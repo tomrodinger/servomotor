@@ -1,0 +1,13 @@
+#ifndef SRC_DEBUG_UART_H_
+#define SRC_DEBUG_UART_H_
+
+#include <stdint.h>
+
+void debug_uart_init(void);
+void convert_uint16_to_byte_array(char *output, uint16_t input);
+void transmit(void *s, uint8_t len);
+void print_number(char *message_prefix, uint16_t n);
+uint8_t get_command_uart1(void);
+
+
+#endif /* SRC_DEBUG_UART_H_ */
