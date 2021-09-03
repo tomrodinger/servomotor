@@ -1,0 +1,4 @@
+../Core/Src/microsecond_clock.c:6:6:microsecond_clock_init	0	static
+../Core/Src/microsecond_clock.c:17:6:TIM3_IRQHandler	0	static
+../Core/Src/microsecond_clock.c:24:10:get_microsecond_time	16	static
+../Core/Src/microsecond_clock.c:45:6:reset_microsecond_time	0	static

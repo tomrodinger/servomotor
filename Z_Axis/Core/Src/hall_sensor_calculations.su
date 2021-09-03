@@ -1,0 +1,4 @@
+../Core/Src/hall_sensor_calculations.c:47:6:adjust_hall_sensor_readings	12	static
+../Core/Src/hall_sensor_calculations.c:60:9:get_hall_position	40	static
+../Core/Src/hall_sensor_calculations.c:142:6:zero_hall_position	8	static
+../Core/Src/hall_sensor_calculations.c:152:6:print_hall_position	112	static

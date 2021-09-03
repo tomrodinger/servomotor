@@ -1,0 +1,10 @@
+../Core/Src/main.c:26:6:SysTick_Handler	8	static
+../Core/Src/main.c:34:6:clock_init	0	static
+../Core/Src/main.c:59:6:systick_init	0	static
+../Core/Src/main.c:95:6:portA_init	0	static
+../Core/Src/main.c:129:6:portB_init	0	static
+../Core/Src/main.c:155:6:portC_init	0	static
+../Core/Src/main.c:181:6:portD_init	0	static
+../Core/Src/main.c:206:6:process_debug_uart_commands	8	static
+../Core/Src/main.c:275:6:button_logic	8	static
+../Core/Src/main.c:304:5:main	8	static

@@ -1,0 +1,16 @@
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:132:6:HAL_PWREx_EnableBatteryCharging	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:147:6:HAL_PWREx_DisableBatteryCharging	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:382:6:HAL_PWREx_EnableInternalWakeUpLine	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:391:6:HAL_PWREx_DisableInternalWakeUpLine	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:415:19:HAL_PWREx_EnableGPIOPullUp	4	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:477:19:HAL_PWREx_DisableGPIOPullUp	4	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:539:19:HAL_PWREx_EnableGPIOPullDown	4	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:601:19:HAL_PWREx_DisableGPIOPullDown	4	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:654:6:HAL_PWREx_EnablePullUpPullDownConfig	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:665:6:HAL_PWREx_DisablePullUpPullDownConfig	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:705:6:HAL_PWREx_EnableFlashPowerDown	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:723:6:HAL_PWREx_DisableFlashPowerDown	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:737:10:HAL_PWREx_GetVoltageRange	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:763:19:HAL_PWREx_ControlVoltageScaling	8	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:804:6:HAL_PWREx_EnableLowPowerRunMode	0	static
+../Drivers/STM32G0xx_HAL_Driver/Src/stm32g0xx_hal_pwr_ex.c:819:19:HAL_PWREx_DisableLowPowerRunMode	8	static

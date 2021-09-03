@@ -1,0 +1,5 @@
+../Core/Src/ADC.c:9:6:adc_init	16	static
+../Core/Src/ADC.c:84:6:check_if_break_condition	16	static
+../Core/Src/ADC.c:95:6:check_if_ADC_watchdog1_exceeded	16	static
+../Core/Src/ADC.c:106:6:check_if_ADC_watchdog2_exceeded	16	static
+../Core/Src/ADC.c:117:6:check_if_ADC_watchdog3_exceeded	16	static
