@@ -12,21 +12,21 @@
 #define SENSOR_SEGMENT_RESOLUTION_DIV_2 3840
 #define SENSOR_SEGMENT_RESOLUTION 7680
 #define CALIBRATION_CAPTURE_STEP_SIZE 128 // this should be slow so that data can be captured and collected accurately
-#define HALL1_MIDLINE 39158
-#define HALL2_MIDLINE 39088
-#define HALL3_MIDLINE 38979
+#define HALL1_MIDLINE 38104
+#define HALL2_MIDLINE 39005
+#define HALL3_MIDLINE 38371
 
 
 struct hall_weights_struct {
-   int16_t h1[WEIGHTS_PER_HALL_SENSOR];
-   int16_t h2[WEIGHTS_PER_HALL_SENSOR];
-   int16_t h3[WEIGHTS_PER_HALL_SENSOR];
+   int32_t h1[WEIGHTS_PER_HALL_SENSOR];
+   int32_t h2[WEIGHTS_PER_HALL_SENSOR];
+   int32_t h3[WEIGHTS_PER_HALL_SENSOR];
 };
 
 #define HALL_WEIGHTS_INITIALIZER { \
-    {  3840,      0,      0}, \
-    {  3840,    222,    493}, \
-    {  3843,    -57,     99}, \
+    {  3182,    362,   -464}, \
+    {  3488,   -476,    629}, \
+    {  4565,    276,   -251}, \
 }
 
 #endif

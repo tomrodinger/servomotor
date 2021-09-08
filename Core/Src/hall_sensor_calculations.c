@@ -10,7 +10,7 @@
 #include "debug_uart.h"
 
 #define UINT32_MIDPOINT 2147483648
-
+#define HALL_POSITION_HYSTERESIS 100
 
 // set which axis this motor is controlling
 #ifdef X_AXIS
@@ -43,6 +43,7 @@ static int8_t previous_largest_sensor = -1;
 static int32_t sensor_incremental_position = 0;
 static int32_t hall_sensor_offset = 0;
 static uint16_t time_difference_div = 0;
+static int32_t hall_position_with_hysteresis = 0;
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
@@ -122,20 +123,40 @@ int32_t get_hall_position(void)
     if (largest_sensor != previous_largest_sensor) {
         if (largest_sensor - previous_largest_sensor == 1) {
             sensor_incremental_position = sensor_incremental_position + SENSOR_SEGMENT_RESOLUTION;
+//            red_LED_on();
         }
         else if (largest_sensor - previous_largest_sensor == -1) {
             sensor_incremental_position = sensor_incremental_position - SENSOR_SEGMENT_RESOLUTION;
+//            red_LED_off();
         }
         else if (largest_sensor - previous_largest_sensor == -2) {
             sensor_incremental_position = sensor_incremental_position + SENSOR_SEGMENT_RESOLUTION;
+//            red_LED_on();
         }
         else {
             sensor_incremental_position = sensor_incremental_position - SENSOR_SEGMENT_RESOLUTION;
+//            red_LED_off();
         }
         previous_largest_sensor = largest_sensor;
     }
 
 	return sensor_incremental_position + fraction - hall_sensor_offset;
+}
+
+
+int32_t get_hall_position_with_hysteresis(void)
+{
+	int32_t hall_position;
+
+	hall_position = get_hall_position();
+	if(hall_position > hall_position_with_hysteresis) {
+		hall_position_with_hysteresis = hall_position;
+	}
+	else if(hall_position + HALL_POSITION_HYSTERESIS < hall_position_with_hysteresis) {
+		hall_position_with_hysteresis = hall_position + HALL_POSITION_HYSTERESIS;
+	}
+
+	return hall_position_with_hysteresis;
 }
 
 
@@ -153,7 +174,7 @@ void print_hall_position(void)
 {
 	char buf[100];
 	int32_t hall_position = get_hall_position();
-	sprintf(buf, "hall_position: %d   time_diffference_div: %hu\n", (int)hall_position, time_difference_div);
+	sprintf(buf, "hall_position: %d   time_difference_div: %hu\n", (int)hall_position, time_difference_div);
 	transmit(buf, strlen(buf));
 }
 

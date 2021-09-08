@@ -17,6 +17,7 @@ void debug_uart_init(void)
     USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE | USART_CR1_FIFOEN |
                   USART_CR1_RXNEIE_RXFNEIE; // enable transmitter, receiver, FIFO mode
 //    HAL_NVIC_SetPriority(USART1_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
+    NVIC_SetPriority(USART1_IRQn, 3);
     NVIC_EnableIRQ(USART1_IRQn);
 }
 
@@ -71,6 +72,15 @@ void transmit(void *s, uint8_t len)
 //    USART1->ICR = USART_ICR_TXFECF_Msk; // clear the transmit interrupt flag
 //    USART1->TDR = transmitBuffer[0]; // start transmitting the first byte
                                // the rest of the transmission will be completed by the UART interrupt
+}
+
+void transmit_without_interrupts(char *message, uint8_t len)
+{
+	int32_t i;
+	for(i = 0; i < len; i++) {
+		while(!(USART1->ISR & USART_ISR_TXE_TXFNF_Msk));
+		USART1->TDR = message[i];
+	}
 }
 
 

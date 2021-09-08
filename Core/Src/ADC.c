@@ -2,7 +2,9 @@
 #include "ADC.h"
 #include "leds.h"
 
-#define ADC_OVERSAMPLING_BITS 0 // we are doing 4x oversamping on each ADC measurement
+#define ADC_WATCHDOG_UPPER_THRESHOLD 1700
+#define ADC_WATCHDOG_LOWER_THRESHOLD 1000
+
 uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
 
@@ -24,7 +26,7 @@ void adc_init(void)
     ADC1->CFGR1 |= ADC_CFGR1_AWD1EN | ADC_CFGR1_AWD1SGL | (0 << ADC_CFGR1_AWD1CH_Pos);
     ADC1->TR1 = (0 << ADC_TR2_LT2_Pos) | (2000 << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
 
-    ADC1->TR2 = (0 << ADC_TR2_LT2_Pos) | (2000 << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR2 = (ADC_WATCHDOG_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
 
     ADC1->TR3 = (0 << ADC_TR2_LT2_Pos) | (2000 << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
@@ -84,43 +86,80 @@ void adc_init(void)
 void check_if_break_condition(void)
 {
 	if(TIM1->SR & TIM_SR_BIF) {
-		red_LED_on();
+//		red_LED_on();
 		TIM1->SR &= ~TIM_SR_BIF;
 	}
 	else {
-		red_LED_off();
+//		red_LED_off();
 	}
 }
 
 void check_if_ADC_watchdog1_exceeded(void)
 {
 	if(ADC1->ISR & ADC_ISR_AWD1) {
-		red_LED_on();
+//		red_LED_on();
 		ADC1->ISR |= ADC_ISR_AWD1;
 	}
 	else {
-		red_LED_off();
+//		red_LED_off();
 	}
 }
 
 void check_if_ADC_watchdog2_exceeded(void)
 {
 	if(ADC1->ISR & ADC_ISR_AWD2) {
-		red_LED_on();
+//		red_LED_on();
 		ADC1->ISR |= ADC_ISR_AWD2;
 	}
 	else {
-		red_LED_off();
+//		red_LED_off();
 	}
 }
 
 void check_if_ADC_watchdog3_exceeded(void)
 {
 	if(ADC1->ISR & ADC_ISR_AWD3) {
-		red_LED_on();
+//		red_LED_on();
 		ADC1->ISR |= ADC_ISR_AWD3;
 	}
 	else {
-		red_LED_off();
+//		red_LED_off();
 	}
 }
+
+uint16_t get_hall_sensor1_voltage(void)
+{
+	return ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24];
+}
+
+uint16_t get_hall_sensor2_voltage(void)
+{
+	return ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24];
+}
+
+uint16_t get_hall_sensor3_voltage(void)
+{
+	return ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24];
+}
+
+
+uint16_t get_motor_current(void)
+{
+	int16_t min_current = 32767;
+	int16_t max_current = -32768;
+	int16_t current;
+	int32_t i;
+
+	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i+= 2) {
+		current = ADC_buffer[i];
+		if(current < min_current) {
+			min_current = current;
+		}
+		else if(current > max_current) {
+			max_current = current;
+		}
+	}
+
+	return max_current;
+}
+
