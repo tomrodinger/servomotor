@@ -15,6 +15,16 @@
 #include "clock_calibration.h"
 #include "error_handling.h"
 #include "step_direction_input.h"
+#include "unique_id.h"
+
+struct __attribute__((__packed__)) product_info_struct {
+	uint32_t firmware_version;
+	uint32_t hardware_version;
+	uint32_t product_code;
+	char descriptiont[];
+};
+struct product_info_struct product_info = {1, 12, 2, "Servomotor"};
+char PRODUCT_DESCRIPTION[] = "Servomotor";
 
 #define DISABLE_MOSFETS_COMMAND 0
 #define ENABLE_MOSFETS_COMMAND 1
@@ -34,6 +44,11 @@
 #define GET_POSITION_COMMAND 15
 #define GET_STATUS_COMMAND 16
 #define GO_TO_CLOSED_LOOP_COMMAND 17
+#define GET_UPDATE_FREQUENCY_COMMAND 18
+#define MOVE_WITH_ACCELERATION_COMMAND 19
+#define DETECT_DEVICES_COMMAND 20
+#define SET_DEVICE_ALIAS_COMMAND 21
+#define GET_PRODUCT_INFO_COMMAND 22
 #define NO_ERROR_RESPONSE "R\x00\x00"
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * 7)
@@ -44,11 +59,23 @@ extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 extern volatile uint8_t commandReceived;
+extern uint8_t my_alias;
 
+static uint64_t my_unique_id;
+static int16_t detect_devices_delay = -1;
+
+// This interrupt will be called 100 times per second
 void SysTick_Handler(void)
 {
-    green_LED_toggle();
-    if(USART2_timout_timer < 2) {
+	static uint16_t toggle_counter = 0;
+
+	toggle_counter++;
+	if(toggle_counter >= 50) {
+	    green_LED_toggle();
+		toggle_counter = 0;
+	}
+
+    if(USART2_timout_timer < USART2_TIMEOUT) {
     	USART2_timout_timer++;
     }
 //	red_LED_off();
@@ -81,7 +108,7 @@ void clock_init(void)
 
 void systick_init(void)
 {
-    SysTick->LOAD  = 16000000;                         /* set reload register */
+    SysTick->LOAD  = 640000;       // set this timer to trigger the interrupt 100 times per second (ie. 64000000 / 100)
     NVIC_SetPriority (SysTick_IRQn, 3); /* set Priority for Systick Interrupt */
     SysTick->VAL   = 0UL;                                             /* Load the SysTick Counter Value */
     SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
@@ -243,21 +270,24 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 	uint8_t n_items_in_queue;
 	int32_t motor_position;
 	uint8_t buf[5];
+	uint32_t frequency;
+	uint64_t unique_id;
+	uint8_t new_alias;
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == MY_AXIS) || (axis == ALL_AXIS)) {
+    if((axis == my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
         switch(command) {
         case DISABLE_MOSFETS_COMMAND:
             disable_mosfets();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case ENABLE_MOSFETS_COMMAND:
             enable_mosfets();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
@@ -267,9 +297,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             desired_position = get_desired_position();
             max_velocity = get_max_velocity();
             end_time = abs((int32_t)(end_position - desired_position)) / max_velocity + local_time;
-            add_to_queue(end_position, end_time);
-//            print_number("Set position: ", (uint16_t)desired_position);
-            if(axis != ALL_AXIS) {
+//            add_to_queue(end_position, end_time);
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
@@ -279,16 +308,15 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 max_velocity = MAX_VELOCITY;
             }
             set_max_velocity(max_velocity);
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case SET_POSITION_AND_FINISH_TIME_COMMAND:
             end_position = ((int32_t*)parameters)[0];
             end_time = ((int32_t*)parameters)[1];
-            add_to_queue(end_position, end_time);
-//            print_number("Set position: ", (uint16_t)desired_position);
-            if(axis != ALL_AXIS) {
+//            add_to_queue(end_position, end_time);
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
@@ -298,7 +326,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             	max_acceleration = MAX_ACCELERATION;
             }
             set_max_acceleration(max_acceleration);
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
@@ -308,19 +336,19 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case CAPTURE_HALL_SENSOR_DATA_COMMAND:
         	capture_type = parameters[0];
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             start_capture(capture_type);
             break;
         case RESET_TIME_COMMAND:
         	reset_time();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case GET_CURRENT_TIME_COMMAND:
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 local_time = get_microsecond_time();
                 rs485_transmit("R\x01\x06", 3);
                 rs485_transmit(&local_time, 6);
@@ -330,7 +358,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	memcpy(&time_from_master, parameters, 6);
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit("R\x01\x06", 3);
                 rs485_transmit(&time_error, 4);
                 rs485_transmit(&clock_calibration_value, 2);
@@ -338,20 +366,20 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case GET_N_ITEMS_IN_QUEUE_COMMAND:
         	n_items_in_queue = get_n_items_in_queue();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit("R\x01\x01", 3);
                 rs485_transmit(&n_items_in_queue, 1);
             }
             break;
         case EMERGENCY_STOP_COMMAND:
         	emergency_stop();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case ZERO_POSITION_COMMAND:
             zero_position_and_hall_sensor();
-			if(axis != ALL_AXIS) {
+			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
@@ -359,19 +387,19 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             enable_mosfets();
 //            int32_t max_homing_travel_displacement = ((int32_t*)parameters)[0];
             //start_homing(max_homing_travel_displacement);
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case GET_POSITION_COMMAND:
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
             	motor_position = get_actual_motor_position();
                 rs485_transmit("R\x01\x04", 3);
            		rs485_transmit(&motor_position, sizeof(motor_position));
             }
             break;
         case GET_STATUS_COMMAND:
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
             	get_motor_status(buf);
                 rs485_transmit("R\x01\x05", 3);
         		rs485_transmit(buf, sizeof(buf));
@@ -379,12 +407,51 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case GO_TO_CLOSED_LOOP_COMMAND:
         	start_go_to_closed_loop_mode();
-            if(axis != ALL_AXIS) {
+            if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
+        case GET_UPDATE_FREQUENCY_COMMAND:
+			frequency = get_update_frequency();
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01\x04", 3);
+				rs485_transmit(&frequency, 4);
+			}
+			break;
+        case MOVE_WITH_ACCELERATION_COMMAND:
+            end_position = ((int32_t*)parameters)[0];
+            end_time = ((int32_t*)parameters)[1];
+            add_to_queue(end_position, end_time);
+			if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+			break;
+        case DETECT_DEVICES_COMMAND:
+        	detect_devices_delay = get_random_number(99);
+			break;
+        case SET_DEVICE_ALIAS_COMMAND:
+            unique_id = ((int64_t*)parameters)[0];
+            new_alias = ((uint8_t*)parameters)[8];
+        	if(unique_id == my_unique_id) {
+        		my_alias = new_alias;
+        	}
+        	break;
+        case GET_PRODUCT_INFO_COMMAND:
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+				uint8_t product_info_length = sizeof(product_info);
+				rs485_transmit(&product_info_length, 1);
+				rs485_transmit(&product_info, sizeof(product_info));
+			}
+			break;
         }
     }
+}
+
+void transmit_unique_id(void)
+{
+	rs485_transmit("R\x01\x08", 3);
+	rs485_transmit(&my_unique_id, 8);
 }
 
 
@@ -486,20 +553,27 @@ void button_logic(void)
 		}
 		else if(time_pressed_down >= 300) {
 			enable_mosfets();
-			move_n_steps_in_m_time(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 5000000);
+			add_trapazoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, 200000);
 		}
 		else if(time_pressed_down >= 50) {
 			enable_mosfets();
-			move_n_steps_in_m_time(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 5000000);
+			add_trapazoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, -200000);
 		}
     }
 }
 
+void print_start_message(void)
+{
+	char buff[200];
+
+    transmit("Program Start\n", 14);
+    sprintf(buff, "Unique ID: 0x%lx%lx\n", ((uint32_t *)&my_unique_id)[1], ((uint32_t *)&my_unique_id)[0]);
+    transmit(buff, strlen(buff));
+}
 
 int main(void)
 {
 //	volatile int i;
-//	char buff[200];
 
     clock_init();
     systick_init();
@@ -514,10 +588,12 @@ int main(void)
     pwm_init();
     step_and_direction_init();
 
+    my_unique_id = get_unique_id();
 
     __enable_irq();
 
-    transmit("Program Start\n", 14);
+    print_start_message();
+
     rs485_transmit("Start\n", 6);
 
     while(1) {
@@ -528,6 +604,13 @@ int main(void)
             processCommand(selectedAxis, command, valueBuffer);
             commandReceived = 0;
         }
+
+    	if(detect_devices_delay > -1) {
+    		if(detect_devices_delay == 0) {
+    			transmit_unique_id();
+    		}
+    		detect_devices_delay--;
+    	}
 
         process_debug_uart_commands();
         button_logic();

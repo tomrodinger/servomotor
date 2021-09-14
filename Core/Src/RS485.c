@@ -2,13 +2,12 @@
 #include <string.h>
 #include "RS485.h"
 #include "error_handling.h"
-
-#define MY_AXIS 'Y'  // set which axis this motor is controlling
-#define ALL_AXIS 'A' // will also respond to this 'all' command
+#include "leds.h"
 
 #define TRANSMIT_BUFFER_SIZE 150
 #define MAX_VALUE_LENGTH 200 // Maximum length that the value can be in the entire protocol (all possible devices, present and future)
 
+uint8_t my_alias = 'Z';
 static char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
@@ -53,7 +52,7 @@ void rs485_drive_disable(void)
 void USART2_IRQHandler(void)
 {
     if(USART2->ISR & USART_ISR_RXNE_RXFNE) {
-        if(USART2_timout_timer >= 2) {
+        if(USART2_timout_timer >= USART2_TIMEOUT) {
             receiveIndex = 0;
         }
         uint8_t receivedByte;
@@ -61,11 +60,8 @@ void USART2_IRQHandler(void)
         USART2_timout_timer = 0;
         if(!commandReceived) {
             if(receiveIndex == 0) {
-                if((receivedByte == 'X') || (receivedByte == 'Y') || (receivedByte == 'Z') ||
-                   (receivedByte == 'z') || (receivedByte == 'E') || (receivedByte == ALL_AXIS)) {
-                    selectedAxis = receivedByte;
-                    receiveIndex++;
-                }
+				selectedAxis = receivedByte;
+				receiveIndex++;
             }
             else if(receiveIndex == 1) {
                 command = receivedByte;
@@ -96,10 +92,12 @@ void USART2_IRQHandler(void)
     }
 
     while((USART2->ISR & USART_CR1_TXEIE_TXFNFIE_Msk) && (transmitCount > 0)) {
+    	red_LED_on();
         USART2->TDR = transmitBuffer[transmitIndex];
         transmitCount--;
         transmitIndex++;
     }
+
     if(transmitCount == 0) {
         USART2->CR1 &= ~USART_CR1_TXEIE_TXFNFIE_Msk; // nothing more to transmit, so disable the interrupt
 //        if(USART2->ISR & USART_ISR_TC) {
@@ -108,6 +106,7 @@ void USART2_IRQHandler(void)
 //        }
     }
 
+    red_LED_off();
 }
 
 

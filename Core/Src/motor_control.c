@@ -5,6 +5,7 @@
 #include "stm32g0xx_hal.h"
 #include "microsecond_clock.h"
 #include "debug_uart.h"
+#include "PWM.h"
 #include "ADC.h"
 #include "hall_sensor_calculations.h"
 #include "mosfets.h"
@@ -60,10 +61,11 @@
 
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
+#define ACCELERATION_SHIFT_LEFT 8
 #define MOVEMENT_QUEUE_SIZE 16 // this has to be a power of 2
 typedef struct {
-    int32_t movement_end_position;
-    uint64_t movement_end_time;
+    int64_t acceleration;
+    uint32_t n_time_steps;
 } movement_queue_t;
 static movement_queue_t movement_queue[MOVEMENT_QUEUE_SIZE];
 static uint8_t queue_write_position = 0;
@@ -73,6 +75,8 @@ static uint8_t n_items_in_queue = 0;
 static int32_t hall_position = 0;
 static int32_t velocity = 0;
 static uint64_t movement_end_time = 0;
+static int64_t current_velocity_i64 = 0;
+static int64_t current_position_i64 = 0;
 static int32_t desired_position = 0; // this is the target position
 static uint32_t commutation_position = 0;
 static uint32_t commutation_position_offset = UINT32_MIDPOINT;
@@ -85,6 +89,9 @@ static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 //static int32_t desired_velocity = 0;
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
+
+static uint8_t go_to_closed_loop_mode_active = 0;
+
 static uint32_t debug_counter = 0;
 static uint16_t time_difference1 = 0;
 static uint16_t time_difference2 = 0;
@@ -135,19 +142,6 @@ static uint16_t max_motor_control_time_difference = 0;
 // coast phase, the motor will rotate through one hall sensor revolution (ie. moves CALIBRATION_MOVEMENT_DISTANCE).
 #define CALIBRATION_COAST_TIME (CALIBRATION_MOVEMENT_DISTANCE / CALIBRATION_MAX_VELOCITY)
 
-
-// this is the peak velocity reached during the movements related to going into closed loop mode.
-// it is in units of motor microsteps per time unit.
-// for example, 64 means that the motor will take 64 microsteps per time unit.
-#define GO_TO_CLOSED_LOOP_MODE_MAX_VELOCITY 64
-
-#define GO_TO_CLOSED_LOOP_MODE_VELOCITY_SHIFT 7 // this is how many binary decimal places we are keeping for the velocity value
-
-#define GO_TO_CLOSED_LOOP_MODE_ACCELERATION 1 // this is the acceleration used during the processof going into closed loop mode. the units are microsteps divided by
-                                              // (1 << CALIBRATION_VELOCITY_SHIFT) per one unit of time squared.
-
-// this is the time to accelerate or decelerate during the processof going into closed loop mode. careful that this number ends up being an integer.
-#define GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME ((GO_TO_CLOSED_LOOP_MODE_MAX_VELOCITY << GO_TO_CLOSED_LOOP_MODE_VELOCITY_SHIFT) / GO_TO_CLOSED_LOOP_MODE_ACCELERATION)
 
 
 #define CAPTURE_HALL_SENSOR_READINGS 1
@@ -485,67 +479,47 @@ m         position of the maximum hall sensor reading found here
     calibration.time--;
 }
 
-
+#define GO_TO_CLOSED_LOOP_MODE_ACCELERATION 1000000
+#define GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME 1000
+#define GO_TO_CLOSED_LOOP_MODE_COAST_TIME 10000
 void start_go_to_closed_loop_mode(void)
 {
 	transmit("Go to closed loop mode start\n", 29);
 
-	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-
 	clear_the_queue_and_stop_no_disable_interrupt();
 	set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
 	enable_mosfets();
-	memset(&go_to_closed_loop_mode, 0, sizeof(go_to_closed_loop_mode));
-	go_to_closed_loop_mode.move_number = 1;
-	go_to_closed_loop_mode.time = GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME;
-	go_to_closed_loop_mode.velocity = 0;
-	go_to_closed_loop_mode.acceleration = -GO_TO_CLOSED_LOOP_MODE_ACCELERATION;
 	motor_pwm_voltage = GO_TO_CLOSED_LOOP_MODE_MOTOR_PWM_VOLTAGE;
-
-	TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME);
+	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME);
+	add_to_queue(-GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME * 2);
+	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME);
+	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME);
+	go_to_closed_loop_mode_active = 1;
 }
 
 
 void go_to_closed_loop_mode_logic(void)
 {
-//	char buf[200];
-
-    if(go_to_closed_loop_mode.time == 0) {
-    	go_to_closed_loop_mode.move_number++;
-        switch(go_to_closed_loop_mode.move_number) {
-        case 2:
-        	go_to_closed_loop_mode.time = GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME * 2;
-        	go_to_closed_loop_mode.acceleration = GO_TO_CLOSED_LOOP_MODE_ACCELERATION;
-            break;
-        case 3:
-        	go_to_closed_loop_mode.time = GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME;
-        	go_to_closed_loop_mode.acceleration = -GO_TO_CLOSED_LOOP_MODE_ACCELERATION;
-            break;
-        case 4:
-        	go_to_closed_loop_mode.time = GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME; // let some time for the motor to settle the position
-        	go_to_closed_loop_mode.acceleration = 0;
-            break;
-        default:
-        	commutation_position_offset = commutation_position_offset - desired_position;
-        	zero_hall_position();
-        	desired_position = 0;
-        	movement_end_position = 0;
-        	movement_end_time = 0;
-       		motor_pwm_voltage = 0;
-			set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-        	hall_position = get_hall_position();
-//    		sprintf(buf, "desired_position: %d   hall_position: %d\n", (int)desired_position, (int)(hall_position));
-//    		transmit(buf, strlen(buf));
-    		go_to_closed_loop_mode.move_number = 0; // finished all the steps
-            break;
-        }
-//        sprintf(buf, "%hhu: pos: %ld   time: %u   vel: %d   accel: %d\n", go_to_closed_loop_mode.move_number, desired_position, go_to_closed_loop_mode.time, go_to_closed_loop_mode.velocity, go_to_closed_loop_mode.acceleration);
-//        transmit(buf, strlen(buf));
+    if(!go_to_closed_loop_mode_active) {
+    	return;
     }
 
-    go_to_closed_loop_mode.velocity += go_to_closed_loop_mode.acceleration;
-    desired_position += (((int32_t)go_to_closed_loop_mode.velocity + (1 << (GO_TO_CLOSED_LOOP_MODE_VELOCITY_SHIFT - 1))) >> GO_TO_CLOSED_LOOP_MODE_VELOCITY_SHIFT); // implements rounding for better accuracy
-    go_to_closed_loop_mode.time--;
+    if(n_items_in_queue == 0) {
+		commutation_position_offset = commutation_position_offset - desired_position;
+		zero_hall_position();
+		desired_position = 0;
+		current_position_i64 = 0;
+		current_velocity_i64 = 0;
+		movement_end_position = 0;
+		movement_end_time = 0;
+		motor_pwm_voltage = 0;
+		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
+		hall_position = get_hall_position();
+//    		sprintf(buf, "desired_position: %d   hall_position: %d\n", (int)desired_position, (int)(hall_position));
+//    		transmit(buf, strlen(buf));
+		go_to_closed_loop_mode_active = 0;
+    }
 }
 
 
@@ -790,11 +764,12 @@ void print_motor_current(void)
 
 
 
-void add_to_queue(int32_t position, uint64_t time)
+void add_to_queue(int32_t acceleration, uint32_t n_time_steps)
 {
     if(n_items_in_queue < MOVEMENT_QUEUE_SIZE) {
-        movement_queue[queue_write_position].movement_end_position = position;
-        movement_queue[queue_write_position].movement_end_time = time;
+        movement_queue[queue_write_position].acceleration = acceleration;
+        movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
+        movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
         n_items_in_queue++;
     }
@@ -803,21 +778,8 @@ void add_to_queue(int32_t position, uint64_t time)
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta)
 {
-	uint64_t local_time = get_microsecond_time();
-	add_to_queue(desired_position - displacement, local_time + time_delta);
-}
-
-
-uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time)
-{
-    if(n_items_in_queue == 0) {
-        return 0;
-    }
-    *end_position = movement_queue[queue_read_position].movement_end_position;
-    *end_time = movement_queue[queue_read_position].movement_end_time;
-    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-    n_items_in_queue--;
-    return 1;
+//	uint64_t local_time = get_microsecond_time();
+//	add_to_queue(desired_position - displacement, local_time + time_delta);
 }
 
 
@@ -832,6 +794,14 @@ void clear_the_queue_and_stop(void)
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+}
+
+
+void add_trapazoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration)
+{
+	add_to_queue(acceleration, 1000);
+	add_to_queue(0, 1000000);
+	add_to_queue(-acceleration, 1000);
 }
 
 
@@ -862,85 +832,21 @@ void compute_velocity(void)
 
 uint8_t handle_queued_movements(void)
 {
-	uint64_t current_time = get_microsecond_time();
-	uint8_t has_queued_item;
-	volatile uint16_t start_time;
-	volatile uint16_t end_time;
-	int8_t sign;
-
-	if(current_time >= movement_end_time) {
-		int32_t end_position;
-		uint64_t end_time;
-		has_queued_item = take_from_queue(&end_position, &end_time);
-
-		if(has_queued_item) {
-			movement_start_time = movement_end_time;
-			movement_start_position = movement_end_position;
-			movement_end_time = end_time;
-			movement_end_position = end_position;
-//			desired_velocity = ((movement_end_position - movement_start_position) * VELOCITY_SCALE_FACTOR) / (int32_t)(movement_end_time - movement_start_time);
+	if(n_items_in_queue > 0) {
+		if(movement_queue[queue_read_position].n_time_steps > 0) {
+			current_velocity_i64 += movement_queue[queue_read_position].acceleration;
+			current_position_i64 += current_velocity_i64;
+			desired_position = ((int32_t *)&current_position_i64)[1]; // take the most significant 32 bit number
+			movement_queue[queue_read_position].n_time_steps--;
 		}
 		else {
-//			desired_position = movement_end_position;
-			movement_end_position += get_step_count();
-			movement_end_time = current_time;
-		}
-
-		debug_counter++;
-	}
-
-
-	if(current_time < movement_end_time) {
-		current_time_captured = current_time;
-		movement_end_time_captured = movement_end_time;
-
-		desired_position = (int64_t)(current_time - movement_start_time) * ((int64_t)movement_end_position - (int64_t)movement_start_position) /
-						   (int32_t)(movement_end_time - movement_start_time) + movement_start_position;
-/*
-		int64_t numerator = (int64_t)(current_time - movement_start_time) * ((int64_t)movement_end_position - (int64_t)movement_start_position);
-		uint32_t denominator = (int32_t)(movement_end_time - movement_start_time);
-		uint64_t numerator_u64;
-		if(numerator < 0) {
-			sign = -1;
-			numerator_u64 = -numerator;
-		}
-		else {
-			sign = 1;
-			numerator_u64 = numerator;
-		}
-		while((((uint32_t *)&numerator_u64)[1] != 0) && ((((uint32_t *)&numerator_u64)[0] & (1 << 31)) != 0)) {
-			numerator_u64 >>= 1;
-			denominator >>= 1;
-		}
-		uint32_t numerator_u32 = ((uint32_t *)&numerator_u64)[0];
-		start_time = TIM3->CNT;
-		desired_position = numerator_u32 / denominator;
-		end_time = TIM3->CNT;
-		if(sign == -1) {
-			desired_position = -desired_position;
-		}
-		desired_position += movement_start_position;
-*/
-//		desired_velocity = ((movement_end_position - desired_position) * VELOCITY_SCALE_FACTOR) / (int32_t)(movement_end_time - current_time);
-		time_difference5 = end_time - start_time;
-		if(time_difference5 > max_time_difference5) {
-			max_time_difference5 = time_difference5;
+		    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+		    n_items_in_queue--;
 		}
 		return 1;
 	}
-	else {
-		desired_position = movement_end_position;
-//		desired_velocity = ((movement_end_position - desired_position) * VELOCITY_SCALE_FACTOR) / (int32_t)(movement_end_time - current_time);
-		return 0;
-	}
 
-	// make sure that the velocity does not exceed some maximum value
-//	if(desired_velocity > MAX_DESIRED_VELOCITY) {
-//		desired_velocity = MAX_DESIRED_VELOCITY;
-//	}
-//	else if(desired_velocity < -MAX_DESIRED_VELOCITY) {
-//		desired_velocity = -MAX_DESIRED_VELOCITY;
-//	}
+	return 0;
 }
 
 
@@ -1015,14 +921,19 @@ void motor_movement_calculations(void)
 {
 	uint8_t moving = 0; // 1 indicates that the motor is moving, 0 indicates that it is stopped
 
+    if(go_to_closed_loop_mode_active) {
+        go_to_closed_loop_mode_logic();
+        moving = 1;
+    }
+
 //    if(calibration.move_number > 0) {
 //        handle_calibration_logic();
 //        moving = 1;
 //    }
-      if(go_to_closed_loop_mode.move_number > 0) {
-          go_to_closed_loop_mode_logic();
-          moving = 1;
-      }
+//      if(go_to_closed_loop_mode.move_number > 0) {
+//          go_to_closed_loop_mode_logic();
+//          moving = 1;
+//      }
 
 //    else if(homing.move_number > 0) {
 //        handle_homing_logic();
@@ -1031,9 +942,7 @@ void motor_movement_calculations(void)
 //    else if(capture.capture_type) {
 //        capture_logic();
 //    }
-    else {
-        moving = handle_queued_movements();
-    }
+    moving |= handle_queued_movements();
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = desired_position + commutation_position_offset;
@@ -1245,6 +1154,10 @@ uint8_t get_motor_control_mode(void)
 	return motor_control_mode;
 }
 
+uint32_t get_update_frequency(void)
+{
+	return PWM_FREQUENCY * 2;
+}
 
 void zero_position_and_hall_sensor(void)
 {
@@ -1253,6 +1166,8 @@ void zero_position_and_hall_sensor(void)
 	commutation_position_offset = commutation_position_offset - desired_position;
     zero_hall_position();
 	desired_position = 0;
+	current_position_i64 = 0;
+	current_velocity_i64 = 0;
 	movement_end_position = 0;
 	movement_end_time = 0;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt

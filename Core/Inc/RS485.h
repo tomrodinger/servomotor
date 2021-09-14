@@ -2,6 +2,10 @@
 #ifndef SRC_RS485_H_
 #define SRC_RS485_H_
 
+#define ALL_ALIAS 255 // to address all devices on the bus at the same time
+
+#define USART2_TIMEOUT 5 // one count is 10ms, so this is a timeout of about 50 ms
+
 #define MAX_VALUE_BUFFER_LENGTH 8 // Maximum length of any value that this controller might need to process
                                   // Values longer than this may be valid for other devices and will be ignored
 

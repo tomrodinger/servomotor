@@ -1,4 +1,5 @@
 #include "stm32g0xx_hal.h"
+#include "PWM.h"
 
 void pwm_init(void)
 {
@@ -8,7 +9,7 @@ void pwm_init(void)
     GPIOB->AFR[0] = (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
 
     TIM1->PSC = 0; // no prescaler
-    TIM1->ARR = 1024; // this sets the period to be about 31250 Hz @ input clock frequency of 64MHz
+    TIM1->ARR = PWM_PERIOD;
 //    TIM1->CCR1 = 1;
 //    TIM1->CCR2 = 2049;
 //    TIM1->CCR3 = 1000;
