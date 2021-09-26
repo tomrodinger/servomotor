@@ -26,11 +26,12 @@ Core/Src/motor_control.o: ../Core/Src/motor_control.c \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_flash_ex.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_pwr.h \
  ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_pwr_ex.h \
+ ../Core/Inc/microsecond_clock.h ../Core/Inc/debug_uart.h \
+ ../Core/Inc/PWM.h ../Core/Inc/ADC.h \
+ ../Core/Src/hall_sensor_calculations.h ../Core/Inc/mosfets.h \
  ../Core/Inc/CommutationTable.h ../Core/Inc/error_handling.h \
- ../Core/Inc/RS485.h ../Core/Inc/mosfets.h ../Core/Inc/debug_uart.h \
- ../Core/Inc/ADC.h ../Core/Src/hall_sensor_calculations.h \
- ../Core/Inc/motor_control.h ../Core/Inc/microsecond_clock.h \
- ../Core/Inc/LookupTableZ.h
+ ../Core/Inc/RS485.h ../Core/Inc/motor_control.h ../Core/Inc/leds.h \
+ ../Core/Src/step_direction_input.h ../Core/Inc/LookupTableZ.h
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal.h:
 ../Core/Inc/stm32g0xx_hal_conf.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_rcc.h:
@@ -58,13 +59,16 @@ Core/Src/motor_control.o: ../Core/Src/motor_control.c \
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_flash_ex.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_pwr.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_pwr_ex.h:
+../Core/Inc/microsecond_clock.h:
+../Core/Inc/debug_uart.h:
+../Core/Inc/PWM.h:
+../Core/Inc/ADC.h:
+../Core/Src/hall_sensor_calculations.h:
+../Core/Inc/mosfets.h:
 ../Core/Inc/CommutationTable.h:
 ../Core/Inc/error_handling.h:
 ../Core/Inc/RS485.h:
-../Core/Inc/mosfets.h:
-../Core/Inc/debug_uart.h:
-../Core/Inc/ADC.h:
-../Core/Src/hall_sensor_calculations.h:
 ../Core/Inc/motor_control.h:
-../Core/Inc/microsecond_clock.h:
+../Core/Inc/leds.h:
+../Core/Src/step_direction_input.h:
 ../Core/Inc/LookupTableZ.h:

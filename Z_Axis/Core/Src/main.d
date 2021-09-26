@@ -30,7 +30,8 @@ Core/Src/main.o: ../Core/Src/main.c \
  ../Core/Inc/mosfets.h ../Core/Inc/ADC.h ../Core/Inc/PWM.h \
  ../Core/Inc/CommutationTable.h ../Core/Src/hall_sensor_calculations.h \
  ../Core/Inc/motor_control.h ../Core/Inc/microsecond_clock.h \
- ../Core/Inc/error_handling.h
+ ../Core/Src/clock_calibration.h ../Core/Inc/error_handling.h \
+ ../Core/Src/step_direction_input.h ../Core/Inc/unique_id.h
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal.h:
 ../Core/Inc/stm32g0xx_hal_conf.h:
 ../Drivers/STM32G0xx_HAL_Driver/Inc/stm32g0xx_hal_rcc.h:
@@ -68,4 +69,7 @@ Core/Src/main.o: ../Core/Src/main.c \
 ../Core/Src/hall_sensor_calculations.h:
 ../Core/Inc/motor_control.h:
 ../Core/Inc/microsecond_clock.h:
+../Core/Src/clock_calibration.h:
 ../Core/Inc/error_handling.h:
+../Core/Src/step_direction_input.h:
+../Core/Inc/unique_id.h:

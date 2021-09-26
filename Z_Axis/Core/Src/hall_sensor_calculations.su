@@ -1,4 +1,5 @@
-../Core/Src/hall_sensor_calculations.c:47:6:adjust_hall_sensor_readings	12	static
-../Core/Src/hall_sensor_calculations.c:60:9:get_hall_position	40	static
-../Core/Src/hall_sensor_calculations.c:142:6:zero_hall_position	8	static
-../Core/Src/hall_sensor_calculations.c:152:6:print_hall_position	112	static
+../Core/Src/hall_sensor_calculations.c:48:6:adjust_hall_sensor_readings	16	static
+../Core/Src/hall_sensor_calculations.c:61:9:get_hall_position	24	static
+../Core/Src/hall_sensor_calculations.c:147:9:get_hall_position_with_hysteresis	8	static
+../Core/Src/hall_sensor_calculations.c:163:6:zero_hall_position	8	static
+../Core/Src/hall_sensor_calculations.c:173:6:print_hall_position	112	static

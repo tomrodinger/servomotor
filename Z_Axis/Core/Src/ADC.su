@@ -1,5 +1,9 @@
-../Core/Src/ADC.c:9:6:adc_init	16	static
-../Core/Src/ADC.c:84:6:check_if_break_condition	16	static
-../Core/Src/ADC.c:95:6:check_if_ADC_watchdog1_exceeded	16	static
-../Core/Src/ADC.c:106:6:check_if_ADC_watchdog2_exceeded	16	static
-../Core/Src/ADC.c:117:6:check_if_ADC_watchdog3_exceeded	16	static
+../Core/Src/ADC.c:11:6:adc_init	16	static
+../Core/Src/ADC.c:86:6:check_if_break_condition	0	static
+../Core/Src/ADC.c:97:6:check_if_ADC_watchdog1_exceeded	0	static
+../Core/Src/ADC.c:108:6:check_if_ADC_watchdog2_exceeded	0	static
+../Core/Src/ADC.c:119:6:check_if_ADC_watchdog3_exceeded	0	static
+../Core/Src/ADC.c:130:10:get_hall_sensor1_voltage	0	static
+../Core/Src/ADC.c:135:10:get_hall_sensor2_voltage	0	static
+../Core/Src/ADC.c:140:10:get_hall_sensor3_voltage	0	static
+../Core/Src/ADC.c:146:10:get_motor_current	8	static
