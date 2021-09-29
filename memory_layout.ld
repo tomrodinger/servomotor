@@ -36,9 +36,10 @@ _Min_Stack_Size = 0x400;	/* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 8K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 64K
-  SETTINGS (r)    : ORIGIN = 0x8007800,    LENGTH = 2048  /* settings will be stored in flash here */
+  BOOTLOADER (rx)   : ORIGIN = 0x8000000,   LENGTH = 10K  /* the bootloader is stored here */
+  FLASH      (rx)   : ORIGIN = 0x8002800,   LENGTH = 52K /* the application is stored here */
+  SETTINGS   (r)    : ORIGIN = 0x800F800,   LENGTH = 2K  /* settings will be stored in flash here */
+  RAM        (xrw)  : ORIGIN = 0x20000000,  LENGTH = 8K
 }
 
 /* Sections */

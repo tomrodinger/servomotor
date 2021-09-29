@@ -130,7 +130,7 @@ Infinite_Loop:
   .size g_pfnVectors, .-g_pfnVectors
 
 g_pfnVectors:
-  .word _estack
+  .word 0
   .word Reset_Handler
   .word NMI_Handler
   .word HardFault_Handler
@@ -138,7 +138,7 @@ g_pfnVectors:
   .word 0
   .word 0
   .word 0
-  .word 0
+  .word _estack  /* Moved this _estack value from the fist position to the 9th position, because we will use the first position for a difference purpose */
   .word 0
   .word 0
   .word SVC_Handler

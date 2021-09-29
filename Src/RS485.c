@@ -93,10 +93,10 @@ void USART2_IRQHandler(void)
                         fatal_error(message, 1);
                     }
                     receiveIndex++;
-                    if(receiveIndex == 1281) {
-                        sprintf(message, "recd: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
-                        fatal_error(message, 1);
-                    }
+//                    if(receiveIndex == 1281) {
+//                        sprintf(message, "recd: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
+//                        fatal_error(message, 1);
+//                    }
                 }
 
                 if(receiveIndex >= valueLength) {

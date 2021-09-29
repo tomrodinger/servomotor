@@ -29,6 +29,9 @@ extern uint8_t my_alias;
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
 
+#define LAUNCH_APPLICATION_DELAY 50
+static int32_t launch_applicaiton = -1;
+
 // This interrupt will be called 100 times per second
 void SysTick_Handler(void)
 {
@@ -46,6 +49,10 @@ void SysTick_Handler(void)
 
     if(detect_devices_delay > 0) {
         detect_devices_delay--;
+    }
+
+    if(launch_applicaiton > 0) {
+        launch_applicaiton--;
     }
 
 //	red_LED_off();
@@ -232,11 +239,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 	uint64_t unique_id;
 	uint8_t new_alias;
     uint8_t error_code;
-//    char message[100];
+    char message[100];
 //    sprintf(message, "axis: %hu  command: %hu", axis, command);
 //    fatal_error(message, 1);
 //    print_number("Received a command with length: ", commandLen);
     if((axis == my_alias) || (axis == ALL_ALIAS)) {
+        launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
         switch(command) {
@@ -274,7 +282,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case FIRMWARE_UPGRADE_COMMAND:
-            fatal_error("firmware", 2);
+            sprintf(message, "FIRMWARE_UPGRADE_COMMAND page %hu\n", parameters[0]);
+            transmit(message, strlen(message));
             error_code = burn_firmware_page(parameters[0], parameters + 1);
 			if((axis != ALL_ALIAS) && (error_code == 0)) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -331,6 +340,8 @@ void print_start_message()
 int main(void)
 {
 //	volatile int i;
+    typedef void (*pFunction)(void);
+    pFunction jumpToApplication = 0;
 
     clock_init();
     systick_init();
@@ -351,6 +362,27 @@ int main(void)
 
     print_start_message();
 
+//    uint32_t buffer[4];
+    char message[100];
+//    buffer[0] = 0;
+//    uint32_t crc32 = calculate_crc32_buffer(buffer, 1);
+//    sprintf(message, "crc32: %08lX\n", crc32);
+    sprintf(message, "firmware size: %lu\n", get_firmware_size());
+    transmit(message, strlen(message));
+
+
+    if(firmware_crc_check()) {
+        transmit("Firmware CRC check passed\n", 26);
+        uint32_t jumpAddress = *(__IO uint32_t*)(APPLICATION_ADDRESS_PTR);
+        jumpToApplication = (pFunction)jumpAddress; 
+        sprintf(message, "Application start address: %08lx\n", jumpAddress);
+        transmit(message, strlen(message));
+        launch_applicaiton = LAUNCH_APPLICATION_DELAY; // launch the application after a short delay
+    }
+    else {
+        transmit("Firmware CRC check failed\n", 26);
+    }
+
     rs485_transmit("Start\n", 6);
 
     while(1) {
@@ -363,6 +395,12 @@ int main(void)
             transmit_unique_id();
     		detect_devices_delay--;
     	}
+
+        if(launch_applicaiton == 0) {
+            // the bootloader code will no longer be valid. the application code will reset the stack pointer and reinitialize things
+            __disable_irq();
+            jumpToApplication();
+        }
 
         process_debug_uart_commands();
     }

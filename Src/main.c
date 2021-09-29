@@ -252,6 +252,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t capture_type;
     uint8_t n_items_in_queue;
     int32_t motor_position;
+    int32_t acceleration;
+    uint32_t time_steps;
     uint8_t buf[5];
     uint32_t frequency;
     uint64_t unique_id;
@@ -402,9 +404,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case MOVE_WITH_ACCELERATION_COMMAND:
-            end_position = ((int32_t*)parameters)[0];
-            end_time = ((int32_t*)parameters)[1];
-            add_to_queue(end_position, end_time);
+            acceleration = ((int32_t*)parameters)[0];
+            time_steps = ((uint32_t*)parameters)[1];
+            add_to_queue(acceleration, time_steps);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
@@ -576,8 +578,6 @@ void print_start_message()
 
 int main(void)
 {
-//	volatile int i;
-
     clock_init();
     systick_init();
     portA_init();
@@ -591,7 +591,7 @@ int main(void)
     pwm_init();
     step_and_direction_init();
 
-    SCB->VTOR = 0; // vector table is moved to where the application starts, which is after the bootloader
+    SCB->VTOR = 0x2800; // vector table is moved to where the application starts, which is after the bootloader
 
     my_unique_id = get_unique_id();
 

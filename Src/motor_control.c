@@ -834,19 +834,22 @@ uint8_t handle_queued_movements(void)
 {
 	if(n_items_in_queue > 0) {
 		if(movement_queue[queue_read_position].n_time_steps > 0) {
-			current_velocity_i64 += movement_queue[queue_read_position].acceleration;
-			current_position_i64 += current_velocity_i64;
-			desired_position = ((int32_t *)&current_position_i64)[1]; // take the most significant 32 bit number
 			movement_queue[queue_read_position].n_time_steps--;
 		}
 		else {
 		    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
 		    n_items_in_queue--;
 		}
-		return 1;
+		if (n_items_in_queue > 0) {
+			current_velocity_i64 += movement_queue[queue_read_position].acceleration;
+		}
 	}
 
-	return 0;
+	current_position_i64 += current_velocity_i64;
+	desired_position = ((int32_t *)&current_position_i64)[1]; // take the most significant 32 bit number
+
+	return (current_velocity_i64 != 0);
+
 }
 
 
