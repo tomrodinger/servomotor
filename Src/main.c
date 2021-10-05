@@ -567,11 +567,11 @@ void button_logic(void)
 		}
 		else if(time_pressed_down >= 300) {
 			enable_mosfets();
-			add_trapazoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, 200000);
+			add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, 200000);
 		}
 		else if(time_pressed_down >= 50) {
 			enable_mosfets();
-			add_trapazoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, -200000);
+			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, -200000);
 		}
     }
 }

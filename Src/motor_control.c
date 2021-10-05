@@ -803,7 +803,7 @@ void clear_the_queue_and_stop(void)
 }
 
 
-void add_trapazoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration)
+void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration)
 {
 	add_to_queue(acceleration, 1000);
 	add_to_queue(0, 1000000);

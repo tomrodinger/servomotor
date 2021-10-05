@@ -50,7 +50,7 @@ void print_motor_current(void);
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void add_to_queue(int32_t acceleration, uint32_t n_time_steps);
-void add_trapazoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration);
+void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration);
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);
 void clear_the_queue_and_stop(void);
