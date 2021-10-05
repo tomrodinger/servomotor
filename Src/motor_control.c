@@ -765,7 +765,10 @@ void print_motor_current(void)
 
 
 void add_to_queue(int32_t acceleration, uint32_t n_time_steps)
-{
+{	
+	if(n_time_steps == 0) {
+		return; // in the case that the number if time steps is zero, it makes sense to not anything to the queue
+	}
     if(n_items_in_queue < MOVEMENT_QUEUE_SIZE) {
         movement_queue[queue_write_position].acceleration = acceleration;
         movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
@@ -773,6 +776,9 @@ void add_to_queue(int32_t acceleration, uint32_t n_time_steps)
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
         n_items_in_queue++;
     }
+	else {
+		fatal_error("queue is full", 6);
+	}
 }
 
 
@@ -833,15 +839,13 @@ void compute_velocity(void)
 uint8_t handle_queued_movements(void)
 {
 	if(n_items_in_queue > 0) {
-		if(movement_queue[queue_read_position].n_time_steps > 0) {
-			movement_queue[queue_read_position].n_time_steps--;
-		}
-		else {
+		// there is an assumption here that any item in the queue will always have one or more time steps
+		// see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
+		current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
+		movement_queue[queue_read_position].n_time_steps--;
+		if(movement_queue[queue_read_position].n_time_steps == 0) {
 		    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
 		    n_items_in_queue--;
-		}
-		if (n_items_in_queue > 0) {
-			current_velocity_i64 += movement_queue[queue_read_position].acceleration;
 		}
 	}
 
