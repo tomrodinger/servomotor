@@ -4,9 +4,10 @@ import sys
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
+import struct
 
 #SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/cu.usbserial-1420"
+SERIAL_PORT = "/dev/cu.usbserial-1410"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
@@ -59,6 +60,20 @@ if len(response) != payload_size:
     print("Received this payload: ", response)
     exit(1)
 print(response)
+for c in response:
+    if c >= 33 and c <= 126:
+        print("Character: %1c -> %3d 0x%02x" % (c, c, c))
+    else:
+        print("Character:   -> %3d 0x%02x" % (c, c))
 
+(product_code, hardware_revision_bugfix, hardware_revision_minor, hardware_revision_major,
+ hardware_revision_unused, serial_number, unique_id, unused) = struct.unpack("<8sBBBBIQI", response)
+print("")
+print("The product information is:")
+print("   Product code: [%s]" % (product_code.decode('UTF-8')))
+print("   Hardware version: %u.%u.%u" % (hardware_revision_major, hardware_revision_minor, hardware_revision_bugfix))
+print("   Serial number:", serial_number)
+print("   Unique ID: %016X" % (unique_id))
+print("")
 
 ser.close()

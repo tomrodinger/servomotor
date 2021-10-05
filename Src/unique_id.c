@@ -2,22 +2,12 @@
 #include <stdint.h>
 #include <string.h>
 #include "settings.h"
+#include "product_info.h"
 
 uint64_t get_unique_id(void)
 {
-	uint64_t unique_id;
-	uint32_t unique_id_LSB;
-	uint32_t unique_id_MSB;
-
-	unique_id_LSB = calculate_crc32_buffer((uint8_t *)__DATE__, strlen(__DATE__));
-	crc32_init();
-	unique_id_MSB = calculate_crc32_buffer((uint8_t *)__TIME__, strlen(__TIME__));
-	crc32_init();
-	unique_id = unique_id_MSB;
-	unique_id <<= 32;
-	unique_id |= unique_id_LSB;
-
-	return unique_id;
+    struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+	return product_info->unique_id;
 }
 
 uint32_t get_random_number(uint32_t limit)

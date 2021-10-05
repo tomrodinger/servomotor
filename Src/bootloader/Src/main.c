@@ -6,18 +6,10 @@
 #include "debug_uart.h"
 #include "../../RS485.h"
 #include "error_handling.h"
-#include "unique_id.h"
+#include "../../unique_id.h"
 #include "../../settings.h"
 #include "../../commands.h"
-
-struct __attribute__((__packed__)) product_info_struct {
-	uint32_t firmware_version;
-	uint32_t hardware_version;
-	uint32_t product_code;
-	char descriptiont[];
-};
-struct product_info_struct product_info = {1, 12, 2, "Servomotor"};
-char PRODUCT_DESCRIPTION[] = "Servomotor";
+#include "../../product_info.h"
 
 extern uint32_t USART2_timout_timer;
 extern char selectedAxis;
@@ -271,22 +263,21 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
-        case GET_PRODUCT_INFO_COMMAND:
-//            sprintf(message, "GET_PRODUCT_INFO_COMMAND\n");
-//            transmit(message, strlen(message));
-			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
-				uint8_t product_info_length = sizeof(product_info);
-				rs485_transmit(&product_info_length, 1);
-				rs485_transmit(&product_info, sizeof(product_info));
-			}
-			break;
         case FIRMWARE_UPGRADE_COMMAND:
             sprintf(message, "FIRMWARE_UPGRADE_COMMAND page %hu\n", parameters[0]);
             transmit(message, strlen(message));
             error_code = burn_firmware_page(parameters[0], parameters + 1);
 			if((axis != ALL_ALIAS) && (error_code == 0)) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+			break;
+        case GET_PRODUCT_INFO_COMMAND:
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+				uint8_t product_info_length = sizeof(struct product_info_struct);
+				rs485_transmit(&product_info_length, 1);
+				rs485_transmit(product_info, sizeof(struct product_info_struct));
 			}
 			break;
         }

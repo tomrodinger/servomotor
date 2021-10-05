@@ -138,11 +138,11 @@ g_pfnVectors:
   .word 0
   .word 0
   .word 0
-  .word _estack  /* Moved this _estack value from the fist position to the 9th position, because we will use the first position for a difference purpose */
+  .word 0
   .word 0
   .word 0
   .word SVC_Handler
-  .word 0
+  .word _estack  /* Moved this _estack value from the fist position to the 9th position, because we will use the first position for a different purpose */
   .word 0
   .word PendSV_Handler
   .word SysTick_Handler

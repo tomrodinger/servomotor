@@ -18,15 +18,17 @@
 #include "unique_id.h"
 #include "settings.h"
 #include "commands.h"
+#include "product_info.h"
 
-struct __attribute__((__packed__)) product_info_struct {
-	uint32_t firmware_version;
-	uint32_t hardware_version;
-	uint32_t product_code;
-	char descriptiont[];
-};
-struct product_info_struct product_info = {1, 12, 2, "Servomotor"};
 char PRODUCT_DESCRIPTION[] = "Servomotor";
+
+struct __attribute__((__packed__)) firmware_version_struct {
+	uint8_t bugfix;
+	uint8_t minor;
+	uint8_t major;
+	uint8_t not_used;
+};
+struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * 7)
@@ -427,9 +429,26 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_INFO_COMMAND:
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
-				uint8_t product_info_length = sizeof(product_info);
+				uint8_t product_info_length = sizeof(struct product_info_struct);
+                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				rs485_transmit(&product_info_length, 1);
-				rs485_transmit(&product_info, sizeof(product_info));
+				rs485_transmit(product_info, sizeof(struct product_info_struct));
+			}
+			break;
+        case GET_PRODUCT_DESCRIPTION_COMMAND:
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+				rs485_transmit(&product_description_length, 1);
+				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+			}
+			break;
+        case GET_FIRMWARE_VERSION_COMMAND:
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+				uint8_t firmware_version_length = sizeof(firmware_version);
+				rs485_transmit(&firmware_version_length, 1);
+				rs485_transmit(&firmware_version, sizeof(firmware_version));
 			}
 			break;
         }
