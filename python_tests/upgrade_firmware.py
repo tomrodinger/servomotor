@@ -10,17 +10,9 @@ import struct
 import random
 import os
 
-PRODUCT_CODE = "M1      " # This should be 8 characters
-
-HARDWARE_REVISION_MAJOR = 0
-HARDWARE_REVISION_MINOR = 8
-HARDWARE_REVISION_BUGFIX = 0
-HARDWARE_REVISION = ((HARDWARE_REVISION_MAJOR << 16) | (HARDWARE_REVISION_MINOR << 8) | HARDWARE_REVISION_BUGFIX)
-
-SERIAL_NUMBER_FILENAME = os.path.expanduser("~") + "/.motor_serial_number"
 
 #SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
+SERIAL_PORT = "/dev/tty.usbserial-1410"
 FIRMWARE_UPGRADE_COMMAND = 23
 FLASH_BASE_ADDRESS = 0x8000000
 FLASH_PAGE_SIZE = 2048
@@ -29,11 +21,6 @@ FIRST_FIRMWARE_PAGE_NUMBER = (BOOTLOADER_N_PAGES)
 LAST_FIRMWARE_PAGE_NUMBER = 30
 FLASH_SETTINGS_PAGE_NUMBER = 31
 
-# The avaialble positions in this particular chip are from 4 to 10
-PRODUCT_CODE_POSITION = 4 # the product code is 8 bytes, so it takes two positions in the 32-bit data representation
-HARDWARE_REVISION_POSITION = 6
-SERIAL_NUMBER_POSITION = 7
-UNIQUE_ID_POSITION = 8 # this takes two positions
 
 def open_serial_port(serial_device, baud_rate, timeout = 0.05):
     print("Opening serial device:", serial_device)
@@ -122,58 +109,6 @@ def program_one_page(ser, page_number, data):
 #        exit(1)
 
 
-def read_serial_number():
-    print("Reading the serial number from the file:", SERIAL_NUMBER_FILENAME)
-    try:
-        fh = open(SERIAL_NUMBER_FILENAME, "r")
-    except:
-        print("Error: could not open the file containing the serial number:", SERIAL_NUMBER_FILENAME)
-        print("Make sure that the file is there and contains an integer in ascii text format")
-        exit(1)
-    try:
-        serial_number_data = fh.read()
-    except:
-        print("Error: could not read the data in the serial number file")
-        exit(1)
-    fh.close()
-    try:
-        serial_number = int(serial_number_data.strip())
-    except:
-        print("Error: the file containg the serial number does not contain a valid integer in ascii text format")
-        exit(1)
-    if serial_number < 0 or serial_number > (1 << 32) - 1:
-        print("Error: the serial number contained in the file must fit into a 32-bit unsigned number")
-        exit(1)
-    return serial_number
-
-
-def increment_serial_number(serial_number):
-    serial_number = serial_number + 1
-    if serial_number > (1 << 32) - 1:
-        print("Error: exceeded the number of possible serial numbers that can be stored in the device")
-        print("The serial number reached:", serial_number)
-    return serial_number
-
-
-def write_serial_number(serial_number):
-    print("Saving the serial number %d to the file: %s" % (serial_number, SERIAL_NUMBER_FILENAME))
-    try:
-        fh = open(SERIAL_NUMBER_FILENAME, "w")
-    except:
-        print("Error: could not open the file for writing the serial number:", SERIAL_NUMBER_FILENAME)
-        print("Make sure that the locaiton is writable and that the filename is reasonable")
-        exit(1)
-    serial_number_text = str(serial_number)
-    try:
-        fh.write(serial_number_text)
-    except:
-        print("Error: could not write the serial number to the file")
-        print("Make sure that it is a file that can be written. ie. the disk is not full and there are write permissions")
-        exit(1)
-    fh.close()
-
-
-
 if len(sys.argv) != 2:
     print_usage()
 
@@ -191,29 +126,8 @@ for item in struct.iter_unpack('<I', data):  # unpack as little endian unsigned 
     data_uint32.append(item[0])
 print(len(data_uint32))
 
-serial_number = read_serial_number()
-serial_number = increment_serial_number(serial_number)
-
-assert len(PRODUCT_CODE) == 8
-(product_code_L, product_code_H) = struct.unpack('<II', bytes(PRODUCT_CODE, encoding='utf8'))
-data_uint32[PRODUCT_CODE_POSITION] = product_code_L
-data_uint32[PRODUCT_CODE_POSITION + 1] = product_code_H
-data_uint32[HARDWARE_REVISION_POSITION] = HARDWARE_REVISION
-data_uint32[SERIAL_NUMBER_POSITION] = serial_number
-unique_id_L = random.randint(0, (1 << 32) - 1)
-unique_id_H = random.randint(0, (1 << 32) - 1)
-data_uint32[UNIQUE_ID_POSITION] = unique_id_L
-data_uint32[UNIQUE_ID_POSITION + 1] = unique_id_H
-
 for i in range(20):
     print("data item [%2d]: 0x%08X %10u" % (i, data_uint32[i], data_uint32[i]))
-
-
-write_serial_number(serial_number)
-
-exit(1)
-
-
 
 # we are finished manipulating, so now repack it back into bytes
 data2 = b''
