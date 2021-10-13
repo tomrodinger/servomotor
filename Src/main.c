@@ -255,6 +255,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t n_items_in_queue;
     int32_t motor_position;
     int32_t acceleration;
+    int32_t velocity;
     uint32_t time_steps;
     uint8_t buf[5];
     uint32_t frequency;
@@ -289,7 +290,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
-        case SET_VELOCITY_COMMAND:
+        case SET_MAX_VELOCITY_COMMAND:
             max_velocity = *(int32_t*)parameters;
             if(max_velocity > MAX_VELOCITY) {
                 max_velocity = MAX_VELOCITY;
@@ -307,7 +308,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
-        case SET_ACCELERATION_COMMAND:
+        case SET_MAX_ACCELERATION_COMMAND:
             max_acceleration = *(uint16_t*)parameters;
             if(max_acceleration > MAX_ACCELERATION) {
             	max_acceleration = MAX_ACCELERATION;
@@ -408,7 +409,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case MOVE_WITH_ACCELERATION_COMMAND:
             acceleration = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
-            add_to_queue(acceleration, time_steps);
+            add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
@@ -449,6 +450,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 				uint8_t firmware_version_length = sizeof(firmware_version);
 				rs485_transmit(&firmware_version_length, 1);
 				rs485_transmit(&firmware_version, sizeof(firmware_version));
+			}
+			break;
+        case MOVE_WITH_VELOCITY_COMMAND:
+            velocity = ((int32_t*)parameters)[0];
+            time_steps = ((uint32_t*)parameters)[1];
+            add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
+			if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
 			break;
         }

@@ -11,8 +11,8 @@ import random
 import os
 
 
-#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1410"
+SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
+#SERIAL_PORT = "/dev/tty.usbserial-1410"
 FIRMWARE_UPGRADE_COMMAND = 23
 FLASH_BASE_ADDRESS = 0x8000000
 FLASH_PAGE_SIZE = 2048

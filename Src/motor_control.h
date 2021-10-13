@@ -33,6 +33,8 @@
 #define MAX_VELOCITY 1
 #define MAX_ACCELERATION 1
 
+typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
+
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
 void start_calibration(uint8_t verbose_data);
 void start_go_to_closed_loop_mode(void);
@@ -49,7 +51,7 @@ void print_time_difference(void);
 void print_motor_current(void);
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
-void add_to_queue(int32_t acceleration, uint32_t n_time_steps);
+void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
 void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration);
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);

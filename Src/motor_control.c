@@ -61,10 +61,14 @@
 
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
-#define ACCELERATION_SHIFT_LEFT 8
+#define ACCELERATION_OR_VELOCITY_SHIFT_LEFT 8
 #define MOVEMENT_QUEUE_SIZE 16 // this has to be a power of 2
 typedef struct {
-    int64_t acceleration;
+	movement_type_t movement_type;
+	union {
+	    int64_t acceleration; // we use this variable if the movement_type == MOVE_WITH_ACCELERATION
+	    int64_t velocity;     // we use this variable if the movement_type == MOVE_WITH_VELOCITY
+	};
     uint32_t n_time_steps;
 } movement_queue_t;
 static movement_queue_t movement_queue[MOVEMENT_QUEUE_SIZE];
@@ -490,11 +494,11 @@ void start_go_to_closed_loop_mode(void)
 	set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
 	enable_mosfets();
 	motor_pwm_voltage = GO_TO_CLOSED_LOOP_MODE_MOTOR_PWM_VOLTAGE;
-	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME);
-	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME);
-	add_to_queue(-GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME * 2);
-	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME);
-	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME);
+	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME, MOVE_WITH_ACCELERATION);
+	add_to_queue(-GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME * 2, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, GO_TO_CLOSED_LOOP_MODE_COAST_TIME, MOVE_WITH_ACCELERATION);
+	add_to_queue(GO_TO_CLOSED_LOOP_MODE_ACCELERATION, GO_TO_CLOSED_LOOP_MODE_ACCELERATION_TIME, MOVE_WITH_ACCELERATION);
 	go_to_closed_loop_mode_active = 1;
 }
 
@@ -764,14 +768,21 @@ void print_motor_current(void)
 
 
 
-void add_to_queue(int32_t acceleration, uint32_t n_time_steps)
+void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
 	if(n_time_steps == 0) {
 		return; // in the case that the number if time steps is zero, it makes sense to not anything to the queue
 	}
     if(n_items_in_queue < MOVEMENT_QUEUE_SIZE) {
-        movement_queue[queue_write_position].acceleration = acceleration;
-        movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
+		movement_queue[queue_write_position].movement_type = movement_type;
+		if(movement_type == 0) {
+	        movement_queue[queue_write_position].acceleration = parameter;
+    	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_OR_VELOCITY_SHIFT_LEFT;
+		}
+		else {
+	        movement_queue[queue_write_position].velocity = parameter;
+    	    movement_queue[queue_write_position].velocity <<= ACCELERATION_OR_VELOCITY_SHIFT_LEFT;
+		}
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
         n_items_in_queue++;
@@ -805,9 +816,9 @@ void clear_the_queue_and_stop(void)
 
 void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration)
 {
-	add_to_queue(acceleration, 1000);
-	add_to_queue(0, 1000000);
-	add_to_queue(-acceleration, 1000);
+	add_to_queue(acceleration, 1000, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, 1000000, MOVE_WITH_ACCELERATION);
+	add_to_queue(-acceleration, 1000, MOVE_WITH_ACCELERATION);
 }
 
 
@@ -841,11 +852,21 @@ uint8_t handle_queued_movements(void)
 	if(n_items_in_queue > 0) {
 		// there is an assumption here that any item in the queue will always have one or more time steps
 		// see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
-		current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
-		movement_queue[queue_read_position].n_time_steps--;
-		if(movement_queue[queue_read_position].n_time_steps == 0) {
-		    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-		    n_items_in_queue--;
+		if(movement_queue[queue_read_position].movement_type == MOVE_WITH_ACCELERATION) {
+			current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
+			movement_queue[queue_read_position].n_time_steps--;
+			if(movement_queue[queue_read_position].n_time_steps == 0) {
+				queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+				n_items_in_queue--;
+			}
+		}
+		else {
+			current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity  is constant during this time step
+			movement_queue[queue_read_position].n_time_steps--;
+			if(movement_queue[queue_read_position].n_time_steps == 0) {
+				queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+				n_items_in_queue--;
+			}
 		}
 	}
 
@@ -1163,7 +1184,7 @@ uint8_t get_motor_control_mode(void)
 
 uint32_t get_update_frequency(void)
 {
-	return PWM_FREQUENCY * 2;
+	return PWM_FREQUENCY >> 1;
 }
 
 void zero_position_and_hall_sensor(void)
