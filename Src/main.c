@@ -268,12 +268,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 //        print_number("command:", command);
         switch(command) {
         case DISABLE_MOSFETS_COMMAND:
+            commandReceived = 0;
             disable_mosfets();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case ENABLE_MOSFETS_COMMAND:
+            commandReceived = 0;
             enable_mosfets();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -281,6 +283,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case SET_POSITION_AND_MOVE_COMMAND:
             end_position = ((int32_t*)parameters)[0];
+            commandReceived = 0;
             local_time = get_microsecond_time();
             desired_position = get_desired_position();
             max_velocity = get_max_velocity();
@@ -292,6 +295,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case SET_MAX_VELOCITY_COMMAND:
             max_velocity = *(int32_t*)parameters;
+            commandReceived = 0;
             if(max_velocity > MAX_VELOCITY) {
                 max_velocity = MAX_VELOCITY;
             }
@@ -303,6 +307,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case SET_POSITION_AND_FINISH_TIME_COMMAND:
             end_position = ((int32_t*)parameters)[0];
             end_time = ((int32_t*)parameters)[1];
+            commandReceived = 0;
 //            add_to_queue(end_position, end_time);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -310,6 +315,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case SET_MAX_ACCELERATION_COMMAND:
             max_acceleration = *(uint16_t*)parameters;
+            commandReceived = 0;
             if(max_acceleration > MAX_ACCELERATION) {
             	max_acceleration = MAX_ACCELERATION;
             }
@@ -319,23 +325,27 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case START_CALIBRATION_COMMAND:
+            commandReceived = 0;
             enable_mosfets();
             start_calibration(1);
             break;
         case CAPTURE_HALL_SENSOR_DATA_COMMAND:
         	capture_type = parameters[0];
+            commandReceived = 0;
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             start_capture(capture_type);
             break;
         case RESET_TIME_COMMAND:
+            commandReceived = 0;
         	reset_time();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case GET_CURRENT_TIME_COMMAND:
+            commandReceived = 0;
             if(axis != ALL_ALIAS) {
                 local_time = get_microsecond_time();
                 rs485_transmit("R\x01\x06", 3);
@@ -344,6 +354,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case TIME_SYNC_COMMAND:
         	memcpy(&time_from_master, parameters, 6);
+            commandReceived = 0;
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
             if(axis != ALL_ALIAS) {
@@ -353,6 +364,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case GET_N_ITEMS_IN_QUEUE_COMMAND:
+            commandReceived = 0;
         	n_items_in_queue = get_n_items_in_queue();
             if(axis != ALL_ALIAS) {
                 rs485_transmit("R\x01\x01", 3);
@@ -360,18 +372,21 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case EMERGENCY_STOP_COMMAND:
+            commandReceived = 0;
         	emergency_stop();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case ZERO_POSITION_COMMAND:
+            commandReceived = 0;
             zero_position_and_hall_sensor();
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case HOMING_COMMAND:
+            commandReceived = 0;
             enable_mosfets();
 //            int32_t max_homing_travel_displacement = ((int32_t*)parameters)[0];
             //start_homing(max_homing_travel_displacement);
@@ -380,6 +395,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case GET_POSITION_COMMAND:
+            commandReceived = 0;
             if(axis != ALL_ALIAS) {
             	motor_position = get_actual_motor_position();
                 rs485_transmit("R\x01\x04", 3);
@@ -387,6 +403,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case GET_STATUS_COMMAND:
+            commandReceived = 0;
             if(axis != ALL_ALIAS) {
             	get_motor_status(buf);
                 rs485_transmit("R\x01\x05", 3);
@@ -394,12 +411,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case GO_TO_CLOSED_LOOP_COMMAND:
+            commandReceived = 0;
         	start_go_to_closed_loop_mode();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case GET_UPDATE_FREQUENCY_COMMAND:
+            commandReceived = 0;
 			frequency = get_update_frequency();
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01\x04", 3);
@@ -409,17 +428,20 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case MOVE_WITH_ACCELERATION_COMMAND:
             acceleration = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
+            commandReceived = 0;
             add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
 			break;
         case DETECT_DEVICES_COMMAND:
+            commandReceived = 0;
         	detect_devices_delay = get_random_number(99);
 			break;
         case SET_DEVICE_ALIAS_COMMAND:
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
+            commandReceived = 0;
         	if(unique_id == my_unique_id) {
                	transmit("Unique ID matches\n", 18);
         		my_alias = new_alias;
@@ -428,6 +450,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	}
         	break;
         case GET_PRODUCT_INFO_COMMAND:
+            commandReceived = 0;
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
@@ -437,6 +460,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case GET_PRODUCT_DESCRIPTION_COMMAND:
+            commandReceived = 0;
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
 				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
@@ -445,6 +469,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case GET_FIRMWARE_VERSION_COMMAND:
+            commandReceived = 0;
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
 				uint8_t firmware_version_length = sizeof(firmware_version);
@@ -455,6 +480,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case MOVE_WITH_VELOCITY_COMMAND:
             velocity = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
+            commandReceived = 0;
             add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -637,7 +663,6 @@ int main(void)
 
     	if(commandReceived) {
             processCommand(selectedAxis, command, valueBuffer);
-            commandReceived = 0;
         }
 
         if(detect_devices_delay == 0) {
