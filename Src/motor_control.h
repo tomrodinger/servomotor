@@ -1,31 +1,6 @@
 #ifndef SRC_MOTOR_CONTROL_H_
 #define SRC_MOTOR_CONTROL_H_
 
-// set which axis this motor is controlling
-#ifdef X_AXIS
-	#define MY_AXIS 'X'
-#else
-	#ifdef Y_AXIS
-		#define MY_AXIS 'Y'
-	#else
-		#ifdef Z_AXIS
-			#define MY_AXIS 'Z'
-		#else
-			#ifdef SMALL_Z_AXIS
-				#define MY_AXIS 'z'
-			#else
-				#ifdef E_AXIS
-					#define MY_AXIS 'E'
-				#else
-					#error "You need to set an axis"
-				#endif
-			#endif
-		#endif
-	#endif
-#endif
-
-#define ALL_AXIS 'A' // will also respond to this 'all' command
-
 #define OPEN_LOOP_POSITION_CONTROL 0
 #define CLOSED_LOOP_POSITION_CONTROL 1
 #define OPEN_LOOP_PWM_VOLTAGE_CONTROL 2

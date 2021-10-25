@@ -11,9 +11,10 @@ import random
 import os
 
 
-SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-#SERIAL_PORT = "/dev/tty.usbserial-1410"
+#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
+SERIAL_PORT = "/dev/tty.usbserial-1420"
 FIRMWARE_UPGRADE_COMMAND = 23
+SYSTEM_RESET_COMMAND = 27
 FLASH_BASE_ADDRESS = 0x8000000
 FLASH_PAGE_SIZE = 2048
 BOOTLOADER_N_PAGES = 5    # 10kB bootloader
@@ -109,6 +110,14 @@ def program_one_page(ser, page_number, data):
 #        exit(1)
 
 
+def system_reset_command(ser):
+    print("Resettting the newly programmed device...")
+    command = int(255).to_bytes(1, "little") + SYSTEM_RESET_COMMAND.to_bytes(1, "little") + int(0).to_bytes(1, "little")
+    print("Writing %d bytes" % (len(command)))
+    ser.write(command)
+
+
+
 if len(sys.argv) != 2:
     print_usage()
 
@@ -147,6 +156,9 @@ print("Will write this many bytes:", len(data))
 
 ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
 
+system_reset_command(ser)
+time.sleep(0.1) # wait for it to reset
+
 page_number = FIRST_FIRMWARE_PAGE_NUMBER
 while len(data) > 0:
     if page_number > LAST_FIRMWARE_PAGE_NUMBER:
@@ -162,5 +174,8 @@ while len(data) > 0:
     data = data[FLASH_PAGE_SIZE:]
     page_number = page_number + 1
 
+system_reset_command(ser)
+
+time.sleep(0.1)
 
 ser.close()

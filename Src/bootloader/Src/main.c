@@ -280,6 +280,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 				rs485_transmit(product_info, sizeof(struct product_info_struct));
 			}
 			break;
+        case SYSTEM_RESET_COMMAND:
+            NVIC_SystemReset();
+            break;
         }
     }
 }

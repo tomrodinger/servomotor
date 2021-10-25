@@ -281,7 +281,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
-        case SET_POSITION_AND_MOVE_COMMAND:
+        case TRAPEZOID_MOVE_COMMAND:
             end_position = ((int32_t*)parameters)[0];
             commandReceived = 0;
             local_time = get_microsecond_time();
@@ -486,7 +486,13 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
 			break;
+        case SYSTEM_RESET_COMMAND:
+            NVIC_SystemReset();
+            break;
         }
+    }
+    else {
+        commandReceived = 0;
     }
 }
 
@@ -510,7 +516,7 @@ void process_debug_uart_commands(void)
     		zero_position_and_hall_sensor();
     		break;
     	case 'c':
-			start_calibration(0);
+			start_go_to_closed_loop_mode();
 			break;
     	case 'p':
     		print_position();

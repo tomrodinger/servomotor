@@ -8,32 +8,10 @@
 #include "error_handling.h"
 #include "ADC.h"
 #include "debug_uart.h"
+#include "LookupTableZ.h"
 
 #define UINT32_MIDPOINT 2147483648
 #define HALL_POSITION_HYSTERESIS 100
-
-// set which axis this motor is controlling
-#ifdef X_AXIS
-	#include "LookupTableX.h"
-#else
-	#ifdef Y_AXIS
-		#include "LookupTableY.h"
-	#else
-		#ifdef Z_AXIS
-			#include "LookupTableZ.h"
-		#else
-			#ifdef SMALL_Z_AXIS
-				#include "LookupTablez.h"
-			#else
-				#ifdef E_AXIS
-					#include "LookupTableE.h"
-				#else
-					#error "You need to set an axis"
-				#endif
-			#endif
-		#endif
-	#endif
-#endif
 
 static const struct hall_weights_struct hall_weights = HALL_WEIGHTS_INITIALIZER;
 
