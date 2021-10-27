@@ -19,6 +19,8 @@
 #include "settings.h"
 #include "commands.h"
 #include "product_info.h"
+#include "LookupTableZ.h"
+
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
 
@@ -31,7 +33,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 
 
-#define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * 7)
+#define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 extern uint32_t USART2_timout_timer;
@@ -246,11 +248,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 {
     uint64_t local_time;
     uint64_t time_from_master = 0;
-    int32_t end_position;
-    uint32_t end_time;
-    int32_t desired_position;
-    int32_t max_velocity;
-    uint16_t max_acceleration;
+//    int32_t end_position;
+//    uint32_t end_time;
+//    int32_t desired_position;
+    uint32_t max_velocity;
+    uint32_t max_acceleration;
     uint8_t capture_type;
     uint8_t n_items_in_queue;
     int32_t motor_position;
@@ -261,6 +263,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint32_t frequency;
     uint64_t unique_id;
     uint8_t new_alias;
+    int32_t trapezoid_move_displacement;
+    uint32_t trapezoid_move_time;
 
 //    print_number("Received a command with length: ", commandLen);
     if((axis == my_alias) || (axis == ALL_ALIAS)) {
@@ -282,31 +286,25 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case TRAPEZOID_MOVE_COMMAND:
-            end_position = ((int32_t*)parameters)[0];
+            trapezoid_move_displacement = ((int32_t*)parameters)[0];
+            trapezoid_move_time = ((uint32_t*)parameters)[1];
             commandReceived = 0;
-            local_time = get_microsecond_time();
-            desired_position = get_desired_position();
-            max_velocity = get_max_velocity();
-            end_time = abs((int32_t)(end_position - desired_position)) / max_velocity + local_time;
-//            add_to_queue(end_position, end_time);
+            add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case SET_MAX_VELOCITY_COMMAND:
-            max_velocity = *(int32_t*)parameters;
+            max_velocity = *(uint32_t*)parameters;
             commandReceived = 0;
-            if(max_velocity > MAX_VELOCITY) {
-                max_velocity = MAX_VELOCITY;
-            }
             set_max_velocity(max_velocity);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case SET_POSITION_AND_FINISH_TIME_COMMAND:
-            end_position = ((int32_t*)parameters)[0];
-            end_time = ((int32_t*)parameters)[1];
+//            end_position = ((int32_t*)parameters)[0];
+//            end_time = ((int32_t*)parameters)[1];
             commandReceived = 0;
 //            add_to_queue(end_position, end_time);
             if(axis != ALL_ALIAS) {
@@ -314,11 +312,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case SET_MAX_ACCELERATION_COMMAND:
-            max_acceleration = *(uint16_t*)parameters;
+            max_acceleration = *(uint32_t*)parameters;
             commandReceived = 0;
-            if(max_acceleration > MAX_ACCELERATION) {
-            	max_acceleration = MAX_ACCELERATION;
-            }
             set_max_acceleration(max_acceleration);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -387,9 +382,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case HOMING_COMMAND:
             commandReceived = 0;
-            enable_mosfets();
-//            int32_t max_homing_travel_displacement = ((int32_t*)parameters)[0];
-            //start_homing(max_homing_travel_displacement);
+            int32_t max_homing_travel_displacement = ((int32_t*)parameters)[0];
+            uint32_t max_homing_time = ((uint32_t*)parameters)[1];
+            start_homing(max_homing_travel_displacement, max_homing_time);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
@@ -564,10 +559,10 @@ void process_debug_uart_commands(void)
     		}
     		break;
     	case 'h':
-//    		start_homing(1000000000);
+            start_homing(6451200, 620000);
     		break;
     	case 'H':
-//    		start_homing(-1000000000);
+            start_homing(-6451200, 620000);
     		break;
     	case 'S':
 			transmit("Saving settings\n", 16);
@@ -608,11 +603,11 @@ void button_logic(void)
 		}
 		else if(time_pressed_down >= 300) {
 			enable_mosfets();
-			add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, 200000);
+			add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, get_update_frequency() * 2);
 		}
 		else if(time_pressed_down >= 50) {
 			enable_mosfets();
-			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, 1000, -200000);
+			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, get_update_frequency() * 2);
 		}
     }
 }
@@ -661,7 +656,7 @@ int main(void)
 
     print_start_message();
 
-    rs485_transmit("Start\n", 6);
+//    rs485_transmit("Start\n", 6);
 
     while(1) {
 //    	check_if_break_condition();

@@ -5,15 +5,28 @@
 #define CLOSED_LOOP_POSITION_CONTROL 1
 #define OPEN_LOOP_PWM_VOLTAGE_CONTROL 2
 
-#define MAX_VELOCITY 1
-#define MAX_ACCELERATION 1
+#define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
+#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS) * (uint64_t)(1 << 24))
+//#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS))
+#define MAX_RPM                       1980 // should be divisable by 60 ideally
+#define MAX_RPS                       (MAX_RPM / 60)
+#define MAX_MICROSTEPS_PER_SECOND     ((uint64_t)MAX_RPS * (uint64_t)MICROSTEPS_PER_ROTATION)
+#define MAX_MICROSTEPS_PER_TIME_STEP  ((uint64_t)MAX_MICROSTEPS_PER_SECOND / (uint64_t)TIME_STEPS_PER_SECOND)
+#define MAX_VELOCITY                  ((int64_t)MAX_MICROSTEPS_PER_TIME_STEP)
+
+#define MM_PER_ROTATION                                    20
+#define MAX_ACCELERATION_MM_PER_SECOND_SQUARED             10000
+#define MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED      (MAX_ACCELERATION_MM_PER_SECOND_SQUARED / MM_PER_ROTATION)
+#define MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED     ((uint64_t)MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * (uint64_t)MICROSTEPS_PER_ROTATION)
+#define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
+#define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
 void start_calibration(uint8_t verbose_data);
 void start_go_to_closed_loop_mode(void);
-void start_homing(int32_t max_homing_displacement);
+void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time);
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void print_queue_stats(void);
 void start_capture(uint8_t capture_type);
@@ -27,7 +40,7 @@ void print_motor_current(void);
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
-void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration);
+void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time);
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);
 void clear_the_queue_and_stop(void);
@@ -37,10 +50,10 @@ void set_motor_control_mode(uint8_t new_motor_closed_loop_control);
 uint32_t get_update_frequency(void);
 uint8_t get_motor_control_mode(void);
 void zero_position_and_hall_sensor(void);
-void set_max_velocity(int32_t new_max_velocity);
+void set_max_velocity(uint32_t new_max_velocity);
 int32_t get_max_velocity(void);
 int32_t get_desired_position(void);
-void set_max_acceleration(uint16_t new_max_acceleration);
+void set_max_acceleration(uint32_t new_max_acceleration);
 void emergency_stop(void);
 int32_t get_actual_motor_position(void);
 void get_motor_status(uint8_t *buf);

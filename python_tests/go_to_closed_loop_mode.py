@@ -16,6 +16,7 @@ SET_DEVICE_ALIAS_COMMAND = 21
 GET_PRODUCT_INFO_COMMAND = 22
 MOVE_WITH_ACCELERATION_COMMAND = 19
 MOVE_WITH_VELOCITY_COMMAND = 26
+GO_TO_CLOSED_LOOP_COMMAND = 17
 
 DETECT_DEVICES_MAX_TIME = 1.2
 
@@ -69,6 +70,12 @@ def send_homing_command(ser, max_displacement, max_time_steps):
     print_data(command)
     ser.write(command)
 
+def send_go_to_closed_loop_command(ser):
+    command = bytearray([255, GO_TO_CLOSED_LOOP_COMMAND, 0])
+    print("Writing %d bytes" % (len(command)))
+    print_data(command)
+    ser.write(command)
+
 
 def get_response(ser):
     response = ser.read(3)
@@ -116,22 +123,15 @@ def print_data(data):
 
 
 def print_usage():
-    print("Usage: %s max-displacement max-time-steps" % (sys.argv[0]))
-    print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
+    print("Usage: %s" % (sys.argv[0]))
     exit(1)
 
-if len(sys.argv) != 3:
+if len(sys.argv) != 1:
     print_usage()
     
-max_displacement = int(sys.argv[1])
-max_time_steps = int(sys.argv[2])
-if max_time_steps < 0:
-    print("The time steps cannot be negative")
-    exit(1)
-
 
 ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
-send_homing_command(ser, max_displacement, max_time_steps)
+send_go_to_closed_loop_command(ser)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")

@@ -10,7 +10,6 @@ import time
 SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 TRAPEZOID_MOVE_COMMAND = 2
-HOMING_COMMAND = 14
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
 GET_PRODUCT_INFO_COMMAND = 22
@@ -57,14 +56,6 @@ def send_trapezoid_move_command(ser, displacement, time_steps):
     command = bytearray([255, TRAPEZOID_MOVE_COMMAND, 8])
     command = command + displacement.to_bytes(4, byteorder = "little", signed = True)
     command = command + time_steps.to_bytes(4, "little", signed = False)
-    print("Writing %d bytes" % (len(command)))
-    print_data(command)
-    ser.write(command)
-
-def send_homing_command(ser, max_displacement, max_time_steps):
-    command = bytearray([255, HOMING_COMMAND, 8])
-    command = command + max_displacement.to_bytes(4, byteorder = "little", signed = True)
-    command = command + max_time_steps.to_bytes(4, "little", signed = False)
     print("Writing %d bytes" % (len(command)))
     print_data(command)
     ser.write(command)
@@ -116,22 +107,22 @@ def print_data(data):
 
 
 def print_usage():
-    print("Usage: %s max-displacement max-time-steps" % (sys.argv[0]))
+    print("Usage: %s displacement time-steps" % (sys.argv[0]))
     print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
     exit(1)
 
 if len(sys.argv) != 3:
     print_usage()
     
-max_displacement = int(sys.argv[1])
-max_time_steps = int(sys.argv[2])
-if max_time_steps < 0:
+displacement = int(sys.argv[1])
+time_steps = int(sys.argv[2])
+if time_steps < 0:
     print("The time steps cannot be negative")
     exit(1)
 
 
 ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
-send_homing_command(ser, max_displacement, max_time_steps)
+send_trapezoid_move_command(ser, displacement, time_steps)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")

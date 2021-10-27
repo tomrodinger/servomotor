@@ -63,8 +63,8 @@ static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static uint64_t movement_start_time = 0;
 static int32_t movement_start_position = 0;
 static int32_t movement_end_position = 0;
-static uint16_t max_acceleration = 1;
-static int32_t max_velocity = MAX_VELOCITY;
+static int64_t max_acceleration = MAX_ACCELERATION;
+static int64_t max_velocity = MAX_VELOCITY;
 static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 //static int32_t desired_velocity = 0;
@@ -79,6 +79,8 @@ static int32_t motor_pwm_voltage_limit;
 static int32_t vibration_polarity_moving_average;
 static int32_t max_motor_pwm_voltage_limit;
 static uint32_t commutation_position_offset_at_max;
+
+static uint8_t homing_active = 0;
 
 
 static uint32_t debug_counter = 0;
@@ -480,6 +482,8 @@ void start_go_to_closed_loop_mode(void)
 {
 	transmit("Go to closed loop mode start\n", 29);
 
+	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+
 	clear_the_queue_and_stop_no_disable_interrupt();
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
 	enable_mosfets();
@@ -495,6 +499,8 @@ void start_go_to_closed_loop_mode(void)
 	vibration_polarity_moving_average = 0;
 	max_motor_pwm_voltage_limit = 0;
 	zero_hall_position();
+
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
 void go_to_closed_loop_mode_logic(void)
@@ -656,99 +662,43 @@ void capture_logic(void)
     }
 }
 
-/*
-void start_homing(int32_t max_homing_displacement)
+void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
 {
-	char buf[200];
-	motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
-    clear_the_queue_and_stop();
-    transmit("Homing start\n", 13);
-    memset(&homing, 0, sizeof(homing));
-    enable_mosfets();
-    reset_six_step_sequence();
-	int32_t six_step_hall_position = get_six_step_hall_position();
-    homing.move_number = 1;
-	homing.time = HOMING_ACCELERATION_TIME;
-    homing.velocity = 0;
-    if(max_homing_displacement >= 0) {
-    	homing.direction = 1;
-        homing.acceleration = HOMING_ACCELERATION;
-    }
-    else {
-    	homing.direction = -1;
-        homing.acceleration = -HOMING_ACCELERATION;
-    }
-    homing.start_position = actual_position;
-    homing.start_six_step_hall_position = six_step_hall_position;
-    motor_pwm_voltage = HOMING_MOTOR_PWM_VOLTAGE;
-    sprintf(buf, "Home start pos: %d   time: %u   vel: %hd   accel: %hd\n", (int)desired_position, (unsigned int)homing.time, homing.velocity, homing.acceleration);
-    transmit(buf, strlen(buf));
+	if(motor_control_mode != CLOSED_LOOP_POSITION_CONTROL) {
+		fatal_error("not in closed loop", 8);
+	}
+
+	if(n_items_in_queue != 0) {
+		fatal_error("queue not empty", 9);
+	}
+
+	add_trapezoid_move_to_queue(max_homing_displacement, max_homing_time);
+
+	homing_active = 1;
 }
 
-
+#define HOMING_MAX_POSITION_ERROR 10000
 void handle_homing_logic(void)
 {
-	int32_t six_step_hall_position = get_six_step_hall_position();
-    static int32_t previous_six_step_hall_position = 0;
-    char buf[200];
-    int32_t delta_position;
-    int32_t delta_six_step_hall_position;
+	int32_t position_error;
+	position_error = abs(desired_position - hall_position);
 
-	if(six_step_hall_position != previous_six_step_hall_position) {
-//		sprintf(buf, "delta_position: %d   delta_six_step_hall_position: %d   min_expected_delta_position: %d\n  min_expected",
-//			    (int)delta_position, (int)delta_six_step_hall_position, (int)min_expected_delta_position);
-//		transmit(buf, strlen(buf));
-		previous_six_step_hall_position = six_step_hall_position;
-
-
+	if(position_error > HOMING_MAX_POSITION_ERROR) {
+		homing_active = 0;
+		clear_the_queue_and_stop_no_disable_interrupt();
+		current_velocity_i64 = 0; // detected a colision so stop where we are
+		if(desired_position >= hall_position) {
+			((int32_t *)&current_position_i64)[1] -= HOMING_MAX_POSITION_ERROR;
+		}
+		else {
+			((int32_t *)&current_position_i64)[1] += HOMING_MAX_POSITION_ERROR;
+		}
 	}
 
-	if(homing.direction == 1) {
-		delta_position = actual_position - homing.start_position;
-		delta_six_step_hall_position = six_step_hall_position - homing.start_six_step_hall_position;
+	if(n_items_in_queue == 0) {
+		homing_active = 0;
 	}
-	else {
-		delta_position = homing.start_position - actual_position;
-		delta_six_step_hall_position = homing.start_six_step_hall_position - six_step_hall_position;
-	}
-	int32_t position_error = delta_position - delta_six_step_hall_position * 21502;
-	if(abs(position_error) > MAX_HOMING_ERROR) {
-		homing.time = 0;
-		homing.move_number = 4;
-		transmit("Crash detected\n", 15);
-	}
-
-    if(homing.time == 0) {
-        homing.move_number++;
-        switch(homing.move_number) {
-        case 2:
-            homing.time = HOMING_COAST_TIME;
-            homing.acceleration = 0;
-            break;
-        case 3:
-            homing.time = HOMING_ACCELERATION_TIME;
-            homing.acceleration = HOMING_ACCELERATION;
-            break;
-        default:
-			chear_the_queue_and_stop();
-			homing.time = 0;
-			homing.acceleration = 0;
-			homing.velocity = 0;
-            homing.move_number = 0; // this signals that homing is no longer in progress
-            break;
-        }
-        sprintf(buf, "%u: pos: %d   time: %u   vel: %hd   accel: %hd\n", (unsigned int)homing.move_number, (int)desired_position, (unsigned int)homing.time, homing.velocity, homing.acceleration);
-        transmit(buf, strlen(buf));
-    }
-
-    homing.velocity += homing.acceleration;
-    actual_position += (((int32_t)homing.velocity + (1 << (HOMING_VELOCITY_SHIFT - 1))) >> HOMING_VELOCITY_SHIFT); // implements rounding for better accuracy
-    homing.time--;
 }
-*/
-
-
-
 
 
 void print_position(void)
@@ -841,7 +791,6 @@ void print_motor_current(void)
 }
 
 
-
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
 	if(n_time_steps == 0) {
@@ -887,12 +836,47 @@ void clear_the_queue_and_stop(void)
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
+/*
+delta_t = 3000000
+delta_d = int(microsteps_per_rotation * 1.0 + 0.5)
+delta_t1 = int(max_velocity / max_acceleration + 0.5)
+if 2 * delta_t1 > delta_t:
+    print("Doing the special case of the move where the time is very short but so is the distance")
+    delta_t1 = delta_t // 2
+delta_t2 = delta_t - 2 * delta_t1
+numerator = delta_d
+denominator = ((delta_t1 + delta_t2) * delta_t1)
+acceleration = int(delta_d / ((delta_t1 + delta_t2) * delta_t1) + 0.5)
+*/
 
-void add_trapezoid_move_to_queue(int32_t new_position, uint32_t max_velocity, int32_t acceleration)
+void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time)
 {
-	add_to_queue(acceleration, 1000, MOVE_WITH_ACCELERATION);
-	add_to_queue(0, 1000000, MOVE_WITH_ACCELERATION);
-	add_to_queue(-acceleration, 1000, MOVE_WITH_ACCELERATION);
+	int64_t delta_d = (int64_t)total_displacement << 24;
+//	uint32_t delta_t1 = ((max_acceleration >> 1) + max_velocity) / max_acceleration; // calculating detal_t1 with rounding
+	int64_t delta_t1 = max_velocity / max_acceleration; // calculating detal_t1 without rounding
+	if((delta_t1 << 1) > total_time) {
+	    delta_t1 = total_time >> 1;
+	}
+	uint32_t delta_t2 = total_time - (delta_t1 << 1);
+	int64_t numerator = delta_d;
+	int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
+	int64_t acceleration = numerator / denominator;
+
+	print_int64("max_velocity: ", max_velocity);
+	print_int64("max_acceleration: ", max_acceleration);
+	print_int64("delta_d: ", (int64_t)delta_d);
+	print_int64("delta_t: ", (int64_t)total_time);
+	print_int64("delta_t1: ", (int64_t)delta_t1);
+	print_int64("delta_t2: ", (int64_t)delta_t2);
+	print_int64("numerator: ", (int64_t)numerator);
+	print_int64("denominator: ", (int64_t)denominator);
+	print_int64("acceleration: ", (int64_t)acceleration);
+
+//	acceleration >>= 8;
+	
+	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
 
 
@@ -1025,8 +1009,11 @@ void motor_movement_calculations(void)
 
     if(go_to_closed_loop_mode_active) {
         go_to_closed_loop_mode_logic();
-        moving = 1;
     }
+    else if(homing_active) {
+        handle_homing_logic();
+    }
+
 
 //    if(calibration.move_number > 0) {
 //        handle_calibration_logic();
@@ -1044,7 +1031,7 @@ void motor_movement_calculations(void)
 //    else if(capture.capture_type) {
 //        capture_logic();
 //    }
-    moving |= handle_queued_movements();
+    moving = handle_queued_movements();
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = desired_position + commutation_position_offset;
@@ -1284,10 +1271,15 @@ void zero_position_and_hall_sensor(void)
 }
 
 
-
-void set_max_velocity(int32_t new_max_velocity)
+void set_max_velocity(uint32_t new_max_velocity)
 {
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	max_velocity = new_max_velocity;
+	max_velocity <<= 24;
+	if(max_velocity > MAX_VELOCITY) {
+		max_velocity = MAX_VELOCITY;
+	}
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
 int32_t get_max_velocity(void)
@@ -1300,10 +1292,13 @@ int32_t get_desired_position(void)
 	return desired_position;
 }
 
-void set_max_acceleration(uint16_t new_max_acceleration)
+void set_max_acceleration(uint32_t new_max_acceleration)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	max_acceleration = new_max_acceleration;
+	if(max_acceleration > MAX_ACCELERATION) {
+		max_acceleration = MAX_ACCELERATION;
+	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 

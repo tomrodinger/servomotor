@@ -117,8 +117,56 @@ void print_number(char *message_prefix, uint16_t n)
     uint8_t message_prefix_len = strlen(message_prefix);
     strcpy(message, message_prefix);
     convert_uint16_to_byte_array(message + message_prefix_len, n);
-    message[message_prefix_len + 5] = '\n';
-    transmit(message, message_prefix_len + 5 + 1);
+    message[message_prefix_len + N_DIGITS] = '\n';
+    transmit(message, message_prefix_len + N_DIGITS + 1);
+}
+
+
+
+// the output will be right justified and padded with spaces
+// there is no terminator byte
+void convert_int64_to_byte_array(char *output, int64_t input)
+{
+    int8_t i;
+    int8_t leading_zero = 1;
+    uint8_t negative = 0;
+    
+    if(input < 0) {
+        negative = 1;
+        input = -input;
+    }
+
+    #define N_DIGITS_INT64 20 // a int64_t has maximum 20 digits
+    for(i = N_DIGITS_INT64 - 1; i >= 0; i--) {
+        if(input == 0) {
+            if(leading_zero) {
+                output[i] = '0';
+            }
+            else if(negative) {
+                output[i] = '-';
+                negative = 0;
+            }
+            else {
+                output[i] = ' ';
+            }
+        }
+        else {
+            output[i] = input % 10 + '0';
+            input /= 10;
+        }
+        leading_zero = 0;
+    }
+}
+
+
+void print_int64(char *message_prefix, int64_t n)
+{
+    static char message[115];
+    uint8_t message_prefix_len = strlen(message_prefix);
+    strcpy(message, message_prefix);
+    convert_int64_to_byte_array(message + message_prefix_len, n);
+    message[message_prefix_len + N_DIGITS_INT64] = '\n';
+    transmit(message, message_prefix_len + N_DIGITS_INT64 + 1);
 }
 
 

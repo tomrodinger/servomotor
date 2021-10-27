@@ -7,7 +7,7 @@ import serial.tools.list_ports
 import time
 
 #SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1410"
+SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
