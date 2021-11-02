@@ -6,7 +6,7 @@
 #define OPEN_LOOP_PWM_VOLTAGE_CONTROL 2
 
 #define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
-#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS) * (uint64_t)(1 << 24))
+#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS) * ((uint64_t)1 << 32))
 //#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS))
 #define MAX_RPM                       1980 // should be divisable by 60 ideally
 #define MAX_RPS                       (MAX_RPM / 60)
@@ -54,6 +54,7 @@ void set_max_velocity(uint32_t new_max_velocity);
 int32_t get_max_velocity(void);
 int32_t get_desired_position(void);
 void set_max_acceleration(uint32_t new_max_acceleration);
+int32_t get_max_acceleration(void);
 void emergency_stop(void);
 int32_t get_actual_motor_position(void);
 void get_motor_status(uint8_t *buf);

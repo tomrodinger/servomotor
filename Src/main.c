@@ -513,6 +513,9 @@ void process_debug_uart_commands(void)
     	case 'c':
 			start_go_to_closed_loop_mode();
 			break;
+    	case 'C':
+			start_calibration(0);
+			break;
     	case 'p':
     		print_position();
     		print_hall_position();

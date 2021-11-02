@@ -4,7 +4,6 @@ import sys
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
-import time
 
 SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
 #SERIAL_PORT = "/dev/tty.usbserial-1420"
@@ -15,6 +14,7 @@ GET_PRODUCT_INFO_COMMAND = 22
 MOVE_WITH_ACCELERATION_COMMAND = 19
 
 DETECT_DEVICES_MAX_TIME = 1.2
+
 
 def open_serial_port(serial_device, baud_rate, timeout = 0.05):
     print("Opening serial device:", serial_device)
@@ -89,22 +89,54 @@ def print_data(data):
 
 
 def print_usage():
-    print("Usage: %s acceleration time-steps" % (sys.argv[0]))
+    print("Usage: %s acceleration time" % (sys.argv[0]))
+    print("The acceleration is in units of mm per second per second")
+    print("The time in in units of seconds")
     print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
     exit(1)
 
 if len(sys.argv) != 3:
     print_usage()
     
-acceleration = int(sys.argv[1])
-time_steps = int(sys.argv[2])
-if time_steps < 0:
+acceleration = float(sys.argv[1])
+time = float(sys.argv[2])
+if time < 0:
     print("The time steps cannot be negative")
     exit(1)
 
 
+TIME_STEPS_PER_SECOND = 31250
+mm_per_rotation = 20
+microsteps_per_rotation = 360 * 256 * 7
+microsteps_per_mm = microsteps_per_rotation / mm_per_rotation
+max_rpm = 2000
+max_rps = max_rpm / 60
+max_microsteps_per_second = max_rps * microsteps_per_rotation
+max_microsteps_per_time_step = max_microsteps_per_second / TIME_STEPS_PER_SECOND
+max_velocity = max_microsteps_per_time_step
+max_acceleration_mm_per_second_squared = 10000
+max_acceleration_rotations_per_second_squared = max_acceleration_mm_per_second_squared / mm_per_rotation
+max_acceleration_microsteps_per_second_squared = max_acceleration_rotations_per_second_squared * microsteps_per_rotation
+max_acceleration_microsteps_per_time_step_squared = max_acceleration_microsteps_per_second_squared / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND)
+max_acceleration = max_acceleration_microsteps_per_time_step_squared
+
+print("The maximum microsteps per time step (velocity) is:", max_velocity)
+print("The maximum microsteps per time step squared (max acceleration) is:", max_acceleration)
+
+acceleration_mm_per_second_squared = acceleration
+acceleration_rotations_per_second_squared = acceleration_mm_per_second_squared / mm_per_rotation
+acceleration_microsteps_per_second_squared = acceleration_rotations_per_second_squared * microsteps_per_rotation
+acceleration_microsteps_per_time_step_squared = acceleration_microsteps_per_second_squared / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND)
+
+print("The microsteps per time step squared (acceleration) is:", acceleration_microsteps_per_time_step_squared)
+acceleration_to_send = int(acceleration_microsteps_per_time_step_squared * (1 << 24) + 0.5)
+print("The acceleration to send:", acceleration_to_send)
+
+time_steps = int(time * TIME_STEPS_PER_SECOND + 0.5)
+
+
 ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
-send_move_with_acceleration_command(ser, acceleration, time_steps)
+send_move_with_acceleration_command(ser, acceleration_to_send, time_steps)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")

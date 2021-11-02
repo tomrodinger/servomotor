@@ -37,7 +37,8 @@
 
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
-#define ACCELERATION_OR_VELOCITY_SHIFT_LEFT 8
+#define ACCELERATION_SHIFT_LEFT 8
+#define VELOCITY_SHIFT_LEFT 12
 #define MOVEMENT_QUEUE_SIZE 16 // this has to be a power of 2
 typedef struct {
 	movement_type_t movement_type;
@@ -63,8 +64,10 @@ static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static uint64_t movement_start_time = 0;
 static int32_t movement_start_position = 0;
 static int32_t movement_end_position = 0;
-static int64_t max_acceleration = MAX_ACCELERATION;
-static int64_t max_velocity = MAX_VELOCITY;
+//static int64_t max_acceleration = MAX_ACCELERATION;
+static int64_t max_acceleration = 1418633883;
+//static int64_t max_velocity = MAX_VELOCITY;
+static int64_t max_velocity = 2954937499648;
 static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 //static int32_t desired_velocity = 0;
@@ -81,6 +84,8 @@ static int32_t max_motor_pwm_voltage_limit;
 static uint32_t commutation_position_offset_at_max;
 
 static uint8_t homing_active = 0;
+static uint8_t calibration_active = 0;
+static uint32_t calibration_index = 0;
 
 
 static uint32_t debug_counter = 0;
@@ -178,28 +183,15 @@ static uint16_t max_motor_control_time_difference = 0;
  *    CALIBRATION_MOVEMENT_DISTANCE 645120
  */
 
-
+#define CALIBRATION_DATA_SIZE 300
 struct calibration_struct {
-    uint8_t move_number;
-    uint16_t time;
-    int16_t velocity;
-    int16_t acceleration;
-    uint8_t capturing_data;
-    uint8_t verbose_data;
-    uint8_t avg_counter;
-    uint32_t hall1_sum;
-    uint32_t hall2_sum;
-    uint32_t hall3_sum;
+	int16_t position;
+    uint16_t hall1;
+    uint16_t hall2;
+    uint16_t hall3;
 };
-struct calibration_struct calibration = {0};
+struct calibration_struct calibration[CALIBRATION_DATA_SIZE];
 
-struct go_to_closed_loop_mode_struct {
-    uint8_t move_number;
-    uint16_t time;
-    int16_t velocity;
-    int16_t acceleration;
-};
-struct go_to_closed_loop_mode_struct go_to_closed_loop_mode = {0};
 
 struct capture_struct {
     uint8_t capture_type;
@@ -250,224 +242,97 @@ void clear_the_queue_and_stop_no_disable_interrupt(void)
 }
 
 
-void start_calibration(uint8_t verbose_data)
+/*
+delta_t = 3000000
+delta_d = int(microsteps_per_rotation * 1.0 + 0.5)
+delta_t1 = int(max_velocity / max_acceleration + 0.5)
+if 2 * delta_t1 > delta_t:
+    print("Doing the special case of the move where the time is very short but so is the distance")
+    delta_t1 = delta_t // 2
+delta_t2 = delta_t - 2 * delta_t1
+numerator = delta_d
+denominator = ((delta_t1 + delta_t2) * delta_t1)
+acceleration = int(delta_d / ((delta_t1 + delta_t2) * delta_t1) + 0.5)
+*/
+
+void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int32_t *acceleration_returned, uint32_t *delta_t1_returned, uint32_t *delta_t2_returned)
 {
-	char buf[200];
+	int64_t delta_d = (int64_t)total_displacement << 24;
+//	uint32_t delta_t1 = ((max_acceleration >> 1) + max_velocity) / max_acceleration; // calculating detal_t1 with rounding
+	int64_t delta_t1 = max_velocity / max_acceleration; // calculating detal_t1 without rounding
+	if((delta_t1 << 1) > total_time) {
+	    delta_t1 = total_time >> 1;
+	}
+	uint32_t delta_t2 = total_time - (delta_t1 << 1);
+	int64_t numerator = delta_d;
+	int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
+	int64_t acceleration = numerator / denominator;
 
-    if(verbose_data) {
-    	rs485_transmit("Calibration start\n", 18);
-    }
+	print_int64("max_velocity: ", max_velocity);
+	print_int64("max_acceleration: ", max_acceleration);
+	print_int64("delta_d: ", (int64_t)delta_d);
+	print_int64("delta_t: ", (int64_t)total_time);
+	print_int64("delta_t1: ", (int64_t)delta_t1);
+	print_int64("delta_t2: ", (int64_t)delta_t2);
+	print_int64("numerator: ", (int64_t)numerator);
+	print_int64("denominator: ", (int64_t)denominator);
+	print_int64("acceleration: ", (int64_t)acceleration);
 
-    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-
-    clear_the_queue_and_stop_no_disable_interrupt();
-    memset(&calibration, 0, sizeof(calibration));
-    calibration.verbose_data = verbose_data;
-    enable_mosfets();
-    calibration.move_number = 1;
-    calibration.time = CALIBRATION_ACCELERATION_TIME;
-    calibration.velocity = 0;
-    calibration.acceleration = -CALIBRATION_ACCELERATION;
-    motor_pwm_voltage = CALIBRATION_MOTOR_PWM_VOLTAGE;
-
-    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-
-    if(verbose_data) {
-    	sprintf(buf, "Cal start pos: %d   time: %hu   vel: %hd   accel: %hd\n", (int)desired_position, calibration.time, calibration.velocity, calibration.acceleration);
-    	transmit(buf, strlen(buf));
-    }
+//	acceleration >>= 8;
+	*acceleration_returned = acceleration;
+	*delta_t1_returned = (uint32_t)delta_t1;
+	*delta_t2_returned = (uint32_t)delta_t2;
 }
 
 
-void handle_calibration_logic(void)
+#define CALIBRATION_TIME (get_update_frequency() * 2)
+#define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 2)
+void start_calibration(uint8_t verbose_data)
 {
-    uint16_t hall_data_buffer[3];
-//	char buf[200];
-	volatile uint32_t i;
+	int32_t acceleration;
+	uint32_t delta_t1;
+	uint32_t delta_t2;
 
-	calibration.hall1_sum += get_hall_sensor1_voltage();
-	calibration.hall2_sum += get_hall_sensor2_voltage();
-	calibration.hall3_sum += get_hall_sensor3_voltage();
-	calibration.avg_counter++;
-	if(calibration.avg_counter == HALL_SAMPLES_PER_PRINT) {
-		if(calibration.capturing_data) {
-			hall_data_buffer[0] = calibration.hall1_sum - HALL_SENSOR_SHIFT;
-			hall_data_buffer[1] = calibration.hall2_sum - HALL_SENSOR_SHIFT;
-			hall_data_buffer[2] = calibration.hall3_sum - HALL_SENSOR_SHIFT;
-		}
-		else {
-			hall_data_buffer[0] = 0;
-			hall_data_buffer[1] = 0;
-			hall_data_buffer[2] = 0;
-		}
-	    if(calibration.verbose_data) {
-	    	rs485_transmit((void*)hall_data_buffer, 6);
-	    }
-	    else {
-	    	for(i = 0; i < 1000; i++); // a delay to make up that we aren't transmitting anything
-	    }
-		calibration.avg_counter = 0;
-		calibration.hall1_sum = 0;
-		calibration.hall2_sum = 0;
-		calibration.hall3_sum = 0;
+	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
+		fatal_error("not in open loop", 10);
 	}
 
-/*
-#define CALIBRATION_MAX_VELOCITY 64
-#define CALIBRATION_VELOCITY_SHIFT 8
-#define CALIBRATION_ACCELERATION 1
-#define CALIBRATION_ACCELERATION_TIME = ((CALIBRATION_VELOCITY << CALIBRATION_VELOCITY_SHIFT) / CALIBRATION_ACCELERATION)
-#define CALIBRATION_ACCELERATION_DISTANCE = ((CALIBRATION_ACCELERATION_TIME * (CALIBRATION_ACCELERATION_TIME + 1)) >> 1)
-#define CALIBRATION_SMALL_COAST_TIME (CALIBRATION_ACCELERATION_DISTANCE / CALIBRATION_MAX_VELOCITY)
-*/
+	if(n_items_in_queue != 0) {
+		fatal_error("queue not empty", 9);
+	}
+
+	compute_trapezoid_move(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2, &acceleration, &delta_t1, &delta_t2);
+
+	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+	add_to_queue(acceleration, delta_t1 * 2, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 
 /*
-| Move Number | Position Before Move                | Velocity at Beginning of Move | Acceleration                   | Movement Time                     | Velocity at End of Move   | Position Delta                     | Position After Move                  |
-==================================================================================================================================================================================================================================================================
-| 1           | 0                                   | 0                             | -CALIBRATION_ACCELERATION      | CALIBRATION_ACCELERATION_TIME     | -CALIBRATION_MAX_VELOCITY | -CALIBRATION_ACCELERATION_DISTANCE | -CALIBRATION_ACCELERATION_DISTANCE   |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 2           | -CALIBRATION_ACCELERATION_DISTANCE  | -CALIBRATION_MAX_VELOCITY     | 0                              | CALIBRATION_COAST_TIME / 2        | -CALIBRATION_MAX_VELOCITY | -CALIBRATION_MOVEMENT_DISTANCE / 2 | -CALIBRATION_ACCELERATION_DISTANCE   |
-|             |                                     |                               |                                |                                   |                           |                                    | -CALIBRATION_MOVEMENT_DISTANCE / 2   |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 3           | -CALIBRATION_ACCELERATION_DISTANCE  | -CALIBRATION_MAX_VELOCITY     | +CALIBRATION_ACCELERATION      | CALIBRATION_ACCELERATION_TIME * 2 | CALIBRATION_MAX_VELOCITY  | 0                                  | -CALIBRATION_ACCELERATION_DISTANCE   |
-|             | -CALIBRATION_MOVEMENT_DISTANCE / 2  |                               |                                |                                   |                           |                                    | -CALIBRATION_MOVEMENT_DISTANCE / 2   |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 4           | -CALIBRATION_ACCELERATION_DISTANCE  | CALIBRATION_MAX_VELOCITY      | 0                              | CALIBRATION_SMALL_COAST_TIME      | CALIBRATION_MAX_VELOCITY  | CALIBRATION_ACCELERATION_DISTANCE  | -CALIBRATION_MOVEMENT_DISTANCE / 2   |
-|             | -CALIBRATION_MOVEMENT_DISTANCE / 2  |                               |                                |                                   |                           |                                    |                                      |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 5           | -CALIBRATION_MOVEMENT_DISTANCE / 2  | CALIBRATION_MAX_VELOCITY      | 0                              | CALIBRATION_COAST_TIME            | CALIBRATION_MAX_VELOCITY  | CALIBRATION_MOVEMENT_DISTANCE      | CALIBRATION_MOVEMENT_DISTANCE / 2    |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 6           | CALIBRATION_MOVEMENT_DISTANCE / 2   | CALIBRATION_MAX_VELOCITY      | 0                              | CALIBRATION_SMALL_COAST_TIME      | CALIBRATION_MAX_VELOCITY  | CALIBRATION_ACCELERATION_DISTANCE  | CALIBRATION_MOVEMENT_DISTANCE / 2    |
-|             |                                     |                               |                                |                                   |                           |                                    | +CALIBRATION_ACCELERATION_DISTANCE   |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 7           | CALIBRATION_MOVEMENT_DISTANCE / 2   | CALIBRATION_MAX_VELOCITY      | -CALIBRATION_ACCELERATION      | CALIBRATION_ACCELERATION_TIME * 2 | -CALIBRATION_MAX_VELOCITY | 0                                  | CALIBRATION_MOVEMENT_DISTANCE / 2    |
-|             | +CALIBRATION_ACCELERATION_DISTANCE  |                               |                                |                                   |                           |                                    | +CALIBRATION_ACCELERATION_DISTANCE   |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 8           | CALIBRATION_MOVEMENT_DISTANCE / 2   | -CALIBRATION_MAX_VELOCITY     | 0                              | calibration_max_hall_position /   | -CALIBRATION_MAX_VELOCITY | -calibration_max_hall_position     | CALIBRATION_MOVEMENT_DISTANCE / 2    |
-|             | +CALIBRATION_ACCELERATION_DISTANCE  |                               |                                | CALIBRATION_MAX_VELOCITY          |                           |                                    | +CALIBRATION_ACCELERATION_DISTANCE   |
-|             |                                     |                               |                                |                                   |                           |                                    | -calibration_max_hall_position       |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| 9           | CALIBRATION_MOVEMENT_DISTANCE / 2   | -CALIBRATION_MAX_VELOCITY     | +CALIBRATION_ACCELERATION      | CALIBRATION_ACCELERATION_TIME     | 0                         | -CALIBRATION_ACCELERATION_DISTANCE | CALIBRATION_MOVEMENT_DISTANCE / 2    |
-|             | +CALIBRATION_ACCELERATION_DISTANCE  |                               |                                |                                   |                           |                                    | -calibration_max_hall_position       |
-|             | -calibration_max_hall_position      |                               |                                |                                   |                           |                                    |                                      |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	max_velocity = MAX_VELOCITY;
+	max_acceleration = MAX_ACCELERATION;
 
-
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------> Position
-|
-|Move Number                                                                                                 START        MAX HALL SENSOR MAX POSITION
-| 1                                                                              <    <    <   <   <  <  < < <<|                      M
-| 2                                 <    <    <    <    <    <    <    <    <    <
-| 3   |<< < <  <  <   <   <    <    <
-|     |>> > >  >  >   >   >    >    >
-| 4                                 >    >    >    >    >    >    >
-| 5                                                               >....>....>....>....>....>....>....>....>....>....>....>....>....>..m.>....>....>....>...>
-| 6                                                                                                                                                        >....>....>....>....>....>....>
-| 7                                                                                                                                                                                      >    >    >   >   >  >  > > >>|
-|                                                                                                                                                                                        <    <    <   <   <  <  < < <<|
-| 8                                                                                                                                                                  <    <    <    <    <
-| 9                                                                                                                                   |<<< < <  <  <   <   <    <    <
-\/
-TIME
-DOWNWARD
-
-                                     <------------------------------------------> <--------------------------->
-                                           CALIBRATION_MOVEMENT_DISTANCE / 2    CALIBRATION_ACCELERATION_DISTANCE
-	   <---------------------------> <---------------------------> <--------------------------------------------------------------------------------------> <---------------------------> <--------------------------->
-	                               CALIBRATION_ACCELERATION_DISTANCE                               CALIBRATION_MOVEMENT_DISTANCE                          CALIBRATION_ACCELERATION_DISTANCE
-     CALIBRATION_ACCELERATION_DISTANCE                                                                                                                                                  CALIBRATION_ACCELERATION_DISTANCE
-                                                                                                                                       <------------------->
-                                                                                                                                  calibration.max_hall_distance
-                                                                                                                                                                     <------------------->
-                                                                                                                                                                  calibration.max_hall_distance
-                                                                                                                                       <--------------------------->
-                                                                                                                                     CALIBRATION_ACCELERATION_DISTANCE
-
-|         Stopped (possibly briefly)
->         Movement tot he right
-<         Movement to the left
->> > >  > Accelerating, moving right
-<  < < << Accelerating, moving left
-<< < <  < Decelerating, moving left
->  > > >> Decelerating, moving right
->   >   > Constant velocity coasting
-....      Recording the hall sensor readings needed for position calibration
-M         position of the maximum hall sensor reading
-m         position of the maximum hall sensor reading found here
-<------>  Distance covered by various movements (as labeled)
-
+	add_trapezoid_move_to_queue(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
+	add_trapezoid_move_to_queue(-CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
 */
-    if(calibration.time == 0) {
-        calibration.move_number++;
-        switch(calibration.move_number) {
-        case 2:
-            calibration.time = CALIBRATION_COAST_TIME >> 1;
-            calibration.acceleration = 0;
-            break;
-        case 3:
-            calibration.time = CALIBRATION_ACCELERATION_TIME * 2;
-            calibration.acceleration = CALIBRATION_ACCELERATION;
-            break;
-        case 4:
-            calibration.time = CALIBRATION_SMALL_COAST_TIME;
-            calibration.acceleration = 0;
-            break;
-        case 5:
-            calibration.capturing_data = 1;
-            calibration.time = CALIBRATION_COAST_TIME;
-            calibration.acceleration = 0;
-            break;
-        case 6:
-            calibration.time = CALIBRATION_SMALL_COAST_TIME;
-            calibration.acceleration = 0;
-//            sprintf(buf, "actual_position: %d   calibration.max_hall_position: %d\n", (int)actual_position, (int)calibration.max_hall_position);
-//            transmit(buf, strlen(buf));
-            break;
-        case 7:
-            calibration.capturing_data = 0;
-            if(calibration.verbose_data) {
-            	rs485_transmit("Calibration capture done\n", 25);
-            }
-            calibration.time = CALIBRATION_ACCELERATION_TIME * 2;
-            calibration.acceleration = -CALIBRATION_ACCELERATION;
-            break;
-        case 8:
-            calibration.time = CALIBRATION_MOVEMENT_DISTANCE / CALIBRATION_MAX_VELOCITY;
-//            sprintf(buf, "FIX THIS moving for this amount of distance: %d\n", (int)CALIBRATION_MOVEMENT_DISTANCE);
-//            transmit(buf, strlen(buf));
-            calibration.acceleration = 0;
-            break;
-        case 9:
-            calibration.time = CALIBRATION_ACCELERATION_TIME;
-            calibration.acceleration = CALIBRATION_ACCELERATION;
-            break;
-        case 10:
-			calibration.time = CALIBRATION_ACCELERATION_TIME >> 1; // this can be changed to any small value. the purpose is to allow the motor to settle after stopping moving
-			calibration.acceleration = 0;
-			calibration.velocity = 0;
-			clear_the_queue_and_stop();
-		    if(calibration.verbose_data) {
-		    	rs485_transmit("Calibration done\n", 17);
-		    }
-			break;
-        default:
-//    		zero_hall_position();
-//    		int32_t hall_position = get_hall_position();
-//    		sprintf(buf, "desired_position: %d   hall_position: %d\n", (int)desired_position, (int)(hall_position));
-//    		transmit(buf, strlen(buf));
-    		motor_pwm_voltage = 0;
-    		movement_end_position = desired_position;
-//    		motor_control_mode = CLOSED_LOOP_POSITION_CONTROL;
-            calibration.move_number = 0; // this signals that calibration is no longer in progress
-            break;
-        }
-//        sprintf(buf, "%u: pos: %d   time: %hu   vel: %hd   accel: %hd\n", (unsigned int)calibration.move_number, (int)desired_position, calibration.time, calibration.velocity, calibration.acceleration);
-//        transmit(buf, strlen(buf));
-    }
+	calibration_index = 0;
+	calibration_active = 1;
+}
 
-    calibration.velocity += calibration.acceleration;
-    desired_position += (((int32_t)calibration.velocity + (1 << (CALIBRATION_VELOCITY_SHIFT - 1))) >> CALIBRATION_VELOCITY_SHIFT); // implements rounding for better accuracy
-    calibration.time--;
+void handle_calibration_logic(void)
+{
+	if(n_items_in_queue == 2) {
+		if(calibration_index < CALIBRATION_DATA_SIZE) {
+			calibration[calibration_index].hall1 = get_hall_sensor1_voltage();
+			calibration[calibration_index].hall2 = get_hall_sensor2_voltage();
+			calibration[calibration_index].hall3 = get_hall_sensor3_voltage();
+			calibration_index++;
+		}
+	}
+	else if(n_items_in_queue == 0) {
+		calibration_active = 0;
+	}
 }
 
 
@@ -800,11 +665,17 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 		movement_queue[queue_write_position].movement_type = movement_type;
 		if(movement_type == 0) {
 	        movement_queue[queue_write_position].acceleration = parameter;
-    	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_OR_VELOCITY_SHIFT_LEFT;
+    	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
+            if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
+	            fatal_error("accel too high", 11);
+            }
 		}
 		else {
 	        movement_queue[queue_write_position].velocity = parameter;
-    	    movement_queue[queue_write_position].velocity <<= ACCELERATION_OR_VELOCITY_SHIFT_LEFT;
+    	    movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
+            if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
+	            fatal_error("vel too high", 12);
+            }
 		}
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
@@ -836,44 +707,15 @@ void clear_the_queue_and_stop(void)
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
-/*
-delta_t = 3000000
-delta_d = int(microsteps_per_rotation * 1.0 + 0.5)
-delta_t1 = int(max_velocity / max_acceleration + 0.5)
-if 2 * delta_t1 > delta_t:
-    print("Doing the special case of the move where the time is very short but so is the distance")
-    delta_t1 = delta_t // 2
-delta_t2 = delta_t - 2 * delta_t1
-numerator = delta_d
-denominator = ((delta_t1 + delta_t2) * delta_t1)
-acceleration = int(delta_d / ((delta_t1 + delta_t2) * delta_t1) + 0.5)
-*/
 
 void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time)
 {
-	int64_t delta_d = (int64_t)total_displacement << 24;
-//	uint32_t delta_t1 = ((max_acceleration >> 1) + max_velocity) / max_acceleration; // calculating detal_t1 with rounding
-	int64_t delta_t1 = max_velocity / max_acceleration; // calculating detal_t1 without rounding
-	if((delta_t1 << 1) > total_time) {
-	    delta_t1 = total_time >> 1;
-	}
-	uint32_t delta_t2 = total_time - (delta_t1 << 1);
-	int64_t numerator = delta_d;
-	int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
-	int64_t acceleration = numerator / denominator;
+	int32_t acceleration;
+	uint32_t delta_t1;
+	uint32_t delta_t2;
 
-	print_int64("max_velocity: ", max_velocity);
-	print_int64("max_acceleration: ", max_acceleration);
-	print_int64("delta_d: ", (int64_t)delta_d);
-	print_int64("delta_t: ", (int64_t)total_time);
-	print_int64("delta_t1: ", (int64_t)delta_t1);
-	print_int64("delta_t2: ", (int64_t)delta_t2);
-	print_int64("numerator: ", (int64_t)numerator);
-	print_int64("denominator: ", (int64_t)denominator);
-	print_int64("acceleration: ", (int64_t)acceleration);
+	compute_trapezoid_move(total_displacement, total_time, &acceleration, &delta_t1, &delta_t2);
 
-//	acceleration >>= 8;
-	
 	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
@@ -928,6 +770,9 @@ uint8_t handle_queued_movements(void)
 		}
 	}
 
+	if(current_velocity_i64 > max_velocity) {
+		fatal_error("vel too high", 12);
+	}
 	current_position_i64 += current_velocity_i64;
 	desired_position = ((int32_t *)&current_position_i64)[1]; // take the most significant 32 bit number
 
@@ -1013,24 +858,10 @@ void motor_movement_calculations(void)
     else if(homing_active) {
         handle_homing_logic();
     }
+    else if(calibration_active) {
+        handle_calibration_logic();
+    }
 
-
-//    if(calibration.move_number > 0) {
-//        handle_calibration_logic();
-//        moving = 1;
-//    }
-//      if(go_to_closed_loop_mode.move_number > 0) {
-//          go_to_closed_loop_mode_logic();
-//          moving = 1;
-//      }
-
-//    else if(homing.move_number > 0) {
-//        handle_homing_logic();
-//    	moving = 1;
-//    }
-//    else if(capture.capture_type) {
-//        capture_logic();
-//    }
     moving = handle_queued_movements();
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
@@ -1275,7 +1106,7 @@ void set_max_velocity(uint32_t new_max_velocity)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	max_velocity = new_max_velocity;
-	max_velocity <<= 24;
+	max_velocity <<= VELOCITY_SHIFT_LEFT;
 	if(max_velocity > MAX_VELOCITY) {
 		max_velocity = MAX_VELOCITY;
 	}
@@ -1287,19 +1118,25 @@ int32_t get_max_velocity(void)
 	return max_velocity;
 }
 
-int32_t get_desired_position(void)
-{
-	return desired_position;
-}
-
 void set_max_acceleration(uint32_t new_max_acceleration)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	max_acceleration = new_max_acceleration;
+	max_acceleration <<= ACCELERATION_SHIFT_LEFT;
 	if(max_acceleration > MAX_ACCELERATION) {
 		max_acceleration = MAX_ACCELERATION;
 	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+}
+
+int32_t get_max_acceleration(void)
+{
+	return max_acceleration;
+}
+
+int32_t get_desired_position(void)
+{
+	return desired_position;
 }
 
 void reset_time(void)
@@ -1339,8 +1176,8 @@ void get_motor_status(uint8_t *buf)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	buf[0] = motor_control_mode;
-	buf[1] = calibration.move_number;
-	buf[2] = homing.move_number;
+	buf[1] = n_items_in_queue;
+	buf[2] = homing_active;
 	buf[3] = capture.capture_type;
 	buf[4] = get_mosfets_enabled();
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
