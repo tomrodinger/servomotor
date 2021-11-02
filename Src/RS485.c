@@ -100,12 +100,14 @@ void USART2_IRQHandler(void)
                 }
 
                 if(receiveIndex >= valueLength) {
-                    if(valueLength <= MAX_VALUE_BUFFER_LENGTH) {
-                        commandReceived = 1;
-                    }
-                    else {
-                        sprintf(message, "too long: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
-                        fatal_error(message, 1);
+                    if(selectedAxis != 'R' && selectedAxis == my_alias) {
+                        if(valueLength <= MAX_VALUE_BUFFER_LENGTH) {
+                            commandReceived = 1;
+                        }
+                        else {
+                            sprintf(message, "too long: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
+                            fatal_error(message, 1);
+                        }
                     }
                     nReceivedBytes = 0;
                 }
@@ -162,4 +164,3 @@ void rs485_transmit(void *s, uint8_t len)
                                                     // once the buffer becomes empty
     }
 }
-
