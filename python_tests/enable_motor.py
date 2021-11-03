@@ -2,8 +2,8 @@
 
 import serial
 
-ser = serial.Serial('/dev/tty.SLAB_USBtoUART', 230400, timeout = 0.1)  # open serial port
-#ser = serial.Serial('/dev/tty.usbserial-1420', 230400, timeout = 0.05)  # open serial port
+#ser = serial.Serial('/dev/tty.SLAB_USBtoUART', 230400, timeout = 0.1)  # open serial port
+ser = serial.Serial('/dev/tty.usbserial-1420', 230400, timeout = 0.05)  # open serial port
 
 print(ser.name)         # check which port was really used
 ser.write(bytearray([ord('X'), 1, 0]))

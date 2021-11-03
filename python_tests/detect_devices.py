@@ -6,8 +6,8 @@ from serial.serialutil import to_bytes
 import serial.tools.list_ports
 import time
 
-SERIAL_PORT = "/dev/cu.SLAB_USBtoUART"
-#SERIAL_PORT = "/dev/tty.usbserial-1420"
+#SERIAL_PORT = "/dev/cu.SLAB_USBtoUART"
+SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21

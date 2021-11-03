@@ -86,6 +86,7 @@ static uint32_t commutation_position_offset_at_max;
 static uint8_t homing_active = 0;
 static uint8_t calibration_active = 0;
 static uint32_t calibration_index = 0;
+static uint8_t decelerate_to_stop_active = 0;
 
 
 static uint32_t debug_counter = 0;
@@ -749,24 +750,50 @@ void compute_velocity(void)
 
 uint8_t handle_queued_movements(void)
 {
-	if(n_items_in_queue > 0) {
-		// there is an assumption here that any item in the queue will always have one or more time steps
-		// see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
-		if(movement_queue[queue_read_position].movement_type == MOVE_WITH_ACCELERATION) {
-			current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
-			movement_queue[queue_read_position].n_time_steps--;
-			if(movement_queue[queue_read_position].n_time_steps == 0) {
-				queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-				n_items_in_queue--;
+	if(!decelerate_to_stop_active) {
+		if(n_items_in_queue > 0) {
+			// there is an assumption here that any item in the queue will always have one or more time steps
+			// see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
+			if(movement_queue[queue_read_position].movement_type == MOVE_WITH_ACCELERATION) {
+				current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
+				movement_queue[queue_read_position].n_time_steps--;
+				if(movement_queue[queue_read_position].n_time_steps == 0) {
+					queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+					n_items_in_queue--;
+				}
+			}
+			else {
+				current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity  is constant during this time step
+				movement_queue[queue_read_position].n_time_steps--;
+				if(movement_queue[queue_read_position].n_time_steps == 0) {
+					queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+					n_items_in_queue--;
+				}
 			}
 		}
 		else {
-			current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity  is constant during this time step
-			movement_queue[queue_read_position].n_time_steps--;
-			if(movement_queue[queue_read_position].n_time_steps == 0) {
-				queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-				n_items_in_queue--;
+			decelerate_to_stop_active = 1;
+		}
+	}
+	if(decelerate_to_stop_active) {
+		if(current_velocity_i64 >= 0) {
+			if(current_velocity_i64 > max_acceleration) {
+				current_velocity_i64 -= max_acceleration;
 			}
+			else {
+				current_velocity_i64 = 0;
+			}
+		}
+		else {
+			if(-current_velocity_i64 > max_acceleration) {
+				current_velocity_i64 += max_acceleration;
+			}
+			else {
+				current_velocity_i64 = 0;
+			}
+		}
+		if(current_velocity_i64 == 0) {
+			decelerate_to_stop_active = 0;
 		}
 	}
 

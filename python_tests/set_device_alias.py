@@ -6,8 +6,8 @@ from serial.serialutil import to_bytes
 import serial.tools.list_ports
 import time
 
-SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-#SERIAL_PORT = "/dev/tty.usbserial-1410"
+#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
+SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
@@ -97,7 +97,10 @@ if len(sys.argv) != 3:
 unique_id = int(sys.argv[1], 16)
 if len(sys.argv[2]) != 1:
     print("Error: the alias nust be just one character, not:", sys.argv[2])
-alias = ord(sys.argv[2])
+if sys.argv[2] == "255":
+    alias = 255
+else:
+    alias = ord(sys.argv[2])
 
 print("We will attempt to change the alias of the device with unique id %016X to %c" % (unique_id, alias))
 

@@ -100,7 +100,7 @@ void USART2_IRQHandler(void)
                 }
 
                 if(receiveIndex >= valueLength) {
-                    if(selectedAxis != 'R' && selectedAxis == my_alias) {
+                    if(selectedAxis != 'R' && (selectedAxis == my_alias || selectedAxis == 255)) {
                         if(valueLength <= MAX_VALUE_BUFFER_LENGTH) {
                             commandReceived = 1;
                         }
