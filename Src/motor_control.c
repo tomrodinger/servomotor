@@ -64,10 +64,10 @@ static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static uint64_t movement_start_time = 0;
 static int32_t movement_start_position = 0;
 static int32_t movement_end_position = 0;
-//static int64_t max_acceleration = MAX_ACCELERATION;
-static int64_t max_acceleration = 1418633883;
-//static int64_t max_velocity = MAX_VELOCITY;
-static int64_t max_velocity = 2954937499648;
+static int64_t max_acceleration = MAX_ACCELERATION;
+//static int64_t max_acceleration = 1418633883;
+static int64_t max_velocity = MAX_VELOCITY;
+//static int64_t max_velocity = 2954937499648;
 static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 //static int32_t desired_velocity = 0;
@@ -585,6 +585,8 @@ void print_current_movement(void)
 {
 	char buf[150];
 	uint64_t current_time = get_microsecond_time();
+	print_int64("max acceleration:", (int64_t)max_acceleration);
+	print_int64("max velocity:", (int64_t)max_velocity);
 	sprintf(buf, "current_time: %lu   movement_start_time: %lu   movement_end_time: %lu\n",
 			(unsigned long int)current_time, (unsigned long int)movement_start_time, (unsigned long int)movement_end_time);
 	transmit(buf, strlen(buf));
