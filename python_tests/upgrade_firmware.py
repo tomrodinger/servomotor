@@ -1,6 +1,7 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 import sys
+import argparse
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
@@ -9,10 +10,9 @@ import binascii
 import struct
 import random
 import os
+import serial_functions
 
 
-#SERIAL_PORT = "/dev/cu.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
 FIRMWARE_UPGRADE_COMMAND = 23
 SYSTEM_RESET_COMMAND = 27
 FLASH_BASE_ADDRESS = 0x8000000
@@ -22,23 +22,6 @@ FIRST_FIRMWARE_PAGE_NUMBER = (BOOTLOADER_N_PAGES)
 LAST_FIRMWARE_PAGE_NUMBER = 30
 FLASH_SETTINGS_PAGE_NUMBER = 31
 
-
-def open_serial_port(serial_device, baud_rate, timeout = 0.05):
-    print("Opening serial device:", serial_device)
-    try:
-        ser = serial.Serial(serial_device, baud_rate, timeout = timeout)
-    except:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("So, make sure you plugged in your USB to serial adapeter")
-        print("Otherwise, make sure thet the correct serial port is defined in this program")
-        print("Here are the current serial ports detected on your computer:")
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p[0])
-        exit(1)
-    print("Opened:", ser.name)
-    return ser
 
 
 def print_data(data):
@@ -117,11 +100,15 @@ def system_reset_command(ser):
     ser.write(command)
 
 
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+# and it also takes a mandatory firmware file name
+parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('firmware_filename', help='new firmware file to send to the device')
+args = parser.parse_args()
 
-if len(sys.argv) != 2:
-    print_usage()
-
-firmware_filename = sys.argv[1]
+serial_port = args.port
+firmware_filename = args.firmware_filename
 
 data = read_binary(firmware_filename)
 # pad zeros until the length of the data is divisable by 4
@@ -154,7 +141,7 @@ data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4,
 
 print("Will write this many bytes:", len(data))
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
 system_reset_command(ser)
 time.sleep(0.1) # wait for it to reset

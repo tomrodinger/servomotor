@@ -440,7 +440,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	if(unique_id == my_unique_id) {
                	transmit("Unique ID matches\n", 18);
         		my_alias = new_alias;
-           		save_settings(my_alias);
+                uint16_t hall1_midline;
+                uint16_t hall2_midline;
+                uint16_t hall3_midline;
+                get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
+           		save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
@@ -523,6 +527,7 @@ void process_debug_uart_commands(void)
     		print_current_movement();
     		print_velocity();
     		print_time_difference();
+            print_hall_sensor_data();
 			break;
     	case 'P':
     		print_motor_current();
@@ -569,7 +574,11 @@ void process_debug_uart_commands(void)
     		break;
     	case 'S':
 			transmit("Saving settings\n", 16);
-    		save_settings(my_alias);
+            uint16_t hall1_midline;
+            uint16_t hall2_midline;
+            uint16_t hall3_midline;
+            get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
+            save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
     		break;
 		}
     	command_uart1 = 0;
@@ -615,7 +624,7 @@ void button_logic(void)
     }
 }
 
-void print_start_message()
+void print_start_message(void)
 {
 	char buff[200];
 	uint32_t my_unique_id_u32_array[2];
@@ -632,6 +641,7 @@ void print_start_message()
         sprintf(buff, "Alias: 0x%02hx\n", my_alias);
     }
     transmit(buff, strlen(buff));
+    print_hall_midlines();
 }
 
 int main(void)
@@ -653,7 +663,12 @@ int main(void)
 
     my_unique_id = get_unique_id();
 
-    load_settings(&my_alias); // load the settings from non-volatile memory
+    uint16_t hall1_midline;
+    uint16_t hall2_midline;
+    uint16_t hall3_midline;
+    load_settings(&my_alias, &hall1_midline, &hall2_midline, &hall3_midline); // load the settings from non-volatile memory
+
+    set_hall_midlines(hall1_midline, hall2_midline, hall3_midline); // set the hall sensor midlines
 
     __enable_irq();
 
@@ -673,6 +688,15 @@ int main(void)
             transmit_unique_id();
             detect_devices_delay--;
     	}
+
+        if(is_calibration_data_available()) {
+            process_calibration_data();
+            uint16_t hall1_midline;
+            uint16_t hall2_midline;
+            uint16_t hall3_midline;
+            get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
+            save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
+        }
 
         process_debug_uart_commands();
         button_logic();

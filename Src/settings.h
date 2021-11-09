@@ -12,8 +12,8 @@
 #define FIRMWARE_START_ADDRESS  (FIRST_FIRMWARE_PAGE_NUMBER * FLASH_PAGE_SIZE + FLASH_BASE_ADDRESS)
 #define APPLICATION_ADDRESS_PTR (FIRMWARE_START_ADDRESS + sizeof(uint32_t))
 
-void load_settings(uint8_t *my_alias);
-void save_settings(uint8_t my_alias);
+void load_settings(uint8_t *my_alias, uint16_t *hall1_midline, uint16_t *hall2_midline, uint16_t *hall3_midline);
+void save_settings(uint8_t my_alias, uint16_t hall1_midline, uint16_t hall2_midline, uint16_t hall3_midline);
 int8_t burn_firmware_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE]);
 void crc32_init(void);
 uint32_t crc32(uint32_t new_value);

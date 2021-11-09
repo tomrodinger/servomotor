@@ -37,6 +37,7 @@ void print_current_movement(void);
 void print_velocity(void);
 void print_time_difference(void);
 void print_motor_current(void);
+void print_hall_sensor_data(void);
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
@@ -58,6 +59,8 @@ int32_t get_max_acceleration(void);
 void emergency_stop(void);
 int32_t get_actual_motor_position(void);
 void get_motor_status(uint8_t *buf);
+uint8_t is_calibration_data_available(void);
+void process_calibration_data(void);
 
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

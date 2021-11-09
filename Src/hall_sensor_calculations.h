@@ -8,6 +8,8 @@ int32_t get_hall_position(void);
 int32_t get_hall_position_with_hysteresis(void);
 void zero_hall_position(void);
 void print_hall_position(void);
-
+void set_hall_midlines(uint16_t new_hall1_midline, uint16_t new_hall2_midline, uint16_t new_hall3_midline);
+void get_hall_midlines(uint16_t *returned_hall1_midline, uint16_t *returned_hall2_midline, uint16_t *returned_hall3_midline);
+void print_hall_midlines(void);
 
 #endif

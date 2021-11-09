@@ -3,11 +3,11 @@
 import serial
 import time
 
-MY_AXIS = 'Z'
+MY_AXIS = 'X'
 CALIBRATION_DONE_TEXT = bytearray(b'Calibration done\n')
 
-#ser = serial.Serial('/dev/tty.SLAB_USBtoUART', 230400, timeout = 0.1)  # open serial port
-ser = serial.Serial('/dev/tty.usbserial-1410', 230400, timeout = 0.1)  # open serial port
+ser = serial.Serial('/dev/tty.SLAB_USBtoUART', 230400, timeout = 0.1)  # open serial port
+#ser = serial.Serial('/dev/tty.usbserial-1410', 230400, timeout = 0.1)  # open serial port
 
 print(ser.name)         # check which port was really used
 print("Sending the command to enable the motor")

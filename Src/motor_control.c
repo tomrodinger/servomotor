@@ -85,7 +85,6 @@ static uint32_t commutation_position_offset_at_max;
 
 static uint8_t homing_active = 0;
 static uint8_t calibration_active = 0;
-static uint32_t calibration_index = 0;
 static uint8_t decelerate_to_stop_active = 0;
 
 
@@ -184,14 +183,15 @@ static uint16_t max_motor_control_time_difference = 0;
  *    CALIBRATION_MOVEMENT_DISTANCE 645120
  */
 
-#define CALIBRATION_DATA_SIZE 300
+#define CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT 8
+#define CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 (384)
+#define CALIBRATION_DATA_SIZE ((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT))
 struct calibration_struct {
-	int16_t position;
-    uint16_t hall1;
-    uint16_t hall2;
-    uint16_t hall3;
+	uint16_t local_min_or_max;
+	int32_t local_min_or_max_position;
 };
-struct calibration_struct calibration[CALIBRATION_DATA_SIZE];
+struct calibration_struct calibration[3][CALIBRATION_DATA_SIZE];
+static uint32_t calibration_index[3];
 
 
 struct capture_struct {
@@ -286,13 +286,29 @@ void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int
 }
 
 
+uint32_t hall1_sum;
+uint32_t hall2_sum;
+uint32_t hall3_sum;
+uint8_t avg_counter;
+uint16_t hall_data_buffer[3];
+
 #define CALIBRATION_TIME (get_update_frequency() * 2)
-#define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 2)
+#define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 3 / 2)
+#define HALL_PEAK_FIND_THREASHOLD 150
+uint8_t hall_rising_flag[3];
+uint16_t hall_local_maximum[3];
+uint16_t hall_local_minimum[3];
+int32_t hall_calibration_start_position;
+int32_t hall_local_maximum_position[3];
+int32_t hall_local_minimum_position[3];
+uint8_t calibration_data_available = 0;
+
 void start_calibration(uint8_t verbose_data)
 {
 	int32_t acceleration;
 	uint32_t delta_t1;
 	uint32_t delta_t2;
+	uint8_t j;
 
 	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
 		fatal_error("not in open loop", 10);
@@ -301,6 +317,10 @@ void start_calibration(uint8_t verbose_data)
 	if(n_items_in_queue != 0) {
 		fatal_error("queue not empty", 9);
 	}
+
+   	rs485_transmit("Calibration start\n", 18);
+
+	enable_mosfets();
 
 	compute_trapezoid_move(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2, &acceleration, &delta_t1, &delta_t2);
 
@@ -317,25 +337,248 @@ void start_calibration(uint8_t verbose_data)
 	add_trapezoid_move_to_queue(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
 	add_trapezoid_move_to_queue(-CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
 */
-	calibration_index = 0;
+	hall_calibration_start_position = ((int32_t *)&current_position_i64)[1];
+	for(j = 0; j < 3; j++) {
+		hall_rising_flag[j] = 1;
+		hall_local_maximum[j] = 0;
+		hall_local_minimum[j] = 65535;
+		hall_local_maximum_position[j] = 0;
+		hall_local_minimum_position[j] = 0;
+		calibration_index[j] = 0;
+	}
+
+	hall1_sum = 0;
+	hall2_sum = 0;
+	hall3_sum = 0;
+	avg_counter = 0;
+
+	calibration_data_available = 0;
 	calibration_active = 1;
 }
 
-void handle_calibration_logic(void)
+void handle_calibration_logic_old(void)
 {
 	if(n_items_in_queue == 2) {
-		if(calibration_index < CALIBRATION_DATA_SIZE) {
-			calibration[calibration_index].hall1 = get_hall_sensor1_voltage();
-			calibration[calibration_index].hall2 = get_hall_sensor2_voltage();
-			calibration[calibration_index].hall3 = get_hall_sensor3_voltage();
-			calibration_index++;
+		hall1_sum += get_hall_sensor1_voltage();
+		hall2_sum += get_hall_sensor2_voltage();
+		hall3_sum += get_hall_sensor3_voltage();
+		avg_counter++;
+		if(avg_counter == HALL_SAMPLES_PER_PRINT) {
+			hall_data_buffer[0] = hall1_sum - HALL_SENSOR_SHIFT;
+			hall_data_buffer[1] = hall2_sum - HALL_SENSOR_SHIFT;
+			hall_data_buffer[2] = hall3_sum - HALL_SENSOR_SHIFT;
+			rs485_transmit((void*)hall_data_buffer, 6);
+			avg_counter = 0;
+			hall1_sum = 0;
+			hall2_sum = 0;
+			hall3_sum = 0;
 		}
 	}
 	else if(n_items_in_queue == 0) {
 		calibration_active = 0;
+		disable_mosfets();
+       	rs485_transmit("Calibration capture done\n", 25);
+	}
+
+}
+
+
+void handle_calibration_logic_middle(void)
+{
+	if(n_items_in_queue == 2) {
+		hall1_sum = get_hall_sensor1_voltage();
+		hall2_sum = get_hall_sensor2_voltage();
+		hall3_sum = get_hall_sensor3_voltage();
+		avg_counter++;
+		if(avg_counter == HALL_SAMPLES_PER_PRINT) {
+			hall_data_buffer[0] = hall1_sum;
+			hall_data_buffer[1] = hall2_sum;
+			hall_data_buffer[2] = hall3_sum;
+			rs485_transmit((void*)hall_data_buffer, 6);
+			avg_counter = 0;
+			hall1_sum = 0;
+			hall2_sum = 0;
+			hall3_sum = 0;
+		}
+	}
+	else if(n_items_in_queue == 0) {
+		calibration_active = 0;
+		disable_mosfets();
+       	rs485_transmit("Calibration capture done\n", 25);
+	}
+
+}
+
+
+
+void handle_calibration_logic(void)
+{
+	uint16_t hall_reading;
+	int32_t calibration_relative_position = ((int32_t *)&current_position_i64)[1] - hall_calibration_start_position;
+	uint8_t j;
+
+	if(n_items_in_queue == 2) {
+		for(j = 0; j < 3; j++) {
+			if(calibration_index[j] < CALIBRATION_DATA_SIZE) {
+				switch(j) {
+				case 0:
+					hall_reading = get_hall_sensor1_voltage();
+					break;
+				case 1:
+					hall_reading = get_hall_sensor2_voltage();
+					break;
+				case 2:
+					hall_reading = get_hall_sensor3_voltage();
+					break;
+				}
+	//			if((hall_reading > 10000) || (hall_reading < 7000)) {
+	//				fatal_error("hall sensor error", 15);
+	//			}
+				if(hall_rising_flag[j]) {
+					if(hall_reading > hall_local_maximum[j]) {
+						hall_local_maximum[j] = hall_reading;
+						hall_local_maximum_position[j] = calibration_relative_position;
+					}
+					if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
+						calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
+						calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
+	//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
+	//							fatal_error("", 2);
+	//						}
+						calibration_index[j]++;
+						hall_local_minimum[j] = hall_reading;
+						hall_local_minimum_position[j] = calibration_relative_position;
+						hall_rising_flag[j] = 0;
+					}
+				}
+				else {
+					if(hall_reading < hall_local_minimum[j]) {
+						hall_local_minimum[j] = hall_reading;
+						hall_local_minimum_position[j] = calibration_relative_position;
+					}
+					if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
+						calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
+						calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
+//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
+//							fatal_error("", 2);
+//						}
+						calibration_index[j]++;
+						hall_local_maximum[j] = hall_reading;
+						hall_local_maximum_position[j] = calibration_relative_position;
+						hall_rising_flag[j] = 1;
+					}
+				}
+			}
+			else {
+				fatal_error("calibration overflow", 13);
+			}
+		}
+	}
+	else if(n_items_in_queue == 0) {
+		calibration_active = 0;
+		calibration_data_available = 1;
+		disable_mosfets();
 	}
 }
 
+uint8_t is_calibration_data_available(void)
+{
+	return calibration_data_available;
+}
+
+void process_calibration_data(void)
+{
+	uint16_t i;
+	int32_t position_delta;
+	uint16_t peak_to_peak;
+	int32_t min_position_delta;
+	int32_t max_position_delta;
+	uint16_t min_peak_to_peak;
+	uint16_t max_peak_to_peak;
+	uint8_t min_or_max;
+	char buf[150];
+	uint8_t j;
+
+	for(j = 0; j < 3; j++) {
+		for(i = 0; i < calibration_index[j]; i++) {
+			sprintf(buf, "index: %u  local_min_or_max: %u  position: %ld\n",
+					i, calibration[j][i].local_min_or_max, calibration[j][i].local_min_or_max_position);
+			transmit(buf, strlen(buf));
+		}
+
+		min_or_max = 0;
+		min_position_delta = 2147483640;
+		max_position_delta = -2147483640;
+		min_peak_to_peak = 65535;
+		max_peak_to_peak = 0;
+		for(i = 1; i < calibration_index[j]; i++) {
+			position_delta = calibration[j][i].local_min_or_max_position - calibration[j][i - 1].local_min_or_max_position;
+			if(position_delta > max_position_delta) {
+				max_position_delta = position_delta;
+			}
+			if(position_delta < min_position_delta) {
+				min_position_delta = position_delta;
+			}
+
+			if(min_or_max == 0) {
+//				if(calibration[j][i - 1].local_min_or_max < calibration[j][i].local_min_or_max) {
+//					fatal_error("",1);
+//				}
+				peak_to_peak = calibration[j][i - 1].local_min_or_max - calibration[j][i].local_min_or_max;
+				min_or_max = 1;
+			}
+			else {
+//				if(calibration[j][i].local_min_or_max < calibration[j][i - 1].local_min_or_max) {
+//					fatal_error("",1);
+//				}
+				peak_to_peak = calibration[j][i].local_min_or_max - calibration[j][i - 1].local_min_or_max;
+				min_or_max = 0;
+			}
+			if(peak_to_peak > max_peak_to_peak) {
+				max_peak_to_peak = peak_to_peak;
+			}
+			if(peak_to_peak < min_peak_to_peak) {
+				min_peak_to_peak = peak_to_peak;
+			}
+
+			sprintf(buf, "i: %u  max to min delta: %u  position delta: %ld\n", i, peak_to_peak, position_delta);
+			transmit(buf, strlen(buf));
+		}
+
+		sprintf(buf, "min_position_delta: %ld  max_position_delta: %ld\n", min_position_delta, max_position_delta);
+		transmit(buf, strlen(buf));
+		sprintf(buf, "min_peak_to_peak: %u  max_peak_to_peak: %u\n", min_peak_to_peak, max_peak_to_peak);
+		transmit(buf, strlen(buf));
+	}
+
+	#define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 3)
+	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 75  // make sure this is larger than N_POLES
+	uint32_t minima_and_maxima_avg[3] = {0, 0, 0};
+	uint16_t midline[3];
+	for(j = 0; j < 3; j++) {
+		if(calibration_index[j] < MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA) {
+			fatal_error("not enough minima or maxima", 15);
+		}
+
+		uint16_t start_calibration_index = (calibration_index[j] - N_POLES);
+		for(i = start_calibration_index; i < calibration_index[j]; i++) {
+			minima_and_maxima_avg[j] += (uint32_t)calibration[j][i].local_min_or_max;
+			sprintf(buf, "Averaging: index: %u  local_min_or_max: %u\n", i, calibration[j][i].local_min_or_max);
+			transmit(buf, strlen(buf));
+		}
+		minima_and_maxima_avg[j] /= N_POLES;
+		midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j] << 3) - HALL_SENSOR_SHIFT);
+	}
+
+	set_hall_midlines(midline[0], midline[1], midline[2]);
+
+	for(j = 0; j < 3; j++) {
+		sprintf(buf, "The average and midline for hall sensor %hu are: %lu  %u\n", j + 1, minima_and_maxima_avg[j], midline[j]);
+		transmit(buf, strlen(buf));
+	}
+
+	calibration_data_available = 0;
+}
 
 #define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 10
 #define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 120
@@ -655,6 +898,21 @@ void print_motor_current(void)
 	char buf[100];
 	int16_t current = get_motor_current();
 	sprintf(buf, "%hd\n", current);
+	transmit(buf, strlen(buf));
+}
+
+
+void print_hall_sensor_data(void)
+{
+	char buf[100];
+	uint16_t hall1 = get_hall_sensor1_voltage();
+	uint16_t hall2 = get_hall_sensor2_voltage();
+	uint16_t hall3 = get_hall_sensor3_voltage();
+
+	sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", hall1, hall2, hall3);
+	transmit(buf, strlen(buf));
+
+	sprintf(buf, "hall_position: %ld\n", hall_position);
 	transmit(buf, strlen(buf));
 }
 
