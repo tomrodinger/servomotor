@@ -1069,6 +1069,17 @@ uint8_t handle_queued_movements(void)
 
 
 #define PID_SHIFT_RIGHT 18
+#define ERROR_HYSTERESIS_P 0
+#define ERROR_HYSTERESIS_D 0
+#define PROPORTIONAL_CONSTANT_PID 5000 // if exceeding 32767 then need to check whether any math will overflow below in the proportional term
+#define INTEGRAL_CONSTANT_PID 50
+#define DERIVATIVE_CONSTANT_PID 50000
+#define MAX_INT32 2147483647
+#define MAX_ERROR ((MAX_INT32 / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
+#define MAX_ERROR_CHANGE ((MAX_INT32 / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
+//#define DERIVATIVE_CONSTANT_PID 250000
+//#define DERIVATIVE_CONSTANT_PID 1280000
+
 int32_t PID_controller(int32_t error)
 {
     int32_t output_value;
@@ -1078,17 +1089,12 @@ int32_t PID_controller(int32_t error)
     static int32_t previous_error = 0;
     int32_t error_change;
     static int32_t low_pass_filtered_error_change = 0;
-#define PROPORTIONAL_CONSTANT_PID 10800 // if exceeding 32767 then need to check whether any math will overflow below in the proportional term
-#define INTEGRAL_CONSTANT_PID 0
-#define DERIVATIVE_CONSTANT_PID 000000
-//#define DERIVATIVE_CONSTANT_PID 250000
-//#define DERIVATIVE_CONSTANT_PID 1280000
 
-    if(error < -10000) {
-        error = -10000;
+    if(error < -MAX_ERROR) {
+        error = -MAX_ERROR;
     }
-    else if(error > 10000) {
-        error = 10000;
+    else if(error > MAX_ERROR) {
+        error = MAX_ERROR;
     }
     integral_term += (error * INTEGRAL_CONSTANT_PID);
     if(integral_term > (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
@@ -1098,12 +1104,13 @@ int32_t PID_controller(int32_t error)
     	integral_term = -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT);
     }
     proportional_term = error * PROPORTIONAL_CONSTANT_PID;
+
     error_change = error - previous_error;
-    if(error_change > 5000) {
-    	error_change = 5000;
+    if(error_change > MAX_ERROR_CHANGE) {
+    	error_change = MAX_ERROR_CHANGE;
     }
-    if(error_change < -5000) {
-    	error_change = -5000;
+    if(error_change < -MAX_ERROR_CHANGE) {
+    	error_change = -MAX_ERROR_CHANGE;
     }
 
     low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
@@ -1122,6 +1129,93 @@ int32_t PID_controller(int32_t error)
     // proportional term:  953
     // derivative term:   4768
     // sum:               6971
+    output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
+
+//    if(output_value < -CLOSED_LOOP_PWM_VOLTAGE) {
+//        output_value = -CLOSED_LOOP_PWM_VOLTAGE;
+//    }
+//    else if(output_value > CLOSED_LOOP_PWM_VOLTAGE) {
+//        output_value = CLOSED_LOOP_PWM_VOLTAGE;
+//    }
+
+    return output_value;
+}
+
+
+int32_t PID_controller_with_hysteresis(int32_t error)
+{
+	static int32_t error_with_hysteresis_p;
+	static int32_t error_with_hysteresis_d;
+    int32_t output_value;
+    int32_t proportional_term;
+    static int32_t integral_term = 0;
+    int32_t derivative_term;
+    static int32_t previous_error = 0;
+    int32_t error_change;
+    static int32_t low_pass_filtered_error_change = 0;
+
+	// make sure the error is winin some range to prevent overlow of the math
+    if(error < -MAX_ERROR) {
+        error = -MAX_ERROR;
+    }
+    else if(error > MAX_ERROR) {
+        error = MAX_ERROR;
+    }
+
+	// calculate the error with hysteresis to be used in the proportional term of the PID controller
+	if(error - (ERROR_HYSTERESIS_P >> 1) > error_with_hysteresis_p) {
+		error_with_hysteresis_p = error - (ERROR_HYSTERESIS_P >> 1);
+	}
+	else if(error + (ERROR_HYSTERESIS_P >> 1) < error_with_hysteresis_p) {
+		error_with_hysteresis_p = error + (ERROR_HYSTERESIS_P >> 1);
+	}
+
+	// calculate the error with hysteresis to be used in the derivative term of the PID controller
+	if(error - (ERROR_HYSTERESIS_D >> 1) > error_with_hysteresis_d) {
+		error_with_hysteresis_d = error - (ERROR_HYSTERESIS_D >> 1);
+	}
+	else if(error + (ERROR_HYSTERESIS_D >> 1) < error_with_hysteresis_d) {
+		error_with_hysteresis_d = error + (ERROR_HYSTERESIS_D >> 1);
+	}
+
+	// calculate the integral term of the PID controller
+    integral_term += (error * INTEGRAL_CONSTANT_PID);
+    if(integral_term > (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
+    	integral_term = CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT;
+    }
+    else if(integral_term < -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
+    	integral_term = -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT);
+    }
+
+	// calculate the proportional term of the PID controller
+    proportional_term = error_with_hysteresis_p * PROPORTIONAL_CONSTANT_PID;
+    
+	// calculate the derivative term of the PID controller
+	error_change = error_with_hysteresis_d - previous_error;
+    previous_error = error_with_hysteresis_d;
+    if(error_change > MAX_ERROR_CHANGE) {
+    	error_change = MAX_ERROR_CHANGE;
+    }
+    if(error_change < -MAX_ERROR_CHANGE) {
+    	error_change = -MAX_ERROR_CHANGE;
+    }
+    low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
+    low_pass_filtered_error_change += error_change;
+    low_pass_filtered_error_change >>= 4;
+    derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
+
+    // maximum value are (approximately):
+    // integral term:       66000000
+    // proportional term:  250000000
+    // derivative term:   1250000000
+    // sum:               1510000000
+    // Make sure it does not exceed the max int32_t = 2147483647
+    // After shifting, the maximum values are:
+    // integral term:      250
+    // proportional term:  953
+    // derivative term:   4768
+    // sum:               6971
+	// sum together the P, I, and D terms to get the final output value
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
 //    if(output_value < -CLOSED_LOOP_PWM_VOLTAGE) {
@@ -1165,7 +1259,7 @@ void motor_movement_calculations(void)
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			int32_t motor_maximum_allowed_pwm_voltage;
 
-			motor_pwm_voltage = PID_controller(desired_position - hall_position);
+			motor_pwm_voltage = PID_controller_with_hysteresis(desired_position - hall_position);
 
 			if(motor_pwm_voltage >= 0) {
 				motor_maximum_allowed_pwm_voltage = velocity + CLOSED_LOOP_PWM_VOLTAGE;
@@ -1467,6 +1561,7 @@ void get_motor_status(uint8_t *buf)
 	buf[2] = homing_active;
 	buf[3] = capture.capture_type;
 	buf[4] = get_mosfets_enabled();
+	buf[5] = 0; // this is a flag to indicate a fatal error; there is no error at this time
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 

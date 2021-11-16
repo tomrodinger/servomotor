@@ -1,36 +1,19 @@
 #!/usr/local/bin/python3
 
 import sys
+import argparse
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
 import time
+import serial_functions
 
-#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
 GET_PRODUCT_INFO_COMMAND = 22
 
 DETECT_DEVICES_MAX_TIME = 1.2
-
-def open_serial_port(serial_device, baud_rate, timeout = 0.05):
-    print("Opening serial device:", serial_device)
-    try:
-        ser = serial.Serial(serial_device, baud_rate, timeout = timeout)
-    except:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("So, make sure you plugged in your USB to serial adapeter")
-        print("Otherwise, make sure thet the correct serial port is defined in this program")
-        print("Here are the current serial ports detected on your computer:")
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p[0])
-        exit(1)
-    print("Opened:", ser.name)
-    return ser
 
 
 def send_set_device_alias_command(ser, unique_id, alias):
@@ -86,25 +69,29 @@ def print_data(data):
     for d in data:
         print("0x%02X %d" % (d, d))
 
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+parser = argparse.ArgumentParser(description='Set the alias of the device using its unique ID to identify it')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('unique_id', help='This is the unique ID of the device and it can be found with the detect devices command')
+parser.add_argument('alias', help='This is the alias to set in this device')
+args = parser.parse_args()
 
-def print_usage():
-    print("Usage: %s unique-id new-alias", sys.argv[0])
-    exit(1)
-
-if len(sys.argv) != 3:
-    print_usage()
-    
-unique_id = int(sys.argv[1], 16)
-if len(sys.argv[2]) != 1:
-    print("Error: the alias nust be just one character, not:", sys.argv[2])
-if sys.argv[2] == "255":
+serial_port = args.port
+unique_id = int(args.unique_id, 16)
+alias = args.alias
+if alias == "255":
     alias = 255
+elif len(alias) == 1:
+    alias = ord(alias)
 else:
-    alias = ord(sys.argv[2])
+    print("Error: the alias nust be just one character, not:", alias)
+    print("The alias can also be 255 (which means no alias)")
+    exit(1)
 
 print("We will attempt to change the alias of the device with unique id %016X to %c" % (unique_id, alias))
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
+
 send_set_device_alias_command(ser, unique_id, alias)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):

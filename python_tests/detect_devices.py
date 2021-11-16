@@ -1,13 +1,13 @@
 #!/usr/local/bin/python3
 
 import sys
+import argparse
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
 import time
+import serial_functions
 
-#SERIAL_PORT = "/dev/cu.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
@@ -15,22 +15,6 @@ GET_PRODUCT_INFO_COMMAND = 22
 
 DETECT_DEVICES_MAX_TIME = 1.2
 
-def open_serial_port(serial_device, baud_rate, timeout = 0.05):
-    print("Opening serial device:", serial_device)
-    try:
-        ser = serial.Serial(serial_device, baud_rate, timeout = timeout)
-    except:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("So, make sure you plugged in your USB to serial adapeter")
-        print("Otherwise, make sure thet the correct serial port is defined in this program")
-        print("Here are the current serial ports detected on your computer:")
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p[0])
-        exit(1)
-    print("Opened:", ser.name)
-    return ser
 
 
 def send_detect_devices_command(ser):
@@ -42,6 +26,8 @@ def send_detect_devices_command(ser):
 
 def get_response(ser):
     response = ser.read(3)
+    if len(response) != 0:
+        print("Receive some bytes:", response)
     if len(response) != 3:
         return None, "Error: didn't receive an expected three bytes"
     print("Received a response: ", response)
@@ -81,7 +67,15 @@ def print_device_data(unique_id, alias):
     print("unique id: %016X and alias %s" % (unique_id, alias_str))
 
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+# and it also takes a mandatory firmware file name
+parser = argparse.ArgumentParser(description='Detect all devices on the RS485 bus')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+args = parser.parse_args()
+
+serial_port = args.port
+
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
 device_dict = {}
 
@@ -107,4 +101,5 @@ print("=========================================================================
 print("Here is the final device list:")
 for key in device_dict.keys():
     print_device_data(key, device_dict[key])
+
 ser.close()

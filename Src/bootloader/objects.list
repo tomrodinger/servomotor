@@ -1,3 +1,4 @@
+"./build/global_variables.o"
 "./build/RS485.o"
 "./build/debug_uart.o"
 "./build/error_handling.o"

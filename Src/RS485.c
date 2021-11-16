@@ -5,17 +5,17 @@
 #include "leds.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "global_variables.h"
 
 #define TRANSMIT_BUFFER_SIZE 150
 
-uint8_t my_alias = 255;
 static char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
 static uint16_t valueLength;
 static uint16_t nReceivedBytes = 0;
 static uint16_t receiveIndex;
-volatile uint32_t USART2_timout_timer = 0;
+volatile uint32_t USART1_timout_timer = 0;
 
 char volatile selectedAxis;
 uint8_t command;
@@ -24,50 +24,46 @@ volatile uint8_t commandReceived = 0;
 
 void rs485_init(void)
 {
-    RCC->APBENR1 |= RCC_APBENR1_USART2EN_Msk; // enable the clock to the UART2 peripheral
-//    RCC->CCIPR |= 1 << RCC_CCIPR_USART2SEL_Pos; // select SYSCLK as the clock source
-    GPIOA->AFR[0] = (1 << GPIO_AFRL_AFSEL1_Pos) | (1 << GPIO_AFRL_AFSEL2_Pos) | (1 << GPIO_AFRL_AFSEL3_Pos); // choose the right alternate function to put on these pins
-    USART2->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
-    USART2->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the receive interrupt
-//    HAL_NVIC_SetPriority(USART2_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
-//    USART2->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is not supported on UART2)
-    USART2->CR3 = (0 << USART_CR3_DEP_Pos) | USART_CR3_DEM; // drive enable is active high, enable the drive enable
-    USART2->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; // enable transmitter, receiver, and the uart
-    NVIC_SetPriority(USART2_IRQn, 0);
-    NVIC_EnableIRQ(USART2_IRQn);
+    RCC->APBENR2 |= RCC_APBENR2_USART1EN_Msk; // enable the clock to the UART1 peripheral
+    RCC->CCIPR |= 1 << RCC_CCIPR_USART1SEL_Pos; // select SYSCLK as the clock source
+    
+    GPIOB->AFR[0] |= (0 << GPIO_AFRL_AFSEL6_Pos) | // for PB6, choose alternative function 0 (USART1_TX)
+                     (0 << GPIO_AFRL_AFSEL7_Pos);  // for PB7, choose alternative function 0 (USART1_RX)
+    GPIOA->AFR[1] |= (1 << GPIO_AFRH_AFSEL12_Pos); // for PA12, choose alternative function 1 (USART1_DE)
+
+    USART1->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
+    USART1->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_FIFOEN | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the FIFO mode, enable the receive interrupt
+//    HAL_NVIC_SetPriority(USART1_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
+//    USART1->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is supported on USART1 but not supported on USART2)
+    USART1->RTOR = (255 << USART_RTOR_RTO_Pos); // set the maximum timeout (255 bits)
+    USART1->CR3 = (0 << USART_CR3_DEP_Pos) | USART_CR3_DEM; // drive enable is active high, enable the drive enable
+    USART1->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; // enable transmitter, receiver, and the uart
+    NVIC_SetPriority(USART1_IRQn, 1); // pretty high priority but lower than the motor control interrupt
+    NVIC_EnableIRQ(USART1_IRQn);
 }
 
 
-void rs485_drive_enable(void)
-{
-    GPIOA->BSRR = 1 << 1;
-}
-
-
-void rs485_drive_disable(void)
-{
-    GPIOA->BSRR = (1 << 1) << 16;
-}
-
-
-
-void USART2_IRQHandler(void)
+void USART1_IRQHandler(void)
 {
     char message[100];
 
-    if(USART2->ISR & USART_ISR_RXNE_RXFNE) {
-        if(USART2_timout_timer >= USART2_TIMEOUT) {
+    if(USART1->ISR & USART_ISR_RXNE_RXFNE) {
+//        if((USART1_timout_timer >= USART1_TIMEOUT) || (USART1->ISR & USART_ISR_RTOF)) {
+//            nReceivedBytes = 0;
+//            USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
+//        }
+        if(USART1_timout_timer >= USART1_TIMEOUT) {
             nReceivedBytes = 0;
         }
         uint8_t receivedByte;
-        receivedByte = USART2->RDR;
+        receivedByte = USART1->RDR;
         if(nReceivedBytes < 65535) {
             nReceivedBytes++;
         }
         else {
             fatal_error("too many bytes", 1);
         }
-        USART2_timout_timer = 0;
+        USART1_timout_timer = 0;
         if(!commandReceived) {
             if(nReceivedBytes == 1) {
 				selectedAxis = receivedByte;
@@ -93,10 +89,6 @@ void USART2_IRQHandler(void)
                         fatal_error(message, 1);
                     }
                     receiveIndex++;
-//                    if(receiveIndex == 1281) {
-//                        sprintf(message, "recd: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
-//                        fatal_error(message, 1);
-//                    }
                 }
 
                 if(receiveIndex >= valueLength) {
@@ -118,19 +110,15 @@ void USART2_IRQHandler(void)
         }
     }
 
-    while((USART2->ISR & USART_CR1_TXEIE_TXFNFIE_Msk) && (transmitCount > 0)) {
+    while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
     	red_LED_on();
-        USART2->TDR = transmitBuffer[transmitIndex];
+        USART1->TDR = transmitBuffer[transmitIndex];
         transmitCount--;
         transmitIndex++;
     }
 
     if(transmitCount == 0) {
-        USART2->CR1 &= ~USART_CR1_TXEIE_TXFNFIE_Msk; // nothing more to transmit, so disable the interrupt
-//        if(USART2->ISR & USART_ISR_TC) {
-//            USART2->CR1 &= ~USART_CR1_TCIE; // disable the interrupt for "transmission complete" and
-//            rs485_drive_disable();          // disable the RS485 drive
-//        }
+        USART1->CR1 &= ~USART_CR1_TXFEIE; // nothing more to transmit, so disable the interrupt
     }
 
     red_LED_off();
@@ -150,17 +138,14 @@ void rs485_transmit(void *s, uint8_t len)
     transmitIndex = 0;
     transmitCount = len;
 
-//    rs485_drive_enable();
-//    USART2->CR1 |= USART_CR1_TCIE; // enable the interrupt for "transmission complete". we will use it to disable the RS485 drive enable.
-
-    while((USART2->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
-        USART2->TDR = transmitBuffer[transmitIndex];
+    while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
+        USART1->TDR = transmitBuffer[transmitIndex];
         transmitCount--;
         transmitIndex++;
     }
     if(transmitCount > 0) {
-        USART2->CR1 |= USART_CR1_TXEIE_TXFNFIE_Msk; // we have more to transmit and the buffer must be full,
-                                                    // so enable the interrupt to handle the rest of the transmission
-                                                    // once the buffer becomes empty
+        USART1->CR1 |= USART_CR1_TXFEIE; // we have more to transmit and the buffer must be full,
+                                         // so enable the interrupt to handle the rest of the transmission
+                                         // once the buffer becomes empty
     }
 }

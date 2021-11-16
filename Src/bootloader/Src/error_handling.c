@@ -4,7 +4,7 @@
 #include <string.h>
 #include "mosfets.h"
 #include "leds.h"
-#include "debug_uart.h"
+#include "../../debug_uart.h"
 
 void fatal_error(char *message, uint16_t error_code)
 {

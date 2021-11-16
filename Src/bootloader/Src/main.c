@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "leds.h"
-#include "debug_uart.h"
+#include "../../debug_uart.h"
 #include "../../RS485.h"
 #include "error_handling.h"
 #include "../../unique_id.h"
@@ -11,7 +11,7 @@
 #include "../../commands.h"
 #include "../../product_info.h"
 
-extern uint32_t USART2_timout_timer;
+extern uint32_t USART1_timout_timer;
 extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
@@ -35,8 +35,8 @@ void SysTick_Handler(void)
 		toggle_counter = 0;
 	}
 
-    if(USART2_timout_timer < USART2_TIMEOUT) {
-    	USART2_timout_timer++;
+    if(USART1_timout_timer < USART1_TIMEOUT) {
+    	USART1_timout_timer++;
     }
 
     if(detect_devices_delay > 0) {
@@ -117,9 +117,9 @@ void portA_init(void)
 
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE1_Pos)  | // RS485 drive enable
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // RS485 Data out
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // RS485 Data receive
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // hall sensor 2
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // hall sensor 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // hall sensor 3
@@ -128,7 +128,7 @@ void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE10_Pos) | // PWM 3
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // PWM 4
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE12_Pos) | // MOSFET switch disable
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 drive enable
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // Button input and also SWDIO (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);  // Potentiometer input
@@ -154,8 +154,8 @@ void portB_init(void)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // PWM 2
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // serial port TX
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // serial port RX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
@@ -259,7 +259,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	if(unique_id == my_unique_id) {
                 transmit("Match\n", 6);
         		my_alias = new_alias;
-           		save_settings(my_alias);
+           		save_settings(my_alias, 0, 0, 0);
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
@@ -299,16 +299,16 @@ void transmit_unique_id(void)
 
 void process_debug_uart_commands(void)
 {
-    uint8_t command_uart1 = get_command_uart1();
+    uint8_t command_debug_uart = get_command_debug_uart();
 
-    if(command_uart1 != 0) {
-    	switch(command_uart1) {
+    if(command_debug_uart != 0) {
+    	switch(command_debug_uart) {
     	case 'S':
 			transmit("Saving settings\n", 16);
-    		save_settings(my_alias);
+    		save_settings(my_alias, 0, 0, 0);
     		break;
 		}
-    	command_uart1 = 0;
+    	command_debug_uart = 0;
 	}
 }
 
@@ -350,7 +350,8 @@ int main(void)
 
     my_unique_id = get_unique_id();
 
-    load_settings(&my_alias); // load the settings from non-volatile memory
+    uint16_t midline;
+    load_settings(&my_alias, &midline, &midline, &midline); // load the settings from non-volatile memory
 
     __enable_irq();
 

@@ -20,6 +20,7 @@
 #include "commands.h"
 #include "product_info.h"
 #include "LookupTableZ.h"
+#include "global_variables.h"
 
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
@@ -36,12 +37,11 @@ struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-extern uint32_t USART2_timout_timer;
+extern uint32_t USART1_timout_timer;
 extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 extern volatile uint8_t commandReceived;
-extern uint8_t my_alias;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
@@ -57,8 +57,8 @@ void SysTick_Handler(void)
 		toggle_counter = 0;
 	}
 
-    if(USART2_timout_timer < USART2_TIMEOUT) {
-    	USART2_timout_timer++;
+    if(USART1_timout_timer < USART1_TIMEOUT) {
+    	USART1_timout_timer++;
     }
 
     if(detect_devices_delay > 0) {
@@ -135,9 +135,9 @@ void portA_init(void)
 
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE1_Pos)  | // RS485 drive enable
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // RS485 Data out
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // RS485 Data receive
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // hall sensor 2
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // hall sensor 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // hall sensor 3
@@ -146,20 +146,23 @@ void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE10_Pos) | // PWM 3
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // PWM 4
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE12_Pos) | // MOSFET switch disable
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 drive enable
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // Button input and also SWDIO (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);  // Potentiometer input
 
     GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT0_Pos) | // make all the pins with analog components connected open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the debug UART receive pin open drain
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT15_Pos);
     GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
+    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the UART receive pin
 }
 
 
@@ -172,8 +175,8 @@ void portB_init(void)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // PWM 2
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // serial port TX
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // serial port RX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
@@ -259,12 +262,13 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     int32_t acceleration;
     int32_t velocity;
     uint32_t time_steps;
-    uint8_t buf[5];
+    uint8_t get_status_buffer[GET_STATUS_COMMAND_RESPONSE_LENGTH - 3];
     uint32_t frequency;
     uint64_t unique_id;
     uint8_t new_alias;
     int32_t trapezoid_move_displacement;
     uint32_t trapezoid_move_time;
+    char buf[100];
 
 //    print_number("Received a command with length: ", commandLen);
     if((axis == my_alias) || (axis == ALL_ALIAS)) {
@@ -400,9 +404,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_STATUS_COMMAND:
             commandReceived = 0;
             if(axis != ALL_ALIAS) {
-            	get_motor_status(buf);
-                rs485_transmit("R\x01\x05", 3);
-        		rs485_transmit(buf, sizeof(buf));
+            	get_motor_status(get_status_buffer);
+                rs485_transmit("R\x01\x06", 3);
+        		rs485_transmit(get_status_buffer, sizeof(get_status_buffer));
             }
             break;
         case GO_TO_CLOSED_LOOP_COMMAND:
@@ -424,6 +428,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             acceleration = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
             commandReceived = 0;
+            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
+            transmit(buf, strlen(buf));
             add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -480,6 +486,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             velocity = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
             commandReceived = 0;
+            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
+            transmit(buf, strlen(buf));
             add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -507,10 +515,10 @@ void transmit_unique_id(void)
 
 void process_debug_uart_commands(void)
 {
-    uint8_t command_uart1 = get_command_uart1();
+    uint8_t command_debug_uart = get_command_debug_uart();
 
-    if(command_uart1 != 0) {
-    	switch(command_uart1) {
+    if(command_debug_uart != 0) {
+    	switch(command_debug_uart) {
     	case 'z':
     		zero_position_and_hall_sensor();
     		break;
@@ -581,7 +589,7 @@ void process_debug_uart_commands(void)
             save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
     		break;
 		}
-    	command_uart1 = 0;
+    	command_debug_uart = 0;
 	}
 }
 
@@ -599,6 +607,7 @@ void button_logic(void)
     	}
     }
     else if(press_flag) {
+//        fatal_error("Button pressed down", 3);  // DEBUG
     	press_flag = 0;
     	time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
     	if(time_pressed_down > 5000000) {
@@ -685,6 +694,7 @@ int main(void)
         }
 
         if(detect_devices_delay == 0) {
+            transmit("Transmitting unique ID\n", 23);
             transmit_unique_id();
             detect_devices_delay--;
     	}

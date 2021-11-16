@@ -4,9 +4,9 @@ import sys
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
+import argparse
+import serial_functions
 
-#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
 
 DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
@@ -34,8 +34,8 @@ def open_serial_port(serial_device, baud_rate, timeout = 0.05):
     return ser
 
 
-def send_move_with_acceleration_command(ser, acceleration, time_steps):
-    command = bytearray([ord('X'), MOVE_WITH_ACCELERATION_COMMAND, 8])
+def send_move_with_acceleration_command(ser, alias, acceleration, time_steps):
+    command = bytearray([alias, MOVE_WITH_ACCELERATION_COMMAND, 8])
     command = command + acceleration.to_bytes(4, byteorder = "little", signed = True)
     command = command + time_steps.to_bytes(4, "little")
     print("Writing %d bytes" % (len(command)))
@@ -95,11 +95,32 @@ def print_usage():
     print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
     exit(1)
 
-if len(sys.argv) != 3:
-    print_usage()
-    
-acceleration = float(sys.argv[1])
-time = float(sys.argv[2])
+
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+parser = argparse.ArgumentParser(description='Control the motor to make a move given the specified acceleration and time')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
+parser.add_argument('acceleration', help='This is the acceleration of the move in mm per second squared')
+parser.add_argument('time', help='This is the amount of time to accelerate for in seconds')
+args = parser.parse_args()
+
+serial_port = args.port
+
+alias = args.alias
+if alias == None:
+    print("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help.")
+    exit(1)
+elif alias == "255":
+    alias = 255
+elif len(alias) == 1:
+    alias = ord(alias)
+else:
+    print("Error: the alias nust be just one character, not:", alias)
+    print("The alias can also be 255 (which means no alias)")
+    exit(1)
+
+acceleration = float(args.acceleration)
+time = float(args.time)
 if time < 0:
     print("The time steps cannot be negative")
     exit(1)
@@ -134,12 +155,13 @@ print("The acceleration to send:", acceleration_to_send)
 
 time_steps = int(time * TIME_STEPS_PER_SECOND + 0.5)
 
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
-send_move_with_acceleration_command(ser, acceleration_to_send, time_steps)
+send_move_with_acceleration_command(ser, alias, acceleration_to_send, time_steps)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")
     exit(1)
 print("Command succeeded")
+
 ser.close()

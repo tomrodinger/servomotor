@@ -5,8 +5,8 @@ void pwm_init(void)
 {
     RCC->APBENR2 |= RCC_APBENR2_TIM1EN; // enable the clock to TIM1
 //    RCC->CCIPR |= RCC_CCIPR_TIM1SEL; // select the PLLQCLK as the clock source to TIM1
-    GPIOA->AFR[1] = (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL10_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
-    GPIOB->AFR[0] = (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
+    GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL10_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
+    GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
 
     TIM1->PSC = 0; // no prescaler
     TIM1->ARR = PWM_PERIOD;
@@ -40,7 +40,7 @@ void pwm_init(void)
     TIM1->SR = 0; // clear all the interrupt flags
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 
-    NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 1);
+    NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 0); // the interrupt that controls the motor has the highest priority
 	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
 }
 
