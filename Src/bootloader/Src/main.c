@@ -377,7 +377,7 @@ int main(void)
         transmit("Firmware CRC check failed\n", 26);
     }
 
-    rs485_transmit("Start\n", 6);
+//    rs485_transmit("Start\n", 6);
 
     while(1) {
     	if(commandReceived) {
