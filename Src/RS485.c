@@ -33,7 +33,7 @@ void rs485_init(void)
 //    USART2->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is not supported on UART2)
     USART2->CR3 = (0 << USART_CR3_DEP_Pos) | USART_CR3_DEM; // drive enable is active high, enable the drive enable
     USART2->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; // enable transmitter, receiver, and the uart
-    NVIC_SetPriority(USART2_IRQn, 0);
+    NVIC_SetPriority(USART2_IRQn, 1);
     NVIC_EnableIRQ(USART2_IRQn);
 }
 

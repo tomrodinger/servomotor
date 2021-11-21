@@ -40,7 +40,7 @@ void pwm_init(void)
     TIM1->SR = 0; // clear all the interrupt flags
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 
-    NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 1);
+    NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 0);
 	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
 }
 

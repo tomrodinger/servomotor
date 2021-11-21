@@ -55,15 +55,10 @@ static uint8_t n_items_in_queue = 0;
 
 static int32_t hall_position = 0;
 static int32_t velocity = 0;
-static uint64_t movement_end_time = 0;
 static int64_t current_velocity_i64 = 0;
 static int64_t current_position_i64 = 0;
-static int32_t desired_position = 0; // this is the target position
 static uint32_t commutation_position = 0;
 static uint32_t commutation_position_offset = UINT32_MIDPOINT;
-static uint64_t movement_start_time = 0;
-static int32_t movement_start_position = 0;
-static int32_t movement_end_position = 0;
 static int64_t max_acceleration = MAX_ACCELERATION;
 //static int64_t max_acceleration = 1418633883;
 static int64_t max_velocity = MAX_VELOCITY;
@@ -85,10 +80,9 @@ static uint32_t commutation_position_offset_at_max;
 
 static uint8_t homing_active = 0;
 static uint8_t calibration_active = 0;
+static uint8_t calibration_print_output;
 static uint8_t decelerate_to_stop_active = 0;
 
-
-static uint32_t debug_counter = 0;
 static uint16_t time_difference1 = 0;
 static uint16_t time_difference2 = 0;
 static uint16_t time_difference3 = 0;
@@ -100,11 +94,14 @@ static uint16_t max_time_difference3 = 0;
 static uint16_t max_time_difference4 = 0;
 static uint16_t max_time_difference5 = 0;
 static uint64_t current_time_captured = 0;
-static uint64_t movement_end_time_captured;
 static uint16_t motor_control_tick_time_difference = 0;
 static uint16_t max_motor_control_tick_time_difference = 0;
 static uint16_t motor_control_time_difference = 0;
 static uint16_t max_motor_control_time_difference = 0;
+static int32_t max_hall_position_delta = -2000000000;
+static int32_t min_hall_position_delta = 2000000000;
+static int32_t average_hall_position_delta = 0;
+static int32_t average_hall_position_delta_count = 0;
 
 //extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
@@ -138,11 +135,6 @@ static uint16_t max_motor_control_time_difference = 0;
 // coast phase, the motor will rotate through one hall sensor revolution (ie. moves CALIBRATION_MOVEMENT_DISTANCE).
 #define CALIBRATION_COAST_TIME (CALIBRATION_MOVEMENT_DISTANCE / CALIBRATION_MAX_VELOCITY)
 
-
-
-#define CAPTURE_HALL_SENSOR_READINGS 1
-#define CAPTURE_HALL_POSITION 2
-#define CAPTURE_ADJUSTED_HALL_SENSOR_READINGS 3
 
 
 #define HOMING_MAX_VELOCITY 32
@@ -191,6 +183,11 @@ struct calibration_struct {
 	int32_t local_min_or_max_position;
 };
 struct calibration_struct calibration[3][CALIBRATION_DATA_SIZE];
+uint16_t fast_capture_data_size = sizeof(calibration) / sizeof(uint16_t);
+uint16_t *fast_capture_data = (void*)&calibration;
+uint16_t fast_capture_data_index;
+uint8_t fast_capture_data_active = 0;
+uint8_t fast_capture_data_result_ready = 0;
 static uint32_t calibration_index[3];
 
 
@@ -238,8 +235,6 @@ void clear_the_queue_and_stop_no_disable_interrupt(void)
     queue_read_position = 0;
     queue_write_position = 0;
     n_items_in_queue = 0;
-    movement_end_time = 0;
-    movement_end_position = desired_position;
 }
 
 
@@ -292,7 +287,7 @@ uint32_t hall3_sum;
 uint8_t avg_counter;
 uint16_t hall_data_buffer[3];
 
-#define CALIBRATION_TIME (get_update_frequency() * 2)
+#define CALIBRATION_TIME (get_update_frequency() * 1)
 #define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 3 / 2)
 #define HALL_PEAK_FIND_THREASHOLD 150
 uint8_t hall_rising_flag[3];
@@ -303,7 +298,7 @@ int32_t hall_local_maximum_position[3];
 int32_t hall_local_minimum_position[3];
 uint8_t calibration_data_available = 0;
 
-void start_calibration(uint8_t verbose_data)
+void start_calibration(uint8_t print_output)
 {
 	int32_t acceleration;
 	uint32_t delta_t1;
@@ -318,7 +313,10 @@ void start_calibration(uint8_t verbose_data)
 		fatal_error("queue not empty", 9);
 	}
 
-   	rs485_transmit("Calibration start\n", 18);
+	if(print_output) {
+	   	rs485_transmit("Calibration start\n", 18);
+	}
+	calibration_print_output = print_output;
 
 	enable_mosfets();
 
@@ -356,60 +354,6 @@ void start_calibration(uint8_t verbose_data)
 	calibration_active = 1;
 }
 
-void handle_calibration_logic_old(void)
-{
-	if(n_items_in_queue == 2) {
-		hall1_sum += get_hall_sensor1_voltage();
-		hall2_sum += get_hall_sensor2_voltage();
-		hall3_sum += get_hall_sensor3_voltage();
-		avg_counter++;
-		if(avg_counter == HALL_SAMPLES_PER_PRINT) {
-			hall_data_buffer[0] = hall1_sum - HALL_SENSOR_SHIFT;
-			hall_data_buffer[1] = hall2_sum - HALL_SENSOR_SHIFT;
-			hall_data_buffer[2] = hall3_sum - HALL_SENSOR_SHIFT;
-			rs485_transmit((void*)hall_data_buffer, 6);
-			avg_counter = 0;
-			hall1_sum = 0;
-			hall2_sum = 0;
-			hall3_sum = 0;
-		}
-	}
-	else if(n_items_in_queue == 0) {
-		calibration_active = 0;
-		disable_mosfets();
-       	rs485_transmit("Calibration capture done\n", 25);
-	}
-
-}
-
-
-void handle_calibration_logic_middle(void)
-{
-	if(n_items_in_queue == 2) {
-		hall1_sum = get_hall_sensor1_voltage();
-		hall2_sum = get_hall_sensor2_voltage();
-		hall3_sum = get_hall_sensor3_voltage();
-		avg_counter++;
-		if(avg_counter == HALL_SAMPLES_PER_PRINT) {
-			hall_data_buffer[0] = hall1_sum;
-			hall_data_buffer[1] = hall2_sum;
-			hall_data_buffer[2] = hall3_sum;
-			rs485_transmit((void*)hall_data_buffer, 6);
-			avg_counter = 0;
-			hall1_sum = 0;
-			hall2_sum = 0;
-			hall3_sum = 0;
-		}
-	}
-	else if(n_items_in_queue == 0) {
-		calibration_active = 0;
-		disable_mosfets();
-       	rs485_transmit("Calibration capture done\n", 25);
-	}
-
-}
-
-
 
 void handle_calibration_logic(void)
 {
@@ -418,66 +362,95 @@ void handle_calibration_logic(void)
 	uint8_t j;
 
 	if(n_items_in_queue == 2) {
-		for(j = 0; j < 3; j++) {
-			if(calibration_index[j] < CALIBRATION_DATA_SIZE) {
-				switch(j) {
-				case 0:
-					hall_reading = get_hall_sensor1_voltage();
-					break;
-				case 1:
-					hall_reading = get_hall_sensor2_voltage();
-					break;
-				case 2:
-					hall_reading = get_hall_sensor3_voltage();
-					break;
-				}
-	//			if((hall_reading > 10000) || (hall_reading < 7000)) {
-	//				fatal_error("hall sensor error", 15);
-	//			}
-				if(hall_rising_flag[j]) {
-					if(hall_reading > hall_local_maximum[j]) {
-						hall_local_maximum[j] = hall_reading;
-						hall_local_maximum_position[j] = calibration_relative_position;
+		if(calibration_print_output) {
+//			hall1_sum += get_hall_sensor1_voltage();
+//			hall2_sum += get_hall_sensor2_voltage();
+//			hall3_sum += get_hall_sensor3_voltage();
+			hall1_sum = get_hall_sensor1_voltage();
+			hall2_sum = get_hall_sensor2_voltage();
+			hall3_sum = get_hall_sensor3_voltage();
+			avg_counter++;
+			if(avg_counter == 16) {
+//				hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
+//				hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
+//				hall_data_buffer[2] = (hall3_sum >> 1) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[0] = (hall1_sum << 3) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[1] = (hall2_sum << 3) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[2] = (hall3_sum << 3) - HALL_SENSOR_SHIFT;
+				rs485_transmit((void*)hall_data_buffer, 6);
+				avg_counter = 0;
+				hall1_sum = 0;
+				hall2_sum = 0;
+				hall3_sum = 0;
+			}
+		}
+		else {
+			for(j = 0; j < 3; j++) {
+				if(calibration_index[j] < CALIBRATION_DATA_SIZE) {
+					switch(j) {
+					case 0:
+						hall_reading = get_hall_sensor1_voltage();
+						break;
+					case 1:
+						hall_reading = get_hall_sensor2_voltage();
+						break;
+					case 2:
+						hall_reading = get_hall_sensor3_voltage();
+						break;
 					}
-					if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
-						calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
-						calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
+		//			if((hall_reading > 10000) || (hall_reading < 7000)) {
+		//				fatal_error("hall sensor error", 15);
+		//			}
+					if(hall_rising_flag[j]) {
+						if(hall_reading > hall_local_maximum[j]) {
+							hall_local_maximum[j] = hall_reading;
+							hall_local_maximum_position[j] = calibration_relative_position;
+						}
+						if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
+							calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
+							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
+		//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
+		//							fatal_error("", 2);
+		//						}
+							calibration_index[j]++;
+							hall_local_minimum[j] = hall_reading;
+							hall_local_minimum_position[j] = calibration_relative_position;
+							hall_rising_flag[j] = 0;
+						}
+					}
+					else {
+						if(hall_reading < hall_local_minimum[j]) {
+							hall_local_minimum[j] = hall_reading;
+							hall_local_minimum_position[j] = calibration_relative_position;
+						}
+						if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
+							calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
+							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
 	//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
 	//							fatal_error("", 2);
 	//						}
-						calibration_index[j]++;
-						hall_local_minimum[j] = hall_reading;
-						hall_local_minimum_position[j] = calibration_relative_position;
-						hall_rising_flag[j] = 0;
+							calibration_index[j]++;
+							hall_local_maximum[j] = hall_reading;
+							hall_local_maximum_position[j] = calibration_relative_position;
+							hall_rising_flag[j] = 1;
+						}
 					}
 				}
 				else {
-					if(hall_reading < hall_local_minimum[j]) {
-						hall_local_minimum[j] = hall_reading;
-						hall_local_minimum_position[j] = calibration_relative_position;
-					}
-					if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
-						calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
-						calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
-//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
-//							fatal_error("", 2);
-//						}
-						calibration_index[j]++;
-						hall_local_maximum[j] = hall_reading;
-						hall_local_maximum_position[j] = calibration_relative_position;
-						hall_rising_flag[j] = 1;
-					}
+					fatal_error("calibration overflow", 13);
 				}
-			}
-			else {
-				fatal_error("calibration overflow", 13);
 			}
 		}
 	}
 	else if(n_items_in_queue == 0) {
 		calibration_active = 0;
-		calibration_data_available = 1;
 		disable_mosfets();
+		if(calibration_print_output) {
+	       	rs485_transmit("Calibration capture done\n", 25);
+		}
+		else {
+			calibration_data_available = 1;
+		}
 	}
 }
 
@@ -701,16 +674,11 @@ void go_to_closed_loop_mode_logic(void)
 	}
 	else {
 		commutation_position_offset = commutation_position_offset_at_max;
-		desired_position = 0;
 		current_position_i64 = 0;
 		current_velocity_i64 = 0;
-		movement_end_position = 0;
-		movement_end_time = 0;
 		motor_pwm_voltage = 0;
 		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
 		hall_position = get_hall_position();
-//    		sprintf(buf, "desired_position: %d   hall_position: %d\n", (int)desired_position, (int)(hall_position));
-//    		transmit(buf, strlen(buf));
 		go_to_closed_loop_mode_active = 0;
     }
 }
@@ -790,13 +758,13 @@ void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
 void handle_homing_logic(void)
 {
 	int32_t position_error;
-	position_error = abs(desired_position - hall_position);
+	position_error = abs(((int32_t *)&current_position_i64)[1] - hall_position);
 
 	if(position_error > HOMING_MAX_POSITION_ERROR) {
 		homing_active = 0;
 		clear_the_queue_and_stop_no_disable_interrupt();
 		current_velocity_i64 = 0; // detected a colision so stop where we are
-		if(desired_position >= hall_position) {
+		if(((int32_t *)&current_position_i64)[1] >= hall_position) {
 			((int32_t *)&current_position_i64)[1] -= HOMING_MAX_POSITION_ERROR;
 		}
 		else {
@@ -810,10 +778,18 @@ void handle_homing_logic(void)
 }
 
 
+void start_fast_capture_data(void)
+{
+	transmit("Fast capture data\n", 18);
+	fast_capture_data_index = 0;
+	fast_capture_data_active = 1;
+}
+
+
 void print_position(void)
 {
 	char buf[100];
-	sprintf(buf, "hall_position: %d   desired_position: %d\n", (int)hall_position, (int)desired_position);
+	sprintf(buf, "current_position: %ld\n", ((int32_t *)&current_position_i64)[1]);
 	transmit(buf, strlen(buf));
 }
 
@@ -830,13 +806,9 @@ void print_current_movement(void)
 	uint64_t current_time = get_microsecond_time();
 	print_int64("max acceleration:", (int64_t)max_acceleration);
 	print_int64("max velocity:", (int64_t)max_velocity);
-	sprintf(buf, "current_time: %lu   movement_start_time: %lu   movement_end_time: %lu\n",
-			(unsigned long int)current_time, (unsigned long int)movement_start_time, (unsigned long int)movement_end_time);
+	sprintf(buf, "current_time: %lu\n", (unsigned long int)current_time);
 	transmit(buf, strlen(buf));
-	sprintf(buf, "movement_start_position: %d   movement_end_position: %d   motor_control_mode: %u\n",
-			(int)movement_start_position, (int)movement_end_position, (unsigned int)motor_control_mode);
-	transmit(buf, strlen(buf));
-	sprintf(buf, "debug_counter: %u\n", (unsigned int)debug_counter);
+	sprintf(buf, "motor_control_mode: %u\n", (unsigned int)motor_control_mode);
 	transmit(buf, strlen(buf));
 }
 
@@ -873,7 +845,7 @@ void print_time_difference(void)
 	transmit(buf, strlen(buf));
 	max_time_difference5 = 0;
 
-	sprintf(buf, "current_time_captured: %u   movement_end_time_captured: %u\n", (unsigned int)current_time_captured, (unsigned int)movement_end_time_captured);
+	sprintf(buf, "current_time_captured: %u\n", (unsigned int)current_time_captured);
 	transmit(buf, strlen(buf));
 
 	sprintf(buf, "motor_control_time_difference: %hu   max_motor_control_time_difference: %hu\n", motor_control_time_difference, max_motor_control_time_difference);
@@ -889,9 +861,22 @@ void print_time_difference(void)
 //	transmit(buf, strlen(buf));
 
 	current_time_captured = 1;
-	movement_end_time_captured = 1;
 }
 
+
+void print_hall_position_delta_stats(void)
+{
+	char buf[150];
+	int32_t ahpd = average_hall_position_delta;
+	int32_t ahpd_count = average_hall_position_delta_count;
+	ahpd /= ahpd_count;
+	sprintf(buf, "max_hall_position_delta: %ld   min_hall_position_delta: %ld  avg_hall_position_delta: %ld\n", max_hall_position_delta, min_hall_position_delta, ahpd);
+	transmit(buf, strlen(buf));
+	max_hall_position_delta = -2000000000;
+	min_hall_position_delta = 2000000000;
+	average_hall_position_delta = 0;
+	average_hall_position_delta_count = 0;
+}
 
 void print_motor_current(void)
 {
@@ -912,10 +897,28 @@ void print_hall_sensor_data(void)
 	sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", hall1, hall2, hall3);
 	transmit(buf, strlen(buf));
 
-	sprintf(buf, "hall_position: %ld\n", hall_position);
+	sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, commutation_position_offset);
 	transmit(buf, strlen(buf));
 }
 
+
+uint8_t is_fast_capture_data_result_ready(void)
+{
+	return fast_capture_data_result_ready;
+}
+
+void print_fast_capture_data_result(void)
+{
+	uint16_t i;
+	char buf[100];
+
+	for(i = 0; i < fast_capture_data_index; i += 3) {
+		sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", fast_capture_data[i + 0], fast_capture_data[i + 1], fast_capture_data[i + 2]);
+		transmit(buf, strlen(buf));
+	}
+
+	fast_capture_data_result_ready = 0;
+}
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
@@ -982,6 +985,7 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
 
+#define VELOCITY_AVERAGING_TIME_STEPS 100
 
 void compute_velocity(void)
 {
@@ -993,7 +997,7 @@ void compute_velocity(void)
 	static uint16_t count = 0;
 
 	count++;
-	if(count >= 20) {
+	if(count >= VELOCITY_AVERAGING_TIME_STEPS) {
 		count = 0;
 
 		current_time = TIM3->CNT;
@@ -1001,7 +1005,7 @@ void compute_velocity(void)
 		delta_position = hall_position - previous_hall_position;
 		delta_time = current_time - previous_time;
 		delta_position *= VELOCITY_SCALE_FACTOR;
-		velocity = delta_position / delta_time;
+		velocity = delta_position / (int32_t)delta_time;
 
 		previous_hall_position = hall_position;
 		previous_time = current_time;
@@ -1061,7 +1065,6 @@ uint8_t handle_queued_movements(void)
 		fatal_error("vel too high", 12);
 	}
 	current_position_i64 += current_velocity_i64;
-	desired_position = ((int32_t *)&current_position_i64)[1]; // take the most significant 32 bit number
 
 	return (current_velocity_i64 != 0);
 
@@ -1152,7 +1155,7 @@ void motor_movement_calculations(void)
     moving = handle_queued_movements();
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
-		commutation_position = desired_position + commutation_position_offset;
+		commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
 		if(moving) {
 			motor_pwm_voltage = OPEN_LOOP_DYNAMIC_MOTOR_PWM_VOLTAGE;
 		}
@@ -1165,7 +1168,7 @@ void motor_movement_calculations(void)
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			int32_t motor_maximum_allowed_pwm_voltage;
 
-			motor_pwm_voltage = PID_controller(desired_position - hall_position);
+			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 
 			if(motor_pwm_voltage >= 0) {
 				motor_maximum_allowed_pwm_voltage = velocity + CLOSED_LOOP_PWM_VOLTAGE;
@@ -1281,6 +1284,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	uint16_t motor_control_tick_time;
 	static uint16_t previous_motor_control_tick_time;
 	uint16_t time_difference_delay;
+	static int32_t old_hall_position;
 
 	start_time = TIM3->CNT;
 	start_time2 = start_time;
@@ -1289,6 +1293,29 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	time_difference1 = end_time - start_time;
 	if(time_difference1 > max_time_difference1) {
     	max_time_difference1 = time_difference1;
+	}
+
+	int32_t hall_position_delta = hall_position - old_hall_position;
+	old_hall_position = hall_position;
+	if(hall_position_delta > max_hall_position_delta) {
+		max_hall_position_delta = hall_position_delta;
+	}
+	if(hall_position_delta < min_hall_position_delta) {
+		min_hall_position_delta = hall_position_delta;
+	}
+	average_hall_position_delta += hall_position_delta;
+	average_hall_position_delta_count++;
+
+	if(fast_capture_data_active) {
+		if(fast_capture_data_index + 3 <= fast_capture_data_size) {
+			fast_capture_data[fast_capture_data_index++] = get_hall_sensor1_voltage();
+			fast_capture_data[fast_capture_data_index++] = get_hall_sensor2_voltage();
+			fast_capture_data[fast_capture_data_index++] = get_hall_sensor3_voltage();
+		}
+		else {
+			fast_capture_data_active = 0;
+			fast_capture_data_result_ready = 1;
+		}
 	}
 
 	start_time = TIM3->CNT;
@@ -1378,13 +1405,10 @@ void zero_position_and_hall_sensor(void)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
-	commutation_position_offset = commutation_position_offset - desired_position;
+	commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
     zero_hall_position();
-	desired_position = 0;
 	current_position_i64 = 0;
 	current_velocity_i64 = 0;
-	movement_end_position = 0;
-	movement_end_time = 0;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
@@ -1421,16 +1445,15 @@ int32_t get_max_acceleration(void)
 	return max_acceleration;
 }
 
-int32_t get_desired_position(void)
+int32_t get_current_position(void)
 {
-	return desired_position;
+	return ((int32_t *)&current_position_i64)[1];
 }
 
 void reset_time(void)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
-    movement_end_time = 0;
     reset_microsecond_time();
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
@@ -1453,7 +1476,7 @@ int32_t get_actual_motor_position(void)
 		ret = hall_position;
 	}
 	else {
-		ret = desired_position;
+		ret = ((int32_t *)&current_position_i64)[1];
 	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
     return ret;
