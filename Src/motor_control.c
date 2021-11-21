@@ -525,7 +525,7 @@ void process_calibration_data(void)
 	}
 
 	#define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 3)
-	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 75  // make sure this is larger than N_POLES
+	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 70  // make sure this is larger than N_POLES
 	uint32_t minima_and_maxima_avg[3] = {0, 0, 0};
 	uint16_t midline[3];
 	for(j = 0; j < 3; j++) {
