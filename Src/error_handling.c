@@ -124,8 +124,6 @@ void fatal_error(char *message, uint16_t error_code)
     			red_LED_on(); // flash the red LED to indicate error, or keep it on continuously if the error code is 0
     		}
 
-			volatile uint32_t i;
-//			for(i = 0; i < 150000; i++);
 			systick_half_cycle_delay_plus_handle_commands(error_code);
 
 			if(error_code != 0) { // if the error code is 0 then we will just leave the red LED on continuously
@@ -143,7 +141,6 @@ void fatal_error(char *message, uint16_t error_code)
 //			}
 //			transmit_without_interrupts(buf2, strlen(buf2));
 
-//			for(i = 0; i < 150000; i++);
 			systick_half_cycle_delay_plus_handle_commands(error_code);
     	}
     }

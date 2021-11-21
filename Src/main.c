@@ -326,7 +326,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case START_CALIBRATION_COMMAND:
             commandReceived = 0;
             enable_mosfets();
-            start_calibration(1);
+            start_calibration(0);
             break;
         case CAPTURE_HALL_SENSOR_DATA_COMMAND:
         	capture_type = parameters[0];
@@ -334,7 +334,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
-            start_capture(capture_type);
+            if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
+                start_calibration(1);
+            }
+            else {
+                start_capture(capture_type);
+            }
             break;
         case RESET_TIME_COMMAND:
             commandReceived = 0;
@@ -528,7 +533,14 @@ void process_debug_uart_commands(void)
     	case 'C':
 			start_calibration(0);
 			break;
+        case 'a':
+            start_calibration(1); // we will let it print the output so we can capture it and plot it
+            break;
+        case 'f':
+            start_fast_capture_data();
+            break;
     	case 'p':
+            transmit("\n", 1);
     		print_position();
     		print_hall_position();
     		print_queue_stats();
@@ -536,6 +548,7 @@ void process_debug_uart_commands(void)
     		print_velocity();
     		print_time_difference();
             print_hall_sensor_data();
+            print_hall_position_delta_stats();
 			break;
     	case 'P':
     		print_motor_current();
@@ -707,6 +720,11 @@ int main(void)
             get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
             save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
         }
+
+        if(is_fast_capture_data_result_ready()) {
+            print_fast_capture_data_result();
+        }
+
 
         process_debug_uart_commands();
         button_logic();

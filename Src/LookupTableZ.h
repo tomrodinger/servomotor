@@ -12,9 +12,6 @@
 #define SENSOR_SEGMENT_RESOLUTION_DIV_2 3840
 #define SENSOR_SEGMENT_RESOLUTION 7680
 #define CALIBRATION_CAPTURE_STEP_SIZE 128 // this should be slow so that data can be captured and collected accurately
-#define HALL1_MIDLINE 38104
-#define HALL2_MIDLINE 39005
-#define HALL3_MIDLINE 38371
 
 
 struct hall_weights_struct {

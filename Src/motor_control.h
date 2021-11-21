@@ -5,6 +5,11 @@
 #define CLOSED_LOOP_POSITION_CONTROL 1
 #define OPEN_LOOP_PWM_VOLTAGE_CONTROL 2
 
+#define CAPTURE_HALL_SENSOR_READINGS 1
+#define CAPTURE_HALL_POSITION 2
+#define CAPTURE_ADJUSTED_HALL_SENSOR_READINGS 3
+#define CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING 4
+
 #define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
 #define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS) * ((uint64_t)1 << 32))
 //#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS))
@@ -24,7 +29,7 @@
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
-void start_calibration(uint8_t verbose_data);
+void start_calibration(uint8_t print_output);
 void start_go_to_closed_loop_mode(void);
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time);
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
@@ -38,6 +43,11 @@ void print_velocity(void);
 void print_time_difference(void);
 void print_motor_current(void);
 void print_hall_sensor_data(void);
+void print_hall_position_delta_stats(void);
+
+void start_fast_capture_data(void);
+uint8_t is_fast_capture_data_result_ready(void);
+void print_fast_capture_data_result(void);
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
@@ -53,7 +63,7 @@ uint8_t get_motor_control_mode(void);
 void zero_position_and_hall_sensor(void);
 void set_max_velocity(uint32_t new_max_velocity);
 int32_t get_max_velocity(void);
-int32_t get_desired_position(void);
+int32_t get_current_position(void);
 void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);

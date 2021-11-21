@@ -30,9 +30,9 @@ static uint16_t hall3_midline = DEFAULT_HALL_MIDLINE;
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
-	int32_t d0_shifted = (int32_t)(hall_sensor_readings[0] - hall1_midline);
-	int32_t d1_shifted = (int32_t)(hall_sensor_readings[1] - hall2_midline);
-	int32_t d2_shifted = (int32_t)(hall_sensor_readings[2] - hall3_midline);
+	int32_t d0_shifted = (int32_t)hall_sensor_readings[0] - (int32_t)hall1_midline;
+	int32_t d1_shifted = (int32_t)hall_sensor_readings[1] - (int32_t)hall2_midline;
+	int32_t d2_shifted = (int32_t)hall_sensor_readings[2] - (int32_t)hall3_midline;
     int32_t d0 = (d0_shifted * hall_weights.h1[0] + d1_shifted * hall_weights.h1[1] + d2_shifted * hall_weights.h1[2]);
     int32_t d1 = (d1_shifted * hall_weights.h2[0] + d2_shifted * hall_weights.h2[1] + d0_shifted * hall_weights.h2[2]);
     int32_t d2 = (d2_shifted * hall_weights.h3[0] + d0_shifted * hall_weights.h3[1] + d1_shifted * hall_weights.h3[2]);
