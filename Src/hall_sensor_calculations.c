@@ -58,7 +58,7 @@ int32_t get_hall_position(void)
 	hall_sensor_readings[2] = ((ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24]) << 3) - HALL_SENSOR_SHIFT;
 	adjust_hall_sensor_readings(hall_sensor_readings, d);
 
-    if((d[0] > d[1]) && (d[0] > d[2])) {
+    if((d[0] >= d[1]) && (d[0] >= d[2])) { // check if d[0] is the highest
         largest_sensor = 0;
         numerator = d[1] - d[2];
         if(d[2] > d[1]) {
@@ -68,7 +68,7 @@ int32_t get_hall_position(void)
             denominator = d[0] - d[2];
         }
     }
-    else if ((d[1] > d[2]) && (d[1] > d[0])) {
+    else if ((d[1] >= d[2]) && (d[1] >= d[0])) { // check if d[1] is the highest
         largest_sensor = 1;
         numerator = d[2] - d[0];
         if(d[0] > d[2]) {
@@ -78,7 +78,7 @@ int32_t get_hall_position(void)
             denominator = d[1] - d[0];
         }
     }
-    else {
+    else {                                    // otherwise d[2] is the highest
         largest_sensor = 2;
         numerator = d[0] - d[1];
         if(d[1] > d[0]) {
