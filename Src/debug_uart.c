@@ -35,7 +35,7 @@ void USART2_IRQHandler(void)
 		   (receivedByte == 'o') || (receivedByte == 'v') || (receivedByte == 'h') || (receivedByte == 'H') ||
            (receivedByte == 'S') || (receivedByte == 'C') || (receivedByte == 'a') || (receivedByte == 'f') ||
            (receivedByte == 't')) {
-            command_uart1 = receivedByte;
+            command_debug_uart = receivedByte;
         }
     }
 
