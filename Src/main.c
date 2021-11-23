@@ -539,6 +539,9 @@ void process_debug_uart_commands(void)
         case 'f':
             start_fast_capture_data();
             break;
+        case 't':
+            fast_capture_until_trigger();
+            break;
     	case 'p':
             transmit("\n", 1);
     		print_position();

@@ -32,6 +32,7 @@
 
 #define VELOCITY_SCALE_FACTOR 11
 #define UINT32_MIDPOINT 2147483648
+#define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
 #define HALL_TO_POSITION_90_DEGREE_OFFSET ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) >> 2)
 
@@ -183,8 +184,15 @@ struct calibration_struct {
 	int32_t local_min_or_max_position;
 };
 struct calibration_struct calibration[3][CALIBRATION_DATA_SIZE];
-uint16_t fast_capture_data_size = sizeof(calibration) / sizeof(uint16_t);
-uint16_t *fast_capture_data = (void*)&calibration;
+
+struct __attribute__((__packed__)) fast_capture_data_struct {
+	uint16_t hall1;
+	uint16_t hall2;
+	uint16_t hall3;
+	uint16_t hall_position_16bit;
+};
+struct fast_capture_data_struct *fast_capture_data = (void*)&calibration;
+uint16_t fast_capture_data_size = sizeof(calibration) / sizeof(struct fast_capture_data_struct);
 uint16_t fast_capture_data_index;
 uint8_t fast_capture_data_active = 0;
 uint8_t fast_capture_data_result_ready = 0;
@@ -786,6 +794,14 @@ void start_fast_capture_data(void)
 }
 
 
+void fast_capture_until_trigger(void)
+{
+	memset(fast_capture_data, 0, fast_capture_data_size * sizeof(struct fast_capture_data_struct));
+	fast_capture_data_index = 0;
+	fast_capture_data_active = 2;
+}
+
+
 void print_position(void)
 {
 	char buf[100];
@@ -912,9 +928,14 @@ void print_fast_capture_data_result(void)
 	uint16_t i;
 	char buf[100];
 
-	for(i = 0; i < fast_capture_data_index; i += 3) {
-		sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", fast_capture_data[i + 0], fast_capture_data[i + 1], fast_capture_data[i + 2]);
+	for(i = 0; i < fast_capture_data_size; i++) {
+		sprintf(buf, "%hu %hu %hu %hu\n", fast_capture_data[fast_capture_data_index].hall1, fast_capture_data[fast_capture_data_index].hall2,
+		                                  fast_capture_data[fast_capture_data_index].hall3, fast_capture_data[fast_capture_data_index].hall_position_16bit);
 		transmit(buf, strlen(buf));
+		fast_capture_data_index++;
+		if(fast_capture_data_index >= fast_capture_data_size) {
+			fast_capture_data_index = 0;
+		}
 	}
 
 	fast_capture_data_result_ready = 0;
@@ -1368,7 +1389,7 @@ void motor_phase_calculations(void)
 //    transmit(buf, strlen(buf));
 }
 
-
+#define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 9000
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 {
 	uint16_t start_time;
@@ -1391,6 +1412,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 
 	int32_t hall_position_delta = hall_position - old_hall_position;
 	old_hall_position = hall_position;
+
 	if(hall_position_delta > max_hall_position_delta) {
 		max_hall_position_delta = hall_position_delta;
 	}
@@ -1400,13 +1422,37 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	average_hall_position_delta += hall_position_delta;
 	average_hall_position_delta_count++;
 
-	if(fast_capture_data_active) {
-		if(fast_capture_data_index + 3 <= fast_capture_data_size) {
-			fast_capture_data[fast_capture_data_index++] = get_hall_sensor1_voltage();
-			fast_capture_data[fast_capture_data_index++] = get_hall_sensor2_voltage();
-			fast_capture_data[fast_capture_data_index++] = get_hall_sensor3_voltage();
+	if(fast_capture_data_active != 0) {
+		fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor1_voltage();
+		fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor2_voltage();
+		fast_capture_data[fast_capture_data_index].hall3 = get_hall_sensor3_voltage();
+		fast_capture_data[fast_capture_data_index].hall_position_16bit = (uint16_t)hall_position;
+		fast_capture_data_index++;
+		if(fast_capture_data_index >= fast_capture_data_size) {
+			if(fast_capture_data_active == 1) {
+				fast_capture_data_active = 0;
+				fast_capture_data_result_ready = 1;
+			}
+			else {
+				fast_capture_data_index = 0;
+			}
 		}
-		else {
+	}
+
+	// check that the position values don't go out of range (overflow)
+	if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+		fatal_error("position out of range", 17);
+	}
+
+	// check that the hall sensor position doesn't go out of range (overflow)
+	if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+		fatal_error("hall position out of range", 18);
+	}
+
+	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
+	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
+		disable_mosfets();
+		if(fast_capture_data_active) {
 			fast_capture_data_active = 0;
 			fast_capture_data_result_ready = 1;
 		}
