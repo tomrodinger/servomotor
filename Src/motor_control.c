@@ -28,9 +28,7 @@
 #define GO_TO_CLOSED_LOOP_MODE_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 #define HOMING_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 
-#define MAX_PWM_VOLTAGE_ADJUSTMENT 400
-
-#define VELOCITY_SCALE_FACTOR 11
+#define VELOCITY_SCALE_FACTOR 256
 #define UINT32_MIDPOINT 2147483648
 #define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
@@ -55,6 +53,8 @@ static uint8_t queue_read_position = 0;
 static uint8_t n_items_in_queue = 0;
 
 static int32_t hall_position = 0;
+static int32_t previous_hall_position;
+static int32_t hall_position_delta;
 static int32_t velocity = 0;
 static int64_t current_velocity_i64 = 0;
 static int64_t current_position_i64 = 0;
@@ -73,7 +73,6 @@ static uint8_t go_to_closed_loop_mode_active = 0;
 static int32_t commutation_scan_microsteps;
 static uint8_t vibration_four_step;
 static int32_t sum_delta;
-static int32_t previous_hall_position;
 static int32_t motor_pwm_voltage_limit;
 static int32_t vibration_polarity_moving_average;
 static int32_t max_motor_pwm_voltage_limit;
@@ -565,6 +564,7 @@ void process_calibration_data(void)
 #define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 120
 #define COMMUTATION_SCAN_MICROSTEPS (256 * 360) // one electrical rotation
 #define COMMUTATION_SCAN_STEP_FACTOR 1
+#define COMMUTATION_SCAN_MIN_STEP_SIZE 100
 //#define COMMUTATION_SCAN_STEP_SIZE (256 * 360 / COMMUTATION_SCAN_STEPS)
 #define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 100
 #define MOVING_AVERAGE_SHIFT_RIGHT 7
@@ -583,26 +583,19 @@ void start_go_to_closed_loop_mode(void)
 	desired_motor_pwm_voltage = 0;
 	go_to_closed_loop_mode_active = 1;
 	motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
-//	sum_abs_delta = 0;
 	sum_delta = 0;
-	previous_hall_position = hall_position;
 	vibration_polarity_moving_average = 0;
 	max_motor_pwm_voltage_limit = 0;
 	zero_hall_position();
+	previous_hall_position = 0;
 
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
 void go_to_closed_loop_mode_logic(void)
 {
-	char buf[30];
+//	char buf[30];
 	if(commutation_scan_microsteps < COMMUTATION_SCAN_MICROSTEPS) {
-		int32_t hall_position_delta = hall_position - previous_hall_position;
-		previous_hall_position = hall_position;
-//		if(hall_position_delta < 0) {
-//			hall_position_delta = -hall_position_delta;
-//		}
-//		sum_abs_delta += hall_position_delta;
 		switch(vibration_four_step) {
 		case 0:
 			sum_delta += hall_position_delta;
@@ -625,6 +618,9 @@ void go_to_closed_loop_mode_logic(void)
 			if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
 				vibration_four_step = 0;
 				int32_t step_size = (MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM - motor_pwm_voltage_limit + 1) * COMMUTATION_SCAN_STEP_FACTOR;
+				if(step_size < COMMUTATION_SCAN_MIN_STEP_SIZE) {
+					step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
+				}
 				commutation_scan_microsteps += step_size;
 				if(sum_delta > 0) {
 					if(vibration_polarity_moving_average >= 0) {
@@ -671,8 +667,8 @@ void go_to_closed_loop_mode_logic(void)
 					}
 				}
 				commutation_position_offset += step_size;
-				sprintf(buf, "%hu %ld\n", (uint16_t)motor_pwm_voltage_limit, vibration_polarity_moving_average);
-				transmit(buf, strlen(buf));
+//				sprintf(buf, "%hu %ld\n", (uint16_t)motor_pwm_voltage_limit, vibration_polarity_moving_average);
+//				transmit(buf, strlen(buf));
 				sum_delta = 0;
 			}
 			break;
@@ -918,10 +914,22 @@ void print_hall_sensor_data(void)
 }
 
 
+void print_motor_status(void)
+{
+	uint8_t status[5];
+	char buf[100];
+
+	get_motor_status(status);
+	sprintf(buf, "status: %hu %hu %hu %hu %hu\n", status[0], status[1], status[2], status[3], status[4]);
+	transmit(buf, strlen(buf));
+}
+
+
 uint8_t is_fast_capture_data_result_ready(void)
 {
 	return fast_capture_data_result_ready;
 }
+
 
 void print_fast_capture_data_result(void)
 {
@@ -941,10 +949,11 @@ void print_fast_capture_data_result(void)
 	fast_capture_data_result_ready = 0;
 }
 
+
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
 	if(n_time_steps == 0) {
-		return; // in the case that the number if time steps is zero, it makes sense to not anything to the queue
+		return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
 	}
     if(n_items_in_queue < MOVEMENT_QUEUE_SIZE) {
 		movement_queue[queue_write_position].movement_type = movement_type;
@@ -1006,31 +1015,15 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
 
-#define VELOCITY_AVERAGING_TIME_STEPS 100
+#define VELOCITY_AVERAGING_SHIFT_RIGHT 8
+#define VELOCITY_AVERAGING_TIME_STEPS ((1 << VELOCITY_AVERAGING_SHIFT_RIGHT) - 1)
 
 void compute_velocity(void)
 {
-	static int32_t previous_hall_position = 0;
-	static uint16_t previous_time = 0;
-	uint16_t current_time;
-	int32_t delta_position;
-	uint16_t delta_time;
-	static uint16_t count = 0;
+	static int32_t velocity_moving_average = 0;
 
-	count++;
-	if(count >= VELOCITY_AVERAGING_TIME_STEPS) {
-		count = 0;
-
-		current_time = TIM3->CNT;
-
-		delta_position = hall_position - previous_hall_position;
-		delta_time = current_time - previous_time;
-		delta_position *= VELOCITY_SCALE_FACTOR;
-		velocity = delta_position / (int32_t)delta_time;
-
-		previous_hall_position = hall_position;
-		previous_time = current_time;
-	}
+	velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
+	velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
 }
 
 uint8_t handle_queued_movements(void)
@@ -1048,7 +1041,7 @@ uint8_t handle_queued_movements(void)
 				}
 			}
 			else {
-				current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity  is constant during this time step
+				current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity is constant during this time step
 				movement_queue[queue_read_position].n_time_steps--;
 				if(movement_queue[queue_read_position].n_time_steps == 0) {
 					queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
@@ -1061,6 +1054,9 @@ uint8_t handle_queued_movements(void)
 		}
 	}
 	if(decelerate_to_stop_active) {
+		if(current_velocity_i64 != 0) {
+			fatal_error("run out of queue items", 18);
+		}
 		if(current_velocity_i64 >= 0) {
 			if(current_velocity_i64 > max_acceleration) {
 				current_velocity_i64 -= max_acceleration;
@@ -1082,7 +1078,7 @@ uint8_t handle_queued_movements(void)
 		}
 	}
 
-	if(current_velocity_i64 > max_velocity) {
+	if((current_velocity_i64 > max_velocity) || (current_velocity_i64 < -max_velocity)) {
 		fatal_error("vel too high", 12);
 	}
 	current_position_i64 += current_velocity_i64;
@@ -1284,16 +1280,17 @@ void motor_movement_calculations(void)
 			int32_t motor_maximum_allowed_pwm_voltage;
 
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
-
+			int32_t velocity_divided_by_KV = (velocity * VELOCITY_SCALE_FACTOR) >> 8; 
+			velocity_divided_by_KV = 0;
 			if(motor_pwm_voltage >= 0) {
-				motor_maximum_allowed_pwm_voltage = velocity + CLOSED_LOOP_PWM_VOLTAGE;
+				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV + CLOSED_LOOP_PWM_VOLTAGE;
 				if(motor_pwm_voltage > motor_maximum_allowed_pwm_voltage) {
 					motor_pwm_voltage = motor_maximum_allowed_pwm_voltage;
 				}
 				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
 			}
 			else {
-				motor_maximum_allowed_pwm_voltage = velocity - CLOSED_LOOP_PWM_VOLTAGE;
+				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV - CLOSED_LOOP_PWM_VOLTAGE;
 				if(motor_pwm_voltage < motor_maximum_allowed_pwm_voltage) {
 					motor_pwm_voltage = motor_maximum_allowed_pwm_voltage;
 				}
@@ -1399,7 +1396,6 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	uint16_t motor_control_tick_time;
 	static uint16_t previous_motor_control_tick_time;
 	uint16_t time_difference_delay;
-	static int32_t old_hall_position;
 
 	start_time = TIM3->CNT;
 	start_time2 = start_time;
@@ -1410,8 +1406,8 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
     	max_time_difference1 = time_difference1;
 	}
 
-	int32_t hall_position_delta = hall_position - old_hall_position;
-	old_hall_position = hall_position;
+	hall_position_delta = hall_position - previous_hall_position;
+	previous_hall_position = hall_position;
 
 	if(hall_position_delta > max_hall_position_delta) {
 		max_hall_position_delta = hall_position_delta;
@@ -1439,16 +1435,6 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 		}
 	}
 
-	// check that the position values don't go out of range (overflow)
-	if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error("position out of range", 17);
-	}
-
-	// check that the hall sensor position doesn't go out of range (overflow)
-	if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error("hall position out of range", 18);
-	}
-
 	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
 	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
 		disable_mosfets();
@@ -1472,6 +1458,16 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	time_difference3 = end_time - start_time;
 	if(time_difference3 > max_time_difference3) {
     	max_time_difference3 = time_difference3;
+	}
+
+	// check that the position values don't go out of range (overflow)
+	if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+		fatal_error("position out of range", 17);
+	}
+
+	// check that the hall sensor position doesn't go out of range (overflow)
+	if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+		fatal_error("hall position out of range", 18);
 	}
 
 	start_time = TIM3->CNT;
