@@ -28,7 +28,7 @@
 #define GO_TO_CLOSED_LOOP_MODE_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 #define HOMING_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 
-#define VELOCITY_SCALE_FACTOR 256
+#define VELOCITY_SCALE_FACTOR 300
 #define UINT32_MIDPOINT 2147483648
 #define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
@@ -916,11 +916,11 @@ void print_hall_sensor_data(void)
 
 void print_motor_status(void)
 {
-	uint8_t status[5];
+	uint8_t status[6];
 	char buf[100];
 
 	get_motor_status(status);
-	sprintf(buf, "status: %hu %hu %hu %hu %hu\n", status[0], status[1], status[2], status[3], status[4]);
+	sprintf(buf, "status: %hu %hu %hu %hu %hu %hu\n", status[0], status[1], status[2], status[3], status[4], status[5]);
 	transmit(buf, strlen(buf));
 }
 
@@ -1091,12 +1091,16 @@ uint8_t handle_queued_movements(void)
 #define PID_SHIFT_RIGHT 18
 #define ERROR_HYSTERESIS_P 0
 #define ERROR_HYSTERESIS_D 0
-#define PROPORTIONAL_CONSTANT_PID 5000 // if exceeding 32767 then need to check whether any math will overflow below in the proportional term
-#define INTEGRAL_CONSTANT_PID 50
-#define DERIVATIVE_CONSTANT_PID 50000
-#define MAX_INT32 2147483647
-#define MAX_ERROR ((MAX_INT32 / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
-#define MAX_ERROR_CHANGE ((MAX_INT32 / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
+
+#define PROPORTIONAL_CONSTANT_PID 5000
+#define INTEGRAL_CONSTANT_PID     1
+#define DERIVATIVE_CONSTANT_PID   5000
+
+#define MAX_INT32         2147483647
+#define MAX_INTEGRAL_TERM (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)
+#define MAX_OTHER_TERMS   ((MAX_INT32 - MAX_INTEGRAL_TERM) / 2)
+#define MAX_ERROR         ((MAX_OTHER_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
+#define MAX_ERROR_CHANGE  ((MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
 //#define DERIVATIVE_CONSTANT_PID 250000
 //#define DERIVATIVE_CONSTANT_PID 1280000
 
@@ -1281,7 +1285,7 @@ void motor_movement_calculations(void)
 
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 			int32_t velocity_divided_by_KV = (velocity * VELOCITY_SCALE_FACTOR) >> 8; 
-			velocity_divided_by_KV = 0;
+//			velocity_divided_by_KV = 0;
 			if(motor_pwm_voltage >= 0) {
 				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV + CLOSED_LOOP_PWM_VOLTAGE;
 				if(motor_pwm_voltage > motor_maximum_allowed_pwm_voltage) {
