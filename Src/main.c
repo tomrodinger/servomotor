@@ -544,6 +544,7 @@ void process_debug_uart_commands(void)
     		print_time_difference();
             print_hall_sensor_data();
             print_hall_position_delta_stats();
+            print_motor_status();
 			break;
     	case 'P':
     		print_motor_current();
