@@ -19,7 +19,7 @@
 
 #define MAX_HOMING_ERROR 100000
 
-#define POWER_MULTIPLIER 1
+#define POWER_MULTIPLIER 2
 
 #define CLOSED_LOOP_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 #define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
@@ -82,6 +82,7 @@ static uint8_t homing_active = 0;
 static uint8_t calibration_active = 0;
 static uint8_t calibration_print_output;
 static uint8_t decelerate_to_stop_active = 0;
+static uint8_t motor_busy = 0; // this will be set to 1 while the motor is doing a long action like calibration or homing. other movement commands cannot be executed during this time.
 
 static uint16_t time_difference1 = 0;
 static uint16_t time_difference2 = 0;
@@ -313,11 +314,11 @@ void start_calibration(uint8_t print_output)
 	uint8_t j;
 
 	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
-		fatal_error("not in open loop", 10);
+		fatal_error(7); // "not in open loop" (all error text is defined in error_text.c)
 	}
 
 	if(n_items_in_queue != 0) {
-		fatal_error("queue not empty", 9);
+		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
 	}
 
 	if(print_output) {
@@ -334,6 +335,8 @@ void start_calibration(uint8_t print_output)
 	add_to_queue(acceleration, delta_t1 * 2, MOVE_WITH_ACCELERATION);
 	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+
+	motor_busy = 1;
 
 /*
 	max_velocity = MAX_VELOCITY;
@@ -406,7 +409,7 @@ void handle_calibration_logic(void)
 						break;
 					}
 		//			if((hall_reading > 10000) || (hall_reading < 7000)) {
-		//				fatal_error("hall sensor error", 15);
+		//				fatal_error(9); // "hall sensor error" (all error text is defined in error_text.c)
 		//			}
 					if(hall_rising_flag[j]) {
 						if(hall_reading > hall_local_maximum[j]) {
@@ -416,9 +419,6 @@ void handle_calibration_logic(void)
 						if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
 							calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
 							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
-		//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
-		//							fatal_error("", 2);
-		//						}
 							calibration_index[j]++;
 							hall_local_minimum[j] = hall_reading;
 							hall_local_minimum_position[j] = calibration_relative_position;
@@ -433,9 +433,6 @@ void handle_calibration_logic(void)
 						if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
 							calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
 							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
-	//						if((calibration_index[j] >= 1) && (hall_local_maximum_position[j] < calibration[j][calibration_index[j] - 1].local_min_or_max_position)) {
-	//							fatal_error("", 2);
-	//						}
 							calibration_index[j]++;
 							hall_local_maximum[j] = hall_reading;
 							hall_local_maximum_position[j] = calibration_relative_position;
@@ -444,7 +441,7 @@ void handle_calibration_logic(void)
 					}
 				}
 				else {
-					fatal_error("calibration overflow", 13);
+					fatal_error(10); // "calibration overflow" (all error text is defined in error_text.c)
 				}
 			}
 		}
@@ -454,6 +451,7 @@ void handle_calibration_logic(void)
 		disable_mosfets();
 		if(calibration_print_output) {
 	       	rs485_transmit("Calibration capture done\n", 25);
+	   		motor_busy = 0;
 		}
 		else {
 			calibration_data_available = 1;
@@ -501,16 +499,10 @@ void process_calibration_data(void)
 			}
 
 			if(min_or_max == 0) {
-//				if(calibration[j][i - 1].local_min_or_max < calibration[j][i].local_min_or_max) {
-//					fatal_error("",1);
-//				}
 				peak_to_peak = calibration[j][i - 1].local_min_or_max - calibration[j][i].local_min_or_max;
 				min_or_max = 1;
 			}
 			else {
-//				if(calibration[j][i].local_min_or_max < calibration[j][i - 1].local_min_or_max) {
-//					fatal_error("",1);
-//				}
 				peak_to_peak = calibration[j][i].local_min_or_max - calibration[j][i - 1].local_min_or_max;
 				min_or_max = 0;
 			}
@@ -537,7 +529,7 @@ void process_calibration_data(void)
 	uint16_t midline[3];
 	for(j = 0; j < 3; j++) {
 		if(calibration_index[j] < MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA) {
-			fatal_error("not enough minima or maxima", 15);
+			fatal_error(11); // "not enough minima or maxima" (all error text is defined in error_text.c)
 		}
 
 		uint16_t start_calibration_index = (calibration_index[j] - N_POLES);
@@ -558,6 +550,7 @@ void process_calibration_data(void)
 	}
 
 	calibration_data_available = 0;
+	motor_busy = 0;
 }
 
 #define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 10
@@ -570,6 +563,8 @@ void process_calibration_data(void)
 #define MOVING_AVERAGE_SHIFT_RIGHT 7
 void start_go_to_closed_loop_mode(void)
 {
+	motor_busy = 1;
+
 	transmit("Go to closed loop mode start\n", 29);
 
 	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
@@ -673,7 +668,7 @@ void go_to_closed_loop_mode_logic(void)
 			}
 			break;
 		default:
-			fatal_error("vibration four step", 7);
+			fatal_error(12); // "vibration four step" (all error text is defined in error_text.c)
 		}
 	}
 	else {
@@ -684,6 +679,7 @@ void go_to_closed_loop_mode_logic(void)
 		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
 		hall_position = get_hall_position();
 		go_to_closed_loop_mode_active = 0;
+		motor_busy = 0;
     }
 }
 
@@ -746,14 +742,16 @@ void capture_logic(void)
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
 {
 	if(motor_control_mode != CLOSED_LOOP_POSITION_CONTROL) {
-		fatal_error("not in closed loop", 8);
+		fatal_error(13); // "not in closed loop" (all error text is defined in error_text.c)
 	}
 
 	if(n_items_in_queue != 0) {
-		fatal_error("queue not empty", 9);
+		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
 	}
 
 	add_trapezoid_move_to_queue(max_homing_displacement, max_homing_time);
+
+	motor_busy = 1;
 
 	homing_active = 1;
 }
@@ -778,6 +776,7 @@ void handle_homing_logic(void)
 
 	if(n_items_in_queue == 0) {
 		homing_active = 0;
+		motor_busy = 0;
 	}
 }
 
@@ -952,6 +951,10 @@ void print_fast_capture_data_result(void)
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
+	if(motor_busy) {
+		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
+	}
+
 	if(n_time_steps == 0) {
 		return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
 	}
@@ -961,14 +964,14 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 	        movement_queue[queue_write_position].acceleration = parameter;
     	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
             if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
-	            fatal_error("accel too high", 11);
+	            fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
             }
 		}
 		else {
 	        movement_queue[queue_write_position].velocity = parameter;
     	    movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
             if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
-	            fatal_error("vel too high", 12);
+	            fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
             }
 		}
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
@@ -976,7 +979,7 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
         n_items_in_queue++;
     }
 	else {
-		fatal_error("queue is full", 6);
+		fatal_error(17); // "queue is full" (all error text is defined in error_text.c)
 	}
 }
 
@@ -1055,7 +1058,7 @@ uint8_t handle_queued_movements(void)
 	}
 	if(decelerate_to_stop_active) {
 		if(current_velocity_i64 != 0) {
-			fatal_error("run out of queue items", 18);
+			fatal_error(18); // "run out of queue items" (all error text is defined in error_text.c)
 		}
 		if(current_velocity_i64 >= 0) {
 			if(current_velocity_i64 > max_acceleration) {
@@ -1079,7 +1082,7 @@ uint8_t handle_queued_movements(void)
 	}
 
 	if((current_velocity_i64 > max_velocity) || (current_velocity_i64 < -max_velocity)) {
-		fatal_error("vel too high", 12);
+		fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
 	}
 	current_position_i64 += current_velocity_i64;
 
@@ -1285,7 +1288,7 @@ void motor_movement_calculations(void)
 
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 			int32_t velocity_divided_by_KV = (velocity * VELOCITY_SCALE_FACTOR) >> 8; 
-//			velocity_divided_by_KV = 0;
+			velocity_divided_by_KV = 0;
 			if(motor_pwm_voltage >= 0) {
 				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV + CLOSED_LOOP_PWM_VOLTAGE;
 				if(motor_pwm_voltage > motor_maximum_allowed_pwm_voltage) {
@@ -1466,12 +1469,12 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 
 	// check that the position values don't go out of range (overflow)
 	if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error("position out of range", 17);
+		fatal_error(20); // "position out of range" (all error text is defined in error_text.c)
 	}
 
 	// check that the hall sensor position doesn't go out of range (overflow)
 	if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error("hall position out of range", 18);
+		fatal_error(21); // "hall position out of range" (all error text is defined in error_text.c)
 	}
 
 	start_time = TIM3->CNT;

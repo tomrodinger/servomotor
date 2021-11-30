@@ -78,7 +78,7 @@ static void unlock_flash(void)
     while(FLASH->SR & FLASH_SR_BSY1_Msk);
 
     if(FLASH->CR & FLASH_CR_LOCK_Msk) {
-        fatal_error("flash unlock fail", 3);
+        fatal_error(2); // "flash unlock fail" (all error text is defined in error_text.c)
     }
 }
 
@@ -116,7 +116,7 @@ static void write_one_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE])
         *(dst_memory_location++) = data_u32;
         while(FLASH->SR & FLASH_SR_BSY1_Msk);
         if((FLASH->SR & FLASH_SR_EOP_Msk) == 0) {
-            fatal_error("flash write fail", 4);
+            fatal_error(3); // "flash write fail" (all error text is defined in error_text.c)
         }
         FLASH->SR |= FLASH_SR_EOP_Msk;
     }
@@ -148,7 +148,7 @@ void save_settings(uint8_t my_alias, uint16_t hall1_midline, uint16_t hall2_midl
         ((uint32_t *)(SETTINGS_FLASH_ADDRESS))[write_index++] = *(read_ptr++);
         while(FLASH->SR & FLASH_SR_BSY1_Msk);
         if((FLASH->SR & FLASH_SR_EOP_Msk) == 0) {
-            fatal_error("flash write fail", 4);
+            fatal_error(3); // "flash write fail" (all error text is defined in error_text.c)
         }
     }
     FLASH->SR |= FLASH_SR_EOP_Msk;

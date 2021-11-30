@@ -1,6 +1,0 @@
-../Core/Src/leds.c:4:13:red_LED_on	0	static
-../Core/Src/leds.c:8:13:red_LED_off	0	static
-../Core/Src/leds.c:12:13:red_LED_toggle	0	static
-../Core/Src/leds.c:21:13:green_LED_on	0	static
-../Core/Src/leds.c:25:13:green_LED_off	0	static
-../Core/Src/leds.c:29:13:green_LED_toggle	0	static

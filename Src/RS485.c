@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "global_variables.h"
+#include "device_status.h"
 
 #define TRANSMIT_BUFFER_SIZE 150
 
@@ -15,7 +16,6 @@ static volatile uint8_t transmitCount = 0;
 static uint16_t valueLength;
 static uint16_t nReceivedBytes = 0;
 static uint16_t receiveIndex;
-volatile uint32_t USART1_timout_timer = 0;
 
 char volatile selectedAxis;
 uint8_t command;
@@ -34,8 +34,8 @@ void rs485_init(void)
     USART1->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
     USART1->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_FIFOEN | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the FIFO mode, enable the receive interrupt
 //    HAL_NVIC_SetPriority(USART1_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
-//    USART1->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is supported on USART1 but not supported on USART2)
-    USART1->RTOR = (255 << USART_RTOR_RTO_Pos); // set the maximum timeout (255 bits)
+    USART1->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is supported on USART1 but not supported on USART2)
+    USART1->RTOR = ((230400 / 10) << USART_RTOR_RTO_Pos); // set the timeout t0 0.1 s)
     USART1->CR3 = (0 << USART_CR3_DEP_Pos) | USART_CR3_DEM; // drive enable is active high, enable the drive enable
     USART1->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; // enable transmitter, receiver, and the uart
     NVIC_SetPriority(USART1_IRQn, 1); // pretty high priority but lower than the motor control interrupt
@@ -45,15 +45,10 @@ void rs485_init(void)
 
 void USART1_IRQHandler(void)
 {
-    char message[100];
-
     if(USART1->ISR & USART_ISR_RXNE_RXFNE) {
-//        if((USART1_timout_timer >= USART1_TIMEOUT) || (USART1->ISR & USART_ISR_RTOF)) {
-//            nReceivedBytes = 0;
-//            USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
-//        }
-        if(USART1_timout_timer >= USART1_TIMEOUT) {
+        if(USART1->ISR & USART_ISR_RTOF) {
             nReceivedBytes = 0;
+            USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
         }
         uint8_t receivedByte;
         receivedByte = USART1->RDR;
@@ -61,9 +56,8 @@ void USART1_IRQHandler(void)
             nReceivedBytes++;
         }
         else {
-            fatal_error("too many bytes", 1);
+            fatal_error(4); // "too many bytes" (all error text is defined in error_text.c)
         }
-        USART1_timout_timer = 0;
         if(!commandReceived) {
             if(nReceivedBytes == 1) {
 				selectedAxis = receivedByte;
@@ -80,15 +74,8 @@ void USART1_IRQHandler(void)
                     valueLength = (receivedByte << 8) + valueBuffer[0];
                     receiveIndex = 0;
                 }
-                else {
-                    if(receiveIndex < MAX_VALUE_BUFFER_LENGTH) {
-                        valueBuffer[receiveIndex] = receivedByte;
-                    }
-                    else {
-                        sprintf(message, "full: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
-                        fatal_error(message, 1);
-                    }
-                    receiveIndex++;
+                else if(receiveIndex < MAX_VALUE_BUFFER_LENGTH) {
+                    valueBuffer[receiveIndex++] = receivedByte;
                 }
 
                 if(receiveIndex >= valueLength) {
@@ -97,8 +84,7 @@ void USART1_IRQHandler(void)
                             commandReceived = 1;
                         }
                         else {
-                            sprintf(message, "too long: %hu %hu %u %hu %hu", selectedAxis, command, (unsigned int)receiveIndex, valueBuffer[receiveIndex-2], valueBuffer[receiveIndex-1]);
-                            fatal_error(message, 1);
+                            fatal_error(6); // "command too long" (all error text is defined in error_text.c)
                         }
                     }
                     nReceivedBytes = 0;
@@ -106,7 +92,7 @@ void USART1_IRQHandler(void)
             }
         }
         else {
-            fatal_error("command overflow", 5);
+            fatal_error(5); // "command overflow" (all error text is defined in error_text.c)
         }
     }
 

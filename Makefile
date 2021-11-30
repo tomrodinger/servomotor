@@ -1,8 +1,8 @@
-HEADERS = Src/global_variables.h   Src/ADC.h   Src/RS485.h   Src/error_handling.h   Src/mosfets.h   Src/step_direction_input.h   Src/CommutationTable.h   Src/clock_calibration.h   Src/hall_sensor_calculations.h   Src/motor_control.h   Src/stm32g0xx_hal_conf.h   Src/LookupTableE.h   Src/LookupTableZ.h   Src/commands.h   Src/leds.h   Src/product_info.h   Src/stm32g0xx_it.h   Src/LookupTableSmallZ.h   Src/PWM.h   Src/debug_uart.h   Src/microsecond_clock.h   Src/settings.h   Src/unique_id.h
-OBJECTS = build/startup_stm32g030c8tx.o   build/global_variables.o   build/ADC.o   build/PWM.o   build/RS485.o   build/clock_calibration.o   build/debug_uart.o   build/error_handling.o   build/hall_sensor_calculations.o   build/leds.o   build/main.o   build/microsecond_clock.o   build/mosfets.o   build/motor_control.o   build/step_direction_input.o   build/syscalls.o   build/sysmem.o   build/system_stm32g0xx.o   build/unique_id.o   build/settings.o
+HEADERS = Src/global_variables.h   Src/ADC.h   Src/RS485.h   Src/error_handling.h   Src/mosfets.h   Src/step_direction_input.h   Src/CommutationTable.h   Src/clock_calibration.h   Src/hall_sensor_calculations.h   Src/motor_control.h   Src/stm32g0xx_hal_conf.h   Src/LookupTableE.h   Src/LookupTableZ.h   Src/commands.h   Src/leds.h   Src/product_info.h   Src/stm32g0xx_it.h   Src/LookupTableSmallZ.h   Src/PWM.h   Src/debug_uart.h   Src/microsecond_clock.h   Src/settings.h   Src/unique_id.h   Src/error_text.h   Src/overvoltage.h   Src/device_status.h
+OBJECTS = build/startup_stm32g030c8tx.o   build/global_variables.o   build/ADC.o   build/PWM.o   build/RS485.o   build/clock_calibration.o   build/debug_uart.o   build/error_handling.o   build/hall_sensor_calculations.o   build/leds.o   build/main.o   build/microsecond_clock.o   build/mosfets.o   build/motor_control.o   build/step_direction_input.o   build/syscalls.o   build/sysmem.o   build/system_stm32g0xx.o   build/unique_id.o   build/settings.o   build/error_text.o   build/overvoltage.o   build/device_status.o
 GCC_DIR=toolchain_essentials/bin/
 
-default: build/firmware_STM32G030.bin
+default: build/firmware_STM32G030.firmware
 
 build/startup_stm32g030c8tx.o: Src/startup_stm32g030c8tx.s
 	$(GCC_DIR)/arm-none-eabi-gcc -mcpu=cortex-m0plus -c -x assembler-with-cpp -MMD -MP -MF"build/startup_stm32g030c8tx.d" -MT"build/startup_stm32g030c8tx.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "build/startup_stm32g030c8tx.o" "Src/startup_stm32g030c8tx.s"
@@ -64,18 +64,30 @@ build/unique_id.o: Src/unique_id.c $(HEADERS)
 build/settings.o: Src/settings.c $(HEADERS)
 	$(GCC_DIR)/arm-none-eabi-gcc "Src/settings.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -ISrc -IDrivers/STM32G0xx_HAL_Driver/Inc -IDrivers/STM32G0xx_HAL_Driver/Inc/Legacy -IDrivers/CMSIS/Device/ST/STM32G0xx/Include -IDrivers/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"build/settings.d" -MT"build/settings.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "build/settings.o" -DZ_AXIS
 
+build/error_text.o: Src/error_text.c $(HEADERS)
+	$(GCC_DIR)/arm-none-eabi-gcc "Src/error_text.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -ISrc -IDrivers/STM32G0xx_HAL_Driver/Inc -IDrivers/STM32G0xx_HAL_Driver/Inc/Legacy -IDrivers/CMSIS/Device/ST/STM32G0xx/Include -IDrivers/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"build/error_text.d" -MT"build/error_text.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "build/error_text.o" -DZ_AXIS
+
+build/overvoltage.o: Src/overvoltage.c $(HEADERS)
+	$(GCC_DIR)/arm-none-eabi-gcc "Src/overvoltage.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -ISrc -IDrivers/STM32G0xx_HAL_Driver/Inc -IDrivers/STM32G0xx_HAL_Driver/Inc/Legacy -IDrivers/CMSIS/Device/ST/STM32G0xx/Include -IDrivers/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"build/overvoltage.d" -MT"build/overvoltage.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "build/overvoltage.o" -DZ_AXIS
+
+build/device_status.o: Src/device_status.c $(HEADERS)
+	$(GCC_DIR)/arm-none-eabi-gcc "Src/device_status.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -ISrc -IDrivers/STM32G0xx_HAL_Driver/Inc -IDrivers/STM32G0xx_HAL_Driver/Inc/Legacy -IDrivers/CMSIS/Device/ST/STM32G0xx/Include -IDrivers/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"build/device_status.d" -MT"build/device_status.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "build/device_status.o" -DZ_AXIS
+
 build/firmware_STM32G030.elf: $(OBJECTS) memory_layout.ld
 	$(GCC_DIR)/arm-none-eabi-gcc -o "build/firmware_STM32G030.elf" $(OBJECTS) -mcpu=cortex-m0plus -T"memory_layout.ld" --specs=nosys.specs -Wl,-Map="build/firmware_STM32G030.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-	$(GCC_DIR)/arm-none-eabi-size   build/firmware_STM32G030.elf 
+	$(GCC_DIR)/arm-none-eabi-size   build/firmware_STM32G030.elf
 	$(GCC_DIR)/arm-none-eabi-objdump -h -S  build/firmware_STM32G030.elf  > "build/firmware_STM32G030.list"
 
 build/firmware_STM32G030.bin: build/firmware_STM32G030.elf
 	$(GCC_DIR)/arm-none-eabi-objcopy  -O binary  build/firmware_STM32G030.elf  "build/firmware_STM32G030.bin"
 
+build/firmware_STM32G030.firmware: build/firmware_STM32G030.bin
+	./bin2firmware build/firmware_STM32G030.bin build/firmware_STM32G030.firmware M1 1
+
 
 clean:
 	-rm -f build/*
 
-program:
-	python_tests//upgrade_firmware.py build/firmware_STM32G030.bin
+program: build/firmware_STM32G030.firmware
+	python_tests/upgrade_firmware.py build/firmware_STM32G030.firmware
 

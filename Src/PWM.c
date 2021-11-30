@@ -1,5 +1,6 @@
 #include "stm32g0xx_hal.h"
 #include "PWM.h"
+#include "overvoltage.h"
 
 void pwm_init(void)
 {
@@ -16,15 +17,16 @@ void pwm_init(void)
     TIM1->CCR1 = 0;
     TIM1->CCR2 = 0;
     TIM1->CCR3 = 0;
+    TIM1->CCR4 = (334 * OVERVOLTAGE_PROTECTION_SETTING) / 12;
 
 //    TIM1->CCMR1 = TIM_CCMR1_OC1PE | (6 << TIM_CCMR1_OC1M_Pos) | TIM_CCMR1_OC2PE | (6 << TIM_CCMR1_OC2M_Pos); // enable the preload and set as PWM mode 1
 //    TIM1->CCMR2 = TIM_CCMR2_OC3PE | (6 << TIM_CCMR2_OC3M_Pos);  // enable the preload and set as PWM mode 1
-    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) | (6 << TIM_CCMR1_OC2M_Pos); // set as PWM mode 1
-    TIM1->CCMR2 = (6 << TIM_CCMR2_OC3M_Pos);  // enable the preload and set as PWM mode 1
-    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E;
+    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) | (6 << TIM_CCMR1_OC2M_Pos); // set channels 1 and 2 as PWM mode 1
+    TIM1->CCMR2 = (6 << TIM_CCMR2_OC3M_Pos) | (6 << TIM_CCMR2_OC4M_Pos); // set channels 3 and 4 as PWM mode 1
+    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E; // enable the outputs
 
-    TIM1->CCMR1 |= TIM_CCMR1_OC1CE | TIM_CCMR1_OC2CE;
-    TIM1->CCMR2 |= TIM_CCMR2_OC3CE;
+    TIM1->CCMR1 |= TIM_CCMR1_OC1CE | TIM_CCMR1_OC2CE; // enable the ability to force 0 onto these channels when a fault signal is detected (from the analog watchdog in this case)
+    TIM1->CCMR2 |= TIM_CCMR2_OC3CE;                   // same as above but for the third channel
     TIM1->SMCR = TIM_SMCR_OCCS;
 
 //    TIM1->BDTR = TIM_BDTR_MOE | TIM_BDTR_AOE | TIM_BDTR_BKP | TIM_BDTR_BKE | TIM_BDTR_OSSR | TIM_BDTR_OSSI; // main output enable, on break put lines in idle state only for the current PWM cycle, enable the break function

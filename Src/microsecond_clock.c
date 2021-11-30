@@ -54,7 +54,7 @@ uint64_t get_microsecond_time(void)
 	returned_time.fourty_eight_bit_time.upper_32_bits = upper_32_bits;
 
 	if(returned_time.sixty_four_bit_time < previous_64bit_time) {
-		fatal_error("The time went backwards", 1);
+		fatal_error(1); // "time went backwards" (all error text is defined in error_text.c)
 	}
 	previous_64bit_time = returned_time.sixty_four_bit_time;
 

@@ -8,6 +8,8 @@
 #include "RS485.h"
 #include "commands.h"
 #include "global_variables.h"
+#include "error_text.h"
+#include "device_status.h"
 
 #define SYSTICK_LOAD_VALUE 16000000 // this must be less than 2^24 because the systick timer is 24 bits
 #define FATAL_ERROR_COMMAND_BUFFER_SIZE 3
@@ -21,7 +23,7 @@ static uint16_t nReceivedBytes = 0;
 static char volatile selectedAxis;
 static uint8_t command;
 
-void fatal_error_systick_init(void)
+static void fatal_error_systick_init(void)
 {
     SysTick->LOAD  = SYSTICK_LOAD_VALUE;       // set this timer to roll over twice per second
     SysTick->VAL   = 0;       // Load the SysTick Counter Value
@@ -29,7 +31,7 @@ void fatal_error_systick_init(void)
 }
 
 
-void receive(void)
+static void receive(void)
 {
     if(USART1->ISR & USART_ISR_RXNE_RXFNE) {
         if(USART1->ISR & USART_ISR_RTOF) {
@@ -54,25 +56,29 @@ void receive(void)
 				if((selectedAxis != 'R') && (selectedAxis == my_alias || selectedAxis == 255) && (valueLength == 0)) {
 					commandReceived = 1;
 				}
+				nReceivedBytes = 0;
             }
         }
     }
 }
 
 
-void rs485_transmit_status(uint8_t status)
+static void rs485_transmit_status(uint8_t error_code)
 {
-	uint8_t transmitBuffer[GET_STATUS_COMMAND_RESPONSE_LENGTH] = {'R', 1, 6, 0, 0, 0, 0, 0, status};
+	struct device_status_struct *device_status = get_device_status(); 
+	uint8_t *device_status_uint8_t = (uint8_t *)device_status;
 	uint8_t i;
 
-	for(i = 0; i < GET_STATUS_COMMAND_RESPONSE_LENGTH; i++) {
+	set_device_error_code(error_code);
+
+	for(i = 0; i < sizeof(struct device_status_struct); i++) {
 		while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0);
-        USART1->TDR = transmitBuffer[i];
+        USART1->TDR = device_status_uint8_t[i];
     }
 }
 
 
-void handle_commands(uint8_t error_code)
+static void handle_commands(uint8_t error_code)
 {
 	receive(); // this will receive any commands through the RS485 interface
 
@@ -86,24 +92,26 @@ void handle_commands(uint8_t error_code)
 			rs485_transmit_status(error_code); // this indicates that there was a fatal error and the particular error code is made available for query 
 			break;
 		}
+		commandReceived = 0;
 	}
 }
 
 
-void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
+static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
 {
 	do {
-//		handle_commands(error_code);
+		handle_commands(error_code);
 		systick_previous_value = systick_new_value;
 		systick_new_value = SysTick->VAL;
 	} while ((systick_new_value < (SYSTICK_LOAD_VALUE >> 1)) == (systick_previous_value < (SYSTICK_LOAD_VALUE >> 1)));
 }
 
 
-void fatal_error(char *message, uint16_t error_code)
+void fatal_error(uint16_t error_code)
 {
 	uint32_t e;
 	char buf[10];
+	const char *message;
 
 	// Avoid the fatal error recusrice loop. We will enter the fatal error routine only one, and can get
 	// out of it only by full system reset, which can be triggered by the reset command.
@@ -117,6 +125,7 @@ void fatal_error(char *message, uint16_t error_code)
 	fatal_error_systick_init();
 	fatal_error_occurred = 1;
 
+	message = get_error_text(error_code);
     sprintf(buf, ": %hu\n", error_code);
     while(1) { // print out the error message continuously forever
     	for(e = 0; e < error_code + 3; e++) {
@@ -131,46 +140,8 @@ void fatal_error(char *message, uint16_t error_code)
 			}
 			transmit_without_interrupts(message, strlen(message));
 			transmit_without_interrupts(buf, strlen(buf));
-//			systick_new_value = SysTick->VAL;
-//			char buf2[30];
-//			if(systick_new_value < 16000000) {
-//				sprintf(buf2, "<: %u\n", (unsigned int)(systick_new_value));
-//			}
-//			else {
-//				sprintf(buf2, ">: %u\n", (unsigned int)(systick_new_value));
-//			}
-//			transmit_without_interrupts(buf2, strlen(buf2));
 
 			systick_half_cycle_delay_plus_handle_commands(error_code);
-    	}
-    }
-}
-
-
-void fatal_error_old(char *message, uint16_t error_code)
-{
-	volatile uint32_t delay;
-	uint32_t e;
-	char buf[10];
-
-    __disable_irq();
-
-    disable_mosfets();
-    green_LED_off();
-
-    sprintf(buf, ": %hu\n", error_code);
-    while(1) { // print out the error message continuously forever
-    	for(e = 0; e < error_code + 3; e++) {
-    		if((error_code == 0) || (e < error_code)) {
-    			red_LED_on(); // flash the red LED to indicate error, or keep it on continuously if the error code is 0
-    		}
-			for(delay = 0; delay < 1000000; delay++); // add a delay so we don't repeat printing the error message like a mad man
-			if(error_code != 0) { // if the error code is 0 then we will just leave the red LED on continuously
-				red_LED_off();
-			}
-			transmit_without_interrupts(message, strlen(message));
-			transmit_without_interrupts(buf, strlen(buf));
-			for(delay = 0; delay < 1000000; delay++); // add a delay so we don't repeat printing the error message like a mad man
     	}
     }
 }

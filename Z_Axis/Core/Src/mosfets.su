@@ -1,3 +1,0 @@
-../Core/Src/mosfets.c:5:6:enable_mosfets	0	static
-../Core/Src/mosfets.c:10:6:disable_mosfets	0	static
-../Core/Src/mosfets.c:15:9:get_mosfets_enabled	0	static

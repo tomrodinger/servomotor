@@ -4,6 +4,9 @@ import sys
 import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
+import argparse
+import serial_functions
+
 
 #SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
 SERIAL_PORT = "/dev/tty.usbserial-142220"
@@ -15,24 +18,6 @@ MOVE_WITH_ACCELERATION_COMMAND = 19
 MOVE_WITH_VELOCITY_COMMAND = 26
 
 DETECT_DEVICES_MAX_TIME = 1.2
-
-
-def open_serial_port(serial_device, baud_rate, timeout = 0.05):
-    print("Opening serial device:", serial_device)
-    try:
-        ser = serial.Serial(serial_device, baud_rate, timeout = timeout)
-    except:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("So, make sure you plugged in your USB to serial adapeter")
-        print("Otherwise, make sure thet the correct serial port is defined in this program")
-        print("Here are the current serial ports detected on your computer:")
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p[0])
-        exit(1)
-    print("Opened:", ser.name)
-    return ser
 
 
 def send_move_with_acceleration_command(ser, acceleration, time_steps):
@@ -98,23 +83,36 @@ def print_data(data):
         print("0x%02X %d" % (d, d))
 
 
-def print_usage():
-    print("Usage: %s velocity time" % (sys.argv[0]))
-    print("The velocity is in units of mm per second")
-    print("The time in in units of seconds")
-    print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+parser = argparse.ArgumentParser(description='Control the motor to make a move given the specified velocity and time')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
+parser.add_argument('velocity', help='This is the velociuty of the move in mm per second')
+parser.add_argument('time', help='This is the amount of time to accelerate for in seconds')
+args = parser.parse_args()
+
+serial_port = args.port
+
+alias = args.alias
+if alias == None:
+    print("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help.")
+    exit(1)
+elif alias == "255":
+    alias = 255
+elif len(alias) == 1:
+    alias = ord(alias)
+else:
+    print("Error: the alias nust be just one character, not:", alias)
+    print("The alias can also be 255 (which means no alias)")
     exit(1)
 
-if len(sys.argv) != 3:
-    print_usage()
-    
-mm_per_second = float(sys.argv[1])
-time = float(sys.argv[2])
+mm_per_second = float(args.velocity)
+time = float(args.time)
 if time < 0:
     print("The time steps cannot be negative")
     exit(1)
 
-
+    
 TIME_STEPS_PER_SECOND = 31250
 mm_per_rotation = 20
 microsteps_per_rotation = 360 * 256 * 7
@@ -143,12 +141,13 @@ print("The velocity to send:", velocity_to_send)
 
 time_steps = int(time * TIME_STEPS_PER_SECOND + 0.5)
 
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
 send_move_with_velocity_command(ser, velocity_to_send, time_steps)
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")
     exit(1)
 print("Command succeeded")
+
 ser.close()

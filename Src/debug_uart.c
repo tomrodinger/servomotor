@@ -79,7 +79,7 @@ void transmit(void *s, uint8_t len)
                                // the rest of the transmission will be completed by the UART interrupt
 }
 
-void transmit_without_interrupts(char *message, uint8_t len)
+void transmit_without_interrupts(const char *message, uint8_t len)
 {
 	int32_t i;
 	for(i = 0; i < len; i++) {

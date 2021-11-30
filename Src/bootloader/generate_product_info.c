@@ -8,10 +8,10 @@
 #include <pwd.h>
 #include <assert.h>
 #include <sys/stat.h>
-#include <elf.h>
+#include <sys/errno.h>
 #include "../product_info.h"
 
-#define MAX_PRODUCT_CODE_LENGTH 8
+#define MAX_MODEL_CODE_LENGTH 8
 
 #define SERIAL_NUMBER_FILENAME ".motor_serial_number"
 
@@ -152,7 +152,7 @@ void write_serial_number(char *filename, uint32_t serial_number)
 }
 
 
-void save_bin_file(char *input_file, char *output_file, char product_code[8],
+void save_bin_file(char *input_file, char *output_file, char model_code[8], uint8_t firmware_compatibility_code,
                       uint8_t hardware_version_bugfix, uint8_t hardware_version_minor, uint8_t hardware_version_major,
                       uint32_t serial_number, uint64_t unique_id)
 {
@@ -162,7 +162,8 @@ void save_bin_file(char *input_file, char *output_file, char product_code[8],
     read_file(input_file, &data, &data_len);
 
     memset(&product_info, 0, sizeof(product_info));
-    memcpy(product_info.product_code, product_code, sizeof(product_info.product_code));
+    memcpy(product_info.model_code, model_code, sizeof(product_info.model_code));
+    product_info.firmware_compatibility_code = firmware_compatibility_code;
     product_info.hardware_version_bugfix = hardware_version_bugfix;
     product_info.hardware_version_minor = hardware_version_minor;
     product_info.hardware_version_major = hardware_version_major;
@@ -173,6 +174,29 @@ void save_bin_file(char *input_file, char *output_file, char product_code[8],
     write_file(output_file, data, data_len);
     free(data);
 }
+
+
+uint8_t string_to_firmware_compatibility_code(const char *number_str)
+{
+    char *end;
+    long int value = strtol(number_str, &end, 10); 
+    if ((end == number_str) || (*end != '\0') || (errno == ERANGE)) {
+        printf("Error: not a valid integer number");
+        exit(1);
+    }
+    if(value < 0) {
+        printf("Error: the firmware compatibility code cannot be a negative number\n");
+        printf("You have specified the invalid input [%s]\n", number_str);
+        exit(1);
+    }
+    if(value > 255) {
+        printf("Error: the firmware compatibility code cannot be larger than 255\n");
+        printf("You have specified the invalid input [%s]\n", number_str);
+        exit(1);
+    }
+    return (uint8_t)value;
+}
+
 
 void decompose_hardware_string(const char *hardware_version_string, uint8_t *hardware_version_bugfix, uint8_t *hardware_version_minor, uint8_t *hardware_version_major)
 {
@@ -227,7 +251,7 @@ void decompose_hardware_string(const char *hardware_version_string, uint8_t *har
 
 void print_usage(char *executable_name)
 {
-    printf("Usage: %s input_file.bin output_file.bin product_code hardware_version\n", executable_name);
+    printf("Usage: %s input_file.bin output_file.bin model_code firmware_compatibility_code hardware_version\n", executable_name);
     exit(1);
 }
 
@@ -236,7 +260,8 @@ int main(int argc, char **argv)
 {
     char *input_file;
     char *output_file;
-    char product_code[9] = "        ";
+    char model_code[9] = "        ";
+    uint8_t firmware_compatibility_code;
     char *hardware_version_string;
     uint8_t hardware_version_bugfix;
     uint8_t hardware_version_minor;
@@ -245,33 +270,38 @@ int main(int argc, char **argv)
     uint64_t unique_id;
     char serial_number_full_filename[2000];
 
-    if(argc != 5) {
+    if(argc != 6) {
         print_usage(argv[0]);
     }
 
     input_file = argv[1];
     output_file = argv[2];
 
-    if(strlen(argv[3]) > MAX_PRODUCT_CODE_LENGTH) {
-        fprintf(stderr, "Error: the product code is too long. The length must be %d characters or less.\n", MAX_PRODUCT_CODE_LENGTH);
+    if(strlen(argv[3]) > MAX_MODEL_CODE_LENGTH) {
+        fprintf(stderr, "Error: the model code is too long. The length must be %d characters or less.\n", MAX_MODEL_CODE_LENGTH);
         exit(1);
     }
-    strncpy(product_code, argv[3], strlen(argv[3])); // do the copy without copying the null terminator
+    strncpy(model_code, argv[3], strlen(argv[3])); // do the copy without copying the null terminator
 
-    hardware_version_string = argv[4];
+    firmware_compatibility_code = string_to_firmware_compatibility_code(argv[4]);
+
+    hardware_version_string = argv[5];
     decompose_hardware_string(hardware_version_string, &hardware_version_bugfix, &hardware_version_minor, &hardware_version_major);
+
+    printf("The model code is [%s]\n", model_code);
+    printf("The firmware compatibility code is %hhu\n", firmware_compatibility_code);
 
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
     sprintf(serial_number_full_filename, "%s/%s", homedir, SERIAL_NUMBER_FILENAME);
     serial_number = read_serial_number(serial_number_full_filename);
     serial_number++; // we will increament the serial number each time we run this
-    printf("Incremented the serial number. This product will have serial number %u.\n", serial_number);
+    printf("Incremented the serial number. This device will have serial number %u.\n", serial_number);
 
     srandomdev();
     unique_id = (random() << 32) | random();
 
-    save_bin_file(input_file, output_file, product_code, hardware_version_bugfix, hardware_version_minor, hardware_version_major, serial_number, unique_id);
+    save_bin_file(input_file, output_file, model_code, firmware_compatibility_code, hardware_version_bugfix, hardware_version_minor, hardware_version_major, serial_number, unique_id);
 
     write_serial_number(serial_number_full_filename, serial_number);
 }

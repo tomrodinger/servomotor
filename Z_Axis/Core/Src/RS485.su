@@ -1,5 +1,0 @@
-../Core/Src/RS485.c:23:6:rs485_init	0	static
-../Core/Src/RS485.c:39:6:rs485_drive_enable	0	static
-../Core/Src/RS485.c:45:6:rs485_drive_disable	0	static
-../Core/Src/RS485.c:52:6:USART2_IRQHandler	24	static
-../Core/Src/RS485.c:113:6:rs485_transmit	24	static

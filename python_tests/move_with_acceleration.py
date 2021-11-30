@@ -16,24 +16,6 @@ MOVE_WITH_ACCELERATION_COMMAND = 19
 DETECT_DEVICES_MAX_TIME = 1.2
 
 
-def open_serial_port(serial_device, baud_rate, timeout = 0.05):
-    print("Opening serial device:", serial_device)
-    try:
-        ser = serial.Serial(serial_device, baud_rate, timeout = timeout)
-    except:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("So, make sure you plugged in your USB to serial adapeter")
-        print("Otherwise, make sure thet the correct serial port is defined in this program")
-        print("Here are the current serial ports detected on your computer:")
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            print(p[0])
-        exit(1)
-    print("Opened:", ser.name)
-    return ser
-
-
 def send_move_with_acceleration_command(ser, alias, acceleration, time_steps):
     command = bytearray([alias, MOVE_WITH_ACCELERATION_COMMAND, 8])
     command = command + acceleration.to_bytes(4, byteorder = "little", signed = True)
@@ -86,14 +68,6 @@ def print_data(data):
     print(data)
     for d in data:
         print("0x%02X %d" % (d, d))
-
-
-def print_usage():
-    print("Usage: %s acceleration time" % (sys.argv[0]))
-    print("The acceleration is in units of mm per second per second")
-    print("The time in in units of seconds")
-    print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
-    exit(1)
 
 
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device

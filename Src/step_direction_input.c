@@ -13,6 +13,7 @@ void step_and_direction_init(void)
 //	NVIC_EnableIRQ(EXTI4_15_IRQn); // enable the interrupt to this external input
 }
 
+/*
 void EXTI4_15_IRQHandler(void)
 {
     if(GPIOB->IDR & (1 << 5)) {
@@ -22,9 +23,9 @@ void EXTI4_15_IRQHandler(void)
     	step_count -= MICROSTEPS_PER_STEP;
     }
 
-//	fatal_error("PB4 interrupt triggered", 2);
 	EXTI->RPR1 = EXTI_RPR1_RPIF4; // clear the interrupt flag
 }
+*/
 
 int32_t get_step_count(void)
 {

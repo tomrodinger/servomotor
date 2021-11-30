@@ -15,12 +15,14 @@
 #include "clock_calibration.h"
 #include "error_handling.h"
 #include "step_direction_input.h"
+#include "overvoltage.h"
 #include "unique_id.h"
 #include "settings.h"
 #include "commands.h"
 #include "product_info.h"
 #include "LookupTableZ.h"
 #include "global_variables.h"
+#include "device_status.h"
 
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
@@ -37,7 +39,6 @@ struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-extern uint32_t USART1_timout_timer;
 extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
@@ -45,28 +46,6 @@ extern volatile uint8_t commandReceived;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
-
-// This interrupt will be called 100 times per second
-void SysTick_Handler(void)
-{
-	static uint16_t toggle_counter = 0;
-
-	toggle_counter++;
-	if(toggle_counter >= 50) {
-	    green_LED_toggle();
-		toggle_counter = 0;
-	}
-
-    if(USART1_timout_timer < USART1_TIMEOUT) {
-    	USART1_timout_timer++;
-    }
-
-    if(detect_devices_delay > 0) {
-        detect_devices_delay--;
-    }
-
-//	red_LED_off();
-}
 
 void clock_init(void)
 {
@@ -181,7 +160,7 @@ void portB_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
@@ -222,9 +201,11 @@ void portC_init(void)
 
 void portD_init(void)
 {
+    #define TOUCH_BUTTON_PORT_D_PIN 1
+
     GPIOD->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos) |
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE1_Pos) | // touch button
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos) |
@@ -245,6 +226,31 @@ void portD_init(void)
     GPIOD->PUPDR = 0;
 }
 
+
+// This interrupt will be called 100 times per second
+void SysTick_Handler(void)
+{
+    #define OVERVOLTAGE_PORT_B_PIN 12
+
+	static uint16_t toggle_counter = 0;
+
+	toggle_counter++;
+	if(toggle_counter >= 50) {
+	    green_LED_toggle();
+		toggle_counter = 0;
+	}
+
+    if(detect_devices_delay > 0) {
+        detect_devices_delay--;
+    }
+
+//    if((GPIOB->IDR & (1 << OVERVOLTAGE_PORT_B_PIN)) == 0) {
+//        red_LED_off();
+//    }
+//    else {
+//        red_LED_on();
+//    }
+}
 
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
@@ -268,7 +274,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t new_alias;
     int32_t trapezoid_move_displacement;
     uint32_t trapezoid_move_time;
-    char buf[100];
 
 //    print_number("Received a command with length: ", commandLen);
     if((axis == my_alias) || (axis == ALL_ALIAS)) {
@@ -410,8 +415,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             commandReceived = 0;
             if(axis != ALL_ALIAS) {
             	get_motor_status(get_status_buffer);
-                rs485_transmit("R\x01\x06", 3);
-        		rs485_transmit(get_status_buffer, sizeof(get_status_buffer));
+                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
             }
             break;
         case GO_TO_CLOSED_LOOP_COMMAND:
@@ -433,8 +437,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             acceleration = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
             commandReceived = 0;
-            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
-            transmit(buf, strlen(buf));
+//            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
+//            transmit(buf, strlen(buf));
             add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -491,8 +495,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             velocity = ((int32_t*)parameters)[0];
             time_steps = ((uint32_t*)parameters)[1];
             commandReceived = 0;
-            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
-            transmit(buf, strlen(buf));
+//            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
+//            transmit(buf, strlen(buf));
             add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -624,7 +628,6 @@ void button_logic(void)
     	}
     }
     else if(press_flag) {
-//        fatal_error("Button pressed down", 3);  // DEBUG
     	press_flag = 0;
     	time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
     	if(time_pressed_down > 5000000) {
@@ -652,21 +655,21 @@ void button_logic(void)
 
 void print_start_message(void)
 {
-	char buff[200];
+//	char buff[200];
 	uint32_t my_unique_id_u32_array[2];
 
 	memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
 
-    transmit("Program Start\n", 14);
-    sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-    transmit(buff, strlen(buff));
-    if((my_alias >= 33) && (my_alias <= 126)) {
-        sprintf(buff, "Alias: %c\n", my_alias);
-    }
-    else {
-        sprintf(buff, "Alias: 0x%02hx\n", my_alias);
-    }
-    transmit(buff, strlen(buff));
+    transmit("Applicaiton start\n", 18);
+//    sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
+//    transmit(buff, strlen(buff));
+//    if((my_alias >= 33) && (my_alias <= 126)) {
+//        sprintf(buff, "Alias: %c\n", my_alias);
+//    }
+//    else {
+//        sprintf(buff, "Alias: 0x%02hx\n", my_alias);
+//    }
+//    transmit(buff, strlen(buff));
     print_hall_midlines();
 }
 
@@ -684,6 +687,7 @@ int main(void)
     adc_init();
     pwm_init();
     step_and_direction_init();
+    overvoltage_init();
 
     SCB->VTOR = 0x2800; // vector table is moved to where the application starts, which is after the bootloader
 
@@ -732,5 +736,12 @@ int main(void)
 
         process_debug_uart_commands();
         button_logic();
+
+        if((GPIOD->IDR & (1 << TOUCH_BUTTON_PORT_D_PIN)) == 0) {
+            red_LED_on();
+        }
+        else {
+            red_LED_off();
+        }
     }
 }

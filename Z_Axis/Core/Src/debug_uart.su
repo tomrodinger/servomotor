@@ -1,7 +1,0 @@
-../Core/Src/debug_uart.c:12:6:debug_uart_init	0	static
-../Core/Src/debug_uart.c:25:6:USART1_IRQHandler	12	static
-../Core/Src/debug_uart.c:48:6:transmit	24	static
-../Core/Src/debug_uart.c:77:6:transmit_without_interrupts	12	static
-../Core/Src/debug_uart.c:89:6:convert_uint16_to_byte_array	24	static
-../Core/Src/debug_uart.c:113:6:print_number	40	static
-../Core/Src/debug_uart.c:124:9:get_command_uart1	0	static
