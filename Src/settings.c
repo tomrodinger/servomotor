@@ -1,24 +1,13 @@
 #include <string.h>
 #include "stm32g0xx_hal.h"
 #include "settings.h"
+#include "global_variables.h"
 #include "error_handling.h"
 
-#define SETTINGS_STRUCT_SIZE (sizeof(struct settings_struct)) 
-struct __attribute__((aligned (4))) __attribute__((__packed__)) settings_struct {
-	uint8_t my_alias;
-	uint16_t hall1_midline;
-	uint16_t hall2_midline;
-	uint16_t hall3_midline;
-};
 
-void load_settings(uint8_t *my_alias, uint16_t *hall1_midline, uint16_t *hall2_midline, uint16_t *hall3_midline)
+void load_global_settings(void)
 {
-    struct settings_struct settings;
-    memcpy(&settings, (void *)SETTINGS_FLASH_ADDRESS, SETTINGS_STRUCT_SIZE);
-    *my_alias = settings.my_alias;
-    *hall1_midline = settings.hall1_midline;
-    *hall2_midline = settings.hall2_midline;
-    *hall3_midline = settings.hall3_midline;
+    memcpy(&global_settings, (void *)GLOBAL_SETTINGS_FLASH_ADDRESS, GLOBAL_SETTINGS_STRUCT_SIZE);
 }
 
 inline void crc32_init(void)
@@ -124,28 +113,22 @@ static void write_one_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE])
 }
 
 __attribute__ ((long_call, section (".RamFunc")))
-void save_settings(uint8_t my_alias, uint16_t hall1_midline, uint16_t hall2_midline, uint16_t hall3_midline)
+void save_global_settings(void)
 {
     #define SINGLE_WRITE_SIZE (sizeof(uint32_t) * 2)
-    uint16_t n_writes = (SETTINGS_STRUCT_SIZE + (SINGLE_WRITE_SIZE - 1)) / SINGLE_WRITE_SIZE; // divide by 4 but round up
+    uint16_t n_writes = (GLOBAL_SETTINGS_STRUCT_SIZE + (SINGLE_WRITE_SIZE - 1)) / SINGLE_WRITE_SIZE; // divide by the write size but round up
     uint16_t i;
-    struct settings_struct settings;
-    uint32_t *read_ptr = (void *)&settings;
+    uint32_t *read_ptr = (void *)&global_settings;
     uint16_t write_index = 0;
-
-    settings.my_alias = my_alias;
-    settings.hall1_midline = hall1_midline;
-    settings.hall2_midline = hall2_midline;
-    settings.hall3_midline = hall3_midline;
 
     __disable_irq();
     unlock_flash();
-    erase_one_page(FLASH_SETTINGS_PAGE_NUMBER);
+    erase_one_page(GLOBAL_SETTINGS_FLASH_PAGE_NUMBER);
     // Then, write the values to FLASH
     for(i = 0; i < n_writes; i++) {
         FLASH->CR = FLASH_CR_PG | FLASH_CR_EOPIE;
-        ((uint32_t *)(SETTINGS_FLASH_ADDRESS))[write_index++] = *(read_ptr++);
-        ((uint32_t *)(SETTINGS_FLASH_ADDRESS))[write_index++] = *(read_ptr++);
+        ((uint32_t *)(GLOBAL_SETTINGS_FLASH_ADDRESS))[write_index++] = *(read_ptr++);
+        ((uint32_t *)(GLOBAL_SETTINGS_FLASH_ADDRESS))[write_index++] = *(read_ptr++);
         while(FLASH->SR & FLASH_SR_BSY1_Msk);
         if((FLASH->SR & FLASH_SR_EOP_Msk) == 0) {
             fatal_error(3); // "flash write fail" (all error text is defined in error_text.c)

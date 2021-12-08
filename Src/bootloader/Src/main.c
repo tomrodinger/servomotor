@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "leds.h"
+#include "../../leds.h"
 #include "../../debug_uart.h"
 #include "../../RS485.h"
 #include "../../error_handling.h"
 #include "../../unique_id.h"
 #include "../../settings.h"
+#include "../../global_variables.h"
 #include "../../commands.h"
 #include "../../product_info.h"
 #include "../../device_status.h"
@@ -17,7 +18,6 @@ extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 extern volatile uint8_t commandReceived;
-extern uint8_t my_alias;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
@@ -136,7 +136,7 @@ void portB_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
@@ -145,7 +145,7 @@ void portB_init(void)
     	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
     		        (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos); // no pull up or down except RX pin is pull up
+    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD12_Pos); // RX pin is pull up, overvoltage pin is pull down
 }
 
 
@@ -229,7 +229,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t error_code;
     char message[100];
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == my_alias) || (axis == ALL_ALIAS)) {
+    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
         launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
@@ -252,8 +252,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 
         	if(unique_id == my_unique_id) {
                 transmit("Match\n", 6);
-        		my_alias = new_alias;
-           		save_settings(my_alias, 0, 0, 0);
+        		global_settings.my_alias = new_alias;
+           		save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
@@ -281,7 +281,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			break;
         case GET_STATUS_COMMAND:
             if(axis != ALL_ALIAS) {
-                set_in_the_bootloader_flag();
+                set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
             }
             break;
@@ -297,7 +297,7 @@ void transmit_unique_id(void)
     uint32_t crc32 = 0x04030201;
 	rs485_transmit("R\x01\x0d", 3);
 	rs485_transmit(&my_unique_id, 8);
-	rs485_transmit(&my_alias, 1);
+	rs485_transmit(&global_settings.my_alias, 1);
 	rs485_transmit(&crc32, 4);
 }
 
@@ -310,7 +310,7 @@ void process_debug_uart_commands(void)
     	switch(command_debug_uart) {
     	case 'S':
 			transmit("Saving settings\n", 16);
-    		save_settings(my_alias, 0, 0, 0);
+    		save_global_settings();
     		break;
 		}
     	command_debug_uart = 0;
@@ -333,11 +333,11 @@ void print_start_message()
     transmit(buff, strlen(buff));
     sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
     transmit(buff, strlen(buff));
-    if((my_alias >= 33) && (my_alias <= 126)) {
-        sprintf(buff, "Alias: %c\n", my_alias);
+    if((global_settings.my_alias >= 33) && (global_settings.my_alias <= 126)) {
+        sprintf(buff, "Alias: %c\n", global_settings.my_alias);
     }
     else {
-        sprintf(buff, "Alias: 0x%02hx\n", my_alias);
+        sprintf(buff, "Alias: 0x%02hx\n", global_settings.my_alias);
     }
     transmit(buff, strlen(buff));
 }
@@ -361,8 +361,7 @@ int main(void)
 
     my_unique_id = get_unique_id();
 
-    uint16_t midline;
-    load_settings(&my_alias, &midline, &midline, &midline); // load the settings from non-volatile memory
+    load_global_settings(); // load the settings from non-volatile memory
 
     __enable_irq();
 

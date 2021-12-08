@@ -41,6 +41,7 @@ void print_position(void);
 void print_current_movement(void);
 void print_velocity(void);
 void print_time_difference(void);
+void print_max_motor_current_settings(void);
 void print_motor_current(void);
 void print_hall_sensor_data(void);
 void print_hall_position_delta_stats(void);
@@ -70,9 +71,11 @@ void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);
 int32_t get_actual_motor_position(void);
-void get_motor_status(uint8_t *buf);
+uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 void process_calibration_data(void);
+void set_motor_current_baseline(void);
+void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_motor_regen_current);
 
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

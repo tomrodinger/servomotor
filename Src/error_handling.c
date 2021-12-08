@@ -53,7 +53,7 @@ static void receive(void)
             }
             else if(nReceivedBytes == 3) {
 				valueLength = receivedByte;
-				if((selectedAxis != 'R') && (selectedAxis == my_alias || selectedAxis == 255) && (valueLength == 0)) {
+				if((selectedAxis != 'R') && (selectedAxis == global_settings.my_alias || selectedAxis == 255) && (valueLength == 0)) {
 					commandReceived = 1;
 				}
 				nReceivedBytes = 0;

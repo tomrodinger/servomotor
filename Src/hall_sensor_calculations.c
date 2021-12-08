@@ -9,6 +9,7 @@
 #include "ADC.h"
 #include "debug_uart.h"
 #include "LookupTableZ.h"
+#include "global_variables.h"
 
 #define UINT32_MIDPOINT 2147483648
 #define HALL_POSITION_HYSTERESIS 100
@@ -22,17 +23,13 @@ static int32_t sensor_incremental_position = 0;
 static int32_t hall_sensor_offset = 0;
 static uint16_t time_difference_div = 0;
 static int32_t hall_position_with_hysteresis = 0;
-#define DEFAULT_HALL_MIDLINE 38500
-static uint16_t hall1_midline = DEFAULT_HALL_MIDLINE;
-static uint16_t hall2_midline = DEFAULT_HALL_MIDLINE;
-static uint16_t hall3_midline = DEFAULT_HALL_MIDLINE;
 
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
-	int32_t d0_shifted = (int32_t)hall_sensor_readings[0] - (int32_t)hall1_midline;
-	int32_t d1_shifted = (int32_t)hall_sensor_readings[1] - (int32_t)hall2_midline;
-	int32_t d2_shifted = (int32_t)hall_sensor_readings[2] - (int32_t)hall3_midline;
+	int32_t d0_shifted = (int32_t)hall_sensor_readings[0] - (int32_t)global_settings.hall1_midline;
+	int32_t d1_shifted = (int32_t)hall_sensor_readings[1] - (int32_t)global_settings.hall2_midline;
+	int32_t d2_shifted = (int32_t)hall_sensor_readings[2] - (int32_t)global_settings.hall3_midline;
     int32_t d0 = (d0_shifted * hall_weights.h1[0] + d1_shifted * hall_weights.h1[1] + d2_shifted * hall_weights.h1[2]);
     int32_t d1 = (d1_shifted * hall_weights.h2[0] + d2_shifted * hall_weights.h2[1] + d0_shifted * hall_weights.h2[2]);
     int32_t d2 = (d2_shifted * hall_weights.h3[0] + d0_shifted * hall_weights.h3[1] + d1_shifted * hall_weights.h3[2]);
@@ -162,25 +159,9 @@ void print_hall_position(void)
 }
 
 
-void set_hall_midlines(uint16_t new_hall1_midline, uint16_t new_hall2_midline, uint16_t new_hall3_midline)
-{
-    hall1_midline = new_hall1_midline;
-    hall2_midline = new_hall2_midline;
-    hall3_midline = new_hall3_midline;
-}
-
-
-void get_hall_midlines(uint16_t *returned_hall1_midline, uint16_t *returned_hall2_midline, uint16_t *returned_hall3_midline)
-{
-    *returned_hall1_midline = hall1_midline;
-    *returned_hall2_midline = hall2_midline;
-    *returned_hall3_midline = hall3_midline;
-}
-
-
 void print_hall_midlines(void)
 {
     char buf[100];
-    sprintf(buf, "Hall sensor midlines: %u %u %u\n", hall1_midline, hall2_midline, hall3_midline);
+    sprintf(buf, "Hall sensor midlines: %u %u %u\n", global_settings.hall1_midline, global_settings.hall2_midline, global_settings.hall3_midline);
     transmit(buf, strlen(buf));
 }

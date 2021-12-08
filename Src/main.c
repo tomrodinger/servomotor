@@ -169,7 +169,7 @@ void portB_init(void)
     	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
     		        (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos); // no pull up or down except RX pin is pull up
+    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD12_Pos); // RX pin is pull up, overvoltage pin is pull down
 }
 
 
@@ -268,15 +268,30 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     int32_t acceleration;
     int32_t velocity;
     uint32_t time_steps;
-    uint8_t get_status_buffer[GET_STATUS_COMMAND_RESPONSE_LENGTH - 3];
     uint32_t frequency;
     uint64_t unique_id;
     uint8_t new_alias;
     int32_t trapezoid_move_displacement;
     uint32_t trapezoid_move_time;
+    uint16_t new_maximum_motor_current;
+    uint16_t new_maximum_motor_regen_current;
+    uint8_t n_moves_in_this_command;
+
+    #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
+    struct move_parameters_struct {
+        union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
+            int32_t acceleration;
+            int32_t velocity;
+        };
+        int32_t time_steps;
+    };
+    struct multi_move_command_buffer_struct {
+        uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
+        struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
+    };
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == my_alias) || (axis == ALL_ALIAS)) {
+    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
         switch(command) {
@@ -414,7 +429,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_STATUS_COMMAND:
             commandReceived = 0;
             if(axis != ALL_ALIAS) {
-            	get_motor_status(get_status_buffer);
+            	uint8_t motor_status_flags = get_motor_status_flags();
+                set_device_status_flags(motor_status_flags);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
             }
             break;
@@ -454,12 +470,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             commandReceived = 0;
         	if(unique_id == my_unique_id) {
                	transmit("Unique ID matches\n", 18);
-        		my_alias = new_alias;
-                uint16_t hall1_midline;
-                uint16_t hall2_midline;
-                uint16_t hall3_midline;
-                get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
-           		save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
+        		global_settings.my_alias = new_alias;
+           		save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
@@ -505,6 +517,43 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case SYSTEM_RESET_COMMAND:
             NVIC_SystemReset();
             break;
+        case SET_MAXIMUM_MOTOR_CURRENT:
+            new_maximum_motor_current = ((uint16_t*)parameters)[0];
+            new_maximum_motor_regen_current = ((uint16_t*)parameters)[1];
+            commandReceived = 0;
+            set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
+            save_global_settings();
+			if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+        	break;
+        case MULTI_MOVE_COMMAND:
+            n_moves_in_this_command = ((int8_t*)parameters)[0];
+            struct multi_move_command_buffer_struct multi_move_command_buffer;
+            memcpy(&multi_move_command_buffer, parameters + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+            commandReceived = 0;
+            char buf[100];
+            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
+            transmit(buf, strlen(buf));
+            if(n_moves_in_this_command > MAX_MULTI_MOVES) {
+                fatal_error(24);
+            }
+            for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
+                if((n_moves_in_this_command & 1) == 0) {
+                    add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
+                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
+                    transmit(buf, strlen(buf));
+                } else {
+                    add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
+                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
+                    transmit(buf, strlen(buf));
+                }
+                multi_move_command_buffer.move_type_bits >>= 1;
+            }
+			if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+			break;
         }
     }
     else {
@@ -517,7 +566,7 @@ void transmit_unique_id(void)
     uint32_t crc32 = 0x04030201;
     rs485_transmit("R\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
-    rs485_transmit(&my_alias, 1);
+    rs485_transmit(&global_settings.my_alias, 1);
     rs485_transmit(&crc32, 4);
 }
 
@@ -603,11 +652,7 @@ void process_debug_uart_commands(void)
     		break;
     	case 'S':
 			transmit("Saving settings\n", 16);
-            uint16_t hall1_midline;
-            uint16_t hall2_midline;
-            uint16_t hall3_midline;
-            get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
-            save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
+            save_global_settings();
     		break;
 		}
     	command_debug_uart = 0;
@@ -663,14 +708,15 @@ void print_start_message(void)
     transmit("Applicaiton start\n", 18);
 //    sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
 //    transmit(buff, strlen(buff));
-//    if((my_alias >= 33) && (my_alias <= 126)) {
-//        sprintf(buff, "Alias: %c\n", my_alias);
+//    if((global_settings.my_alias >= 33) && (global_settings.my_alias <= 126)) {
+//        sprintf(buff, "Alias: %c\n", global_settings.my_alias);
 //    }
 //    else {
-//        sprintf(buff, "Alias: 0x%02hx\n", my_alias);
+//        sprintf(buff, "Alias: 0x%02hx\n", global_settings.my_alias);
 //    }
 //    transmit(buff, strlen(buff));
     print_hall_midlines();
+    print_max_motor_current_settings();
 }
 
 int main(void)
@@ -693,12 +739,9 @@ int main(void)
 
     my_unique_id = get_unique_id();
 
-    uint16_t hall1_midline;
-    uint16_t hall2_midline;
-    uint16_t hall3_midline;
-    load_settings(&my_alias, &hall1_midline, &hall2_midline, &hall3_midline); // load the settings from non-volatile memory
-
-    set_hall_midlines(hall1_midline, hall2_midline, hall3_midline); // set the hall sensor midlines
+    load_global_settings(); // load the settings from non-volatile memory into ram for faster access
+    set_motor_current_baseline(); // make sure to call this before set_max_motor_current() and make sure to call it when the MOSFETs are disabled. at the start of the program is fine
+    set_max_motor_current(global_settings.max_motor_current, global_settings.max_motor_regen_current);
 
     __enable_irq();
 
@@ -708,7 +751,7 @@ int main(void)
 
     while(1) {
 //    	check_if_break_condition();
-//    	check_if_ADC_watchdog2_exceeded();
+    	check_if_ADC_watchdog2_exceeded();
 
     	if(commandReceived) {
             processCommand(selectedAxis, command, valueBuffer);
@@ -722,11 +765,7 @@ int main(void)
 
         if(is_calibration_data_available()) {
             process_calibration_data();
-            uint16_t hall1_midline;
-            uint16_t hall2_midline;
-            uint16_t hall3_midline;
-            get_hall_midlines(&hall1_midline, &hall2_midline, &hall3_midline);
-            save_settings(my_alias, hall1_midline, hall2_midline, hall3_midline);
+            save_global_settings();
         }
 
         if(is_fast_capture_data_result_ready()) {

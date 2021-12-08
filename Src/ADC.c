@@ -2,8 +2,8 @@
 #include "ADC.h"
 #include "leds.h"
 
-#define ADC_WATCHDOG_UPPER_THRESHOLD 1700
-#define ADC_WATCHDOG_LOWER_THRESHOLD 1000
+#define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 1450
+#define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 1250
 
 uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
@@ -24,12 +24,12 @@ void adc_init(void)
                                             // calculation: 1/32000000*(1.5+12.5)*1000000
 
     ADC1->CFGR1 |= ADC_CFGR1_AWD1EN | ADC_CFGR1_AWD1SGL | (0 << ADC_CFGR1_AWD1CH_Pos);
-    ADC1->TR1 = (0 << ADC_TR2_LT2_Pos) | (2000 << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
+    ADC1->TR1 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
 
-    ADC1->TR2 = (ADC_WATCHDOG_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR2 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
 
-    ADC1->TR3 = (0 << ADC_TR2_LT2_Pos) | (2000 << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR3 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 3
     ADC1->AWD3CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 3, this is the motor current measurement
 
 //    ADC1->CHSELR = (1 << 0) |    // select the channels to be converted, 5 channels total
@@ -108,11 +108,11 @@ void check_if_ADC_watchdog1_exceeded(void)
 void check_if_ADC_watchdog2_exceeded(void)
 {
 	if(ADC1->ISR & ADC_ISR_AWD2) {
-//		red_LED_on();
+		red_LED_on();
 		ADC1->ISR |= ADC_ISR_AWD2;
 	}
 	else {
-//		red_LED_off();
+		red_LED_off();
 	}
 }
 
@@ -163,3 +163,9 @@ uint16_t get_motor_current(void)
 	return max_current;
 }
 
+void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
+{
+    ADC1->TR1 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
+    ADC1->TR2 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR3 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 3
+}

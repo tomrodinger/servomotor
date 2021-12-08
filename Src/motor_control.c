@@ -16,12 +16,14 @@
 #include "leds.h"
 #include "step_direction_input.h"
 #include "LookupTableZ.h"
+#include "device_status.h"
+#include "global_variables.h"
 
 #define MAX_HOMING_ERROR 100000
 
-#define POWER_MULTIPLIER 2
+#define POWER_MULTIPLIER 1
 
-#define CLOSED_LOOP_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
+#define CLOSED_LOOP_PWM_VOLTAGE (200 * POWER_MULTIPLIER)
 #define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 #define OPEN_LOOP_DYNAMIC_MOTOR_PWM_VOLTAGE (125 * POWER_MULTIPLIER)
 #define CALIBRATION_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
@@ -34,12 +36,18 @@
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
 #define HALL_TO_POSITION_90_DEGREE_OFFSET ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) >> 2)
 
+#define EXPECTED_MOTOR_CURRENT_BASELINE 1152
+#define MOTOR_CURRENT_BASELINE_TOLERANCE 200
+#define MIN_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
+#define MAX_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE + MOTOR_CURRENT_BASELINE_TOLERANCE)
+#define MAX_MOTOR_CURRENT 300 // make sure this number is less than (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
+
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
 #define ACCELERATION_SHIFT_LEFT 8
 #define VELOCITY_SHIFT_LEFT 12
-#define MOVEMENT_QUEUE_SIZE 16 // this has to be a power of 2
-typedef struct {
+#define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
+typedef struct __attribute__((__packed__)) {
 	movement_type_t movement_type;
 	union {
 	    int64_t acceleration; // we use this variable if the movement_type == MOVE_WITH_ACCELERATION
@@ -77,6 +85,7 @@ static int32_t motor_pwm_voltage_limit;
 static int32_t vibration_polarity_moving_average;
 static int32_t max_motor_pwm_voltage_limit;
 static uint32_t commutation_position_offset_at_max;
+static uint16_t motor_current_baseline = 1350;
 
 static uint8_t homing_active = 0;
 static uint8_t calibration_active = 0;
@@ -373,20 +382,20 @@ void handle_calibration_logic(void)
 
 	if(n_items_in_queue == 2) {
 		if(calibration_print_output) {
-//			hall1_sum += get_hall_sensor1_voltage();
-//			hall2_sum += get_hall_sensor2_voltage();
-//			hall3_sum += get_hall_sensor3_voltage();
-			hall1_sum = get_hall_sensor1_voltage();
-			hall2_sum = get_hall_sensor2_voltage();
-			hall3_sum = get_hall_sensor3_voltage();
+			hall1_sum += get_hall_sensor1_voltage();
+			hall2_sum += get_hall_sensor2_voltage();
+			hall3_sum += get_hall_sensor3_voltage();
+//			hall1_sum = get_hall_sensor1_voltage();
+//			hall2_sum = get_hall_sensor2_voltage();
+//			hall3_sum = get_hall_sensor3_voltage();
 			avg_counter++;
 			if(avg_counter == 16) {
-//				hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
-//				hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
-//				hall_data_buffer[2] = (hall3_sum >> 1) - HALL_SENSOR_SHIFT;
-				hall_data_buffer[0] = (hall1_sum << 3) - HALL_SENSOR_SHIFT;
-				hall_data_buffer[1] = (hall2_sum << 3) - HALL_SENSOR_SHIFT;
-				hall_data_buffer[2] = (hall3_sum << 3) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
+				hall_data_buffer[2] = (hall3_sum >> 1) - HALL_SENSOR_SHIFT;
+//				hall_data_buffer[0] = (hall1_sum << 3) - HALL_SENSOR_SHIFT;
+//				hall_data_buffer[1] = (hall2_sum << 3) - HALL_SENSOR_SHIFT;
+//				hall_data_buffer[2] = (hall3_sum << 3) - HALL_SENSOR_SHIFT;
 				rs485_transmit((void*)hall_data_buffer, 6);
 				avg_counter = 0;
 				hall1_sum = 0;
@@ -542,7 +551,9 @@ void process_calibration_data(void)
 		midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j] << 3) - HALL_SENSOR_SHIFT);
 	}
 
-	set_hall_midlines(midline[0], midline[1], midline[2]);
+	global_settings.hall1_midline = midline[0];
+	global_settings.hall2_midline = midline[1];
+	global_settings.hall3_midline = midline[2];
 
 	for(j = 0; j < 3; j++) {
 		sprintf(buf, "The average and midline for hall sensor %hu are: %lu  %u\n", j + 1, minima_and_maxima_avg[j], midline[j]);
@@ -889,11 +900,18 @@ void print_hall_position_delta_stats(void)
 	average_hall_position_delta_count = 0;
 }
 
+void print_max_motor_current_settings(void)
+{
+	char buf[150];
+	sprintf(buf, "Maximum motor current: %hu   Maximum motor regeneration current: %hu\n", global_settings.max_motor_current, global_settings.max_motor_regen_current);
+	transmit(buf, strlen(buf));
+}
+
 void print_motor_current(void)
 {
-	char buf[100];
+	char buf[150];
 	int16_t current = get_motor_current();
-	sprintf(buf, "%hd\n", current);
+	sprintf(buf, "current: %hd   motor_current_baseline: %hu\n", current, motor_current_baseline);
 	transmit(buf, strlen(buf));
 }
 
@@ -915,11 +933,10 @@ void print_hall_sensor_data(void)
 
 void print_motor_status(void)
 {
-	uint8_t status[6];
 	char buf[100];
 
-	get_motor_status(status);
-	sprintf(buf, "status: %hu %hu %hu %hu %hu %hu\n", status[0], status[1], status[2], status[3], status[4], status[5]);
+	uint8_t motor_status_flags = get_motor_status_flags();
+	sprintf(buf, "status: %hu\n", motor_status_flags);
 	transmit(buf, strlen(buf));
 }
 
@@ -1060,22 +1077,22 @@ uint8_t handle_queued_movements(void)
 		if(current_velocity_i64 != 0) {
 			fatal_error(18); // "run out of queue items" (all error text is defined in error_text.c)
 		}
-		if(current_velocity_i64 >= 0) {
-			if(current_velocity_i64 > max_acceleration) {
-				current_velocity_i64 -= max_acceleration;
-			}
-			else {
-				current_velocity_i64 = 0;
-			}
-		}
-		else {
-			if(-current_velocity_i64 > max_acceleration) {
-				current_velocity_i64 += max_acceleration;
-			}
-			else {
-				current_velocity_i64 = 0;
-			}
-		}
+//		if(current_velocity_i64 >= 0) {
+//			if(current_velocity_i64 > max_acceleration) {
+//				current_velocity_i64 -= max_acceleration;
+//			}
+//			else {
+//				current_velocity_i64 = 0;
+//			}
+//		}
+//		else {
+//			if(-current_velocity_i64 > max_acceleration) {
+//				current_velocity_i64 += max_acceleration;
+//			}
+//			else {
+//				current_velocity_i64 = 0;
+//			}
+//		}
 		if(current_velocity_i64 == 0) {
 			decelerate_to_stop_active = 0;
 		}
@@ -1625,15 +1642,43 @@ int32_t get_actual_motor_position(void)
     return ret;
 }
 
-void get_motor_status(uint8_t *buf)
+uint8_t get_motor_status_flags(void)
 {
+	uint8_t motor_status_flags = 0;
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	buf[0] = motor_control_mode;
-	buf[1] = n_items_in_queue;
-	buf[2] = homing_active;
-	buf[3] = capture.capture_type;
-	buf[4] = get_mosfets_enabled();
-	buf[5] = 0; // this is a flag to indicate a fatal error; there is no error at this time
+	if(get_mosfets_enabled()) {
+		motor_status_flags |= (1 << STATUS_MOSFETS_ENABLED_FLAG_BIT);
+	}
+	if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+		motor_status_flags |= (1 << STATUS_CLOSED_LOOP_FLAG_BIT);
+	}
+	if(calibration_active) {
+		motor_status_flags |= (1 << STATUS_CALIBRATING_FLAG_BIT);
+	}
+	if(homing_active) {
+		motor_status_flags |= (1 << STATUS_HOMING_FLAG_BIT);
+	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+
+	return motor_status_flags;
+}
+
+// This needs to be called before the MOSFETs are activated, so that the current flow through them is 0
+void set_motor_current_baseline(void)
+{
+	motor_current_baseline = get_motor_current();
+	if((motor_current_baseline < MIN_MOTOR_CURRENT_BASELINE) || (motor_current_baseline > MAX_MOTOR_CURRENT_BASELINE)) {
+		fatal_error(22);
+	}
+}
+
+void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_motor_regen_current)
+{
+	if((new_max_motor_current > MAX_MOTOR_CURRENT) || (new_max_motor_regen_current > MAX_MOTOR_CURRENT)) {
+		fatal_error(23);
+	}
+	global_settings.max_motor_current = new_max_motor_current;
+	global_settings.max_motor_regen_current = new_max_motor_regen_current;
+	set_analog_watchdog_limits(motor_current_baseline - global_settings.max_motor_current, motor_current_baseline + global_settings.max_motor_regen_current);
 }
 

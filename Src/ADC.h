@@ -12,6 +12,7 @@ uint16_t get_hall_sensor1_voltage(void);
 uint16_t get_hall_sensor2_voltage(void);
 uint16_t get_hall_sensor3_voltage(void);
 uint16_t get_motor_current(void);
+void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit);
 
 
 #endif /* SRC_ADC_H_ */

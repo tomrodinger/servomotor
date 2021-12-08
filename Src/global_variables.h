@@ -2,8 +2,9 @@
 #ifndef GLOBAL_VARIABLES_H_
 #define GLOBAL_VARIABLES_H_
 
-#define GET_STATUS_COMMAND_RESPONSE_LENGTH 9
+#include <stdint.h>
+#include "settings.h"
 
-extern uint8_t my_alias;
+extern struct global_settings_struct global_settings;
 
 #endif

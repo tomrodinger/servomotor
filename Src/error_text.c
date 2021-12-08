@@ -23,6 +23,9 @@ char error_text[] =
     "motor busy\0"                   // error 19
     "position out of range\0"        // error 20
     "hall position out of range\0"   // error 21
+    "current sensor failed\0"        // error 22
+    "max motor current too high\0"   // error 23
+    "multi-move more than 32 moves\0"// error 24
     "\0";                            // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)
