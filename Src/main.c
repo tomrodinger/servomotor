@@ -276,6 +276,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint16_t new_maximum_motor_current;
     uint16_t new_maximum_motor_regen_current;
     uint8_t n_moves_in_this_command;
+    int32_t max_homing_travel_displacement;
+    uint32_t max_homing_time;
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -410,9 +412,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case HOMING_COMMAND:
+            max_homing_travel_displacement = ((int32_t*)parameters)[0];
+            max_homing_time = ((uint32_t*)parameters)[1];
             commandReceived = 0;
-            int32_t max_homing_travel_displacement = ((int32_t*)parameters)[0];
-            uint32_t max_homing_time = ((uint32_t*)parameters)[1];
+            char buf[100];
+            sprintf(buf, "homing: max_homing_travel_displacement: %ld   max_homing_time: %lu\n", max_homing_travel_displacement, max_homing_time);
+            transmit(buf, strlen(buf));
             start_homing(max_homing_travel_displacement, max_homing_time);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -532,21 +537,21 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             struct multi_move_command_buffer_struct multi_move_command_buffer;
             memcpy(&multi_move_command_buffer, parameters + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
             commandReceived = 0;
-            char buf[100];
-            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
-            transmit(buf, strlen(buf));
+//            char buf[100];
+//            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
+//            transmit(buf, strlen(buf));
             if(n_moves_in_this_command > MAX_MULTI_MOVES) {
                 fatal_error(24);
             }
             for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
-                if((n_moves_in_this_command & 1) == 0) {
+                if((multi_move_command_buffer.move_type_bits & 1) == 0) {
                     add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
-                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
-                    transmit(buf, strlen(buf));
+//                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
+//                    transmit(buf, strlen(buf));
                 } else {
                     add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
-                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
-                    transmit(buf, strlen(buf));
+//                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
+//                    transmit(buf, strlen(buf));
                 }
                 multi_move_command_buffer.move_type_bits >>= 1;
             }

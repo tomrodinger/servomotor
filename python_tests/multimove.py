@@ -214,7 +214,7 @@ for i in range(len(acceleration)):
     acceleration_microsteps_per_time_step_squared = acceleration_microsteps_per_second_squared / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND)
 
     print("The microsteps per time step squared (acceleration) is:", acceleration_microsteps_per_time_step_squared)
-    acceleration_to_send = int(acceleration_microsteps_per_time_step_squared * (1 << 24) + 0.5)
+    acceleration_to_send = round(acceleration_microsteps_per_time_step_squared * (1 << 24))
     print("The acceleration to send:", acceleration_to_send)
 
     time_steps = int(time_seconds[i] * TIME_STEPS_PER_SECOND + 0.5)

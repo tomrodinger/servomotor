@@ -19,11 +19,11 @@
 #include "device_status.h"
 #include "global_variables.h"
 
-#define MAX_HOMING_ERROR 100000
+#define MAX_HOMING_ERROR 50000
 
 #define POWER_MULTIPLIER 1
 
-#define CLOSED_LOOP_PWM_VOLTAGE (200 * POWER_MULTIPLIER)
+#define CLOSED_LOOP_PWM_VOLTAGE (80 * POWER_MULTIPLIER)
 #define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
 #define OPEN_LOOP_DYNAMIC_MOTOR_PWM_VOLTAGE (125 * POWER_MULTIPLIER)
 #define CALIBRATION_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
@@ -767,7 +767,7 @@ void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
 	homing_active = 1;
 }
 
-#define HOMING_MAX_POSITION_ERROR 10000
+#define HOMING_MAX_POSITION_ERROR 50000
 void handle_homing_logic(void)
 {
 	int32_t position_error;
@@ -1162,17 +1162,6 @@ int32_t PID_controller(int32_t error)
     low_pass_filtered_error_change >>= 4;
     derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
     previous_error = error;
-    // maximum value are (approximately):
-    // integral term:       66000000
-    // proportional term:  250000000
-    // derivative term:   1250000000
-    // sum:               1510000000
-    // Make sure it does not exceed the max int32_t = 2147483647
-    // After shifting, the maximum values are:
-    // integral term:      250
-    // proportional term:  953
-    // derivative term:   4768
-    // sum:               6971
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
 //    if(output_value < -CLOSED_LOOP_PWM_VOLTAGE) {
@@ -1305,7 +1294,7 @@ void motor_movement_calculations(void)
 
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 			int32_t velocity_divided_by_KV = (velocity * VELOCITY_SCALE_FACTOR) >> 8; 
-			velocity_divided_by_KV = 0;
+//			velocity_divided_by_KV = 0;
 			if(motor_pwm_voltage >= 0) {
 				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV + CLOSED_LOOP_PWM_VOLTAGE;
 				if(motor_pwm_voltage > motor_maximum_allowed_pwm_voltage) {
