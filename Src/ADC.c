@@ -161,8 +161,6 @@ uint16_t get_motor_current(void)
 		}
 	}
 
-	return 1152; // DEBUG
-
 	return max_current;
 }
 
