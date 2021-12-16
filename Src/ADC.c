@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "stm32g0xx_hal.h"
 #include "ADC.h"
 #include "leds.h"
@@ -150,7 +151,7 @@ uint16_t get_motor_current(void)
 	int16_t current;
 	int32_t i;
 
-	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i+= 2) {
+	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i += 2) {
 		current = ADC_buffer[i];
 		if(current < min_current) {
 			min_current = current;
@@ -159,6 +160,8 @@ uint16_t get_motor_current(void)
 			max_current = current;
 		}
 	}
+
+	return 1152; // DEBUG
 
 	return max_current;
 }

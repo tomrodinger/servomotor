@@ -26,6 +26,9 @@
 #define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
+#define DEFAULT_MAX_MOTOR_CURRENT = 100
+#define DEFAULT_MAX_MOTOR_REGEN_CURRENT = 100
+
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
@@ -76,6 +79,7 @@ uint8_t is_calibration_data_available(void);
 void process_calibration_data(void);
 void set_motor_current_baseline(void);
 void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_motor_regen_current);
+void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

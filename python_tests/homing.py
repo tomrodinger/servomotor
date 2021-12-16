@@ -5,9 +5,8 @@ import serial
 from serial.serialutil import to_bytes
 import serial.tools.list_ports
 import time
-
-#SERIAL_PORT = "/dev/tty.SLAB_USBtoUART"
-SERIAL_PORT = "/dev/tty.usbserial-1420"
+import argparse
+import serial_functions
 
 TRAPEZOID_MOVE_COMMAND = 2
 HOMING_COMMAND = 14
@@ -115,26 +114,64 @@ def print_data(data):
         print("0x%02X %d" % (d, d))
 
 
-def print_usage():
-    print("Usage: %s max-displacement max-time-steps" % (sys.argv[0]))
-    print("For example, this is a sensible command: %s 100000 1000" % (sys.argv[0]))
+
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+# and it also takes a mandatory firmware file name
+parser = argparse.ArgumentParser(description='Do homing (find the stop)')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
+parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
+parser.add_argument('maximum_displacement', help='This is the maximum displacement allowed for the homing')
+parser.add_argument('maximum_time', help='This is the maximum time in seconds to allow for the homing to succeed')
+args = parser.parse_args()
+
+if args.PORT == True:
+    serial_port = "MENU"
+else:
+    serial_port = args.port
+
+alias = args.alias
+if alias == None:
+    print("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help.")
+    exit(1)
+elif alias == "255":
+    alias = 255
+elif len(alias) == 1:
+    alias = ord(alias)
+else:
+    print("Error: the alias nust be just one character, not:", alias)
+    print("The alias can also be 255 (which means no alias)")
     exit(1)
 
-if len(sys.argv) != 3:
-    print_usage()
-    
-max_displacement = int(sys.argv[1])
-max_time_steps = int(sys.argv[2])
-if max_time_steps < 0:
+
+
+homing_max_distance_mm = float(args.maximum_displacement)
+homing_max_time_seconds = float(args.maximum_time)
+
+
+
+TIME_STEPS_PER_SECOND = 31250
+mm_per_rotation = 20
+microsteps_per_rotation = 360 * 256 * 7
+microsteps_per_mm = microsteps_per_rotation / mm_per_rotation
+
+homing_max_distance_microsteps = int(homing_max_distance_mm * microsteps_per_mm + 0.5)
+homing_time_steps = int(homing_max_time_seconds * TIME_STEPS_PER_SECOND + 0.5)
+
+
+ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
+
+if homing_time_steps < 0:
     print("The time steps cannot be negative")
     exit(1)
 
 
-ser = open_serial_port(SERIAL_PORT, 230400, 0.05)
-send_homing_command(ser, max_displacement, max_time_steps)
+send_homing_command(ser, homing_max_distance_microsteps, homing_time_steps)
+
 payload = get_response(ser)
 if (payload == None) or (len(payload) != 0):
     print("Received an invalid response")
     exit(1)
 print("Command succeeded")
+
 ser.close()

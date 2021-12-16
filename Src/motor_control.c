@@ -46,7 +46,7 @@ const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEP
 
 #define ACCELERATION_SHIFT_LEFT 8
 #define VELOCITY_SHIFT_LEFT 12
-#define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
+#define MOVEMENT_QUEUE_SIZE 64 // this has to be a power of 2
 typedef struct __attribute__((__packed__)) {
 	movement_type_t movement_type;
 	union {
@@ -69,12 +69,9 @@ static int64_t current_position_i64 = 0;
 static uint32_t commutation_position = 0;
 static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static int64_t max_acceleration = MAX_ACCELERATION;
-//static int64_t max_acceleration = 1418633883;
 static int64_t max_velocity = MAX_VELOCITY;
-//static int64_t max_velocity = 2954937499648;
 static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
-//static int32_t desired_velocity = 0;
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 
 static uint8_t go_to_closed_loop_mode_active = 0;
@@ -86,8 +83,11 @@ static int32_t vibration_polarity_moving_average;
 static int32_t max_motor_pwm_voltage_limit;
 static uint32_t commutation_position_offset_at_max;
 static uint16_t motor_current_baseline = 1350;
+static int32_t position_lower_safety_limit = -2000000000;
+static int32_t position_upper_safety_limit = 2000000000;
 
 static uint8_t homing_active = 0;
+static int8_t homing_direction = 0; // 1 for positive, -1 for negative
 static uint8_t calibration_active = 0;
 static uint8_t calibration_print_output;
 static uint8_t decelerate_to_stop_active = 0;
@@ -113,8 +113,8 @@ static int32_t min_hall_position_delta = 2000000000;
 static int32_t average_hall_position_delta = 0;
 static int32_t average_hall_position_delta_count = 0;
 
-//extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-
+static int64_t position_after_last_queue_item = 0;
+static int64_t velocity_after_last_queue_item = 0;
 
 // for the following calibration movement calculations, the time unit is one motor calculation cycle. at the time of this
 // writing, this is roughly 25 microseconds. it may be noted elsewhere what this is more accurately.
@@ -787,6 +787,12 @@ void handle_homing_logic(void)
 
 	if(n_items_in_queue == 0) {
 		homing_active = 0;
+		if(homing_direction == -1) {
+			position_lower_safety_limit = ((int32_t *)&current_position_i64)[1];
+		}
+		else {
+			position_upper_safety_limit = ((int32_t *)&current_position_i64)[1];
+		}
 		motor_busy = 0;
 	}
 }
@@ -968,6 +974,10 @@ void print_fast_capture_data_result(void)
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
+	int64_t predicted_final_velocity;
+	int64_t predicted_final_position;
+	char buf[150];
+
 	if(motor_busy) {
 		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
 	}
@@ -983,14 +993,50 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
             if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
 	            fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
             }
+			predicted_final_velocity = velocity_after_last_queue_item + movement_queue[queue_write_position].acceleration * n_time_steps;
+			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+			transmit(buf, strlen(buf));
+			if(abs(predicted_final_velocity) > max_velocity) {
+				fatal_error(28); // "predicted velocity too high" (all error text is defined in error_text.c)
+			}
+			predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * ((n_time_steps * (n_time_steps + 1)) >> 1);
+			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+			transmit(buf, strlen(buf));
+			if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
+				fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
+			}
+			#define TURN_POINT_CALCULATION_SHIFT 16
+			int64_t time_step_at_turn_point_shifted = -(int64_t)(velocity_after_last_queue_item * (1 << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
+			sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+			transmit(buf, strlen(buf));
+			if((time_step_at_turn_point_shifted > 0) || ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
+				int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (time_step_at_turn_point_shifted - (1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+				sprintf(buf, "relative_position_at_turn_point: %lld\n", relative_position_at_turn_point);
+				transmit(buf, strlen(buf));
+				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
+				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
+					fatal_error(26); // "turn point out of safety zone" (all error text is defined in error_text.c)
+				}
+			}
+			else {
+				transmit("No turn point\n", 14);
+			}
 		}
 		else {
 	        movement_queue[queue_write_position].velocity = parameter;
     	    movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
+			predicted_final_velocity = movement_queue[queue_write_position].velocity;
+			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+			transmit(buf, strlen(buf));
             if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
 	            fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
             }
+			predicted_final_position = position_after_last_queue_item + movement_queue[queue_write_position].velocity * n_time_steps;
+			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+			transmit(buf, strlen(buf));
 		}
+		position_after_last_queue_item = predicted_final_position;
+		velocity_after_last_queue_item = predicted_final_velocity;
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
         n_items_in_queue++;
@@ -1277,6 +1323,10 @@ void motor_movement_calculations(void)
     }
 
     moving = handle_queued_movements();
+
+	if( (((int32_t *)&current_position_i64)[1] > position_upper_safety_limit) || (((int32_t *)&current_position_i64)[1] < position_lower_safety_limit) ) {
+		fatal_error(25); // "safety limit exceeded" (all error text is defined in error_text.c)
+	}
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
@@ -1671,3 +1721,8 @@ void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_moto
 	set_analog_watchdog_limits(motor_current_baseline - global_settings.max_motor_current, motor_current_baseline + global_settings.max_motor_regen_current);
 }
 
+void set_movement_limits(int32_t lower_limit, int32_t upper_limit)
+{
+	position_lower_safety_limit = lower_limit;
+	position_upper_safety_limit = upper_limit;
+}

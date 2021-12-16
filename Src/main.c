@@ -278,6 +278,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t n_moves_in_this_command;
     int32_t max_homing_travel_displacement;
     uint32_t max_homing_time;
+    int32_t lower_limit;
+    int32_t upper_limit;
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -559,6 +561,17 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
 			break;
+        case SET_SAFETY_LIMITS_COMMAND:
+            lower_limit = ((int32_t*)parameters)[0];
+            upper_limit = ((uint32_t*)parameters)[1];
+            commandReceived = 0;
+            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
+            transmit(buf, strlen(buf));
+            set_movement_limits(lower_limit, upper_limit);
+			if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+			break;
         }
     }
     else {
@@ -746,6 +759,12 @@ int main(void)
 
     load_global_settings(); // load the settings from non-volatile memory into ram for faster access
     set_motor_current_baseline(); // make sure to call this before set_max_motor_current() and make sure to call it when the MOSFETs are disabled. at the start of the program is fine
+    if(global_settings.max_motor_current == 0xffff) {
+        global_settings.max_motor_current = DEFAULT_MAX_MOTOR_CURRENT;
+    }
+    if(global_settings.max_motor_regen_current == 0xffff) {
+        global_settings.max_motor_regen_current = DEFAULT_MAX_MOTOR_REGEN_CURRENT;
+    }
     set_max_motor_current(global_settings.max_motor_current, global_settings.max_motor_regen_current);
 
     __enable_irq();

@@ -26,6 +26,10 @@ char error_text[] =
     "current sensor failed\0"        // error 22
     "max motor current too high\0"   // error 23
     "multi-move more than 32 moves\0"// error 24
+    "safety limit exceeded\0"        // error 25
+    "turn point out of safety zone\0"// error 26
+    "predicted position out of safety zone"// error 27
+    "predicted velocity too high"    // error 28
     "\0";                            // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)
