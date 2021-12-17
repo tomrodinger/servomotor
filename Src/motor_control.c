@@ -1006,20 +1006,25 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 				fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
 			}
 			#define TURN_POINT_CALCULATION_SHIFT 16
-			int64_t time_step_at_turn_point_shifted = -(int64_t)(velocity_after_last_queue_item * (1 << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
-			sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
-			transmit(buf, strlen(buf));
-			if((time_step_at_turn_point_shifted > 0) || ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
-				int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (time_step_at_turn_point_shifted - (1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-				sprintf(buf, "relative_position_at_turn_point: %lld\n", relative_position_at_turn_point);
-				transmit(buf, strlen(buf));
-				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
-				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
-					fatal_error(26); // "turn point out of safety zone" (all error text is defined in error_text.c)
-				}
+			if(movement_queue[queue_write_position].acceleration == 0) {
+				transmit("No turn point (acceleration == 0)\n", 34);
 			}
 			else {
-				transmit("No turn point\n", 14);
+				int64_t time_step_at_turn_point_shifted = -(int64_t)(velocity_after_last_queue_item * (1 << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
+				sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+				transmit(buf, strlen(buf));
+				if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
+					int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (time_step_at_turn_point_shifted - (1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+					sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+					transmit(buf, strlen(buf));
+					int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
+					if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
+						fatal_error(26); // "turn point out of safety zone" (all error text is defined in error_text.c)
+					}
+				}
+				else {
+					transmit("No turn point\n", 14);
+				}
 			}
 		}
 		else {
