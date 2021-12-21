@@ -1,5 +1,6 @@
 import os
 import serial
+import serial.tools.list_ports
 
 SAVED_SERIAL_DEVICE_FILENAME = "serial_device.txt"
 
@@ -7,6 +8,7 @@ SAVED_SERIAL_DEVICE_FILENAME = "serial_device.txt"
 def select_serial_port_from_menu():
     while(1):
         print("Here are the current serial ports detected on your computer:")
+        print("Now getting the list")
         ports = list(serial.tools.list_ports.comports())
         for i in range(len(ports)):
             p = ports[i][0]
@@ -65,6 +67,8 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
     try:
         serial_port = serial.Serial(device_name, baud_rate, timeout=timeout)
     except serial.SerialException:
+        serial_port = None
+    if serial_port == None:
         print("Could not open the serial port")
         print("Most likely, this is because the hardware is not connected properly")
         print("or that the hardware is connected but the device name has changed. It does that sometimes,")

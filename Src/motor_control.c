@@ -46,7 +46,7 @@ const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEP
 
 #define ACCELERATION_SHIFT_LEFT 8
 #define VELOCITY_SHIFT_LEFT 12
-#define MOVEMENT_QUEUE_SIZE 64 // this has to be a power of 2
+#define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
 typedef struct __attribute__((__packed__)) {
 	movement_type_t movement_type;
 	union {
@@ -787,12 +787,12 @@ void handle_homing_logic(void)
 
 	if(n_items_in_queue == 0) {
 		homing_active = 0;
-		if(homing_direction == -1) {
-			position_lower_safety_limit = ((int32_t *)&current_position_i64)[1];
-		}
-		else {
-			position_upper_safety_limit = ((int32_t *)&current_position_i64)[1];
-		}
+//		if(homing_direction == -1) {
+//			position_lower_safety_limit = ((int32_t *)&current_position_i64)[1];
+//		}
+//		else {
+//			position_upper_safety_limit = ((int32_t *)&current_position_i64)[1];
+//		}
 		motor_busy = 0;
 	}
 }
@@ -971,6 +971,7 @@ void print_fast_capture_data_result(void)
 	fast_capture_data_result_ready = 0;
 }
 
+#define TURN_POINT_CALCULATION_SHIFT 4
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {	
@@ -987,43 +988,42 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 	}
     if(n_items_in_queue < MOVEMENT_QUEUE_SIZE) {
 		movement_queue[queue_write_position].movement_type = movement_type;
-		if(movement_type == 0) {
+		if(movement_type == MOVE_WITH_ACCELERATION) {
 	        movement_queue[queue_write_position].acceleration = parameter;
     	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
             if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
 	            fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
             }
 			predicted_final_velocity = velocity_after_last_queue_item + movement_queue[queue_write_position].acceleration * n_time_steps;
-			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
-			transmit(buf, strlen(buf));
+//			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+//			transmit(buf, strlen(buf));
 			if(abs(predicted_final_velocity) > max_velocity) {
 				fatal_error(28); // "predicted velocity too high" (all error text is defined in error_text.c)
 			}
-			predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * ((n_time_steps * (n_time_steps + 1)) >> 1);
-			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-			transmit(buf, strlen(buf));
+			predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
+//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//			transmit(buf, strlen(buf));
 			if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
 				fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
 			}
-			#define TURN_POINT_CALCULATION_SHIFT 16
 			if(movement_queue[queue_write_position].acceleration == 0) {
-				transmit("No turn point (acceleration == 0)\n", 34);
+//				transmit("No turn point (acceleration == 0)\n", 34);
 			}
 			else {
-				int64_t time_step_at_turn_point_shifted = -(int64_t)(velocity_after_last_queue_item * (1 << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
-				sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
-				transmit(buf, strlen(buf));
+				int64_t time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
+//				sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+//				transmit(buf, strlen(buf));
 				if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
-					int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (time_step_at_turn_point_shifted - (1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-					sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
-					transmit(buf, strlen(buf));
+					int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+//					sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+//					transmit(buf, strlen(buf));
 					int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
 					if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
 						fatal_error(26); // "turn point out of safety zone" (all error text is defined in error_text.c)
 					}
 				}
 				else {
-					transmit("No turn point\n", 14);
+//					transmit("No turn point\n", 14);
 				}
 			}
 		}
@@ -1031,14 +1031,14 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 	        movement_queue[queue_write_position].velocity = parameter;
     	    movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
 			predicted_final_velocity = movement_queue[queue_write_position].velocity;
-			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
-			transmit(buf, strlen(buf));
+//			sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+//			transmit(buf, strlen(buf));
             if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
 	            fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
             }
 			predicted_final_position = position_after_last_queue_item + movement_queue[queue_write_position].velocity * n_time_steps;
-			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-			transmit(buf, strlen(buf));
+//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//			transmit(buf, strlen(buf));
 		}
 		position_after_last_queue_item = predicted_final_position;
 		velocity_after_last_queue_item = predicted_final_velocity;
@@ -1051,6 +1051,82 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 	}
 }
 
+
+void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results)
+{	
+	int64_t movement_queue_queue_write_position_acceleration;
+	int64_t movement_queue_queue_write_position_velocity;
+	int64_t predicted_final_velocity;
+	int64_t predicted_final_position;
+	int64_t time_step_at_turn_point_shifted = 0;
+	int64_t relative_position_at_turn_point = 0;
+	char buf[150];
+
+	memset(results, 0, sizeof(add_to_queue_test_results_t));
+
+	if(n_time_steps == 0) {
+		return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
+	}
+	if(movement_type == MOVE_WITH_ACCELERATION) {
+		movement_queue_queue_write_position_acceleration = parameter;
+		movement_queue_queue_write_position_acceleration <<= ACCELERATION_SHIFT_LEFT;
+		if(abs(movement_queue_queue_write_position_acceleration) > max_acceleration) {
+			fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
+		}
+		predicted_final_velocity = velocity_after_last_queue_item + movement_queue_queue_write_position_acceleration * n_time_steps;
+		sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+		transmit(buf, strlen(buf));
+		if(abs(predicted_final_velocity) > max_velocity) {
+			fatal_error(28); // "predicted velocity too high" (all error text is defined in error_text.c)
+		}
+		predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue_queue_write_position_acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
+		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+		transmit(buf, strlen(buf));
+		if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
+			fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
+		}
+		if(movement_queue_queue_write_position_acceleration == 0) {
+			transmit("No turn point (acceleration == 0)\n", 34);
+		}
+		else {
+			time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue_queue_write_position_acceleration);
+			sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+			transmit(buf, strlen(buf));
+			if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
+				relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+				sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+				transmit(buf, strlen(buf));
+				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
+				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
+					fatal_error(26); // "turn point out of safety zone" (all error text is defined in error_text.c)
+				}
+			}
+			else {
+				transmit("No turn point\n", 14);
+			}
+		}
+	}
+	else {
+		movement_queue_queue_write_position_velocity = parameter;
+		movement_queue_queue_write_position_velocity <<= VELOCITY_SHIFT_LEFT;
+		predicted_final_velocity = movement_queue_queue_write_position_velocity;
+		sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+		transmit(buf, strlen(buf));
+		if(abs(movement_queue_queue_write_position_velocity) > max_velocity) {
+			fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
+		}
+		predicted_final_position = position_after_last_queue_item + movement_queue_queue_write_position_velocity * n_time_steps;
+		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+		transmit(buf, strlen(buf));
+	}
+	position_after_last_queue_item = predicted_final_position;
+	velocity_after_last_queue_item = predicted_final_velocity;
+
+	results->predicted_final_velocity = ((int32_t*)&predicted_final_velocity)[1];
+	results->predicted_final_position = ((int32_t*)&predicted_final_position)[1];
+	results->time_step_at_turn_point = (time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT);
+	results->relative_position_at_turn_point = ((int32_t*)&relative_position_at_turn_point)[1];
+}
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta)
 {

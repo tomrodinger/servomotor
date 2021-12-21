@@ -280,6 +280,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint32_t max_homing_time;
     int32_t lower_limit;
     int32_t upper_limit;
+    add_to_queue_test_results_t add_to_queue_test_results;
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -570,6 +571,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             set_movement_limits(lower_limit, upper_limit);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+			break;
+        case ADD_TO_QUEUE_TEST_COMMAND:
+            add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_results);
+            commandReceived = 0;
+			if(axis != ALL_ALIAS) {
+                rs485_transmit("R\x01\x10", 3);
+                rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
 			}
 			break;
         }

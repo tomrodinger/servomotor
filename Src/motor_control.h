@@ -82,4 +82,13 @@ void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_moto
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 
 
+typedef struct __attribute__((__packed__)) {
+	int32_t predicted_final_velocity;
+	int32_t predicted_final_position;
+	int32_t time_step_at_turn_point;
+	int32_t relative_position_at_turn_point;
+} add_to_queue_test_results_t;
+
+void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results);
+
 #endif /* SRC_MOTOR_CONTROL_H_ */
