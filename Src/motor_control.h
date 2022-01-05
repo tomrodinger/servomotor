@@ -26,8 +26,8 @@
 #define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
-#define DEFAULT_MAX_MOTOR_CURRENT 100
-#define DEFAULT_MAX_MOTOR_REGEN_CURRENT 100
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
@@ -78,7 +78,7 @@ uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 void process_calibration_data(void);
 void set_motor_current_baseline(void);
-void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_motor_regen_current);
+void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 
 

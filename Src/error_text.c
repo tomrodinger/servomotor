@@ -24,7 +24,7 @@ char error_text[] =
     "position out of range\0"                 // error 20
     "hall position out of range\0"            // error 21
     "current sensor failed\0"                 // error 22
-    "max motor current too high\0"            // error 23
+    "max pwm voltage too high\0"              // error 23
     "multi-move more than 32 moves\0"         // error 24
     "safety limit exceeded\0"                 // error 25
     "turn point out of safety zone\0"         // error 26

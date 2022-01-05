@@ -768,13 +768,13 @@ int main(void)
 
     load_global_settings(); // load the settings from non-volatile memory into ram for faster access
     set_motor_current_baseline(); // make sure to call this before set_max_motor_current() and make sure to call it when the MOSFETs are disabled. at the start of the program is fine
-    if(global_settings.max_motor_current == 0xffff) {
-        global_settings.max_motor_current = DEFAULT_MAX_MOTOR_CURRENT;
+    if(global_settings.max_motor_pwm_voltage == 0xffff) {
+        global_settings.max_motor_pwm_voltage = DEFAULT_MAX_MOTOR_PWM_VOLTAGE;
     }
-    if(global_settings.max_motor_regen_current == 0xffff) {
-        global_settings.max_motor_regen_current = DEFAULT_MAX_MOTOR_REGEN_CURRENT;
+    if(global_settings.max_motor_regen_pwm_voltage == 0xffff) {
+        global_settings.max_motor_regen_pwm_voltage = DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE;
     }
-    set_max_motor_current(global_settings.max_motor_current, global_settings.max_motor_regen_current);
+    set_max_motor_current(global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
 
     __enable_irq();
 

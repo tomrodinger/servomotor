@@ -21,18 +21,12 @@
 
 #define MAX_HOMING_ERROR 50000
 
-#define POWER_MULTIPLIER 1
-
-#define CLOSED_LOOP_PWM_VOLTAGE (80 * POWER_MULTIPLIER)
-#define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
-#define OPEN_LOOP_DYNAMIC_MOTOR_PWM_VOLTAGE (125 * POWER_MULTIPLIER)
-#define CALIBRATION_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
-#define GO_TO_CLOSED_LOOP_MODE_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
-#define HOMING_MOTOR_PWM_VOLTAGE (100 * POWER_MULTIPLIER)
-
-#define VELOCITY_SCALE_FACTOR 300
+#define MAX_PWM_VOLTAGE (150)
+#define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100)
+#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (64)
+#define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #define UINT32_MIDPOINT 2147483648
-#define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000
+#define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000  // a position in the range -2000000000 to 2000000000 is valid
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
 #define HALL_TO_POSITION_90_DEGREE_OFFSET ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) >> 2)
 
@@ -71,6 +65,7 @@ static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static int64_t max_acceleration = MAX_ACCELERATION;
 static int64_t max_velocity = MAX_VELOCITY;
 static int32_t motor_pwm_voltage = 0;
+static int32_t max_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 
@@ -87,7 +82,7 @@ static int32_t position_lower_safety_limit = -2000000000;
 static int32_t position_upper_safety_limit = 2000000000;
 
 static uint8_t homing_active = 0;
-static int8_t homing_direction = 0; // 1 for positive, -1 for negative
+//static int8_t homing_direction = 0; // 1 for positive, -1 for negative
 static uint8_t calibration_active = 0;
 static uint8_t calibration_print_output;
 static uint8_t decelerate_to_stop_active = 0;
@@ -909,7 +904,7 @@ void print_hall_position_delta_stats(void)
 void print_max_motor_current_settings(void)
 {
 	char buf[150];
-	sprintf(buf, "Maximum motor current: %hu   Maximum motor regeneration current: %hu\n", global_settings.max_motor_current, global_settings.max_motor_regen_current);
+	sprintf(buf, "Maximum motor pwm voltage: %hu   Maximum motor regeneration pwm voltage: %hu\n", global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
 	transmit(buf, strlen(buf));
 }
 
@@ -977,7 +972,7 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 {	
 	int64_t predicted_final_velocity;
 	int64_t predicted_final_position;
-	char buf[150];
+//	char buf[150];
 
 	if(motor_busy) {
 		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
@@ -1244,7 +1239,7 @@ uint8_t handle_queued_movements(void)
 #define DERIVATIVE_CONSTANT_PID   5000
 
 #define MAX_INT32         2147483647
-#define MAX_INTEGRAL_TERM (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)
+#define MAX_INTEGRAL_TERM (MAX_PWM_VOLTAGE << PID_SHIFT_RIGHT)
 #define MAX_OTHER_TERMS   ((MAX_INT32 - MAX_INTEGRAL_TERM) / 2)
 #define MAX_ERROR         ((MAX_OTHER_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
 #define MAX_ERROR_CHANGE  ((MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
@@ -1268,11 +1263,11 @@ int32_t PID_controller(int32_t error)
         error = MAX_ERROR;
     }
     integral_term += (error * INTEGRAL_CONSTANT_PID);
-    if(integral_term > (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
-    	integral_term = CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT;
+    if(integral_term > (max_pwm_voltage << PID_SHIFT_RIGHT)) {
+    	integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
     }
-    else if(integral_term < -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
-    	integral_term = -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT);
+    else if(integral_term < -(max_pwm_voltage << PID_SHIFT_RIGHT)) {
+    	integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
     }
     proportional_term = error * PROPORTIONAL_CONSTANT_PID;
 
@@ -1291,11 +1286,11 @@ int32_t PID_controller(int32_t error)
     previous_error = error;
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
-//    if(output_value < -CLOSED_LOOP_PWM_VOLTAGE) {
-//        output_value = -CLOSED_LOOP_PWM_VOLTAGE;
+//    if(output_value < -max_pwm_voltage) {
+//        output_value = -max_pwm_voltage;
 //    }
-//    else if(output_value > CLOSED_LOOP_PWM_VOLTAGE) {
-//        output_value = CLOSED_LOOP_PWM_VOLTAGE;
+//    else if(output_value > max_pwm_voltage) {
+//        output_value = max_pwm_voltage;
 //    }
 
     return output_value;
@@ -1340,11 +1335,11 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 
 	// calculate the integral term of the PID controller
     integral_term += (error * INTEGRAL_CONSTANT_PID);
-    if(integral_term > (CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
-    	integral_term = CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT;
+    if(integral_term > (max_pwm_voltage << PID_SHIFT_RIGHT)) {
+    	integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
     }
-    else if(integral_term < -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT)) {
-    	integral_term = -(CLOSED_LOOP_PWM_VOLTAGE << PID_SHIFT_RIGHT);
+    else if(integral_term < -(max_pwm_voltage << PID_SHIFT_RIGHT)) {
+    	integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
     }
 
 	// calculate the proportional term of the PID controller
@@ -1378,11 +1373,11 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 	// sum together the P, I, and D terms to get the final output value
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
-//    if(output_value < -CLOSED_LOOP_PWM_VOLTAGE) {
-//        output_value = -CLOSED_LOOP_PWM_VOLTAGE;
+//    if(output_value < -max_pwm_voltage) {
+//        output_value = -max_pwm_voltage;
 //    }
-//    else if(output_value > CLOSED_LOOP_PWM_VOLTAGE) {
-//        output_value = CLOSED_LOOP_PWM_VOLTAGE;
+//    else if(output_value > max_pwm_voltage) {
+//        output_value = max_pwm_voltage;
 //    }
 
     return output_value;
@@ -1412,7 +1407,7 @@ void motor_movement_calculations(void)
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
 		if(moving) {
-			motor_pwm_voltage = OPEN_LOOP_DYNAMIC_MOTOR_PWM_VOLTAGE;
+			motor_pwm_voltage = max_pwm_voltage;
 		}
 		else {
 			motor_pwm_voltage = OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE;
@@ -1421,23 +1416,20 @@ void motor_movement_calculations(void)
 	else {
 		commutation_position = hall_position + commutation_position_offset;
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-			int32_t motor_maximum_allowed_pwm_voltage;
-
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
-			int32_t velocity_divided_by_KV = (velocity * VELOCITY_SCALE_FACTOR) >> 8; 
-//			velocity_divided_by_KV = 0;
+			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8; 
+			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_pwm_voltage;
+			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_pwm_voltage;
+			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
+				motor_pwm_voltage = motor_max_allowed_pwm_voltage;
+			}
+			if(motor_pwm_voltage < motor_min_allowed_pwm_voltage) {
+				motor_pwm_voltage = motor_min_allowed_pwm_voltage;
+			}
 			if(motor_pwm_voltage >= 0) {
-				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV + CLOSED_LOOP_PWM_VOLTAGE;
-				if(motor_pwm_voltage > motor_maximum_allowed_pwm_voltage) {
-					motor_pwm_voltage = motor_maximum_allowed_pwm_voltage;
-				}
 				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
 			}
 			else {
-				motor_maximum_allowed_pwm_voltage = velocity_divided_by_KV - CLOSED_LOOP_PWM_VOLTAGE;
-				if(motor_pwm_voltage < motor_maximum_allowed_pwm_voltage) {
-					motor_pwm_voltage = motor_maximum_allowed_pwm_voltage;
-				}
 				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
 				motor_pwm_voltage = -motor_pwm_voltage;
 			}
@@ -1685,7 +1677,8 @@ void zero_position_and_hall_sensor(void)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
-	commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
+//	commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
+	commutation_position_offset = commutation_position_offset + get_hall_position();
     zero_hall_position();
 	current_position_i64 = 0;
 	current_velocity_i64 = 0;
@@ -1792,14 +1785,17 @@ void set_motor_current_baseline(void)
 	}
 }
 
-void set_max_motor_current(uint16_t new_max_motor_current, uint16_t new_max_motor_regen_current)
+void set_max_motor_current(uint16_t new_max_pwm_voltage, uint16_t new_max_regen_pwm_voltage)
 {
-	if((new_max_motor_current > MAX_MOTOR_CURRENT) || (new_max_motor_regen_current > MAX_MOTOR_CURRENT)) {
+	if(new_max_pwm_voltage > MAX_PWM_VOLTAGE) {
 		fatal_error(23);
 	}
-	global_settings.max_motor_current = new_max_motor_current;
-	global_settings.max_motor_regen_current = new_max_motor_regen_current;
-	set_analog_watchdog_limits(motor_current_baseline - global_settings.max_motor_current, motor_current_baseline + global_settings.max_motor_regen_current);
+	max_pwm_voltage = new_max_pwm_voltage;
+	global_settings.max_motor_pwm_voltage = new_max_pwm_voltage;
+	global_settings.max_motor_regen_pwm_voltage = new_max_regen_pwm_voltage;
+	int32_t analog_watchdog_lower_limit = (int32_t)global_settings.max_motor_regen_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
+	int32_t analog_watchdog_upper_limit = (int32_t)global_settings.max_motor_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
+	set_analog_watchdog_limits(motor_current_baseline - analog_watchdog_lower_limit, motor_current_baseline + analog_watchdog_upper_limit);
 }
 
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit)
