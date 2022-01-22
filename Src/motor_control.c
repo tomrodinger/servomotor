@@ -1533,10 +1533,10 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	static uint16_t previous_motor_control_tick_time;
 	uint16_t time_difference_delay;
 
-	start_time = TIM3->CNT;
+	start_time = TIM14->CNT;
 	start_time2 = start_time;
 	hall_position = get_hall_position();
-	end_time = TIM3->CNT;
+	end_time = TIM14->CNT;
 	time_difference1 = end_time - start_time;
 	if(time_difference1 > max_time_difference1) {
     	max_time_difference1 = time_difference1;
@@ -1580,17 +1580,17 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 		}
 	}
 
-	start_time = TIM3->CNT;
+	start_time = TIM14->CNT;
 	compute_velocity();
-	end_time = TIM3->CNT;
+	end_time = TIM14->CNT;
 	time_difference2 = end_time - start_time;
 	if(time_difference2 > max_time_difference2) {
     	max_time_difference2 = time_difference2;
 	}
 
-	start_time = TIM3->CNT;
+	start_time = TIM14->CNT;
 	motor_movement_calculations();
-	end_time = TIM3->CNT;
+	end_time = TIM14->CNT;
 	time_difference3 = end_time - start_time;
 	if(time_difference3 > max_time_difference3) {
     	max_time_difference3 = time_difference3;
@@ -1606,30 +1606,30 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 		fatal_error(21); // "hall position out of range" (all error text is defined in error_text.c)
 	}
 
-	start_time = TIM3->CNT;
+	start_time = TIM14->CNT;
 	motor_phase_calculations();
-	end_time = TIM3->CNT;
+	end_time = TIM14->CNT;
 	time_difference4 = end_time - start_time;
 	if(time_difference4 > max_time_difference4) {
     	max_time_difference4 = time_difference4;
 	}
 
-	motor_control_tick_time = TIM3->CNT;
+	motor_control_tick_time = TIM14->CNT;
 	motor_control_tick_time_difference = motor_control_tick_time - previous_motor_control_tick_time;
 	if(motor_control_tick_time_difference > max_motor_control_tick_time_difference) {
     	max_motor_control_tick_time_difference = motor_control_tick_time_difference;
 	}
 	previous_motor_control_tick_time = motor_control_tick_time;
 
-	end_time2 = TIM3->CNT;
+	end_time2 = TIM14->CNT;
 	motor_control_time_difference = end_time2 - start_time2;
 	if(motor_control_time_difference > max_motor_control_time_difference) {
     	max_motor_control_time_difference = motor_control_time_difference;
 	}
 	if(motor_control_time_difference < 20) { // if the calculation was too fast, introduce an artificial delay here
-		start_time = TIM3->CNT;              // let's improve this in the future with a better algorithm, ok?
+		start_time = TIM14->CNT;              // let's improve this in the future with a better algorithm, ok?
 		do {
-			end_time = TIM3->CNT;
+			end_time = TIM14->CNT;
 			time_difference_delay = end_time - start_time;
 		} while(time_difference_delay < 20 - motor_control_time_difference);
 	}

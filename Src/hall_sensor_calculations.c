@@ -89,10 +89,10 @@ int32_t get_hall_position(void)
     numerator >>= 10;
     denominator >>= 10;
 
-    start_time = TIM3->CNT;
+    start_time = TIM14->CNT;
     // watch out: it seems that this division will give the wrong result if the denominator exceeds the int16_t range
     fraction = numerator * SENSOR_SEGMENT_RESOLUTION_DIV_2 / denominator;
-    end_time = TIM3->CNT;
+    end_time = TIM14->CNT;
     time_difference_div = end_time - start_time;
     fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
 
