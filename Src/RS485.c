@@ -31,7 +31,7 @@ void rs485_init(void)
                      (0 << GPIO_AFRL_AFSEL7_Pos);  // for PB7, choose alternative function 0 (USART1_RX)
     GPIOA->AFR[1] |= (1 << GPIO_AFRH_AFSEL12_Pos); // for PA12, choose alternative function 1 (USART1_DE)
 
-    USART1->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
+    USART1->BRR = 278; // set baud to 230400 @ 64MHz SYSCLK
     USART1->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_FIFOEN | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the FIFO mode, enable the receive interrupt
 //    HAL_NVIC_SetPriority(USART1_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
     USART1->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is supported on USART1 but not supported on USART2)
@@ -42,10 +42,15 @@ void rs485_init(void)
     NVIC_EnableIRQ(USART1_IRQn);
 }
 
+void rs485_allow_next_command(void)
+{
+    commandReceived = 0;
+    USART1->CR1 |= USART_CR1_RXNEIE_RXFNEIE; // enable receive interrupt
+}
 
 void USART1_IRQHandler(void)
 {
-    if(USART1->ISR & USART_ISR_RXNE_RXFNE) {
+    if((USART1->ISR & USART_ISR_RXNE_RXFNE) && (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE)) {
         if(USART1->ISR & USART_ISR_RTOF) {
             nReceivedBytes = 0;
             USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
@@ -81,6 +86,8 @@ void USART1_IRQHandler(void)
                 if(receiveIndex >= valueLength) {
                     if(selectedAxis != 'R' && (selectedAxis == global_settings.my_alias || selectedAxis == 255)) {
                         if(valueLength <= MAX_VALUE_BUFFER_LENGTH) {
+                            USART1->CR1 &= ~USART_CR1_RXNEIE_RXFNEIE; // disable receive interrupt until this command is processed
+                                                                      // in the mean time, received bytes will be put in the hardware fifo
                             commandReceived = 1;
                         }
                         else {
@@ -97,7 +104,7 @@ void USART1_IRQHandler(void)
     }
 
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
-    	red_LED_on();
+//    	red_LED_on();
         USART1->TDR = transmitBuffer[transmitIndex];
         transmitCount--;
         transmitIndex++;
@@ -107,7 +114,7 @@ void USART1_IRQHandler(void)
         USART1->CR1 &= ~USART_CR1_TXFEIE; // nothing more to transmit, so disable the interrupt
     }
 
-    red_LED_off();
+//    red_LED_off();
 }
 
 

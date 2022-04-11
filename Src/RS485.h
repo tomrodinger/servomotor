@@ -12,6 +12,7 @@
 #define MAX_VALUE_BUFFER_LENGTH (MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + FLASH_PAGE_SIZE + 1) // Maximum length of any value that this controller might need to process
 
 void rs485_init(void);
+void rs485_allow_next_command(void);
 void rs485_transmit(void *s, uint8_t len);
 
 
