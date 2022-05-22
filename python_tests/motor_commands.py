@@ -177,8 +177,46 @@ def print_inputs_or_responses(message, data, terminal_window_columns):
     else:
         print("Error: this is not correctly formatted:", data)
 
+
+def print_protocol_version():
+    print("Currently using protocol version v%d" % (commands.PROTOCOL_VERSION))
+
+
+def print_data_type_descriptions():
+    print("\nThese are the descriptions of the various input and output data types currently supported:\n")
+    header1 = "   Data type ID   "
+    header2 = "Size (bytes)"
+    header3 = "      Max Value      "
+    header4 = "      Min Value      "
+    header5 = "Description"
+    header_format_string = "%%%ds | %%%ds | %%%ds | %%%ds | %%%ds" % (len(header1), len(header2), len(header3), len(header4), len(header5))
+    data_format_string = "%%%ds | %%%ds | %%%ds | %%%ds | %%%ds" % (len(header1), len(header2), len(header3), len(header4), len(header5))
+    header = header_format_string % (header1, header2, header3, header4, header5)
+    # print the header
+    print(header)
+    header_len = len(header)
+    # print a bar that has the length of the header to underline the header
+    print("-" * header_len)
+
+    for data_type_id in commands.data_type_dict.keys():
+        data_type = commands.data_type_dict[data_type_id]
+        data_size = commands.data_type_to_size_dict[data_type_id]
+        if(data_size != None):
+            data_size = str(data_size)
+        else:
+            data_size = "Variable"
+        data_type_is_integer = commands.data_type_is_integer_dict[data_type_id]
+        if(data_type_is_integer):
+            data_max_value = str(commands.data_type_max_value_dict[data_type_id])
+            data_min_value = str(commands.data_type_min_value_dict[data_type_id])
+        else:
+            data_max_value = "Not Applicable"
+            data_min_value = "Not Applicable"
+        data_description = commands.data_type_description_dict[data_type_id]
+        print(data_format_string % (data_type, data_size, data_max_value, data_min_value, data_description))
+
 def print_registered_commands():
-    print("\nThese are the registered commands:\n")
+    print("\nThese are the supported commands:\n")
     # First, find out the width of the terminal window
     terminal_window_columns = shutil.get_terminal_size().columns
     # iterate through all the sorted keys in the dictionary
@@ -235,6 +273,16 @@ def list_2d_string_to_packed_bytes(input):
     return input_packed
 
 
+def buf10_to_packed_bytes(input):
+    # convert the string into a bytearray
+    input_packed = bytearray(input, "utf-8")
+    # check that the length of the bytearray is correct
+    if len(input_packed) != 10:
+        print("Error: the input is not 10 bytes long")
+        exit(1)
+    return input_packed
+
+
 def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value):
     if is_integer:
         try:
@@ -257,6 +305,8 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
         elif data_type_id == commands.list_2d:
             input_packed = list_2d_string_to_packed_bytes(input)
+        elif data_type_id == commands.buf10:
+            input_packed = buf10_to_packed_bytes(input)
         else:
             print("Error: didn't yet implement a converter to handle the input type:", commands.data_type_dict[data_type_id])
             exit(1)
@@ -288,6 +338,9 @@ def gather_inputs(command_id, inputs):
         if input_data_is_integer:
             input_data_min_value = commands.data_type_min_value_dict[data_type_id]
             input_data_max_value = commands.data_type_max_value_dict[data_type_id]
+        else:
+            input_data_min_value = None
+            input_data_max_value = None
         input_data_type_string = commands.data_type_dict[data_type_id]
         input_data_description = expected_inputs[i][1]
         print("Now converting input number %d (%s)" % (i + 1, inputs[i]))
@@ -316,7 +369,7 @@ def interpret_single_response(command_id, response):
             exit(1)
         print("Good. The command was successful and the payload is empty as expected")
     else:
-        print("The expected response for this command is (along with the decoded value(s) below):"),
+        print("The expected response for this command along with the decoded value(s) is below:"),
         for i in range(len(expected_response)):
             response_text = input_or_response_to_string(expected_response[i])
             print("  ", response_text)
@@ -366,6 +419,8 @@ def interpret_single_response(command_id, response):
                         print("   ---> the single byte integer %d or 0x%02x in hex" % (data_item[0], data_item[0]))
                 elif data_type == commands.crc32:
                     print("   ---> 0x%08X" % (int.from_bytes(data_item, byteorder = "little")))
+                elif data_type == commands.buf10:
+                    print("   ---> %s" % (data_item))
                 else:
                     print("Error: did not implement the part that interprets non-integer data yet")
                     exit(1)

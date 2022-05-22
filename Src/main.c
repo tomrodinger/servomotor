@@ -35,8 +35,9 @@ struct __attribute__((__packed__)) firmware_version_struct {
 };
 struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 
-
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
+
+#define PING_PAYLOAD_SIZE 10
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 extern char selectedAxis;
@@ -280,6 +281,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     int32_t lower_limit;
     int32_t upper_limit;
     add_to_queue_test_results_t add_to_queue_test_results;
+    uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -580,6 +582,16 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
 			}
 			break;
+        case PING_COMMAND:
+        	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+            rs485_allow_next_command();
+            if(axis != ALL_ALIAS) {
+                ping_response_buffer[0] = 'R';
+                ping_response_buffer[1] = '\x01';
+                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+            }
+            break;
         }
     }
     else {

@@ -25,6 +25,8 @@ parser.add_argument('inputs',
 args = parser.parse_args()
 
 if args.commands == True:
+    motor_commands.print_protocol_version()
+    motor_commands.print_data_type_descriptions()
     motor_commands.print_registered_commands()
     exit(0)
 

@@ -1,4 +1,5 @@
 
+PROTOCOL_VERSION = 19
 registered_commands = {}
 
 def register_command(command_id, command_name, description, inputs, response, multiple_responses = False):
@@ -38,9 +39,11 @@ u64_unique_id = 15      # the unique id of the device
 u8_alias = 16           # the alias of the device
 crc32 = 17              # 32-bit CRC
 u8_alias = 18           # This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number up to 255
+buf10 = 19              # 10 byte long buffer containing any binary data
 list_2d = 200           # a two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
-string_null_term = 201   # this is a string with a variable length and must be null terminated
-success_response = b''  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
+string_null_term = 201  # this is a string with a variable length and must be null terminated
+unknown_data = 202      # this is an unknown data type (work in progress; will be corrected and documented later)
+success_response = 240  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
 
 
 data_type_dict = {
@@ -62,9 +65,10 @@ data_type_dict = {
     u64_unique_id : "u64_unique_id",
     u8_alias : "u8_alias",
     crc32 : "crc32",
-    u8_alias: "u8_alias",
+    buf10 : "buf10",
     list_2d : "list_2d",
     string_null_term : "string_null_term",
+    unknown_data : "unknown_data",
     success_response : "success_response"
 }
 
@@ -87,8 +91,11 @@ data_type_to_size_dict = {
     u8_alias : 1,
     u64_unique_id : 8,
     crc32 : 4,
+    buf10 : 10,
     list_2d : None,
     string_null_term : None,
+    unknown_data : None,
+    success_response : None,
 }
 
 data_type_min_value_dict = {
@@ -140,11 +147,38 @@ data_type_is_integer_dict = {
     u64_unique_id : False,
     u8_alias : False, # This is sometimes a character, sometimes a number, but for this purpose we will say it is not an integer  
     crc32 : False,   
+    buf10 : False,
     list_2d : False,
     string_null_term : False,
-    success_response : False
+    unknown_data : False,
+    success_response : False,
 }
 
+data_type_description_dict = {
+    i8  : "8-bit signed integer",
+    u8  : "8-bit unsigned integer",
+    i16 : "16-bit signed integer",
+    u16 : "16-bit unsigned integer",
+    i24 : "24-bit signed integer",
+    u24 : "24-bit unsigned integer",
+    i32 : "32-bit signed integer",
+    u32 : "32-bit unsigned integer",
+    i48 : "48-bit signed integer",
+    u48 : "48-bit unsigned integer",
+    i64 : "64-bit signed integer",
+    u64 : "64-bit unsigned integer",
+    string8 : "8 byte long string with null termination if it is shorter than 8 bytes",
+    u24_version_number : "3 byte version number. the order is patch, minor, major",
+    u32_version_number : "4 byte version number. the order is development number, patch, minor, major",
+    u64_unique_id : "The unique ID of the device (8-bytes long)",
+    u8_alias : "This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number from 0 to 255",
+    crc32 : "32-bit CRC",
+    buf10 : "10 byte long buffer containing any binary data",
+    list_2d : "A two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]",
+    string_null_term : "This is a string with a variable length and must be null terminated",
+    unknown_data : "This is an unknown data type (work in progress; will be corrected and documented later)",
+    success_response : "Indicates that the command was received successfully and is being executed. the next command can be immediately transmitted without causing a command overflow situation."
+}
 
 # === Below are the commands that are defined in the protocol ===
 
@@ -203,7 +237,7 @@ command_id   = 7
 command_name = "CAPTURE_HALL_SENSOR_DATA_COMMAND"
 description  = "Start sending hall sensor data (work in progress; don't send this command)"
 inputs       = (u8, "Indicates the type of data to read. Currently 1 to 4 are valid. 0 indicates turning off the reading.")
-response     = (b'', "Various data. This is work in progress.")
+response     = (unknown_data, "Various data. This is work in progress.")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 8
@@ -393,9 +427,17 @@ inputs       = [(i32, "The lower limit in microsteps"),
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
+command_id   = 31
+command_name = "PING_COMMAND"
+description  = "Send a payload containing any data and the device will respond with the same data back"
+inputs       = (buf10, "Any binary data payload to send to the device")
+response     = (buf10, "The same data that was sent to the device will be returned if all went well")
+register_command(command_id, command_name, description, inputs, response)
+
 command_id   = 254
 command_name = "ADD_TO_QUEUE_TEST_COMMAND"
 description  = "This is used for testing of some calculations that predict of the motion will go out of the set safety limits"
 inputs       = []
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
+
