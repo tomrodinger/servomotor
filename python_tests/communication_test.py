@@ -21,7 +21,7 @@ if command_id == None:
     print("Please run this program with the -c option to see all supported commands")
     exit(1)
 
-gathered_inputs = motor_commands.gather_inputs(command_id, "hellohello")
+gathered_inputs = motor_commands.gather_inputs(command_id, ["hellohello"])
 
 motor_commands.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the motor_commands module
 motor_commands.open_serial_port()

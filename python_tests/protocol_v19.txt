@@ -1,0 +1,223 @@
+Currently using protocol version v19
+
+These are the descriptions of the various input and output data types currently supported:
+
+   Data type ID    | Size (bytes) |       Max Value       |       Min Value       | Description
+-----------------------------------------------------------------------------------------------
+                i8 |            1 |                   127 |                  -128 | 8-bit signed integer
+                u8 |            1 |                   255 |                     0 | 8-bit unsigned integer
+               i16 |            2 |                 32767 |                -32768 | 16-bit signed integer
+               u16 |            2 |                 65535 |                     0 | 16-bit unsigned integer
+               i24 |            3 |               8388607 |              -8388608 | 24-bit signed integer
+               u24 |            3 |              16777215 |                     0 | 24-bit unsigned integer
+               i32 |            4 |            2147483647 |           -2147483648 | 32-bit signed integer
+               u32 |            4 |            4294967295 |                     0 | 32-bit unsigned integer
+               i48 |            6 |          549755813887 |         -549755813888 | 48-bit signed integer
+               u48 |            6 |         1099511627775 |                     0 | 48-bit unsigned integer
+               i64 |            8 |   9223372036854775807 |  -9223372036854775808 | 64-bit signed integer
+               u64 |            8 |  18446744073709551615 |                     0 | 64-bit unsigned integer
+           string8 |            8 |        Not Applicable |        Not Applicable | 8 byte long string with null termination if it is shorter than 8 bytes
+u24_version_number |            3 |        Not Applicable |        Not Applicable | 3 byte version number. the order is patch, minor, major
+u32_version_number |            4 |        Not Applicable |        Not Applicable | 4 byte version number. the order is development number, patch, minor, major
+     u64_unique_id |            8 |        Not Applicable |        Not Applicable | The unique ID of the device (8-bytes long)
+          u8_alias |            1 |        Not Applicable |        Not Applicable | This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number from 0 to 255
+             crc32 |            4 |        Not Applicable |        Not Applicable |  32-bit CRC
+             buf10 |           10 |        Not Applicable |        Not Applicable | 10 byte long buffer containing any binary data
+           list_2d |     Variable |        Not Applicable |        Not Applicable | A two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
+  string_null_term |     Variable |        Not Applicable |        Not Applicable | This is a string with a variable length and must be null terminated
+      unknown_data |     Variable |        Not Applicable |        Not Applicable | This is an unknown data type (work in progress; will be corrected and documented later)
+  success_response |     Variable |        Not Applicable |        Not Applicable | Indicates that the command was received successfully and is being executed. the next command can be immediately transmitted without causing a command overflow situation.
+
+These are the registered commands:
+
+  0: DISABLE_MOSFETS_COMMAND
+     Disable MOSFETS (note that MOSFETs are disabled after initial power on)
+     Input:  None
+     Response: success_response: Indicates success
+
+  1: ENABLE_MOSFETS_COMMAND
+     Enable MOSFETS
+     Input:  None
+     Response: success_response: Indicates success
+
+  2: TRAPEZOID_MOVE_COMMAND
+     Move immediately to the given position using the currently set speed (the speed is set by a separate command)
+     Input: i32: The displacement to travel. Can be positiove or negative.
+     Input: u32: The time over which to do the move
+     Response: success_response: Indicates success
+
+  3: SET_MAX_VELOCITY_COMMAND
+     Set maximum velocity (this is not used at this time)
+     Input: u32: Maximum velocity
+     Response: success_response: Indicates success
+
+  4: SET_POSITION_AND_FINISH_TIME_COMMAND
+     Move to this new given position and finish the move at the given absolution time
+     Input: i32: Position value
+     Input: u32: Time value
+     Response: success_response: Indicates success
+
+  5: SET_MAX_ACCELERATION_COMMAND
+     Set max acceleration
+     Input: u16: The maximum acceleration
+     Response: success_response: Indicates success
+
+  6: START_CALIBRATION_COMMAND
+     Start a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly
+     Input:  None
+     Response:  None
+
+  7: CAPTURE_HALL_SENSOR_DATA_COMMAND
+     Start sending hall sensor data (work in progress; don't send this command)
+     Input: u8: Indicates the type of data to read. Currently 1 to 4 are valid. 0 indicates turning off the reading.
+     Response: unknown_data: Various data. This is work in progress.
+
+  8: RESET_TIME_COMMAND
+     Reset the absolute time to zero (call this first before issuing any movement commands
+     Input:  None
+     Response: success_response: Indicates success
+
+  9: GET_CURRENT_TIME_COMMAND
+     Get the current absolute time
+     Input:  None
+     Response: u48: The current absolute time
+
+ 10: TIME_SYNC_COMMAND
+     Send the master time to the motor so that it can sync its own clock (do this 10 times per second)
+     Input: u48: The motor absolute time that the motor should sync to (in microseconds)
+     Response: i32: The error in the motor's time compared to the master time
+     Response: u16: The contents of the RCC-ICSCR register (holds the HSICAL and HSITRIM settings)
+
+ 11: GET_N_ITEMS_IN_QUEUE_COMMAND
+     Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)
+     Input:  None
+     Response: u8: The number of items in the movement queue. This command will return between 0 and 32. If less than 32, you can add more items to the queue to continue the movements in order without stopping.
+
+ 12: EMERGENCY_STOP_COMMAND
+     Emergency stop (stop all movement, disable MOSFETS, clear the queue)
+     Input:  None
+     Response: success_response: Indicates success
+
+ 13: ZERO_POSITION_COMMAND
+     Make the current position the position zero (origin)
+     Input:  None
+     Response: success_response: Indicates success
+
+ 14: HOMING_COMMAND
+     Homing (or in other words, move until a crash and then stop immediately)
+     Input: i32: The maximum distance to move (if a crash does not occur). This can be positive or negative. the sign determines the direction of movement.
+     Input: u32: The maximum time to allow for homing. Make sure to give enough time for the motor to cover the maximum distance or the motor may move too fast or throw a fatal error.
+     Response: success_response: Indicates success
+
+ 15: GET_POSITION_COMMAND
+     Get the current position
+     Input:  None
+     Response: i32: The current position
+
+ 16: GET_STATUS_COMMAND
+     Get the status
+     Input:  None
+     Response: u8: A series of flags which are 1 bit each. These are:    Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)    Bit 1: MOSFETs are enabled    Bit 2: Motor is in closed
+            loop mode    Bit 3: Motor is currently executing the calibration command    Bit 4: Motor is currently executing a homing command    Bit 5: Not used, set to 0    Bit 6: Not used, set to 0    Bit 7: Not used,
+            set to 0
+     Response: u8: The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you
+            can execute the SYSTEM_RESET_COMMAND to get out of the fatal error state.
+
+ 17: GO_TO_CLOSED_LOOP_COMMAND
+     Go to closed loop position control mode
+     Input:  None
+     Response: success_response: Indicates success
+
+ 18: GET_UPDATE_FREQUENCY_COMMAND
+     Get the update frequency (reciprocal of the time step)
+     Input:  None
+     Response: u32: Update frequency in Hz. This is how often the motor executes all calculations for hall sensor position, movement, PID loop, safety, etc.
+
+ 19: MOVE_WITH_ACCELERATION_COMMAND
+     Move with acceleration
+     Input: i32: The acceleration (the unit is microsteps per time step per time step * 2^24)
+     Input: u32: The number of time steps to apply this acceleration. Use command 18 to get the frequency of the time steps. After this many time steps, the acceleration will go to zero and velocity will be maintained.
+     Response: success_response: Indicates success
+
+ 20: DETECT_DEVICES_COMMAND
+     Detect devices
+     Input:  None
+     Response: u64_unique_id: A unique ID (unique among all devices manufactured). The response is sent after a random delay of between 0 and 1 seconds.
+     Response: u8_alias: The alias of the device that has this unique ID
+     Response: crc32: A CRC32 value for this packet. This is used to verify that the response is correct. However, currently this is hardcoded as 0x04030201
+
+ 21: SET_DEVICE_ALIAS_COMMAND
+     Set device alias
+     Input: u64: Unique ID of the target device
+     Input: u8_alias: The alias (short one byte ID) such as X, Y, Z, E, etc. Cannot be R because this is reserved for a response message.
+     Response: success_response: Indicates success
+
+ 22: GET_PRODUCT_INFO_COMMAND
+     Get product information
+     Input:  None
+     Response: string8: The product code / model number (when doing a firmware upgrade, this must match between the firmware file and the target device)
+     Response: u8: A firmware compatibility code (when doing a firmware upgrade, this must match between the firmware file and the target device)
+     Response: u24_version_number: The hardware version stored as 3 bytes. The first byte is the patch version, followed by the minor and major versions.
+     Response: u32: The serial number
+     Response: u64: The unique ID for the product
+     Response: u32: Not currently used
+
+ 23: FIRMWARE_UPGRADE_COMMAND
+     Upgrade one page of flash memory (several of these are needed to do a full firmware upgrade). Documentation to be done later.
+     Input:  None
+     Response: success_response: Indicates success
+
+ 24: GET_PRODUCT_DESCRIPTION_COMMAND
+     Get the product description. Documentation to be done later.
+     Input:  None
+     Response: string_null_term: This is a brief description of the product
+
+ 25: GET_FIRMWARE_VERSION_COMMAND
+     Get the firmware version. Documentation to be done latre.
+     Input:  None
+     Response: u32_version_number: The firmware version stored as 4 bytes. The first byte is the development number, then patch version, followed by the minor and major versions.
+
+ 26: MOVE_WITH_VELOCITY_COMMAND
+     Move with velocity
+     Input: i32: The velocity (the unit is microsteps per time step * 2^20)
+     Input: u32: The number of time steps to maintain this velocity. Use command 18 to get the frequency of the time steps. After this many time steps, If the queue becomes empty, the motor will maintain the last velocity
+            indefinitely. The velocity will take affect immediately if the queue is empty or will take affect immediately when this queued item is reached.
+     Response: success_response: Indicates success
+
+ 27: SYSTEM_RESET_COMMAND
+     System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from
+     the beginning.
+     Input:  None
+     Response:  None
+
+ 28: SET_MAXIMUM_MOTOR_CURRENT
+     Set the maximum motor current and maximum regeneration current. The values are stored in non-volatile memory and survive a reset.
+     Input: u16: The motor current.  The units are some arbitrary units and not amps. A value of 50 or 100 is suitable.
+     Input: u16: The motor regeneration current (while it is braking). This parameter is currently not used for anything.
+     Response: success_response: Indicates success
+
+ 29: MULTI_MOVE_COMMAND
+     Multi-move command
+     Input: u8: Specify how many moves are being communicated in this one shot
+     Input: u32: Each bit specifies if the move is a (bit = 0) MOVE_WITH_ACCELERATION_COMMAND or a (bit = 1) MOVE_WITH_VELOCITY_COMMAND
+     Input: list_2d: A 2D list in Python format (list of lists). Each item in the list is of type [i32, u32] representing a series of move commands. Each move command specifies the acceleration to move at or the velocity
+            to instantly change to (according to the bits baove) and the number of time steps over which this command is to be executed. For example: '[[100, 30000], [-200, 60000]]'. There is a limit of 32 move commands
+            that can be listed in this one multi-move command. Each of the moves takes up one queue spot, so make sure there is enough space in the queue to store all of the commands.
+     Response: success_response: Indicates success
+
+ 30: SET_SAFETY_LIMITS_COMMAND
+     Set safety limits (to prevent motion from exceeding set bounds)
+     Input: i32: The lower limit in microsteps
+     Input: i32: The upper limit in microsteps
+     Response: success_response: Indicates success
+
+ 31: PING_COMMAND
+     Send a payload containing any data and the device will respond with the same data back
+     Input: buf10: Any binary data payload to send to the device
+     Response: buf10: The same data that was sent to the device will be returned if all went well
+
+254: ADD_TO_QUEUE_TEST_COMMAND
+     This is used for testing of some calculations that predict of the motion will go out of the set safety limits
+     Input:  None
+     Response: success_response: Indicates success
+
