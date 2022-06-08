@@ -2,18 +2,37 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../../leds.h"
-#include "../../debug_uart.h"
-#include "../../RS485.h"
-#include "../../error_handling.h"
-#include "../../unique_id.h"
-#include "../../settings.h"
-#include "../../global_variables.h"
-#include "../../commands.h"
-#include "../../product_info.h"
-#include "../../device_status.h"
+#include "leds.h"
+#include "debug_uart.h"
+#include "RS485.h"
+#include "mosfets.h"
+#include "ADC.h"
+#include "PWM.h"
+#include "microsecond_clock.h"
+#include "clock_calibration.h"
+#include "error_handling.h"
+#include "unique_id.h"
+#include "settings.h"
+#include "commands.h"
+#include "product_info.h"
+#include "global_variables.h"
+#include "device_status.h"
+#include "bed_heater_control.h"
 
-extern uint32_t USART1_timout_timer;
+
+char PRODUCT_DESCRIPTION[] = "Print bed heater";
+
+struct __attribute__((__packed__)) firmware_version_struct {
+	uint8_t bugfix;
+	uint8_t minor;
+	uint8_t major;
+	uint8_t not_used;
+};
+struct firmware_version_struct firmware_version = {0, 8, 0, 0};
+
+#define PING_PAYLOAD_SIZE 10
+
+extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 extern char selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
@@ -21,10 +40,6 @@ extern volatile uint8_t commandReceived;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
-
-#define LAUNCH_APPLICATION_DELAY 50
-static int32_t launch_applicaiton = -1;
-
 
 void clock_init(void)
 {
@@ -90,34 +105,42 @@ void systick_init(void)
 void portA_init(void)
 {
 	#define BUTTON_PORT_A_PIN 13
+    #define FAN1_CONTROL_PORT_A_PIN 7
+    #define FAN2_CONTROL_PORT_A_PIN 8
+
+    GPIOA->BSRR = 1 << HEATER_CONTROL_PORT_A_PIN;
 
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // 24V line voltage measurement ADC input
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // hall sensor 2
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // hall sensor 1
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // hall sensor 3
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // current measurement channel B
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // PWM 1
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE10_Pos) | // PWM 3
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // PWM 4
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  |
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE7_Pos)  | // fan 1 digital control
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE8_Pos)  | // fan 2 digital control
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE9_Pos)  | // heater control digital output
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 drive enable
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // Button input and also SWDIO (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);  // Potentiometer input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
 
     GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT0_Pos) | // make all the pins with analog components connected open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // also, make the debug UART receive pin open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // may not be necessary
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT10_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT11_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT15_Pos);
     GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
+    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the UART receive pin
 }
 
 
@@ -126,26 +149,24 @@ void portB_init(void)
     GPIOB->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos)  |
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // PWM 2
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos)  | // ambient temperature measurement ADC input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  |
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
 
-    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // step input make as open drain
-    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
-    		        (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
+    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD12_Pos); // RX pin is pull up, overvoltage pin is pull down
+    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos); // RX pin is pull up
 }
 
 
@@ -179,7 +200,7 @@ void portD_init(void)
 {
     GPIOD->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos) | 
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos) |
@@ -204,10 +225,12 @@ void portD_init(void)
 // This interrupt will be called 100 times per second
 void SysTick_Handler(void)
 {
+    #define OVERVOLTAGE_PORT_B_PIN 12
+
 	static uint16_t toggle_counter = 0;
 
 	toggle_counter++;
-	if(toggle_counter >= 5) {
+	if(toggle_counter >= 50) {
 	    green_LED_toggle();
 		toggle_counter = 0;
 	}
@@ -216,89 +239,145 @@ void SysTick_Handler(void)
         detect_devices_delay--;
     }
 
-    if(launch_applicaiton > 0) {
-        launch_applicaiton--;
-    }
+//    if((GPIOB->IDR & (1 << OVERVOLTAGE_PORT_B_PIN)) == 0) {
+//        red_LED_off();
+//    }
+//    else {
+//        red_LED_on();
+//    }
 }
 
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 {
-	uint64_t unique_id;
-	uint8_t new_alias;
-    uint8_t error_code;
-    char message[100];
+    uint64_t local_time;
+    uint64_t time_from_master = 0;
+    uint64_t unique_id;
+    uint8_t new_alias;
+    uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
+
+    #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
+    struct move_parameters_struct {
+        union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
+            int32_t acceleration;
+            int32_t velocity;
+        };
+        int32_t time_steps;
+    };
+    struct multi_move_command_buffer_struct {
+        uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
+        struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
+    };
+
 //    print_number("Received a command with length: ", commandLen);
     if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
-        launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
         switch(command) {
+        case RESET_TIME_COMMAND:
+            rs485_allow_next_command();
+        	reset_microsecond_time();
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+            break;
+        case GET_CURRENT_TIME_COMMAND:
+            rs485_allow_next_command();
+            if(axis != ALL_ALIAS) {
+                local_time = get_microsecond_time();
+                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(&local_time, 6);
+            }
+            break;
+        case TIME_SYNC_COMMAND:
+        	memcpy(&time_from_master, parameters, 6);
+            rs485_allow_next_command();
+        	int32_t time_error = time_sync(time_from_master);
+        	uint16_t clock_calibration_value = get_clock_calibration_value();
+            if(axis != ALL_ALIAS) {
+                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(&time_error, 4);
+                rs485_transmit(&clock_calibration_value, 2);
+            }
+            break;
+        case GET_STATUS_COMMAND:
+            rs485_allow_next_command();
+            if(axis != ALL_ALIAS) {
+            	uint8_t device_status_flags = get_device_status_flags();
+                set_device_status_flags(device_status_flags);
+                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+            }
+            break;
         case DETECT_DEVICES_COMMAND:
-//            sprintf(message, "DETECT_DEVICES_COMMAND\n");
-//            transmit(message, strlen(message));
+            rs485_allow_next_command();
         	detect_devices_delay = get_random_number(99);
 			break;
         case SET_DEVICE_ALIAS_COMMAND:
-//            sprintf(message, "SET_DEVICE_ALIAS_COMMAND\n");
-//            transmit(message, strlen(message));
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
-
-//            uint32_t my_unique_id_u32_array[2];
-//            memcpy(my_unique_id_u32_array, &unique_id, sizeof(unique_id));
-//            sprintf(message, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-//            transmit(message, strlen(message));
-
+            rs485_allow_next_command();
         	if(unique_id == my_unique_id) {
-                transmit("Match\n", 6);
+               	transmit("Unique ID matches\n", 18);
         		global_settings.my_alias = new_alias;
            		save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
         	}
         	break;
-        case FIRMWARE_UPGRADE_COMMAND:
-            transmit("firmware upgrade command\n", 25);
-            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-            if((memcmp(parameters, product_info->model_code, MODEL_CODE_LENGTH) == 0) && (*(parameters + MODEL_CODE_LENGTH) == product_info->firmware_compatibility_code)) {
-                uint8_t firmware_page = *(parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
-                sprintf(message, "valid firmware page %hu\n", firmware_page);
-                transmit(message, strlen(message));
-                error_code = burn_firmware_page(firmware_page, parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
-                if((axis != ALL_ALIAS) && (error_code == 0)) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-            }
-			break;
         case GET_PRODUCT_INFO_COMMAND:
+            rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
+                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				rs485_transmit(&product_info_length, 1);
 				rs485_transmit(product_info, sizeof(struct product_info_struct));
 			}
 			break;
-        case GET_STATUS_COMMAND:
-            if(axis != ALL_ALIAS) {
-                set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-            }
-            break;
+        case GET_PRODUCT_DESCRIPTION_COMMAND:
+            rs485_allow_next_command();
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+				rs485_transmit(&product_description_length, 1);
+				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+			}
+			break;
+        case GET_FIRMWARE_VERSION_COMMAND:
+            rs485_allow_next_command();
+			if(axis != ALL_ALIAS) {
+				rs485_transmit("R\x01", 2);
+				uint8_t firmware_version_length = sizeof(firmware_version);
+				rs485_transmit(&firmware_version_length, 1);
+				rs485_transmit(&firmware_version, sizeof(firmware_version));
+			}
+			break;
         case SYSTEM_RESET_COMMAND:
             NVIC_SystemReset();
             break;
+        case PING_COMMAND:
+        	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+            rs485_allow_next_command();
+            if(axis != ALL_ALIAS) {
+                ping_response_buffer[0] = 'R';
+                ping_response_buffer[1] = '\x01';
+                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+            }
+            break;
         }
+    }
+    else {
+        rs485_allow_next_command();
     }
 }
 
 void transmit_unique_id(void)
 {
     uint32_t crc32 = 0x04030201;
-	rs485_transmit("R\x01\x0d", 3);
-	rs485_transmit(&my_unique_id, 8);
-	rs485_transmit(&global_settings.my_alias, 1);
-	rs485_transmit(&crc32, 4);
+    rs485_transmit("R\x01\x0d", 3);
+    rs485_transmit(&my_unique_id, 8);
+    rs485_transmit(&global_settings.my_alias, 1);
+    rs485_transmit(&crc32, 4);
 }
 
 
@@ -308,46 +387,99 @@ void process_debug_uart_commands(void)
 
     if(command_debug_uart != 0) {
     	switch(command_debug_uart) {
+        case 'c':
+            do_one_ADC_conversion_cycle();
+            break;
+    	case 'p':
+            print_bed_voltage();
+            print_bed_current();
+            print_ambient_temperature();
+            print_bed_resistance();
+            print_bed_temperature();
+            break;
+        case 'e':
+    		turn_on_or_off_bed_heater(1);
+            #define ENABLE_BED_HEATER_MESSAGE "Enabling the bed heater. Press capital E to disable it.\n"
+			transmit(ENABLE_BED_HEATER_MESSAGE, sizeof(ENABLE_BED_HEATER_MESSAGE) - 1);
+    		break;
+    	case 'E':
+    		turn_on_or_off_bed_heater(0);
+            #define DISABLE_BED_HEATER_MESSAGE "Disabling the bed heater. Press small e to enable it.\n"
+			transmit(DISABLE_BED_HEATER_MESSAGE, sizeof(DISABLE_BED_HEATER_MESSAGE) - 1);
+    		break;
     	case 'S':
 			transmit("Saving settings\n", 16);
-    		save_global_settings();
+            save_global_settings();
     		break;
 		}
     	command_debug_uart = 0;
 	}
 }
 
-void print_start_message()
+
+void button_logic(void)
 {
-	char buff[200];
+    static uint64_t press_start_time = 0;
+    uint32_t time_pressed_down = 0;
+    static uint8_t press_flag = 0;
+
+    if((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) == 0) {
+    	if(press_flag == 0) {
+			press_start_time = get_microsecond_time();
+			press_flag = 1;
+    	}
+    }
+    else if(press_flag) {
+    	press_flag = 0;
+    	time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
+    	if(time_pressed_down > 5000000) {
+    		time_pressed_down = 5000000;
+    	}
+    	time_pressed_down = time_pressed_down / 1000;
+
+    	if(time_pressed_down > 0) {
+    		print_number("Button press time: ", time_pressed_down);
+    	}
+
+		if(time_pressed_down >= 2000) {
+
+		}
+		else if(time_pressed_down >= 300) {
+
+		}
+		else if(time_pressed_down >= 50) {
+
+		}
+    }
+}
+
+void print_start_message(void)
+{
 	uint32_t my_unique_id_u32_array[2];
-    struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 
 	memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
 
-    transmit("Bootloader start\n", 17);
-    transmit("Model code: ", 12);
-    transmit(&product_info->model_code, 8);
-    transmit("\n", 1);
-    sprintf(buff, "Firmware compatibility code: %hu\n", product_info->firmware_compatibility_code);
-    transmit(buff, strlen(buff));
-    sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-    transmit(buff, strlen(buff));
-    if((global_settings.my_alias >= 33) && (global_settings.my_alias <= 126)) {
-        sprintf(buff, "Alias: %c\n", global_settings.my_alias);
+    transmit("Applicaiton start\n", 18);
+}
+
+
+void process_ADC_values(void)
+{
+    uint16_t current;
+    uint16_t voltage;
+    uint16_t temperature;
+
+    if(new_ADC_values_available()) {
+        process_ADC_values();
+        current = get_current_sense_value();
+        voltage = get_24V_sense_value();
+        temperature = get_temperature_sense_value();
+        bed_heater_calculations(current, voltage, temperature);
     }
-    else {
-        sprintf(buff, "Alias: 0x%02hx\n", global_settings.my_alias);
-    }
-    transmit(buff, strlen(buff));
 }
 
 int main(void)
 {
-//	volatile int i;
-    typedef void (*pFunction)(void);
-    pFunction jumpToApplication = 0;
-
     clock_init();
     systick_init();
     portA_init();
@@ -356,62 +488,39 @@ int main(void)
     portD_init();
     debug_uart_init();
     rs485_init();
+    microsecond_clock_init();
+    adc_init();
+//    pwm_init();
 
-    SCB->VTOR = 0; // vector table for the bootloader is located at the normal location
+    SCB->VTOR = 0x2800; // vector table is moved to where the application starts, which is after the bootloader
 
     my_unique_id = get_unique_id();
 
-    load_global_settings(); // load the settings from non-volatile memory
+    load_global_settings(); // load the settings from non-volatile memory into ram for faster access
 
     __enable_irq();
 
     print_start_message();
 
-//    uint32_t buffer[4];
-    char message[100];
-//    buffer[0] = 0;
-//    uint32_t crc32 = calculate_crc32_buffer(buffer, 1);
-//    sprintf(message, "crc32: %08lX\n", crc32);
-    uint32_t firmware_size = get_firmware_size();
-    if(firmware_size == 0xFFFFFFFF) {
-        transmit("No application firmware is present\n", 35);
-    }
-    else {
-        sprintf(message, "Firmware size: %lu bytes\n", (firmware_size << 2));
-        transmit(message, strlen(message));
-        if(firmware_crc_check()) {
-            transmit("Firmware CRC check passed\n", 26);
-            uint32_t jumpAddress = *(__IO uint32_t*)(APPLICATION_ADDRESS_PTR);
-            jumpToApplication = (pFunction)jumpAddress; 
-    //        sprintf(message, "Application start address: %08lx\n", jumpAddress);
-    //        transmit(message, strlen(message));
-            launch_applicaiton = LAUNCH_APPLICATION_DELAY; // launch the application after a short delay
-        }
-        else {
-            transmit("Firmware CRC check failed\n", 26);
-        }
-    }
-
-
 //    rs485_transmit("Start\n", 6);
 
     while(1) {
+//    	check_if_break_condition();
+//    	check_if_ADC_watchdog2_exceeded();
+
     	if(commandReceived) {
             processCommand(selectedAxis, command, valueBuffer);
-            commandReceived = 0;
         }
 
         if(detect_devices_delay == 0) {
+            transmit("Transmitting unique ID\n", 23);
             transmit_unique_id();
-    		detect_devices_delay--;
+            detect_devices_delay--;
     	}
 
-        if(launch_applicaiton == 0) {
-            // the bootloader code will no longer be valid. the application code will reset the stack pointer and reinitialize things
-            __disable_irq();
-            jumpToApplication();
-        }
-
         process_debug_uart_commands();
+        button_logic();
+
+        process_ADC_values();
     }
 }

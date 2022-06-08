@@ -2,16 +2,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "../../Src/leds.h"
-#include "../../Src/debug_uart.h"
-#include "../../Src/RS485.h"
-#include "../../Src/error_handling.h"
-#include "../../Src/unique_id.h"
-#include "../../Src/settings.h"
-#include "../../Src/global_variables.h"
-#include "../../Src/commands.h"
-#include "../../Src/product_info.h"
-#include "../../Src/device_status.h"
+#include "leds.h"
+#include "debug_uart.h"
+#include "RS485.h"
+#include "error_handling.h"
+#include "unique_id.h"
+#include "settings.h"
+#include "global_variables.h"
+#include "commands.h"
+#include "product_info.h"
+#include "device_status.h"
 
 extern uint32_t USART1_timout_timer;
 extern char selectedAxis;

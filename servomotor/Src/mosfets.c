@@ -4,11 +4,13 @@ static uint8_t mosfets_enabled = 0;
 
 void enable_mosfets(void)
 {
+    GPIOA->BSRR = 1 << 1;
     mosfets_enabled = 1;
 }
 
 void disable_mosfets(void)
 {
+    GPIOA->BSRR = (1 << 1) << 16;
     mosfets_enabled = 0;
 }
 

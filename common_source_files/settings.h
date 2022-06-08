@@ -3,6 +3,7 @@
 #define SETTINGS_H_
 
 #include "stm32g0xx_hal.h"
+#include "device_specific_settings.h"
 
 #define FLASH_BASE_ADDRESS 0x8000000
 //#define FLASH_PAGE_SIZE 2048  // commented this out because this definition is included in "stm32g0xx_hal.h"
@@ -13,17 +14,7 @@
 #define LAST_FIRMWARE_PAGE_NUMBER 30
 #define FIRMWARE_START_ADDRESS  (FIRST_FIRMWARE_PAGE_NUMBER * FLASH_PAGE_SIZE + FLASH_BASE_ADDRESS)
 #define APPLICATION_ADDRESS_PTR (FIRMWARE_START_ADDRESS + sizeof(uint32_t))
-
-#define GLOBAL_SETTINGS_STRUCT_SIZE (sizeof(struct global_settings_struct)) 
-struct __attribute__((aligned (4))) __attribute__((__packed__)) global_settings_struct {
-	uint8_t my_alias;
-	uint16_t hall1_midline;
-	uint16_t hall2_midline;
-	uint16_t hall3_midline;
-    uint16_t max_motor_pwm_voltage;
-    uint16_t max_motor_regen_pwm_voltage;
-    uint8_t dummys[5]; // this solves a warning. the size of this structure should be divisible by 64 bits (8 bytes).
-};
+#define GLOBAL_SETTINGS_STRUCT_SIZE (sizeof(struct global_settings_struct)) // that device specific structure that defines all the settings for this device is defined in device_specific_settings.h
 
 void load_global_settings(void);
 void save_global_settings(void);
