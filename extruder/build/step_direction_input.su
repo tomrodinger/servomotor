@@ -1,0 +1,2 @@
+Src/step_direction_input.c:8:6:step_and_direction_init	0	static
+Src/step_direction_input.c:30:9:get_step_count	0	static

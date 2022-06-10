@@ -1,0 +1,7 @@
+../common_source_files/settings.c:8:6:load_global_settings	8	static
+../common_source_files/settings.c:13:13:crc32_init	0	static
+../common_source_files/settings.c:25:9:firmware_crc_check	8	static
+../common_source_files/settings.c:45:10:calculate_crc32_buffer	8	static
+../common_source_files/settings.c:56:10:get_firmware_size	0	static
+../common_source_files/settings.c:116:6:save_global_settings	32	static
+../common_source_files/settings.c:143:8:burn_firmware_page	56	static

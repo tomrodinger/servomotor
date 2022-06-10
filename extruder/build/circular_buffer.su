@@ -1,0 +1,10 @@
+Src/circular_buffer.c:7:17:circular_buf_init	16	static
+Src/circular_buffer.c:17:6:circular_buf_reset	0	static
+Src/circular_buffer.c:23:6:circular_buf_free	8	static
+Src/circular_buffer.c:27:9:circular_buf_full	0	static
+Src/circular_buffer.c:31:9:circular_buf_empty	0	static
+Src/circular_buffer.c:35:10:circular_buf_size	0	static
+Src/circular_buffer.c:48:6:advance_pointer	0	static
+Src/circular_buffer.c:60:6:retreat_pointer	0	static
+Src/circular_buffer.c:67:6:circular_buf_put	0	static
+Src/circular_buffer.c:72:10:circular_buf_get	0	static

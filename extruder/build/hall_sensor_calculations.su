@@ -1,0 +1,17 @@
+Src/hall_sensor_calculations.c:64:6:switch_motor	48	static
+Src/hall_sensor_calculations.c:75:6:set_current_motor_index	8	static
+Src/hall_sensor_calculations.c:84:6:adjust_hall_sensor_readings	12	static
+Src/hall_sensor_calculations.c:104:9:get_region	0	static
+Src/hall_sensor_calculations.c:141:9:get_hall_position1	16	static
+Src/hall_sensor_calculations.c:198:9:get_hall_position2	24	static
+Src/hall_sensor_calculations.c:432:9:get_hall_position	8	static
+Src/hall_sensor_calculations.c:441:9:get_hall_position_with_hysteresis	8	static
+Src/hall_sensor_calculations.c:457:6:zero_hall_position	16	static
+Src/hall_sensor_calculations.c:465:6:print_fraction	32	static
+Src/hall_sensor_calculations.c:473:6:print_hall_position_and_time_difference	32	static
+Src/hall_sensor_calculations.c:485:6:print_hall_sensor_value	32	static
+Src/hall_sensor_calculations.c:493:6:print_hall_midlines	120	static
+Src/hall_sensor_calculations.c:500:10:get_smoothed_hall_sensor1_voltage	0	static
+Src/hall_sensor_calculations.c:504:10:get_smoothed_hall_sensor2_voltage	0	static
+Src/hall_sensor_calculations.c:508:10:get_smoothed_hall_sensor3_voltage	0	static
+Src/hall_sensor_calculations.c:512:10:get_smoothed_hall_sensor4_voltage	0	static

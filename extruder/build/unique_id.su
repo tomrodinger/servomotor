@@ -1,0 +1,2 @@
+../common_source_files/unique_id.c:7:10:get_unique_id	0	static
+../common_source_files/unique_id.c:13:10:get_random_number	8	static

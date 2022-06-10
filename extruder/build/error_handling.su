@@ -1,0 +1,2 @@
+../common_source_files/error_handling.c:100:13:systick_half_cycle_delay_plus_handle_commands	40	static
+../common_source_files/error_handling.c:110:6:fatal_error	48	static

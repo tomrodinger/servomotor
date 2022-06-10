@@ -1,0 +1,2 @@
+Src/overvoltage.c:4:6:overvoltage_init	0	static
+Src/overvoltage.c:12:6:EXTI4_15_IRQHandler	8	static

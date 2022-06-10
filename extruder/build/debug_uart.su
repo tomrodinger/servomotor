@@ -1,0 +1,9 @@
+../common_source_files/debug_uart.c:12:6:debug_uart_init	0	static
+../common_source_files/debug_uart.c:28:6:USART2_IRQHandler	12	static
+../common_source_files/debug_uart.c:53:6:transmit	24	static
+../common_source_files/debug_uart.c:82:6:transmit_without_interrupts	12	static
+../common_source_files/debug_uart.c:94:6:convert_uint16_to_byte_array	24	static
+../common_source_files/debug_uart.c:118:6:print_number	40	static
+../common_source_files/debug_uart.c:132:6:convert_int64_to_byte_array	24	static
+../common_source_files/debug_uart.c:166:6:print_int64	40	static
+../common_source_files/debug_uart.c:177:9:get_command_debug_uart	0	static

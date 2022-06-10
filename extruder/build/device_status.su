@@ -1,0 +1,3 @@
+../common_source_files/device_status.c:5:30:get_device_status	0	static
+../common_source_files/device_status.c:10:6:set_device_status_flags	0	static
+../common_source_files/device_status.c:16:6:set_device_error_code	0	static

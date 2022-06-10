@@ -1,0 +1,6 @@
+../common_source_files/leds.c:4:13:red_LED_on	0	static
+../common_source_files/leds.c:8:13:red_LED_off	0	static
+../common_source_files/leds.c:12:13:red_LED_toggle	0	static
+../common_source_files/leds.c:21:13:green_LED_on	0	static
+../common_source_files/leds.c:25:13:green_LED_off	0	static
+../common_source_files/leds.c:29:13:green_LED_toggle	0	static

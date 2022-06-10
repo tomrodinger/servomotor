@@ -1,0 +1,12 @@
+Src/ADC.c:12:6:adc_init	16	static
+Src/ADC.c:87:6:check_if_break_condition	16	static
+Src/ADC.c:98:6:check_if_ADC_watchdog1_exceeded	16	static
+Src/ADC.c:109:6:check_if_ADC_watchdog2_exceeded	0	static
+Src/ADC.c:120:6:check_if_ADC_watchdog3_exceeded	0	static
+Src/ADC.c:131:10:get_hall_sensor1_voltage	0	static
+Src/ADC.c:136:10:get_hall_sensor2_voltage	0	static
+Src/ADC.c:141:10:get_hall_sensor3_voltage	0	static
+Src/ADC.c:146:10:get_hall_sensor4_voltage	0	static
+Src/ADC.c:151:10:get_temperature_sensor_voltage	0	static
+Src/ADC.c:156:10:get_motor_current	0	static
+Src/ADC.c:190:6:set_analog_watchdog_limits	0	static

@@ -610,8 +610,8 @@ void process_calibration_data(void)
 		global_settings.hall1_midline = midline[0];
 		global_settings.hall2_midline = midline[1];
 	} else {
-		global_settings.hall1_midline = midline[0];
-		global_settings.hall2_midline = midline[1];
+		global_settings.hall3_midline = midline[0];
+		global_settings.hall4_midline = midline[1];
 	}
 
 	for(j = 0; j < 2; j++) {

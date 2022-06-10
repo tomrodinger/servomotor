@@ -1,0 +1,17 @@
+../Drivers/CMSIS/Include/core_cm0plus.h:985:34:__NVIC_SystemReset	0	static
+Src/main.c:58:6:clock_init	0	static
+Src/main.c:83:6:systick_init	0	static
+Src/main.c:155:6:portA_init	0	static
+Src/main.c:220:6:portB_init	0	static
+Src/main.c:251:6:portC_init	0	static
+Src/main.c:277:6:portD_init	0	static
+Src/main.c:306:6:SysTick_Handler	8	static
+Src/main.c:331:6:processCommand	408	static
+Src/main.c:738:6:transmit_unique_id	16	static
+Src/main.c:748:6:process_debug_uart_commands	8	static
+Src/main.c:845:6:button_logic	8	static
+Src/main.c:888:6:heater_on	0	static
+Src/main.c:893:6:heater_off	0	static
+Src/main.c:898:6:heater_logic	8	static
+Src/main.c:924:6:print_start_message	8	static
+Src/main.c:945:5:main	48	static

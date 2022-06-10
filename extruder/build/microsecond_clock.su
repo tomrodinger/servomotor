@@ -1,0 +1,4 @@
+../common_source_files/microsecond_clock.c:8:6:microsecond_clock_init	0	static
+../common_source_files/microsecond_clock.c:22:6:TIM14_IRQHandler	0	static
+../common_source_files/microsecond_clock.c:34:10:get_microsecond_time	16	static
+../common_source_files/microsecond_clock.c:96:6:reset_microsecond_time	0	static

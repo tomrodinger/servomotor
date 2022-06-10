@@ -1,0 +1,3 @@
+../common_source_files/clock_calibration.c:12:9:PI_controller	0	static
+../common_source_files/clock_calibration.c:38:9:time_sync	8	static
+../common_source_files/clock_calibration.c:47:10:get_clock_calibration_value	0	static

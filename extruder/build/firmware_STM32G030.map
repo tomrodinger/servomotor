@@ -1,0 +1,1646 @@
+Archive member included to satisfy reference by file (symbol)
+
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (exit)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o) (_global_impure_ptr)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (__libc_init_array)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+                              build/circular_buffer.o (malloc)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+                              build/RS485.o (memcpy)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o (memset)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o) (_free_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o) (_malloc_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o) (_sbrk_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+                              build/error_handling.o (sprintf)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-strlen.o)
+                              build/debug_uart.o (strlen)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o) (__malloc_lock)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o) (_svfprintf_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o) (_printf_i)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o) (errno)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o) (__retarget_lock_acquire_recursive)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o) (memchr)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o) (memmove)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o) (_realloc_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o) (_malloc_usable_size_r)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o) (__gnu_thumb1_case_shi)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                              build/debug_uart.o (__aeabi_uidiv)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+                              build/debug_uart.o (__aeabi_idiv)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o) (__aeabi_idiv0)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o)
+                              build/debug_uart.o (__aeabi_ldivmod)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o)
+                              build/debug_uart.o (__aeabi_uldivmod)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+                              build/hall_sensor_calculations.o (__aeabi_lmul)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o) (__udivmoddi4)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o) (__gnu_ldivmod_helper)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o) (__clzdi2)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o) (__divdi3)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzsi2.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o) (__clzsi2)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o) (_sbrk)
+/Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+                              /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o) (_exit)
+
+Discarded input sections
+
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+ .data          0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ .rodata        0x0000000000000000       0x24 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ .text          0x0000000000000000       0x80 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .ARM.extab     0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .ARM.exidx     0x0000000000000000       0x10 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .ARM.attributes
+                0x0000000000000000       0x1b /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+ .text          0x0000000000000000       0x14 build/startup_stm32g030c8tx.o
+ .data          0x0000000000000000        0x0 build/startup_stm32g030c8tx.o
+ .bss           0x0000000000000000        0x0 build/startup_stm32g030c8tx.o
+ .text          0x0000000000000000        0x0 build/global_variables.o
+ .data          0x0000000000000000        0x0 build/global_variables.o
+ .bss           0x0000000000000000        0x0 build/global_variables.o
+ .data.my_alias
+                0x0000000000000000        0x1 build/global_variables.o
+ .text          0x0000000000000000        0x0 build/circular_buffer.o
+ .data          0x0000000000000000        0x0 build/circular_buffer.o
+ .bss           0x0000000000000000        0x0 build/circular_buffer.o
+ .text.circular_buf_init
+                0x0000000000000000       0x1c build/circular_buffer.o
+ .text.circular_buf_reset
+                0x0000000000000000        0xc build/circular_buffer.o
+ .text.circular_buf_free
+                0x0000000000000000        0x8 build/circular_buffer.o
+ .text.circular_buf_full
+                0x0000000000000000        0x4 build/circular_buffer.o
+ .text.circular_buf_empty
+                0x0000000000000000       0x18 build/circular_buffer.o
+ .text.circular_buf_size
+                0x0000000000000000       0x20 build/circular_buffer.o
+ .text.advance_pointer
+                0x0000000000000000       0x38 build/circular_buffer.o
+ .text.retreat_pointer
+                0x0000000000000000       0x18 build/circular_buffer.o
+ .text.circular_buf_put
+                0x0000000000000000       0x40 build/circular_buffer.o
+ .text.circular_buf_get
+                0x0000000000000000       0x1c build/circular_buffer.o
+ .comment       0x0000000000000000       0x4e build/circular_buffer.o
+ .ARM.attributes
+                0x0000000000000000       0x2c build/circular_buffer.o
+ .text          0x0000000000000000        0x0 build/ADC.o
+ .data          0x0000000000000000        0x0 build/ADC.o
+ .bss           0x0000000000000000        0x0 build/ADC.o
+ .text.check_if_break_condition
+                0x0000000000000000       0x24 build/ADC.o
+ .text.check_if_ADC_watchdog1_exceeded
+                0x0000000000000000       0x24 build/ADC.o
+ .text.check_if_ADC_watchdog3_exceeded
+                0x0000000000000000       0x18 build/ADC.o
+ .text          0x0000000000000000        0x0 build/PWM.o
+ .data          0x0000000000000000        0x0 build/PWM.o
+ .bss           0x0000000000000000        0x0 build/PWM.o
+ .text          0x0000000000000000        0x0 build/RS485.o
+ .data          0x0000000000000000        0x0 build/RS485.o
+ .bss           0x0000000000000000        0x0 build/RS485.o
+ .text          0x0000000000000000        0x0 build/clock_calibration.o
+ .data          0x0000000000000000        0x0 build/clock_calibration.o
+ .bss           0x0000000000000000        0x0 build/clock_calibration.o
+ .text.PI_controller
+                0x0000000000000000       0x44 build/clock_calibration.o
+ .text          0x0000000000000000        0x0 build/debug_uart.o
+ .data          0x0000000000000000        0x0 build/debug_uart.o
+ .bss           0x0000000000000000        0x0 build/debug_uart.o
+ .text.convert_uint16_to_byte_array
+                0x0000000000000000       0xe4 build/debug_uart.o
+ .text.convert_int64_to_byte_array
+                0x0000000000000000       0x8c build/debug_uart.o
+ .text          0x0000000000000000        0x0 build/error_handling.o
+ .data          0x0000000000000000        0x0 build/error_handling.o
+ .bss           0x0000000000000000        0x0 build/error_handling.o
+ .text          0x0000000000000000        0x0 build/hall_sensor_calculations.o
+ .data          0x0000000000000000        0x0 build/hall_sensor_calculations.o
+ .bss           0x0000000000000000        0x0 build/hall_sensor_calculations.o
+ .text.set_current_motor_index
+                0x0000000000000000       0x18 build/hall_sensor_calculations.o
+ .text.adjust_hall_sensor_readings
+                0x0000000000000000       0x98 build/hall_sensor_calculations.o
+ .text.get_region
+                0x0000000000000000       0x34 build/hall_sensor_calculations.o
+ .text.get_hall_position_with_hysteresis
+                0x0000000000000000       0x3c build/hall_sensor_calculations.o
+ .rodata.print_fraction.str1.4
+                0x0000000000000000        0x5 build/hall_sensor_calculations.o
+ .text.print_fraction
+                0x0000000000000000       0x2c build/hall_sensor_calculations.o
+ .text.print_hall_position_and_time_difference
+                0x0000000000000000       0x4c build/hall_sensor_calculations.o
+ .rodata.print_hall_sensor_value.str1.4
+                0x0000000000000000        0x7 build/hall_sensor_calculations.o
+ .text.print_hall_sensor_value
+                0x0000000000000000       0x2c build/hall_sensor_calculations.o
+ .bss.Counter_1
+                0x0000000000000000        0x2 build/hall_sensor_calculations.o
+ .bss.Counter_2
+                0x0000000000000000        0x2 build/hall_sensor_calculations.o
+ .bss.buffer_1  0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.buffer_2  0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.buffer_3  0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.buffer_4  0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.hall_position_with_hysteresis
+                0x0000000000000000        0x8 build/hall_sensor_calculations.o
+ .bss.sum1      0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.sum2      0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.sum3      0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .bss.sum4      0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .data.first_time_running1
+                0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .data.first_time_running2
+                0x0000000000000000        0x4 build/hall_sensor_calculations.o
+ .text          0x0000000000000000        0x0 build/leds.o
+ .data          0x0000000000000000        0x0 build/leds.o
+ .bss           0x0000000000000000        0x0 build/leds.o
+ .text.red_LED_toggle
+                0x0000000000000000       0x1c build/leds.o
+ .text.green_LED_on
+                0x0000000000000000       0x10 build/leds.o
+ .text          0x0000000000000000        0x0 build/main.o
+ .data          0x0000000000000000        0x0 build/main.o
+ .bss           0x0000000000000000        0x0 build/main.o
+ .text.systick_init
+                0x0000000000000000       0x2c build/main.o
+ .text.portA_init
+                0x0000000000000000       0x20 build/main.o
+ .text.portB_init
+                0x0000000000000000       0x20 build/main.o
+ .text.portC_init
+                0x0000000000000000       0x1c build/main.o
+ .text.portD_init
+                0x0000000000000000       0x18 build/main.o
+ .text.transmit_unique_id
+                0x0000000000000000       0x3c build/main.o
+ .text.heater_on
+                0x0000000000000000       0x10 build/main.o
+ .text.heater_off
+                0x0000000000000000       0x14 build/main.o
+ .text.heater_logic
+                0x0000000000000000       0x68 build/main.o
+ .text          0x0000000000000000        0x0 build/microsecond_clock.o
+ .data          0x0000000000000000        0x0 build/microsecond_clock.o
+ .bss           0x0000000000000000        0x0 build/microsecond_clock.o
+ .text          0x0000000000000000        0x0 build/mosfets.o
+ .data          0x0000000000000000        0x0 build/mosfets.o
+ .bss           0x0000000000000000        0x0 build/mosfets.o
+ .text          0x0000000000000000        0x0 build/motor_control.o
+ .data          0x0000000000000000        0x0 build/motor_control.o
+ .bss           0x0000000000000000        0x0 build/motor_control.o
+ .text.capture_logic
+                0x0000000000000000      0x108 build/motor_control.o
+ .text.handle_homing_logic
+                0x0000000000000000       0x98 build/motor_control.o
+ .text.move_n_steps_in_m_time
+                0x0000000000000000        0x4 build/motor_control.o
+ .text.clear_the_queue_and_stop
+                0x0000000000000000       0x30 build/motor_control.o
+ .text.compute_velocity
+                0x0000000000000000       0x38 build/motor_control.o
+ .text.PID_controller
+                0x0000000000000000       0xa0 build/motor_control.o
+ .text.PID_controller_with_hysteresis
+                0x0000000000000000       0xcc build/motor_control.o
+ .text.get_max_velocity
+                0x0000000000000000       0x1c build/motor_control.o
+ .text.get_max_acceleration
+                0x0000000000000000       0x1c build/motor_control.o
+ .text.get_current_position
+                0x0000000000000000       0x1c build/motor_control.o
+ .bss.counter.18
+                0x0000000000000000        0x2 build/motor_control.o
+ .bss.error_with_hysteresis_d.13
+                0x0000000000000000        0x4 build/motor_control.o
+ .bss.error_with_hysteresis_p.14
+                0x0000000000000000        0x4 build/motor_control.o
+ .bss.integral_term.12
+                0x0000000000000000        0x4 build/motor_control.o
+ .bss.low_pass_filtered_error_change.10
+                0x0000000000000000        0x4 build/motor_control.o
+ .bss.previous_error.11
+                0x0000000000000000        0x4 build/motor_control.o
+ .text          0x0000000000000000        0x0 build/step_direction_input.o
+ .data          0x0000000000000000        0x0 build/step_direction_input.o
+ .bss           0x0000000000000000        0x0 build/step_direction_input.o
+ .text.get_step_count
+                0x0000000000000000       0x14 build/step_direction_input.o
+ .bss.step_count
+                0x0000000000000000        0x4 build/step_direction_input.o
+ .text          0x0000000000000000        0x0 build/system_stm32g0xx.o
+ .data          0x0000000000000000        0x0 build/system_stm32g0xx.o
+ .bss           0x0000000000000000        0x0 build/system_stm32g0xx.o
+ .text.SystemCoreClockUpdate
+                0x0000000000000000       0x98 build/system_stm32g0xx.o
+ .data.SystemCoreClock
+                0x0000000000000000        0x4 build/system_stm32g0xx.o
+ .rodata.AHBPrescTable
+                0x0000000000000000       0x40 build/system_stm32g0xx.o
+ .rodata.APBPrescTable
+                0x0000000000000000       0x20 build/system_stm32g0xx.o
+ .text          0x0000000000000000        0x0 build/unique_id.o
+ .data          0x0000000000000000        0x0 build/unique_id.o
+ .bss           0x0000000000000000        0x0 build/unique_id.o
+ .text          0x0000000000000000        0x0 build/settings.o
+ .data          0x0000000000000000        0x0 build/settings.o
+ .bss           0x0000000000000000        0x0 build/settings.o
+ .text.crc32_init
+                0x0000000000000000       0x1c build/settings.o
+ .text.firmware_crc_check
+                0x0000000000000000       0x70 build/settings.o
+ .text.calculate_crc32_buffer
+                0x0000000000000000       0x34 build/settings.o
+ .text.get_firmware_size
+                0x0000000000000000        0xc build/settings.o
+ .text          0x0000000000000000        0x0 build/error_text.o
+ .data          0x0000000000000000        0x0 build/error_text.o
+ .bss           0x0000000000000000        0x0 build/error_text.o
+ .text          0x0000000000000000        0x0 build/overvoltage.o
+ .data          0x0000000000000000        0x0 build/overvoltage.o
+ .bss           0x0000000000000000        0x0 build/overvoltage.o
+ .text          0x0000000000000000        0x0 build/device_status.o
+ .data          0x0000000000000000        0x0 build/device_status.o
+ .bss           0x0000000000000000        0x0 build/device_status.o
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .text.exit     0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .debug_frame   0x0000000000000000       0x28 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .ARM.attributes
+                0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-exit.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ .rodata._global_impure_ptr
+                0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .text.malloc   0x0000000000000000       0x14 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .text.free     0x0000000000000000       0x14 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .debug_frame   0x0000000000000000       0x40 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .ARM.attributes
+                0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-malloc.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .text._sprintf_r
+                0x0000000000000000       0x38 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-strlen.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-strlen.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .text.__ssprint_r
+                0x0000000000000000      0x100 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .text.cleanup_glue
+                0x0000000000000000       0x1a /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .text._reclaim_reent
+                0x0000000000000000       0xcc /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_init
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_init_recursive
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_close
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_close_recursive
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_acquire
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_try_acquire
+                0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_try_acquire_recursive
+                0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text.__retarget_lock_release
+                0x0000000000000000        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___arc4random_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___at_quick_exit_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___atexit_recursive_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___dd_hash_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___env_recursive_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___sfp_recursive_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___sinit_recursive_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .bss.__lock___tz_mutex
+                0x0000000000000000        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o)
+ .text          0x0000000000000000       0x40 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o)
+ .ARM.attributes
+                0x0000000000000000       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_uldivmod.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+ .text          0x0000000000000000      0x198 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .ARM.extab     0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .ARM.exidx     0x0000000000000000        0x8 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .debug_frame   0x0000000000000000       0x3c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .ARM.attributes
+                0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivmoddi4.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+ .ARM.extab     0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzsi2.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzsi2.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .text._exit    0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .debug_frame   0x0000000000000000       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .ARM.attributes
+                0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(_exit.o)
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .rodata        0x0000000000000000       0x24 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .eh_frame      0x0000000000000000        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .ARM.attributes
+                0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+ .text          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+ .data          0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+ .bss           0x0000000000000000        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+BOOTLOADER       0x0000000008000000 0x0000000000002800 xr
+FLASH            0x0000000008002800 0x000000000000d000 xr
+SETTINGS         0x000000000800f800 0x0000000000000800 r
+RAM              0x0000000020000000 0x0000000000002000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/crt0.o
+LOAD build/startup_stm32g030c8tx.o
+LOAD build/global_variables.o
+LOAD build/circular_buffer.o
+LOAD build/ADC.o
+LOAD build/PWM.o
+LOAD build/RS485.o
+LOAD build/clock_calibration.o
+LOAD build/debug_uart.o
+LOAD build/error_handling.o
+LOAD build/hall_sensor_calculations.o
+LOAD build/leds.o
+LOAD build/main.o
+LOAD build/microsecond_clock.o
+LOAD build/mosfets.o
+LOAD build/motor_control.o
+LOAD build/step_direction_input.o
+LOAD build/system_stm32g0xx.o
+LOAD build/unique_id.o
+LOAD build/settings.o
+LOAD build/error_text.o
+LOAD build/overvoltage.o
+LOAD build/device_status.o
+START GROUP
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libm.a
+END GROUP
+START GROUP
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a
+END GROUP
+START GROUP
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a
+END GROUP
+START GROUP
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a
+END GROUP
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtend.o
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+                0x0000000020002000                _estack = (ORIGIN (RAM) + LENGTH (RAM))
+                0x0000000000000000                _Min_Heap_Size = 0x0
+                0x0000000000000400                _Min_Stack_Size = 0x400
+
+.isr_vector     0x0000000008002800       0xb8
+                0x0000000008002800                . = ALIGN (0x4)
+ *(.isr_vector)
+ .isr_vector    0x0000000008002800       0xb8 build/startup_stm32g030c8tx.o
+                0x0000000008002800                g_pfnVectors
+                0x00000000080028b8                . = ALIGN (0x4)
+
+.text           0x00000000080028b8     0x5840
+                0x00000000080028b8                . = ALIGN (0x4)
+ *(.text)
+ .text          0x00000000080028b8       0x48 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ .text          0x0000000008002900        0xe /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-strlen.o)
+                0x0000000008002900                strlen
+ *fill*         0x000000000800290e        0x2 
+ .text          0x0000000008002910       0x14 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+                0x0000000008002910                __gnu_thumb1_case_shi
+ .text          0x0000000008002924      0x114 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+                0x0000000008002924                __udivsi3
+                0x0000000008002924                __aeabi_uidiv
+                0x0000000008002a30                __aeabi_uidivmod
+ .text          0x0000000008002a38      0x1d4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+                0x0000000008002a38                __aeabi_idiv
+                0x0000000008002a38                __divsi3
+                0x0000000008002c04                __aeabi_idivmod
+ .text          0x0000000008002c0c        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+                0x0000000008002c0c                __aeabi_ldiv0
+                0x0000000008002c0c                __aeabi_idiv0
+ .text          0x0000000008002c10       0x48 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o)
+                0x0000000008002c10                __aeabi_ldivmod
+ .text          0x0000000008002c58       0x5c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+                0x0000000008002c58                __aeabi_lmul
+                0x0000000008002c58                __muldi3
+ .text          0x0000000008002cb4       0x3c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+                0x0000000008002cb4                __gnu_ldivmod_helper
+ .text          0x0000000008002cf0       0x18 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o)
+                0x0000000008002cf0                __clzdi2
+ .text          0x0000000008002d08      0x1cc /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+                0x0000000008002d08                __divdi3
+ .text          0x0000000008002ed4       0x3c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzsi2.o)
+                0x0000000008002ed4                __clzsi2
+ *(.text*)
+ .text.Reset_Handler
+                0x0000000008002f10       0x50 build/startup_stm32g030c8tx.o
+                0x0000000008002f10                Reset_Handler
+ .text.Default_Handler
+                0x0000000008002f60        0x2 build/startup_stm32g030c8tx.o
+                0x0000000008002f60                FLASH_IRQHandler
+                0x0000000008002f60                HardFault_Handler
+                0x0000000008002f60                PendSV_Handler
+                0x0000000008002f60                NMI_Handler
+                0x0000000008002f60                I2C1_IRQHandler
+                0x0000000008002f60                RTC_TAMP_IRQHandler
+                0x0000000008002f60                SPI1_IRQHandler
+                0x0000000008002f60                DMA1_Ch4_5_DMAMUX1_OVR_IRQHandler
+                0x0000000008002f60                EXTI2_3_IRQHandler
+                0x0000000008002f60                ADC1_IRQHandler
+                0x0000000008002f60                I2C2_IRQHandler
+                0x0000000008002f60                TIM17_IRQHandler
+                0x0000000008002f60                TIM16_IRQHandler
+                0x0000000008002f60                TIM3_IRQHandler
+                0x0000000008002f60                RCC_IRQHandler
+                0x0000000008002f60                DMA1_Channel1_IRQHandler
+                0x0000000008002f60                Default_Handler
+                0x0000000008002f60                EXTI0_1_IRQHandler
+                0x0000000008002f60                SPI2_IRQHandler
+                0x0000000008002f60                SVC_Handler
+                0x0000000008002f60                WWDG_IRQHandler
+                0x0000000008002f60                DMA1_Channel2_3_IRQHandler
+                0x0000000008002f60                TIM1_CC_IRQHandler
+ *fill*         0x0000000008002f62        0x2 
+ .text.adc_init
+                0x0000000008002f64      0x118 build/ADC.o
+                0x0000000008002f64                adc_init
+ .text.check_if_ADC_watchdog2_exceeded
+                0x000000000800307c       0x18 build/ADC.o
+                0x000000000800307c                check_if_ADC_watchdog2_exceeded
+ .text.get_hall_sensor1_voltage
+                0x0000000008003094       0x18 build/ADC.o
+                0x0000000008003094                get_hall_sensor1_voltage
+ .text.get_hall_sensor2_voltage
+                0x00000000080030ac       0x18 build/ADC.o
+                0x00000000080030ac                get_hall_sensor2_voltage
+ .text.get_hall_sensor3_voltage
+                0x00000000080030c4       0x18 build/ADC.o
+                0x00000000080030c4                get_hall_sensor3_voltage
+ .text.get_hall_sensor4_voltage
+                0x00000000080030dc       0x18 build/ADC.o
+                0x00000000080030dc                get_hall_sensor4_voltage
+ .text.get_temperature_sensor_voltage
+                0x00000000080030f4       0x18 build/ADC.o
+                0x00000000080030f4                get_temperature_sensor_voltage
+ .text.get_motor_current
+                0x000000000800310c        0x8 build/ADC.o
+                0x000000000800310c                get_motor_current
+ .text.set_analog_watchdog_limits
+                0x0000000008003114       0x14 build/ADC.o
+                0x0000000008003114                set_analog_watchdog_limits
+ .text.pwm_init
+                0x0000000008003128      0x11c build/PWM.o
+                0x0000000008003128                pwm_init
+ .text.rs485_init
+                0x0000000008003244       0x7c build/RS485.o
+                0x0000000008003244                rs485_init
+ .text.rs485_allow_next_command
+                0x00000000080032c0       0x1c build/RS485.o
+                0x00000000080032c0                rs485_allow_next_command
+ .text.USART1_IRQHandler
+                0x00000000080032dc      0x184 build/RS485.o
+                0x00000000080032dc                USART1_IRQHandler
+ .text.rs485_transmit
+                0x0000000008003460       0x84 build/RS485.o
+                0x0000000008003460                rs485_transmit
+ .text.time_sync
+                0x00000000080034e4       0x58 build/clock_calibration.o
+                0x00000000080034e4                time_sync
+ .text.get_clock_calibration_value
+                0x000000000800353c        0xc build/clock_calibration.o
+                0x000000000800353c                get_clock_calibration_value
+ .text.debug_uart_init
+                0x0000000008003548       0x4c build/debug_uart.o
+                0x0000000008003548                debug_uart_init
+ .text.USART2_IRQHandler
+                0x0000000008003594       0x9c build/debug_uart.o
+                0x0000000008003594                USART2_IRQHandler
+ .text.transmit
+                0x0000000008003630       0x80 build/debug_uart.o
+                0x0000000008003630                transmit
+ .text.transmit_without_interrupts
+                0x00000000080036b0       0x24 build/debug_uart.o
+                0x00000000080036b0                transmit_without_interrupts
+ .text.print_number
+                0x00000000080036d4      0x130 build/debug_uart.o
+                0x00000000080036d4                print_number
+ .text.print_int64
+                0x0000000008003804       0xd4 build/debug_uart.o
+                0x0000000008003804                print_int64
+ .text.get_command_debug_uart
+                0x00000000080038d8       0x14 build/debug_uart.o
+                0x00000000080038d8                get_command_debug_uart
+ .text.systick_half_cycle_delay_plus_handle_commands
+                0x00000000080038ec      0x158 build/error_handling.o
+ .text.fatal_error
+                0x0000000008003a44      0x118 build/error_handling.o
+                0x0000000008003a44                fatal_error
+ .text.switch_motor
+                0x0000000008003b5c       0x4c build/hall_sensor_calculations.o
+                0x0000000008003b5c                switch_motor
+ .text.get_hall_position1
+                0x0000000008003ba8      0x1a4 build/hall_sensor_calculations.o
+                0x0000000008003ba8                get_hall_position1
+ .text.get_hall_position2
+                0x0000000008003d4c      0x1d4 build/hall_sensor_calculations.o
+                0x0000000008003d4c                get_hall_position2
+ .text.get_hall_position
+                0x0000000008003f20       0x1c build/hall_sensor_calculations.o
+                0x0000000008003f20                get_hall_position
+ .text.zero_hall_position
+                0x0000000008003f3c       0x38 build/hall_sensor_calculations.o
+                0x0000000008003f3c                zero_hall_position
+ .text.print_hall_midlines
+                0x0000000008003f74       0x40 build/hall_sensor_calculations.o
+                0x0000000008003f74                print_hall_midlines
+ .text.get_smoothed_hall_sensor1_voltage
+                0x0000000008003fb4        0xc build/hall_sensor_calculations.o
+                0x0000000008003fb4                get_smoothed_hall_sensor1_voltage
+ .text.get_smoothed_hall_sensor2_voltage
+                0x0000000008003fc0        0xc build/hall_sensor_calculations.o
+                0x0000000008003fc0                get_smoothed_hall_sensor2_voltage
+ .text.get_smoothed_hall_sensor3_voltage
+                0x0000000008003fcc        0xc build/hall_sensor_calculations.o
+                0x0000000008003fcc                get_smoothed_hall_sensor3_voltage
+ .text.get_smoothed_hall_sensor4_voltage
+                0x0000000008003fd8        0xc build/hall_sensor_calculations.o
+                0x0000000008003fd8                get_smoothed_hall_sensor4_voltage
+ .text.red_LED_on
+                0x0000000008003fe4       0x10 build/leds.o
+                0x0000000008003fe4                red_LED_on
+ .text.red_LED_off
+                0x0000000008003ff4       0x10 build/leds.o
+                0x0000000008003ff4                red_LED_off
+ .text.green_LED_off
+                0x0000000008004004       0x10 build/leds.o
+                0x0000000008004004                green_LED_off
+ .text.green_LED_toggle
+                0x0000000008004014       0x1c build/leds.o
+                0x0000000008004014                green_LED_toggle
+ .text.__NVIC_SystemReset
+                0x0000000008004030       0x1c build/main.o
+ .text.clock_init
+                0x000000000800404c       0x4c build/main.o
+                0x000000000800404c                clock_init
+ .text.SysTick_Handler
+                0x0000000008004098       0x34 build/main.o
+                0x0000000008004098                SysTick_Handler
+ .text.processCommand
+                0x00000000080040cc      0x500 build/main.o
+                0x00000000080040cc                processCommand
+ .text.process_debug_uart_commands
+                0x00000000080045cc      0x114 build/main.o
+                0x00000000080045cc                process_debug_uart_commands
+ .text.button_logic
+                0x00000000080046e0       0xcc build/main.o
+                0x00000000080046e0                button_logic
+ .text.print_start_message
+                0x00000000080047ac       0x18 build/main.o
+                0x00000000080047ac                print_start_message
+ .text.startup.main
+                0x00000000080047c4      0x25c build/main.o
+                0x00000000080047c4                main
+ .text.microsecond_clock_init
+                0x0000000008004a20       0x50 build/microsecond_clock.o
+                0x0000000008004a20                microsecond_clock_init
+ .text.TIM14_IRQHandler
+                0x0000000008004a70       0x24 build/microsecond_clock.o
+                0x0000000008004a70                TIM14_IRQHandler
+ .text.get_microsecond_time
+                0x0000000008004a94       0x74 build/microsecond_clock.o
+                0x0000000008004a94                get_microsecond_time
+ .text.reset_microsecond_time
+                0x0000000008004b08       0x14 build/microsecond_clock.o
+                0x0000000008004b08                reset_microsecond_time
+ .text.enable_mosfets
+                0x0000000008004b1c       0x20 build/mosfets.o
+                0x0000000008004b1c                enable_mosfets
+ .text.disable_mosfets
+                0x0000000008004b3c       0x24 build/mosfets.o
+                0x0000000008004b3c                disable_mosfets
+ .text.get_mosfets_enabled
+                0x0000000008004b60        0xc build/mosfets.o
+                0x0000000008004b60                get_mosfets_enabled
+ .text.add_to_queue.part.0
+                0x0000000008004b6c      0x418 build/motor_control.o
+ .text.motor_struct_init
+                0x0000000008004f84      0x168 build/motor_control.o
+                0x0000000008004f84                motor_struct_init
+ .text.clear_the_queue_and_stop_no_disable_interrupt
+                0x00000000080050ec       0x1c build/motor_control.o
+                0x00000000080050ec                clear_the_queue_and_stop_no_disable_interrupt
+ .text.compute_trapezoid_move
+                0x0000000008005108      0x14c build/motor_control.o
+                0x0000000008005108                compute_trapezoid_move
+ .text.start_calibration
+                0x0000000008005254      0x2d8 build/motor_control.o
+                0x0000000008005254                start_calibration
+ .text.handle_calibration_logic
+                0x000000000800552c      0x248 build/motor_control.o
+                0x000000000800552c                handle_calibration_logic
+ .text.is_calibration_data_available
+                0x0000000008005774        0xc build/motor_control.o
+                0x0000000008005774                is_calibration_data_available
+ .text.process_calibration_data
+                0x0000000008005780      0x34c build/motor_control.o
+                0x0000000008005780                process_calibration_data
+ .text.start_go_to_closed_loop_mode
+                0x0000000008005acc       0xc4 build/motor_control.o
+                0x0000000008005acc                start_go_to_closed_loop_mode
+ .text.go_to_closed_loop_mode_logic
+                0x0000000008005b90      0x1cc build/motor_control.o
+                0x0000000008005b90                go_to_closed_loop_mode_logic
+ .text.start_capture
+                0x0000000008005d5c       0x54 build/motor_control.o
+                0x0000000008005d5c                start_capture
+ .text.start_homing
+                0x0000000008005db0      0x154 build/motor_control.o
+                0x0000000008005db0                start_homing
+ .text.start_fast_capture_data
+                0x0000000008005f04       0x24 build/motor_control.o
+                0x0000000008005f04                start_fast_capture_data
+ .text.fast_capture_until_trigger
+                0x0000000008005f28       0x34 build/motor_control.o
+                0x0000000008005f28                fast_capture_until_trigger
+ .text.print_hall_position
+                0x0000000008005f5c       0x40 build/motor_control.o
+                0x0000000008005f5c                print_hall_position
+ .text.print_position
+                0x0000000008005f9c       0x3c build/motor_control.o
+                0x0000000008005f9c                print_position
+ .text.print_queue_stats
+                0x0000000008005fd8       0x2c build/motor_control.o
+                0x0000000008005fd8                print_queue_stats
+ .text.print_current_movement
+                0x0000000008006004       0x94 build/motor_control.o
+                0x0000000008006004                print_current_movement
+ .text.print_velocity
+                0x0000000008006098       0x3c build/motor_control.o
+                0x0000000008006098                print_velocity
+ .text.print_time_difference
+                0x00000000080060d4      0x164 build/motor_control.o
+                0x00000000080060d4                print_time_difference
+ .text.print_hall_position_delta_stats
+                0x0000000008006238       0x74 build/motor_control.o
+                0x0000000008006238                print_hall_position_delta_stats
+ .text.print_max_motor_current_settings
+                0x00000000080062ac       0x38 build/motor_control.o
+                0x00000000080062ac                print_max_motor_current_settings
+ .text.print_motor_current
+                0x00000000080062e4       0x44 build/motor_control.o
+                0x00000000080062e4                print_motor_current
+ .text.print_hall_sensor_data
+                0x0000000008006328       0x78 build/motor_control.o
+                0x0000000008006328                print_hall_sensor_data
+ .text.print_motor_status
+                0x00000000080063a0       0x94 build/motor_control.o
+                0x00000000080063a0                print_motor_status
+ .text.is_fast_capture_data_result_ready
+                0x0000000008006434        0xc build/motor_control.o
+                0x0000000008006434                is_fast_capture_data_result_ready
+ .text.print_fast_capture_data_result
+                0x0000000008006440       0xa0 build/motor_control.o
+                0x0000000008006440                print_fast_capture_data_result
+ .text.add_to_queue
+                0x00000000080064e0       0x54 build/motor_control.o
+                0x00000000080064e0                add_to_queue
+ .text.add_to_queue_test
+                0x0000000008006534      0x3a4 build/motor_control.o
+                0x0000000008006534                add_to_queue_test
+ .text.get_n_items_in_queue
+                0x00000000080068d8        0xc build/motor_control.o
+                0x00000000080068d8                get_n_items_in_queue
+ .text.add_trapezoid_move_to_queue
+                0x00000000080068e4      0x100 build/motor_control.o
+                0x00000000080068e4                add_trapezoid_move_to_queue
+ .text.handle_queued_movements
+                0x00000000080069e4      0x2c0 build/motor_control.o
+                0x00000000080069e4                handle_queued_movements
+ .text.motor_movement_calculations
+                0x0000000008006ca4      0x278 build/motor_control.o
+                0x0000000008006ca4                motor_movement_calculations
+ .text.motor_phase_calculations
+                0x0000000008006f1c       0x94 build/motor_control.o
+                0x0000000008006f1c                motor_phase_calculations
+ .text.TIM1_BRK_UP_TRG_COM_IRQHandler
+                0x0000000008006fb0      0x2e8 build/motor_control.o
+                0x0000000008006fb0                TIM1_BRK_UP_TRG_COM_IRQHandler
+ .text.increase_motor_pwm_voltage
+                0x0000000008007298       0x58 build/motor_control.o
+                0x0000000008007298                increase_motor_pwm_voltage
+ .text.decrease_motor_pwm_voltage
+                0x00000000080072f0       0x58 build/motor_control.o
+                0x00000000080072f0                decrease_motor_pwm_voltage
+ .text.set_motor_control_mode
+                0x0000000008007348       0x20 build/motor_control.o
+                0x0000000008007348                set_motor_control_mode
+ .text.get_motor_control_mode
+                0x0000000008007368       0x20 build/motor_control.o
+                0x0000000008007368                get_motor_control_mode
+ .text.get_update_frequency
+                0x0000000008007388        0x8 build/motor_control.o
+                0x0000000008007388                get_update_frequency
+ .text.zero_position_and_hall_sensor
+                0x0000000008007390       0x88 build/motor_control.o
+                0x0000000008007390                zero_position_and_hall_sensor
+ .text.set_max_velocity
+                0x0000000008007418       0x64 build/motor_control.o
+                0x0000000008007418                set_max_velocity
+ .text.set_max_acceleration
+                0x000000000800747c       0x60 build/motor_control.o
+                0x000000000800747c                set_max_acceleration
+ .text.reset_time
+                0x00000000080074dc       0x38 build/motor_control.o
+                0x00000000080074dc                reset_time
+ .text.emergency_stop
+                0x0000000008007514       0x38 build/motor_control.o
+                0x0000000008007514                emergency_stop
+ .text.get_actual_motor_position
+                0x000000000800754c       0x44 build/motor_control.o
+                0x000000000800754c                get_actual_motor_position
+ .text.get_motor_status_flags
+                0x0000000008007590       0x74 build/motor_control.o
+                0x0000000008007590                get_motor_status_flags
+ .text.set_motor_current_baseline
+                0x0000000008007604       0x44 build/motor_control.o
+                0x0000000008007604                set_motor_current_baseline
+ .text.set_max_motor_current
+                0x0000000008007648       0xb8 build/motor_control.o
+                0x0000000008007648                set_max_motor_current
+ .text.set_movement_limits
+                0x0000000008007700       0x24 build/motor_control.o
+                0x0000000008007700                set_movement_limits
+ .text.step_and_direction_init
+                0x0000000008007724        0x4 build/step_direction_input.o
+                0x0000000008007724                step_and_direction_init
+ .text.SystemInit
+                0x0000000008007728       0x10 build/system_stm32g0xx.o
+                0x0000000008007728                SystemInit
+ .text.get_unique_id
+                0x0000000008007738        0xc build/unique_id.o
+                0x0000000008007738                get_unique_id
+ .text.get_random_number
+                0x0000000008007744       0x18 build/unique_id.o
+                0x0000000008007744                get_random_number
+ .text.load_global_settings
+                0x000000000800775c       0x1c build/settings.o
+                0x000000000800775c                load_global_settings
+ .text.get_error_text
+                0x0000000008007778       0x34 build/error_text.o
+                0x0000000008007778                get_error_text
+ .text.overvoltage_init
+                0x00000000080077ac       0x2c build/overvoltage.o
+                0x00000000080077ac                overvoltage_init
+ .text.EXTI4_15_IRQHandler
+                0x00000000080077d8       0x14 build/overvoltage.o
+                0x00000000080077d8                EXTI4_15_IRQHandler
+ .text.get_device_status
+                0x00000000080077ec        0x8 build/device_status.o
+                0x00000000080077ec                get_device_status
+ .text.set_device_status_flags
+                0x00000000080077f4        0xc build/device_status.o
+                0x00000000080077f4                set_device_status_flags
+ .text.set_device_error_code
+                0x0000000008007800        0xc build/device_status.o
+                0x0000000008007800                set_device_error_code
+ .text.__libc_init_array
+                0x000000000800780c       0x48 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+                0x000000000800780c                __libc_init_array
+ .text.memcpy   0x0000000008007854       0x12 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+                0x0000000008007854                memcpy
+ .text.memset   0x0000000008007866       0x10 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+                0x0000000008007866                memset
+ *fill*         0x0000000008007876        0x2 
+ .text._free_r  0x0000000008007878       0x94 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+                0x0000000008007878                _free_r
+ .text._malloc_r
+                0x000000000800790c       0xbc /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                0x000000000800790c                _malloc_r
+ .text._sbrk_r  0x00000000080079c8       0x24 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+                0x00000000080079c8                _sbrk_r
+ .text.sprintf  0x00000000080079ec       0x40 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+                0x00000000080079ec                sprintf
+                0x00000000080079ec                siprintf
+ .text.__malloc_lock
+                0x0000000008007a2c       0x10 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+                0x0000000008007a2c                __malloc_lock
+ .text.__malloc_unlock
+                0x0000000008007a3c       0x10 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+                0x0000000008007a3c                __malloc_unlock
+ .text.__ssputs_r
+                0x0000000008007a4c       0xc4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+                0x0000000008007a4c                __ssputs_r
+ .text._svfprintf_r
+                0x0000000008007b10      0x200 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+                0x0000000008007b10                _svfprintf_r
+                0x0000000008007b10                _svfiprintf_r
+ .text._printf_common
+                0x0000000008007d10       0xde /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x0000000008007d10                _printf_common
+ *fill*         0x0000000008007dee        0x2 
+ .text._printf_i
+                0x0000000008007df0      0x224 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x0000000008007df0                _printf_i
+ .text.__retarget_lock_acquire_recursive
+                0x0000000008008014        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+                0x0000000008008014                __retarget_lock_acquire_recursive
+ .text.__retarget_lock_release_recursive
+                0x0000000008008016        0x2 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+                0x0000000008008016                __retarget_lock_release_recursive
+ .text.memchr   0x0000000008008018       0x16 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+                0x0000000008008018                memchr
+ .text.memmove  0x000000000800802e       0x26 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+                0x000000000800802e                memmove
+ .text._realloc_r
+                0x0000000008008054       0x4c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+                0x0000000008008054                _realloc_r
+ .text._malloc_usable_size_r
+                0x00000000080080a0       0x10 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+                0x00000000080080a0                _malloc_usable_size_r
+ .text._sbrk    0x00000000080080b0       0x1c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+                0x00000000080080b0                _sbrk
+ *(.glue_7)
+ .glue_7        0x00000000080080cc        0x0 linker stubs
+ *(.glue_7t)
+ .glue_7t       0x00000000080080cc        0x0 linker stubs
+ *(.eh_frame)
+ .eh_frame      0x00000000080080cc        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ *(.init)
+ .init          0x00000000080080cc        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+                0x00000000080080cc                _init
+ .init          0x00000000080080d0        0x8 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+ *(.fini)
+ .fini          0x00000000080080d8        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+                0x00000000080080d8                _fini
+ .fini          0x00000000080080dc        0x8 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+ *fill*         0x00000000080080e4        0x4 
+ .fini.__stub   0x00000000080080e8       0x10 linker stubs
+                0x00000000080080f8                . = ALIGN (0x4)
+                0x00000000080080f8                _etext = .
+
+.vfp11_veneer   0x00000000080080f8        0x0
+ .vfp11_veneer  0x00000000080080f8        0x0 linker stubs
+
+.v4_bx          0x00000000080080f8        0x0
+ .v4_bx         0x00000000080080f8        0x0 linker stubs
+
+.iplt           0x00000000080080f8        0x0
+ .iplt          0x00000000080080f8        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+
+.rodata         0x00000000080080f8     0x32f8
+                0x00000000080080f8                . = ALIGN (0x4)
+ *(.rodata)
+ .rodata        0x00000000080080f8        0x4 build/main.o
+ *(.rodata*)
+ .rodata.fatal_error.str1.4
+                0x00000000080080fc        0x0 build/error_handling.o
+                                          0x7 (size before relaxing)
+ .rodata.switch_motor.str1.4
+                0x00000000080080fc       0x14 build/hall_sensor_calculations.o
+ .rodata.print_hall_midlines.str1.4
+                0x0000000008008110       0x20 build/hall_sensor_calculations.o
+ .rodata.processCommand.str1.4
+                0x0000000008008130       0x90 build/main.o
+ .rodata.processCommand
+                0x00000000080081c0      0x7f8 build/main.o
+ .rodata.transmit_unique_id.str1.4
+                0x00000000080089b8        0x4 build/main.o
+ .rodata.process_debug_uart_commands.str1.4
+                0x00000000080089bc       0x6d build/main.o
+                                         0x71 (size before relaxing)
+ *fill*         0x0000000008008a29        0x3 
+ .rodata.process_debug_uart_commands
+                0x0000000008008a2c       0xe0 build/main.o
+ .rodata.button_logic.str1.4
+                0x0000000008008b0c       0x14 build/main.o
+ .rodata.print_start_message.str1.4
+                0x0000000008008b20       0x13 build/main.o
+ *fill*         0x0000000008008b33        0x1 
+ .rodata.main.str1.4
+                0x0000000008008b34       0x18 build/main.o
+ .rodata.compute_trapezoid_move.str1.4
+                0x0000000008008b4c       0x6e build/motor_control.o
+                                         0x7f (size before relaxing)
+ *fill*         0x0000000008008bba        0x2 
+ .rodata.start_calibration.str1.4
+                0x0000000008008bbc       0x13 build/motor_control.o
+ *fill*         0x0000000008008bcf        0x1 
+ .rodata.handle_calibration_logic.str1.4
+                0x0000000008008bd0       0x1a build/motor_control.o
+ *fill*         0x0000000008008bea        0x2 
+ .rodata.process_calibration_data.str1.4
+                0x0000000008008bec      0x12a build/motor_control.o
+ *fill*         0x0000000008008d16        0x2 
+ .rodata.start_go_to_closed_loop_mode.str1.4
+                0x0000000008008d18       0x1e build/motor_control.o
+ *fill*         0x0000000008008d36        0x2 
+ .rodata.start_capture.str1.4
+                0x0000000008008d38        0xf build/motor_control.o
+ *fill*         0x0000000008008d47        0x1 
+ .rodata.start_fast_capture_data.str1.4
+                0x0000000008008d48       0x13 build/motor_control.o
+ *fill*         0x0000000008008d5b        0x1 
+ .rodata.print_hall_position.str1.4
+                0x0000000008008d5c        0x9 build/motor_control.o
+ *fill*         0x0000000008008d65        0x3 
+ .rodata.print_position.str1.4
+                0x0000000008008d68       0x17 build/motor_control.o
+ *fill*         0x0000000008008d7f        0x1 
+ .rodata.print_queue_stats.str1.4
+                0x0000000008008d80       0x16 build/motor_control.o
+ *fill*         0x0000000008008d96        0x2 
+ .rodata.print_current_movement.str1.4
+                0x0000000008008d98       0x50 build/motor_control.o
+ .rodata.print_velocity.str1.4
+                0x0000000008008de8       0x50 build/motor_control.o
+                                          0xf (size before relaxing)
+ .rodata.print_time_difference.str1.4
+                0x0000000008008de8      0x1c7 build/motor_control.o
+ *fill*         0x0000000008008faf        0x1 
+ .rodata.print_hall_position_delta_stats.str1.4
+                0x0000000008008fb0       0x5b build/motor_control.o
+ *fill*         0x000000000800900b        0x1 
+ .rodata.print_max_motor_current_settings.str1.4
+                0x000000000800900c       0x4e build/motor_control.o
+ *fill*         0x000000000800905a        0x2 
+ .rodata.print_motor_current.str1.4
+                0x000000000800905c       0x2c build/motor_control.o
+ .rodata.print_hall_sensor_data.str1.4
+                0x0000000008009088       0x6b build/motor_control.o
+ *fill*         0x00000000080090f3        0x1 
+ .rodata.print_motor_status.str1.4
+                0x00000000080090f4        0xd build/motor_control.o
+ *fill*         0x0000000008009101        0x3 
+ .rodata.print_fast_capture_data_result.str1.4
+                0x0000000008009104        0xd build/motor_control.o
+ *fill*         0x0000000008009111        0x3 
+ .rodata.add_to_queue_test.str1.4
+                0x0000000008009114       0xb7 build/motor_control.o
+ *fill*         0x00000000080091cb        0x1 
+ .rodata.increase_motor_pwm_voltage.str1.4
+                0x00000000080091cc       0x1f build/motor_control.o
+ *fill*         0x00000000080091eb        0x1 
+ .rodata.commutation_lookup_table
+                0x00000000080091ec     0x21c0 build/motor_control.o
+                0x00000000080091ec                commutation_lookup_table
+ .rodata.get_error_text.str1.4
+                0x000000000800b3ac        0xe build/error_text.o
+ .rodata._svfprintf_r.str1.1
+                0x000000000800b3ba       0x11 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .rodata._printf_i.str1.1
+                0x000000000800b3cb       0x22 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+                0x000000000800b3f0                . = ALIGN (0x4)
+ *fill*         0x000000000800b3ed        0x3 
+
+.ARM.extab      0x000000000800b3f0        0x0
+                0x000000000800b3f0                . = ALIGN (0x4)
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+                0x000000000800b3f0                . = ALIGN (0x4)
+
+.ARM            0x000000000800b3f0        0x8
+                0x000000000800b3f0                . = ALIGN (0x4)
+                0x000000000800b3f0                __exidx_start = .
+ *(.ARM.exidx*)
+ .ARM.exidx     0x000000000800b3f0        0x8 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+                0x000000000800b3f8                __exidx_end = .
+                0x000000000800b3f8                . = ALIGN (0x4)
+
+.rel.dyn        0x000000000800b3f8        0x0
+ .rel.iplt      0x000000000800b3f8        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+
+.preinit_array  0x000000000800b3f8        0x0
+                0x000000000800b3f8                . = ALIGN (0x4)
+                0x000000000800b3f8                PROVIDE (__preinit_array_start = .)
+ *(.preinit_array*)
+                0x000000000800b3f8                PROVIDE (__preinit_array_end = .)
+                0x000000000800b3f8                . = ALIGN (0x4)
+
+.init_array     0x000000000800b3f8        0x4
+                0x000000000800b3f8                . = ALIGN (0x4)
+                0x000000000800b3f8                PROVIDE (__init_array_start = .)
+ *(SORT_BY_NAME(.init_array.*))
+ *(.init_array*)
+ .init_array    0x000000000800b3f8        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x000000000800b3fc                PROVIDE (__init_array_end = .)
+                0x000000000800b3fc                . = ALIGN (0x4)
+
+.fini_array     0x000000000800b3fc        0x4
+                0x000000000800b3fc                . = ALIGN (0x4)
+                [!provide]                        PROVIDE (__fini_array_start = .)
+ *(SORT_BY_NAME(.fini_array.*))
+ *(.fini_array*)
+ .fini_array    0x000000000800b3fc        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+                [!provide]                        PROVIDE (__fini_array_end = .)
+                0x000000000800b400                . = ALIGN (0x4)
+                0x000000000800b400                _sidata = LOADADDR (.data)
+
+.data           0x0000000020000000      0x4e0 load address 0x000000000800b400
+                0x0000000020000000                . = ALIGN (0x4)
+                0x0000000020000000                _sdata = .
+ *(.data)
+ *(.data*)
+ .data.global_settings
+                0x0000000020000000       0x14 build/global_variables.o
+                0x0000000020000000                global_settings
+ .data.integral_term.0
+                0x0000000020000014        0x4 build/clock_calibration.o
+ .data.leading_zero.2
+                0x0000000020000018        0x1 build/debug_uart.o
+ *fill*         0x0000000020000019        0x3 
+ .data.systick_new_value
+                0x000000002000001c        0x4 build/error_handling.o
+ .data.M_index  0x0000000020000020        0x1 build/hall_sensor_calculations.o
+                0x0000000020000020                M_index
+ .data.prev_region.0
+                0x0000000020000021        0x1 build/hall_sensor_calculations.o
+ .data.prev_region.2
+                0x0000000020000022        0x1 build/hall_sensor_calculations.o
+ *fill*         0x0000000020000023        0x1 
+ .data.PRODUCT_DESCRIPTION
+                0x0000000020000024        0xb build/main.o
+                0x0000000020000024                PRODUCT_DESCRIPTION
+ *fill*         0x000000002000002f        0x1 
+ .data.detect_devices_delay
+                0x0000000020000030        0x2 build/main.o
+ *fill*         0x0000000020000032        0x2 
+ .data.firmware_version
+                0x0000000020000034        0x4 build/main.o
+                0x0000000020000034                firmware_version
+ .data.d_value  0x0000000020000038        0x4 build/motor_control.o
+                0x0000000020000038                d_value
+ .data.fast_capture_data
+                0x000000002000003c        0x4 build/motor_control.o
+                0x000000002000003c                fast_capture_data
+ .data.fast_capture_data_size
+                0x0000000020000040        0x2 build/motor_control.o
+                0x0000000020000040                fast_capture_data_size
+ *fill*         0x0000000020000042        0x2 
+ .data.i_value  0x0000000020000044        0x4 build/motor_control.o
+                0x0000000020000044                i_value
+ .data.max_hall_position_delta
+                0x0000000020000048        0x4 build/motor_control.o
+ .data.min_hall_position_delta
+                0x000000002000004c        0x4 build/motor_control.o
+ .data.p_value  0x0000000020000050        0x4 build/motor_control.o
+                0x0000000020000050                p_value
+ .data.error_text
+                0x0000000020000054      0x242 build/error_text.o
+                0x0000000020000054                error_text
+ *fill*         0x0000000020000296        0x2 
+ .data.device_status
+                0x0000000020000298        0x5 build/device_status.o
+ *fill*         0x000000002000029d        0x3 
+ .data._impure_ptr
+                0x00000000200002a0        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+                0x00000000200002a0                _impure_ptr
+ .data.impure_data
+                0x00000000200002a4       0x60 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ *(.RamFunc)
+ .RamFunc       0x0000000020000304      0x1b8 build/settings.o
+                0x0000000020000304                save_global_settings
+                0x00000000200003bc                burn_firmware_page
+ *fill*         0x00000000200004bc        0x4 
+ .RamFunc.__stub
+                0x00000000200004c0       0x20 linker stubs
+ *(.RamFunc*)
+                0x00000000200004e0                . = ALIGN (0x4)
+                0x00000000200004e0                _edata = .
+
+.igot.plt       0x00000000200004e0        0x0 load address 0x000000000800b8e0
+ .igot.plt      0x00000000200004e0        0x0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+                0x00000000200004e0                . = ALIGN (0x4)
+
+.bss            0x00000000200004e0      0xfd0 load address 0x000000000800b8e0
+                0x00000000200004e0                _sbss = .
+                0x00000000200004e0                __bss_start__ = _sbss
+ *(.bss)
+ .bss           0x00000000200004e0       0x1c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ *(.bss*)
+ .bss.ADC_buffer
+                0x00000000200004fc       0x40 build/ADC.o
+                0x00000000200004fc                ADC_buffer
+ .bss.command   0x000000002000053c        0x1 build/RS485.o
+                0x000000002000053c                command
+ .bss.commandReceived
+                0x000000002000053d        0x1 build/RS485.o
+                0x000000002000053d                commandReceived
+ .bss.nReceivedBytes
+                0x000000002000053e        0x2 build/RS485.o
+ .bss.receiveIndex
+                0x0000000020000540        0x2 build/RS485.o
+ .bss.selectedAxis
+                0x0000000020000542        0x1 build/RS485.o
+                0x0000000020000542                selectedAxis
+ *fill*         0x0000000020000543        0x1 
+ .bss.transmitBuffer
+                0x0000000020000544       0x96 build/RS485.o
+ .bss.transmitCount
+                0x00000000200005da        0x1 build/RS485.o
+ .bss.transmitIndex
+                0x00000000200005db        0x1 build/RS485.o
+ .bss.valueBuffer
+                0x00000000200005dc      0x80a build/RS485.o
+                0x00000000200005dc                valueBuffer
+ .bss.valueLength
+                0x0000000020000de6        0x2 build/RS485.o
+ .bss.command_debug_uart
+                0x0000000020000de8        0x1 build/debug_uart.o
+ .bss.i.3       0x0000000020000de9        0x1 build/debug_uart.o
+ *fill*         0x0000000020000dea        0x2 
+ .bss.message.0
+                0x0000000020000dec       0x73 build/debug_uart.o
+ *fill*         0x0000000020000e5f        0x1 
+ .bss.message.1
+                0x0000000020000e60       0x64 build/debug_uart.o
+ .bss.transmitBuffer
+                0x0000000020000ec4       0x96 build/debug_uart.o
+ .bss.transmitCount
+                0x0000000020000f5a        0x1 build/debug_uart.o
+ .bss.transmitIndex
+                0x0000000020000f5b        0x1 build/debug_uart.o
+ .bss.command   0x0000000020000f5c        0x1 build/error_handling.o
+ .bss.commandReceived
+                0x0000000020000f5d        0x1 build/error_handling.o
+ .bss.fatal_error_occurred
+                0x0000000020000f5e        0x1 build/error_handling.o
+ *fill*         0x0000000020000f5f        0x1 
+ .bss.nReceivedBytes
+                0x0000000020000f60        0x2 build/error_handling.o
+ .bss.selectedAxis
+                0x0000000020000f62        0x1 build/error_handling.o
+ *fill*         0x0000000020000f63        0x1 
+ .bss.systick_previous_value
+                0x0000000020000f64        0x4 build/error_handling.o
+ .bss.fraction_for_print
+                0x0000000020000f68        0x4 build/hall_sensor_calculations.o
+ .bss.hall_sensor_offset
+                0x0000000020000f6c        0x8 build/hall_sensor_calculations.o
+ .bss.sensor_incremental_position
+                0x0000000020000f74        0x8 build/hall_sensor_calculations.o
+ .bss.smoothed_hall_sensor_readings
+                0x0000000020000f7c        0x4 build/hall_sensor_calculations.o
+                0x0000000020000f7c                smoothed_hall_sensor_readings
+ .bss.heating_counter
+                0x0000000020000f80        0x4 build/main.o
+                0x0000000020000f80                heating_counter
+ .bss.heating_flag
+                0x0000000020000f84        0x1 build/main.o
+ *fill*         0x0000000020000f85        0x3 
+ .bss.my_unique_id
+                0x0000000020000f88        0x8 build/main.o
+ .bss.press_flag.1
+                0x0000000020000f90        0x1 build/main.o
+ *fill*         0x0000000020000f91        0x7 
+ .bss.press_start_time.0
+                0x0000000020000f98        0x8 build/main.o
+ .bss.sensor_val_extruder
+                0x0000000020000fa0        0x2 build/main.o
+                0x0000000020000fa0                sensor_val_extruder
+ .bss.target_temp_extruder
+                0x0000000020000fa2        0x2 build/main.o
+                0x0000000020000fa2                target_temp_extruder
+ .bss.toggle_counter.2
+                0x0000000020000fa4        0x2 build/main.o
+ *fill*         0x0000000020000fa6        0x2 
+ .bss.previous_64bit_time.0
+                0x0000000020000fa8        0x8 build/microsecond_clock.o
+ .bss.upper_32_bits
+                0x0000000020000fb0        0x4 build/microsecond_clock.o
+ .bss.mosfets_enabled
+                0x0000000020000fb4        0x1 build/mosfets.o
+ *fill*         0x0000000020000fb5        0x3 
+ .bss.average_hall_position_delta
+                0x0000000020000fb8        0x4 build/motor_control.o
+ .bss.average_hall_position_delta_count
+                0x0000000020000fbc        0x4 build/motor_control.o
+ .bss.avg_counter
+                0x0000000020000fc0        0x1 build/motor_control.o
+                0x0000000020000fc0                avg_counter
+ *fill*         0x0000000020000fc1        0x3 
+ .bss.calibration
+                0x0000000020000fc4      0x120 build/motor_control.o
+                0x0000000020000fc4                calibration
+ .bss.calibration_data_available
+                0x00000000200010e4        0x1 build/motor_control.o
+                0x00000000200010e4                calibration_data_available
+ *fill*         0x00000000200010e5        0x3 
+ .bss.calibration_index
+                0x00000000200010e8        0x8 build/motor_control.o
+ .bss.current_time_captured
+                0x00000000200010f0        0x8 build/motor_control.o
+ .bss.fast_capture_data_active
+                0x00000000200010f8        0x1 build/motor_control.o
+                0x00000000200010f8                fast_capture_data_active
+ *fill*         0x00000000200010f9        0x1 
+ .bss.fast_capture_data_index
+                0x00000000200010fa        0x2 build/motor_control.o
+                0x00000000200010fa                fast_capture_data_index
+ .bss.fast_capture_data_result_ready
+                0x00000000200010fc        0x1 build/motor_control.o
+                0x00000000200010fc                fast_capture_data_result_ready
+ *fill*         0x00000000200010fd        0x3 
+ .bss.hall1_sum
+                0x0000000020001100        0x4 build/motor_control.o
+                0x0000000020001100                hall1_sum
+ .bss.hall2_sum
+                0x0000000020001104        0x4 build/motor_control.o
+                0x0000000020001104                hall2_sum
+ .bss.hall_calibration_start_position
+                0x0000000020001108        0x4 build/motor_control.o
+                0x0000000020001108                hall_calibration_start_position
+ .bss.hall_data_buffer
+                0x000000002000110c        0x4 build/motor_control.o
+                0x000000002000110c                hall_data_buffer
+ .bss.hall_local_maximum
+                0x0000000020001110        0x4 build/motor_control.o
+                0x0000000020001110                hall_local_maximum
+ *fill*         0x0000000020001114        0x4 
+ .bss.hall_local_maximum_position
+                0x0000000020001118        0x8 build/motor_control.o
+                0x0000000020001118                hall_local_maximum_position
+ .bss.hall_local_minimum
+                0x0000000020001120        0x4 build/motor_control.o
+                0x0000000020001120                hall_local_minimum
+ *fill*         0x0000000020001124        0x4 
+ .bss.hall_local_minimum_position
+                0x0000000020001128        0x8 build/motor_control.o
+                0x0000000020001128                hall_local_minimum_position
+ .bss.hall_rising_flag
+                0x0000000020001130        0x2 build/motor_control.o
+                0x0000000020001130                hall_rising_flag
+ *fill*         0x0000000020001132        0x2 
+ .bss.integral_term.16
+                0x0000000020001134        0x4 build/motor_control.o
+ .bss.max_motor_control_tick_time_difference
+                0x0000000020001138        0x2 build/motor_control.o
+ .bss.max_motor_control_time_difference
+                0x000000002000113a        0x2 build/motor_control.o
+ .bss.max_time_difference1
+                0x000000002000113c        0x2 build/motor_control.o
+ .bss.max_time_difference2
+                0x000000002000113e        0x2 build/motor_control.o
+ .bss.max_time_difference3
+                0x0000000020001140        0x2 build/motor_control.o
+ .bss.max_time_difference4
+                0x0000000020001142        0x2 build/motor_control.o
+ .bss.max_time_difference5
+                0x0000000020001144        0x2 build/motor_control.o
+ .bss.motor_control_tick_time_difference
+                0x0000000020001146        0x2 build/motor_control.o
+ .bss.motor_control_time_difference
+                0x0000000020001148        0x2 build/motor_control.o
+ *fill*         0x000000002000114a        0x6 
+ .bss.motor_list
+                0x0000000020001150      0x180 build/motor_control.o
+ .bss.movement_queue
+                0x00000000200012d0      0x1a0 build/motor_control.o
+ .bss.n_items_in_queue
+                0x0000000020001470        0x1 build/motor_control.o
+ *fill*         0x0000000020001471        0x7 
+ .bss.position_after_last_queue_item
+                0x0000000020001478        0x8 build/motor_control.o
+ .bss.previous_error.15
+                0x0000000020001480        0x4 build/motor_control.o
+ .bss.previous_motor_control_tick_time.0
+                0x0000000020001484        0x2 build/motor_control.o
+ .bss.queue_read_position
+                0x0000000020001486        0x1 build/motor_control.o
+ .bss.queue_write_position
+                0x0000000020001487        0x1 build/motor_control.o
+ .bss.time_difference1
+                0x0000000020001488        0x2 build/motor_control.o
+ .bss.time_difference2
+                0x000000002000148a        0x2 build/motor_control.o
+ .bss.time_difference3
+                0x000000002000148c        0x2 build/motor_control.o
+ .bss.time_difference4
+                0x000000002000148e        0x2 build/motor_control.o
+ .bss.velocity_after_last_queue_item
+                0x0000000020001490        0x8 build/motor_control.o
+ .bss.velocity_moving_average.17
+                0x0000000020001498        0x4 build/motor_control.o
+ .bss.__malloc_free_list
+                0x000000002000149c        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                0x000000002000149c                __malloc_free_list
+ .bss.__malloc_sbrk_start
+                0x00000000200014a0        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+                0x00000000200014a0                __malloc_sbrk_start
+ .bss.errno     0x00000000200014a4        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+                0x00000000200014a4                errno
+ .bss.__lock___malloc_recursive_mutex
+                0x00000000200014a8        0x1 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+                0x00000000200014a8                __lock___malloc_recursive_mutex
+ *fill*         0x00000000200014a9        0x3 
+ .bss.heap_end.0
+                0x00000000200014ac        0x4 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+ *(COMMON)
+                0x00000000200014b0                . = ALIGN (0x4)
+                0x00000000200014b0                _ebss = .
+                0x00000000200014b0                __bss_end__ = _ebss
+
+._user_heap_stack
+                0x00000000200014b0      0x400 load address 0x000000000800b8e0
+                0x00000000200014b0                . = ALIGN (0x8)
+                0x00000000200014b0                PROVIDE (end = .)
+                [!provide]                        PROVIDE (_end = .)
+                0x00000000200014b0                . = (. + _Min_Heap_Size)
+                0x00000000200018b0                . = (. + _Min_Stack_Size)
+ *fill*         0x00000000200014b0      0x400 
+                0x00000000200018b0                . = ALIGN (0x8)
+
+/DISCARD/
+ libc.a(*)
+ libm.a(*)
+ libgcc.a(*)
+
+.ARM.attributes
+                0x0000000000000000       0x28
+ *(.ARM.attributes)
+ .ARM.attributes
+                0x0000000000000000       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crti.o
+ .ARM.attributes
+                0x000000000000001e       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtbegin.o
+ .ARM.attributes
+                0x000000000000004a       0x22 build/startup_stm32g030c8tx.o
+ .ARM.attributes
+                0x000000000000006c       0x32 build/global_variables.o
+ .ARM.attributes
+                0x000000000000009e       0x2c build/ADC.o
+ .ARM.attributes
+                0x00000000000000ca       0x2c build/PWM.o
+ .ARM.attributes
+                0x00000000000000f6       0x2c build/RS485.o
+ .ARM.attributes
+                0x0000000000000122       0x2c build/clock_calibration.o
+ .ARM.attributes
+                0x000000000000014e       0x2c build/debug_uart.o
+ .ARM.attributes
+                0x000000000000017a       0x2c build/error_handling.o
+ .ARM.attributes
+                0x00000000000001a6       0x2c build/hall_sensor_calculations.o
+ .ARM.attributes
+                0x00000000000001d2       0x2c build/leds.o
+ .ARM.attributes
+                0x00000000000001fe       0x2c build/main.o
+ .ARM.attributes
+                0x000000000000022a       0x2c build/microsecond_clock.o
+ .ARM.attributes
+                0x0000000000000256       0x2c build/mosfets.o
+ .ARM.attributes
+                0x0000000000000282       0x2c build/motor_control.o
+ .ARM.attributes
+                0x00000000000002ae       0x2c build/step_direction_input.o
+ .ARM.attributes
+                0x00000000000002da       0x2c build/system_stm32g0xx.o
+ .ARM.attributes
+                0x0000000000000306       0x2c build/unique_id.o
+ .ARM.attributes
+                0x0000000000000332       0x2c build/settings.o
+ .ARM.attributes
+                0x000000000000035e       0x2c build/error_text.o
+ .ARM.attributes
+                0x000000000000038a       0x2c build/overvoltage.o
+ .ARM.attributes
+                0x00000000000003b6       0x2c build/device_status.o
+ .ARM.attributes
+                0x00000000000003e2       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-impure.o)
+ .ARM.attributes
+                0x000000000000040e       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+ .ARM.attributes
+                0x000000000000043a       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+ .ARM.attributes
+                0x0000000000000466       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+ .ARM.attributes
+                0x0000000000000492       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+ .ARM.attributes
+                0x00000000000004be       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+ .ARM.attributes
+                0x00000000000004ea       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+ .ARM.attributes
+                0x0000000000000516       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .ARM.attributes
+                0x0000000000000542       0x1c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-strlen.o)
+ .ARM.attributes
+                0x000000000000055e       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+ .ARM.attributes
+                0x000000000000058a       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .ARM.attributes
+                0x00000000000005b6       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+ .ARM.attributes
+                0x00000000000005e2       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .ARM.attributes
+                0x000000000000060e       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .ARM.attributes
+                0x000000000000063a       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+ .ARM.attributes
+                0x0000000000000666       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+ .ARM.attributes
+                0x0000000000000692       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+ .ARM.attributes
+                0x00000000000006be       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+ .ARM.attributes
+                0x00000000000006ea       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_thumb1_case_shi.o)
+ .ARM.attributes
+                0x0000000000000708       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .ARM.attributes
+                0x0000000000000726       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .ARM.attributes
+                0x0000000000000744       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+ .ARM.attributes
+                0x0000000000000762       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_aeabi_ldivmod.o)
+ .ARM.attributes
+                0x0000000000000780       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+ .ARM.attributes
+                0x00000000000007ac       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+ .ARM.attributes
+                0x00000000000007d8       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzdi2.o)
+ .ARM.attributes
+                0x00000000000007f6       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+ .ARM.attributes
+                0x0000000000000822       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_clzsi2.o)
+ .ARM.attributes
+                0x0000000000000840       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
+ .ARM.attributes
+                0x000000000000086c       0x1e /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/crtn.o
+OUTPUT(build/firmware_STM32G030.elf elf32-littlearm)
+LOAD linker stubs
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libm.a
+LOAD /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a
+
+.comment        0x0000000000000000       0x4d
+ .comment       0x0000000000000000       0x4d build/global_variables.o
+                                         0x4e (size before relaxing)
+ .comment       0x000000000000004d       0x4e build/ADC.o
+ .comment       0x000000000000004d       0x4e build/PWM.o
+ .comment       0x000000000000004d       0x4e build/RS485.o
+ .comment       0x000000000000004d       0x4e build/clock_calibration.o
+ .comment       0x000000000000004d       0x4e build/debug_uart.o
+ .comment       0x000000000000004d       0x4e build/error_handling.o
+ .comment       0x000000000000004d       0x4e build/hall_sensor_calculations.o
+ .comment       0x000000000000004d       0x4e build/leds.o
+ .comment       0x000000000000004d       0x4e build/main.o
+ .comment       0x000000000000004d       0x4e build/microsecond_clock.o
+ .comment       0x000000000000004d       0x4e build/mosfets.o
+ .comment       0x000000000000004d       0x4e build/motor_control.o
+ .comment       0x000000000000004d       0x4e build/step_direction_input.o
+ .comment       0x000000000000004d       0x4e build/system_stm32g0xx.o
+ .comment       0x000000000000004d       0x4e build/unique_id.o
+ .comment       0x000000000000004d       0x4e build/settings.o
+ .comment       0x000000000000004d       0x4e build/error_text.o
+ .comment       0x000000000000004d       0x4e build/overvoltage.o
+ .comment       0x000000000000004d       0x4e build/device_status.o
+
+.debug_frame    0x0000000000000000      0x4e4
+ .debug_frame   0x0000000000000000       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-init.o)
+ .debug_frame   0x000000000000002c       0x28 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memcpy-stub.o)
+ .debug_frame   0x0000000000000054       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memset.o)
+ .debug_frame   0x0000000000000074       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-freer.o)
+ .debug_frame   0x00000000000000a0       0x30 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-mallocr.o)
+ .debug_frame   0x00000000000000d0       0x2c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sbrkr.o)
+ .debug_frame   0x00000000000000fc       0x48 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-sprintf.o)
+ .debug_frame   0x0000000000000144       0x40 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-mlock.o)
+ .debug_frame   0x0000000000000184       0x74 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-svfprintf.o)
+ .debug_frame   0x00000000000001f8       0x54 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-vfprintf_i.o)
+ .debug_frame   0x000000000000024c       0x48 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-reent.o)
+ .debug_frame   0x0000000000000294       0xb0 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-lock.o)
+ .debug_frame   0x0000000000000344       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memchr-stub.o)
+ .debug_frame   0x0000000000000364       0x28 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-memmove.o)
+ .debug_frame   0x000000000000038c       0x30 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-reallocr.o)
+ .debug_frame   0x00000000000003bc       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libc_nano.a(lib_a-nano-msizer.o)
+ .debug_frame   0x00000000000003dc       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_udivsi3.o)
+ .debug_frame   0x00000000000003fc       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divsi3.o)
+ .debug_frame   0x000000000000041c       0x34 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_muldi3.o)
+ .debug_frame   0x0000000000000450       0x38 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(bpabi.o)
+ .debug_frame   0x0000000000000488       0x3c /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/thumb/v6-m/nofp/libgcc.a(_divdi3.o)
+ .debug_frame   0x00000000000004c4       0x20 /Users/zepingchen/Desktop/new_firmware/servomotor/toolchain_essentials/bin/../lib/gcc/arm-none-eabi/10.2.1/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libnosys.a(sbrk.o)
