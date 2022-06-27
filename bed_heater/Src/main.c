@@ -391,9 +391,7 @@ void process_debug_uart_commands(void)
             do_one_ADC_conversion_cycle();
             break;
     	case 'p':
-            print_bed_voltage();
-            print_bed_current();
-            print_ambient_temperature();
+            print_ADC_values();
             print_bed_resistance();
             print_bed_temperature();
             break;
@@ -465,12 +463,11 @@ void print_start_message(void)
 
 void process_ADC_values(void)
 {
-    uint16_t current;
-    uint16_t voltage;
-    uint16_t temperature;
+    uint32_t current;
+    uint32_t voltage;
+    uint32_t temperature;
 
     if(new_ADC_values_available()) {
-        process_ADC_values();
         current = get_current_sense_value();
         voltage = get_24V_sense_value();
         temperature = get_temperature_sense_value();

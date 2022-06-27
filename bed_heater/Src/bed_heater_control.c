@@ -7,9 +7,11 @@
 #include "debug_uart.h"
 
 static uint8_t bed_heater_enabled = 0;
+static uint32_t baseline_current = 0;
+static uint32_t current_minus_baseline = 0;
 static uint32_t bed_heater_resistance = 0;
 static uint16_t desired_temperature_times_10 = 0;
-static uint16_t actual_temperature_time_10 = 0;
+static uint16_t actual_temperature_times_10 = 0;
 
 
 static uint16_t calculate_bed_temperature_times_10(void)
@@ -52,43 +54,31 @@ uint8_t get_device_status_flags(void)
 }
 
 
-void bed_heater_calculations(uint16_t current, uint16_t voltage, uint16_t temperature)
+void bed_heater_calculations(uint32_t current, uint32_t voltage, uint32_t temperature)
 {
-    uint32_t resistance = (uint32_t)voltage * 65535 / current;
-    bed_heater_resistance = resistance; 
-}
-
-
-void print_bed_current(void)
-{
-    char buf[40];
-    uint16_t current = get_current_sense_value();
-	sprintf(buf, "Bed heater current: %hu\n", current);
-	transmit(buf, strlen(buf));
-}
-
-
-void print_bed_voltage(void)
-{
-    char buf[40];
-    uint16_t voltage = get_24V_sense_value();
-	sprintf(buf, "Bed heater voltage: %hu\n", voltage);
-	transmit(buf, strlen(buf));
-}
-
-
-void print_ambient_temperature(void)
-{
-    char buf[40];
-    uint16_t temperature = get_temperature_sense_value();
-	sprintf(buf, "Ambient temperature: %hu\n", temperature);
-	transmit(buf, strlen(buf));
+    if(bed_heater_enabled) {
+        if(current > baseline_current) {
+            current_minus_baseline = current - baseline_current;
+            bed_heater_resistance = (uint32_t)voltage * 100 / current_minus_baseline;
+        }
+        else {
+            bed_heater_resistance = 4000000000;
+        }
+    }
+    else {
+        baseline_current = current;
+        current_minus_baseline = 0;
+    }
 }
 
 
 void print_bed_resistance(void)
 {
     char buf[50];
+	sprintf(buf, "Baseline current: %lu\n", baseline_current);
+	transmit(buf, strlen(buf));
+	sprintf(buf, "Current minus baseline: %lu\n", current_minus_baseline);
+	transmit(buf, strlen(buf));
 	sprintf(buf, "Bed heater resistance: %lu\n", bed_heater_resistance);
 	transmit(buf, strlen(buf));
 }
@@ -97,7 +87,7 @@ void print_bed_resistance(void)
 void print_bed_temperature(void)
 {
     char buf[40];
-	sprintf(buf, "Bed temperature: %hu\n", actual_temperature_time_10);
+	sprintf(buf, "Bed temperature: %hu\n", actual_temperature_times_10);
 	transmit(buf, strlen(buf));
 }
 

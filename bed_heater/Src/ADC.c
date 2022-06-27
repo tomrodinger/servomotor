@@ -1,16 +1,18 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include "stm32g0xx_hal.h"
 #include "ADC.h"
 #include "leds.h"
+#include "debug_uart.h"
 
 #define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 1450
 #define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 1250
 
 static volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
+static volatile uint32_t current = 0;
 static volatile uint32_t voltage = 0;
 static volatile uint32_t temperature = 0;
-static volatile uint32_t current = 0;
 static volatile uint8_t new_values_measured_flag = 0;
 
 
@@ -56,11 +58,11 @@ void adc_init(void)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |    // select the channels to be converted, 8 channels total
     		       (1  << ADC_CHSELR_SQ2_Pos) |
 				   (0  << ADC_CHSELR_SQ3_Pos) |
-				   (10 << ADC_CHSELR_SQ4_Pos) |
+				   (1  << ADC_CHSELR_SQ4_Pos) |
 				   (0  << ADC_CHSELR_SQ5_Pos) |
 				   (1  << ADC_CHSELR_SQ6_Pos) |
 				   (0  << ADC_CHSELR_SQ7_Pos) |
-				   (10 << ADC_CHSELR_SQ8_Pos);
+				   (1  << ADC_CHSELR_SQ8_Pos);
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
     for(i = 0; i < 100000; i++); // allow time for the voltage regulator to stabilize
@@ -74,7 +76,6 @@ void adc_init(void)
 
     ADC1->CFGR1 |= ADC_CFGR1_DMAEN; // enable of the DMA must be done after calibration (see 15.5.5 in the reference manual)
 
-	memset(ADC_buffer, 0, sizeof(ADC_buffer));
     DMA1_Channel1->CMAR = (uint32_t)(void*)ADC_buffer;
     DMA1_Channel1->CPAR = (uint32_t)(void*)(&ADC1->DR);
     DMA1_Channel1->CNDTR = (DMA_ADC_BUFFER_SIZE << DMA_CNDTR_NDT_Pos);
@@ -104,12 +105,12 @@ void do_one_ADC_conversion_cycle(void)
 
 void DMA1_Channel1_IRQHandler(void)
 {
+	uint32_t c = 0;
 	uint32_t v = 0;
 	uint32_t t = 0;
-	uint32_t c = 0;
 	int32_t i;
-	static uint8_t led_state = 1;
-
+//	static uint8_t led_state = 1;
+/*
 	if(led_state == 0)
 	{
 		led_state = 1;
@@ -120,16 +121,20 @@ void DMA1_Channel1_IRQHandler(void)
 		led_state = 0;
 		red_LED_off();
 	}
-
-
-	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i += 8) {
-		c += ADC_buffer[i + 0] + ADC_buffer[i + 2] + ADC_buffer[i + 4] + ADC_buffer[i + 6];
-		v += ADC_buffer[i + 1] + ADC_buffer[i + 5];
-		t += ADC_buffer[i + 3] + ADC_buffer[i + 7];
+*/
+	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i += DMA_ADC_BUFFER_VALUES_PER_CYCLE) {
+		c += ADC_buffer[i + 0];
+		v += ADC_buffer[i + 1];
+		c += ADC_buffer[i + 2];
+		v += ADC_buffer[i + 3];
+		c += ADC_buffer[i + 4];
+		v += ADC_buffer[i + 5];
+		c += ADC_buffer[i + 6];
+		v += ADC_buffer[i + 7];
 	}
-	c >>= 4;
-	v >>= 3;
-	t >>= 3;
+//	c >>= 4;
+//	v >>= 3;
+//	t >>= 3;
 
 	current = c;
 	voltage = v;
@@ -189,19 +194,19 @@ void check_if_ADC_watchdog3_exceeded(void)
 }
 
 
-uint16_t get_current_sense_value(void)
+uint32_t get_current_sense_value(void)
 {
 	return current;
 }
 
 
-uint16_t get_24V_sense_value(void)
+uint32_t get_24V_sense_value(void)
 {
 	return voltage;
 }
 
 
-uint16_t get_temperature_sense_value(void)
+uint32_t get_temperature_sense_value(void)
 {
 	return temperature;
 }
@@ -213,6 +218,21 @@ uint8_t new_ADC_values_available(void)
 	new_values_measured_flag = 0;
 	return flag;
 }
+
+void print_ADC_values(void)
+{
+    char buf[50];
+    uint32_t c = current;
+    uint32_t v = voltage;
+    uint32_t t = temperature;
+	sprintf(buf, "Bed heater current: %lu\n", c);
+	transmit(buf, strlen(buf));
+	sprintf(buf, "Bed heater voltage: %lu\n", v);
+	transmit(buf, strlen(buf));
+	sprintf(buf, "Ambient temperature: %lu\n", t);
+	transmit(buf, strlen(buf));
+}
+
 
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
 {
