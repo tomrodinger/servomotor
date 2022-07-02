@@ -235,6 +235,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 //        print_number("command:", command);
         switch(command) {
         case DETECT_DEVICES_COMMAND:
+            rs485_allow_next_command();
 //            sprintf(message, "DETECT_DEVICES_COMMAND\n");
 //            transmit(message, strlen(message));
         	detect_devices_delay = get_random_number(99);
@@ -244,6 +245,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 //            transmit(message, strlen(message));
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
+            rs485_allow_next_command();
 
 //            uint32_t my_unique_id_u32_array[2];
 //            memcpy(my_unique_id_u32_array, &unique_id, sizeof(unique_id));
@@ -265,12 +267,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 sprintf(message, "valid firmware page %hu\n", firmware_page);
                 transmit(message, strlen(message));
                 error_code = burn_firmware_page(firmware_page, parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
+                rs485_allow_next_command();
                 if((axis != ALL_ALIAS) && (error_code == 0)) {
                     rs485_transmit(NO_ERROR_RESPONSE, 3);
                 }
             }
 			break;
         case GET_PRODUCT_INFO_COMMAND:
+            rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
 				rs485_transmit("R\x01", 2);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
@@ -280,6 +284,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case GET_STATUS_COMMAND:
+            rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
                 set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));

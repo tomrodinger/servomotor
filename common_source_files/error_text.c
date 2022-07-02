@@ -30,6 +30,7 @@ char error_text[] =
     "turn point out of safety zone\0"         // error 26
     "predicted position out of safety zone\0" // error 27
     "predicted velocity too high\0"           // error 28
+    "debug1\0"                                // error 29
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

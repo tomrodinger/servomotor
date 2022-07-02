@@ -22,8 +22,7 @@
 #define MAX_HOMING_ERROR 50000
 
 #define MAX_PWM_VOLTAGE (200)
-#define OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE (100)
-#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (100)
+#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (200)
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #define UINT32_MIDPOINT 2147483648
 #define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000  // a position in the range -2000000000 to 2000000000 is valid
@@ -1410,7 +1409,7 @@ void motor_movement_calculations(void)
 			motor_pwm_voltage = max_pwm_voltage;
 		}
 		else {
-			motor_pwm_voltage = OPEN_LOOP_STATIC_MOTOR_PWM_VOLTAGE;
+			motor_pwm_voltage = max_pwm_voltage / 2;
 		}
 	}
 	else {
@@ -1574,6 +1573,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
 	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
 		disable_mosfets();
+        fatal_error(29); // DEBUG
 		if(fast_capture_data_active) {
 			fast_capture_data_active = 0;
 			fast_capture_data_result_ready = 1;
