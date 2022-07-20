@@ -23,7 +23,8 @@ static int32_t sensor_incremental_position = 0;
 static int32_t hall_sensor_offset = 0;
 static uint16_t time_difference_div = 0;
 static int32_t hall_position_with_hysteresis = 0;
-
+static uint8_t hall_sensor_statitics_active = 0;
+static hall_sensor_statistics_t hall_sensor_statistics;
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
@@ -53,6 +54,24 @@ int32_t get_hall_position(void)
 	hall_sensor_readings[0] = ((ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24]) << 3) - HALL_SENSOR_SHIFT;
 	hall_sensor_readings[1] = ((ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24]) << 3) - HALL_SENSOR_SHIFT;
 	hall_sensor_readings[2] = ((ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24]) << 3) - HALL_SENSOR_SHIFT;
+
+    if(hall_sensor_statitics_active) {
+        for(uint8_t h = 0; h < 3; h++) {
+            if(hall_sensor_readings[h] > hall_sensor_statistics.max_value[h]) {
+                hall_sensor_statistics.max_value[h] = hall_sensor_readings[h];
+            }
+            if(hall_sensor_readings[h] < hall_sensor_statistics.min_value[h]) {
+                hall_sensor_statistics.min_value[h] = hall_sensor_readings[h];
+            }
+            if(hall_sensor_statistics.n < 0xFFFFFFFF) {
+                hall_sensor_statistics.sum[h] += hall_sensor_readings[h];
+            }
+        }
+        if(hall_sensor_statistics.n < 0xFFFFFFFF) {
+            hall_sensor_statistics.n++;
+        }
+    }
+
 	adjust_hall_sensor_readings(hall_sensor_readings, d);
 
     if((d[0] >= d[1]) && (d[0] >= d[2])) { // check if d[0] is the highest
@@ -164,4 +183,32 @@ void print_hall_midlines(void)
     char buf[100];
     sprintf(buf, "Hall sensor midlines: %u %u %u\n", global_settings.hall1_midline, global_settings.hall2_midline, global_settings.hall3_midline);
     transmit(buf, strlen(buf));
+}
+
+
+void get_hall_sensor_statistics(hall_sensor_statistics_t *hall_sensor_statistics_output)
+{
+	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    memcpy(hall_sensor_statistics_output, &hall_sensor_statistics, sizeof(hall_sensor_statistics));
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+}
+
+
+void hall_sensor_turn_off_statistics(void)
+{
+    hall_sensor_statitics_active = 0;
+}
+
+
+void hall_sensor_turn_on_and_reset_statistics(void)
+{
+	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    for(uint8_t h = 0; h < 3; h++) {
+        hall_sensor_statistics.min_value[h] = 0xFFFF;
+        hall_sensor_statistics.max_value[h] = 0;
+        hall_sensor_statistics.sum[h] = 0;
+        hall_sensor_statistics.n = 0;
+    }
+    hall_sensor_statitics_active = 1;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }

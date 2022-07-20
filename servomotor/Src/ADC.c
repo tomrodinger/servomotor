@@ -2,6 +2,7 @@
 #include "stm32g0xx_hal.h"
 #include "ADC.h"
 #include "leds.h"
+#include "error_handling.h"
 
 #define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 1450
 #define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 1250
@@ -130,17 +131,38 @@ void check_if_ADC_watchdog3_exceeded(void)
 
 uint16_t get_hall_sensor1_voltage(void)
 {
-	return ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24];
+	uint16_t a = ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24];
+/*	if(a < 8500 - 2000) {
+		fatal_error(29);
+	}
+	if(a > 8500 + 2000) {
+		fatal_error(29);
+	} */
+	return a;
 }
 
 uint16_t get_hall_sensor2_voltage(void)
 {
-	return ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24];
+	uint16_t a = ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24];
+/*	if(a < 8500 - 2000) {
+		fatal_error(29);
+	}
+	if(a > 8500 + 2000) {
+		fatal_error(29);
+	} */
+	return a;
 }
 
 uint16_t get_hall_sensor3_voltage(void)
 {
-	return ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24];
+	uint16_t a = ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24];
+/*	if(a < 8500 - 2000) {
+		fatal_error(29);
+	}
+	if(a > 8500 + 2000) {
+		fatal_error(29);
+	} */
+	return a;
 }
 
 

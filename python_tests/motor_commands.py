@@ -120,6 +120,19 @@ def string_to_u8_alias(input):
     return converted_input
 
 
+def string_to_u64_unique_id(input):
+    # conver the string representation of a base 16 hex number to a positive integer that fits into a u64
+    try:
+        converted_input = int(input, 16)
+    except ValueError:
+        print("Error: cannot convert the hexadecimal number %s to an integer" % (input))
+        exit(1)
+    if converted_input < 0 or converted_input > 0xFFFFFFFFFFFFFFFF:
+        print("Error: it is not within the allowed range. The allowed range is 0 to 0xFFFFFFFFFFFFFFFF")
+        exit(1)
+    return converted_input
+
+
 def set_standard_options_from_args(args):
     global serial_port
     global alias
@@ -307,6 +320,8 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             input_packed = list_2d_string_to_packed_bytes(input)
         elif data_type_id == commands.buf10:
             input_packed = buf10_to_packed_bytes(input)
+        elif data_type_id == commands.u64_unique_id:
+            input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
         else:
             print("Error: didn't yet implement a converter to handle the input type:", commands.data_type_dict[data_type_id])
             exit(1)
@@ -364,7 +379,7 @@ def interpret_single_response(command_id, response):
             exit(1)
         print("Good. There was no response.")
     elif len(expected_response) == 1 and expected_response[0][0] == commands.success_response:
-        if response != commands.success_response:
+        if response != b'':
             print("Error: the response was not the expected success response")
             exit(1)
         print("Good. The command was successful and the payload is empty as expected")

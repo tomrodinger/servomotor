@@ -35,6 +35,8 @@
 #define MAX_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE + MOTOR_CURRENT_BASELINE_TOLERANCE)
 #define MAX_MOTOR_CURRENT 300 // make sure this number is less than (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
 
+#define MAX_MOTOR_CONTROL_TICK_TIME_DIFFERENCE_FATAL_ERROR_THRESHOLD 100
+
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
 #define ACCELERATION_SHIFT_LEFT 8
@@ -99,6 +101,7 @@ static uint16_t max_time_difference4 = 0;
 static uint16_t max_time_difference5 = 0;
 static uint64_t current_time_captured = 0;
 static uint16_t motor_control_tick_time_difference = 0;
+static uint16_t previous_motor_control_tick_time;
 static uint16_t max_motor_control_tick_time_difference = 0;
 static uint16_t motor_control_time_difference = 0;
 static uint16_t max_motor_control_time_difference = 0;
@@ -239,6 +242,12 @@ struct closed_loop_struct {
     int32_t max_hall_distance;
 };
 struct closed_loop_struct closed_loop = {0};
+
+
+void reset_time_profiler(void)
+{
+	previous_motor_control_tick_time = TIM14->CNT;
+}
 
 
 void clear_the_queue_and_stop_no_disable_interrupt(void)
@@ -1529,7 +1538,6 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	uint16_t end_time;
 	uint16_t end_time2;
 	uint16_t motor_control_tick_time;
-	static uint16_t previous_motor_control_tick_time;
 	uint16_t time_difference_delay;
 
 	start_time = TIM14->CNT;
@@ -1618,6 +1626,9 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	motor_control_tick_time_difference = motor_control_tick_time - previous_motor_control_tick_time;
 	if(motor_control_tick_time_difference > max_motor_control_tick_time_difference) {
     	max_motor_control_tick_time_difference = motor_control_tick_time_difference;
+		if(max_motor_control_tick_time_difference > MAX_MOTOR_CONTROL_TICK_TIME_DIFFERENCE_FATAL_ERROR_THRESHOLD) {
+			fatal_error(30); // "control loop took too long"  (all error text is defined in error_text.c)
+		}
 	}
 	previous_motor_control_tick_time = motor_control_tick_time;
 
@@ -1635,6 +1646,12 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	}
 
 	TIM1->SR = 0; // clear the interrupt flag
+}
+
+
+void disable_motor_control_loop(void)
+{
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt
 }
 
 

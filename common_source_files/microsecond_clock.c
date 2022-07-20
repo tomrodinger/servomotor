@@ -98,3 +98,9 @@ void reset_microsecond_time(void)
 	TIM14->CNT = 0;
 	upper_32_bits = 0;
 }
+
+void microsecond_delay(uint32_t microseconds)
+{
+	uint64_t start_time = get_microsecond_time();
+	while(get_microsecond_time() - start_time < microseconds);
+}

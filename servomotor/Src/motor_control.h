@@ -31,6 +31,7 @@
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
+void reset_time_profiler(void);
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
 void start_calibration(uint8_t print_output);
 void start_go_to_closed_loop_mode(void);
@@ -80,6 +81,7 @@ void process_calibration_data(void);
 void set_motor_current_baseline(void);
 void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
+void disable_motor_control_loop(void);
 
 
 typedef struct __attribute__((__packed__)) {

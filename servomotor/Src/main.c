@@ -282,6 +282,13 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     int32_t upper_limit;
     add_to_queue_test_results_t add_to_queue_test_results;
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
+    uint8_t control_hall_sensor_statistics_subcommand;
+    struct __attribute__((__packed__)) {
+        uint8_t axis;
+        uint8_t command;
+        uint8_t size;
+        hall_sensor_statistics_t hall_sensor_statistics;
+    } hall_sensor_statistics_full_response;
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -592,6 +599,29 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
             }
             break;
+        case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
+            control_hall_sensor_statistics_subcommand = ((int8_t*)parameters)[0];
+            rs485_allow_next_command();
+			if(axis != ALL_ALIAS) {
+                if(control_hall_sensor_statistics_subcommand == 0) {
+                    hall_sensor_turn_off_statistics();
+                }
+                if(control_hall_sensor_statistics_subcommand == 1) {
+                    hall_sensor_turn_on_and_reset_statistics();
+                }
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+			}
+            break;
+        case GET_HALL_SENSOR_STATISTICS_COMMAND:
+            rs485_allow_next_command();
+            get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
+            if(axis != ALL_ALIAS) {
+                hall_sensor_statistics_full_response.axis = 'R';
+                hall_sensor_statistics_full_response.command = '\x01';
+                hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
+                rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+            }
+            break;
         }
     }
     else {
@@ -808,8 +838,13 @@ int main(void)
     	}
 
         if(is_calibration_data_available()) {
+            disable_motor_control_loop();
             process_calibration_data();
+            transmit("Saving the settings\n", 20);
             save_global_settings();
+            transmit("\nResetting\n\n", 12);
+            microsecond_delay(10000);
+            NVIC_SystemReset();
         }
 
         if(is_fast_capture_data_result_ready()) {

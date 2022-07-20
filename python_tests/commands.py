@@ -349,7 +349,7 @@ register_command(command_id, command_name, description, inputs, response, multip
 command_id   = 21
 command_name = "SET_DEVICE_ALIAS_COMMAND"
 description  = "Set device alias"
-inputs       = [(u64, "Unique ID of the target device"),
+inputs       = [(u64_unique_id, "Unique ID of the target device"),
                 (u8_alias, "The alias (short one byte ID) such as X, Y, Z, E, etc. Cannot be R because this is reserved for a response message.")]
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
@@ -362,7 +362,7 @@ response     = [(string8, "The product code / model number (when doing a firmwar
                 (u8, "A firmware compatibility code (when doing a firmware upgrade, this must match between the firmware file and the target device)"),
                 (u24_version_number, "The hardware version stored as 3 bytes. The first byte is the patch version, followed by the minor and major versions."),
                 (u32, "The serial number"),
-                (u64, "The unique ID for the product"),
+                (u64_unique_id, "The unique ID for the product"),
                 (u32, "Not currently used")]
 register_command(command_id, command_name, description, inputs, response)
 
@@ -432,6 +432,29 @@ command_name = "PING_COMMAND"
 description  = "Send a payload containing any data and the device will respond with the same data back"
 inputs       = (buf10, "Any binary data payload to send to the device")
 response     = (buf10, "The same data that was sent to the device will be returned if all went well")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 32
+command_name = "CONTROL_HALL_SENSOR_STATISTICS_COMMAND"
+description  = "Turn on or off the gathering of statistics for the hall sensors and reset the statistics"
+inputs       = [(u8, "0 = turn off statistics gathering, 1 = reset statistics and turn on gathering")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 33
+command_name = "GET_HALL_SENSOR_STATISTICS_COMMAND"
+description  = "Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system."
+inputs       = []
+response     = [(u16, "The maximum value of hall sensor 1 encoutered since the last statistics reset"),
+                (u16, "The maximum value of hall sensor 2 encoutered since the last statistics reset"),
+                (u16, "The maximum value of hall sensor 3 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 1 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 2 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 3 encoutered since the last statistics reset"),
+                (u64, "The sum of hall sensor 1 values collected since the last statistics reset"),
+                (u64, "The sum of hall sensor 2 values collected since the last statistics reset"),
+                (u64, "The sum of hall sensor 3 values collected since the last statistics reset"),
+                (u32, "The number of times the hall sensors were measured since the last statistics reset")]
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 254
