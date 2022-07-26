@@ -47,14 +47,15 @@ void adc_init(void)
 //				   (0xf << ADC_CHSELR_SQ6_Pos) |  // these last three are not used
 //				   (0xf << ADC_CHSELR_SQ7_Pos) |
 //				   (0xf << ADC_CHSELR_SQ8_Pos);
-    ADC1->CHSELR = (0 << ADC_CHSELR_SQ1_Pos) |    // select the channels to be converted, 8 channels total
-    		       (5 << ADC_CHSELR_SQ2_Pos) |
-				   (0 << ADC_CHSELR_SQ3_Pos) |
-				   (4 << ADC_CHSELR_SQ4_Pos) |
-				   (0 << ADC_CHSELR_SQ5_Pos) |
-				   (6 << ADC_CHSELR_SQ6_Pos) |
-				   (0 << ADC_CHSELR_SQ7_Pos) |
-				   (7 << ADC_CHSELR_SQ8_Pos);
+	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
+    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
+    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+				   (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+				   (4  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+				   (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
     for(i = 0; i < 100000; i++); // allow time for the voltage regulator to stabilize
@@ -129,9 +130,11 @@ void check_if_ADC_watchdog3_exceeded(void)
 	}
 }
 
+// hall sensor 1 is connected to index 1 of the 8 channel cycle
+#define HALL1_ADC_CYCLE_INDEX 1
 uint16_t get_hall_sensor1_voltage(void)
 {
-	uint16_t a = ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24];
+	uint16_t a = ADC_buffer[HALL1_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24];
 /*	if(a < 8500 - 2000) {
 		fatal_error(29);
 	}
@@ -141,9 +144,11 @@ uint16_t get_hall_sensor1_voltage(void)
 	return a;
 }
 
+// hall sensor 2 is connected to index 4 of the 8 channel cycle
+#define HALL2_ADC_CYCLE_INDEX 4
 uint16_t get_hall_sensor2_voltage(void)
 {
-	uint16_t a = ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24];
+	uint16_t a = ADC_buffer[HALL2_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24];
 /*	if(a < 8500 - 2000) {
 		fatal_error(29);
 	}
@@ -153,9 +158,11 @@ uint16_t get_hall_sensor2_voltage(void)
 	return a;
 }
 
+// hall sensor 3 is connected to index 7 of the 8 channel cycle
+#define HALL3_ADC_CYCLE_INDEX 7
 uint16_t get_hall_sensor3_voltage(void)
 {
-	uint16_t a = ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24];
+	uint16_t a = ADC_buffer[HALL3_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24];
 /*	if(a < 8500 - 2000) {
 		fatal_error(29);
 	}
@@ -172,14 +179,18 @@ uint16_t get_motor_current(void)
 	int16_t max_current = -32768;
 	int16_t current;
 	int32_t i;
+	int32_t j;
 
-	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i += 2) {
-		current = ADC_buffer[i];
-		if(current < min_current) {
-			min_current = current;
-		}
-		else if(current > max_current) {
-			max_current = current;
+	for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
+		for(j = 0; j < ADC_CYCLE_INDEXES; j += 3) {
+			uint32_t buffer_index = i * ADC_CYCLE_INDEXES + j;
+			current = ADC_buffer[buffer_index];
+			if(current < min_current) {
+				min_current = current;
+			}
+			else if(current > max_current) {
+				max_current = current;
+			}
 		}
 	}
 
@@ -187,6 +198,24 @@ uint16_t get_motor_current(void)
 
 	return max_current;
 }
+
+
+#define TEMPERATURE_ADC_CYCLE_INDEX 5
+uint16_t get_temperature(void)
+{
+	uint16_t a = ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 0] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 8] +
+	             ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 16] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 24];
+	return a;
+}
+
+#define SUPPLY_VOLTAGE_ADC_CYCLE_INDEX 2
+uint16_t get_supply_voltage(void)
+{
+	uint16_t a = ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 0] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 8] +
+	             ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 16] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 24];
+	return a;
+}
+
 
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
 {

@@ -50,6 +50,8 @@ void print_motor_current(void);
 void print_hall_sensor_data(void);
 void print_hall_position_delta_stats(void);
 void print_motor_status(void);
+void print_motor_temperature(void);
+void print_supply_voltage(void);
 
 void start_fast_capture_data(void);
 uint8_t is_fast_capture_data_result_ready(void);

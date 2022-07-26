@@ -916,11 +916,34 @@ void print_max_motor_current_settings(void)
 	transmit(buf, strlen(buf));
 }
 
+
 void print_motor_current(void)
 {
 	char buf[150];
 	int16_t current = get_motor_current();
 	sprintf(buf, "current: %hd   motor_current_baseline: %hu\n", current, motor_current_baseline);
+	transmit(buf, strlen(buf));
+}
+
+
+void print_motor_temperature(void)
+{
+	char buf[100];
+	int16_t temperature = get_temperature();
+	sprintf(buf, "Temperature: %hd\n", temperature);
+	transmit(buf, strlen(buf));
+}
+
+
+#define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 24047
+void print_supply_voltage(void)
+{
+	char buf[100];
+	int16_t supply_voltage = get_supply_voltage();
+	int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+	int16_t whole_number = supply_voltage_calibrated / 10;
+	int16_t decimal = (supply_voltage_calibrated % 10);
+	sprintf(buf, "Supply voltage: %hd.%hu \n", whole_number, decimal);
 	transmit(buf, strlen(buf));
 }
 

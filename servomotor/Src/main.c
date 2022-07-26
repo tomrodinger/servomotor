@@ -674,6 +674,8 @@ void process_debug_uart_commands(void)
             print_hall_sensor_data();
             print_hall_position_delta_stats();
             print_motor_status();
+            print_motor_temperature();
+            print_supply_voltage();
 			break;
     	case 'P':
     		print_motor_current();
