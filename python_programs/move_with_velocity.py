@@ -112,7 +112,7 @@ if time < 0:
     print("The time steps cannot be negative")
     exit(1)
 
-    
+
 TIME_STEPS_PER_SECOND = 31250
 mm_per_rotation = 20
 microsteps_per_rotation = 360 * 256 * 7
@@ -140,6 +140,7 @@ velocity_to_send = int(microsteps_per_time_step * (1 << 20) + 0.5)
 print("The velocity to send:", velocity_to_send)
 
 time_steps = int(time * TIME_STEPS_PER_SECOND + 0.5)
+print("The timesteps to send:", time_steps)
 
 ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
