@@ -79,5 +79,5 @@ clean:
 	-rm -f ${BUILD_DIR}/*
 
 program: ${BUILD_DIR}/firmware_STM32G030.firmware
-	/usr/bin/python3 ../python_tests/upgrade_firmware.py ${BUILD_DIR}/firmware_STM32G030.firmware
+	/usr/bin/python3 ../python_programs/upgrade_firmware.py ${BUILD_DIR}/firmware_STM32G030.firmware
 

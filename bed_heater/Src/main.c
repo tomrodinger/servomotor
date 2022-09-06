@@ -108,7 +108,7 @@ void portA_init(void)
     #define FAN1_CONTROL_PORT_A_PIN 7
     #define FAN2_CONTROL_PORT_A_PIN 8
 
-    GPIOA->BSRR = 1 << HEATER_CONTROL_PORT_A_PIN;
+    GPIOA->BSRR = (1 << HEATER_CONTROL_PORT_A_PIN) | (1 << FAN1_CONTROL_PORT_A_PIN) | (1 << FAN2_CONTROL_PORT_A_PIN);
 
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
@@ -134,6 +134,9 @@ void portA_init(void)
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos) |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT10_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT11_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |

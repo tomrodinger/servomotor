@@ -59,7 +59,7 @@ void bed_heater_calculations(uint32_t current, uint32_t voltage, uint32_t temper
     if(bed_heater_enabled) {
         if(current > baseline_current) {
             current_minus_baseline = current - baseline_current;
-            bed_heater_resistance = (uint32_t)voltage * 100 / current_minus_baseline;
+            bed_heater_resistance = (uint64_t)voltage * 5000 / current_minus_baseline;
         }
         else {
             bed_heater_resistance = 4000000000;
