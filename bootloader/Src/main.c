@@ -93,17 +93,17 @@ void portA_init(void)
 
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // hall sensor 2
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // hall sensor 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // hall sensor 3
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // current measurement channel B
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // PWM 1
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  | // PWM 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE10_Pos) | // PWM 3
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // PWM 4
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // PWM 3
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) | // PWM 4
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 drive enable
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // Button input and also SWDIO (for programming)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
@@ -127,16 +127,16 @@ void portB_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos)  |
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // PWM 2
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  | // PWM 2
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);

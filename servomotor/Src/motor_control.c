@@ -21,7 +21,7 @@
 
 #define MAX_HOMING_ERROR 50000
 
-#define MAX_PWM_VOLTAGE (200)
+#define MAX_PWM_VOLTAGE (300)
 #define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (200)
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #define UINT32_MIDPOINT 2147483648
@@ -1493,6 +1493,10 @@ void motor_phase_calculations(void)
 //    char buf[200];
 //    volatile uint32_t delay;
 
+	if(get_mosfets_enabled() == 0) {
+		return;
+	}
+
 //    sprintf(buf, "commutation_position: %u\n", (unsigned int)commutation_position);
 //    transmit(buf, strlen(buf));
 
@@ -1602,6 +1606,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	}
 
 	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
+	/*
 	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
 		disable_mosfets();
         fatal_error(29); // DEBUG
@@ -1610,7 +1615,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 			fast_capture_data_result_ready = 1;
 		}
 	}
-
+	*/
 	start_time = TIM14->CNT;
 	compute_velocity();
 	end_time = TIM14->CNT;

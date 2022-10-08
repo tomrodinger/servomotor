@@ -1,459 +1,493 @@
-#!/usr/local/bin/python3
 
-import sys
-import serial
-from serial.serialutil import to_bytes
-import serial.tools.list_ports
-import time
-import struct
-import argparse
-import shutil
-import serial_functions
-import commands
-import textwrap
+PROTOCOL_VERSION = 19
+registered_commands = {}
 
-ser = None
-alias = 255
-
-def get_response():
-    response = ser.read(3)
-    if len(response) == 0:
-        return None, "Error: timeout"
-    if len(response) != 3:
-        return None, "Error: the response is not 3 bytes long"
-    print("Received a response: ", response)
-    if response[0] != ord('R'):
-        return None, "Error: the first is not the expected R"
-    payload_size = response[2]
-    if payload_size == 0:
-        if response[1] != 0:
-            return None, "Error: the second byte should be 0 if there is no payload"
-    else:
-        if response[1] != 1:
-            return None, "Error: the second byte should be 1 if there is a payload"
-
-    if payload_size == 0:
-        print("This response indicates SUCCESS and has no payload")
-        return b''
-
-    payload = ser.read(payload_size)
-    if len(payload) != payload_size:
-        return None, "Error: didn't receive the right length payload. Received: %s" % (payload)
-
-    print("Got a valid payload:")
-    print_data(payload)
-
-    return payload
-
-
-def parse_response(response):
-    if len(response) != 13:
-        return None, None
-    unique_id = int.from_bytes(response[0:8], "little")
-    alias = int(response[4])
-    crc32 = int.from_bytes(response[5:9], "little")
-    if crc32 != 0x04030201:
-        return None, None
-    return unique_id, alias
-
-
-def print_data(data):
-    print(data)
-    for d in data:
-        print("0x%02X %d" % (d, d))
-
-
-def send_command(command_id, gathered_inputs):
-    command_payload_len = len(gathered_inputs)
-    command = bytearray([alias, command_id, command_payload_len]) + gathered_inputs
-    print("Writing %d bytes" % (len(command)))
-    print_data(command)
-    ser.write(command)
-    if commands.registered_commands[command_id][3] == []:
-        print("This command has no response whatsoever")
-        return None
-    all_response_payloads = []
-    while(1):
-        response_payload = get_response()
-        if commands.registered_commands[command_id][4] == False:
-            if isinstance(response_payload, tuple):
-                print(response_payload[1]) # An error occured and the error message is the second element of the tuple
-                exit(1)
-            return response_payload
-        else:
-            if isinstance(response_payload, tuple):
-                if response_payload[1] == "Error: timeout":
-                    break
-                else:
-                    print(response_payload[1]) # An error occured and the error message is the second element of the tuple
-                    exit(1)
-        all_response_payloads.append(response_payload)
-    return all_response_payloads
-
-
-def add_standard_option_to_parser(parser):
-    # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
-    # and it also takes a mandatory firmware file name
-    parser.add_argument('-p', '--port', help='serial port device', default=None)
-    parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-    parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
-    args = parser.parse_args()
-    return 0
-
-def string_to_u8_alias(input):
-    if input == "255":
-        converted_input = 255
-    elif len(input) == 1:
-        converted_input = ord(input)
-    else:
-        try:
-            converted_input = int(input)
-        except ValueError:
-            print("Error: it is not a single character nor is it an integer")
-            exit(1)
-        if converted_input < 0 or converted_input > 255:
-            print("Error: it is not within the allowed range. The allowed range is 0 to 255")
-            exit(1)
-    if converted_input == ord('R'):
-        print("Error: the alias R is not allowed because it is reserved to indicate a response")
+def register_command(command_id, command_name, description, inputs, response, multiple_responses = False):
+    if command_id in registered_commands.keys():
+        print("ERROR: The command ID", command_id, "is already registered")
         exit(1)
-    return converted_input
-
-
-def string_to_u64_unique_id(input):
-    # conver the string representation of a base 16 hex number to a positive integer that fits into a u64
-    try:
-        converted_input = int(input, 16)
-    except ValueError:
-        print("Error: cannot convert the hexadecimal number %s to an integer" % (input))
-        exit(1)
-    if converted_input < 0 or converted_input > 0xFFFFFFFFFFFFFFFF:
-        print("Error: it is not within the allowed range. The allowed range is 0 to 0xFFFFFFFFFFFFFFFF")
-        exit(1)
-    return converted_input
-
-
-def set_standard_options_from_args(args):
-    global serial_port
-    global alias
-
-    if args.PORT == True:
-        serial_port = "MENU"
-    else:
-        serial_port = args.port
-
-    alias = args.alias
-    if alias == None:
-        print("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help.")
-        exit(1)
-
-    print("Getting the alias of the device we want to communicate with (%s)" % (alias))
-    alias = string_to_u8_alias(alias)
-
-
-def open_serial_port():
-    global ser
-    ser = serial_functions.open_serial_port(serial_port, 230400, timeout = 1.2)
-
-
-def close_serial_port():
-    ser.close
-
-
-def input_or_response_to_string(data):
-    if not isinstance(data, tuple):
-        print("Error: the data is not a tuple")
-        exit(1)
-    if len(data) != 2:
-        print("Error: the data is not a tuple of length 2")
-        exit(1)
-    data_type = commands.data_type_dict[data[0]]
-    data_description = data[1]
-    return "%s: %s" % (data_type, data_description)
-
-def print_wrapped_text(first_line_message, subsequent_lines_message, text, terminal_window_columns):
-    wrapped_text = textwrap.wrap(text, initial_indent = first_line_message, subsequent_indent = subsequent_lines_message, width = terminal_window_columns)
-    for line in wrapped_text:
-        print(line)
-
-def print_inputs_or_responses(message, data, terminal_window_columns):
-    subsequent_spaces = 12
-    if data == None or (isinstance(data, list) and len(data) == 0):
-        print(message, "None")
-    elif isinstance(data, list):
-        for i in range(len(data)):
-            text = input_or_response_to_string(data[i])
-            print_wrapped_text(message, " " * subsequent_spaces, text, terminal_window_columns)
-    elif isinstance(data, tuple):
-        text = input_or_response_to_string(data)
-        print_wrapped_text(message, " " * subsequent_spaces, text, terminal_window_columns)
-    else:
-        print("Error: this is not correctly formatted:", data)
-
-
-def print_protocol_version():
-    print("Currently using protocol version v%d" % (commands.PROTOCOL_VERSION))
-
-
-def print_data_type_descriptions():
-    print("\nThese are the descriptions of the various input and output data types currently supported:\n")
-    header1 = "   Data type ID   "
-    header2 = "Size (bytes)"
-    header3 = "      Max Value      "
-    header4 = "      Min Value      "
-    header5 = "Description"
-    header_format_string = "%%%ds | %%%ds | %%%ds | %%%ds | %%%ds" % (len(header1), len(header2), len(header3), len(header4), len(header5))
-    data_format_string = "%%%ds | %%%ds | %%%ds | %%%ds | %%%ds" % (len(header1), len(header2), len(header3), len(header4), len(header5))
-    header = header_format_string % (header1, header2, header3, header4, header5)
-    # print the header
-    print(header)
-    header_len = len(header)
-    # print a bar that has the length of the header to underline the header
-    print("-" * header_len)
-
-    for data_type_id in commands.data_type_dict.keys():
-        data_type = commands.data_type_dict[data_type_id]
-        data_size = commands.data_type_to_size_dict[data_type_id]
-        if(data_size != None):
-            data_size = str(data_size)
-        else:
-            data_size = "Variable"
-        data_type_is_integer = commands.data_type_is_integer_dict[data_type_id]
-        if(data_type_is_integer):
-            data_max_value = str(commands.data_type_max_value_dict[data_type_id])
-            data_min_value = str(commands.data_type_min_value_dict[data_type_id])
-        else:
-            data_max_value = "Not Applicable"
-            data_min_value = "Not Applicable"
-        data_description = commands.data_type_description_dict[data_type_id]
-        print(data_format_string % (data_type, data_size, data_max_value, data_min_value, data_description))
-
-def print_registered_commands():
-    print("\nThese are the supported commands:\n")
-    # First, find out the width of the terminal window
-    terminal_window_columns = shutil.get_terminal_size().columns
-    # iterate through all the sorted keys in the dictionary
-    for key in sorted(commands.registered_commands.keys()):
-        print("%3d: %s" % (key, commands.registered_commands[key][0]))
-        print_wrapped_text("     ", "     ", commands.registered_commands[key][1], terminal_window_columns)
-        inputs = commands.registered_commands[key][2]
-        print_inputs_or_responses("     Input: ", inputs, terminal_window_columns)
-        response = commands.registered_commands[key][3]
-        print_inputs_or_responses("     Response: ", response, terminal_window_columns)
-        print()
-
-def get_command_id(command):
-    for key in sorted(commands.registered_commands.keys()):
-        registered_command = commands.registered_commands[key]
-        if command == registered_command[0]:
-            return key
-    return None
-
-def list_2d_string_to_packed_bytes(input):
-    # convert this string representation of a python two dimensional list to a python list of lists
-    try:
-        input_list_2d = eval(input)
-    except NameError:
-        print("Error: the input could not be successfully translated using the eval function in Python")
-        exit(1)
-    # check that the shape of this list is correct (ie. is a 2D list or in other words a list of lists)
-    if not isinstance(input_list_2d, list):
-        print("Error: the input could not be translated into a valid list object")
-        exit(1)
-    if len(input_list_2d) < 1:
-        print("Error: the provided input appears to be an empty list")
-        exit(1)
-    is_signed = True
-    input_packed = b''
-    for list_item in input_list_2d:
-        print("Here is a list item:", list_item)
-        if not isinstance(list_item, list):
-            print("Error: the sub-item in the list could not be translated into a valid list object")
-            exit(1)
-        if len(list_item) != 2:
-            print("Error: the sub-item in the list is not a list with two elements in it")
-            exit(1)
-        for list_sub_item in list_item:
-            if not isinstance(list_sub_item, int):
-                print("Error: the sub-sub-item in the list is not an integer")
-                exit(1)
-            try:
-                input_packed = input_packed + list_sub_item.to_bytes(4, byteorder="little", signed=is_signed)
-            except OverflowError:
-                print("Error: the integer value is too large to be represented in the given number of bytes")
-                exit(1)
-            is_signed = not is_signed
-    return input_packed
-
-
-def buf10_to_packed_bytes(input):
-    # convert the string into a bytearray
-    input_packed = bytearray(input, "utf-8")
-    # check that the length of the bytearray is correct
-    if len(input_packed) != 10:
-        print("Error: the input is not 10 bytes long")
-        exit(1)
-    return input_packed
-
-
-def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value):
-    if is_integer:
-        try:
-            input_int = int(input)
-        except ValueError:
-            print("Error: the input is not an integer")
-            exit(1)
-        if input_int < input_data_min_value or input_int > input_data_max_value:
-            print("Error: the input is not within the allowed range")
-            print("The allowed range is:", input_data_min_value, "to", input_data_max_value)
-            exit(1)
-        if input_data_min_value < 0:
-            input_signed = True
-        else:
-            input_signed = False
-        input_packed = input_int.to_bytes(input_data_size, byteorder = "little", signed = input_signed)
-        print("The converted input is:", input_packed)
-    else:
-        if data_type_id == commands.u8_alias:
-            input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
-        elif data_type_id == commands.list_2d:
-            input_packed = list_2d_string_to_packed_bytes(input)
-        elif data_type_id == commands.buf10:
-            input_packed = buf10_to_packed_bytes(input)
-        elif data_type_id == commands.u64_unique_id:
-            input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
-        else:
-            print("Error: didn't yet implement a converter to handle the input type:", commands.data_type_dict[data_type_id])
-            exit(1)
-    return input_packed
-
-def gather_inputs(command_id, inputs):
-    expected_inputs = commands.registered_commands[command_id][2]
-    if len(expected_inputs) == 0:
-        print("This command takes no inputs")
-    else:
-        if len(expected_inputs) == 1:
-            print("The expected input for this command is:"),
-        else:
-            print("The expected inputs for this command are:"),
-        for i in range(len(expected_inputs)):
-            input_text = input_or_response_to_string(expected_inputs[i])
-            print("  ", input_text)
-    print("%d input(s) were given" % (len(inputs)))
-    if len(inputs) != len(expected_inputs):
-        print("Error: the number of inputs given for this command is not the expected number")
-        exit(1)
-    print("Good. You gave the correct number of inputs.")
-    
-    concatenated_inputs = bytearray()
-    for i in range(len(inputs)):
-        data_type_id = expected_inputs[i][0]
-        input_data_size = commands.data_type_to_size_dict[data_type_id]
-        input_data_is_integer = commands.data_type_is_integer_dict[data_type_id]
-        if input_data_is_integer:
-            input_data_min_value = commands.data_type_min_value_dict[data_type_id]
-            input_data_max_value = commands.data_type_max_value_dict[data_type_id]
-        else:
-            input_data_min_value = None
-            input_data_max_value = None
-        input_data_type_string = commands.data_type_dict[data_type_id]
-        input_data_description = expected_inputs[i][1]
-        print("Now converting input number %d (%s)" % (i + 1, inputs[i]))
-        converted_data = convert_input_to_right_type(data_type_id, inputs[i], input_data_size, input_data_is_integer, input_data_min_value, input_data_max_value)
-        if converted_data == None:
-            print("Error: bad input. This input must follow this convention:")
-            print("  %s: %s (size: %d unpack type: %s)" % (input_data_type_string, input_data_description, input_data_size, input_data_min_value, input_data_max_value))
-            exit(1)
-        concatenated_inputs += converted_data
-    return concatenated_inputs
-
-def interpret_single_response(command_id, response):
+    if inputs == None:
+        inputs = []
+    elif isinstance(inputs, tuple):
+        inputs = [inputs]
     if response == None:
-        print("This command has no other response and there is nothing more to say")
-        return
-    expected_response = commands.registered_commands[command_id][3]
-    if len(expected_response) == 0:
-        print("We are expecting this command to have no response whatsoever")
-        if response != None:
-            print("Error: there was some sort of response")
-            exit(1)
-        print("Good. There was no response.")
-    elif len(expected_response) == 1 and expected_response[0][0] == commands.success_response:
-        if response != b'':
-            print("Error: the response was not the expected success response")
-            exit(1)
-        print("Good. The command was successful and the payload is empty as expected")
-    else:
-        print("The expected response for this command along with the decoded value(s) is below:"),
-        for i in range(len(expected_response)):
-            response_text = input_or_response_to_string(expected_response[i])
-            print("  ", response_text)
-            data_type = expected_response[i][0]
-            if data_type == commands.string_null_term:
-                # find the first occurance of the null terminator in the byte array response
-                null_terminator_index = response.find(b'\x00')
-                # if it didn't fina a null terminator then throw an error
-                if null_terminator_index == -1:
-                    print("Error: the response from the device is not null terminated. This is a bug in the device or some sort of communication error")
-                    exit(1)
-                data_type_size = null_terminator_index + 1
-            else:
-                data_type_size = commands.data_type_to_size_dict[data_type]
-            if len(response) < data_type_size:
-                print("Error: the response does not contain enough bytes to decode this data type")
-                exit(1)
-            data_item = response[:data_type_size]
-            response = response[data_type_size:]
-            data_item_is_integer = commands.data_type_is_integer_dict[data_type]
-            if data_item_is_integer:
-                data_item_min_value = commands.data_type_min_value_dict[data_type]
-                data_item_max_value = commands.data_type_max_value_dict[data_type]
-                if data_item_min_value < 0:
-                    data_item_signed = True
-                else:
-                    data_item_signed = False
-                from_bytes_result = int.from_bytes(data_item, byteorder = "little", signed = data_item_signed)
-                print("   --->", from_bytes_result)
-            else:
-                if data_type == commands.string8:
-                    # remove the null terminator from the string
-                    data_item = data_item[:-1]
-                    print("   --->", data_item.decode("utf-8"))
-                if data_type == commands.string_null_term:
-                    print("   --->", data_item.decode("utf-8"))
-                elif data_type == commands.u24_version_number:
-                    print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
-                elif data_type == commands.u32_version_number:
-                    print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
-                elif data_type == commands.u64_unique_id:
-                    print("   ---> %d" % (int.from_bytes(data_item, byteorder = "little")))
-                elif data_type == commands.u8_alias:
-                    if data_item >= bytearray([33]) and data_item <= bytearray([126]):
-                        print("   ---> the ASCII character %c" % (data_item[0]))
-                    else:
-                        print("   ---> the single byte integer %d or 0x%02x in hex" % (data_item[0], data_item[0]))
-                elif data_type == commands.crc32:
-                    print("   ---> 0x%08X" % (int.from_bytes(data_item, byteorder = "little")))
-                elif data_type == commands.buf10:
-                    print("   ---> %s" % (data_item))
-                else:
-                    print("Error: did not implement the part that interprets non-integer data yet")
-                    exit(1)
-        if len(response) != 0:
-            print("Error: there unexpected bytes left in the response after interpreting the expected response")
-            exit(1)
+        response = []
+    elif isinstance(response, tuple):
+        response = [response]
+    registered_commands[command_id] = (command_name, description, inputs, response, multiple_responses)
+
+def get_registered_commands():
+    return registered_commands
+
+# These are the various data types that can be used in the inputs and outputs of a command
+i8  = 0  # 8-bit signed integer
+u8  = 1  # 8-bit unsigned integer
+i16 = 2  # 16-bit signed integer
+u16 = 3  # 16-bit unsigned integer
+i24 = 4  # 24-bit signed integer
+u24 = 5  # 24-bit unsigned integer
+i32 = 6  # 32-bit signed integer
+u32 = 7  # 32-bit unsigned integer
+i48 = 8  # 48-bit signed integer
+u48 = 9  # 48-bit unsigned integer
+i64 = 10 # 64-bit signed integer
+u64 = 11 # 64-bit unsigned integer
+string8 = 12            # 8 byte long string with null termination if it is shorter than 8 bytes
+u24_version_number = 13 # 3 byte version number. the order is patch, minor, major
+u32_version_number = 14 # 4 byte version number. the order is development number, patch, minor, major
+u64_unique_id = 15      # the unique id of the device
+u8_alias = 16           # the alias of the device
+crc32 = 17              # 32-bit CRC
+u8_alias = 18           # This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number up to 255
+buf10 = 19              # 10 byte long buffer containing any binary data
+list_2d = 200           # a two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
+string_null_term = 201  # this is a string with a variable length and must be null terminated
+unknown_data = 202      # this is an unknown data type (work in progress; will be corrected and documented later)
+success_response = 240  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
+
+class command_data_types:
+    i8  = 0  # 8-bit signed integer
+    u8  = 1  # 8-bit unsigned integer
+    i16 = 2  # 16-bit signed integer
+    u16 = 3  # 16-bit unsigned integer
+    i24 = 4  # 24-bit signed integer
+    u24 = 5  # 24-bit unsigned integer
+    i32 = 6  # 32-bit signed integer
+    u32 = 7  # 32-bit unsigned integer
+    i48 = 8  # 48-bit signed integer
+    u48 = 9  # 48-bit unsigned integer
+    i64 = 10 # 64-bit signed integer
+    u64 = 11 # 64-bit unsigned integer
+    string8 = 12            # 8 byte long string with null termination if it is shorter than 8 bytes
+    u24_version_number = 13 # 3 byte version number. the order is patch, minor, major
+    u32_version_number = 14 # 4 byte version number. the order is development number, patch, minor, major
+    u64_unique_id = 15      # the unique id of the device
+    u8_alias = 16           # the alias of the device
+    crc32 = 17              # 32-bit CRC
+    u8_alias = 18           # This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number up to 255
+    buf10 = 19              # 10 byte long buffer containing any binary data
+    list_2d = 200           # a two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
+    string_null_term = 201  # this is a string with a variable length and must be null terminated
+    unknown_data = 202      # this is an unknown data type (work in progress; will be corrected and documented later)
+    success_response = 240  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
+    
 
 
-def interpret_response(command_id, response):
-    if not isinstance(response, list):
-        interpret_single_response(command_id, response)
-    else:
-        if len(response) == 0:
-            print("There was no response from any device(s)")
-        elif len(response) == 1:
-            interpret_single_response(command_id, response[0])
-        else:
-            print("The response is a list containing multiple responses. Interpreting them:")
-            for i in range(len(response)):
-                interpret_single_response(command_id, response[i])
+data_type_dict = {
+    i8  : "i8",
+    u8  : "u8",
+    i16 : "i16",
+    u16 : "u16",
+    i24 : "i24",
+    u24 : "u24",
+    i32 : "i32",
+    u32 : "u32",
+    i48 : "i48",
+    u48 : "u48",
+    i64 : "i64",
+    u64 : "u64",
+    string8 : "string8",
+    u24_version_number : "u24_version_number",
+    u32_version_number : "u32_version_number",
+    u64_unique_id : "u64_unique_id",
+    u8_alias : "u8_alias",
+    crc32 : "crc32",
+    buf10 : "buf10",
+    list_2d : "list_2d",
+    string_null_term : "string_null_term",
+    unknown_data : "unknown_data",
+    success_response : "success_response"
+}
+
+data_type_to_size_dict = {
+    i8  : 1,
+    u8  : 1,
+    i16 : 2,
+    u16 : 2,
+    i24 : 3,
+    u24 : 3,
+    i32 : 4,
+    u32 : 4,
+    i48 : 6,
+    u48 : 6,
+    i64 : 8,
+    u64 : 8,
+    string8 : 8,
+    u24_version_number : 3,
+    u32_version_number : 4,
+    u8_alias : 1,
+    u64_unique_id : 8,
+    crc32 : 4,
+    buf10 : 10,
+    list_2d : None,
+    string_null_term : None,
+    unknown_data : None,
+    success_response : None,
+}
+
+data_type_min_value_dict = {
+    i8  : -128,
+    u8  : 0,
+    i16 : -32768,
+    u16 : 0,
+    i24 : -8388608,
+    u24 : 0,
+    i32 : -2147483648,
+    u32 : 0,
+    i48 : -549755813888,
+    u48 : 0,
+    i64 : -9223372036854775808,
+    u64 : 0,
+}
+
+data_type_max_value_dict = {
+    i8  : 127,
+    u8  : 255,
+    i16 : 32767,
+    u16 : 65535,
+    i24 : 8388607,
+    u24 : 16777215,
+    i32 : 2147483647,
+    u32 : 4294967295,
+    i48 : 549755813887,
+    u48 : 1099511627775,
+    i64 : 9223372036854775807,
+    u64 : 18446744073709551615,
+}
+
+data_type_is_integer_dict = {
+    i8  : True,
+    u8  : True,
+    i16 : True,
+    u16 : True,
+    i24 : True,
+    u24 : True,
+    i32 : True,
+    u32 : True,
+    i48 : True,
+    u48 : True,
+    i64 : True,
+    u64 : True,
+    string8 : False,
+    u24_version_number : False,
+    u32_version_number : False,
+    u64_unique_id : False,
+    u8_alias : False, # This is sometimes a character, sometimes a number, but for this purpose we will say it is not an integer  
+    crc32 : False,   
+    buf10 : False,
+    list_2d : False,
+    string_null_term : False,
+    unknown_data : False,
+    success_response : False,
+}
+
+data_type_description_dict = {
+    i8  : "8-bit signed integer",
+    u8  : "8-bit unsigned integer",
+    i16 : "16-bit signed integer",
+    u16 : "16-bit unsigned integer",
+    i24 : "24-bit signed integer",
+    u24 : "24-bit unsigned integer",
+    i32 : "32-bit signed integer",
+    u32 : "32-bit unsigned integer",
+    i48 : "48-bit signed integer",
+    u48 : "48-bit unsigned integer",
+    i64 : "64-bit signed integer",
+    u64 : "64-bit unsigned integer",
+    string8 : "8 byte long string with null termination if it is shorter than 8 bytes",
+    u24_version_number : "3 byte version number. the order is patch, minor, major",
+    u32_version_number : "4 byte version number. the order is development number, patch, minor, major",
+    u64_unique_id : "The unique ID of the device (8-bytes long)",
+    u8_alias : "This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number from 0 to 255",
+    crc32 : "32-bit CRC",
+    buf10 : "10 byte long buffer containing any binary data",
+    list_2d : "A two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]",
+    string_null_term : "This is a string with a variable length and must be null terminated",
+    unknown_data : "This is an unknown data type (work in progress; will be corrected and documented later)",
+    success_response : "Indicates that the command was received successfully and is being executed. the next command can be immediately transmitted without causing a command overflow situation."
+}
+
+# === Below are the commands that are defined in the protocol ===
+
+command_id   = 0
+command_name = "DISABLE_MOSFETS_COMMAND"
+description  = "Disable MOSFETS (note that MOSFETs are disabled after initial power on)"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 1
+command_name = "ENABLE_MOSFETS_COMMAND"
+description  = "Enable MOSFETS"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 2
+command_name = "TRAPEZOID_MOVE_COMMAND"
+description  = "Move immediately to the given position using the currently set speed (the speed is set by a separate command)"
+inputs       = [(i32, "The displacement to travel. Can be positiove or negative."),
+                (u32, "The time over which to do the move")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 3
+command_name = "SET_MAX_VELOCITY_COMMAND"
+description  = "Set maximum velocity (this is not used at this time)"
+inputs       = (u32, "Maximum velocity")
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 4
+command_name = "SET_POSITION_AND_FINISH_TIME_COMMAND"
+description  = "Move to this new given position and finish the move at the given absolution time"
+inputs       = [(i32, "Position value"),
+                (u32, "Time value")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 5
+command_name = "SET_MAX_ACCELERATION_COMMAND"
+description  = "Set max acceleration"
+inputs       = (u16, "The maximum acceleration")
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 6
+command_name = "START_CALIBRATION_COMMAND"
+description  = "Start a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly"
+inputs       = []
+response     = None
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 7
+command_name = "CAPTURE_HALL_SENSOR_DATA_COMMAND"
+description  = "Start sending hall sensor data (work in progress; don't send this command)"
+inputs       = (u8, "Indicates the type of data to read. Currently 1 to 4 are valid. 0 indicates turning off the reading.")
+response     = (unknown_data, "Various data. This is work in progress.")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 8
+command_name = "RESET_TIME_COMMAND"
+description  = "Reset the absolute time to zero (call this first before issuing any movement commands"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 9
+command_name = "GET_CURRENT_TIME_COMMAND"
+description  = "Get the current absolute time"
+inputs       = []
+response     = (u48, "The current absolute time")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 10
+command_name = "TIME_SYNC_COMMAND"
+description  = "Send the master time to the motor so that it can sync its own clock (do this 10 times per second)"
+inputs       = (u48, "The motor absolute time that the motor should sync to (in microseconds)")
+response     = [(i32, "The error in the motor's time compared to the master time"),
+                (u16, "The contents of the RCC-ICSCR register (holds the HSICAL and HSITRIM settings)")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 11
+command_name = "GET_N_ITEMS_IN_QUEUE_COMMAND"
+description  = "Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)"
+inputs       = []
+response     = (u8, "The number of items in the movement queue. This command will return between 0 and 32. If less than 32, you can add more items to the queue to continue the movements in order without stopping.")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 12
+command_name = "EMERGENCY_STOP_COMMAND"
+description  = "Emergency stop (stop all movement, disable MOSFETS, clear the queue)"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 13
+command_name = "ZERO_POSITION_COMMAND"
+description  = "Make the current position the position zero (origin)"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 14
+command_name = "HOMING_COMMAND"
+description  = "Homing (or in other words, move until a crash and then stop immediately)"
+inputs       = [(i32, "The maximum distance to move (if a crash does not occur). This can be positive or negative. the sign determines the direction of movement."),
+                (u32, "The maximum time to allow for homing. Make sure to give enough time for the motor to cover the maximum distance or the motor may move too fast or throw a fatal error.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 15
+command_name = "GET_POSITION_COMMAND"
+description  = "Get the current position"
+inputs       = []
+response     = (i32, "The current position")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 16
+command_name = "GET_STATUS_COMMAND"
+description  = "Get the status"
+inputs       = []
+response     = [(u8,
+'''A series of flags which are 1 bit each. These are:
+   Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)
+   Bit 1: MOSFETs are enabled
+   Bit 2: Motor is in closed loop mode
+   Bit 3: Motor is currently executing the calibration command
+   Bit 4: Motor is currently executing a homing command
+   Bit 5: Not used, set to 0
+   Bit 6: Not used, set to 0
+   Bit 7: Not used, set to 0'''),
+                (u8, "The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the SYSTEM_RESET_COMMAND to get out of the fatal error state.")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 17
+command_name = "GO_TO_CLOSED_LOOP_COMMAND"
+description  = "Go to closed loop position control mode"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 18
+command_name = "GET_UPDATE_FREQUENCY_COMMAND"
+description  = "Get the update frequency (reciprocal of the time step)"
+inputs       = []
+response     = (u32, "Update frequency in Hz. This is how often the motor executes all calculations for hall sensor position, movement, PID loop, safety, etc.")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 19
+command_name = "MOVE_WITH_ACCELERATION_COMMAND"
+description  = "Move with acceleration"
+inputs       = [(i32, "The acceleration (the unit is microsteps per time step per time step * 2^24)"),
+                (u32, "The number of time steps to apply this acceleration. Use command 18 to get the frequency of the time steps. After this many time steps, the acceleration will go to zero and velocity will be maintained.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 20
+command_name = "DETECT_DEVICES_COMMAND"
+description  = "Detect devices"
+inputs       = []
+response     = [(u64_unique_id, "A unique ID (unique among all devices manufactured). The response is sent after a random delay of between 0 and 1 seconds."),
+                (u8_alias, "The alias of the device that has this unique ID"),
+                (crc32, "A CRC32 value for this packet. This is used to verify that the response is correct. However, currently this is hardcoded as 0x04030201")]
+register_command(command_id, command_name, description, inputs, response, multiple_responses = True)
+
+command_id   = 21
+command_name = "SET_DEVICE_ALIAS_COMMAND"
+description  = "Set device alias"
+inputs       = [(u64_unique_id, "Unique ID of the target device"),
+                (u8_alias, "The alias (short one byte ID) such as X, Y, Z, E, etc. Cannot be R because this is reserved for a response message.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 22
+command_name = "GET_PRODUCT_INFO_COMMAND"
+description  = "Get product information"
+inputs       = []
+response     = [(string8, "The product code / model number (when doing a firmware upgrade, this must match between the firmware file and the target device)"),
+                (u8, "A firmware compatibility code (when doing a firmware upgrade, this must match between the firmware file and the target device)"),
+                (u24_version_number, "The hardware version stored as 3 bytes. The first byte is the patch version, followed by the minor and major versions."),
+                (u32, "The serial number"),
+                (u64_unique_id, "The unique ID for the product"),
+                (u32, "Not currently used")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 23
+command_name = "FIRMWARE_UPGRADE_COMMAND"
+description  = "Upgrade one page of flash memory (several of these are needed to do a full firmware upgrade). Documentation to be done later."
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 24
+command_name = "GET_PRODUCT_DESCRIPTION_COMMAND"
+description  = "Get the product description. Documentation to be done later."
+inputs       = []
+response     = (string_null_term, "This is a brief description of the product")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 25
+command_name = "GET_FIRMWARE_VERSION_COMMAND"
+description  = "Get the firmware version. Documentation to be done latre."
+inputs       = []
+response     = (u32_version_number, "The firmware version stored as 4 bytes. The first byte is the development number, then patch version, followed by the minor and major versions.")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 26
+command_name = "MOVE_WITH_VELOCITY_COMMAND"
+description  = "Move with velocity"
+inputs       = [(i32, "The velocity (the unit is microsteps per time step * 2^20)"),
+                (u32, "The number of time steps to maintain this velocity. Use command 18 to get the frequency of the time steps. After this many time steps, If the queue becomes empty, the motor will maintain the last velocity indefinitely. The velocity will take affect immediately if the queue is empty or will take affect immediately when this queued item is reached.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 27
+command_name = "SYSTEM_RESET_COMMAND"
+description  = "System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning."
+inputs       = []
+response     = None
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 28
+command_name = "SET_MAXIMUM_MOTOR_CURRENT"
+description  = "Set the maximum motor current and maximum regeneration current. The values are stored in non-volatile memory and survive a reset."
+inputs       = [(u16, "The motor current.  The units are some arbitrary units and not amps. A value of 50 or 100 is suitable."),
+                (u16, "The motor regeneration current (while it is braking). This parameter is currently not used for anything.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 29
+command_name = "MULTI_MOVE_COMMAND"
+description  = "Multi-move command"
+inputs       = [(u8, "Specify how many moves are being communicated in this one shot"),
+                (u32, "Each bit specifies if the move is a (bit = 0) MOVE_WITH_ACCELERATION_COMMAND or a (bit = 1) MOVE_WITH_VELOCITY_COMMAND"),
+                (list_2d, "A 2D list in Python format (list of lists). Each item in the list is of type [i32, u32] representing a series of move commands. Each move command specifies the acceleration to move at or the velocity to instantly change to (according to the bits baove) and the number of time steps over which this command is to be executed. For example: '[[100, 30000], [-200, 60000]]'. There is a limit of 32 move commands that can be listed in this one multi-move command. Each of the moves takes up one queue spot, so make sure there is enough space in the queue to store all of the commands.")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 30
+command_name = "SET_SAFETY_LIMITS_COMMAND"
+description  = "Set safety limits (to prevent motion from exceeding set bounds)"
+inputs       = [(i32, "The lower limit in microsteps"),
+                (i32, "The upper limit in microsteps")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 31
+command_name = "PING_COMMAND"
+description  = "Send a payload containing any data and the device will respond with the same data back"
+inputs       = (buf10, "Any binary data payload to send to the device")
+response     = (buf10, "The same data that was sent to the device will be returned if all went well")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 32
+command_name = "CONTROL_HALL_SENSOR_STATISTICS_COMMAND"
+description  = "Turn on or off the gathering of statistics for the hall sensors and reset the statistics"
+inputs       = [(u8, "0 = turn off statistics gathering, 1 = reset statistics and turn on gathering")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 33
+command_name = "GET_HALL_SENSOR_STATISTICS_COMMAND"
+description  = "Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system."
+inputs       = []
+response     = [(u16, "The maximum value of hall sensor 1 encoutered since the last statistics reset"),
+                (u16, "The maximum value of hall sensor 2 encoutered since the last statistics reset"),
+                (u16, "The maximum value of hall sensor 3 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 1 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 2 encoutered since the last statistics reset"),
+                (u16, "The minimum value of hall sensor 3 encoutered since the last statistics reset"),
+                (u64, "The sum of hall sensor 1 values collected since the last statistics reset"),
+                (u64, "The sum of hall sensor 2 values collected since the last statistics reset"),
+                (u64, "The sum of hall sensor 3 values collected since the last statistics reset"),
+                (u32, "The number of times the hall sensors were measured since the last statistics reset")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 254
+command_name = "ADD_TO_QUEUE_TEST_COMMAND"
+description  = "This is used for testing of some calculations that predict of the motion will go out of the set safety limits"
+inputs       = []
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
 

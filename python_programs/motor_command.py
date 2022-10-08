@@ -3,6 +3,11 @@
 import sys
 import argparse
 import motor_commands
+import communication
+
+communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
+                               motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
+                               motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
 # and it also takes a mandatory firmware file name
@@ -25,9 +30,9 @@ parser.add_argument('inputs',
 args = parser.parse_args()
 
 if args.commands == True:
-    motor_commands.print_protocol_version()
-    motor_commands.print_data_type_descriptions()
-    motor_commands.print_registered_commands()
+    communication.print_protocol_version()
+    communication.print_data_type_descriptions()
+    communication.print_registered_commands()
     exit(0)
 
 if args.command == None:
@@ -37,16 +42,16 @@ if args.command == None:
 
 print("The command is:", args.command)
 
-command_id = motor_commands.get_command_id(args.command)
+command_id = communication.get_command_id(args.command)
 if command_id == None:
     print("ERROR: The command", args.command, "is not supported")
     print("Please run this program with the -c option to see all supported commands")
     exit(1)
 
-gathered_inputs = motor_commands.gather_inputs(command_id, args.inputs)
+gathered_inputs = communication.gather_inputs(command_id, args.inputs)
 
-motor_commands.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the motor_commands module
-motor_commands.open_serial_port()
-response = motor_commands.send_command(command_id, gathered_inputs)
-motor_commands.interpret_response(command_id, response)
-motor_commands.close_serial_port()
+communication.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the communication module
+communication.open_serial_port()
+response = communication.send_command(command_id, gathered_inputs)
+communication.interpret_response(command_id, response)
+communication.close_serial_port()

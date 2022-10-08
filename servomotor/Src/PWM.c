@@ -15,9 +15,9 @@ void pwm_init(void)
 //    TIM1->CCR1 = 1;
 //    TIM1->CCR2 = 2049;
 //    TIM1->CCR3 = 1000;
-    TIM1->CCR1 = 0;
-    TIM1->CCR2 = 0;
-    TIM1->CCR3 = 0;
+    TIM1->CCR1 = 65535; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
+    TIM1->CCR2 = 65535;
+    TIM1->CCR3 = 65535;
     TIM1->CCR4 = (334 * OVERVOLTAGE_PROTECTION_SETTING) / 12;
 
 //    TIM1->CCMR1 = TIM_CCMR1_OC1PE | (6 << TIM_CCMR1_OC1M_Pos) | TIM_CCMR1_OC2PE | (6 << TIM_CCMR1_OC2M_Pos); // enable the preload and set as PWM mode 1

@@ -30,13 +30,7 @@ void USART2_IRQHandler(void)
     if(USART2->ISR & USART_ISR_RXNE_RXFNE) {
         uint8_t receivedByte;
         receivedByte = USART2->RDR;
-        if((receivedByte == 'z') || (receivedByte == 'c') || (receivedByte == 'p') || (receivedByte == 'P') ||
-           (receivedByte == 'i') || (receivedByte == 'd') || (receivedByte == 'e') || (receivedByte == 'E') ||
-		   (receivedByte == 'o') || (receivedByte == 'v') || (receivedByte == 'h') || (receivedByte == 'H') ||
-           (receivedByte == 'S') || (receivedByte == 'C') || (receivedByte == 'a') || (receivedByte == 'f') ||
-           (receivedByte == 't')) {
-            command_debug_uart = receivedByte;
-        }
+        command_debug_uart = receivedByte;
     }
 
     while((USART2->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
