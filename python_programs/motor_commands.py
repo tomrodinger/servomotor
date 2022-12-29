@@ -138,6 +138,17 @@ data_type_min_value_dict = {
     u48 : 0,
     i64 : -9223372036854775808,
     u64 : 0,
+    string8 : None,
+    u24_version_number : None,
+    u32_version_number : None,
+    u8_alias : None,
+    u64_unique_id : None,
+    crc32 : None,
+    buf10 : None,
+    list_2d : None,
+    string_null_term : None,
+    unknown_data : None,
+    success_response : None,
 }
 
 data_type_max_value_dict = {
@@ -153,6 +164,17 @@ data_type_max_value_dict = {
     u48 : 1099511627775,
     i64 : 9223372036854775807,
     u64 : 18446744073709551615,
+    string8 : None,
+    u24_version_number : None,
+    u32_version_number : None,
+    u8_alias : None,
+    u64_unique_id : None,
+    crc32 : None,
+    buf10 : None,
+    list_2d : None,
+    string_null_term : None,
+    unknown_data : None,
+    success_response : None,
 }
 
 data_type_is_integer_dict = {

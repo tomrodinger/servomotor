@@ -5,6 +5,10 @@
 #define ADC_BUFFER_CYCLE_REPETITIONS 4
 #define DMA_ADC_BUFFER_SIZE (ADC_CYCLE_INDEXES * ADC_BUFFER_CYCLE_REPETITIONS)   // enough space for four complete sets of ADC measurements (8 channels)
 
+#define HALL1_ADC_CYCLE_INDEX 1 // hall sensor 1 is connected to index this index of the 8 channel cycle
+#define HALL2_ADC_CYCLE_INDEX 4 // hall sensor 2 is connected to index this index of the 8 channel cycle
+#define HALL3_ADC_CYCLE_INDEX 7 // hall sensor 3 is connected to index this index of the 8 channel cycle
+
 void adc_init(void);
 void check_if_break_condition(void);
 void check_if_ADC_watchdog1_exceeded(void);

@@ -746,8 +746,8 @@ void button_logic(void)
     else if(press_flag) {
     	press_flag = 0;
     	time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
-    	if(time_pressed_down > 5000000) {
-    		time_pressed_down = 5000000;
+    	if(time_pressed_down > 15000000) {
+    		time_pressed_down = 15000000;
     	}
     	time_pressed_down = time_pressed_down / 1000;
 
@@ -755,7 +755,10 @@ void button_logic(void)
     		print_number("Button press time: ", time_pressed_down);
     	}
 
-		if(time_pressed_down >= 2000) {
+		if(time_pressed_down >= 15000) {
+            start_calibration(0);
+        }
+		else if(time_pressed_down >= 2000) {
 			start_go_to_closed_loop_mode();
 		}
 		else if(time_pressed_down >= 300) {

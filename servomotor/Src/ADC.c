@@ -130,8 +130,6 @@ void check_if_ADC_watchdog3_exceeded(void)
 	}
 }
 
-// hall sensor 1 is connected to index 1 of the 8 channel cycle
-#define HALL1_ADC_CYCLE_INDEX 1
 uint16_t get_hall_sensor1_voltage(void)
 {
 	uint16_t a = ADC_buffer[HALL1_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24];
@@ -144,8 +142,6 @@ uint16_t get_hall_sensor1_voltage(void)
 	return a;
 }
 
-// hall sensor 2 is connected to index 4 of the 8 channel cycle
-#define HALL2_ADC_CYCLE_INDEX 4
 uint16_t get_hall_sensor2_voltage(void)
 {
 	uint16_t a = ADC_buffer[HALL2_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24];
@@ -158,8 +154,6 @@ uint16_t get_hall_sensor2_voltage(void)
 	return a;
 }
 
-// hall sensor 3 is connected to index 7 of the 8 channel cycle
-#define HALL3_ADC_CYCLE_INDEX 7
 uint16_t get_hall_sensor3_voltage(void)
 {
 	uint16_t a = ADC_buffer[HALL3_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24];

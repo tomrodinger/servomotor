@@ -32,6 +32,9 @@ char error_text[] =
     "predicted velocity too high\0"           // error 28
     "debug1\0"                                // error 29
     "control loop took too long\0"            // error 30
+    "index out of range\0"                    // error 31
+    "can't pulse when intervals are active\0" // error 32
+    "Invalid run mode\0"                      // error 33
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

@@ -935,7 +935,7 @@ void print_motor_temperature(void)
 }
 
 
-#define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 24047
+#define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
 void print_supply_voltage(void)
 {
 	char buf[100];

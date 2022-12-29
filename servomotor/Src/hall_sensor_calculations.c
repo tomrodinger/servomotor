@@ -51,9 +51,12 @@ int32_t get_hall_position(void)
 	static uint16_t end_time;
 
 
-	hall_sensor_readings[0] = ((ADC_buffer[1] + ADC_buffer[1 + 8] + ADC_buffer[1 + 16] + ADC_buffer[1 + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[1] = ((ADC_buffer[3] + ADC_buffer[3 + 8] + ADC_buffer[3 + 16] + ADC_buffer[3 + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[2] = ((ADC_buffer[5] + ADC_buffer[5 + 8] + ADC_buffer[5 + 16] + ADC_buffer[5 + 24]) << 3) - HALL_SENSOR_SHIFT;
+	hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
+                                ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
+	hall_sensor_readings[1] = ((ADC_buffer[HALL2_ADC_CYCLE_INDEX] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] +
+                                ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
+	hall_sensor_readings[2] = ((ADC_buffer[HALL3_ADC_CYCLE_INDEX] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] +
+                                ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
 
     if(hall_sensor_statitics_active) {
         for(uint8_t h = 0; h < 3; h++) {
