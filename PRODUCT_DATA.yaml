@@ -1,0 +1,52 @@
+- product: M1
+  versions:
+  - version: V26
+    type: full_product
+    web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/dark_template.html
+    picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/robot.jpg
+    description: This is a servo motor made with a 3-phase DC brushless motor. It can be controlled over an RS485 interface.
+    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/user-manual.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor1/V26
+    firmwares:
+    - version: 0.2.3
+      compatibility: 0
+      date: September 9, 2021
+      description: Initial firmware for this product
+      url: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/firmware/0.2.3.firmware
+      sha256: 43f6df3f42ae0582b1331c3ebc3eec1662dc2a7740039b04128bb06d5931dac9
+- product: M2
+  versions:
+  - version: V4
+    type: full_product
+    web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
+    picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V1/pcb_picture_side.jpg
+    description: This is a servo motor made with a 3-phase stepper motor. It can be controlled over an RS485 interface.
+    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V1/user-manual.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor2/V4
+    firmwares:
+    - version: 0.2.3
+      compatibility: 0
+      date: September 29, 2022
+      description: Initial firmware for the servo motor
+      url: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/firmware/servo-motor-fw.firmware
+      sha256: 43f6df3f42ae0582b1331c3ebc3eec1662dc2a7740039b04128bb06d5931dac9
+  - version: V5
+    type: full_product
+    web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
+    picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/pcb_picture_top.jpg
+    description: This product is able to control a servo motor, improved performance
+    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor2/V5
+    firmwares:
+    - version: 0.2.3
+      compatibility: 0
+      date: September 29, 2022
+      description: Initial firmware for the servo motor
+      url: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/firmware/servo-motor-fw.bin
+      sha256: 43f6df3f42ae0582b1331c3ebc3eec1662dc2a7740039b04128bb06d5931dac9
