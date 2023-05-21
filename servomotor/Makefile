@@ -87,4 +87,4 @@ clean:
 
 .PHONY: program
 program: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
-	../python_programs/upgrade_firmware.py ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}_${VERSION}.firmware
+	../python_programs/upgrade_firmware.py ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
