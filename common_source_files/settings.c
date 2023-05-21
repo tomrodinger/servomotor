@@ -140,7 +140,7 @@ void save_global_settings(void)
 }
 
 __attribute__ ((long_call, section (".RamFunc")))
-int8_t burn_firmware_page(uint8_t page_number, uint8_t *data)
+int8_t burn_firmware_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE])
 {
     if((page_number < FIRST_FIRMWARE_PAGE_NUMBER) || (page_number > LAST_FIRMWARE_PAGE_NUMBER)) {
         return -1;
