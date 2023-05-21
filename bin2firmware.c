@@ -158,11 +158,12 @@ int main(int argc, char **argv)
     input_file = argv[1];
     output_file = argv[2];
 
-    if(strlen(argv[3]) > MODEL_CODE_LENGTH) {
-        fprintf(stderr, "Error: the product code is too long. The length must be %d characters or less.\n", MODEL_CODE_LENGTH);
+    uint32_t model_code_length = strlen(argv[3]);
+    if(model_code_length > MODEL_CODE_LENGTH) {
+        fprintf(stderr, "Error: the product code is too long at %u characters. The length must be %d characters or less.\n", model_code_length, MODEL_CODE_LENGTH);
         exit(1);
     }
-    strncpy(model_code, argv[3], strlen(argv[3])); // do the copy without copying the null terminator
+    strncpy(model_code, argv[3], model_code_length); // do the copy without copying the null terminator
 
     firmware_compatibility_code = string_to_firmware_compatibility_code(argv[4]);
 
