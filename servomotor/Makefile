@@ -72,7 +72,7 @@ ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin: ${BUILD_DIR}/motor_f
 
 ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin
 	../bin2firmware ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
-	cp ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware ../firmware_releases/
+	cp ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware firmware_releases/
 
 .PHONY: clean
 clean:
