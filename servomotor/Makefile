@@ -14,14 +14,16 @@ VERSION=$(shell while read product version; do if [ "$$product" = "$(PRODUCT_NAM
 # Determine what platform we are building on
 HOST_OS := $(shell uname -s)
 ifeq ($(HOST_OS),Linux)
-    GCC_DIR ?= ../toolchain_essentials_linux/bin
+    TOOLCHAIN_DIR ?= ../toolchain_essentials_linux
 else ifeq ($(HOST_OS),Darwin)  # macOS
-    GCC_DIR ?= ../toolchain_essentials_mac/bin
+    TOOLCHAIN_DIR ?= ../toolchain_essentials_mac
 else ifeq ($(OS),Windows_NT)  # Windows
-    GCC_DIR ?= ../toolchain_essentials_windows/bin
+    TOOLCHAIN_DIR ?= ../toolchain_essentials_windows
 else
     $(error Unsupported platform: $(HOST_OS))
 endif
+
+GCC_DIR ?= ${TOOLCHAIN_DIR}/bin
 
 # Compiler and linker settings
 SOFTWARE_COMPATIBILITY_CODE = 1
@@ -71,7 +73,7 @@ ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin: ${BUILD_DIR}/motor_f
 	$(GCC_DIR)/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf "${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin"
 
 ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin
-	../bin2firmware ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
+	${TOOLCHAIN_DIR}/bin2firmware ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
 	cp ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware firmware_releases/
 
 .PHONY: clean
