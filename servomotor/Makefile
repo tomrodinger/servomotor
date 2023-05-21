@@ -8,8 +8,9 @@ else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif
 
-# Find out what version of the firmware we are building
-VERSION=$(shell while read product version; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$version; break; fi; done < VERSIONS)
+# Find out what VERSION and SOFTWARE_COMPATIBILITY_CODE we are building
+VERSION=$(shell while read product version sw_compat_code; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$version; break; fi; done < VERSIONS)
+SOFTWARE_COMPATIBILITY_CODE := $(shell while read product version sw_compat_code; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$sw_compat_code; break; fi; done < VERSIONS)
 
 # Determine what platform we are building on
 HOST_OS := $(shell uname -s)
@@ -26,7 +27,6 @@ endif
 GCC_DIR ?= ${TOOLCHAIN_DIR}/bin
 
 # Compiler and linker settings
-SOFTWARE_COMPATIBILITY_CODE = 1
 DEVICE_SOURCE_FILES_DIR = Src
 DRIVERS_DIR = ../Drivers
 BUILD_DIR = build
@@ -45,14 +45,16 @@ INCLUDE_DIRS = \
 	-I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include \
 	-I${DRIVERS_DIR}/CMSIS/Include
 
+
 .PHONY: default
 default:
 ifeq ($(PRODUCT_NAME),)
 	@echo "Please provide a PRODUCT_NAME. Acceptable options are: $(PRODUCT_OPTIONS)"
 	@echo "Example: make PRODUCT_NAME=M1"
 else
-	${MAKE} ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
+	${MAKE} ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware && echo "* * * SUCCESS * * *" || echo "* * * BUILD FAILED * * *"
 endif
+
 
 ${BUILD_DIR}:
 	mkdir -p ${BUILD_DIR}
