@@ -260,19 +260,28 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	}
         	break;
         case FIRMWARE_UPGRADE_COMMAND:
-            transmit("firmware upgrade command\n", 25);
+        {
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-            if((memcmp(parameters, product_info->model_code, MODEL_CODE_LENGTH) == 0) && (*(parameters + MODEL_CODE_LENGTH) == product_info->firmware_compatibility_code)) {
-                uint8_t firmware_page = *(parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
-                sprintf(message, "valid firmware page %hu\n", firmware_page);
-                transmit(message, strlen(message));
-                error_code = burn_firmware_page(firmware_page, parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
-                rs485_allow_next_command();
-                if((axis != ALL_ALIAS) && (error_code == 0)) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+            if(memcmp(parameters, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
+                transmit("This firmware is not for this model\n", 36);
+            }
+            else {
+                if(*(parameters + MODEL_CODE_LENGTH) != product_info->firmware_compatibility_code) {
+                    transmit("Firmware compatibility code mismatch\n", 37);
+                }
+                else {
+                    uint8_t firmware_page = *(parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
+                    sprintf(message, "Valid firmware page %hu\n", firmware_page);
+                    transmit(message, strlen(message));
+                    error_code = burn_firmware_page(firmware_page, parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
+                    if((axis != ALL_ALIAS) && (error_code == 0)) {
+                        rs485_transmit(NO_ERROR_RESPONSE, 3);
+                    }
                 }
             }
+            rs485_allow_next_command();
 			break;
+        }
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {

@@ -34,7 +34,12 @@ char error_text[] =
     "control loop took too long\0"            // error 30
     "index out of range\0"                    // error 31
     "can't pulse when intervals are active\0" // error 32
-    "Invalid run mode\0"                      // error 33
+    "invalid run mode\0"                      // error 33
+    "parameter out of range\0"                // error 34
+    "disable MOSFETs first\0"                 // error 35
+    "framing error\0"                         // error 36
+    "overrun error\0"                         // error 37
+    "noise error\0"                           // error 38
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

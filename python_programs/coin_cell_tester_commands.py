@@ -340,3 +340,9 @@ response     = [(u16, "The maximum millivolts of the coin cell observed during t
                 (u8,  "Overflow flag: 0 = no overflow, 1 = overflow of records. You did not read the records fast enough and some record(s) were lost.")]
 register_command(command_id, command_name, description, inputs, response)
 
+command_id   = 33
+command_name = "GET_PICOAMP_SECONDS_COUNT_COMMAND"
+description  = "Get the number of accumulated picoamp seconds that have been drained out of the battery so far."
+inputs       = []
+response     = [(u64, "The number of picoamp seconds that has accumulated so far")]
+register_command(command_id, command_name, description, inputs, response)

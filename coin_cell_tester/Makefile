@@ -72,7 +72,7 @@ ${BUILD_DIR}/firmware_STM32G030.bin: ${BUILD_DIR}/firmware_STM32G030.elf
 	$(GCC_DIR)/arm-none-eabi-objcopy  -O binary  ${BUILD_DIR}/firmware_STM32G030.elf  "${BUILD_DIR}/firmware_STM32G030.bin"
 
 ${BUILD_DIR}/firmware_STM32G030.firmware: ${BUILD_DIR}/firmware_STM32G030.bin
-	../bin2firmware ${BUILD_DIR}/firmware_STM32G030.bin ${BUILD_DIR}/firmware_STM32G030.firmware B1 1
+	../bin2firmware ${BUILD_DIR}/firmware_STM32G030.bin ${BUILD_DIR}/firmware_STM32G030.firmware C1 1
 
 
 clean:

@@ -6,24 +6,24 @@
 #define HALL_SENSOR_SHIFT 30000
 #define SLOPE_SHIFT_RIGHT 22
 #define OFFSET_SHIFT_RIGHT 8
-#define ONE_REVOLUTION_STEPS 7
+#define ONE_REVOLUTION_STEPS 50
 #define HALL_SAMPLES_PER_PRINT 8
 #define WEIGHTS_PER_HALL_SENSOR 3
-#define SENSOR_SEGMENT_RESOLUTION_DIV_2 3840
-#define SENSOR_SEGMENT_RESOLUTION 7680
+#define SENSOR_SEGMENT_RESOLUTION_DIV_2 27200
+#define SENSOR_SEGMENT_RESOLUTION 54400
 #define CALIBRATION_CAPTURE_STEP_SIZE 128 // this should be slow so that data can be captured and collected accurately
 
 
 struct hall_weights_struct {
-   int32_t h1[WEIGHTS_PER_HALL_SENSOR];
-   int32_t h2[WEIGHTS_PER_HALL_SENSOR];
-   int32_t h3[WEIGHTS_PER_HALL_SENSOR];
+   int16_t h1[WEIGHTS_PER_HALL_SENSOR];
+   int16_t h2[WEIGHTS_PER_HALL_SENSOR];
+   int16_t h3[WEIGHTS_PER_HALL_SENSOR];
 };
 
 #define HALL_WEIGHTS_INITIALIZER { \
-    {  3182,    362,   -464}, \
-    {  3488,   -476,    629}, \
-    {  4565,    276,   -251}, \
+    { 21626,   3139,   9380}, \
+    { 32280,  -5828,   3132}, \
+    { 23755,   2862,  -7221}, \
 }
 
 #endif

@@ -22,36 +22,100 @@ data_type_is_integer_dict = None
 data_type_description_dict = None
 ser = None
 alias = 255
+detect_devices_command_id = None
 
-def get_response():
+
+# When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
+# Timeout on the communication
+class TimeoutError(Exception):
+    pass
+# Communication failure
+class CommunicationError(Exception):
+    pass
+# The payload appears to be wrong or invalid
+class PayloadError(Exception):
+    pass
+
+
+
+def get_response(verbose=True):
     response = ser.read(3)
     if len(response) == 0:
-        return None, "Error: timeout"
+        # Throw and exception if we don't get a response
+        raise TimeoutError("Error: timeout")
     if len(response) != 3:
-        return None, "Error: the response is not 3 bytes long"
-    print("Received a response: ", response)
+        # Thow a general communication error
+        raise CommunicationError("Error: the response is not 3 bytes long")
+    if verbose:
+        print("Received a response: ", response)
     if response[0] != ord('R'):
-        return None, "Error: the first is not the expected R"
+        raise CommunicationError("Error: the first byte is not the expected R")
     payload_size = response[2]
     if payload_size == 0:
         if response[1] != 0:
-            return None, "Error: the second byte should be 0 if there is no payload"
+            raise CommunicationError("Error: the second byte should be 0 if there is no payload")
     else:
         if response[1] != 1:
-            return None, "Error: the second byte should be 1 if there is a payload"
+            raise CommunicationError("Error: the second byte should be 1 if there is a payload")
 
     if payload_size == 0:
-        print("This response indicates SUCCESS and has no payload")
+        if verbose:
+            print("This response indicates SUCCESS and has no payload")
         return b''
 
     payload = ser.read(payload_size)
     if len(payload) != payload_size:
-        return None, "Error: didn't receive the right length payload. Received: %s" % (payload)
+        raise PayloadError("Error: didn't receive the right length payload. Received: %s" % (payload))
 
-    print("Got a valid payload:")
-    print_data(payload)
+    if verbose:
+        print("Got a valid payload:")
+        print_data(payload)
 
     return payload
+
+
+def sniffer():
+    n_bytes_received = 0
+    while True:
+        new_byte = ser.read(1)
+        if len(new_byte) != 1:
+            if n_bytes_received > 0:
+                print("---------------------------------------------------------------")
+                print("Timed out after incomplete communication. Here is what we know:")
+                print("   Received %d bytes" % (n_bytes_received))
+                if n_bytes_received >= 1:
+                    if alias >= 33 and alias <= 126:
+                        alias = chr(alias)
+                    else:
+                        alias = str(alias)
+                    print("   Alias: %s" % (alias))
+                if n_bytes_received >= 2:
+                    print("   Command ID: %d" % (command_id))
+                if n_bytes_received >= 3:
+                    print("   Payload length: %d" % (payload_len))
+                if n_bytes_received >= 4:
+                    print("   Payload:", payload)
+                print("---------------------------------------------------------------")
+                return None, None, None
+            continue
+        new_byte = new_byte[0]
+        n_bytes_received += 1
+        if n_bytes_received == 1:
+            alias = new_byte
+            payload = bytearray()
+        elif n_bytes_received == 2:
+            command_id = new_byte
+        else:
+            if n_bytes_received == 3:
+                payload_len = new_byte
+                if payload_len == 0:
+                    break
+            else:
+                payload.append(new_byte)
+                if len(payload) >= payload_len:
+                    break
+
+    return alias, command_id, payload
 
 
 def parse_response(response):
@@ -71,30 +135,43 @@ def print_data(data):
         print("0x%02X %d" % (d, d))
 
 
-def send_command(command_id, gathered_inputs):
+def flush_receive_buffer():
+    ser.reset_input_buffer()
+
+def send_command(command_id, gathered_inputs, verbose=True):
     command_payload_len = len(gathered_inputs)
     command = bytearray([alias, command_id, command_payload_len]) + gathered_inputs
-    print("Writing %d bytes" % (len(command)))
-    print_data(command)
+    if verbose:
+        print("Writing %d bytes" % (len(command)))
+        print_data(command)
     ser.write(command)
+    if (alias == 255) and (command_id != detect_devices_command_id):
+        if verbose:
+            print("Sending a command to all devices (alias %d) and there will be no response" % (alias))
+        return None
     if registered_commands[command_id][3] == []:
-        print("This command has no response whatsoever")
+        if verbose:
+            print("This command has no response whatsoever")
         return None
     all_response_payloads = []
     while(1):
-        response_payload = get_response()
+        try:
+            response_payload = get_response(verbose=verbose)
+        except TimeoutError:
+            if alias == 255: # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
+                break
+            if registered_commands[command_id][4] == True: # check if this commmand may have any number of responses (including none)
+                break
+            # There is no legitamate reason that we should get a timeout here, so we need to raise this Timeout error again
+            raise TimeoutError("Error: timeout")
+#        except CommunicationError as e:
+#            print("Communication Error:", e)
+#            exit(1)
+#        except PayloadError as e:
+#            print("Payload Error:", e)
+#            exit(1)
         if registered_commands[command_id][4] == False:
-            if isinstance(response_payload, tuple):
-                print(response_payload[1]) # An error occured and the error message is the second element of the tuple
-                exit(1)
             return response_payload
-        else:
-            if isinstance(response_payload, tuple):
-                if response_payload[1] == "Error: timeout":
-                    break
-                else:
-                    print(response_payload[1]) # An error occured and the error message is the second element of the tuple
-                    exit(1)
         all_response_payloads.append(response_payload)
     return all_response_payloads
 
@@ -141,14 +218,19 @@ def string_to_u64_unique_id(input):
     return converted_input
 
 
-def set_standard_options_from_args(args):
+def set_serial_port_from_args(args):
     global serial_port
-    global alias
 
     if args.PORT == True:
         serial_port = "MENU"
     else:
         serial_port = args.port
+
+
+def set_standard_options_from_args(args):
+    global alias
+
+    set_serial_port_from_args(args)
 
     alias = args.alias
     if alias == None:
@@ -170,6 +252,7 @@ def set_command_data(new_protocol_version, new_registered_commands, new_command_
     global data_type_max_value_dict
     global data_type_is_integer_dict
     global data_type_description_dict
+    global detect_devices_command_id
     protocol_version = new_protocol_version
     registered_commands = new_registered_commands
     command_data_types = new_command_data_types
@@ -179,11 +262,12 @@ def set_command_data(new_protocol_version, new_registered_commands, new_command_
     data_type_max_value_dict = new_data_type_max_value_dict
     data_type_is_integer_dict = new_data_type_is_integer_dict
     data_type_description_dict = new_data_type_description_dict
+    detect_devices_command_id = get_command_id("DETECT_DEVICES_COMMAND")
     
 
-def open_serial_port():
+def open_serial_port(timeout = 1.2):
     global ser
-    ser = serial_functions.open_serial_port(serial_port, 230400, timeout = 1.2)
+    ser = serial_functions.open_serial_port(serial_port, 230400, timeout = timeout)
 
 
 def close_serial_port():
@@ -326,7 +410,7 @@ def buf10_to_packed_bytes(input):
     return input_packed
 
 
-def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value):
+def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value, verbose=True):
     if is_integer:
         try:
             input_int = int(input)
@@ -342,7 +426,8 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
         else:
             input_signed = False
         input_packed = input_int.to_bytes(input_data_size, byteorder = "little", signed = input_signed)
-        print("The converted input is:", input_packed)
+        if verbose:
+            print("The converted input is:", input_packed)
     else:
         if data_type_id == command_data_types.u8_alias:
             input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
@@ -357,23 +442,29 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             exit(1)
     return input_packed
 
-def gather_inputs(command_id, inputs):
+def gather_inputs(command_id, inputs, verbose=True):
     expected_inputs = registered_commands[command_id][2]
     if len(expected_inputs) == 0:
-        print("This command takes no inputs")
+        if verbose:
+            print("This command takes no inputs")
     else:
         if len(expected_inputs) == 1:
-            print("The expected input for this command is:"),
+            if verbose:
+                print("The expected input for this command is:"),
         else:
-            print("The expected inputs for this command are:"),
+            if verbose:
+                print("The expected inputs for this command are:"),
         for i in range(len(expected_inputs)):
             input_text = input_or_response_to_string(expected_inputs[i])
-            print("  ", input_text)
-    print("%d input(s) were given" % (len(inputs)))
+            if verbose:
+                print("  ", input_text)
+    if verbose:
+        print("%d input(s) were given" % (len(inputs)))
     if len(inputs) != len(expected_inputs):
         print("Error: the number of inputs given for this command is not the expected number")
         exit(1)
-    print("Good. You gave the correct number of inputs.")
+    if verbose:
+        print("Good. You gave the correct number of inputs.")
     
     concatenated_inputs = bytearray()
     for i in range(len(inputs)):
@@ -388,8 +479,9 @@ def gather_inputs(command_id, inputs):
             input_data_max_value = None
         input_data_type_string = data_type_dict[data_type_id]
         input_data_description = expected_inputs[i][1]
-        print("Now converting input number %d (%s)" % (i + 1, inputs[i]))
-        converted_data = convert_input_to_right_type(data_type_id, inputs[i], input_data_size, input_data_is_integer, input_data_min_value, input_data_max_value)
+        if verbose:
+            print("Now converting input number %d (%s)" % (i + 1, inputs[i]))
+        converted_data = convert_input_to_right_type(data_type_id, inputs[i], input_data_size, input_data_is_integer, input_data_min_value, input_data_max_value, verbose=verbose)
         if converted_data == None:
             print("Error: bad input. This input must follow this convention:")
             print("  %s: %s (size: %d unpack type: %s)" % (input_data_type_string, input_data_description, input_data_size, input_data_min_value, input_data_max_value))
@@ -397,27 +489,34 @@ def gather_inputs(command_id, inputs):
         concatenated_inputs += converted_data
     return concatenated_inputs
 
-def interpret_single_response(command_id, response):
+def interpret_single_response(command_id, response, verbose=True):
+    parsed_response = []
     if response == None:
-        print("This command has no other response and there is nothing more to say")
-        return
+        if verbose:
+            print("This command has no other response and there is nothing more to say")
+        return parsed_response
     expected_response = registered_commands[command_id][3]
     if len(expected_response) == 0:
-        print("We are expecting this command to have no response whatsoever")
+        if verbose:
+            print("We are expecting this command to have no response whatsoever")
         if response != None:
             print("Error: there was some sort of response")
             exit(1)
-        print("Good. There was no response.")
+        if verbose:
+            print("Good. There was no response.")
     elif len(expected_response) == 1 and expected_response[0][0] == command_data_types.success_response:
         if response != b'':
             print("Error: the response was not the expected success response")
             exit(1)
-        print("Good. The command was successful and the payload is empty as expected")
+        if verbose:
+            print("Good. The command was successful and the payload is empty as expected")
     else:
-        print("The expected response for this command along with the decoded value(s) is below:"),
+        if verbose:
+            print("The expected response for this command along with the decoded value(s) is below:"),
         for i in range(len(expected_response)):
-            response_text = input_or_response_to_string(expected_response[i])
-            print("  ", response_text)
+            if verbose:
+                response_text = input_or_response_to_string(expected_response[i])
+                print("  ", response_text)
             data_type = expected_response[i][0]
             if data_type == command_data_types.string_null_term:
                 # find the first occurance of the null terminator in the byte array response
@@ -443,47 +542,75 @@ def interpret_single_response(command_id, response):
                 else:
                     data_item_signed = False
                 from_bytes_result = int.from_bytes(data_item, byteorder = "little", signed = data_item_signed)
-                print("   --->", from_bytes_result)
+                parsed_response.append(from_bytes_result)
+                if verbose:
+                    print("   --->", from_bytes_result)
             else:
                 if data_type == command_data_types.string8:
                     # remove the null terminator from the string
                     data_item = data_item[:-1]
-                    print("   --->", data_item.decode("utf-8"))
+                    data_item = data_item.decode("utf-8")
+                    parsed_response.append(data_item)
+                    if verbose:
+                        print("   --->", data_item)
                 if data_type == command_data_types.string_null_term:
-                    print("   --->", data_item.decode("utf-8"))
+                    data_item = data_item.decode("utf-8")
+                    parsed_response.append(data_item)
+                    if verbose:
+                        print("   --->", data_item)
                 elif data_type == command_data_types.u24_version_number:
-                    print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
+                    parsed_response.append([data_item[0], data_item[1], data_item[2]])
+                    if verbose:
+                        print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
                 elif data_type == command_data_types.u32_version_number:
-                    print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
+                    parsed_response.append([data_item[0], data_item[1], data_item[2], data_item[3]])
+                    if verbose:
+                        print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
                 elif data_type == command_data_types.u64_unique_id:
-                    print("   ---> %d" % (int.from_bytes(data_item, byteorder = "little")))
+                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    parsed_response.append(from_bytes_result)
+                    if verbose:
+                        print("   ---> %d" % (from_bytes_result))
                 elif data_type == command_data_types.u8_alias:
-                    if data_item >= bytearray([33]) and data_item <= bytearray([126]):
-                        print("   ---> the ASCII character %c" % (data_item[0]))
-                    else:
-                        print("   ---> the single byte integer %d or 0x%02x in hex" % (data_item[0], data_item[0]))
+                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    parsed_response.append(from_bytes_result)
+                    if verbose:
+                        if from_bytes_result >= 33 and from_bytes_result <= 126:
+                            print("   ---> the ASCII character %c" % (from_bytes_result))
+                        else:
+                            print("   ---> the single byte integer %d or 0x%02x in hex" % (from_bytes_result, from_bytes_result))
                 elif data_type == command_data_types.crc32:
-                    print("   ---> 0x%08X" % (int.from_bytes(data_item, byteorder = "little")))
+                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    parsed_response.append(from_bytes_result)
+                    if verbose:
+                        print("   ---> 0x%08X" % (from_bytes_result))
                 elif data_type == command_data_types.buf10:
-                    print("   ---> %s" % (data_item))
+                    parsed_response.append(data_item)
+                    if verbose:
+                        print("   ---> %s" % (data_item))
                 else:
                     print("Error: did not implement the part that interprets non-integer data yet")
                     exit(1)
         if len(response) != 0:
             print("Error: there unexpected bytes left in the response after interpreting the expected response")
             exit(1)
+    return parsed_response
 
 
-def interpret_response(command_id, response):
+def interpret_response(command_id, response, verbose=True):
+    parsed_response = []
     if not isinstance(response, list):
-        interpret_single_response(command_id, response)
+        parsed_response = interpret_single_response(command_id, response, verbose=verbose)
     else:
         if len(response) == 0:
-            print("There was no response from any device(s)")
+            if verbose:
+                print("There was no response from any device(s)")
         elif len(response) == 1:
-            interpret_single_response(command_id, response[0])
+            parsed_response = interpret_single_response(command_id, response[0], verbose=verbose)
         else:
-            print("The response is a list containing multiple responses. Interpreting them:")
+            if verbose:
+                print("The response is a list containing multiple responses. Interpreting them:")
             for i in range(len(response)):
-                interpret_single_response(command_id, response[i])
-
+                partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
+                parsed_response.append(partial_parsed_response)
+    return parsed_response

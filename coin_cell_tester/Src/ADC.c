@@ -21,9 +21,9 @@ void adc_init(volatile uint16_t *ADC_buffer)
 //	ADC1->CFGR1 |= ADC_CFGR1_DMACFG; // DMA circular mode (after reaching the end of the buffer, go back to the beginning and keep converting). Comment this out to do one shot mode (fill the buffer to the end then stop).)
 //    ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos) | (1 << ADC_CFGR2_OVSR_Pos) | ADC_CFGR2_OVSE; // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, enable 4x oversampling
 //    ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos); // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, no oversampling
-    ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos) | (3 << ADC_CFGR2_OVSS_Pos) | (6 << ADC_CFGR2_OVSR_Pos) | ADC_CFGR2_OVSE; // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, enable 128x oversampling and 3-bit right shift
-    ADC1->SMPR |= (7 << ADC_SMPR_SMP1_Pos); // select 160.5 ADC cycles as the sampling time, the total time for 1 conversion will be 5.4us
-                                            // calculation: 1/32000000*(160.5+12.5)*1000000
+    ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos) | (4 << ADC_CFGR2_OVSS_Pos) | (7 << ADC_CFGR2_OVSR_Pos) | ADC_CFGR2_OVSE; // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, enable 256x oversampling and 4-bit right shift
+    ADC1->SMPR |= (6 << ADC_SMPR_SMP1_Pos); // select 79.5 ADC cycles as the sampling time, the total time for 1 conversion (including all oversampling) will be 736us
+                                            // calculation: 1/32000000*(79.5+12.5)*256*1000000
 
     ADC1->CHSELR = (1  << ADC_CHSELR_SQ1_Pos) |    // select the channels to be converted, 8 channels total
     		       (1  << ADC_CHSELR_SQ2_Pos) |    // select all to convert channel 1 (PA1), which is the 

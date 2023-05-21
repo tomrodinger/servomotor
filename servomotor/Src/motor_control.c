@@ -15,7 +15,12 @@
 #include "motor_control.h"
 #include "leds.h"
 #include "step_direction_input.h"
-#include "LookupTableZ.h"
+#ifdef PRODUCT_NAME_M1
+#include "LookupTable_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "LookupTable_M2.h"
+#endif
 #include "device_status.h"
 #include "global_variables.h"
 
@@ -23,7 +28,12 @@
 
 #define MAX_PWM_VOLTAGE (300)
 #define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (200)
+#ifdef PRODUCT_NAME_M1
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
+#endif
+#ifdef PRODUCT_NAME_M2
+#define VOLTS_PER_ROTATIONAL_VELOCITY 300
+#endif
 #define UINT32_MIDPOINT 2147483648
 #define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000  // a position in the range -2000000000 to 2000000000 is valid
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
@@ -58,6 +68,7 @@ static uint8_t n_items_in_queue = 0;
 static int32_t hall_position = 0;
 static int32_t previous_hall_position;
 static int32_t hall_position_delta;
+static int32_t velocity_moving_average = 0;
 static int32_t velocity = 0;
 static int64_t current_velocity_i64 = 0;
 static int64_t current_position_i64 = 0;
@@ -70,10 +81,16 @@ static int32_t max_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 
+// PID position control related variables:
+static int32_t integral_term = 0;
+static int32_t previous_error = 0;
+static int32_t low_pass_filtered_error_change = 0;
+
 static uint8_t go_to_closed_loop_mode_active = 0;
 static int32_t commutation_scan_microsteps;
-static uint8_t vibration_four_step;
+static uint16_t vibration_four_step;
 static int32_t sum_delta;
+static int32_t previous_sum_delta;
 static int32_t motor_pwm_voltage_limit;
 static int32_t vibration_polarity_moving_average;
 static int32_t max_motor_pwm_voltage_limit;
@@ -307,7 +324,17 @@ uint32_t hall3_sum;
 uint8_t avg_counter;
 uint16_t hall_data_buffer[3];
 
+#ifdef PRODUCT_NAME_M1
 #define CALIBRATION_TIME (get_update_frequency() * 1)
+#else
+#ifdef PRODUCT_NAME_M2
+#define CALIBRATION_TIME (get_update_frequency() * 2)
+#else
+// If no servomotor is defined then exit with a compile time error
+#error "PRODUCT_NAME_M1 or PRODUCT_NAME_M2 must be defined"
+#endif
+#endif
+
 #define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 3 / 2)
 #define HALL_PEAK_FIND_THREASHOLD 150
 uint8_t hall_rising_flag[3];
@@ -567,18 +594,53 @@ void process_calibration_data(void)
 	motor_busy = 0;
 }
 
+
+// Only one of the below three #defines should be uncommented
+//#define CHARACTERIZE_MOTOR_AND_ENCODER_1
+//#define CHARACTERIZE_MOTOR_AND_ENCODER_2
+//#define CHARACTERIZE_MOTOR_AND_ENCODER_3
+#define PRODUCTION_VERSION
+//#define PRODUCTION_VERSION_EXPERIMENTAL
+
+struct __attribute__((__packed__)) go_to_closed_loop_data_struct { // DEBUG
+	int32_t hall_position_delta; // DEBUG
+}; // DEBUG
+static volatile struct go_to_closed_loop_data_struct *go_to_closed_loop_data = (void*)&calibration; // DEBUG
+static volatile uint16_t go_to_closed_loop_data_size = sizeof(calibration) / sizeof(struct go_to_closed_loop_data_struct); // DEBUG
+static volatile uint8_t go_to_closed_loop_data_available = 0; // DEBUG
+static volatile uint16_t go_to_closed_loop_avg_counter = 0; // DEBUG
+static volatile uint16_t data_index = 0; // DEBUG
+static volatile int32_t previous_hall_position2; // DEBUG
+
+#define COMMUTATION_SCAN_MICROSTEPS (N_COMMUTATION_SUB_STEPS * N_COMMUTATION_STEPS) // one electrical rotation
+#define COMMUTATION_SCAN_STEP_FACTOR 1
+//#define COMMUTATION_SCAN_STEP_SIZE (N_COMMUTATION_SUB_STEPS * N_COMMUTATION_STEPS / COMMUTATION_SCAN_STEPS)
+#ifdef PRODUCT_NAME_M1
+#define COMMUTATION_SCAN_MIN_STEP_SIZE 100
+#define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 100
+#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE 2000
 #define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 10
 #define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 120
-#define COMMUTATION_SCAN_MICROSTEPS (256 * 360) // one electrical rotation
-#define COMMUTATION_SCAN_STEP_FACTOR 1
-#define COMMUTATION_SCAN_MIN_STEP_SIZE 100
-//#define COMMUTATION_SCAN_STEP_SIZE (256 * 360 / COMMUTATION_SCAN_STEPS)
-#define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 100
+#endif
+#ifdef PRODUCT_NAME_M2
+#define COMMUTATION_SCAN_STEP_SIZE 900
+#define COMMUTATION_SCAN_MIN_STEP_SIZE 10
+#define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 3600
+#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE 200
+#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 50
+#define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 300
+#define PWM_VOLTAGE_TO_HALL_FEEDBACK_PHASE_SHIFT 90
+#endif
 #define MOVING_AVERAGE_SHIFT_RIGHT 7
 void start_go_to_closed_loop_mode(void)
 {
+	if(motor_busy) {
+		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
+	}
 	motor_busy = 1;
 
+	memset((void*)go_to_closed_loop_data, 0, go_to_closed_loop_data_size * sizeof(struct go_to_closed_loop_data_struct)); // DEBUG
+	
 	transmit("Go to closed loop mode start\n", 29);
 
 	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
@@ -591,19 +653,185 @@ void start_go_to_closed_loop_mode(void)
 	commutation_scan_microsteps = 0;
 	desired_motor_pwm_voltage = 0;
 	go_to_closed_loop_mode_active = 1;
-	motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
+	#ifdef PRODUCTION_VERSION
+		motor_pwm_voltage_limit = 0;
+	#else
+		motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
+	#endif
+	previous_sum_delta = 0;
 	sum_delta = 0;
 	vibration_polarity_moving_average = 0;
 	max_motor_pwm_voltage_limit = 0;
 	zero_hall_position();
 	previous_hall_position = 0;
+	previous_hall_position2 = 0;  // DEBUG
+
+	go_to_closed_loop_avg_counter = 0; // DEBUG
+	data_index = 0; // DEBUG
 
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
+#ifdef CHARACTERIZE_MOTOR_AND_ENCODER_1
+#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG 240 // DEBUG
 void go_to_closed_loop_mode_logic(void)
 {
-//	char buf[30];
+	if(go_to_closed_loop_data_size > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4) { // DEBUG
+		go_to_closed_loop_data_size = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4; // DEBUG
+	} // DEBUG
+
+	if(go_to_closed_loop_avg_counter < 1000) {
+		if(previous_hall_position2 != 0) {
+			if(data_index < go_to_closed_loop_data_size) {
+				go_to_closed_loop_data[data_index].hall_position_delta += hall_position_delta;
+//				go_to_closed_loop_data[data_index].hall_position_delta += hall_position;  // DEBUG
+				data_index++;
+			}
+			switch(vibration_four_step) {
+			case 0:
+				sum_delta += hall_position_delta;
+				desired_motor_pwm_voltage++;
+				if(desired_motor_pwm_voltage >= MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG) {
+					vibration_four_step++;
+				}
+				break;
+			case 1:
+				sum_delta += hall_position_delta;
+				desired_motor_pwm_voltage--;
+				if(desired_motor_pwm_voltage <= 0) {
+					vibration_four_step++;
+				}
+				break;
+			case 2:
+				sum_delta -= hall_position_delta;
+				desired_motor_pwm_voltage--;
+				if(desired_motor_pwm_voltage <= -MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG) {
+					vibration_four_step++;
+				}
+				break;
+			case 3:
+				sum_delta -= hall_position_delta;
+				desired_motor_pwm_voltage++;
+				if(desired_motor_pwm_voltage >= 0) {
+					vibration_four_step = 0;
+					data_index = 0;
+					go_to_closed_loop_avg_counter++;
+				}
+				break;
+			}
+		}
+		previous_hall_position2 = hall_position; // DEBUG
+	}
+	else {
+		go_to_closed_loop_data_available = 1;
+		motor_pwm_voltage = 0;
+		go_to_closed_loop_mode_active = 0;
+	}
+}
+#endif
+
+
+#ifdef CHARACTERIZE_MOTOR_AND_ENCODER_2
+#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG 240 // DEBUG
+void go_to_closed_loop_mode_logic(void)
+{
+	if(go_to_closed_loop_data_size > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4) { // DEBUG
+		go_to_closed_loop_data_size = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4; // DEBUG
+	} // DEBUG
+
+	switch(vibration_four_step) {
+	case 0:
+		sum_delta += hall_position_delta;
+		desired_motor_pwm_voltage++;
+		if(desired_motor_pwm_voltage >= MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG) {
+			vibration_four_step++;
+		}
+		break;
+	case 1:
+		sum_delta += hall_position_delta;
+		desired_motor_pwm_voltage--;
+		if(desired_motor_pwm_voltage <= 0) {
+			vibration_four_step++;
+		}
+		break;
+	case 2:
+		sum_delta -= hall_position_delta;
+		desired_motor_pwm_voltage--;
+		if(desired_motor_pwm_voltage <= -MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG) {
+			vibration_four_step++;
+		}
+		break;
+	case 3:
+		sum_delta -= hall_position_delta;
+		desired_motor_pwm_voltage++;
+		if(desired_motor_pwm_voltage >= 0) {
+			vibration_four_step = 0;
+			go_to_closed_loop_data[data_index].hall_position_delta = sum_delta; // DEBUG commented out
+//			go_to_closed_loop_data[data_index].hall_position_delta = hall_position; // DEBUG
+			data_index++;
+			sum_delta = 0;
+			if(data_index >= go_to_closed_loop_data_size) {
+				go_to_closed_loop_data_available = 1;
+				motor_pwm_voltage = 0;
+				go_to_closed_loop_mode_active = 0;
+				motor_busy = 0;
+			}
+		}
+		break;
+	}
+}
+#endif
+
+#ifdef CHARACTERIZE_MOTOR_AND_ENCODER_3
+#define N_COMMUTATION_STEPS_DIVISION_FACTOR 3
+#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG 240 // DEBUG
+void go_to_closed_loop_mode_logic(void)
+{
+	if(go_to_closed_loop_data_size > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4) { // DEBUG
+		go_to_closed_loop_data_size = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 4; // DEBUG
+	} // DEBUG
+
+	int32_t step_size = COMMUTATION_SCAN_MICROSTEPS / go_to_closed_loop_data_size / 2;
+	if(commutation_scan_microsteps < COMMUTATION_SCAN_MICROSTEPS) {
+		int32_t phase_delayed_value = vibration_four_step + PWM_VOLTAGE_TO_HALL_FEEDBACK_PHASE_SHIFT;
+		if(phase_delayed_value >= N_COMMUTATION_STEPS / N_COMMUTATION_STEPS_DIVISION_FACTOR) {
+			phase_delayed_value -= N_COMMUTATION_STEPS / N_COMMUTATION_STEPS_DIVISION_FACTOR;
+		}
+		if(phase_delayed_value < ((N_COMMUTATION_STEPS / N_COMMUTATION_STEPS_DIVISION_FACTOR) >> 1)) {
+			sum_delta += hall_position_delta;
+		}
+		else {
+			sum_delta -= hall_position_delta;
+		}
+		desired_motor_pwm_voltage = (((int32_t)commutation_lookup_table[vibration_four_step * N_COMMUTATION_STEPS_DIVISION_FACTOR].phase2) - (MAX_PHASE_VALUE / 2)) / (MAX_PHASE_VALUE / 2 / MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG);
+		vibration_four_step++;
+		if(vibration_four_step >= N_COMMUTATION_STEPS / N_COMMUTATION_STEPS_DIVISION_FACTOR) {
+			vibration_four_step = 0;
+//			if(sum_delta < 0) {
+//				sum_delta = -sum_delta;
+//			}
+			if((data_index >> 1) < go_to_closed_loop_data_size) {
+				go_to_closed_loop_data[data_index >> 1].hall_position_delta += sum_delta;
+				data_index++;
+			}
+
+			commutation_scan_microsteps += step_size;
+			commutation_position_offset += step_size;
+			sum_delta = 0;
+		}
+	}
+	else {
+		go_to_closed_loop_data_available = 1;
+		motor_pwm_voltage = 0;
+		go_to_closed_loop_mode_active = 0;
+		motor_busy = 0;
+	}
+}
+#endif
+
+#ifdef PRODUCTION_VERSION
+void go_to_closed_loop_mode_logic(void)
+{
 	if(commutation_scan_microsteps < COMMUTATION_SCAN_MICROSTEPS) {
 		switch(vibration_four_step) {
 		case 0:
@@ -614,6 +842,12 @@ void go_to_closed_loop_mode_logic(void)
 			}
 			break;
 		case 1:
+			sum_delta += hall_position_delta;
+			desired_motor_pwm_voltage--;
+			if(desired_motor_pwm_voltage <= 0) {
+				vibration_four_step++;
+			}
+			break;
 		case 2:
 			sum_delta -= hall_position_delta;
 			desired_motor_pwm_voltage--;
@@ -622,15 +856,11 @@ void go_to_closed_loop_mode_logic(void)
 			}
 			break;
 		case 3:
-			sum_delta += hall_position_delta;
+			sum_delta -= hall_position_delta;
 			desired_motor_pwm_voltage++;
-			if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
+			if(desired_motor_pwm_voltage >= 0) {
 				vibration_four_step = 0;
-				int32_t step_size = (MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM - motor_pwm_voltage_limit + 1) * COMMUTATION_SCAN_STEP_FACTOR;
-				if(step_size < COMMUTATION_SCAN_MIN_STEP_SIZE) {
-					step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
-				}
-				commutation_scan_microsteps += step_size;
+
 				if(sum_delta > 0) {
 					if(vibration_polarity_moving_average >= 0) {
 						vibration_polarity_moving_average++;
@@ -648,36 +878,42 @@ void go_to_closed_loop_mode_logic(void)
 					}
 				}
 //				vibration_polarity_moving_average = (vibration_polarity_moving_average * ((1 << MOVING_AVERAGE_SHIFT_RIGHT) - 1) + sum_delta) >> MOVING_AVERAGE_SHIFT_RIGHT;
-				if(sum_delta >= 0) {
-//					print_number("", (uint16_t)sum_delta);
-				}
-				else {
+				if(sum_delta < 0) {
 					sum_delta = -sum_delta;
-//					print_number("-", (uint16_t)sum_delta);
 				}
 				if(sum_delta > GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE) {
 					if(motor_pwm_voltage_limit > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM) {
-						motor_pwm_voltage_limit--;
+						motor_pwm_voltage_limit -= 2;
 					}
 				}
 				else {
 					if(motor_pwm_voltage_limit < MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM) {
-						motor_pwm_voltage_limit++;
+						motor_pwm_voltage_limit += 2;
 					}
 				}
 				if(motor_pwm_voltage_limit > max_motor_pwm_voltage_limit) {
 					max_motor_pwm_voltage_limit = motor_pwm_voltage_limit;
 					commutation_position_offset_at_max = commutation_position_offset;
 					if(vibration_polarity_moving_average < 0) {
-						commutation_position_offset_at_max -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-					}
-					else {
 						commutation_position_offset_at_max += HALL_TO_POSITION_90_DEGREE_OFFSET;
 					}
+					else {
+						commutation_position_offset_at_max -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+					}
 				}
+
+				data_index = (uint16_t)((uint32_t)commutation_scan_microsteps * (uint32_t)go_to_closed_loop_data_size / (uint32_t)COMMUTATION_SCAN_MICROSTEPS);
+				if(data_index >= go_to_closed_loop_data_size) {
+					fatal_error(29); // "debug1"
+				}
+				go_to_closed_loop_data[data_index].hall_position_delta = motor_pwm_voltage_limit;
+
+				int32_t step_size = (MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM - motor_pwm_voltage_limit) * COMMUTATION_SCAN_STEP_FACTOR;
+				if(step_size < COMMUTATION_SCAN_MIN_STEP_SIZE) {
+					step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
+				}
+				commutation_scan_microsteps += step_size;
 				commutation_position_offset += step_size;
-//				sprintf(buf, "%hu %ld\n", (uint16_t)motor_pwm_voltage_limit, vibration_polarity_moving_average);
-//				transmit(buf, strlen(buf));
 				sum_delta = 0;
 			}
 			break;
@@ -692,9 +928,99 @@ void go_to_closed_loop_mode_logic(void)
 		motor_pwm_voltage = 0;
 		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
 		hall_position = get_hall_position();
+		go_to_closed_loop_data_available = 1;
 		go_to_closed_loop_mode_active = 0;
 		motor_busy = 0;
     }
+}
+#endif
+
+#ifdef PRODUCTION_VERSION_EXPERIMENTAL
+void go_to_closed_loop_mode_logic(void)
+{
+	static int32_t step_size = COMMUTATION_SCAN_STEP_SIZE;
+	if(data_index < go_to_closed_loop_data_size) {
+		switch(vibration_four_step) {
+		case 0:
+			sum_delta += hall_position_delta;
+			desired_motor_pwm_voltage++;
+			if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
+				vibration_four_step++;
+			}
+			break;
+		case 1:
+			sum_delta += hall_position_delta;
+			desired_motor_pwm_voltage--;
+			if(desired_motor_pwm_voltage <= 0) {
+				vibration_four_step++;
+			}
+			break;
+		case 2:
+			sum_delta -= hall_position_delta;
+			desired_motor_pwm_voltage--;
+			if(desired_motor_pwm_voltage <= -motor_pwm_voltage_limit) {
+				vibration_four_step++;
+			}
+			break;
+		case 3:
+			sum_delta -= hall_position_delta;
+			desired_motor_pwm_voltage++;
+			if(desired_motor_pwm_voltage >= 0) {
+				vibration_four_step = 0;
+
+				if(sum_delta < 0) {
+					sum_delta = -sum_delta;
+				}
+				if(sum_delta >= previous_sum_delta) {
+					step_size = step_size;
+				}
+				else {
+					step_size = -step_size;
+				}				
+				commutation_scan_microsteps += step_size;
+				commutation_position_offset += step_size;
+				previous_sum_delta = sum_delta;
+				sum_delta = 0;
+
+				go_to_closed_loop_data[data_index].hall_position_delta = commutation_scan_microsteps;
+				data_index++;
+			}
+			break;
+		default:
+			fatal_error(12); // "vibration four step" (all error text is defined in error_text.c)
+		}
+	}
+	else {
+		commutation_position_offset = commutation_position_offset;
+		current_position_i64 = 0;
+		current_velocity_i64 = 0;
+		motor_pwm_voltage = 0;
+		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
+		hall_position = get_hall_position();
+		go_to_closed_loop_data_available = 1;
+		go_to_closed_loop_mode_active = 0;
+		motor_busy = 0;
+    }
+}
+#endif
+
+uint8_t is_go_to_closed_loop_data_available(void)
+{
+	return go_to_closed_loop_data_available;
+}
+
+void print_go_to_closed_loop_data(void)
+{
+	char buf[100];
+	uint16_t i;
+
+	for(i = 0; i < go_to_closed_loop_data_size; i++) {
+		sprintf(buf, "%hu: hall_position_delta: %ld\n", i, go_to_closed_loop_data[i].hall_position_delta);
+		transmit(buf, strlen(buf));
+	}
+
+	go_to_closed_loop_data_available = 0;
+	motor_busy = 0;
 }
 
 
@@ -1193,10 +1519,9 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 
 void compute_velocity(void)
 {
-	static int32_t velocity_moving_average = 0;
-
 	velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
 	velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
+//	velocity = 0; // DEBUG
 }
 
 uint8_t handle_queued_movements(void)
@@ -1265,9 +1590,16 @@ uint8_t handle_queued_movements(void)
 #define ERROR_HYSTERESIS_P 0
 #define ERROR_HYSTERESIS_D 0
 
+#ifdef PRODUCT_NAME_M1
 #define PROPORTIONAL_CONSTANT_PID 5000
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   5000
+#endif
+#ifdef PRODUCT_NAME_M2
+#define PROPORTIONAL_CONSTANT_PID 30000
+#define INTEGRAL_CONSTANT_PID     1
+#define DERIVATIVE_CONSTANT_PID   100000
+#endif
 
 #define MAX_INT32         2147483647
 #define MAX_INTEGRAL_TERM (MAX_PWM_VOLTAGE << PID_SHIFT_RIGHT)
@@ -1281,11 +1613,12 @@ int32_t PID_controller(int32_t error)
 {
     int32_t output_value;
     int32_t proportional_term;
-    static int32_t integral_term = 0;
     int32_t derivative_term;
-    static int32_t previous_error = 0;
     int32_t error_change;
-    static int32_t low_pass_filtered_error_change = 0;
+
+#ifdef PRODUCT_NAME_M2
+    error >>= 3;
+#endif
 
     if(error < -MAX_ERROR) {
         error = -MAX_ERROR;
@@ -1317,13 +1650,6 @@ int32_t PID_controller(int32_t error)
     previous_error = error;
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
-//    if(output_value < -max_pwm_voltage) {
-//        output_value = -max_pwm_voltage;
-//    }
-//    else if(output_value > max_pwm_voltage) {
-//        output_value = max_pwm_voltage;
-//    }
-
     return output_value;
 }
 
@@ -1334,11 +1660,8 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 	static int32_t error_with_hysteresis_d;
     int32_t output_value;
     int32_t proportional_term;
-    static int32_t integral_term = 0;
     int32_t derivative_term;
-    static int32_t previous_error = 0;
     int32_t error_change;
-    static int32_t low_pass_filtered_error_change = 0;
 
 	// make sure the error is winin some range to prevent overlow of the math
     if(error < -MAX_ERROR) {
@@ -1448,7 +1771,7 @@ void motor_movement_calculations(void)
 		commutation_position = hall_position + commutation_position_offset;
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
-			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8; 
+			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
 			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_pwm_voltage;
 			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_pwm_voltage;
 			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
@@ -1490,23 +1813,13 @@ void motor_phase_calculations(void)
     static int32_t phase2_slope;
     static int32_t phase3_slope;
     static int32_t tmp32bit;
-//    char buf[200];
-//    volatile uint32_t delay;
 
 	if(get_mosfets_enabled() == 0) {
 		return;
 	}
 
-//    sprintf(buf, "commutation_position: %u\n", (unsigned int)commutation_position);
-//    transmit(buf, strlen(buf));
-
     commutation_step = (commutation_position >> N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) % N_COMMUTATION_STEPS;
     commutation_sub_step = (commutation_position & 0xff) >> (8 - N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT);
-
-//    sprintf(buf, "commutation_step: %u   commutation_sub_step: %u\n", (unsigned int)commutation_step, (unsigned int)commutation_sub_step);
-//    transmit(buf, strlen(buf));
-
-//    for(delay = 0; delay < 100000; delay++);
 
     phase1 = commutation_lookup_table[commutation_step].phase1;
     phase2 = commutation_lookup_table[commutation_step].phase2;
@@ -1530,11 +1843,6 @@ void motor_phase_calculations(void)
     tmp32bit >>= N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT;
     phase3 = phase3 + tmp32bit;
 
-//    sprintf(buf, "Ph: %u %u %u   Motor voltage: %u\n", (unsigned int)phase1, (unsigned int)phase2, (unsigned int)phase3, (unsigned int)motor_pwm_voltage);
-//    transmit(buf, strlen(buf));
-
-//    for(delay = 0; delay < 100000; delay++);
-
     phase1 >>= 8;
     phase1 *= (uint32_t)motor_pwm_voltage;
     phase1 >>= 16;
@@ -1545,16 +1853,23 @@ void motor_phase_calculations(void)
     phase2 *= (uint32_t)motor_pwm_voltage;
     phase2 >>= 16;
     phase2 += 13;
+	#ifdef PRODUCT_NAME_M1
+    TIM1->CCR3 = phase2;
+	#endif
+	#ifdef PRODUCT_NAME_M2
     TIM1->CCR2 = phase2;
+	#endif
 
     phase3 >>= 8;
     phase3 *= (uint32_t)motor_pwm_voltage;
     phase3 >>= 16;
     phase3 += 13;
+	#ifdef PRODUCT_NAME_M1
+    TIM1->CCR2 = phase3;
+	#endif
+	#ifdef PRODUCT_NAME_M2
     TIM1->CCR3 = phase3;
-
-//    sprintf(buf, "Ph: %u %u %u   Motor voltage: %u\n", (unsigned int)phase1, (unsigned int)phase2, (unsigned int)phase3, (unsigned int)motor_pwm_voltage);
-//    transmit(buf, strlen(buf));
+	#endif
 }
 
 #define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 9000
@@ -1592,7 +1907,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 		fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor1_voltage();
 		fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor2_voltage();
 		fast_capture_data[fast_capture_data_index].hall3 = get_hall_sensor3_voltage();
-		fast_capture_data[fast_capture_data_index].hall_position_16bit = (uint16_t)hall_position;
+		fast_capture_data[fast_capture_data_index].hall_position_16bit = (uint16_t)(hall_position >> 8);
 		fast_capture_data_index++;
 		if(fast_capture_data_index >= fast_capture_data_size) {
 			if(fast_capture_data_active == 1) {
@@ -1683,11 +1998,38 @@ void disable_motor_control_loop(void)
 }
 
 
+void increase_commutation_offset(void)
+{
+	char buf[100];
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	commutation_position_offset += 914;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+	sprintf(buf, "commutation_position_offset: %u\n", (unsigned int)commutation_position_offset);
+	transmit(buf, strlen(buf));
+}
+
+
+void decrease_commutation_offset(void)
+{
+	char buf[100];
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	commutation_position_offset -= 914;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+	sprintf(buf, "commutation_position_offset: %u\n", (unsigned int)commutation_position_offset);
+	transmit(buf, strlen(buf));
+}
+
+
 void increase_motor_pwm_voltage(void)
 {
 	char buf[100];
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	desired_motor_pwm_voltage++;
+	if((desired_motor_pwm_voltage > -100) && (desired_motor_pwm_voltage < 100)) {
+		desired_motor_pwm_voltage++;
+	}
+	else {
+		desired_motor_pwm_voltage += 10;
+	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
 	transmit(buf, strlen(buf));
@@ -1697,7 +2039,12 @@ void decrease_motor_pwm_voltage(void)
 {
 	char buf[100];
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	desired_motor_pwm_voltage--;
+	if((desired_motor_pwm_voltage > -100) && (desired_motor_pwm_voltage < 100)) {
+		desired_motor_pwm_voltage--;
+	}
+	else {
+		desired_motor_pwm_voltage -= 10;
+	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
 	transmit(buf, strlen(buf));
@@ -1720,13 +2067,25 @@ uint32_t get_update_frequency(void)
 
 void zero_position_and_hall_sensor(void)
 {
+// Calculations:
+//    commutation_position = hall_position + commutation_position_offset
+//    the hall_position will now be reset to zero, but we want the commutation_position to not change
+//    commutation_position = (hall_position - hall_position) + (commutation_position_offset + hall_position)
+//    From this wee see that we need to adjust the commutation_position_offset by the hall_position and then zero out
+//    the hall_position.
+
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
-//	commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
-	commutation_position_offset = commutation_position_offset + get_hall_position();
-    zero_hall_position();
+    int32_t hall_position_adjustment = zero_hall_position();
+	commutation_position_offset += hall_position_adjustment;
 	current_position_i64 = 0;
 	current_velocity_i64 = 0;
+	hall_position_delta = 0;
+	previous_hall_position = 0;
+	velocity = 0;
+	integral_term = 0;
+	previous_error = 0;
+	low_pass_filtered_error_change = 0;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
@@ -1785,7 +2144,7 @@ void emergency_stop(void)
 }
 
 
-int32_t get_actual_motor_position(void)
+int32_t get_motor_position(void)
 {
 	int32_t ret;
 
@@ -1799,6 +2158,13 @@ int32_t get_actual_motor_position(void)
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
     return ret;
 }
+
+
+int32_t get_hall_sensor_position(void)
+{
+    return hall_position;
+}
+
 
 uint8_t get_motor_status_flags(void)
 {

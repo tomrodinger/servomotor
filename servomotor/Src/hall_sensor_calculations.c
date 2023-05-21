@@ -8,7 +8,12 @@
 #include "error_handling.h"
 #include "ADC.h"
 #include "debug_uart.h"
-#include "LookupTableZ.h"
+#ifdef PRODUCT_NAME_M1
+#include "LookupTable_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "LookupTable_M2.h"
+#endif
 #include "global_variables.h"
 
 #define UINT32_MIDPOINT 2147483648
@@ -108,36 +113,41 @@ int32_t get_hall_position(void)
         }
     }
 
-    numerator >>= 10;
-    denominator >>= 10;
+//    numerator >>= 10;
+//    denominator >>= 10;
+
+    while((numerator > 32767) || (numerator < -32767)) {
+        numerator >>= 1;
+        denominator >>= 1;
+    }
 
     start_time = TIM14->CNT;
     // watch out: it seems that this division will give the wrong result if the denominator exceeds the int16_t range
+//    #ifdef PRODUCT_NAME_M1
     fraction = numerator * SENSOR_SEGMENT_RESOLUTION_DIV_2 / denominator;
+//    #endif
+//    #ifdef PRODUCT_NAME_M2
+//    fraction = ((numerator * (SENSOR_SEGMENT_RESOLUTION_DIV_2 >> 3) / denominator) << 3);
+//    #endif
     end_time = TIM14->CNT;
     time_difference_div = end_time - start_time;
     fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
 
-
     if(previous_largest_sensor == -1) {
         previous_largest_sensor = largest_sensor;
     }
-    if (largest_sensor != previous_largest_sensor) {
+    else if (largest_sensor != previous_largest_sensor) {
         if (largest_sensor - previous_largest_sensor == 1) {
-            sensor_incremental_position = sensor_incremental_position + SENSOR_SEGMENT_RESOLUTION;
-//            red_LED_on();
+            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
         else if (largest_sensor - previous_largest_sensor == -1) {
-            sensor_incremental_position = sensor_incremental_position - SENSOR_SEGMENT_RESOLUTION;
-//            red_LED_off();
+            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
         else if (largest_sensor - previous_largest_sensor == -2) {
-            sensor_incremental_position = sensor_incremental_position + SENSOR_SEGMENT_RESOLUTION;
-//            red_LED_on();
+            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
         else {
-            sensor_incremental_position = sensor_incremental_position - SENSOR_SEGMENT_RESOLUTION;
-//            red_LED_off();
+            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
         previous_largest_sensor = largest_sensor;
     }
@@ -162,13 +172,15 @@ int32_t get_hall_position_with_hysteresis(void)
 }
 
 
-void zero_hall_position(void)
+int32_t zero_hall_position(void)
 {
-	previous_largest_sensor = -1;
-	sensor_incremental_position = 0;
-	hall_sensor_offset = 0;
+//	previous_largest_sensor = -1;
+//	sensor_incremental_position = 0;
+//    int32_t hall_sensor_offset_saved = hall_sensor_offset;
 	int32_t hall_position = get_hall_position();
-	hall_sensor_offset = hall_position;
+    int32_t hall_position_adjustment = hall_position;
+	hall_sensor_offset += hall_position_adjustment;
+    return hall_position_adjustment;
 }
 
 

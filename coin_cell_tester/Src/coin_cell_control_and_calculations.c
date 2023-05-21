@@ -17,6 +17,7 @@ static volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 #define N_INTERVALS 200 // keep this to a maximum of 255
 #define DEFAULT_INTERVAL_DURATION 1
 #define DEFAULT_INTERVAL_LOAD_STATE 0xff
+#define SHUNT_RESISTANCE_OHMS 5 // this is the shunt resistor in series with the load
 
 typedef struct __attribute__((__packed__)) {
     uint8_t load_state;
@@ -28,11 +29,13 @@ static volatile uint16_t interval_index = 0;
 static volatile uint16_t sequence_count = 0;
 static volatile interval_run_mode_t interval_run_mode = STOPPED;
 
+#define COMPRESSED_MILLIVOLTS_REPRESENTATION_BITS 9
+#define COMPRESSED_MILLIVOLTS_REPRESENTATION_MAX_VALUE ((1 << COMPRESSED_MILLIVOLTS_REPRESENTATION_BITS) - 1)
 typedef struct __attribute__((__packed__)) {
-    uint8_t max_millivolts;
-    uint8_t min_millivolts;
+    uint16_t max_millivolts:COMPRESSED_MILLIVOLTS_REPRESENTATION_BITS;
+    uint16_t min_millivolts:COMPRESSED_MILLIVOLTS_REPRESENTATION_BITS;
+    uint16_t sequence_count:14;
     uint8_t interval_index;
-    uint16_t sequence_count;
 } compressed_data_record_t;
 
 #define N_DATA_RECORDS 400
@@ -48,13 +51,18 @@ static volatile uint16_t load_state = 0;
 static volatile uint64_t microsecond_time = 0;
 static volatile uint32_t pulse_duration_counter = 0;
 #define DATA_RECORD_VOLTAGE_DIVIDE 10
-#define DATA_RECORD_VOLTAGE_ADJUSTMENT 66
 static volatile uint32_t sample_counter = 0;
 static volatile uint32_t coin_cell_millivolts = 0;
 static volatile uint64_t picoamp_seconds_count = 0;
 
 static volatile uint16_t time_difference1 = 0;
 static volatile uint16_t max_time_difference1 = 0;
+static volatile uint16_t start_time2 = 0;
+static volatile uint16_t time_difference2 = 0;
+static volatile uint16_t min_time_difference2 = 0xffff;
+static volatile uint16_t max_time_difference2 = 0;
+static volatile uint16_t time_difference3 = 0;
+static volatile uint16_t max_time_difference3 = 0;
 
 static const uint32_t load_resistances_ohms[] = { 300000, 60000, 15000, 3000, 600, 300, 150, 75 };
 
@@ -277,19 +285,13 @@ void save_data_record(void)
         data_record_overflow = 1;
     }
 
-    int32_t coin_cell_max_millivolts_adjusted = (get_max() + (DATA_RECORD_VOLTAGE_DIVIDE >> 1)) / DATA_RECORD_VOLTAGE_DIVIDE - DATA_RECORD_VOLTAGE_ADJUSTMENT;
-    if(coin_cell_max_millivolts_adjusted < 0) {
-        coin_cell_max_millivolts_adjusted = 0;
+    int32_t coin_cell_max_millivolts_adjusted = (get_max() + (DATA_RECORD_VOLTAGE_DIVIDE >> 1)) / DATA_RECORD_VOLTAGE_DIVIDE;
+    if(coin_cell_max_millivolts_adjusted > COMPRESSED_MILLIVOLTS_REPRESENTATION_MAX_VALUE) {
+        coin_cell_max_millivolts_adjusted = COMPRESSED_MILLIVOLTS_REPRESENTATION_MAX_VALUE;
     }
-    if(coin_cell_max_millivolts_adjusted > 255) {
-        coin_cell_max_millivolts_adjusted = 255;
-    }
-    int32_t coin_cell_min_millivolts_adjusted = (get_min() + (DATA_RECORD_VOLTAGE_DIVIDE >> 1)) / DATA_RECORD_VOLTAGE_DIVIDE - DATA_RECORD_VOLTAGE_ADJUSTMENT;
-    if(coin_cell_min_millivolts_adjusted < 0) {
-        coin_cell_min_millivolts_adjusted = 0;
-    }
-    if(coin_cell_min_millivolts_adjusted > 255) {
-        coin_cell_min_millivolts_adjusted = 255;
+    int32_t coin_cell_min_millivolts_adjusted = (get_min() + (DATA_RECORD_VOLTAGE_DIVIDE >> 1)) / DATA_RECORD_VOLTAGE_DIVIDE;
+    if(coin_cell_min_millivolts_adjusted > COMPRESSED_MILLIVOLTS_REPRESENTATION_MAX_VALUE) {
+        coin_cell_min_millivolts_adjusted = COMPRESSED_MILLIVOLTS_REPRESENTATION_MAX_VALUE;
     }
     compressed_data_record[data_record_add_index].max_millivolts = coin_cell_max_millivolts_adjusted;
     compressed_data_record[data_record_add_index].min_millivolts = coin_cell_min_millivolts_adjusted;
@@ -306,8 +308,8 @@ void get_data_record(data_record_t *data_record_out)
 {
     if(n_data_records > 0) {
     	NVIC_DisableIRQ(DMA1_Channel1_IRQn); // disable the interrupt for the DMA channel 1
-        data_record_out->max_millivolts = (compressed_data_record[data_record_take_index].max_millivolts + DATA_RECORD_VOLTAGE_ADJUSTMENT) * DATA_RECORD_VOLTAGE_DIVIDE;
-        data_record_out->min_millivolts = (compressed_data_record[data_record_take_index].min_millivolts + DATA_RECORD_VOLTAGE_ADJUSTMENT) * DATA_RECORD_VOLTAGE_DIVIDE;
+        data_record_out->max_millivolts = (compressed_data_record[data_record_take_index].max_millivolts) * DATA_RECORD_VOLTAGE_DIVIDE;
+        data_record_out->min_millivolts = (compressed_data_record[data_record_take_index].min_millivolts) * DATA_RECORD_VOLTAGE_DIVIDE;
         data_record_out->interval_index = compressed_data_record[data_record_take_index].interval_index;
         data_record_out->sequence_count = compressed_data_record[data_record_take_index].sequence_count;
         data_record_out->n_records_left = n_data_records - 1;
@@ -359,14 +361,21 @@ void get_data_record_and_print_it(void)
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	uint32_t voltage = 0;
-    static uint32_t previous_coin_cell_millivolts = 0;
 	uint16_t start_time;
 	uint16_t end_time;
+	uint32_t voltage = 0;
 	int32_t i;
 	int32_t j;
 
 	start_time = TIM14->CNT;
+
+    time_difference2 = TIM14->CNT - start_time2;
+	if(time_difference2 < min_time_difference2) {
+    	min_time_difference2 = time_difference2;
+	}
+	if(time_difference2 > max_time_difference2) {
+    	max_time_difference2 = time_difference2;
+	}
 
 	for(i = 0; i < DMA_ADC_BUFFER_SIZE; i += DMA_ADC_BUFFER_VALUES_PER_CYCLE) {
         for(j = 0; j < DMA_ADC_BUFFER_VALUES_PER_CYCLE; j++) {
@@ -374,20 +383,69 @@ void DMA1_Channel1_IRQHandler(void)
         }
 	}
     coin_cell_millivolts = voltage * 256 / CALIBRATION_FACTOR;
-
     calculate_min_and_max(coin_cell_millivolts);
-
-    uint32_t total_load_resistance_ohms = 0;
-    for(i = 0; i < N_LOADS; i++) {
-        if(load_state & (1 << i)) {
-            total_load_resistance_ohms += load_resistances_ohms[i];
+/*
+    uint8_t load_state_tmp = 0x80;
+    if(load_state_tmp & ((1 << N_LOADS) - 1)) { // only if one or more loads are on will we do the following calculation and accumulate the picoamp-seconds
+        uint32_t coin_cell_nanovolts = coin_cell_millivolts * 1000000;
+        uint32_t shunt_resistance_adjustment_factor = 0;
+        uint32_t nanoamps = 0;
+        for(i = 0; i < N_LOADS; i++) {
+            if(load_state_tmp & (1 << i)) {
+                nanoamps += coin_cell_nanovolts / load_resistances_ohms[i];
+                #define SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR 1000  // this is here so that the calculation is more precice. if you look at the math, this just cancels out.
+                shunt_resistance_adjustment_factor += SHUNT_RESISTANCE_OHMS * SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR / load_resistances_ohms[i];
+            }
         }
+        shunt_resistance_adjustment_factor += SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR;
+        while(nanoamps > (0xffffffff / (SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR + 1))) { // Let's make sure that we don't overflow the 32-bit nanoamps variable in the calculation below where we multiply by SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR.
+            nanoamps >>= 1;
+            shunt_resistance_adjustment_factor >>= 1;
+        }
+        nanoamps = nanoamps * SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR / shunt_resistance_adjustment_factor;
+        picoamp_seconds_count += nanoamps; // Note that the units stated are right. The thing to know is that this operation happens 1000 times per second, which effectively converts the unit from nanoamps to picoamps.
     }
-    uint32_t nanoamps = ((coin_cell_millivolts + previous_coin_cell_millivolts) >> 1) * 1000000 / total_load_resistance_ohms;
-    picoamp_seconds_count += nanoamps; // Note that the units stated are right. The thing to know is that this operation happens 1000 times per second, which effectively converts the unit from nanoamps to picoamps.
-    previous_coin_cell_millivolts = coin_cell_millivolts;
+*/
+
+    if(load_state & ((1 << N_LOADS) - 1)) { // only if one or more loads are on will we do the following calculation and accumulate the picoamp-seconds
+        uint32_t coin_cell_nanovolts = coin_cell_millivolts * 1000000;
+        uint32_t shunt_resistance_adjustment_factor = 0;
+        uint64_t nanoamps = 0;
+        for(i = 0; i < N_LOADS; i++) {
+            if(load_state & (1 << i)) {
+                nanoamps += coin_cell_nanovolts / load_resistances_ohms[i];
+                #define SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR 1000000  // this is here so that the calculation is more precise. if you look at the math, this just cancels out.
+                shunt_resistance_adjustment_factor += SHUNT_RESISTANCE_OHMS * SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR / load_resistances_ohms[i];
+            }
+        }
+        shunt_resistance_adjustment_factor += SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR;
+        nanoamps = nanoamps * SHUNT_RESISTANCE_ADJUSTMENT_FACTOR_SCALE_FACTOR / shunt_resistance_adjustment_factor;
+        picoamp_seconds_count += nanoamps; // Note that the units stated are right. The thing to know is that this operation happens 1000 times per second, which effectively converts the unit from nanoamps to picoamps.
+    }
+
 
     sample_counter++;
+
+	end_time = TIM14->CNT;
+	time_difference3 = end_time - start_time;
+	if(time_difference3 > max_time_difference3) {
+    	max_time_difference3 = time_difference3;
+	}
+
+	DMA1->IFCR = 0xf; // clear all interrupt flags for DMA channel 1
+}
+
+
+void TIM16_IRQHandler(void)
+{
+	uint16_t start_time;
+	uint16_t end_time;
+
+	start_time = TIM14->CNT;
+
+    if(DMA1->ISR & 0xf) { // if any of the interrupt flags for DMA channel 1 are set, it means that we are still in the process of processing the previous data
+        fatal_error(30); // control loop took too long
+    }
 
     if(pulse_duration_counter > 0) {
         pulse_duration_counter--;
@@ -448,6 +506,9 @@ void DMA1_Channel1_IRQHandler(void)
         break;
     }
 
+    ADC1->CR |= ADC_CR_ADSTART; // start to do the conversions one by one all over again until the DMA buffer is full again
+   	start_time2 = TIM14->CNT;
+
     GPIOA->ODR = (GPIOA->ODR & GPIO_LOAD_MASK_OUT_MASK) | (~(load_state << LOAD_CONTROL_PIN_START_INDEX));
 
 	end_time = TIM14->CNT;
@@ -456,16 +517,6 @@ void DMA1_Channel1_IRQHandler(void)
     	max_time_difference1 = time_difference1;
 	}
 
-	DMA1->IFCR = 0xf; // clear all interrupt flags for DMA channel 1
-}
-
-
-void TIM16_IRQHandler(void)
-{
-    if(DMA1->ISR & 0xf) { // if any of the interrupt flags for DMA channel 1 are set, it means that we are still in the process of processing the previous data
-        fatal_error(30); // control loop took too long
-    }
-    ADC1->CR |= ADC_CR_ADSTART; // start to do the conversions one by one all over again until the DMA buffer is full again
     TIM16->SR = 0; // set all interrupt flags for the timer to zero
 }
 
@@ -506,10 +557,17 @@ void print_time_difference(void)
 
     sprintf(buf, "time_difference1: %hu   max_time_difference1: %hu\n", time_difference1, max_time_difference1);
 	transmit(buf, strlen(buf));
+    sprintf(buf, "time_difference3: %hu   max_time_difference3: %hu\n", time_difference3, max_time_difference3);
+	transmit(buf, strlen(buf));
+    sprintf(buf, "time_difference2: %hu   min_time_difference2: %hu   max_time_difference2: %hu\n", time_difference2, min_time_difference2, max_time_difference2);
+	transmit(buf, strlen(buf));
 	max_time_difference1 = 0;
+	max_time_difference3 = 0;
+	min_time_difference2 = 0xffff;
+	max_time_difference2 = 0;
 }
 
-void load_control_and_voltage_calculations(void)
+void print_millivolts_if_changed(void)
 {
     static uint32_t previous_coin_cell_millivolts = 0;
     uint8_t print_voltage_flag = 0;

@@ -64,6 +64,8 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);
 void clear_the_queue_and_stop(void);
+void increase_commutation_offset(void);
+void decrease_commutation_offset(void);
 void increase_motor_pwm_voltage(void);
 void decrease_motor_pwm_voltage(void);
 void set_motor_control_mode(uint8_t new_motor_closed_loop_control);
@@ -76,7 +78,8 @@ int32_t get_current_position(void);
 void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);
-int32_t get_actual_motor_position(void);
+int32_t get_motor_position(void);
+int32_t get_hall_sensor_position(void);
 uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 void process_calibration_data(void);
@@ -84,7 +87,8 @@ void set_motor_current_baseline(void);
 void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 void disable_motor_control_loop(void);
-
+uint8_t is_go_to_closed_loop_data_available(void);
+void print_go_to_closed_loop_data(void);
 
 typedef struct __attribute__((__packed__)) {
 	int32_t predicted_final_velocity;

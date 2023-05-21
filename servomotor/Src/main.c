@@ -20,7 +20,12 @@
 #include "settings.h"
 #include "commands.h"
 #include "product_info.h"
-#include "LookupTableZ.h"
+#ifdef PRODUCT_NAME_M1
+#include "LookupTable_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "LookupTable_M2.h"
+#endif
 #include "global_variables.h"
 #include "device_status.h"
 
@@ -33,7 +38,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 	uint8_t major;
 	uint8_t not_used;
 };
-struct firmware_version_struct firmware_version = {0, 8, 0, 0};
+struct firmware_version_struct firmware_version = {0, 8, 1, 0};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
 
@@ -265,7 +270,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint32_t max_acceleration;
     uint8_t capture_type;
     uint8_t n_items_in_queue;
-    int32_t motor_position;
     int32_t acceleration;
     int32_t velocity;
     uint32_t time_steps;
@@ -437,10 +441,24 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case GET_POSITION_COMMAND:
             rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-            	motor_position = get_actual_motor_position();
-                rs485_transmit("R\x01\x04", 3);
-           		rs485_transmit(&motor_position, sizeof(motor_position));
+            {
+                int32_t motor_position;
+                if(axis != ALL_ALIAS) {
+                    motor_position = get_motor_position();
+                    rs485_transmit("R\x01\x04", 3);
+                    rs485_transmit(&motor_position, sizeof(motor_position));
+                }
+            }
+            break;
+        case GET_HALL_SENSOR_POSITION_COMMAND:
+            rs485_allow_next_command();
+            {
+                int32_t hall_sensor_position;
+                if(axis != ALL_ALIAS) {
+                    hall_sensor_position = get_hall_sensor_position();
+                    rs485_transmit("R\x01\x04", 3);
+                    rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
+                }
             }
             break;
         case GET_STATUS_COMMAND:
@@ -681,6 +699,12 @@ void process_debug_uart_commands(void)
     	case 'P':
     		print_motor_current();
     		break;
+    	case 'I':
+    		increase_commutation_offset();
+    		break;
+    	case 'D':
+    		decrease_commutation_offset();
+    		break;
     	case 'i':
     		increase_motor_pwm_voltage();
     		break;
@@ -725,6 +749,9 @@ void process_debug_uart_commands(void)
 			transmit("Saving settings\n", 16);
             save_global_settings();
     		break;
+        case 'r':
+            NVIC_SystemReset();
+            break;
 		}
     	command_debug_uart = 0;
 	}
@@ -857,6 +884,9 @@ int main(void)
             print_fast_capture_data_result();
         }
 
+        if(is_go_to_closed_loop_data_available()) {
+            print_go_to_closed_loop_data();
+        }
 
         process_debug_uart_commands();
         button_logic();

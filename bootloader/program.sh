@@ -1,4 +1,6 @@
-./generate_product_info build/bootloader.bin build/bootloader_with_product_info.bin M1 1 0.8.0
+./generate_product_info build/bootloader.bin build/bootloader_with_product_info.bin M1 1 0.9.0
+#./generate_product_info build/bootloader.bin build/bootloader_with_product_info.bin M2 1 0.8.0
+#./generate_product_info build/bootloader.bin build/bootloader_with_product_info.bin C1 1 0.8.0
 
 ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all
 ../programmer_essentials/STM32_Programmer_CLI -c port=SWD -w build/bootloader_with_product_info.bin 0x08000000 

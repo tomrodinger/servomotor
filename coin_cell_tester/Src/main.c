@@ -320,6 +320,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case TIME_SYNC_COMMAND:
         	memcpy(&time_from_master, parameters, 6);
             rs485_allow_next_command();
+			transmit("Time sync\n", 10);
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
             if(axis != ALL_ALIAS) {
@@ -385,6 +386,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case PING_COMMAND:
         	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
             rs485_allow_next_command();
+   			transmit("Ping\n", 5);
             if(axis != ALL_ALIAS) {
                 ping_response_buffer[0] = 'R';
                 ping_response_buffer[1] = '\x01';
@@ -403,6 +405,22 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 get_data_record_response_buffer[2] = sizeof(data_record_t);
                 get_data_record((data_record_t *)(get_data_record_response_buffer + 3));
                 rs485_transmit(get_data_record_response_buffer, 3 + sizeof(data_record_t));
+            }
+            break;
+        }
+        case GET_PICOAMP_SECONDS_COMMAND:
+        {
+            uint64_t picoamp_seconds_count;
+            uint8_t get_data_record_response_buffer[3 + sizeof(uint64_t)];
+            rs485_allow_next_command();
+			transmit("Get picoamp seconds\n", 20);
+            if(axis != ALL_ALIAS) {
+                get_data_record_response_buffer[0] = 'R';
+                get_data_record_response_buffer[1] = '\x01';
+                get_data_record_response_buffer[2] = sizeof(uint64_t);
+                picoamp_seconds_count = get_picoamp_seconds_count();
+                memcpy(get_data_record_response_buffer + 3, &picoamp_seconds_count, sizeof(uint64_t));
+                rs485_transmit(get_data_record_response_buffer, 3 + sizeof(uint64_t));
             }
             break;
         }
@@ -584,6 +602,6 @@ int main(void)
         process_debug_uart_commands();
         button_logic();
 
-        load_control_and_voltage_calculations();
+        print_millivolts_if_changed();
     }
 }

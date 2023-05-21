@@ -49,6 +49,6 @@ void print_intervals(void);
 void print_time_difference(void);
 void get_data_record(data_record_t *data_record_out);
 void get_data_record_and_print_it(void);
-void load_control_and_voltage_calculations(void);
+void print_millivolts_if_changed(void);
 
 #endif
