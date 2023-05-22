@@ -1,29 +1,43 @@
+#!/usr/bin/env bash
+
 set -x
 
 COMMON_SOURCE_FILES_DIR=../common_source_files
 DEVICE_SOURCE_FILES_DIR=Src
 DRIVERS_DIR=../Drivers
 BUILD_DIR=build
-GCC_DIR=../toolchain_essentials/bin/
+GCC_DIR=../toolchain_essentials_mac/bin/
 
-#GCC_DIR=../toolchain_stm32_macos/gcc-arm-none-eabi-10-2020-q4-major/bin/
-$GCC_DIR/arm-none-eabi-gcc -mcpu=cortex-m0plus -c -x assembler-with-cpp -MMD -MP -MF"${BUILD_DIR}/startup_stm32g030c8tx.d" -MT"${BUILD_DIR}/startup_stm32g030c8tx.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/startup_stm32g030c8tx.o" "${DEVICE_SOURCE_FILES_DIR}/startup_stm32g030c8tx.s"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/global_variables.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc/Legacy -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/global_variables.d" -MT"${BUILD_DIR}/global_variables.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/global_variables.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/RS485.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/RS485.d" -MT"${BUILD_DIR}/RS485.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/RS485.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/debug_uart.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/debug_uart.d" -MT"${BUILD_DIR}/debug_uart.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/debug_uart.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/error_handling.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/error_handling.d" -MT"${BUILD_DIR}/error_handling.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/error_handling.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/error_text.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/error_test.d" -MT"${BUILD_DIR}/error_text.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/error_text.o"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/mosfets.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/mosfets.d" -MT"${BUILD_DIR}/mosfets.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/mosfets.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/leds.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/leds.d" -MT"${BUILD_DIR}/leds.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/leds.o"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/main.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/main.d" -MT"${BUILD_DIR}/main.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/main.o"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/syscalls.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/syscalls.d" -MT"${BUILD_DIR}/syscalls.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/syscalls.o"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/sysmem.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/sysmem.d" -MT"${BUILD_DIR}/sysmem.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/sysmem.o"
-$GCC_DIR/arm-none-eabi-gcc "${DEVICE_SOURCE_FILES_DIR}/system_stm32g0xx.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/system_stm32g0xx.d" -MT"${BUILD_DIR}/system_stm32g0xx.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/system_stm32g0xx.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/unique_id.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/unique_id.d" -MT"${BUILD_DIR}/unique_id.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/unique_id.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/settings.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/settings.d" -MT"${BUILD_DIR}/settings.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/settings.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/product_info.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/product_info.d" -MT"${BUILD_DIR}/product_info.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/product_info.o"
-$GCC_DIR/arm-none-eabi-gcc "${COMMON_SOURCE_FILES_DIR}/device_status.c" -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -c -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"${BUILD_DIR}/device_status.d" -MT"${BUILD_DIR}/device_statud.o" --specs=nano.specs -mfloat-abi=soft -mthumb -o "${BUILD_DIR}/device_status.o"
-$GCC_DIR/arm-none-eabi-gcc -o "${BUILD_DIR}/bootloader.elf" @"objects.list" -mcpu=cortex-m0plus -T"STM32G030C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="${BUILD_DIR}/firmware_STM32G030.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+C_FLAGS="-mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -MMD -MP -mfloat-abi=soft -mthumb"
+
+LINKER_FLAGS="-mcpu=cortex-m0plus -TSTM32G030C8TX_FLASH.ld --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group"
+
+OBJECT_FILES="${DEVICE_SOURCE_FILES_DIR}/startup_stm32g030c8tx.s \
+    ${DEVICE_SOURCE_FILES_DIR}/global_variables.c \
+    ${COMMON_SOURCE_FILES_DIR}/RS485.c \
+    ${COMMON_SOURCE_FILES_DIR}/debug_uart.c \
+    ${COMMON_SOURCE_FILES_DIR}/error_handling.c \
+    ${COMMON_SOURCE_FILES_DIR}/error_text.c \
+    ${DEVICE_SOURCE_FILES_DIR}/mosfets.c \
+    ${COMMON_SOURCE_FILES_DIR}/leds.c \
+    ${DEVICE_SOURCE_FILES_DIR}/main.c \
+    ${DEVICE_SOURCE_FILES_DIR}/syscalls.c \
+    ${DEVICE_SOURCE_FILES_DIR}/sysmem.c \
+    ${DEVICE_SOURCE_FILES_DIR}/system_stm32g0xx.c \
+    ${COMMON_SOURCE_FILES_DIR}/unique_id.c \
+    ${COMMON_SOURCE_FILES_DIR}/settings.c \
+    ${COMMON_SOURCE_FILES_DIR}/product_info.c \
+    ${COMMON_SOURCE_FILES_DIR}/device_status.c"
+
+
+mkdir -p ${BUILD_DIR}
+
+$GCC_DIR/arm-none-eabi-gcc -o ${BUILD_DIR}/"bootloader.elf" $OBJECT_FILES $C_FLAGS $LINKER_FLAGS
 $GCC_DIR/arm-none-eabi-size   ${BUILD_DIR}/bootloader.elf 
 $GCC_DIR/arm-none-eabi-objdump -h -S  ${BUILD_DIR}/bootloader.elf  > "${BUILD_DIR}/bootloader.list"
 $GCC_DIR/arm-none-eabi-objcopy  -O binary  ${BUILD_DIR}/bootloader.elf  "${BUILD_DIR}/bootloader.bin"
+
+
+
+
+

@@ -1,2 +1,2 @@
-rm build/*
+rm -rf build
 
