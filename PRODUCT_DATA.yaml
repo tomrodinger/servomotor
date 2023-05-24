@@ -5,7 +5,7 @@
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/dark_template.html
     picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/robot.jpg
     description: This is a servo motor made with a 3-phase DC brushless motor. It can be controlled over an RS485 interface.
-    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    schematic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/user-manual.pdf
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor1/V26
@@ -23,7 +23,7 @@
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V1/pcb_picture_side.jpg
     description: This is a servo motor made with a 3-phase stepper motor. It can be controlled over an RS485 interface.
-    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    schematic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V1/user-manual.pdf
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor2/V4
@@ -39,7 +39,7 @@
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/pcb_picture_top.jpg
     description: This product is able to control a servo motor, improved performance
-    schamatic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
+    schematic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor2/V5
