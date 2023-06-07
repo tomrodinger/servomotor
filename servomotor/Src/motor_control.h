@@ -1,6 +1,14 @@
 #ifndef SRC_MOTOR_CONTROL_H_
 #define SRC_MOTOR_CONTROL_H_
 
+#include <stdint.h>
+#ifdef PRODUCT_NAME_M1
+#include "LookupTable_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "LookupTable_M2.h"
+#endif
+
 #define OPEN_LOOP_POSITION_CONTROL 0
 #define CLOSED_LOOP_POSITION_CONTROL 1
 #define OPEN_LOOP_PWM_VOLTAGE_CONTROL 2
@@ -26,6 +34,7 @@
 #define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
+#define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
 
@@ -46,9 +55,11 @@ void print_current_movement(void);
 void print_velocity(void);
 void print_time_difference(void);
 void print_max_motor_current_settings(void);
+void print_commutation_position_offset(void);
 void print_motor_current(void);
 void print_hall_sensor_data(void);
 void print_hall_position_delta_stats(void);
+void print_motor_pwm_voltage(void);
 void print_motor_status(void);
 void print_motor_temperature(void);
 void print_supply_voltage(void);
@@ -84,6 +95,7 @@ uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 void process_calibration_data(void);
 void set_motor_current_baseline(void);
+void set_motor_commutation_position_offset(uint32_t _commutation_position_offset);
 void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 void disable_motor_control_loop(void);

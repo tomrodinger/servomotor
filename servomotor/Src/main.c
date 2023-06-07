@@ -692,6 +692,7 @@ void process_debug_uart_commands(void)
     		print_time_difference();
             print_hall_sensor_data();
             print_hall_position_delta_stats();
+            print_motor_pwm_voltage();
             print_motor_status();
             print_motor_temperature();
             print_supply_voltage();
@@ -818,6 +819,7 @@ void print_start_message(void)
 //    transmit(buff, strlen(buff));
     print_hall_midlines();
     print_max_motor_current_settings();
+    print_commutation_position_offset();
 }
 
 int main(void)
@@ -842,6 +844,9 @@ int main(void)
 
     load_global_settings(); // load the settings from non-volatile memory into ram for faster access
     set_motor_current_baseline(); // make sure to call this before set_max_motor_current() and make sure to call it when the MOSFETs are disabled. at the start of the program is fine
+    if(global_settings.commutation_position_offset == 0xffffffff) {
+        global_settings.commutation_position_offset = DEFAULT_COMMUTATION_POSITION_OFFSET;
+    }
     if(global_settings.max_motor_pwm_voltage == 0xffff) {
         global_settings.max_motor_pwm_voltage = DEFAULT_MAX_MOTOR_PWM_VOLTAGE;
     }

@@ -73,7 +73,6 @@ static int32_t velocity = 0;
 static int64_t current_velocity_i64 = 0;
 static int64_t current_position_i64 = 0;
 static uint32_t commutation_position = 0;
-static uint32_t commutation_position_offset = UINT32_MIDPOINT;
 static int64_t max_acceleration = MAX_ACCELERATION;
 static int64_t max_velocity = MAX_VELOCITY;
 static int32_t motor_pwm_voltage = 0;
@@ -201,7 +200,7 @@ static int64_t velocity_after_last_queue_item = 0;
 
 #define CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT 8
 #define CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 (384)
-#define CALIBRATION_DATA_SIZE ((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT))
+#define CALIBRATION_DATA_SIZE ((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256) >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT)
 struct calibration_struct {
 	uint16_t local_min_or_max;
 	int32_t local_min_or_max_position;
@@ -336,7 +335,7 @@ uint16_t hall_data_buffer[3];
 #endif
 
 #define CALIBRATION_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS * 3 / 2)
-#define HALL_PEAK_FIND_THREASHOLD 150
+#define HALL_PEAK_FIND_THREASHOLD 200
 uint8_t hall_rising_flag[3];
 uint16_t hall_local_maximum[3];
 uint16_t hall_local_minimum[3];
@@ -367,6 +366,8 @@ void start_calibration(uint8_t print_output)
 
 	enable_mosfets();
 
+	// we will do 1.5 rotations of the motor shaft and then capture the hall sensor readings
+	// the number of hal sensors peaks and valleyes (ie. cycles should be aproximately 1.5 times the number of pole pairs)
 	compute_trapezoid_move(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2, &acceleration, &delta_t1, &delta_t2);
 
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
@@ -563,7 +564,7 @@ void process_calibration_data(void)
 	}
 
 	#define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 3)
-	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 70  // make sure this is larger than N_POLES
+	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA (N_POLES * 3 * 90 / (2 * 100))  // calculate the expected number of minima or maxima, which is 1.5 times the total number of poles on the magnet ring (since we will rotate the shapr 1.5 rotations) and then just take 90% of that as the minimum expected
 	uint32_t minima_and_maxima_avg[3] = {0, 0, 0};
 	uint16_t midline[3];
 	for(j = 0; j < 3; j++) {
@@ -648,7 +649,7 @@ void start_go_to_closed_loop_mode(void)
 	clear_the_queue_and_stop_no_disable_interrupt();
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
 	enable_mosfets();
-	commutation_position_offset = UINT32_MIDPOINT;
+	global_settings.commutation_position_offset = UINT32_MIDPOINT;
 	vibration_four_step = 0;
 	commutation_scan_microsteps = 0;
 	desired_motor_pwm_voltage = 0;
@@ -816,7 +817,7 @@ void go_to_closed_loop_mode_logic(void)
 			}
 
 			commutation_scan_microsteps += step_size;
-			commutation_position_offset += step_size;
+			global_settings.commutation_position_offset += step_size;
 			sum_delta = 0;
 		}
 	}
@@ -893,7 +894,7 @@ void go_to_closed_loop_mode_logic(void)
 				}
 				if(motor_pwm_voltage_limit > max_motor_pwm_voltage_limit) {
 					max_motor_pwm_voltage_limit = motor_pwm_voltage_limit;
-					commutation_position_offset_at_max = commutation_position_offset;
+					commutation_position_offset_at_max = global_settings.commutation_position_offset;
 					if(vibration_polarity_moving_average < 0) {
 						commutation_position_offset_at_max += HALL_TO_POSITION_90_DEGREE_OFFSET;
 					}
@@ -913,7 +914,7 @@ void go_to_closed_loop_mode_logic(void)
 					step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
 				}
 				commutation_scan_microsteps += step_size;
-				commutation_position_offset += step_size;
+				global_settings.commutation_position_offset += step_size;
 				sum_delta = 0;
 			}
 			break;
@@ -922,7 +923,7 @@ void go_to_closed_loop_mode_logic(void)
 		}
 	}
 	else {
-		commutation_position_offset = commutation_position_offset_at_max;
+		global_settings.commutation_position_offset = commutation_position_offset_at_max;
 		current_position_i64 = 0;
 		current_velocity_i64 = 0;
 		motor_pwm_voltage = 0;
@@ -978,7 +979,7 @@ void go_to_closed_loop_mode_logic(void)
 					step_size = -step_size;
 				}				
 				commutation_scan_microsteps += step_size;
-				commutation_position_offset += step_size;
+				global_settings.commutation_position_offset += step_size;
 				previous_sum_delta = sum_delta;
 				sum_delta = 0;
 
@@ -991,7 +992,6 @@ void go_to_closed_loop_mode_logic(void)
 		}
 	}
 	else {
-		commutation_position_offset = commutation_position_offset;
 		current_position_i64 = 0;
 		current_velocity_i64 = 0;
 		motor_pwm_voltage = 0;
@@ -1243,6 +1243,14 @@ void print_max_motor_current_settings(void)
 }
 
 
+void print_commutation_position_offset(void)
+{
+	char buf[100];
+	sprintf(buf, "Commutation position offset: %lu\n", global_settings.commutation_position_offset);
+	transmit(buf, strlen(buf));
+}
+
+
 void print_motor_current(void)
 {
 	char buf[150];
@@ -1284,7 +1292,7 @@ void print_hall_sensor_data(void)
 	sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", hall1, hall2, hall3);
 	transmit(buf, strlen(buf));
 
-	sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, commutation_position_offset);
+	sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, global_settings.commutation_position_offset);
 	transmit(buf, strlen(buf));
 }
 
@@ -1295,6 +1303,14 @@ void print_motor_status(void)
 
 	uint8_t motor_status_flags = get_motor_status_flags();
 	sprintf(buf, "status: %hu\n", motor_status_flags);
+	transmit(buf, strlen(buf));
+}
+
+
+void print_motor_pwm_voltage(void)
+{
+	char buf[100];
+	sprintf(buf, "motor_pwm_voltage: %d\n", (int)motor_pwm_voltage);
 	transmit(buf, strlen(buf));
 }
 
@@ -1759,7 +1775,7 @@ void motor_movement_calculations(void)
 	}
 
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
-		commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
+		commutation_position = ((int32_t *)&current_position_i64)[1] + global_settings.commutation_position_offset;
 		if(moving) {
 			motor_pwm_voltage = max_pwm_voltage;
 		}
@@ -1768,7 +1784,7 @@ void motor_movement_calculations(void)
 		}
 	}
 	else {
-		commutation_position = hall_position + commutation_position_offset;
+		commutation_position = hall_position + global_settings.commutation_position_offset;
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
@@ -1857,7 +1873,7 @@ void motor_phase_calculations(void)
     TIM1->CCR3 = phase2;
 	#endif
 	#ifdef PRODUCT_NAME_M2
-    TIM1->CCR2 = phase2;
+    TIM1->CCR3 = phase2;
 	#endif
 
     phase3 >>= 8;
@@ -1868,7 +1884,7 @@ void motor_phase_calculations(void)
     TIM1->CCR2 = phase3;
 	#endif
 	#ifdef PRODUCT_NAME_M2
-    TIM1->CCR3 = phase3;
+    TIM1->CCR2 = phase3;
 	#endif
 }
 
@@ -2002,9 +2018,9 @@ void increase_commutation_offset(void)
 {
 	char buf[100];
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	commutation_position_offset += 914;
+	global_settings.commutation_position_offset += 914;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-	sprintf(buf, "commutation_position_offset: %u\n", (unsigned int)commutation_position_offset);
+	sprintf(buf, "commutation_position_offset: %lu\n", global_settings.commutation_position_offset);
 	transmit(buf, strlen(buf));
 }
 
@@ -2013,9 +2029,9 @@ void decrease_commutation_offset(void)
 {
 	char buf[100];
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	commutation_position_offset -= 914;
+	global_settings.commutation_position_offset -= 914;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-	sprintf(buf, "commutation_position_offset: %u\n", (unsigned int)commutation_position_offset);
+	sprintf(buf, "commutation_position_offset: %lu\n", global_settings.commutation_position_offset);
 	transmit(buf, strlen(buf));
 }
 
@@ -2077,7 +2093,7 @@ void zero_position_and_hall_sensor(void)
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
     int32_t hall_position_adjustment = zero_hall_position();
-	commutation_position_offset += hall_position_adjustment;
+	global_settings.commutation_position_offset += hall_position_adjustment;
 	current_position_i64 = 0;
 	current_velocity_i64 = 0;
 	hall_position_delta = 0;
