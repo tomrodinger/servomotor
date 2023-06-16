@@ -1,0 +1,54 @@
+Source:,G:\OneDrive\Work\Upwork\TomRodinger\servo_motor_V27\servo_motor.kicad_sch,,,,,,,,,,
+Date:,6/16/2023 9:41,,,,,,,,,,
+Tool:,Eeschema 7.0.1,,,,,,,,,,
+Generator:,C:\Program Files\KiCad\7.0\bin\scripting\plugins/bom_csv_grouped_by_value.py,,,,,,,,,,
+Component Count:,108,,,,,,,,,,
+,,,,,,,,,,,
+Collated Components:,,,,,,,,,,,
+,,,,,,,,,,,
+Item,Qty,Reference(s),Value,LibPart,Footprint,Datasheet,DNP,Description,LCSC,MN,MPN
+1,3,"C1, C5, C30",100pF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C14858,Samsung Electro-Mechanics,CL10C101JB8NNNC
+2,5,"C2, C22, C26, C32, C41",1uF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C15849,Samsung Electro-Mechanics,CL10A105KB8NNNC
+3,2,"C3, C11",4.7uF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,16V 4.7uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C19666,Samsung Electro-Mechanics,CL10A475KO8NNNC
+4,1,C4,NC,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,NC,,,
+5,13,"C6, C7, C10, C12, C14, C15, C19, C21, C24, C27, C29, C31, C34",10uF,Device:C,Capacitor_SMD:C_0805_2012Metric,~,,50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C440198,Murata Electronics,GRM21BR61H106KE43L
+6,9,"C8, C9, C13, C16, C18, C25, C28, C35, C36",100nF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C14663,YAGEO,CC0603KRX7R9BB104
+7,3,"C17, C20, C23",1nF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C1588,Samsung Electro-Mechanics,CL10B102KB8NNNC
+8,1,C33,10uF,Device:C,Capacitor_SMD:C_0603_1608Metric,~,,10V 10uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS,C19702,Samsung Electro-Mechanics,CL10A106KP8NNNC
+9,1,D1,1N4148WS,:1N4148WS_1,Diode_SMD:D_SOD-323,https://www.vishay.com/docs/85751/1n4148ws.pdf,,100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS,C2128,"Jiangsu Changjing Electronics Technology Co., Ltd.",1N4148WS
+10,2,"D2, D5",1N4148WS,Diode:1N4148WS,Diode_SMD:D_SOD-323,https://www.vishay.com/docs/85751/1n4148ws.pdf,,100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS,C2128,"Jiangsu Changjing Electronics Technology Co., Ltd.",1N4148WS
+11,1,D3,KT-0603R,Device:LED,LED_SMD:LED_0603_1608Metric,~,,Red 0603 Light Emitting Diodes,C2286,"Jiangsu Changjing Electronics Technology Co., Ltd.",1N4148WS
+12,1,D4,19-217/GHC-YR1S2/3T,Device:LED,LED_SMD:LED_0603_1608Metric,~,,LED GREEN CLEAR SMD,C72043,Hubei KENTO Elec,KT-0603R
+13,8,"H1, H2, H3, H4, H5, H6, H7, H8",MountingHole_Pad,Mechanical:MountingHole_Pad,servo_motor:Mounting Hole 3.5mm,~,,MountingHole_Pad,,,
+14,1,J1,Serial Port,Connector:Conn_01x04_Male,Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical,~,, 2.54mm Plugin Black 1x4P Plugin,C2691448,XFCN,PZ254V-11-04P
+15,1,J2,Programming,Connector:Conn_01x05_Male,Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical,~,,2.54mm Plugin Black Brass 1x5P Plugin,C492404,XFCN,PZ254V-11-05P
+16,1,J3,Screw_Terminal_01x03,Connector:Screw_Terminal_01x03,servo_motor:MOTOR,~,,Screw_Terminal_01x03,,,
+17,1,J4,RS485,Connector:Conn_01x04_Male,Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical,~,,2.54mm Plugin Black 1x4P Plugin,C2691448,XFCN,PZ254V-11-04P
+18,1,J5,Power IN,Connector:Conn_01x02_Male,TerminalBlock:TerminalBlock_bornier-2_P5.08mm,~,,P=5.08mm Screw termina,C8465,Ningbo Kangnex Elec,WJ500V-5.08-2P
+19,1,J6,Encoder,Connector:Conn_01x05_Male,Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical,~,,2.54mm Plugin Black Brass 1x5P Plugin,C492404,XFCN,PZ254V-11-05P
+20,2,"P1, P3",Board_to_Board_Connector,servo_motor:Board_to_Board_Connector,servo_motor:board_to_board_male,,,Board_to_Board_Connector,,,
+21,2,"P2, P4",Board_to_Board_Connector,servo_motor:Board_to_Board_Connector,servo_motor:board_to_board_female,,,Board_to_Board_Connector,,,
+22,6,"Q1, Q2, Q3, Q4, Q5, Q6",CRTM025N03L,servo_motor:CRTM025N03L,servo_motor:CRTM025N03L,,,"30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)",C467170,CRMICRO,CRTM025N03L
+23,1,Q7,MMBT3904,Transistor_BJT:MMBT3904,Package_TO_SOT_SMD:SOT-23,https://www.onsemi.com/pub/Collateral/2N3903-D.PDF,,"40V 200mW 100@10mA,1V 200mA NPN SOT-23",C20526,Jiangsu Changjing,MMBT3904
+24,1,Q8,2N3906,Transistor_BJT:2N3906,Package_TO_SOT_SMD:SOT-23,https://www.onsemi.com/pub/Collateral/2N3906-D.PDF,,"40V 350mW 100@10mA,1V 200mA PNP SOT-23",C147294,KEC Semicon,2N3906S-RTK/P
+25,1,R1,1M,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 1MΩ 0603  Chip Resistor - Surface Mount ROHS,C22935,UNI-ROYAL(Uniroyal Elec),0603WAF1004T5E
+26,2,"R2, R29",4.7K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 4.7kΩ 0603  Chip Resistor - Surface Mount ROHS,C23162,UNI-ROYAL(Uniroyal Elec),0603WAF4701T5E
+27,1,R3,10M,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 10MΩ 0603  Chip Resistor - Surface Mount ROHS,C7250,UNI-ROYAL(Uniroyal Elec),0603WAF1005T5E
+28,14,"R4, R5, R8, R10, R13, R15, R17, R20, R21, R22, R23, R24, R25, R27",10K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS,C25804,UNI-ROYAL(Uniroyal Elec),0603WAF1002T5E
+29,1,R6,33K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 33kΩ 0603  Chip Resistor - Surface Mount ROHS,C4216,UNI-ROYAL(Uniroyal Elec),0603WAF3302T5E
+30,1,R7,680K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 680kΩ 0603  Chip Resistor - Surface Mount ROHS,C25822,UNI-ROYAL(Uniroyal Elec),0603WAF6803T5E
+31,1,R9,300K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 300kΩ 0603  Chip Resistor - Surface Mount ROHS,C23024,UNI-ROYAL(Uniroyal Elec),0603WAF3003T5E
+32,1,R11,470,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 470Ω 0603  Chip Resistor - Surface Mount ROHS,C23179,UNI-ROYAL(Uniroyal Elec),0603WAF4700T5E
+33,3,"R12, R18, R19",1.5K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS,C22843,UNI-ROYAL(Uniroyal Elec),0603WAF1501T5E
+34,2,"R14, R16",25121WF100MT4E,Device:R,Resistor_SMD:R_2512_6332Metric,~,,"1W 10mΩ ±800ppm/℃ ±1% 2512 Current Sense Resistors""",C127692,UNI-ROYAL(Uniroyal Elec),25121WF100MT4E
+35,1,R26,1K,Device:R,Resistor_SMD:R_0603_1608Metric,~,,100mW Thick Film Resistors ±1% 1kΩ 0603  Chip Resistor - Surface Mount ROHS,C21190,UNI-ROYAL(Uniroyal Elec),0603WAF1001T5E
+36,2,"RST1, SW1",TS-1187A-B-A-B,Switch:SW_Push,Button_Switch_SMD:SW_SPST_TL3342,~,, SPST SMD Tactile Switches,C318884,XKB Connectivity,TS-1187A-B-A-B
+37,1,TH1,100k 1% NTC,Device:Thermistor_NTC,Resistor_SMD:R_0402_1005Metric,~,,THERM NTC 100KOHM 4250K 0402,C77130,Murata Electronics,NCP15WF104F03RC
+38,1,TP1,TestPoint,Connector:TestPoint,servo_motor:TestPoint 6mm,~,,TestPoint,,,
+39,2,"U1, U9",LM321,Amplifier_Operational:LM321,Package_TO_SOT_SMD:SOT-23-5,http://www.ti.com/lit/ds/symlink/lm321.pdf,,IC OPAMP GP 1 CIRCUIT SOT23-5,C471859,Texas Instruments,LM321LVIDBVR
+40,1,U2,STM32G030C8T6,dual_extruder:STM32G030C8T6,servo_motor:STM32G030C8T6,,,IC MCU 32BIT 64KB FLASH 48LQFP,C529329,STMicroelectronics,STM32G030C8T6
+41,1,U3,EG2133,dual_extruder:EG2133,Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm,,,TSSOP-20 Gate Drive ICs ,C190343,EG Micro,EG2133
+42,1,U4,Hall_Sensor*3,servo_motor:Hall_Sensor*3,servo_motor:hall_sensor_3,,,Hall_Sensor*3,,,
+43,1,U5,SN75176BDR,Interface_UART:SN75176AD,Package_SO:SOIC-8_3.9x4.9mm_P1.27mm,http://www.ti.com/lit/ds/symlink/sn75176a.pdf,,transceiver 1/1 SOIC-8 RS-485/RS-422 Ics,C7063,Texas Instruments,SN75176BDR
+44,1,U11,HT7533-1,Regulator_Linear:HT75xx-1-SOT89,Package_TO_SOT_SMD:SOT-89-3,https://www.holtek.com/documents/10179/116711/HT75xx-1v250.pdf,,100mA Fixed 3.3V~3.3V Positive 30V,C14289,Holtek Semicon,HT7533-1
+45,1,U12,L78L10_SOT89,:L78L10_SOT89_1,Package_TO_SOT_SMD:SOT-89-3,http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf,, Fixed 10V~10V Positive 35V ,C122848,Shikues,78L10

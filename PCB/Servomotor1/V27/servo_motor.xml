@@ -1,0 +1,3296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>G:\OneDrive\Work\Upwork\TomRodinger\servo_motor_V27\servo_motor.kicad_sch</source>
+    <date>6/16/2023 9:41:59 AM</date>
+    <tool>Eeschema 7.0.1</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title>Servomotor V27</title>
+        <company/>
+        <rev>13/06/2023</rev>
+        <date/>
+        <source>servo_motor.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>100pF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14858</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10C101JB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14858"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10C101JB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7ba41709-763d-4924-b365-501a763cce07</tstamps>
+    </comp>
+    <comp ref="C2">
+      <value>1uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C15849</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A105KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d4d35a09-efc2-4bcd-ae8c-b3bf24da9385</tstamps>
+    </comp>
+    <comp ref="C3">
+      <value>4.7uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">16V 4.7uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C19666</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A475KO8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="16V 4.7uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C19666"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A475KO8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>aa706075-04f2-4da4-98e5-d7d88cd7820f</tstamps>
+    </comp>
+    <comp ref="C4">
+      <value>NC</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">NC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="NC"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d98b7aab-f00e-44f0-816f-2b5e77cf1b5d</tstamps>
+    </comp>
+    <comp ref="C5">
+      <value>100pF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14858</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10C101JB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14858"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10C101JB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>381460a1-0d24-44e7-b18a-48dfb63251ec</tstamps>
+    </comp>
+    <comp ref="C6">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>37c5c40b-13c6-4f2c-a30e-9c74cb764dd9</tstamps>
+    </comp>
+    <comp ref="C7">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>55e12643-bc23-4c0c-a7f4-758b0cd92d42</tstamps>
+    </comp>
+    <comp ref="C8">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fc10d1cd-4054-4822-b695-f112cf371a70</tstamps>
+    </comp>
+    <comp ref="C9">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d979602b-c012-42f2-aeeb-95f268c4dff3</tstamps>
+    </comp>
+    <comp ref="C10">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4fb4f5cf-0958-4d16-ab52-478aa54a8e0a</tstamps>
+    </comp>
+    <comp ref="C11">
+      <value>4.7uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">16V 4.7uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C19666</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A475KO8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="16V 4.7uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C19666"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A475KO8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a6ae59dc-237c-4aa2-bc71-32f1a65f5102</tstamps>
+    </comp>
+    <comp ref="C12">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>69ea38a4-6ab3-4361-8a3c-6da41e3332bf</tstamps>
+    </comp>
+    <comp ref="C13">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>249f21e6-4d90-4b88-8d62-257af4265d02</tstamps>
+    </comp>
+    <comp ref="C14">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f7bc1b4d-2b8a-4a7e-88b9-4a5178e36ba3</tstamps>
+    </comp>
+    <comp ref="C15">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8de1acf0-b396-47e4-87ee-c9bedc98d585</tstamps>
+    </comp>
+    <comp ref="C16">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5535b40a-54db-4846-967d-9613a617b0e6</tstamps>
+    </comp>
+    <comp ref="C17">
+      <value>1nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C1588</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10B102KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C1588"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10B102KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c824e758-6dff-4c78-918e-8c9fe6d9bdb2</tstamps>
+    </comp>
+    <comp ref="C18">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>11f1bdc8-089d-4d89-9a9a-949794263e1a</tstamps>
+    </comp>
+    <comp ref="C19">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fd520428-8f79-45b0-983d-7a31acbc022b</tstamps>
+    </comp>
+    <comp ref="C20">
+      <value>1nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C1588</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10B102KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C1588"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10B102KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a171b55e-8cc6-40d8-a799-336a7da7ee3a</tstamps>
+    </comp>
+    <comp ref="C21">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6fb6d61b-4b14-443a-9e6a-23f32ea947fc</tstamps>
+    </comp>
+    <comp ref="C22">
+      <value>1uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C15849</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A105KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>52eb1a99-218e-4ad5-951f-b1c92134f919</tstamps>
+    </comp>
+    <comp ref="C23">
+      <value>1nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C1588</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10B102KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C1588"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10B102KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ae475722-2ba4-4c3d-8891-29611dda7853</tstamps>
+    </comp>
+    <comp ref="C24">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fb229b84-5fa4-40ac-87ac-65a58b452b57</tstamps>
+    </comp>
+    <comp ref="C25">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8d86c974-6b53-46ba-8f3e-bcaf2ae3da38</tstamps>
+    </comp>
+    <comp ref="C26">
+      <value>1uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C15849</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A105KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e3dd485b-6736-475d-afd7-489e1b38e2e5</tstamps>
+    </comp>
+    <comp ref="C27">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>30d97757-1406-48d5-ac99-4069ae9b36bc</tstamps>
+    </comp>
+    <comp ref="C28">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f4f5af31-ef30-443d-8101-9117086fef60</tstamps>
+    </comp>
+    <comp ref="C29">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ce7c7648-8dae-43f7-9245-2514e6634910</tstamps>
+    </comp>
+    <comp ref="C30">
+      <value>100pF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14858</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10C101JB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100pF C0G ±5% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14858"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10C101JB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a9cf4bb3-2443-43df-896b-d5ba09e0e3e5</tstamps>
+    </comp>
+    <comp ref="C31">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>78d2a145-ed82-43a7-bdff-bb62570d168a</tstamps>
+    </comp>
+    <comp ref="C32">
+      <value>1uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C15849</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A105KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>da95e7fe-69d9-48a9-bfc5-103dab3ea8e8</tstamps>
+    </comp>
+    <comp ref="C33">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">10V 10uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C19702</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A106KP8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="10V 10uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C19702"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A106KP8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>79a8aab2-4661-4d7e-9a84-3404644df0a6</tstamps>
+    </comp>
+    <comp ref="C34">
+      <value>10uF</value>
+      <footprint>Capacitor_SMD:C_0805_2012Metric</footprint>
+      <fields>
+        <field name="Description">50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C440198</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">GRM21BR61H106KE43L</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 10uF X5R ±10% 0805  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C440198"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="GRM21BR61H106KE43L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e459e791-9d6d-4bae-95b3-6be80fac896f</tstamps>
+    </comp>
+    <comp ref="C35">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6f0799cd-29b8-4f5e-8103-29a0129fba91</tstamps>
+    </comp>
+    <comp ref="C36">
+      <value>100nF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C14663</field>
+        <field name="MN">YAGEO</field>
+        <field name="MPN">CC0603KRX7R9BB104</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 100nF X7R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C14663"/>
+      <property name="MN" value="YAGEO"/>
+      <property name="MPN" value="CC0603KRX7R9BB104"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6bc266f9-1d1b-4818-8d78-42e7be2df761</tstamps>
+    </comp>
+    <comp ref="C41">
+      <value>1uF</value>
+      <footprint>Capacitor_SMD:C_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS</field>
+        <field name="LCSC">C15849</field>
+        <field name="MN">Samsung Electro-Mechanics</field>
+        <field name="MPN">CL10A105KB8NNNC</field>
+      </fields>
+      <libsource lib="Device" part="C" description="Unpolarized capacitor"/>
+      <property name="Description" value="50V 1uF X5R ±10% 0603  Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS"/>
+      <property name="LCSC" value="C15849"/>
+      <property name="MN" value="Samsung Electro-Mechanics"/>
+      <property name="MPN" value="CL10A105KB8NNNC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Unpolarized capacitor"/>
+      <property name="ki_keywords" value="cap capacitor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bec325af-5e93-46fd-b1a0-557cd224191b</tstamps>
+    </comp>
+    <comp ref="D1">
+      <value>1N4148WS</value>
+      <footprint>Diode_SMD:D_SOD-323</footprint>
+      <datasheet>https://www.vishay.com/docs/85751/1n4148ws.pdf</datasheet>
+      <fields>
+        <field name="Description">100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS</field>
+        <field name="LCSC">C2128</field>
+        <field name="MN">Jiangsu Changjing Electronics Technology Co., Ltd.</field>
+        <field name="MPN">1N4148WS</field>
+      </fields>
+      <libsource lib="" part="1N4148WS_1" description="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="Description" value="100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS"/>
+      <property name="LCSC" value="C2128"/>
+      <property name="MN" value="Jiangsu Changjing Electronics Technology Co., Ltd."/>
+      <property name="MPN" value="1N4148WS"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="ki_keywords" value="diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>3a7eeb1d-fe57-431f-92f2-a4fe9ab21e4c</tstamps>
+    </comp>
+    <comp ref="D2">
+      <value>1N4148WS</value>
+      <footprint>Diode_SMD:D_SOD-323</footprint>
+      <datasheet>https://www.vishay.com/docs/85751/1n4148ws.pdf</datasheet>
+      <fields>
+        <field name="Description">100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS</field>
+        <field name="LCSC">C2128</field>
+        <field name="MN">Jiangsu Changjing Electronics Technology Co., Ltd.</field>
+        <field name="MPN">1N4148WS</field>
+      </fields>
+      <libsource lib="Diode" part="1N4148WS" description="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="Description" value="100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS"/>
+      <property name="LCSC" value="C2128"/>
+      <property name="MN" value="Jiangsu Changjing Electronics Technology Co., Ltd."/>
+      <property name="MPN" value="1N4148WS"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="ki_keywords" value="diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4259677c-f9f5-47ef-8313-c9f29b40a2ff</tstamps>
+    </comp>
+    <comp ref="D3">
+      <value>KT-0603R</value>
+      <footprint>LED_SMD:LED_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">Red 0603 Light Emitting Diodes</field>
+        <field name="LCSC">C2286</field>
+        <field name="MN">Jiangsu Changjing Electronics Technology Co., Ltd.</field>
+        <field name="MPN">1N4148WS</field>
+      </fields>
+      <libsource lib="Device" part="LED" description="Light emitting diode"/>
+      <property name="Description" value="Red 0603 Light Emitting Diodes"/>
+      <property name="LCSC" value="C2286"/>
+      <property name="MN" value="Jiangsu Changjing Electronics Technology Co., Ltd."/>
+      <property name="MPN" value="1N4148WS"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Light emitting diode"/>
+      <property name="ki_keywords" value="LED diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cd7ce95e-a15f-4c64-b5e6-cf238cf8667e</tstamps>
+    </comp>
+    <comp ref="D4">
+      <value>19-217/GHC-YR1S2/3T</value>
+      <footprint>LED_SMD:LED_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">LED GREEN CLEAR SMD</field>
+        <field name="LCSC">C72043</field>
+        <field name="MN">Hubei KENTO Elec</field>
+        <field name="MPN">KT-0603R</field>
+      </fields>
+      <libsource lib="Device" part="LED" description="Light emitting diode"/>
+      <property name="Description" value="LED GREEN CLEAR SMD"/>
+      <property name="LCSC" value="C72043"/>
+      <property name="MN" value="Hubei KENTO Elec"/>
+      <property name="MPN" value="KT-0603R"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Light emitting diode"/>
+      <property name="ki_keywords" value="LED diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4b8d9034-6971-4818-8d6b-62278904d05c</tstamps>
+    </comp>
+    <comp ref="D5">
+      <value>1N4148WS</value>
+      <footprint>Diode_SMD:D_SOD-323</footprint>
+      <datasheet>https://www.vishay.com/docs/85751/1n4148ws.pdf</datasheet>
+      <fields>
+        <field name="Description">100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS</field>
+        <field name="LCSC">C2128</field>
+        <field name="MN">Jiangsu Changjing Electronics Technology Co., Ltd.</field>
+        <field name="MPN">1N4148WS</field>
+      </fields>
+      <libsource lib="Diode" part="1N4148WS" description="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="Description" value="100V 200mW Single 1.25V@150mA 4ns 150mA SOD-323  Switching Diode ROHS"/>
+      <property name="LCSC" value="C2128"/>
+      <property name="MN" value="Jiangsu Changjing Electronics Technology Co., Ltd."/>
+      <property name="MPN" value="1N4148WS"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="75V 0.15A Fast switching Diode, SOD-323"/>
+      <property name="ki_keywords" value="diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2c18c267-3481-4dad-ab53-c29707b26210</tstamps>
+    </comp>
+    <comp ref="H1">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>17a1b522-2ee3-4822-93fe-d4342cbed430</tstamps>
+    </comp>
+    <comp ref="H2">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1aaff4d7-bc0a-4f6e-b8ad-8415bdeec2fc</tstamps>
+    </comp>
+    <comp ref="H3">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>833fc831-3bae-4735-8c3a-8dab8fecea0f</tstamps>
+    </comp>
+    <comp ref="H4">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cc17f78e-e02f-442e-b01b-2ac117f36412</tstamps>
+    </comp>
+    <comp ref="H5">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ac23c982-bd50-41d5-a35d-afbf41fe8716</tstamps>
+    </comp>
+    <comp ref="H6">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>26096af7-5ea1-4afa-bbc1-cd20c185469b</tstamps>
+    </comp>
+    <comp ref="H7">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>2ffec877-2f9b-47b1-adcf-626fe7eab2d4</tstamps>
+    </comp>
+    <comp ref="H8">
+      <value>MountingHole_Pad</value>
+      <footprint>servo_motor:Mounting Hole 3.5mm</footprint>
+      <fields>
+        <field name="Description">MountingHole_Pad</field>
+      </fields>
+      <libsource lib="Mechanical" part="MountingHole_Pad" description="Mounting Hole with connection"/>
+      <property name="Description" value="MountingHole_Pad"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Mounting Hole with connection"/>
+      <property name="ki_keywords" value="mounting hole"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>67485858-2578-4518-bb8b-82c516e771f5</tstamps>
+    </comp>
+    <comp ref="J1">
+      <value>Serial Port</value>
+      <footprint>Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Description"> 2.54mm Plugin Black 1x4P Plugin</field>
+        <field name="LCSC">C2691448</field>
+        <field name="MN">XFCN</field>
+        <field name="MPN">PZ254V-11-04P</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_01x04_Male" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value=" 2.54mm Plugin Black 1x4P Plugin"/>
+      <property name="LCSC" value="C2691448"/>
+      <property name="MN" value="XFCN"/>
+      <property name="MPN" value="PZ254V-11-04P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>71127fb2-2511-489e-b456-9cb0173e88c9</tstamps>
+    </comp>
+    <comp ref="J2">
+      <value>Programming</value>
+      <footprint>Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Description">2.54mm Plugin Black Brass 1x5P Plugin</field>
+        <field name="LCSC">C492404</field>
+        <field name="MN">XFCN</field>
+        <field name="MPN">PZ254V-11-05P</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_01x05_Male" description="Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value="2.54mm Plugin Black Brass 1x5P Plugin"/>
+      <property name="LCSC" value="C492404"/>
+      <property name="MN" value="XFCN"/>
+      <property name="MPN" value="PZ254V-11-05P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>99e01380-6fe1-4389-b4d9-30f64a90ab1b</tstamps>
+    </comp>
+    <comp ref="J3">
+      <value>Screw_Terminal_01x03</value>
+      <footprint>servo_motor:MOTOR</footprint>
+      <fields>
+        <field name="Description">Screw_Terminal_01x03</field>
+      </fields>
+      <libsource lib="Connector" part="Screw_Terminal_01x03" description="Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value="Screw_Terminal_01x03"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="screw terminal"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>514e733e-c6cf-4f69-b9da-96d16bbe860f</tstamps>
+    </comp>
+    <comp ref="J4">
+      <value>RS485</value>
+      <footprint>Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Description">2.54mm Plugin Black 1x4P Plugin</field>
+        <field name="LCSC">C2691448</field>
+        <field name="MN">XFCN</field>
+        <field name="MPN">PZ254V-11-04P</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_01x04_Male" description="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value="2.54mm Plugin Black 1x4P Plugin"/>
+      <property name="LCSC" value="C2691448"/>
+      <property name="MN" value="XFCN"/>
+      <property name="MPN" value="PZ254V-11-04P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>025ca65d-0f4e-47d9-8ae0-0c2b39c3a8ec</tstamps>
+    </comp>
+    <comp ref="J5">
+      <value>Power IN</value>
+      <footprint>TerminalBlock:TerminalBlock_bornier-2_P5.08mm</footprint>
+      <fields>
+        <field name="Description">P=5.08mm Screw termina</field>
+        <field name="LCSC">C8465</field>
+        <field name="MN">Ningbo Kangnex Elec</field>
+        <field name="MPN">WJ500V-5.08-2P</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_01x02_Male" description="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value="P=5.08mm Screw termina"/>
+      <property name="LCSC" value="C8465"/>
+      <property name="MN" value="Ningbo Kangnex Elec"/>
+      <property name="MPN" value="WJ500V-5.08-2P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e75f6a42-22f6-4f6c-b5c7-6490f2be5497</tstamps>
+    </comp>
+    <comp ref="J6">
+      <value>Encoder</value>
+      <footprint>Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical</footprint>
+      <fields>
+        <field name="Description">2.54mm Plugin Black Brass 1x5P Plugin</field>
+        <field name="LCSC">C492404</field>
+        <field name="MN">XFCN</field>
+        <field name="MPN">PZ254V-11-05P</field>
+      </fields>
+      <libsource lib="Connector" part="Conn_01x05_Male" description="Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="Description" value="2.54mm Plugin Black Brass 1x5P Plugin"/>
+      <property name="LCSC" value="C492404"/>
+      <property name="MN" value="XFCN"/>
+      <property name="MPN" value="PZ254V-11-05P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)"/>
+      <property name="ki_keywords" value="connector"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6968058f-6b32-4544-949f-5e8a990ef0df</tstamps>
+    </comp>
+    <comp ref="P1">
+      <value>Board_to_Board_Connector</value>
+      <footprint>servo_motor:board_to_board_male</footprint>
+      <fields>
+        <field name="Description">Board_to_Board_Connector</field>
+      </fields>
+      <libsource lib="servo_motor" part="Board_to_Board_Connector" description=""/>
+      <property name="Description" value="Board_to_Board_Connector"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5e0bd7b8-c103-4467-8a24-ba8acab198db</tstamps>
+    </comp>
+    <comp ref="P2">
+      <value>Board_to_Board_Connector</value>
+      <footprint>servo_motor:board_to_board_female</footprint>
+      <fields>
+        <field name="Description">Board_to_Board_Connector</field>
+      </fields>
+      <libsource lib="servo_motor" part="Board_to_Board_Connector" description=""/>
+      <property name="Description" value="Board_to_Board_Connector"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>0e945137-5b38-4532-b2a3-6923bcf2e0f1</tstamps>
+    </comp>
+    <comp ref="P3">
+      <value>Board_to_Board_Connector</value>
+      <footprint>servo_motor:board_to_board_male</footprint>
+      <fields>
+        <field name="Description">Board_to_Board_Connector</field>
+      </fields>
+      <libsource lib="servo_motor" part="Board_to_Board_Connector" description=""/>
+      <property name="Description" value="Board_to_Board_Connector"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>73f3d240-81b6-4a2b-8db3-c6b653fd930d</tstamps>
+    </comp>
+    <comp ref="P4">
+      <value>Board_to_Board_Connector</value>
+      <footprint>servo_motor:board_to_board_female</footprint>
+      <fields>
+        <field name="Description">Board_to_Board_Connector</field>
+      </fields>
+      <libsource lib="servo_motor" part="Board_to_Board_Connector" description=""/>
+      <property name="Description" value="Board_to_Board_Connector"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>95661e90-9b3c-4308-a0c9-ea693a8d89a7</tstamps>
+    </comp>
+    <comp ref="Q1">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>3bee6a3e-884f-42a7-b99e-cf11674ca814</tstamps>
+    </comp>
+    <comp ref="Q2">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bece9e43-5a8d-4115-bac8-568d695bc846</tstamps>
+    </comp>
+    <comp ref="Q3">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1ca30530-f7e6-43ca-a36b-e13bb27f8f2e</tstamps>
+    </comp>
+    <comp ref="Q4">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>bf4d2e44-d072-4beb-abc7-7d0de33e65bb</tstamps>
+    </comp>
+    <comp ref="Q5">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e5267730-726d-476f-9bb6-476b92827164</tstamps>
+    </comp>
+    <comp ref="Q6">
+      <value>CRTM025N03L</value>
+      <footprint>servo_motor:CRTM025N03L</footprint>
+      <fields>
+        <field name="Description">30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)</field>
+        <field name="LCSC">C467170</field>
+        <field name="MN">CRMICRO</field>
+        <field name="MPN">CRTM025N03L</field>
+      </fields>
+      <libsource lib="servo_motor" part="CRTM025N03L" description=""/>
+      <property name="Description" value="30V 98A 2.5mΩ@10V,50A 2.5W N Channel DFN-8-EP(6x5)"/>
+      <property name="LCSC" value="C467170"/>
+      <property name="MN" value="CRMICRO"/>
+      <property name="MPN" value="CRTM025N03L"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d1af301e-66d6-4942-8ac5-78ccfdbad150</tstamps>
+    </comp>
+    <comp ref="Q7">
+      <value>MMBT3904</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
+      <datasheet>https://www.onsemi.com/pub/Collateral/2N3903-D.PDF</datasheet>
+      <fields>
+        <field name="Description">40V 200mW 100@10mA,1V 200mA NPN SOT-23</field>
+        <field name="LCSC">C20526</field>
+        <field name="MN">Jiangsu Changjing</field>
+        <field name="MPN">MMBT3904</field>
+      </fields>
+      <libsource lib="Transistor_BJT" part="MMBT3904" description="0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23"/>
+      <property name="LCSC" value="C20526"/>
+      <property name="Description" value="40V 200mW 100@10mA,1V 200mA NPN SOT-23"/>
+      <property name="MN" value="Jiangsu Changjing"/>
+      <property name="MPN" value="MMBT3904"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23"/>
+      <property name="ki_keywords" value="NPN Transistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>948e1184-b471-4360-b397-3ae58e62c790</tstamps>
+    </comp>
+    <comp ref="Q8">
+      <value>2N3906</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23</footprint>
+      <datasheet>https://www.onsemi.com/pub/Collateral/2N3906-D.PDF</datasheet>
+      <fields>
+        <field name="Description">40V 350mW 100@10mA,1V 200mA PNP SOT-23</field>
+        <field name="LCSC">C147294</field>
+        <field name="MN">KEC Semicon</field>
+        <field name="MPN">2N3906S-RTK/P</field>
+      </fields>
+      <libsource lib="Transistor_BJT" part="2N3906" description="-0.2A Ic, -40V Vce, Small Signal PNP Transistor, TO-92"/>
+      <property name="LCSC" value="C147294"/>
+      <property name="Description" value="40V 350mW 100@10mA,1V 200mA PNP SOT-23"/>
+      <property name="MN" value="KEC Semicon"/>
+      <property name="MPN" value="2N3906S-RTK/P"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="-0.2A Ic, -40V Vce, Small Signal PNP Transistor, TO-92"/>
+      <property name="ki_keywords" value="PNP Transistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cd2d259b-8dc0-46ba-a90d-033ee193706e</tstamps>
+    </comp>
+    <comp ref="R1">
+      <value>1M</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 1MΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C22935</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1004T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 1MΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C22935"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1004T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7885b6f2-0be9-4b71-9a28-357debf3b86c</tstamps>
+    </comp>
+    <comp ref="R2">
+      <value>4.7K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 4.7kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C23162</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF4701T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 4.7kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C23162"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF4701T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>70c07349-a6ed-410a-a0cc-86d43d835779</tstamps>
+    </comp>
+    <comp ref="R3">
+      <value>10M</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 10MΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C7250</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1005T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 10MΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C7250"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1005T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f5e4228d-0b75-4d4e-8bac-2148fd080924</tstamps>
+    </comp>
+    <comp ref="R4">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>795b08fa-63af-4cad-bee4-261a71c27e6c</tstamps>
+    </comp>
+    <comp ref="R5">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ada862a7-dcc1-4b1a-96ff-3531d8899cb1</tstamps>
+    </comp>
+    <comp ref="R6">
+      <value>33K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 33kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C4216</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF3302T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 33kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C4216"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF3302T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fb6194e8-14e6-4524-9eca-b328c45f0e1e</tstamps>
+    </comp>
+    <comp ref="R7">
+      <value>680K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 680kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25822</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF6803T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 680kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25822"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF6803T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a8bd3a04-fe1e-4542-b6cb-99fb77d4ccc3</tstamps>
+    </comp>
+    <comp ref="R8">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d6e669b0-7ef8-49a3-b9eb-6eebb371046f</tstamps>
+    </comp>
+    <comp ref="R9">
+      <value>300K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 300kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C23024</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF3003T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 300kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C23024"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF3003T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c8f2410f-f5c7-442d-aa95-e2d0c7710a63</tstamps>
+    </comp>
+    <comp ref="R10">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1b2230ed-504c-4a44-948b-46005764d787</tstamps>
+    </comp>
+    <comp ref="R11">
+      <value>470</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 470Ω 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C23179</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF4700T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 470Ω 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C23179"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF4700T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5ff079e1-14f0-4e78-91c3-0d56aba7c5f2</tstamps>
+    </comp>
+    <comp ref="R12">
+      <value>1.5K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C22843</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1501T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C22843"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1501T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7083f176-02b2-4d81-865d-78431374d791</tstamps>
+    </comp>
+    <comp ref="R13">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e11bc7ac-8291-44e7-a512-4e79888f01fe</tstamps>
+    </comp>
+    <comp ref="R14">
+      <value>25121WF100MT4E</value>
+      <footprint>Resistor_SMD:R_2512_6332Metric</footprint>
+      <fields>
+        <field name="Description">1W 10mΩ ±800ppm/℃ ±1% 2512 Current Sense Resistors"</field>
+        <field name="LCSC">C127692</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">25121WF100MT4E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="LCSC PN" value=""/>
+      <property name="Description" value="1W 10mΩ ±800ppm/℃ ±1% 2512 Current Sense Resistors&quot;"/>
+      <property name="LCSC" value="C127692"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="25121WF100MT4E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e324b0b4-ec24-40c4-9e84-7b4645fd184b</tstamps>
+    </comp>
+    <comp ref="R15">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>f1ed24ce-089e-4daf-b8ec-7fc356c0b4a3</tstamps>
+    </comp>
+    <comp ref="R16">
+      <value>25121WF100MT4E</value>
+      <footprint>Resistor_SMD:R_2512_6332Metric</footprint>
+      <fields>
+        <field name="Description">1W 10mΩ ±800ppm/℃ ±1% 2512 Current Sense Resistors"</field>
+        <field name="LCSC">C127692</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">25121WF100MT4E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="LCSC PN" value=""/>
+      <property name="Description" value="1W 10mΩ ±800ppm/℃ ±1% 2512 Current Sense Resistors&quot;"/>
+      <property name="LCSC" value="C127692"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="25121WF100MT4E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6e0e46c2-9e72-4eba-8346-3637c5d3a566</tstamps>
+    </comp>
+    <comp ref="R17">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e985cc1a-1505-4b08-837b-fe25654fe7d4</tstamps>
+    </comp>
+    <comp ref="R18">
+      <value>1.5K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C22843</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1501T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C22843"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1501T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>8336db05-d7c2-4fbd-93a1-c67853866860</tstamps>
+    </comp>
+    <comp ref="R19">
+      <value>1.5K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C22843</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1501T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 1.5kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C22843"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1501T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6fc939eb-2be4-4e7e-9574-2133dfbdb22f</tstamps>
+    </comp>
+    <comp ref="R20">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>82e4e7d9-0b4d-4535-b32b-938bc59cb805</tstamps>
+    </comp>
+    <comp ref="R21">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>eef28992-d1be-4e0f-acc4-da16fd8e9176</tstamps>
+    </comp>
+    <comp ref="R22">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>35a8d4cc-4bbc-49c6-8023-e7b98daa01b6</tstamps>
+    </comp>
+    <comp ref="R23">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>098109b6-bfed-41e1-9593-bddad016ea18</tstamps>
+    </comp>
+    <comp ref="R24">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a3b20b86-2b90-41b2-b3fa-b0e8e963d048</tstamps>
+    </comp>
+    <comp ref="R25">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fc35dd07-d410-4787-abde-3359bd4f8d60</tstamps>
+    </comp>
+    <comp ref="R26">
+      <value>1K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 1kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C21190</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1001T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 1kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C21190"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1001T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a29a9aeb-429f-4966-9a02-534e275d361c</tstamps>
+    </comp>
+    <comp ref="R27">
+      <value>10K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C25804</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF1002T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±100ppm/℃ ±1% 10kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C25804"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF1002T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>730f211c-9f26-4efa-a4a1-327f8d56c30c</tstamps>
+    </comp>
+    <comp ref="R29">
+      <value>4.7K</value>
+      <footprint>Resistor_SMD:R_0603_1608Metric</footprint>
+      <fields>
+        <field name="Description">100mW Thick Film Resistors ±1% 4.7kΩ 0603  Chip Resistor - Surface Mount ROHS</field>
+        <field name="LCSC">C23162</field>
+        <field name="MN">UNI-ROYAL(Uniroyal Elec)</field>
+        <field name="MPN">0603WAF4701T5E</field>
+      </fields>
+      <libsource lib="Device" part="R" description="Resistor"/>
+      <property name="Description" value="100mW Thick Film Resistors ±1% 4.7kΩ 0603  Chip Resistor - Surface Mount ROHS"/>
+      <property name="LCSC" value="C23162"/>
+      <property name="MN" value="UNI-ROYAL(Uniroyal Elec)"/>
+      <property name="MPN" value="0603WAF4701T5E"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Resistor"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a3487d9c-2510-409b-bf01-f4e64d024118</tstamps>
+    </comp>
+    <comp ref="RST1">
+      <value>TS-1187A-B-A-B</value>
+      <footprint>Button_Switch_SMD:SW_SPST_TL3342</footprint>
+      <fields>
+        <field name="Description"> SPST SMD Tactile Switches</field>
+        <field name="LCSC">C318884</field>
+        <field name="MN">XKB Connectivity</field>
+        <field name="MPN">TS-1187A-B-A-B</field>
+      </fields>
+      <libsource lib="Switch" part="SW_Push" description="Push button switch, generic, two pins"/>
+      <property name="Description" value=" SPST SMD Tactile Switches"/>
+      <property name="LCSC" value="C318884"/>
+      <property name="MN" value="XKB Connectivity"/>
+      <property name="MPN" value="TS-1187A-B-A-B"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Push button switch, generic, two pins"/>
+      <property name="ki_keywords" value="switch normally-open pushbutton push-button"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d327ce92-e11b-4ff4-896c-3c242a0514fa</tstamps>
+    </comp>
+    <comp ref="SW1">
+      <value>TS-1187A-B-A-B</value>
+      <footprint>Button_Switch_SMD:SW_SPST_TL3342</footprint>
+      <fields>
+        <field name="Description"> SPST SMD Tactile Switches</field>
+        <field name="LCSC">C318884</field>
+        <field name="MN">XKB Connectivity</field>
+        <field name="MPN">TS-1187A-B-A-B</field>
+      </fields>
+      <libsource lib="Switch" part="SW_Push" description="Push button switch, generic, two pins"/>
+      <property name="Description" value=" SPST SMD Tactile Switches"/>
+      <property name="LCSC" value="C318884"/>
+      <property name="MN" value="XKB Connectivity"/>
+      <property name="MPN" value="TS-1187A-B-A-B"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Push button switch, generic, two pins"/>
+      <property name="ki_keywords" value="switch normally-open pushbutton push-button"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>00188b30-3a6e-4dd2-96d1-5bcf95645291</tstamps>
+    </comp>
+    <comp ref="TH1">
+      <value>100k 1% NTC</value>
+      <footprint>Resistor_SMD:R_0402_1005Metric</footprint>
+      <fields>
+        <field name="Description">THERM NTC 100KOHM 4250K 0402</field>
+        <field name="LCSC">C77130</field>
+        <field name="MN">Murata Electronics</field>
+        <field name="MPN">NCP15WF104F03RC</field>
+      </fields>
+      <libsource lib="Device" part="Thermistor_NTC" description="Temperature dependent resistor, negative temperature coefficient"/>
+      <property name="Description" value="THERM NTC 100KOHM 4250K 0402"/>
+      <property name="LCSC" value="C77130"/>
+      <property name="MN" value="Murata Electronics"/>
+      <property name="MPN" value="NCP15WF104F03RC"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Temperature dependent resistor, negative temperature coefficient"/>
+      <property name="ki_keywords" value="thermistor NTC resistor sensor RTD"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>86e3d609-d17c-48a1-8bf1-cbeb499717a1</tstamps>
+    </comp>
+    <comp ref="TP1">
+      <value>TestPoint</value>
+      <footprint>servo_motor:TestPoint 6mm</footprint>
+      <fields>
+        <field name="Description">TestPoint</field>
+      </fields>
+      <libsource lib="Connector" part="TestPoint" description="test point"/>
+      <property name="Description" value="TestPoint"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="test point"/>
+      <property name="ki_keywords" value="test point tp"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>e05bcc79-1402-4a33-b4c7-3c33683bcee3</tstamps>
+    </comp>
+    <comp ref="U1">
+      <value>LM321</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23-5</footprint>
+      <datasheet>http://www.ti.com/lit/ds/symlink/lm321.pdf</datasheet>
+      <fields>
+        <field name="Description">IC OPAMP GP 1 CIRCUIT SOT23-5</field>
+        <field name="LCSC">C471859</field>
+        <field name="MN">Texas Instruments</field>
+        <field name="MPN">LM321LVIDBVR</field>
+      </fields>
+      <libsource lib="Amplifier_Operational" part="LM321" description="Low Power Single Operational Amplifier, SOT-23-5"/>
+      <property name="Description" value="IC OPAMP GP 1 CIRCUIT SOT23-5"/>
+      <property name="LCSC" value="C471859"/>
+      <property name="MN" value="Texas Instruments"/>
+      <property name="MPN" value="LM321LVIDBVR"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Low Power Single Operational Amplifier, SOT-23-5"/>
+      <property name="ki_keywords" value="single opamp"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>704bf28d-740a-41d2-af33-cf10fa93a9c6</tstamps>
+    </comp>
+    <comp ref="U2">
+      <value>STM32G030C8T6</value>
+      <footprint>servo_motor:STM32G030C8T6</footprint>
+      <fields>
+        <field name="Description">IC MCU 32BIT 64KB FLASH 48LQFP</field>
+        <field name="LCSC">C529329</field>
+        <field name="MN">STMicroelectronics</field>
+        <field name="MPN">STM32G030C8T6</field>
+      </fields>
+      <libsource lib="dual_extruder" part="STM32G030C8T6" description=""/>
+      <property name="Description" value="IC MCU 32BIT 64KB FLASH 48LQFP"/>
+      <property name="LCSC" value="C529329"/>
+      <property name="MN" value="STMicroelectronics"/>
+      <property name="MPN" value="STM32G030C8T6"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5404664b-083c-4ae7-9324-834241f1df76</tstamps>
+    </comp>
+    <comp ref="U3">
+      <value>EG2133</value>
+      <footprint>Package_SO:TSSOP-20_4.4x6.5mm_P0.65mm</footprint>
+      <fields>
+        <field name="Description">TSSOP-20 Gate Drive ICs </field>
+        <field name="LCSC">C190343</field>
+        <field name="MN">EG Micro</field>
+        <field name="MPN">EG2133</field>
+      </fields>
+      <libsource lib="dual_extruder" part="EG2133" description=""/>
+      <property name="Description" value="TSSOP-20 Gate Drive ICs "/>
+      <property name="LCSC" value="C190343"/>
+      <property name="MN" value="EG Micro"/>
+      <property name="MPN" value="EG2133"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>912981e1-49cf-4e0a-80d5-9db3cd312c15</tstamps>
+    </comp>
+    <comp ref="U4">
+      <value>Hall_Sensor*3</value>
+      <footprint>servo_motor:hall_sensor_3</footprint>
+      <fields>
+        <field name="Description">Hall_Sensor*3</field>
+      </fields>
+      <libsource lib="servo_motor" part="Hall_Sensor*3" description=""/>
+      <property name="Description" value="Hall_Sensor*3"/>
+      <property name="MN" value=""/>
+      <property name="MPN" value=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ba3d8fc4-acac-477b-9348-701215218608</tstamps>
+    </comp>
+    <comp ref="U5">
+      <value>SN75176BDR</value>
+      <footprint>Package_SO:SOIC-8_3.9x4.9mm_P1.27mm</footprint>
+      <fields>
+        <field name="Description">transceiver 1/1 SOIC-8 RS-485/RS-422 Ics</field>
+        <field name="LCSC">C7063</field>
+        <field name="MN">Texas Instruments</field>
+        <field name="MPN">SN75176BDR</field>
+      </fields>
+      <libsource lib="Interface_UART" part="SN75176AD" description="Differential RS-422/RS-485 bus transceiver, SOIC-8"/>
+      <property name="Description" value="transceiver 1/1 SOIC-8 RS-485/RS-422 Ics"/>
+      <property name="LCSC" value="C7063"/>
+      <property name="MN" value="Texas Instruments"/>
+      <property name="MPN" value="SN75176BDR"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Differential RS-422/RS-485 bus transceiver, SOIC-8"/>
+      <property name="ki_keywords" value="Differential bus transceiver"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>715300da-cee3-4b61-a78d-420eb0096285</tstamps>
+    </comp>
+    <comp ref="U9">
+      <value>LM321</value>
+      <footprint>Package_TO_SOT_SMD:SOT-23-5</footprint>
+      <datasheet>http://www.ti.com/lit/ds/symlink/lm321.pdf</datasheet>
+      <fields>
+        <field name="Description">IC OPAMP GP 1 CIRCUIT SOT23-5</field>
+        <field name="LCSC">C471859</field>
+        <field name="MN">Texas Instruments</field>
+        <field name="MPN">LM321LVIDBVR</field>
+      </fields>
+      <libsource lib="Amplifier_Operational" part="LM321" description="Low Power Single Operational Amplifier, SOT-23-5"/>
+      <property name="Description" value="IC OPAMP GP 1 CIRCUIT SOT23-5"/>
+      <property name="LCSC" value="C471859"/>
+      <property name="MN" value="Texas Instruments"/>
+      <property name="MPN" value="LM321LVIDBVR"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Low Power Single Operational Amplifier, SOT-23-5"/>
+      <property name="ki_keywords" value="single opamp"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>cbd7a8be-0391-4507-b142-9c6935397ce3</tstamps>
+    </comp>
+    <comp ref="U11">
+      <value>HT7533-1</value>
+      <footprint>Package_TO_SOT_SMD:SOT-89-3</footprint>
+      <fields>
+        <field name="Description">100mA Fixed 3.3V~3.3V Positive 30V</field>
+        <field name="LCSC">C14289</field>
+        <field name="MN">Holtek Semicon</field>
+        <field name="MPN">HT7533-1</field>
+      </fields>
+      <libsource lib="Regulator_Linear" part="HT75xx-1-SOT89" description="100mA Low Dropout Voltage Regulator, Fixed Output, SOT89"/>
+      <property name="Description" value="100mA Fixed 3.3V~3.3V Positive 30V"/>
+      <property name="LCSC" value="C14289"/>
+      <property name="MN" value="Holtek Semicon"/>
+      <property name="MPN" value="HT7533-1"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="100mA Low Dropout Voltage Regulator, Fixed Output, SOT89"/>
+      <property name="ki_keywords" value="100mA LDO Regulator Fixed Positive"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>5d107f18-5c6f-48e6-803b-1394a23d3257</tstamps>
+    </comp>
+    <comp ref="U12">
+      <value>L78L10_SOT89</value>
+      <footprint>Package_TO_SOT_SMD:SOT-89-3</footprint>
+      <datasheet>http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf</datasheet>
+      <fields>
+        <field name="Description"> Fixed 10V~10V Positive 35V </field>
+        <field name="LCSC">C122848</field>
+        <field name="MN">Shikues</field>
+        <field name="MPN">78L10</field>
+      </fields>
+      <libsource lib="" part="L78L10_SOT89_1" description="Positive 100mA 30V Linear Regulator, Fixed Output 10V, SOT-89"/>
+      <property name="LCSC" value="C122848"/>
+      <property name="Description" value=" Fixed 10V~10V Positive 35V "/>
+      <property name="MN" value="Shikues"/>
+      <property name="MPN" value="78L10"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="servo_motor.kicad_sch"/>
+      <property name="ki_description" value="Positive 100mA 30V Linear Regulator, Fixed Output 10V, SOT-89"/>
+      <property name="ki_keywords" value="Voltage Regulator 100mA Positive"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>4b2089e8-7821-4964-afff-2240cbfc4353</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="" part="1N4148WS_1">
+      <description>75V 0.15A Fast switching Diode, SOD-323</description>
+      <docs>https://www.vishay.com/docs/85751/1n4148ws.pdf</docs>
+      <footprints>
+        <fp>D*SOD?323*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">1N4148WS_1</field>
+        <field name="Footprint">Diode_SMD:D_SOD-323</field>
+        <field name="Datasheet">https://www.vishay.com/docs/85751/1n4148ws.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="" part="L78L10_SOT89_1">
+      <description>Positive 100mA 30V Linear Regulator, Fixed Output 10V, SOT-89</description>
+      <docs>http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf</docs>
+      <footprints>
+        <fp>SOT?89*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">L78L10_SOT89_1</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-89-3</field>
+        <field name="Datasheet">http://www.st.com/content/ccc/resource/technical/document/datasheet/15/55/e5/aa/23/5b/43/fd/CD00000446.pdf/files/CD00000446.pdf/jcr:content/translations/en.CD00000446.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="OUT" type="power_out"/>
+        <pin num="2" name="GND" type="power_in"/>
+        <pin num="3" name="IN" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Amplifier_Operational" part="LM321">
+      <description>Low Power Single Operational Amplifier, SOT-23-5</description>
+      <docs>http://www.ti.com/lit/ds/symlink/lm321.pdf</docs>
+      <footprints>
+        <fp>SOT?23*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">LM321</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23-5</field>
+        <field name="Datasheet">http://www.ti.com/lit/ds/symlink/lm321.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="+" type="input"/>
+        <pin num="2" name="V-" type="power_in"/>
+        <pin num="3" name="-" type="input"/>
+        <pin num="4" name="" type="output"/>
+        <pin num="5" name="V+" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Conn_01x02_Male">
+      <description>Generic connector, single row, 01x02, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x02_Male</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Conn_01x04_Male">
+      <description>Generic connector, single row, 01x04, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x04_Male</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Conn_01x05_Male">
+      <description>Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Connector*:*_1x??_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x05_Male</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+        <pin num="5" name="Pin_5" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Screw_Terminal_01x03">
+      <description>Generic screw terminal, single row, 01x03, script generated (kicad-library-utils/schlib/autogen/connector/)</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>TerminalBlock*:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Screw_Terminal_01x03</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="TestPoint">
+      <description>test point</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Pin*</fp>
+        <fp>Test*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">TP</field>
+        <field name="Value">TestPoint</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="C">
+      <description>Unpolarized capacitor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="LED">
+      <description>Light emitting diode</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>LED*</fp>
+        <fp>LED_SMD:*</fp>
+        <fp>LED_THT:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">LED</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="R">
+      <description>Resistor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="Thermistor_NTC">
+      <description>Temperature dependent resistor, negative temperature coefficient</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>*NTC*</fp>
+        <fp>*Thermistor*</fp>
+        <fp>PIN?ARRAY*</fp>
+        <fp>bornier*</fp>
+        <fp>*Terminal?Block*</fp>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">TH</field>
+        <field name="Value">Thermistor_NTC</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Diode" part="1N4148WS">
+      <description>75V 0.15A Fast switching Diode, SOD-323</description>
+      <docs>https://www.vishay.com/docs/85751/1n4148ws.pdf</docs>
+      <footprints>
+        <fp>D*SOD?323*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">1N4148WS</field>
+        <field name="Footprint">Diode_SMD:D_SOD-323</field>
+        <field name="Datasheet">https://www.vishay.com/docs/85751/1n4148ws.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Interface_UART" part="SN75176AD">
+      <description>Differential RS-422/RS-485 bus transceiver, SOIC-8</description>
+      <docs>http://www.ti.com/lit/ds/symlink/sn75176a.pdf</docs>
+      <footprints>
+        <fp>SOIC*3.9x4.9mm*P1.27mm*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">SN75176AD</field>
+        <field name="Footprint">Package_SO:SOIC-8_3.9x4.9mm_P1.27mm</field>
+        <field name="Datasheet">http://www.ti.com/lit/ds/symlink/sn75176a.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="R" type="output"/>
+        <pin num="2" name="~{RE}" type="input"/>
+        <pin num="3" name="DE" type="input"/>
+        <pin num="4" name="D" type="input"/>
+        <pin num="5" name="GND" type="power_in"/>
+        <pin num="6" name="A" type="bidirectional"/>
+        <pin num="7" name="B" type="bidirectional"/>
+        <pin num="8" name="VCC" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Mechanical" part="MountingHole_Pad">
+      <description>Mounting Hole with connection</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>MountingHole*Pad*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">H</field>
+        <field name="Value">MountingHole_Pad</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="Regulator_Linear" part="HT75xx-1-SOT89">
+      <description>100mA Low Dropout Voltage Regulator, Fixed Output, SOT89</description>
+      <docs>https://www.holtek.com/documents/10179/116711/HT75xx-1v250.pdf</docs>
+      <footprints>
+        <fp>SOT?89*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">HT75xx-1-SOT89</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-89-3</field>
+        <field name="Datasheet">https://www.holtek.com/documents/10179/116711/HT75xx-1v250.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="VIN" type="power_in"/>
+        <pin num="3" name="VOUT" type="power_out"/>
+      </pins>
+    </libpart>
+    <libpart lib="Switch" part="SW_Push">
+      <description>Push button switch, generic, two pins</description>
+      <docs>~</docs>
+      <fields>
+        <field name="Reference">SW</field>
+        <field name="Value">SW_Push</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Transistor_BJT" part="2N3906">
+      <description>-0.2A Ic, -40V Vce, Small Signal PNP Transistor, TO-92</description>
+      <docs>https://www.onsemi.com/pub/Collateral/2N3906-D.PDF</docs>
+      <footprints>
+        <fp>TO?92*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Q?</field>
+        <field name="Value">2N3906</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
+        <field name="Datasheet">https://www.onsemi.com/pub/Collateral/2N3906-D.PDF</field>
+        <field name="LCSC">C147294</field>
+      </fields>
+      <pins>
+        <pin num="1" name="B" type="input"/>
+        <pin num="2" name="E" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Transistor_BJT" part="MMBT3904">
+      <description>0.2A Ic, 40V Vce, Small Signal NPN Transistor, SOT-23</description>
+      <docs>https://www.onsemi.com/pub/Collateral/2N3903-D.PDF</docs>
+      <footprints>
+        <fp>SOT?23*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">MMBT3904</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-23</field>
+        <field name="Datasheet">https://www.onsemi.com/pub/Collateral/2N3903-D.PDF</field>
+      </fields>
+      <pins>
+        <pin num="1" name="B" type="input"/>
+        <pin num="2" name="E" type="passive"/>
+        <pin num="3" name="C" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="dual_extruder" part="EG2133">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">EG2133</field>
+      </fields>
+      <pins>
+        <pin num="1" name="HIN1" type="input"/>
+        <pin num="2" name="HIN2" type="input"/>
+        <pin num="3" name="HIN3" type="input"/>
+        <pin num="4" name="LIN1#" type="input"/>
+        <pin num="5" name="LIN2#" type="input"/>
+        <pin num="6" name="LIN#" type="input"/>
+        <pin num="7" name="VCC" type="power_in"/>
+        <pin num="8" name="GND" type="passive"/>
+        <pin num="9" name="LO3" type="output"/>
+        <pin num="10" name="LO2" type="output"/>
+        <pin num="11" name="LO1" type="output"/>
+        <pin num="12" name="VS3" type="output"/>
+        <pin num="13" name="HO3" type="output"/>
+        <pin num="14" name="VB3" type="passive"/>
+        <pin num="15" name="VS2" type="output"/>
+        <pin num="16" name="HO2" type="output"/>
+        <pin num="17" name="VB2" type="passive"/>
+        <pin num="18" name="VS1" type="output"/>
+        <pin num="19" name="HO1" type="output"/>
+        <pin num="20" name="VB1" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="dual_extruder" part="STM32G030C8T6">
+      <footprints>
+        <fp>LQFP48</fp>
+        <fp>LQFP48-M</fp>
+        <fp>LQFP48-L</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">STM32G030C8T6</field>
+        <field name="Footprint">LQFP48</field>
+      </fields>
+      <pins>
+        <pin num="1" name="PC13" type="bidirectional"/>
+        <pin num="2" name="PC14-OSC32_IN" type="bidirectional"/>
+        <pin num="3" name="PC15-OSC32_OUT" type="bidirectional"/>
+        <pin num="4" name="VBAT" type="power_in"/>
+        <pin num="5" name="VREF+" type="power_in"/>
+        <pin num="6" name="VDD/VDDA" type="power_in"/>
+        <pin num="7" name="VSS/VSSA" type="power_in"/>
+        <pin num="8" name="PF0-OSC_IN" type="bidirectional"/>
+        <pin num="9" name="PF1-OSC_OUT" type="bidirectional"/>
+        <pin num="10" name="NRST" type="bidirectional"/>
+        <pin num="11" name="PA0" type="bidirectional"/>
+        <pin num="12" name="PA1" type="bidirectional"/>
+        <pin num="13" name="PA2" type="bidirectional"/>
+        <pin num="14" name="PA3" type="bidirectional"/>
+        <pin num="15" name="PA4" type="bidirectional"/>
+        <pin num="16" name="PA5" type="bidirectional"/>
+        <pin num="17" name="PA6" type="bidirectional"/>
+        <pin num="18" name="PA7" type="bidirectional"/>
+        <pin num="19" name="PB0" type="bidirectional"/>
+        <pin num="20" name="PB1" type="bidirectional"/>
+        <pin num="21" name="PB2" type="bidirectional"/>
+        <pin num="22" name="PB10" type="bidirectional"/>
+        <pin num="23" name="PB11" type="bidirectional"/>
+        <pin num="24" name="PB12" type="bidirectional"/>
+        <pin num="25" name="PB13" type="bidirectional"/>
+        <pin num="26" name="PB14" type="bidirectional"/>
+        <pin num="27" name="PB15" type="bidirectional"/>
+        <pin num="28" name="PA8" type="bidirectional"/>
+        <pin num="29" name="PA9" type="bidirectional"/>
+        <pin num="30" name="PC6" type="bidirectional"/>
+        <pin num="31" name="PC7" type="bidirectional"/>
+        <pin num="32" name="PA10" type="bidirectional"/>
+        <pin num="33" name="PA11" type="bidirectional"/>
+        <pin num="34" name="PA12" type="bidirectional"/>
+        <pin num="35" name="PA13" type="bidirectional"/>
+        <pin num="36" name="PA14-BOOT0" type="bidirectional"/>
+        <pin num="37" name="PA15" type="bidirectional"/>
+        <pin num="38" name="PD0" type="bidirectional"/>
+        <pin num="39" name="PD1" type="bidirectional"/>
+        <pin num="40" name="PD2" type="bidirectional"/>
+        <pin num="41" name="PD3" type="bidirectional"/>
+        <pin num="42" name="PB3" type="bidirectional"/>
+        <pin num="43" name="PB4" type="bidirectional"/>
+        <pin num="44" name="PB5" type="bidirectional"/>
+        <pin num="45" name="PB6" type="bidirectional"/>
+        <pin num="46" name="PB7" type="bidirectional"/>
+        <pin num="47" name="PB8" type="bidirectional"/>
+        <pin num="48" name="PB9" type="bidirectional"/>
+      </pins>
+    </libpart>
+    <libpart lib="servo_motor" part="Board_to_Board_Connector">
+      <fields>
+        <field name="Reference">P?</field>
+        <field name="Value">Board_to_Board_Connector</field>
+      </fields>
+      <pins>
+        <pin num="1" name="24V" type="passive"/>
+        <pin num="2" name="10V" type="passive"/>
+        <pin num="3" name="Switch_Disable" type="passive"/>
+        <pin num="4" name="PWM1" type="passive"/>
+        <pin num="5" name="PWM2" type="passive"/>
+        <pin num="6" name="PWM3" type="passive"/>
+        <pin num="7" name="GND" type="passive"/>
+        <pin num="8" name="IA" type="passive"/>
+        <pin num="9" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="servo_motor" part="CRTM025N03L">
+      <fields>
+        <field name="Reference">Q</field>
+        <field name="Value">CRTM025N03L</field>
+      </fields>
+      <pins>
+        <pin num="1" name="S" type="passive"/>
+        <pin num="2" name="S" type="passive"/>
+        <pin num="3" name="S" type="passive"/>
+        <pin num="4" name="G" type="passive"/>
+        <pin num="5" name="D" type="passive"/>
+        <pin num="6" name="D" type="passive"/>
+        <pin num="7" name="D" type="passive"/>
+        <pin num="8" name="D" type="passive"/>
+        <pin num="9" name="D" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="servo_motor" part="Hall_Sensor*3">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">Hall_Sensor*3</field>
+      </fields>
+      <pins>
+        <pin num="1" name="OUT" type="passive"/>
+        <pin num="2" name="VCC" type="passive"/>
+        <pin num="3" name="GND" type="passive"/>
+        <pin num="4" name="OUT" type="passive"/>
+        <pin num="5" name="VCC" type="passive"/>
+        <pin num="6" name="GND" type="passive"/>
+        <pin num="7" name="OUT" type="passive"/>
+        <pin num="8" name="VCC" type="passive"/>
+        <pin num="9" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="Amplifier_Operational">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Amplifier_Operational.kicad_sym</uri>
+    </library>
+    <library logical="Connector">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Connector.kicad_sym</uri>
+    </library>
+    <library logical="Device">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Device.kicad_sym</uri>
+    </library>
+    <library logical="Diode">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Diode.kicad_sym</uri>
+    </library>
+    <library logical="Interface_UART">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Interface_UART.kicad_sym</uri>
+    </library>
+    <library logical="Mechanical">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Mechanical.kicad_sym</uri>
+    </library>
+    <library logical="Regulator_Linear">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Regulator_Linear.kicad_sym</uri>
+    </library>
+    <library logical="Switch">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Switch.kicad_sym</uri>
+    </library>
+    <library logical="Transistor_BJT">
+      <uri>C:\Program Files\KiCad\7.0\share\kicad\symbols\/Transistor_BJT.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="+3V3">
+      <node ref="C11" pin="1" pintype="passive"/>
+      <node ref="C33" pin="1" pintype="passive"/>
+      <node ref="C35" pin="2" pintype="passive"/>
+      <node ref="C9" pin="1" pintype="passive"/>
+      <node ref="J1" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J2" pin="5" pinfunction="Pin_5" pintype="passive"/>
+      <node ref="J6" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="R15" pin="2" pintype="passive"/>
+      <node ref="R18" pin="1" pintype="passive"/>
+      <node ref="R19" pin="1" pintype="passive"/>
+      <node ref="R29" pin="2" pintype="passive"/>
+      <node ref="R3" pin="2" pintype="passive"/>
+      <node ref="R5" pin="2" pintype="passive"/>
+      <node ref="U11" pin="3" pinfunction="VOUT" pintype="power_out"/>
+      <node ref="U2" pin="4" pinfunction="VBAT" pintype="power_in"/>
+      <node ref="U2" pin="5" pinfunction="VREF+" pintype="power_in"/>
+      <node ref="U2" pin="6" pinfunction="VDD/VDDA" pintype="power_in"/>
+      <node ref="U4" pin="2" pinfunction="VCC" pintype="passive"/>
+      <node ref="U4" pin="5" pinfunction="VCC" pintype="passive"/>
+      <node ref="U4" pin="8" pinfunction="VCC" pintype="passive"/>
+      <node ref="U5" pin="8" pinfunction="VCC" pintype="power_in"/>
+    </net>
+    <net code="2" name="+10V">
+      <node ref="C2" pin="1" pintype="passive"/>
+      <node ref="C22" pin="1" pintype="passive"/>
+      <node ref="C26" pin="1" pintype="passive"/>
+      <node ref="C32" pin="1" pintype="passive"/>
+      <node ref="J6" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="P1" pin="2" pinfunction="10V" pintype="passive"/>
+      <node ref="P2" pin="2" pinfunction="10V" pintype="passive"/>
+      <node ref="Q8" pin="2" pinfunction="E" pintype="passive"/>
+      <node ref="R23" pin="2" pintype="passive"/>
+      <node ref="R7" pin="2" pintype="passive"/>
+      <node ref="R9" pin="2" pintype="passive"/>
+      <node ref="U1" pin="5" pinfunction="V+" pintype="power_in"/>
+      <node ref="U11" pin="2" pinfunction="VIN" pintype="power_in"/>
+      <node ref="U12" pin="1" pinfunction="OUT" pintype="power_out"/>
+      <node ref="U9" pin="5" pinfunction="V+" pintype="power_in"/>
+    </net>
+    <net code="3" name="+24V">
+      <node ref="C10" pin="1" pintype="passive"/>
+      <node ref="C12" pin="1" pintype="passive"/>
+      <node ref="C14" pin="1" pintype="passive"/>
+      <node ref="C15" pin="1" pintype="passive"/>
+      <node ref="C19" pin="1" pintype="passive"/>
+      <node ref="C21" pin="1" pintype="passive"/>
+      <node ref="C24" pin="1" pintype="passive"/>
+      <node ref="C25" pin="1" pintype="passive"/>
+      <node ref="C27" pin="1" pintype="passive"/>
+      <node ref="C29" pin="1" pintype="passive"/>
+      <node ref="C31" pin="1" pintype="passive"/>
+      <node ref="C34" pin="1" pintype="passive"/>
+      <node ref="C6" pin="1" pintype="passive"/>
+      <node ref="C7" pin="1" pintype="passive"/>
+      <node ref="J5" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="P1" pin="1" pinfunction="24V" pintype="passive"/>
+      <node ref="P2" pin="1" pinfunction="24V" pintype="passive"/>
+      <node ref="Q2" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q2" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q2" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q2" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q2" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="R27" pin="1" pintype="passive"/>
+      <node ref="U12" pin="3" pinfunction="IN" pintype="power_in"/>
+    </net>
+    <net code="4" name="/A">
+      <node ref="J4" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J4" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="R17" pin="1" pintype="passive"/>
+      <node ref="U5" pin="6" pinfunction="A" pintype="bidirectional"/>
+    </net>
+    <net code="5" name="/B">
+      <node ref="J4" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J4" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="R17" pin="2" pintype="passive"/>
+      <node ref="U5" pin="7" pinfunction="B" pintype="bidirectional"/>
+    </net>
+    <net code="6" name="/ENCODER_A">
+      <node ref="J6" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="R18" pin="2" pintype="passive"/>
+      <node ref="U2" pin="43" pinfunction="PB4" pintype="bidirectional"/>
+    </net>
+    <net code="7" name="/ENCODER_B">
+      <node ref="J6" pin="5" pinfunction="Pin_5" pintype="passive"/>
+      <node ref="R19" pin="2" pintype="passive"/>
+      <node ref="U2" pin="44" pinfunction="PB5" pintype="bidirectional"/>
+    </net>
+    <net code="8" name="/HALL1">
+      <node ref="C17" pin="1" pintype="passive"/>
+      <node ref="U2" pin="16" pinfunction="PA5" pintype="bidirectional"/>
+      <node ref="U4" pin="1" pinfunction="OUT" pintype="passive"/>
+    </net>
+    <net code="9" name="/HALL2">
+      <node ref="C20" pin="1" pintype="passive"/>
+      <node ref="U2" pin="15" pinfunction="PA4" pintype="bidirectional"/>
+      <node ref="U4" pin="4" pinfunction="OUT" pintype="passive"/>
+    </net>
+    <net code="10" name="/HALL3">
+      <node ref="C23" pin="1" pintype="passive"/>
+      <node ref="U2" pin="17" pinfunction="PA6" pintype="bidirectional"/>
+      <node ref="U4" pin="7" pinfunction="OUT" pintype="passive"/>
+    </net>
+    <net code="11" name="/IA">
+      <node ref="P1" pin="8" pinfunction="IA" pintype="passive"/>
+      <node ref="R6" pin="2" pintype="passive"/>
+      <node ref="U1" pin="4" pintype="output"/>
+    </net>
+    <net code="12" name="/IA_B">
+      <node ref="P2" pin="8" pinfunction="IA" pintype="passive"/>
+      <node ref="R2" pin="1" pintype="passive"/>
+    </net>
+    <net code="13" name="/IA_SENSE">
+      <node ref="C1" pin="1" pintype="passive"/>
+      <node ref="R2" pin="2" pintype="passive"/>
+      <node ref="U2" pin="11" pinfunction="PA0" pintype="bidirectional"/>
+    </net>
+    <net code="14" name="/LED_GREEN">
+      <node ref="R11" pin="1" pintype="passive"/>
+      <node ref="U2" pin="3" pinfunction="PC15-OSC32_OUT" pintype="bidirectional"/>
+    </net>
+    <net code="15" name="/LED_RED">
+      <node ref="R12" pin="1" pintype="passive"/>
+      <node ref="U2" pin="2" pinfunction="PC14-OSC32_IN" pintype="bidirectional"/>
+    </net>
+    <net code="16" name="/M_VCC">
+      <node ref="C3" pin="1" pintype="passive"/>
+      <node ref="D1" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="D2" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="D5" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="Q8" pin="3" pinfunction="C" pintype="passive"/>
+      <node ref="U3" pin="7" pinfunction="VCC" pintype="power_in"/>
+    </net>
+    <net code="17" name="/OVER_VOLTAGE">
+      <node ref="R20" pin="2" pintype="passive"/>
+      <node ref="U2" pin="48" pinfunction="PB9" pintype="bidirectional"/>
+    </net>
+    <net code="18" name="/PHASE1">
+      <node ref="C8" pin="2" pintype="passive"/>
+      <node ref="J3" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="Q1" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q1" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q1" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q1" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q1" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="Q2" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q2" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q2" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="U3" pin="18" pinfunction="VS1" pintype="output"/>
+    </net>
+    <net code="19" name="/PHASE2">
+      <node ref="C13" pin="2" pintype="passive"/>
+      <node ref="J3" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="Q3" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q3" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q3" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q3" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q3" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="Q4" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q4" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q4" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="U3" pin="15" pinfunction="VS2" pintype="output"/>
+    </net>
+    <net code="20" name="/PHASE3">
+      <node ref="C16" pin="2" pintype="passive"/>
+      <node ref="J3" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="Q5" pin="5" pinfunction="D" pintype="passive"/>
+      <node ref="Q5" pin="6" pinfunction="D" pintype="passive"/>
+      <node ref="Q5" pin="7" pinfunction="D" pintype="passive"/>
+      <node ref="Q5" pin="8" pinfunction="D" pintype="passive"/>
+      <node ref="Q5" pin="9" pinfunction="D" pintype="passive"/>
+      <node ref="Q6" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q6" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q6" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="U3" pin="12" pinfunction="VS3" pintype="output"/>
+    </net>
+    <net code="21" name="/PWM1">
+      <node ref="P1" pin="4" pinfunction="PWM1" pintype="passive"/>
+      <node ref="U3" pin="1" pinfunction="HIN1" pintype="input"/>
+      <node ref="U3" pin="4" pinfunction="LIN1#" pintype="input"/>
+    </net>
+    <net code="22" name="/PWM1_B">
+      <node ref="P2" pin="4" pinfunction="PWM1" pintype="passive"/>
+      <node ref="U2" pin="28" pinfunction="PA8" pintype="bidirectional"/>
+    </net>
+    <net code="23" name="/PWM2">
+      <node ref="P1" pin="5" pinfunction="PWM2" pintype="passive"/>
+      <node ref="U3" pin="2" pinfunction="HIN2" pintype="input"/>
+      <node ref="U3" pin="5" pinfunction="LIN2#" pintype="input"/>
+    </net>
+    <net code="24" name="/PWM2_B">
+      <node ref="P2" pin="5" pinfunction="PWM2" pintype="passive"/>
+      <node ref="U2" pin="42" pinfunction="PB3" pintype="bidirectional"/>
+    </net>
+    <net code="25" name="/PWM3">
+      <node ref="P1" pin="6" pinfunction="PWM3" pintype="passive"/>
+      <node ref="U3" pin="3" pinfunction="HIN3" pintype="input"/>
+      <node ref="U3" pin="6" pinfunction="LIN#" pintype="input"/>
+    </net>
+    <net code="26" name="/PWM3_B">
+      <node ref="P2" pin="6" pinfunction="PWM3" pintype="passive"/>
+      <node ref="U2" pin="32" pinfunction="PA10" pintype="bidirectional"/>
+    </net>
+    <net code="27" name="/PWM4">
+      <node ref="R25" pin="1" pintype="passive"/>
+      <node ref="U2" pin="33" pinfunction="PA11" pintype="bidirectional"/>
+    </net>
+    <net code="28" name="/REF24">
+      <node ref="C36" pin="1" pintype="passive"/>
+      <node ref="R24" pin="1" pintype="passive"/>
+      <node ref="U2" pin="18" pinfunction="PA7" pintype="bidirectional"/>
+    </net>
+    <net code="29" name="/RESET">
+      <node ref="C18" pin="1" pintype="passive"/>
+      <node ref="J2" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="R15" pin="1" pintype="passive"/>
+      <node ref="RST1" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="U2" pin="10" pinfunction="NRST" pintype="bidirectional"/>
+    </net>
+    <net code="30" name="/RS485_D">
+      <node ref="U2" pin="45" pinfunction="PB6" pintype="bidirectional"/>
+      <node ref="U5" pin="4" pinfunction="D" pintype="input"/>
+    </net>
+    <net code="31" name="/RS485_EN">
+      <node ref="R13" pin="2" pintype="passive"/>
+      <node ref="U2" pin="34" pinfunction="PA12" pintype="bidirectional"/>
+      <node ref="U5" pin="2" pinfunction="~{RE}" pintype="input"/>
+      <node ref="U5" pin="3" pinfunction="DE" pintype="input"/>
+    </net>
+    <net code="32" name="/RS485_R">
+      <node ref="U2" pin="46" pinfunction="PB7" pintype="bidirectional"/>
+      <node ref="U5" pin="1" pinfunction="R" pintype="output"/>
+    </net>
+    <net code="33" name="/SWCLK">
+      <node ref="J2" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="R4" pin="2" pintype="passive"/>
+      <node ref="U2" pin="36" pinfunction="PA14-BOOT0" pintype="bidirectional"/>
+    </net>
+    <net code="34" name="/SWDIO">
+      <node ref="J2" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="R5" pin="1" pintype="passive"/>
+      <node ref="SW1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="U2" pin="35" pinfunction="PA13" pintype="bidirectional"/>
+    </net>
+    <net code="35" name="/SWITCH_DISABLE">
+      <node ref="P1" pin="3" pinfunction="Switch_Disable" pintype="passive"/>
+      <node ref="Q7" pin="1" pinfunction="B" pintype="input"/>
+      <node ref="R21" pin="2" pintype="passive"/>
+    </net>
+    <net code="36" name="/SWITCH_DISABLE_B">
+      <node ref="P2" pin="3" pinfunction="Switch_Disable" pintype="passive"/>
+      <node ref="U2" pin="12" pinfunction="PA1" pintype="bidirectional"/>
+    </net>
+    <net code="37" name="/TEMPERATURE">
+      <node ref="C41" pin="1" pintype="passive"/>
+      <node ref="R29" pin="1" pintype="passive"/>
+      <node ref="TH1" pin="1" pintype="passive"/>
+      <node ref="U2" pin="21" pinfunction="PB2" pintype="bidirectional"/>
+    </net>
+    <net code="38" name="/TOUCH">
+      <node ref="R1" pin="1" pintype="passive"/>
+      <node ref="R3" pin="1" pintype="passive"/>
+      <node ref="U2" pin="37" pinfunction="PA15" pintype="bidirectional"/>
+    </net>
+    <net code="39" name="/UART2 RX">
+      <node ref="J1" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="U2" pin="14" pinfunction="PA3" pintype="bidirectional"/>
+    </net>
+    <net code="40" name="/UART2 TX">
+      <node ref="J1" pin="3" pinfunction="Pin_3" pintype="passive"/>
+      <node ref="U2" pin="13" pinfunction="PA2" pintype="bidirectional"/>
+    </net>
+    <net code="41" name="GND">
+      <node ref="C1" pin="2" pintype="passive"/>
+      <node ref="C10" pin="2" pintype="passive"/>
+      <node ref="C11" pin="2" pintype="passive"/>
+      <node ref="C12" pin="2" pintype="passive"/>
+      <node ref="C14" pin="2" pintype="passive"/>
+      <node ref="C15" pin="2" pintype="passive"/>
+      <node ref="C17" pin="2" pintype="passive"/>
+      <node ref="C18" pin="2" pintype="passive"/>
+      <node ref="C19" pin="2" pintype="passive"/>
+      <node ref="C2" pin="2" pintype="passive"/>
+      <node ref="C20" pin="2" pintype="passive"/>
+      <node ref="C21" pin="2" pintype="passive"/>
+      <node ref="C22" pin="2" pintype="passive"/>
+      <node ref="C23" pin="2" pintype="passive"/>
+      <node ref="C24" pin="2" pintype="passive"/>
+      <node ref="C25" pin="2" pintype="passive"/>
+      <node ref="C26" pin="2" pintype="passive"/>
+      <node ref="C27" pin="2" pintype="passive"/>
+      <node ref="C28" pin="2" pintype="passive"/>
+      <node ref="C29" pin="2" pintype="passive"/>
+      <node ref="C3" pin="2" pintype="passive"/>
+      <node ref="C30" pin="2" pintype="passive"/>
+      <node ref="C31" pin="2" pintype="passive"/>
+      <node ref="C32" pin="2" pintype="passive"/>
+      <node ref="C33" pin="2" pintype="passive"/>
+      <node ref="C34" pin="2" pintype="passive"/>
+      <node ref="C35" pin="1" pintype="passive"/>
+      <node ref="C36" pin="2" pintype="passive"/>
+      <node ref="C4" pin="2" pintype="passive"/>
+      <node ref="C41" pin="2" pintype="passive"/>
+      <node ref="C5" pin="2" pintype="passive"/>
+      <node ref="C6" pin="2" pintype="passive"/>
+      <node ref="C7" pin="2" pintype="passive"/>
+      <node ref="C9" pin="2" pintype="passive"/>
+      <node ref="D3" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="D4" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="H1" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H2" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H3" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H4" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H5" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H6" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H7" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="H8" pin="1" pinfunction="1" pintype="input"/>
+      <node ref="J1" pin="4" pinfunction="Pin_4" pintype="passive"/>
+      <node ref="J2" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="J5" pin="2" pinfunction="Pin_2" pintype="passive"/>
+      <node ref="J6" pin="1" pinfunction="Pin_1" pintype="passive"/>
+      <node ref="P1" pin="7" pinfunction="GND" pintype="passive"/>
+      <node ref="P1" pin="9" pinfunction="GND" pintype="passive"/>
+      <node ref="P2" pin="7" pinfunction="GND" pintype="passive"/>
+      <node ref="P2" pin="9" pinfunction="GND" pintype="passive"/>
+      <node ref="Q7" pin="2" pinfunction="E" pintype="passive"/>
+      <node ref="R13" pin="1" pintype="passive"/>
+      <node ref="R14" pin="1" pintype="passive"/>
+      <node ref="R16" pin="1" pintype="passive"/>
+      <node ref="R21" pin="1" pintype="passive"/>
+      <node ref="R26" pin="2" pintype="passive"/>
+      <node ref="R4" pin="1" pintype="passive"/>
+      <node ref="R8" pin="1" pintype="passive"/>
+      <node ref="RST1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="SW1" pin="1" pinfunction="1" pintype="passive"/>
+      <node ref="TH1" pin="2" pintype="passive"/>
+      <node ref="U1" pin="2" pinfunction="V-" pintype="power_in"/>
+      <node ref="U11" pin="1" pinfunction="GND" pintype="power_in"/>
+      <node ref="U12" pin="2" pinfunction="GND" pintype="power_in"/>
+      <node ref="U2" pin="7" pinfunction="VSS/VSSA" pintype="power_in"/>
+      <node ref="U3" pin="8" pinfunction="GND" pintype="passive"/>
+      <node ref="U4" pin="3" pinfunction="GND" pintype="passive"/>
+      <node ref="U4" pin="6" pinfunction="GND" pintype="passive"/>
+      <node ref="U4" pin="9" pinfunction="GND" pintype="passive"/>
+      <node ref="U5" pin="5" pinfunction="GND" pintype="power_in"/>
+      <node ref="U9" pin="2" pinfunction="V-" pintype="power_in"/>
+    </net>
+    <net code="42" name="Net-(D1-K)">
+      <node ref="C8" pin="1" pintype="passive"/>
+      <node ref="D1" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="U3" pin="20" pinfunction="VB1" pintype="passive"/>
+    </net>
+    <net code="43" name="Net-(D2-K)">
+      <node ref="C13" pin="1" pintype="passive"/>
+      <node ref="D2" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="U3" pin="17" pinfunction="VB2" pintype="passive"/>
+    </net>
+    <net code="44" name="Net-(D3-A)">
+      <node ref="D3" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="R12" pin="2" pintype="passive"/>
+    </net>
+    <net code="45" name="Net-(D4-A)">
+      <node ref="D4" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="R11" pin="2" pintype="passive"/>
+    </net>
+    <net code="46" name="Net-(D5-K)">
+      <node ref="C16" pin="1" pintype="passive"/>
+      <node ref="D5" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="U3" pin="14" pinfunction="VB3" pintype="passive"/>
+    </net>
+    <net code="47" name="Net-(Q1-G)">
+      <node ref="Q1" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="11" pinfunction="LO1" pintype="output"/>
+    </net>
+    <net code="48" name="Net-(Q1-S-Pad1)">
+      <node ref="Q1" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q1" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q1" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="Q3" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q3" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q3" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="Q5" pin="1" pinfunction="S" pintype="passive"/>
+      <node ref="Q5" pin="2" pinfunction="S" pintype="passive"/>
+      <node ref="Q5" pin="3" pinfunction="S" pintype="passive"/>
+      <node ref="R10" pin="1" pintype="passive"/>
+      <node ref="R14" pin="2" pintype="passive"/>
+      <node ref="R16" pin="2" pintype="passive"/>
+    </net>
+    <net code="49" name="Net-(Q2-G)">
+      <node ref="Q2" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="19" pinfunction="HO1" pintype="output"/>
+    </net>
+    <net code="50" name="Net-(Q3-G)">
+      <node ref="Q3" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="10" pinfunction="LO2" pintype="output"/>
+    </net>
+    <net code="51" name="Net-(Q4-G)">
+      <node ref="Q4" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="16" pinfunction="HO2" pintype="output"/>
+    </net>
+    <net code="52" name="Net-(Q5-G)">
+      <node ref="Q5" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="9" pinfunction="LO3" pintype="output"/>
+    </net>
+    <net code="53" name="Net-(Q6-G)">
+      <node ref="Q6" pin="4" pinfunction="G" pintype="passive"/>
+      <node ref="U3" pin="13" pinfunction="HO3" pintype="output"/>
+    </net>
+    <net code="54" name="Net-(Q7-C)">
+      <node ref="Q7" pin="3" pinfunction="C" pintype="passive"/>
+      <node ref="R22" pin="1" pintype="passive"/>
+    </net>
+    <net code="55" name="Net-(Q8-B)">
+      <node ref="Q8" pin="1" pinfunction="B" pintype="input"/>
+      <node ref="R22" pin="2" pintype="passive"/>
+      <node ref="R23" pin="1" pintype="passive"/>
+    </net>
+    <net code="56" name="Net-(R1-Pad2)">
+      <node ref="R1" pin="2" pintype="passive"/>
+      <node ref="TP1" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="57" name="Net-(R20-Pad1)">
+      <node ref="R20" pin="1" pintype="passive"/>
+      <node ref="U9" pin="4" pintype="output"/>
+    </net>
+    <net code="58" name="Net-(U1-+)">
+      <node ref="C5" pin="1" pintype="passive"/>
+      <node ref="R10" pin="2" pintype="passive"/>
+      <node ref="R9" pin="1" pintype="passive"/>
+      <node ref="U1" pin="1" pinfunction="+" pintype="input"/>
+    </net>
+    <net code="59" name="Net-(U1--)">
+      <node ref="C4" pin="1" pintype="passive"/>
+      <node ref="R6" pin="1" pintype="passive"/>
+      <node ref="R7" pin="1" pintype="passive"/>
+      <node ref="R8" pin="2" pintype="passive"/>
+      <node ref="U1" pin="3" pinfunction="-" pintype="input"/>
+    </net>
+    <net code="60" name="Net-(U9-+)">
+      <node ref="C30" pin="1" pintype="passive"/>
+      <node ref="R24" pin="2" pintype="passive"/>
+      <node ref="R26" pin="1" pintype="passive"/>
+      <node ref="R27" pin="2" pintype="passive"/>
+      <node ref="U9" pin="1" pinfunction="+" pintype="input"/>
+    </net>
+    <net code="61" name="Net-(U9--)">
+      <node ref="C28" pin="1" pintype="passive"/>
+      <node ref="R25" pin="2" pintype="passive"/>
+      <node ref="U9" pin="3" pinfunction="-" pintype="input"/>
+    </net>
+    <net code="62" name="unconnected-(P3-10V-Pad2)">
+      <node ref="P3" pin="2" pinfunction="10V" pintype="passive+no_connect"/>
+    </net>
+    <net code="63" name="unconnected-(P3-24V-Pad1)">
+      <node ref="P3" pin="1" pinfunction="24V" pintype="passive+no_connect"/>
+    </net>
+    <net code="64" name="unconnected-(P3-GND-Pad7)">
+      <node ref="P3" pin="7" pinfunction="GND" pintype="passive+no_connect"/>
+    </net>
+    <net code="65" name="unconnected-(P3-GND-Pad9)">
+      <node ref="P3" pin="9" pinfunction="GND" pintype="passive+no_connect"/>
+    </net>
+    <net code="66" name="unconnected-(P3-IA-Pad8)">
+      <node ref="P3" pin="8" pinfunction="IA" pintype="passive+no_connect"/>
+    </net>
+    <net code="67" name="unconnected-(P3-PWM1-Pad4)">
+      <node ref="P3" pin="4" pinfunction="PWM1" pintype="passive+no_connect"/>
+    </net>
+    <net code="68" name="unconnected-(P3-PWM2-Pad5)">
+      <node ref="P3" pin="5" pinfunction="PWM2" pintype="passive+no_connect"/>
+    </net>
+    <net code="69" name="unconnected-(P3-PWM3-Pad6)">
+      <node ref="P3" pin="6" pinfunction="PWM3" pintype="passive+no_connect"/>
+    </net>
+    <net code="70" name="unconnected-(P3-Switch_Disable-Pad3)">
+      <node ref="P3" pin="3" pinfunction="Switch_Disable" pintype="passive+no_connect"/>
+    </net>
+    <net code="71" name="unconnected-(P4-10V-Pad2)">
+      <node ref="P4" pin="2" pinfunction="10V" pintype="passive+no_connect"/>
+    </net>
+    <net code="72" name="unconnected-(P4-24V-Pad1)">
+      <node ref="P4" pin="1" pinfunction="24V" pintype="passive+no_connect"/>
+    </net>
+    <net code="73" name="unconnected-(P4-GND-Pad7)">
+      <node ref="P4" pin="7" pinfunction="GND" pintype="passive+no_connect"/>
+    </net>
+    <net code="74" name="unconnected-(P4-GND-Pad9)">
+      <node ref="P4" pin="9" pinfunction="GND" pintype="passive+no_connect"/>
+    </net>
+    <net code="75" name="unconnected-(P4-IA-Pad8)">
+      <node ref="P4" pin="8" pinfunction="IA" pintype="passive+no_connect"/>
+    </net>
+    <net code="76" name="unconnected-(P4-PWM1-Pad4)">
+      <node ref="P4" pin="4" pinfunction="PWM1" pintype="passive+no_connect"/>
+    </net>
+    <net code="77" name="unconnected-(P4-PWM2-Pad5)">
+      <node ref="P4" pin="5" pinfunction="PWM2" pintype="passive+no_connect"/>
+    </net>
+    <net code="78" name="unconnected-(P4-PWM3-Pad6)">
+      <node ref="P4" pin="6" pinfunction="PWM3" pintype="passive+no_connect"/>
+    </net>
+    <net code="79" name="unconnected-(P4-Switch_Disable-Pad3)">
+      <node ref="P4" pin="3" pinfunction="Switch_Disable" pintype="passive+no_connect"/>
+    </net>
+    <net code="80" name="unconnected-(U2-PA9-Pad29)">
+      <node ref="U2" pin="29" pinfunction="PA9" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="81" name="unconnected-(U2-PB0-Pad19)">
+      <node ref="U2" pin="19" pinfunction="PB0" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="82" name="unconnected-(U2-PB1-Pad20)">
+      <node ref="U2" pin="20" pinfunction="PB1" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="83" name="unconnected-(U2-PB8-Pad47)">
+      <node ref="U2" pin="47" pinfunction="PB8" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="84" name="unconnected-(U2-PB10-Pad22)">
+      <node ref="U2" pin="22" pinfunction="PB10" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="85" name="unconnected-(U2-PB11-Pad23)">
+      <node ref="U2" pin="23" pinfunction="PB11" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="86" name="unconnected-(U2-PB12-Pad24)">
+      <node ref="U2" pin="24" pinfunction="PB12" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="87" name="unconnected-(U2-PB13-Pad25)">
+      <node ref="U2" pin="25" pinfunction="PB13" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="88" name="unconnected-(U2-PB14-Pad26)">
+      <node ref="U2" pin="26" pinfunction="PB14" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="89" name="unconnected-(U2-PB15-Pad27)">
+      <node ref="U2" pin="27" pinfunction="PB15" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="90" name="unconnected-(U2-PC6-Pad30)">
+      <node ref="U2" pin="30" pinfunction="PC6" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="91" name="unconnected-(U2-PC7-Pad31)">
+      <node ref="U2" pin="31" pinfunction="PC7" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="92" name="unconnected-(U2-PC13-Pad1)">
+      <node ref="U2" pin="1" pinfunction="PC13" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="93" name="unconnected-(U2-PD0-Pad38)">
+      <node ref="U2" pin="38" pinfunction="PD0" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="94" name="unconnected-(U2-PD1-Pad39)">
+      <node ref="U2" pin="39" pinfunction="PD1" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="95" name="unconnected-(U2-PD2-Pad40)">
+      <node ref="U2" pin="40" pinfunction="PD2" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="96" name="unconnected-(U2-PD3-Pad41)">
+      <node ref="U2" pin="41" pinfunction="PD3" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="97" name="unconnected-(U2-PF0-OSC_IN-Pad8)">
+      <node ref="U2" pin="8" pinfunction="PF0-OSC_IN" pintype="bidirectional+no_connect"/>
+    </net>
+    <net code="98" name="unconnected-(U2-PF1-OSC_OUT-Pad9)">
+      <node ref="U2" pin="9" pinfunction="PF1-OSC_OUT" pintype="bidirectional+no_connect"/>
+    </net>
+  </nets>
+</export>
