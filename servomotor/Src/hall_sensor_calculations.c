@@ -22,7 +22,6 @@
 static const struct hall_weights_struct hall_weights = HALL_WEIGHTS_INITIALIZER;
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-
 static int8_t previous_largest_sensor = -1;
 static int32_t sensor_incremental_position = 0;
 static int32_t hall_sensor_offset = 0;
@@ -246,6 +245,12 @@ int32_t get_hall_position_raw(void)
     fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
 
     if(previous_largest_sensor == -1) {
+        if(largest_sensor == 1) {
+            sensor_incremental_position = (int32_t)SENSOR_SEGMENT_RESOLUTION;
+        }
+        else if(largest_sensor == 2) {
+            sensor_incremental_position = (int32_t)(SENSOR_SEGMENT_RESOLUTION << 1);
+        }
         previous_largest_sensor = largest_sensor;
     }
     else if (largest_sensor != previous_largest_sensor) {

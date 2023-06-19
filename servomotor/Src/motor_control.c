@@ -44,9 +44,9 @@
 #define MIN_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
 #define MAX_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE + MOTOR_CURRENT_BASELINE_TOLERANCE)
 #define MAX_MOTOR_CURRENT 300 // make sure this number is less than (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
-
 #define MAX_MOTOR_CONTROL_TICK_TIME_DIFFERENCE_FATAL_ERROR_THRESHOLD 100
-
+#define COMPUTED_VELOCITY_CALIBRATION_CONSTANT 3000
+#define COMPUTED_VELOCITY_CALIBRATION_SHIFT 16
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 
 #define ACCELERATION_SHIFT_LEFT 8
@@ -68,7 +68,7 @@ static uint8_t n_items_in_queue = 0;
 static int32_t hall_position = 0;
 static int32_t previous_hall_position;
 static int32_t hall_position_delta;
-static int32_t velocity_moving_average = 0;
+//static int32_t velocity_moving_average = 0;
 static int32_t velocity = 0;
 static int64_t current_velocity_i64 = 0;
 static int64_t current_position_i64 = 0;
@@ -895,11 +895,11 @@ void go_to_closed_loop_mode_logic(void)
 				if(motor_pwm_voltage_limit > max_motor_pwm_voltage_limit) {
 					max_motor_pwm_voltage_limit = motor_pwm_voltage_limit;
 					commutation_position_offset_at_max = global_settings.commutation_position_offset;
-					if(vibration_polarity_moving_average < 0) {
-						commutation_position_offset_at_max += HALL_TO_POSITION_90_DEGREE_OFFSET;
+					if(vibration_polarity_moving_average >= 0) {
+						global_settings.motor_phases_reversed = 0;
 					}
 					else {
-						commutation_position_offset_at_max -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+						global_settings.motor_phases_reversed = 1;
 					}
 				}
 
@@ -923,12 +923,13 @@ void go_to_closed_loop_mode_logic(void)
 		}
 	}
 	else {
-		global_settings.commutation_position_offset = commutation_position_offset_at_max;
-		current_position_i64 = 0;
+		global_settings.commutation_position_offset = commutation_position_offset_at_max + HALL_TO_POSITION_90_DEGREE_OFFSET;
+		hall_position = get_hall_position_raw();
+		((int32_t*)&current_position_i64)[0] = 0;
+		((int32_t*)&current_position_i64)[1] = hall_position;
 		current_velocity_i64 = 0;
 		motor_pwm_voltage = 0;
 		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-		hall_position = get_hall_position();
 		go_to_closed_loop_data_available = 1;
 		go_to_closed_loop_mode_active = 0;
 		motor_busy = 0;
@@ -996,7 +997,7 @@ void go_to_closed_loop_mode_logic(void)
 		current_velocity_i64 = 0;
 		motor_pwm_voltage = 0;
 		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-		hall_position = get_hall_position();
+		hall_position = get_hall_position_raw();
 		go_to_closed_loop_data_available = 1;
 		go_to_closed_loop_mode_active = 0;
 		motor_busy = 0;
@@ -1057,7 +1058,7 @@ void capture_logic(void)
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
     	if(counter == 0) {
     		counter = 256;
-    		int32_t hall_position = get_hall_position();
+    		int32_t hall_position = get_hall_position_raw();
     		memcpy(hall_data_buffer + 3, &hall_position, sizeof(hall_position));
 			rs485_transmit((char*)hall_data_buffer, 12);
     	}
@@ -1066,7 +1067,7 @@ void capture_logic(void)
     else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
     	if(counter == 0) {
     		counter = 256;
-    		int32_t hall_position = get_hall_position();
+    		int32_t hall_position = get_hall_position_raw();
 			adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
 			hall_data_buffer[0] = (adjusted_hall_sensor_readings[0] >> 16) + 32768;
 			hall_data_buffer[1] = (adjusted_hall_sensor_readings[1] >> 16) + 32768;
@@ -1246,7 +1247,12 @@ void print_max_motor_current_settings(void)
 void print_commutation_position_offset(void)
 {
 	char buf[100];
-	sprintf(buf, "Commutation position offset: %lu\n", global_settings.commutation_position_offset);
+	if(!global_settings.motor_phases_reversed) {
+		sprintf(buf, "Commutation position offset: %lu (phases not reveresed)\n", global_settings.commutation_position_offset);
+	}
+	else {
+		sprintf(buf, "Commutation position offset: %lu (phases reveresed)\n", global_settings.commutation_position_offset);
+	}
 	transmit(buf, strlen(buf));
 }
 
@@ -1292,7 +1298,12 @@ void print_hall_sensor_data(void)
 	sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu\n", hall1, hall2, hall3);
 	transmit(buf, strlen(buf));
 
-	sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, global_settings.commutation_position_offset);
+	if(!global_settings.motor_phases_reversed) {
+		sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu (phases not reversed)\n", hall_position, global_settings.commutation_position_offset);
+	}
+	else {
+		sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu (phases reversed)\n", hall_position, global_settings.commutation_position_offset);
+	}
 	transmit(buf, strlen(buf));
 }
 
@@ -1530,13 +1541,36 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
 
-#define VELOCITY_AVERAGING_SHIFT_RIGHT 8
-#define VELOCITY_AVERAGING_TIME_STEPS ((1 << VELOCITY_AVERAGING_SHIFT_RIGHT) - 1)
+//#define VELOCITY_AVERAGING_SHIFT_RIGHT 8
+//#define VELOCITY_AVERAGING_TIME_STEPS ((1 << VELOCITY_AVERAGING_SHIFT_RIGHT) - 1) // keep this maximum 255 so that our n_position_history_items counter does not overflow
+#define VELOCITY_AVERAGING_TIME_STEPS 20
 
+static int16_t position_history[VELOCITY_AVERAGING_TIME_STEPS];
+static uint8_t position_history_index = 0;
+static uint8_t n_position_history_items = 0;
 void compute_velocity(void)
 {
-	velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
-	velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
+	uint16_t latest_hall_position = (uint16_t)(((uint32_t)(hall_position + UINT32_MIDPOINT)) & 0xffff);
+	uint16_t old_recorded_hall_position = position_history[position_history_index];
+	int32_t computed_velocity = 0;
+	position_history[position_history_index] = latest_hall_position;
+	position_history_index++;
+	if(position_history_index >= VELOCITY_AVERAGING_TIME_STEPS) {
+		position_history_index = 0;
+	}
+	if(n_position_history_items < VELOCITY_AVERAGING_TIME_STEPS) {
+		n_position_history_items++;
+	}
+	if(n_position_history_items == VELOCITY_AVERAGING_TIME_STEPS) {
+		computed_velocity = latest_hall_position - old_recorded_hall_position;
+		if(computed_velocity > 32767) {
+			computed_velocity -= 65536;
+		}
+		computed_velocity = (computed_velocity * COMPUTED_VELOCITY_CALIBRATION_CONSTANT) >> COMPUTED_VELOCITY_CALIBRATION_SHIFT; 
+	}
+	velocity = computed_velocity;
+//	velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
+//	velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
 //	velocity = 0; // DEBUG
 }
 
@@ -1612,7 +1646,7 @@ uint8_t handle_queued_movements(void)
 #define DERIVATIVE_CONSTANT_PID   5000
 #endif
 #ifdef PRODUCT_NAME_M2
-#define PROPORTIONAL_CONSTANT_PID 30000
+#define PROPORTIONAL_CONSTANT_PID 20000
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   100000
 #endif
@@ -1788,6 +1822,7 @@ void motor_movement_calculations(void)
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
 			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
+			back_emf_voltage = 0;
 			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_pwm_voltage;
 			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_pwm_voltage;
 			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
@@ -1869,23 +1904,23 @@ void motor_phase_calculations(void)
     phase2 *= (uint32_t)motor_pwm_voltage;
     phase2 >>= 16;
     phase2 += 13;
-	#ifdef PRODUCT_NAME_M1
-    TIM1->CCR3 = phase2;
-	#endif
-	#ifdef PRODUCT_NAME_M2
-    TIM1->CCR3 = phase2;
-	#endif
+	if(!global_settings.motor_phases_reversed) {
+	    TIM1->CCR2 = phase2;
+	}
+	else {
+	    TIM1->CCR3 = phase2;
+	}
 
     phase3 >>= 8;
     phase3 *= (uint32_t)motor_pwm_voltage;
     phase3 >>= 16;
     phase3 += 13;
-	#ifdef PRODUCT_NAME_M1
-    TIM1->CCR2 = phase3;
-	#endif
-	#ifdef PRODUCT_NAME_M2
-    TIM1->CCR2 = phase3;
-	#endif
+	if(!global_settings.motor_phases_reversed) {
+	    TIM1->CCR3 = phase3;
+	}
+	else {
+	    TIM1->CCR2 = phase3;
+	}
 }
 
 #define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 9000
@@ -1900,7 +1935,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 
 	start_time = TIM14->CNT;
 	start_time2 = start_time;
-	hall_position = get_hall_position();
+	hall_position = get_hall_position_raw();
 	end_time = TIM14->CNT;
 	time_difference1 = end_time - start_time;
 	if(time_difference1 > max_time_difference1) {
