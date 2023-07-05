@@ -19,8 +19,7 @@ void debug_uart_init(void)
 
     USART2->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
     USART2->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE | USART_CR1_RXNEIE_RXFNEIE; // enable transmitter, receiver, and the receive interrupt
-//    HAL_NVIC_SetPriority(USART2_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
-    NVIC_SetPriority(USART2_IRQn, 3); // low priority for the debug UART
+    NVIC_SetPriority(USART2_IRQn, 3); // lowest priority for the debug UART
     NVIC_EnableIRQ(USART2_IRQn);
 }
 

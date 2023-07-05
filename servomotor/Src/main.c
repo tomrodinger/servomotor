@@ -38,7 +38,11 @@ struct __attribute__((__packed__)) firmware_version_struct {
 	uint8_t major;
 	uint8_t not_used;
 };
-struct firmware_version_struct firmware_version = {0, 8, 1, 0};
+#define NOT_USED 0xff
+#define MAJOR_FIRMWARE_VERSION 0
+#define MINOR_FIRMWARE_VERSION 8
+#define BUGFIX_FIRMWARE_VERSION 3
+struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
 
@@ -753,6 +757,14 @@ void process_debug_uart_commands(void)
         case 'r':
             NVIC_SystemReset();
             break;
+        case 'g':
+            add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
+//			enable_mosfets();
+            break;
+        case 'G':
+			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
+//			enable_mosfets();
+            break;
 		}
     	command_debug_uart = 0;
 	}
@@ -832,7 +844,6 @@ int main(void)
     portD_init();
     debug_uart_init();
     rs485_init();
-    microsecond_clock_init();
     adc_init();
     pwm_init();
     step_and_direction_init();
@@ -855,6 +866,8 @@ int main(void)
     }
     set_max_motor_current(global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
 
+    microsecond_clock_init();
+
     __enable_irq();
 
     print_start_message();
@@ -862,9 +875,6 @@ int main(void)
 //    rs485_transmit("Start\n", 6);
 
     while(1) {
-//    	check_if_break_condition();
-    	check_if_ADC_watchdog2_exceeded();
-
     	if(commandReceived) {
             processCommand(selectedAxis, command, valueBuffer);
         }
@@ -875,10 +885,8 @@ int main(void)
             detect_devices_delay--;
     	}
 
-        if(is_calibration_data_available()) {
+        if(process_calibration_data()) {
             disable_motor_control_loop();
-            process_calibration_data();
-            transmit("Saving the settings\n", 20);
             save_global_settings();
             transmit("\nResetting\n\n", 12);
             microsecond_delay(10000);
@@ -902,5 +910,7 @@ int main(void)
         else {
             red_LED_off();
         }
+//    	check_if_break_condition();
+    	check_if_ADC_watchdog2_exceeded();
     }
 }

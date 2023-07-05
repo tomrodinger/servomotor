@@ -1,6 +1,9 @@
 COMMON_SOURCE_FILES_DIR = ../common_source_files
 PRODUCT_OPTIONS := M1 M2
 
+# Define the directory of source files before using it
+DEVICE_SOURCE_FILES_DIR = Src
+
 # Find out the product name
 ifeq ($(PRODUCT_NAME),)
 	PRODUCT_OPTIONS := M1 M2
@@ -8,8 +11,11 @@ else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif
 
-# Find out what VERSION and SOFTWARE_COMPATIBILITY_CODE we are building
-VERSION=$(shell while read product version sw_compat_code; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$version; break; fi; done < VERSIONS)
+MAJOR := $(shell awk '/#define MAJOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
+MINOR := $(shell awk '/#define MINOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
+BUGFIX := $(shell awk '/#define BUGFIX_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
+FW_VER := $(MAJOR).$(MINOR).$(BUGFIX)
+VERSION := $(PRODUCT_NAME)_V26_fw$(FW_VER)
 SOFTWARE_COMPATIBILITY_CODE := $(shell while read product version sw_compat_code; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$sw_compat_code; break; fi; done < VERSIONS)
 
 # Determine what platform we are building on
@@ -25,8 +31,6 @@ else
 endif
 
 GCC_DIR ?= ${TOOLCHAIN_DIR}/bin
-
-# Compiler and linker settings
 DEVICE_SOURCE_FILES_DIR = Src
 DRIVERS_DIR = ../Drivers
 BUILD_DIR = build
@@ -45,16 +49,14 @@ INCLUDE_DIRS = \
 	-I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include \
 	-I${DRIVERS_DIR}/CMSIS/Include
 
-
 .PHONY: default
 default:
 ifeq ($(PRODUCT_NAME),)
 	@echo "Please provide a PRODUCT_NAME. Acceptable options are: $(PRODUCT_OPTIONS)"
 	@echo "Example: make PRODUCT_NAME=M1"
 else
-	${MAKE} ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware && echo "* * * SUCCESS * * *" || echo "* * * BUILD FAILED * * *"
+	${MAKE} ${BUILD_DIR}/motor_firmware_${VERSION}.firmware && echo "* * * SUCCESS * * *" || echo "* * * BUILD FAILED * * *"
 endif
-
 
 ${BUILD_DIR}:
 	mkdir -p ${BUILD_DIR}
@@ -68,23 +70,23 @@ ${BUILD_DIR}/%.o: ${DEVICE_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | 
 ${BUILD_DIR}/%.o: ${COMMON_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | ${BUILD_DIR}
 	$(GCC_DIR)/arm-none-eabi-gcc $< $(BUILD_FLAGS) -c $(INCLUDE_DIRS) $(MORE_BUILD_FLAGS) -MF"${BUILD_DIR}/$*.d" -MT"${BUILD_DIR}/$*.o" -o "${BUILD_DIR}/$*.o"
 
-.PHONY: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
-${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf: $(OBJECTS) ${COMMON_SOURCE_FILES_DIR}/memory_layout.ld
-	$(GCC_DIR)/arm-none-eabi-gcc -o "${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf" $(OBJECTS) -mcpu=cortex-m0plus -T"${COMMON_SOURCE_FILES_DIR}/memory_layout.ld" --specs=nosys.specs -Wl,-Map="${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-	$(GCC_DIR)/arm-none-eabi-size ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf
-	$(GCC_DIR)/arm-none-eabi-objdump -h -S ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf > "${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.list"
+.PHONY: ${BUILD_DIR}/motor_firmware_${VERSION}.firmware
+${BUILD_DIR}/motor_firmware_${VERSION}.elf: $(OBJECTS) ${COMMON_SOURCE_FILES_DIR}/memory_layout.ld
+	$(GCC_DIR)/arm-none-eabi-gcc -o "${BUILD_DIR}/motor_firmware_${VERSION}.elf" $(OBJECTS) -mcpu=cortex-m0plus -T"${COMMON_SOURCE_FILES_DIR}/memory_layout.ld" --specs=nosys.specs -Wl,-Map="${BUILD_DIR}/motor_firmware_${VERSION}.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	$(GCC_DIR)/arm-none-eabi-size ${BUILD_DIR}/motor_firmware_${VERSION}.elf
+	$(GCC_DIR)/arm-none-eabi-objdump -h -S ${BUILD_DIR}/motor_firmware_${VERSION}.elf > "${BUILD_DIR}/motor_firmware_${VERSION}.list"
 
-${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf
-	$(GCC_DIR)/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.elf "${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin"
+${BUILD_DIR}/motor_firmware_${VERSION}.bin: ${BUILD_DIR}/motor_firmware_${VERSION}.elf
+	$(GCC_DIR)/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/motor_firmware_${VERSION}.elf "${BUILD_DIR}/motor_firmware_${VERSION}.bin"
 
-${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin
-	${TOOLCHAIN_DIR}/bin2firmware ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
-	cp ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware firmware_releases/
+${BUILD_DIR}/motor_firmware_${VERSION}.firmware: ${BUILD_DIR}/motor_firmware_${VERSION}.bin
+	${TOOLCHAIN_DIR}/bin2firmware ${BUILD_DIR}/motor_firmware_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
+	cp ${BUILD_DIR}/motor_firmware_${VERSION}.firmware firmware_releases/
 
 .PHONY: clean
 clean:
 	$(RM) ${BUILD_DIR}/*
 
 .PHONY: program
-program: ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
-	../python_programs/upgrade_firmware.py ${BUILD_DIR}/motor_firmware_${PRODUCT_NAME}_${VERSION}.firmware
+program: ${BUILD_DIR}/motor_firmware_${VERSION}.firmware
+	../python_programs/upgrade_firmware.py ${BUILD_DIR}/motor_firmware_${VERSION}.firmware

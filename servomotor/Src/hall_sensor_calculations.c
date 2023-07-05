@@ -29,6 +29,9 @@ static uint16_t time_difference_div = 0;
 static int32_t hall_position_with_hysteresis = 0;
 static uint8_t hall_sensor_statitics_active = 0;
 static hall_sensor_statistics_t hall_sensor_statistics;
+static volatile int32_t latest_hall_position = 0;
+static volatile int32_t latest_hall_position_raw = 0;
+
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
@@ -151,7 +154,9 @@ int32_t get_hall_position(void)
         previous_largest_sensor = largest_sensor;
     }
 
-	return sensor_incremental_position + fraction - hall_sensor_offset;
+	int32_t hall_position = sensor_incremental_position + fraction - hall_sensor_offset;
+    latest_hall_position = hall_position;
+	return hall_position;
 }
 
 
@@ -245,10 +250,13 @@ int32_t get_hall_position_raw(void)
     fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
 
     if(previous_largest_sensor == -1) {
-        if(largest_sensor == 1) {
+        if(largest_sensor == 0) {
+            sensor_incremental_position = 0;
+        }
+        else if(largest_sensor == 1) {
             sensor_incremental_position = (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
-        else if(largest_sensor == 2) {
+        else {
             sensor_incremental_position = (int32_t)(SENSOR_SEGMENT_RESOLUTION << 1);
         }
         previous_largest_sensor = largest_sensor;
@@ -269,7 +277,9 @@ int32_t get_hall_position_raw(void)
         previous_largest_sensor = largest_sensor;
     }
 
-	return sensor_incremental_position + fraction;
+    int32_t hall_position = sensor_incremental_position + fraction;
+    latest_hall_position_raw = hall_position;
+	return hall_position;
 }
 
 
@@ -291,24 +301,28 @@ int32_t get_hall_position_with_hysteresis(void)
 
 int32_t zero_hall_position(void)
 {
+    previous_largest_sensor = -1;
+    return 0;
+}
+
+/*
+int32_t zero_hall_position(void)
+{
 //	previous_largest_sensor = -1;
 //	sensor_incremental_position = 0;
 //    int32_t hall_sensor_offset_saved = hall_sensor_offset;
-	int32_t hall_position = get_hall_position();
-    int32_t hall_position_adjustment = hall_position;
+    int32_t hall_position_adjustment = latest_hall_position_raw;
 	hall_sensor_offset += hall_position_adjustment;
     return hall_position_adjustment;
 }
-
+*/
 
 void print_hall_position(void)
 {
 	char buf[100];
-	int32_t hall_position = get_hall_position();
-	sprintf(buf, "hall_position: %d   time_difference_div: %hu\n", (int)hall_position, time_difference_div);
+	sprintf(buf, "hall_position: %ld   time_difference_div: %hu\n", latest_hall_position, time_difference_div);
 	transmit(buf, strlen(buf));
-	int32_t hall_position_raw = get_hall_position_raw();
-	sprintf(buf, "hall_position_raw: %ld   hall_position_offset: %ld\n", hall_position_raw, hall_sensor_offset);
+	sprintf(buf, "hall_position_raw: %ld   hall_position_offset: %ld\n", latest_hall_position_raw, hall_sensor_offset);
 	transmit(buf, strlen(buf));
 }
 

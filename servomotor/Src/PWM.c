@@ -28,7 +28,7 @@ void pwm_init(void)
 
     TIM1->CCMR1 |= TIM_CCMR1_OC1CE | TIM_CCMR1_OC2CE; // enable the ability to force 0 onto these channels when a fault signal is detected (from the analog watchdog in this case)
     TIM1->CCMR2 |= TIM_CCMR2_OC3CE;                   // same as above but for the third channel
-    TIM1->SMCR = TIM_SMCR_OCCS;
+    TIM1->SMCR = TIM_SMCR_OCCS; // select the source that will cause the output of the PWM to be cleared
 
 //    TIM1->BDTR = TIM_BDTR_MOE | TIM_BDTR_AOE | TIM_BDTR_BKP | TIM_BDTR_BKE | TIM_BDTR_OSSR | TIM_BDTR_OSSI; // main output enable, on break put lines in idle state only for the current PWM cycle, enable the break function
     TIM1->BDTR = TIM_BDTR_MOE | TIM_BDTR_AOE | TIM_BDTR_OSSR | TIM_BDTR_OSSI; // main output enable, on break put lines in idle state only for the current PWM cycle, enable the break function
@@ -42,8 +42,6 @@ void pwm_init(void)
 
     TIM1->SR = 0; // clear all the interrupt flags
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-
-    reset_time_profiler();
 
     NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 0); // the interrupt that controls the motor has the highest priority
 	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer

@@ -93,7 +93,7 @@ int32_t get_motor_position(void);
 int32_t get_hall_sensor_position(void);
 uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
-void process_calibration_data(void);
+uint8_t process_calibration_data(void);
 void set_motor_current_baseline(void);
 void set_motor_commutation_position_offset(uint32_t _commutation_position_offset);
 void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);

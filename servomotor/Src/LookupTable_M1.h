@@ -9,8 +9,8 @@
 #define ONE_REVOLUTION_STEPS 7
 #define HALL_SAMPLES_PER_PRINT 8
 #define WEIGHTS_PER_HALL_SENSOR 3
-#define SENSOR_SEGMENT_RESOLUTION_DIV_2 3840
-#define SENSOR_SEGMENT_RESOLUTION 7680
+#define SENSOR_SEGMENT_RESOLUTION_DIV_2 3808
+#define SENSOR_SEGMENT_RESOLUTION 7616
 #define CALIBRATION_CAPTURE_STEP_SIZE 128 // this should be slow so that data can be captured and collected accurately
 
 
@@ -21,9 +21,9 @@ struct hall_weights_struct {
 };
 
 #define HALL_WEIGHTS_INITIALIZER { \
-    {  3442,   -399,      1}, \
-    {  4095,   -565,    588}, \
-    {  3215,   -264,    -27}, \
+    {  3544,    319,    269}, \
+    {  4248,    -16,    344}, \
+    {  4759,     49,   -670}, \
 }
 
 #endif
