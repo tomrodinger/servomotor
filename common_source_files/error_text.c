@@ -40,6 +40,7 @@ char error_text[] =
     "framing error\0"                         // error 36
     "overrun error\0"                         // error 37
     "noise error\0"                           // error 38
+    "go to closed loop failed\0"              // error 39
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)
