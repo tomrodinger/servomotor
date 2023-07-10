@@ -18,19 +18,19 @@
 
 #define UINT32_MIDPOINT 2147483648
 #define HALL_POSITION_HYSTERESIS 100
+#define ONE_REVOLUTION_HALL_COUNTS (SENSOR_SEGMENT_RESOLUTION_DIV_2 * TOTAL_NUMBER_OF_SEGMENTS)
 
 static const struct hall_weights_struct hall_weights = HALL_WEIGHTS_INITIALIZER;
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 static int8_t previous_largest_sensor = -1;
-static int32_t sensor_incremental_position = 0;
-static int32_t hall_sensor_offset = 0;
+static int32_t previous_fraction = 0;
+static int32_t sensor_position = 0;
+static volatile int32_t latest_sensor_position = 0;
 static uint16_t time_difference_div = 0;
-static int32_t hall_position_with_hysteresis = 0;
 static uint8_t hall_sensor_statitics_active = 0;
 static hall_sensor_statistics_t hall_sensor_statistics;
 static volatile int32_t latest_hall_position = 0;
-static volatile int32_t latest_hall_position_raw = 0;
 
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
@@ -46,7 +46,8 @@ void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjus
     adjusted_hall_sensor_readings[2] = d2;
 }
 
-int32_t get_hall_position(void)
+
+get_sensor_position_return_t get_sensor_position(void)
 {
     uint16_t hall_sensor_readings[3];
 	int32_t d[3];
@@ -56,7 +57,7 @@ int32_t get_hall_position(void)
     int32_t fraction;
     static uint16_t start_time;
 	static uint16_t end_time;
-
+    get_sensor_position_return_t hall_position_return_value = {0, 0};
 
 	hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
                                 ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
@@ -136,166 +137,47 @@ int32_t get_hall_position(void)
     fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
 
     if(previous_largest_sensor == -1) {
-        previous_largest_sensor = largest_sensor;
-    }
-    else if (largest_sensor != previous_largest_sensor) {
-        if (largest_sensor - previous_largest_sensor == 1) {
-            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        else if (largest_sensor - previous_largest_sensor == -1) {
-            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        else if (largest_sensor - previous_largest_sensor == -2) {
-            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        else {
-            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        previous_largest_sensor = largest_sensor;
-    }
-
-	int32_t hall_position = sensor_incremental_position + fraction - hall_sensor_offset;
-    latest_hall_position = hall_position;
-	return hall_position;
-}
-
-
-int32_t get_hall_position_raw(void)
-{
-    uint16_t hall_sensor_readings[3];
-	int32_t d[3];
-    int8_t largest_sensor;
-    int32_t numerator;
-    int32_t denominator;
-    int32_t fraction;
-    static uint16_t start_time;
-	static uint16_t end_time;
-
-
-	hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[1] = ((ADC_buffer[HALL2_ADC_CYCLE_INDEX] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[2] = ((ADC_buffer[HALL3_ADC_CYCLE_INDEX] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
-
-    if(hall_sensor_statitics_active) {
-        for(uint8_t h = 0; h < 3; h++) {
-            if(hall_sensor_readings[h] > hall_sensor_statistics.max_value[h]) {
-                hall_sensor_statistics.max_value[h] = hall_sensor_readings[h];
-            }
-            if(hall_sensor_readings[h] < hall_sensor_statistics.min_value[h]) {
-                hall_sensor_statistics.min_value[h] = hall_sensor_readings[h];
-            }
-            if(hall_sensor_statistics.n < 0xFFFFFFFF) {
-                hall_sensor_statistics.sum[h] += hall_sensor_readings[h];
-            }
-        }
-        if(hall_sensor_statistics.n < 0xFFFFFFFF) {
-            hall_sensor_statistics.n++;
-        }
-    }
-
-	adjust_hall_sensor_readings(hall_sensor_readings, d);
-
-    if((d[0] >= d[1]) && (d[0] >= d[2])) { // check if d[0] is the highest
-        largest_sensor = 0;
-        numerator = d[1] - d[2];
-        if(d[2] > d[1]) {
-            denominator = d[0] - d[1];
-        }
-        else {
-            denominator = d[0] - d[2];
-        }
-    }
-    else if ((d[1] >= d[2]) && (d[1] >= d[0])) { // check if d[1] is the highest
-        largest_sensor = 1;
-        numerator = d[2] - d[0];
-        if(d[0] > d[2]) {
-            denominator = d[1] - d[2];
-        }
-        else {
-            denominator = d[1] - d[0];
-        }
-    }
-    else {                                    // otherwise d[2] is the highest
-        largest_sensor = 2;
-        numerator = d[0] - d[1];
-        if(d[1] > d[0]) {
-            denominator = d[2] - d[0];
-        }
-        else {
-            denominator = d[2] - d[1];
-        }
-    }
-
-//    numerator >>= 10;
-//    denominator >>= 10;
-
-    while((numerator > 32767) || (numerator < -32767)) {
-        numerator >>= 1;
-        denominator >>= 1;
-    }
-
-    start_time = TIM14->CNT;
-    // watch out: it seems that this division will give the wrong result if the denominator exceeds the int16_t range
-//    #ifdef PRODUCT_NAME_M1
-    fraction = numerator * SENSOR_SEGMENT_RESOLUTION_DIV_2 / denominator;
-//    #endif
-//    #ifdef PRODUCT_NAME_M2
-//    fraction = ((numerator * (SENSOR_SEGMENT_RESOLUTION_DIV_2 >> 3) / denominator) << 3);
-//    #endif
-    end_time = TIM14->CNT;
-    time_difference_div = end_time - start_time;
-    fraction = fraction + SENSOR_SEGMENT_RESOLUTION_DIV_2;
-
-    if(previous_largest_sensor == -1) {
+        hall_position_return_value.change = 0;
         if(largest_sensor == 0) {
-            sensor_incremental_position = 0;
+            sensor_position = 0;
         }
         else if(largest_sensor == 1) {
-            sensor_incremental_position = (int32_t)SENSOR_SEGMENT_RESOLUTION;
+            sensor_position = (int32_t)SENSOR_SEGMENT_RESOLUTION;
         }
         else {
-            sensor_incremental_position = (int32_t)(SENSOR_SEGMENT_RESOLUTION << 1);
+            sensor_position = (int32_t)(SENSOR_SEGMENT_RESOLUTION << 1);
         }
         previous_largest_sensor = largest_sensor;
     }
-    else if (largest_sensor != previous_largest_sensor) {
-        if (largest_sensor - previous_largest_sensor == 1) {
-            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
+    else {
+        hall_position_return_value.change = fraction - previous_fraction;
+        if (largest_sensor != previous_largest_sensor) {
+            if (largest_sensor - previous_largest_sensor == 1) {
+                hall_position_return_value.change += (int32_t)SENSOR_SEGMENT_RESOLUTION;
+            }
+            else if (largest_sensor - previous_largest_sensor == -1) {
+                hall_position_return_value.change -= (int32_t)SENSOR_SEGMENT_RESOLUTION;
+            }
+            else if (largest_sensor - previous_largest_sensor == -2) {
+                hall_position_return_value.change += (int32_t)SENSOR_SEGMENT_RESOLUTION;
+            }
+            else {
+                hall_position_return_value.change -= (int32_t)SENSOR_SEGMENT_RESOLUTION;
+            }
+            previous_largest_sensor = largest_sensor;
         }
-        else if (largest_sensor - previous_largest_sensor == -1) {
-            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        else if (largest_sensor - previous_largest_sensor == -2) {
-            sensor_incremental_position = sensor_incremental_position + (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        else {
-            sensor_incremental_position = sensor_incremental_position - (int32_t)SENSOR_SEGMENT_RESOLUTION;
-        }
-        previous_largest_sensor = largest_sensor;
     }
-
-    int32_t hall_position = sensor_incremental_position + fraction;
-    latest_hall_position_raw = hall_position;
-	return hall_position;
-}
-
-
-int32_t get_hall_position_with_hysteresis(void)
-{
-	int32_t hall_position;
-
-	hall_position = get_hall_position();
-	if(hall_position > hall_position_with_hysteresis) {
-		hall_position_with_hysteresis = hall_position;
-	}
-	else if(hall_position + HALL_POSITION_HYSTERESIS < hall_position_with_hysteresis) {
-		hall_position_with_hysteresis = hall_position + HALL_POSITION_HYSTERESIS;
-	}
-
-	return hall_position_with_hysteresis;
+    previous_fraction = fraction;
+    sensor_position += hall_position_return_value.change;
+    if(sensor_position >= ONE_REVOLUTION_HALL_COUNTS) {
+        sensor_position -= ONE_REVOLUTION_HALL_COUNTS;
+    }
+    else if(sensor_position < 0) {
+        sensor_position += ONE_REVOLUTION_HALL_COUNTS;
+    }
+    latest_sensor_position = sensor_position;
+    hall_position_return_value.position = sensor_position;
+	return hall_position_return_value;
 }
 
 
@@ -305,24 +187,11 @@ int32_t zero_hall_position(void)
     return 0;
 }
 
-/*
-int32_t zero_hall_position(void)
-{
-//	previous_largest_sensor = -1;
-//	sensor_incremental_position = 0;
-//    int32_t hall_sensor_offset_saved = hall_sensor_offset;
-    int32_t hall_position_adjustment = latest_hall_position_raw;
-	hall_sensor_offset += hall_position_adjustment;
-    return hall_position_adjustment;
-}
-*/
 
-void print_hall_position(void)
+void print_sensor_position(void)
 {
 	char buf[100];
-	sprintf(buf, "hall_position: %ld   time_difference_div: %hu\n", latest_hall_position, time_difference_div);
-	transmit(buf, strlen(buf));
-	sprintf(buf, "hall_position_raw: %ld   hall_position_offset: %ld\n", latest_hall_position_raw, hall_sensor_offset);
+	sprintf(buf, "sensor_position: %ld   time_difference_div: %hu\n", latest_sensor_position, time_difference_div);
 	transmit(buf, strlen(buf));
 }
 

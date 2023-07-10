@@ -90,7 +90,7 @@ void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);
 int32_t get_motor_position(void);
-int32_t get_hall_sensor_position(void);
+int32_t get_hall_position(void);
 uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 uint8_t process_calibration_data(void);
@@ -100,7 +100,7 @@ void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t ne
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
 void disable_motor_control_loop(void);
 uint8_t is_go_to_closed_loop_data_available(void);
-void print_go_to_closed_loop_data(void);
+void process_go_to_closed_loop_data(void);
 
 typedef struct __attribute__((__packed__)) {
 	int32_t predicted_final_velocity;

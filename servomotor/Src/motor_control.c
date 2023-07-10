@@ -68,8 +68,8 @@ static uint8_t queue_write_position = 0;
 static uint8_t queue_read_position = 0;
 static uint8_t n_items_in_queue = 0;
 
+static int32_t sensor_position = 0; // this is the rotational position of the magnetic ring and is used for electrical commutation
 static int32_t hall_position = 0;
-static int32_t previous_hall_position = 0;
 static int32_t hall_position_delta = 0;
 //static int32_t velocity_moving_average = 0;
 static int32_t velocity = 0;
@@ -92,14 +92,8 @@ static int32_t integral_term = 0;
 static int32_t previous_error = 0;
 static int32_t low_pass_filtered_error_change = 0;
 
-static uint8_t go_to_closed_loop_mode_active = 0;
-static int32_t commutation_scan_microsteps;
+static uint8_t go_to_closed_loop_step = 0;
 static uint16_t vibration_four_step;
-static int32_t sum_delta;
-static int32_t previous_sum_delta;
-static int32_t motor_pwm_voltage_limit;
-static int32_t vibration_polarity_moving_average;
-static int32_t max_motor_pwm_voltage_limit;
 static uint16_t motor_current_baseline = 1350;
 static int32_t position_lower_safety_limit = -2000000000;
 static int32_t position_upper_safety_limit = 2000000000;
@@ -517,6 +511,7 @@ void handle_calibration_logic(void)
 //		if(n_items_in_queue == (N_QUEUED_CALIBRATION_CYCLES - 3) * N_QUEUED_CALIBRATION_MOVES_PER_CYCLE) {
 		if(current_position.i64 == 0) {
 			zero_hall_position();
+			hall_position = 0;
 			calibration_data_queue_upper_threshold = (N_QUEUED_CALIBRATION_CYCLES - 3) * N_QUEUED_CALIBRATION_MOVES_PER_CYCLE;
 			calibration_data_queue_lower_threshold = calibration_data_queue_upper_threshold - N_QUEUED_CALIBRATION_MOVES_PER_CYCLE;
 			calibration_data_index = 0;
@@ -734,30 +729,9 @@ uint8_t process_calibration_data(void)
 
 static volatile int32_t *go_to_closed_loop_data = (void*)&calibration; // go_to_closed_loop_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
 static volatile uint16_t go_to_closed_loop_max_data_items = sizeof(calibration) / sizeof(int32_t);
-static volatile uint8_t go_to_closed_loop_data_available = 0;
 static volatile uint16_t go_to_closed_loop_avg_counter = 0;
 static volatile uint16_t data_index = 0;
 
-#define COMMUTATION_SCAN_MICROSTEPS (N_COMMUTATION_SUB_STEPS * N_COMMUTATION_STEPS) // one electrical rotation
-#define COMMUTATION_SCAN_STEP_FACTOR 1
-//#define COMMUTATION_SCAN_STEP_SIZE (N_COMMUTATION_SUB_STEPS * N_COMMUTATION_STEPS / COMMUTATION_SCAN_STEPS)
-#ifdef PRODUCT_NAME_M1
-#define COMMUTATION_SCAN_MIN_STEP_SIZE 100
-#define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 100
-#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE 2000
-#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 10
-#define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 120
-#endif
-#ifdef PRODUCT_NAME_M2
-#define COMMUTATION_SCAN_STEP_SIZE 900
-#define COMMUTATION_SCAN_MIN_STEP_SIZE 10
-#define GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE 3600
-#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE 200
-#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 50
-#define MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM 300
-#define PWM_VOLTAGE_TO_HALL_FEEDBACK_PHASE_SHIFT 90
-#endif
-#define MOVING_AVERAGE_SHIFT_RIGHT 7
 void start_go_to_closed_loop_mode(void)
 {
 	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
@@ -771,82 +745,62 @@ void start_go_to_closed_loop_mode(void)
 	}
 
 	motor_busy = 1;
-	go_to_closed_loop_mode_active = 1;
 
 	memset((void*)go_to_closed_loop_data, 0, go_to_closed_loop_max_data_items * sizeof(int32_t));
 	
 	transmit("Go to closed loop mode start\n", 29);
 
 	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-
 	desired_motor_pwm_voltage = 0;
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
 	enable_mosfets();
-//	global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
 	vibration_four_step = 0;
-	commutation_scan_microsteps = 0;
-	#ifdef PRODUCTION_VERSION
-		motor_pwm_voltage_limit = 0;
-	#else
-		motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
-	#endif
-	previous_sum_delta = 0;
-	sum_delta = 0;
-	vibration_polarity_moving_average = 0;
-	max_motor_pwm_voltage_limit = 0;
-//	zero_hall_position();
-	previous_hall_position = 0;
-
-	go_to_closed_loop_avg_counter = 0; // DEBUG
-	data_index = 0; // DEBUG
-
+	go_to_closed_loop_avg_counter = 0;
+	data_index = 0;
+	go_to_closed_loop_step = 1;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
 
-#define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG 40 // DEBUG
+#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE 50
 #define DESIRED_MOTOR_PWM_VOLTAGE_STEP 1
-#define GO_TO_CLOSED_LOOP_N_DATA_ITEMS ((MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG * 8 / DESIRED_MOTOR_PWM_VOLTAGE_STEP) >> 1)
+#define GO_TO_CLOSED_LOOP_N_DATA_ITEMS ((GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE * 8 / DESIRED_MOTOR_PWM_VOLTAGE_STEP) >> 1)
+#define GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES 1
 void go_to_closed_loop_mode_logic(void)
 {
-	if(go_to_closed_loop_avg_counter < 100) {
-		if((data_index >> 1) < go_to_closed_loop_max_data_items) {
-			if(go_to_closed_loop_avg_counter >= 10) {
-				go_to_closed_loop_data[data_index >> 1] += hall_position_delta;
+	if(go_to_closed_loop_step == 1) {
+		if(go_to_closed_loop_avg_counter < 100) {
+			if((data_index >> 1) < go_to_closed_loop_max_data_items) {
+				if(go_to_closed_loop_avg_counter >= 10) {
+					go_to_closed_loop_data[data_index >> 1] += hall_position_delta;
+				}
+				data_index++;
 			}
-			data_index++;
-		}
-		if((vibration_four_step & 1) == 0) {
-			desired_motor_pwm_voltage += DESIRED_MOTOR_PWM_VOLTAGE_STEP;
-			if(desired_motor_pwm_voltage >= MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM_DEBUG) {
-				vibration_four_step++;
+			if((vibration_four_step & 1) == 0) {
+				desired_motor_pwm_voltage += DESIRED_MOTOR_PWM_VOLTAGE_STEP;
+				if(desired_motor_pwm_voltage >= GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE) {
+					vibration_four_step++;
+				}
+			}
+			else {
+				desired_motor_pwm_voltage -= DESIRED_MOTOR_PWM_VOLTAGE_STEP;
+				if(desired_motor_pwm_voltage <= 0) {
+					vibration_four_step++;
+					if(vibration_four_step < 8) {	
+						global_settings.commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET;
+					}
+					else {
+						global_settings.commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
+						vibration_four_step = 0;
+						data_index = 0;
+						go_to_closed_loop_avg_counter++;
+					}
+				}
 			}
 		}
 		else {
-			desired_motor_pwm_voltage -= DESIRED_MOTOR_PWM_VOLTAGE_STEP;
-			if(desired_motor_pwm_voltage <= 0) {
-				vibration_four_step++;
-				if(vibration_four_step < 8) {	
-					global_settings.commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET;
-				}
-				else {
-					global_settings.commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
-					vibration_four_step = 0;
-					data_index = 0;
-					go_to_closed_loop_avg_counter++;
-				}
-			}
+			go_to_closed_loop_step = 2;
 		}
 	}
-	else {
-		go_to_closed_loop_data_available = 1;
-		go_to_closed_loop_mode_active = 0;
-	}
-}
-
-
-uint8_t is_go_to_closed_loop_data_available(void)
-{
-	return go_to_closed_loop_data_available;
 }
 
 
@@ -861,18 +815,30 @@ struct goertzel_algorithm_result_t goertzel_algorithm(volatile int32_t samples[]
     int32_t d1 = 0;
 	int32_t d2 = 0;
 	uint16_t n;
-	char buf[150];
+	uint16_t n2;
+//	char buf[150];
 
     printf("Running the Goertzel algorithm on %hu samples\n", n_samples);
 
+	n2 = GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES;
     for(n = 0; n < n_samples; n++) {
         int64_t d1_times_w_real_multiplier_64bit = (int64_t)d1 * W_REAL_MULTIPLIER;
-        int32_t y = samples[n] + (d1_times_w_real_multiplier_64bit >> W_REAL_SHIFT) - d2;
+		if(n2 < 0) {
+			n2 += n_samples;
+		}
+		else if(n2 >= n_samples) {
+			n2 -= n_samples;
+		}
+        int32_t y = samples[n2] + (d1_times_w_real_multiplier_64bit >> W_REAL_SHIFT) - d2;
+		n2++;
+		if(n2 >= n_samples) {
+			n2 = 0;
+		}
         d2 = d1;
         d1 = y;
-		sprintf(buf, "n: %hu, d1_times_w_real_multiplier_64bit: %ld, y: %ld, d1: %ld, d2: %ld\n",
-                 n, (int32_t)d1_times_w_real_multiplier_64bit, y, d1, d2);
-		transmit(buf, strlen(buf));
+//		sprintf(buf, "n: %hu, d1_times_w_real_multiplier_64bit: %ld, y: %ld, d1: %ld, d2: %ld\n",
+//                 n, (int32_t)d1_times_w_real_multiplier_64bit, y, d1, d2);
+//		transmit(buf, strlen(buf));
     }
 
     int64_t d1_times_w_real_multiplier_64bit = (int64_t)d1 * W_REAL_MULTIPLIER;
@@ -887,56 +853,73 @@ struct goertzel_algorithm_result_t goertzel_algorithm(volatile int32_t samples[]
 }
 
 
-void print_go_to_closed_loop_data(void)
+void process_go_to_closed_loop_data(void)
 {
 	char buf[100];
 	uint16_t i;
-	for(i = 0; i < GO_TO_CLOSED_LOOP_N_DATA_ITEMS; i++) {
-		sprintf(buf, "%hu: hall_position_delta: %ld\n", i, go_to_closed_loop_data[i]);
-		transmit(buf, strlen(buf));
-	}
-	struct goertzel_algorithm_result_t result = goertzel_algorithm(go_to_closed_loop_data, (uint16_t)GO_TO_CLOSED_LOOP_N_DATA_ITEMS);
-	sprintf(buf, "Goertzel algorithm result: real: %ld, imag: %ld\n", result.real, result.imag);
-	transmit(buf, strlen(buf));
-	int32_t abs_result_real = abs(result.real);
-	int32_t abs_result_imag = abs(result.imag);
-	if(abs_result_real > abs_result_imag) {
-		int32_t ratio = abs_result_real / abs_result_imag;
-		sprintf(buf, "Ratio: %ld\n", ratio);
-		transmit(buf, strlen(buf));
-		if(ratio < 3) {
-			transmit("Ratio is too small\n", 19);
-			fatal_error(39); // "go to closed loop failed" (all error text is defined in error_text.c)
+	int32_t ratio;
+
+	if(go_to_closed_loop_step == 2) {
+		transmit("Go to closed loop data:\n", 24);
+		for(i = 0; i < GO_TO_CLOSED_LOOP_N_DATA_ITEMS; i++) {
+			sprintf(buf, "   %hu: %ld\n", i, go_to_closed_loop_data[i]);
+			transmit(buf, strlen(buf));
 		}
-		if(result.real >= 0.0) {
-			transmit("Angle determined to be very roughly 0 degrees\n", 46);
-			global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
+		struct goertzel_algorithm_result_t result = goertzel_algorithm(go_to_closed_loop_data, (uint16_t)GO_TO_CLOSED_LOOP_N_DATA_ITEMS);
+		sprintf(buf, "Goertzel algorithm result: real: %ld, imag: %ld\n", result.real, result.imag);
+		transmit(buf, strlen(buf));
+		int32_t abs_result_real = abs(result.real);
+		int32_t abs_result_imag = abs(result.imag);
+		if(abs_result_real > abs_result_imag) {
+			if(abs_result_imag == 0) {
+				ratio = 32000;
+			}
+			else {
+				ratio = abs_result_real / abs_result_imag;
+			}
+			sprintf(buf, "Ratio: %ld\n", ratio);
+			transmit(buf, strlen(buf));
+			if(ratio < 3) {
+				transmit("Ratio is too small\n", 19);
+				fatal_error(39); // "go to closed loop failed" (all error text is defined in error_text.c)
+			}
+			if(result.real >= 0.0) {
+				transmit("Angle determined to be very roughly 0 degrees\n", 46);
+				global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
+			}
+			else {
+				transmit("Angle determined to be very roughly 180 degrees\n", 48);
+				global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 1);
+			}
 		}
 		else {
-			transmit("Angle determined to be very roughly 180 degrees\n", 48);
-			global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 1);
+			if(abs_result_real == 0) {
+				ratio = 32000;
+			}
+			else {
+				ratio = abs_result_imag / abs_result_real;
+			}
+			sprintf(buf, "Ratio: %ld\n", ratio);
+			transmit(buf, strlen(buf));
+			if(ratio < 3) {
+				transmit("Ratio is too small\n", 19);
+				fatal_error(39); // "go to closed loop failed" (all error text is defined in error_text.c)
+			}
+			if(result.imag >= 0.0) {
+				transmit("Angle determined to be very roughly 90 degrees\n", 47);
+				global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 2);
+			}
+			else {
+				transmit("Angle determined to be very roughly 270 degrees\n", 48);
+				global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 0);
+			}
 		}
+
+		zero_position_and_hall_sensor();
+		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
+		go_to_closed_loop_step = 0;
+		motor_busy = 0;
 	}
-	else {
-		int32_t ratio = abs_result_imag / abs_result_real;
-		sprintf(buf, "Ratio: %ld\n", ratio);
-		transmit(buf, strlen(buf));
-		if(ratio < 3) {
-			transmit("Ratio is too small\n", 19);
-			fatal_error(39); // "go to closed loop failed" (all error text is defined in error_text.c)
-		}
-		if(result.imag >= 0.0) {
-			transmit("Angle determined to be very roughly 90 degrees\n", 47);
-			global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 2);
-		}
-		else {
-			transmit("Angle determined to be very roughly 270 degrees\n", 48);
-			global_settings.commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 0);
-		}
-	}
-	set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-	go_to_closed_loop_data_available = 0;
-	motor_busy = 0;
 }
 
 
@@ -954,42 +937,43 @@ void start_capture(uint8_t capture_type)
 
 void capture_logic(void)
 {
-    uint16_t hall_data_buffer[6];
     int32_t adjusted_hall_sensor_readings[3];
     static uint16_t counter = 0;
 
     if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
     	if(counter == 0) {
     		counter = 256;
-
+		    uint16_t hall_data_buffer[4];
     		hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
     		hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
     		hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
 			hall_data_buffer[3] = 65535;
-			rs485_transmit((char*)hall_data_buffer, 8);
+			rs485_transmit((char*)hall_data_buffer, sizeof(hall_data_buffer));
     	}
     	counter--;
     }
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
     	if(counter == 0) {
     		counter = 256;
-    		int32_t hall_position = get_hall_position_raw();
-    		memcpy(hall_data_buffer + 3, &hall_position, sizeof(hall_position));
-			rs485_transmit((char*)hall_data_buffer, 12);
+			get_sensor_position_return_t get_sensor_position_return = get_sensor_position();
+    		memcpy(hall_data_buffer, &get_sensor_position_return.position, sizeof(get_sensor_position_return.position));
+			rs485_transmit((char*)&get_sensor_position_return.position, sizeof(get_sensor_position_return.position));
     	}
     	counter--;
     }
     else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
     	if(counter == 0) {
     		counter = 256;
-    		int32_t hall_position = get_hall_position_raw();
+		    uint16_t hall_data_buffer[4];
+    		hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
+    		hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
+    		hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
 			adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
 			hall_data_buffer[0] = (adjusted_hall_sensor_readings[0] >> 16) + 32768;
 			hall_data_buffer[1] = (adjusted_hall_sensor_readings[1] >> 16) + 32768;
 			hall_data_buffer[2] = (adjusted_hall_sensor_readings[2] >> 16) + 32768;
-    		memcpy(hall_data_buffer + 3, &hall_position, sizeof(hall_position));
-			hall_data_buffer[5] = 65535; // magic number to indicate the end of the data
-			rs485_transmit((char*)hall_data_buffer, 12);
+			hall_data_buffer[3] = 65535; // magic number to indicate the end of the data
+			rs485_transmit((char*)hall_data_buffer, sizeof(hall_data_buffer));
     	}
     	counter--;
     }
@@ -1062,7 +1046,7 @@ void fast_capture_until_trigger(void)
 void print_position(void)
 {
 	char buf[100];
-	sprintf(buf, "current_position: %ld\n", current_position.i32[1]);
+	sprintf(buf, "current_position: %ld   hall_position: %ld\n", current_position.i32[1], hall_position);
 	transmit(buf, strlen(buf));
 }
 
@@ -1707,7 +1691,7 @@ void motor_movement_calculations(void)
 {
 	uint8_t moving = 0; // 1 indicates that the motor is moving, 0 indicates that it is stopped
 
-    if(go_to_closed_loop_mode_active) {
+    if(go_to_closed_loop_step != 0) {
         go_to_closed_loop_mode_logic();
     }
     else if(homing_active) {
@@ -1736,7 +1720,7 @@ void motor_movement_calculations(void)
 		}
 	}
 	else {
-		commutation_position = hall_position + global_settings.commutation_position_offset;
+		commutation_position = sensor_position + global_settings.commutation_position_offset;
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 			motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
 			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
@@ -1850,15 +1834,19 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	uint16_t end_time2;
 	uint16_t time_difference_delay;
 	static uint8_t hall_position_delta_violation = 0;
+	get_sensor_position_return_t get_sensor_position_return;
 
 	start_time = TIM14->CNT;
 	start_time2 = start_time;
-	hall_position = get_hall_position_raw();
+	get_sensor_position_return = get_sensor_position();
 	end_time = TIM14->CNT;
 	time_difference1 = end_time - start_time;
 	if(time_difference1 > max_time_difference1) {
     	max_time_difference1 = time_difference1;
 	}
+	sensor_position = get_sensor_position_return.position;
+	hall_position_delta = get_sensor_position_return.change;
+	hall_position += hall_position_delta;
 
 	// DEBUG following 8 lines
 	#define MAX_ASSUMED_MOTOR_RPM 1000
@@ -1870,9 +1858,6 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 //	else if(hall_position < previous_hall_position - MAX_POSITION_COUNTS_PER_CONTROL_CYCLE) {
 //		hall_position = previous_hall_position - MAX_POSITION_COUNTS_PER_CONTROL_CYCLE;
 //	}
-
-	hall_position_delta = hall_position - previous_hall_position;
-	previous_hall_position = hall_position;
 
 	if(hall_position_delta > max_hall_position_delta) {
 		max_hall_position_delta = hall_position_delta;
@@ -2060,23 +2045,15 @@ uint32_t get_update_frequency(void)
 
 void zero_position_and_hall_sensor(void)
 {
-// Calculations:
-//    commutation_position = hall_position + commutation_position_offset
-//    the hall_position will now be reset to zero, but we want the commutation_position to not change
-//    commutation_position = (hall_position - hall_position) + (commutation_position_offset + hall_position)
-//    From this wee see that we need to adjust the commutation_position_offset by the hall_position and then zero out
-//    the hall_position.
-
-    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	if(n_items_in_queue != 0) {
 		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
 	}
-    int32_t hall_position_adjustment = zero_hall_position();
-	global_settings.commutation_position_offset += hall_position_adjustment;
+
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	current_position.i64 = 0;
 	current_velocity_i64 = 0;
+	hall_position = 0;
 	hall_position_delta = 0;
-	previous_hall_position = 0;
 	velocity = 0;
 	integral_term = 0;
 	previous_error = 0;
@@ -2155,7 +2132,7 @@ int32_t get_motor_position(void)
 }
 
 
-int32_t get_hall_sensor_position(void)
+int32_t get_hall_position(void)
 {
     return hall_position;
 }

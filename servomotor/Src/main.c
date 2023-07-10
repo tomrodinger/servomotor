@@ -459,7 +459,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             {
                 int32_t hall_sensor_position;
                 if(axis != ALL_ALIAS) {
-                    hall_sensor_position = get_hall_sensor_position();
+                    hall_sensor_position = get_hall_position();
                     rs485_transmit("R\x01\x04", 3);
                     rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
                 }
@@ -689,7 +689,7 @@ void process_debug_uart_commands(void)
     	case 'p':
             transmit("\n", 1);
     		print_position();
-    		print_hall_position();
+    		print_sensor_position();
     		print_queue_stats();
     		print_current_movement();
     		print_velocity();
@@ -897,9 +897,7 @@ int main(void)
             print_fast_capture_data_result();
         }
 
-        if(is_go_to_closed_loop_data_available()) {
-            print_go_to_closed_loop_data();
-        }
+        process_go_to_closed_loop_data();
 
         process_debug_uart_commands();
         button_logic();

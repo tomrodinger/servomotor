@@ -10,12 +10,15 @@ typedef struct __attribute__((__packed__)) {
     uint32_t n;
 } hall_sensor_statistics_t;
 
+typedef struct {
+    int32_t position;
+    int32_t change;
+} get_sensor_position_return_t;
+
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3]);
-int32_t get_hall_position(void);
-int32_t get_hall_position_raw(void);
-int32_t get_hall_position_with_hysteresis(void);
+get_sensor_position_return_t get_sensor_position(void);
 int32_t zero_hall_position(void);
-void print_hall_position(void);
+void print_sensor_position(void);
 void print_hall_midlines(void);
 void get_hall_sensor_statistics(hall_sensor_statistics_t *hall_sensor_statistics);
 void hall_sensor_turn_off_statistics(void);
