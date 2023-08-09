@@ -3,7 +3,7 @@
   - version: V26
     type: full_product
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/dark_template.html
-    picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/robot.jpg
+    picture: https://github.com/tomrodinger/servomotor/blob/main/Pictures/servomotor%20v1%20pictures/servomotor%20v1%20top%202.jpg
     description: This is a servo motor made with a 3-phase DC brushless motor. It can be controlled over an RS485 interface.
     schematic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R1/V1/user-manual.pdf
