@@ -21,7 +21,7 @@
   - version: V4
     type: full_product
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
-    picture: https://github.com/tomrodinger/servomotor/blob/65aad4fc467247b1d8429a10dae4facab7afd8a9/Pictures/servomotor%20v2%20pictures/servomotor%20v2%20top.jpg
+    picture: https://raw.githubusercontent.com/tomrodinger/servomotor/main/Pictures/servomotor2/back.jpg
     description: This is a servo motor made with a 3-phase stepper motor. It can be controlled over an RS485 interface.
     schematic: https://raw.githubusercontent.com/tomrodinger/line_following_robot/main/PCB/V10/schematic.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V1/user-manual.pdf
