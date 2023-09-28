@@ -81,7 +81,7 @@ ${BUILD_DIR}/firmware_STM32G030.bin: ${BUILD_DIR}/firmware_STM32G030.elf
 	$(GCC_DIR)/arm-none-eabi-objcopy  -O binary  ${BUILD_DIR}/firmware_STM32G030.elf  "${BUILD_DIR}/firmware_STM32G030.bin"
 
 ${BUILD_DIR}/firmware_STM32G030.firmware: ${BUILD_DIR}/firmware_STM32G030.bin
-	../bin2firmware ${BUILD_DIR}/firmware_STM32G030.bin ${BUILD_DIR}/firmware_STM32G030.firmware E1 1
+	../toolchain_essentials_mac/bin2firmware ${BUILD_DIR}/firmware_STM32G030.bin ${BUILD_DIR}/firmware_STM32G030.firmware E1 1
 
 
 clean:
