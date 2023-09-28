@@ -18,6 +18,8 @@
 #define STATUS_CLOSED_LOOP_FLAG_BIT 2
 #define STATUS_CALIBRATING_FLAG_BIT 3
 #define STATUS_HOMING_FLAG_BIT 4
+#define STATUS_GO_TO_CLOSED_LOOP_FLAG_BIT 5
+#define STATUS_MOTOR_BUSY_FLAG_BIT 6
 
 
 struct __attribute__((__packed__)) device_status_struct {

@@ -1,11 +1,16 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 #include "stm32g0xx_hal.h"
 #include "ADC.h"
 #include "leds.h"
 #include "error_handling.h"
+#include "debug_uart.h"
 
-#define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 1450
-#define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 1250
+#define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 65535
+#define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 0
+#define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
 
 uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
@@ -48,6 +53,16 @@ void adc_init(void)
 //				   (0xf << ADC_CHSELR_SQ7_Pos) |
 //				   (0xf << ADC_CHSELR_SQ8_Pos);
 	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
+	#ifdef PRODUCT_NAME_M3
+    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
+    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+	#else
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -56,6 +71,7 @@ void adc_init(void)
 				   (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
 				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
 				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+	#endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
     for(i = 0; i < 100000; i++); // allow time for the voltage regulator to stabilize
@@ -169,28 +185,23 @@ uint16_t get_hall_sensor3_voltage(void)
 
 uint16_t get_motor_current(void)
 {
-	int16_t min_current = 32767;
-	int16_t max_current = -32768;
-	int16_t current;
-	int32_t i;
-	int32_t j;
+	uint32_t current_avg = 0;
+	uint16_t buffer_index = 0;
+	uint16_t n = 0;
+	uint16_t i;
 
 	for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
-		for(j = 0; j < ADC_CYCLE_INDEXES; j += 3) {
-			uint32_t buffer_index = i * ADC_CYCLE_INDEXES + j;
-			current = ADC_buffer[buffer_index];
-			if(current < min_current) {
-				min_current = current;
-			}
-			else if(current > max_current) {
-				max_current = current;
-			}
-		}
+		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX1] +
+					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX2] +
+					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX3];
+		n += 3;
+		buffer_index += ADC_CYCLE_INDEXES;
 	}
+	current_avg /= n;
 
-//	return 1152; // DEBUG
+//	return 1151; // DEBUG
 
-	return max_current;
+	return (uint16_t)current_avg;
 }
 
 
@@ -203,11 +214,34 @@ uint16_t get_temperature(void)
 }
 
 #define SUPPLY_VOLTAGE_ADC_CYCLE_INDEX 2
-uint16_t get_supply_voltage(void)
+uint16_t get_supply_voltage_ADC_value(void)
 {
 	uint16_t a = ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 0] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 8] +
 	             ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 16] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 24];
 	return a;
+}
+
+
+uint16_t get_supply_voltage_volts_time_10(void)
+{
+	uint16_t supply_voltage = get_supply_voltage_ADC_value();
+	uint32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+
+	return (uint16_t)supply_voltage_calibrated;
+}
+
+
+void print_supply_voltage(void)
+{
+	char buf[100];
+	int16_t supply_voltage = get_supply_voltage_ADC_value();
+	sprintf(buf, "Supply voltage (ADC value): %hd\n", supply_voltage);
+	print_debug_string(buf);
+	int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+	int16_t whole_number = supply_voltage_calibrated / 10;
+	int16_t decimal = (supply_voltage_calibrated % 10);
+	sprintf(buf, "Supply voltage: %hd.%hu\n", whole_number, decimal);
+	print_debug_string(buf);
 }
 
 

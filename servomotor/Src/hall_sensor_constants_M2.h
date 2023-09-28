@@ -1,16 +1,15 @@
-#ifndef __LOOKUP_TABLE2__
-#define __LOOKUP_TABLE2__
+#ifndef __HALL_SENSOR_CONSTANTS__
+#define __HALL_SENSOR_CONSTANTS__
 
 #define N_HALL_SENSORS 3
-#define TOTAL_NUMBER_OF_SEGMENTS 168
+#define TOTAL_NUMBER_OF_SEGMENTS 150
 #define HALL_SENSOR_SHIFT 30000
 #define SLOPE_SHIFT_RIGHT 22
 #define OFFSET_SHIFT_RIGHT 8
-#define ONE_REVOLUTION_STEPS 7
 #define HALL_SAMPLES_PER_PRINT 8
 #define WEIGHTS_PER_HALL_SENSOR 3
-#define SENSOR_SEGMENT_RESOLUTION_DIV_2 3808
-#define SENSOR_SEGMENT_RESOLUTION 7616
+#define SENSOR_SEGMENT_RESOLUTION 60928
+#define SENSOR_SEGMENT_RESOLUTION_DIV_2 30464
 #define CALIBRATION_CAPTURE_STEP_SIZE 128 // this should be slow so that data can be captured and collected accurately
 
 
@@ -21,9 +20,9 @@ struct hall_weights_struct {
 };
 
 #define HALL_WEIGHTS_INITIALIZER { \
-    {  3544,    319,    269}, \
-    {  4248,    -16,    344}, \
-    {  4759,     49,   -670}, \
+    { 32394,   1977,  -3523}, \
+    { 28974,   3609,     13}, \
+    { 29042,    -31,   3621}, \
 }
 
 #endif

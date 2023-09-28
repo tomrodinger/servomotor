@@ -1,12 +1,13 @@
 #include "stm32g0xx_hal.h"
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+#include "debug_uart.h"
 #include "microsecond_clock.h"
 #include "error_handling.h"
 
 static uint64_t previous_64bit_time = 0;
 static volatile uint32_t upper_32_bits = 0;
-static volatile uint16_t profiler_clock_start_time[N_PROFILERS];
 
 void microsecond_clock_init(void)
 {
@@ -100,16 +101,10 @@ uint64_t get_microsecond_time(void)
 
 void reset_microsecond_time(void)
 {
-	uint16_t time_adjustment;
-	uint8_t i;
     __disable_irq();
-	time_adjustment = TIM14->CNT;
 	TIM14->CNT = 0;
 	upper_32_bits = 0;
 	previous_64bit_time = 0;
-	for(i = 0; i < N_PROFILERS; i++) {
-		profiler_clock_start_time[i] -= time_adjustment;
-	}
     __enable_irq();
 }
 
@@ -119,18 +114,3 @@ void microsecond_delay(uint32_t microseconds)
 	uint64_t start_time = get_microsecond_time();
 	while(get_microsecond_time() - start_time < microseconds);
 }
-
-
-uint16_t profiler(uint8_t profiler_clock_number)
-{
-	uint16_t t = TIM14->CNT;
-	uint16_t elapsed_time = t - profiler_clock_start_time[profiler_clock_number];
-	profiler_clock_start_time[profiler_clock_number] = t;
-	return elapsed_time;
-}
-
-
-//uint16_t get_maximum_profiler_clock_elapsed_time(uint8_t profiler_clock_number)
-//{
-//	return 0;
-//}

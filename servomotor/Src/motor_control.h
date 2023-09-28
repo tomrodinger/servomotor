@@ -2,11 +2,15 @@
 #define SRC_MOTOR_CONTROL_H_
 
 #include <stdint.h>
+
 #ifdef PRODUCT_NAME_M1
-#include "LookupTable_M1.h"
+#include "hall_sensor_constants_M1.h"
 #endif
 #ifdef PRODUCT_NAME_M2
-#include "LookupTable_M2.h"
+#include "hall_sensor_constants_M2.h"
+#endif
+#ifdef PRODUCT_NAME_M3
+#include "hall_sensor_constants_M3.h"
 #endif
 
 #define OPEN_LOOP_POSITION_CONTROL 0
@@ -19,8 +23,8 @@
 #define CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING 4
 
 #define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
-#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS) * ((uint64_t)1 << 32))
-//#define MICROSTEPS_PER_ROTATION       ((uint64_t)(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS))
+#define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS * ((uint64_t)1 << 32))
+//#define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS)
 #define MAX_RPM                       1980 // should be divisable by 60 ideally
 #define MAX_RPS                       (MAX_RPM / 60)
 #define MAX_MICROSTEPS_PER_SECOND     ((uint64_t)MAX_RPS * (uint64_t)MICROSTEPS_PER_ROTATION)
@@ -37,6 +41,9 @@
 #define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
+
+#define MULTIPURPOSE_DATA_TYPE_CALIBRATION 1
+#define MULTIPURPOSE_DATA_TYPE_GO_TO_CLOSED_LOOP 2
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
@@ -62,7 +69,6 @@ void print_hall_position_delta_stats(void);
 void print_motor_pwm_voltage(void);
 void print_motor_status(void);
 void print_motor_temperature(void);
-void print_supply_voltage(void);
 
 void start_fast_capture_data(void);
 uint8_t is_fast_capture_data_result_ready(void);
@@ -94,7 +100,6 @@ int32_t get_hall_position(void);
 uint8_t get_motor_status_flags(void);
 uint8_t is_calibration_data_available(void);
 uint8_t process_calibration_data(void);
-void set_motor_current_baseline(void);
 void set_motor_commutation_position_offset(uint32_t _commutation_position_offset);
 void set_max_motor_current(uint16_t new_max_closed_loop_pwm_voltage, uint16_t new_max_closed_loop_regen_pwm_voltage);
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit);
@@ -110,5 +115,10 @@ typedef struct __attribute__((__packed__)) {
 } add_to_queue_test_results_t;
 
 void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results);
+void get_multipurpose_data(uint8_t *data_type, uint16_t *data_size, uint8_t **multipurpose_data_ptr);
+void set_commutation_position_offset(uint32_t new_commutation_position_offset);
+void check_current_sensor_and_enable_mosfets(void);
+void set_test_mode(uint8_t new_test_mode);
+void test_M3_motor_spin(void);
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

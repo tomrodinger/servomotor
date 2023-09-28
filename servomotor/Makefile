@@ -1,12 +1,12 @@
 COMMON_SOURCE_FILES_DIR = ../common_source_files
-PRODUCT_OPTIONS := M1 M2
+PRODUCT_OPTIONS := M1 M2 M3
 
 # Define the directory of source files before using it
 DEVICE_SOURCE_FILES_DIR = Src
 
 # Find out the product name
 ifeq ($(PRODUCT_NAME),)
-	PRODUCT_OPTIONS := M1 M2
+	PRODUCT_OPTIONS := M1 M2 M3
 else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif
@@ -14,9 +14,10 @@ endif
 MAJOR := $(shell awk '/#define MAJOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
 MINOR := $(shell awk '/#define MINOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
 BUGFIX := $(shell awk '/#define BUGFIX_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
-FW_VER := $(MAJOR).$(MINOR).$(BUGFIX)
-VERSION := $(PRODUCT_NAME)_V26_fw$(FW_VER)
-SOFTWARE_COMPATIBILITY_CODE := $(shell while read product version sw_compat_code; do if [ "$$product" = "$(PRODUCT_NAME)" ]; then echo $$sw_compat_code; break; fi; done < VERSIONS)
+FIRMWARE_VERSION := $(MAJOR).$(MINOR).$(BUGFIX)
+SOFTWARE_COMPATIBILITY_CODE := $(shell while read product_name version sw_compat_code; do if [ "$$product_name" = "$(PRODUCT_NAME)" ]; then echo $$sw_compat_code; break; fi; done < VERSIONS)
+HARDWARE_VERSION := $(shell while read product_name hw_version sw_compat_code; do if [ "$$product_name" = "$(PRODUCT_NAME)" ]; then echo $$hw_version; break; fi; done < VERSIONS)
+VERSION := $(PRODUCT_NAME)_$(HARDWARE_VERSION)_fw$(FIRMWARE_VERSION)
 
 # Determine what platform we are building on
 HOST_OS := $(shell uname -s)

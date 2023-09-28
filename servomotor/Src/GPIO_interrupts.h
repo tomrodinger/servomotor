@@ -8,8 +8,11 @@
 #ifndef SRC_STEP_DIRECTION_INPUT_H_
 #define SRC_STEP_DIRECTION_INPUT_H_
 
-void step_and_direction_init(void);
-int32_t get_step_count(void);
+#define OVERVOLTAGE_PROTECTION_SETTING 25
 
+void overvoltage_init(void);
+void step_and_direction_init(void);
+int32_t get_external_encoder_position(void);
+void print_external_encoder_position(void);
 
 #endif /* SRC_STEP_DIRECTION_INPUT_H_ */

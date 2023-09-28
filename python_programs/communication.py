@@ -51,6 +51,16 @@ def get_response(verbose=True):
     if response[0] != ord('R'):
         raise CommunicationError("Error: the first byte is not the expected R")
     payload_size = response[2]
+    if payload_size == 0xff:
+        response2 = ser.read(2)
+        if len(response2) == 0:
+            # Throw and exception if we don't get a response
+            raise TimeoutError("Error: timeout")
+        if len(response2) != 2:
+            # Thow a general communication error
+            raise CommunicationError("Error: the response indicated a size of 255 and then the second response is not 2 bytes long")
+        payload_size = response2[0] + (response2[1] << 8)
+        print("Received an extended size:", payload_size)
     if payload_size == 0:
         if response[1] != 0:
             raise CommunicationError("Error: the second byte should be 0 if there is no payload")
@@ -65,7 +75,7 @@ def get_response(verbose=True):
 
     payload = ser.read(payload_size)
     if len(payload) != payload_size:
-        raise PayloadError("Error: didn't receive the right length payload. Received: %s" % (payload))
+        raise PayloadError("Error: didn't receive the right length (%d bytes) payload. Received (%d bytes): %s" % (payload_size, len(payload), payload))
 
     if verbose:
         print("Got a valid payload:")
@@ -401,8 +411,14 @@ def list_2d_string_to_packed_bytes(input):
 
 
 def buf10_to_packed_bytes(input):
-    # convert the string into a bytearray
-    input_packed = bytearray(input, "utf-8")
+    if(isinstance(input, str)):
+        # convert the string into a bytearray
+        input_packed = bytearray(input, "utf-8")
+    elif(isinstance(input, bytes) or isinstance(input, bytearray)):
+        input_packed = input
+    else:
+        print("Error: the input is not a string nor is it a bytearray. It is a:", type(input))
+        exit(1)
     # check that the length of the bytearray is correct
     if len(input_packed) != 10:
         print("Error: the input is not 10 bytes long")
@@ -526,6 +542,8 @@ def interpret_single_response(command_id, response, verbose=True):
                     print("Error: the response from the device is not null terminated. This is a bug in the device or some sort of communication error")
                     exit(1)
                 data_type_size = null_terminator_index + 1
+            elif data_type == command_data_types.general_data:
+                data_type_size = len(response)
             else:
                 data_type_size = data_type_to_size_dict[data_type]
             if len(response) < data_type_size:
@@ -588,8 +606,13 @@ def interpret_single_response(command_id, response, verbose=True):
                     parsed_response.append(data_item)
                     if verbose:
                         print("   ---> %s" % (data_item))
+                elif data_type == command_data_types.general_data:
+                    parsed_response.append(data_item)
+                    if verbose:
+                        for d in data_item:
+                            print("   ---> %d (0x%02x)" % (d, d))
                 else:
-                    print("Error: did not implement the part that interprets non-integer data yet")
+                    print("Error: the interprettation of this data type is not iplemented:", data_type)
                     exit(1)
         if len(response) != 0:
             print("Error: there unexpected bytes left in the response after interpreting the expected response")

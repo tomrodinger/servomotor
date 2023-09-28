@@ -3,7 +3,7 @@
 # Check for the number of command line arguments
 if [[ $# -eq 0 ]]; then
   echo "Please provide a product name."
-  echo "Available products: M1, M2, C1"
+  echo "Available products: M1, M2, C1, E1"
   exit 1
 fi
 
@@ -24,9 +24,13 @@ case "$product_name" in
     software_compatibility_code=1
     hardware_version="0.8.0"
     ;;
+  E1)
+    software_compatibility_code=1
+    hardware_version="0.7.0"
+    ;;
   *)
     echo "Invalid product name. Please choose a valid product."
-    echo "Available products: M1, M2, C1"
+    echo "Available products: M1, M2, C1, E1"
     exit 1
     ;;
 esac

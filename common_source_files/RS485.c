@@ -8,8 +8,6 @@
 #include "global_variables.h"
 #include "device_status.h"
 
-#define TRANSMIT_BUFFER_SIZE 150
-
 static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
@@ -26,11 +24,7 @@ void rs485_init(void)
     
     GPIOB->AFR[0] |= (0 << GPIO_AFRL_AFSEL6_Pos) | // for PB6, choose alternative function 0 (USART1_TX)
                      (0 << GPIO_AFRL_AFSEL7_Pos);  // for PB7, choose alternative function 0 (USART1_RX)
-#ifdef PRODUCT_NAME_M3
-    GPIOB->AFR[0] |= (4 << GPIO_AFRL_AFSEL3_Pos); // for PB3, choose alternative function 4 (USART1_DE)
-#else
     GPIOA->AFR[1] |= (1 << GPIO_AFRH_AFSEL12_Pos); // for PA12, choose alternative function 1 (USART1_DE)
-#endif
 
     USART1->BRR = 278; // set baud to 230400 @ 64MHz SYSCLK
     USART1->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_FIFOEN | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the FIFO mode, enable the receive interrupt

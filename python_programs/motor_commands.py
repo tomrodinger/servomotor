@@ -43,6 +43,7 @@ buf10 = 19              # 10 byte long buffer containing any binary data
 list_2d = 200           # a two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
 string_null_term = 201  # this is a string with a variable length and must be null terminated
 unknown_data = 202      # this is an unknown data type (work in progress; will be corrected and documented later)
+general_data = 203      # this is a general data type whose size is determined by the payload size
 success_response = 240  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
 
 class command_data_types:
@@ -69,6 +70,7 @@ class command_data_types:
     list_2d = 200           # a two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]
     string_null_term = 201  # this is a string with a variable length and must be null terminated
     unknown_data = 202      # this is an unknown data type (work in progress; will be corrected and documented later)
+    general_data = 203      # this is data whose length is determined by the payload length
     success_response = 240  # indicates that the command was received successfully and is being executed. the next command can be transmitted without causing a command overflow situation.
     
 
@@ -96,6 +98,7 @@ data_type_dict = {
     list_2d : "list_2d",
     string_null_term : "string_null_term",
     unknown_data : "unknown_data",
+    general_data : "general_data",
     success_response : "success_response"
 }
 
@@ -122,6 +125,7 @@ data_type_to_size_dict = {
     list_2d : None,
     string_null_term : None,
     unknown_data : None,
+    general_data : None,
     success_response : None,
 }
 
@@ -148,6 +152,7 @@ data_type_min_value_dict = {
     list_2d : None,
     string_null_term : None,
     unknown_data : None,
+    general_data : None,
     success_response : None,
 }
 
@@ -174,6 +179,7 @@ data_type_max_value_dict = {
     list_2d : None,
     string_null_term : None,
     unknown_data : None,
+    general_data : None,
     success_response : None,
 }
 
@@ -200,6 +206,7 @@ data_type_is_integer_dict = {
     list_2d : False,
     string_null_term : False,
     unknown_data : False,
+    general_data : False,
     success_response : False,
 }
 
@@ -226,6 +233,7 @@ data_type_description_dict = {
     list_2d : "A two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]",
     string_null_term : "This is a string with a variable length and must be null terminated",
     unknown_data : "This is an unknown data type (work in progress; will be corrected and documented later)",
+    general_data : "This is a general data type whose size is determined by the payload size",
     success_response : "Indicates that the command was received successfully and is being executed. the next command can be immediately transmitted without causing a command overflow situation."
 }
 
@@ -271,7 +279,7 @@ register_command(command_id, command_name, description, inputs, response)
 command_id   = 5
 command_name = "SET_MAX_ACCELERATION_COMMAND"
 description  = "Set max acceleration"
-inputs       = (u16, "The maximum acceleration")
+inputs       = (u32, "The maximum acceleration")
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
@@ -341,10 +349,10 @@ response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 15
-command_name = "GET_POSITION_COMMAND"
-description  = "Get the current position"
+command_name = "GET_HALL_SENSOR_POSITION_COMMAND"
+description  = "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)"
 inputs       = []
-response     = (i32, "The current position")
+response     = (i32, "The current hall sensor position")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 16
@@ -358,8 +366,8 @@ response     = [(u8,
    Bit 2: Motor is in closed loop mode
    Bit 3: Motor is currently executing the calibration command
    Bit 4: Motor is currently executing a homing command
-   Bit 5: Not used, set to 0
-   Bit 6: Not used, set to 0
+   Bit 5: Motor is currently executing the procedure to go to closed loop mode
+   Bit 6: Motor is currently busy doing a time consuming task and is not ready to take another command
    Bit 7: Not used, set to 0'''),
                 (u8, "The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the SYSTEM_RESET_COMMAND to get out of the fatal error state.")]
 register_command(command_id, command_name, description, inputs, response)
@@ -504,6 +512,43 @@ response     = [(u16, "The maximum value of hall sensor 1 encoutered since the l
                 (u64, "The sum of hall sensor 2 values collected since the last statistics reset"),
                 (u64, "The sum of hall sensor 3 values collected since the last statistics reset"),
                 (u32, "The number of times the hall sensors were measured since the last statistics reset")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 34
+command_name = "GET_POSITION_COMMAND"
+description  = "Get the current desired position (which may not always be the actual position as measured by the hall sensors)"
+inputs       = []
+response     = (i32, "The current desired position")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 35
+command_name = "READ_MULTIPURPOSE_BUFFER_COMMAND"
+description  = "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)"
+inputs       = []
+response     = (general_data, "The data in the buffer (the format and length of the data depends on what was put in the buffer)")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 36
+command_name = "TEST_MODE_COMMAND"
+description  = "Set a test mode. Set this to 0 for the default operation."
+inputs       = [(u8, "The test mode to use (0 = normal operation).")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 37
+command_name = "GET_COMPREHENSIVE_POSITION_COMMAND"
+description  = "Get the electrical commutation position, hall sensor position, and external encoder position all in one shot"
+inputs       = []
+response     = [(i32, "The electrical commutation position"),
+                (i32, "The hall sensor position"),
+                (i32, "The external encoder position")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 38
+command_name = "GET_SUPPLY_VOLTAGE_COMMAND"
+description  = "Get the measured voltage of the power supply"
+inputs       = []
+response     = (u16, "The voltage. Divide this number by 10 to get the actual voltage in volts.")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 254

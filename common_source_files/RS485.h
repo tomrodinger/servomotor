@@ -9,6 +9,7 @@
 
 #define USART1_TIMEOUT 5 // one count is 10ms, so this is a timeout of about 50 ms
 
+#define TRANSMIT_BUFFER_SIZE 150 // this is the maximum number of bytes that can be transmitted with one call to rs485_transmit()
 #define MAX_VALUE_BUFFER_LENGTH (MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + FLASH_PAGE_SIZE + 1) // Maximum length of any value that this controller might need to process
 
 void rs485_init(void);

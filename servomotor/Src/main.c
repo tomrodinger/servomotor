@@ -8,26 +8,28 @@
 #include "mosfets.h"
 #include "ADC.h"
 #include "PWM.h"
-#include "CommutationTable.h"
 #include "hall_sensor_calculations.h"
 #include "motor_control.h"
 #include "microsecond_clock.h"
 #include "clock_calibration.h"
 #include "error_handling.h"
-#include "step_direction_input.h"
-#include "overvoltage.h"
+#include "GPIO_interrupts.h"
 #include "unique_id.h"
 #include "settings.h"
 #include "commands.h"
 #include "product_info.h"
-#ifdef PRODUCT_NAME_M1
-#include "LookupTable_M1.h"
-#endif
-#ifdef PRODUCT_NAME_M2
-#include "LookupTable_M2.h"
-#endif
 #include "global_variables.h"
 #include "device_status.h"
+#ifdef PRODUCT_NAME_M1
+#include "commutation_table_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "commutation_table_M2.h"
+#include "hall_sensor_constants_M2.h"
+#endif
+#ifdef PRODUCT_NAME_M3
+#include "commutation_table_M3.h"
+#endif
 
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
@@ -44,7 +46,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define BUGFIX_FIRMWARE_VERSION 3
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
-#define BUTTON_PRESS_MOTOR_MOVE_DISTANCE (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_STEPS)
+#define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
 
 #define PING_PAYLOAD_SIZE 10
 
@@ -118,11 +120,12 @@ void systick_init(void)
 #define PUPDR_PULL_UP 1
 #define PUPDR_PULL_DOWN 2
 
+#define BUTTON_PORT_A_PIN 13
+#define TOUCH_BUTTON_PORT_A_PIN 15
+
+#ifndef PRODUCT_NAME_M3 // Below are the port pin settings for products M1 and M2
 void portA_init(void)
 {
-	#define BUTTON_PORT_A_PIN 13
-    #define TOUCH_BUTTON_PORT_A_PIN 15
-
     GPIOA->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // current measurement channel A
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET switch disable
@@ -131,7 +134,7 @@ void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // hall sensor 2
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // hall sensor 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // hall sensor 3
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // current measurement channel B
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // voltage measurement of the power supply
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // PWM 1
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE10_Pos) | // PWM 3
@@ -141,14 +144,14 @@ void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE15_Pos);  // touch button
 
-    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT0_Pos) | // make all the pins with analog components connected open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // also, make the switch disable pin open drain since there is no resistor between the pin and the base of a transistor
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the debug UART receive pin open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) |
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
+    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT0_Pos)  | // make all the pins with analog components connected open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos)  | // also, make the switch disable pin open drain since there is no resistor between the pin and the base of a transistor
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos)  | // also, make the debug UART receive pin open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos)  | // may not be necessary
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos)  |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos)  |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos)  |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos)  |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos) |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT15_Pos);
@@ -162,17 +165,17 @@ void portB_init(void)
     GPIOB->MODER =
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE2_Pos)  | // Temperature sensor (NTC) analog input
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // PWM 2
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // Encoder A input or step input
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE5_Pos)  | // Encoder B input or direction input
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE8_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE9_Pos)  | // overvoltage digital input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE12_Pos) | // overvoltage digital input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
@@ -181,7 +184,10 @@ void portB_init(void)
     	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
     		        (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD12_Pos); // RX pin is pull up, overvoltage pin is pull down
+    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD4_Pos)   | // Encoder A
+                   (PUPDR_PULL_UP << GPIO_PUPDR_PUPD5_Pos)   | // Encoder B
+                   (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos)   | // RX pin is pull up
+                   (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD9_Pos);  // Overvoltage pin is pull down
 }
 
 
@@ -235,6 +241,109 @@ void portD_init(void)
     GPIOD->OSPEEDR = 0xffffffff; // very high speed
     GPIOD->PUPDR = 0;
 }
+
+
+void GPIO_init(void)
+{
+    portA_init();
+    portB_init();
+    portC_init();
+    portD_init();
+}
+
+#else // Below are the port pin settings for product M3
+
+void portA_init(void)
+{
+	#define BUTTON_PORT_A_PIN 13
+
+    GPIOA->MODER =
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Direction control of the motor digital output
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // Step motor step control output (to rotate the motor)
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // Temperature sensor (NTC) analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // Hall sensor 1 analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // Hall sensor 2 analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // Hall sensor 3 analog input
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // Motor current control PWM output
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  | // Don't use. Might be connected tp PA11 internally
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting output (to set the overvoltage threshold) by PWM
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Stepper motor driver reset (reset low, normal operation high)
+
+//    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT10_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos);
+    GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
+    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
+
+    GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
+    volatile uint32_t i;
+    for(i = 0; i < 1000; i++); // make a delay
+    GPIOA->BSRR = (1 << 15); // take the stepper motor driver out of reset by making the reset pin high
+}
+
+
+void portB_init(void)
+{
+    GPIOB->MODER =
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Motor driver enable (active low)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  |
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE8_Pos)  | // Overvoltage digital input (will shut off motor driver very fast if trigered)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
+
+//    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // Make the analog input pins open drain
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) | // RX pin make as open drain
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
+    GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
+    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos); // RX pin is pull up, overvoltage pin is pull down
+}
+
+
+void portC_init(void)
+{
+    GPIOC->MODER =
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  |
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE14_Pos) | // Red LED
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Green LED
+//    GPIOC->OTYPER = (0);  // Make the analog input pins open drain
+    GPIOC->OSPEEDR = 0xffffffff; // very high speed
+    GPIOC->PUPDR = 0; // no pins have pulling resistors
+}
+
+
+void GPIO_init(void)
+{
+    portA_init();
+    portB_init();
+    portC_init();
+}
+
+#endif
 
 
 // This interrupt will be called 100 times per second
@@ -292,12 +401,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     add_to_queue_test_results_t add_to_queue_test_results;
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
     uint8_t control_hall_sensor_statistics_subcommand;
-    struct __attribute__((__packed__)) {
-        uint8_t axis;
-        uint8_t command;
-        uint8_t size;
-        hall_sensor_statistics_t hall_sensor_statistics;
-    } hall_sensor_statistics_full_response;
 
     #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
@@ -326,7 +429,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case ENABLE_MOSFETS_COMMAND:
             rs485_allow_next_command();
-            enable_mosfets();
+            check_current_sensor_and_enable_mosfets();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
@@ -367,7 +470,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case START_CALIBRATION_COMMAND:
             rs485_allow_next_command();
-            enable_mosfets();
             start_calibration(0);
             break;
         case CAPTURE_HALL_SENSOR_DATA_COMMAND:
@@ -437,7 +539,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             char buf[100];
             sprintf(buf, "homing: max_homing_travel_displacement: %ld   max_homing_time: %lu\n", max_homing_travel_displacement, max_homing_time);
-            transmit(buf, strlen(buf));
+            print_debug_string(buf);
             start_homing(max_homing_travel_displacement, max_homing_time);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -465,12 +567,34 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
             break;
+        case GET_COMPREHENSIVE_POSITION_COMMAND:
+            rs485_allow_next_command();
+            {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    int32_t motor_position;
+                    int32_t hall_sensor_position;
+                    int32_t external_encoder_position;
+                } comprehensive_position;
+                if(axis != ALL_ALIAS) {
+                    comprehensive_position.header[0] = 'R';
+                    comprehensive_position.header[1] = 1;
+                    comprehensive_position.header[2] = sizeof(comprehensive_position) - 3;
+                    comprehensive_position.motor_position = get_motor_position();
+                    comprehensive_position.hall_sensor_position = get_hall_position();
+                    comprehensive_position.external_encoder_position = get_external_encoder_position();
+                    rs485_transmit(&comprehensive_position, sizeof(comprehensive_position));
+                }
+            }
+            break;
         case GET_STATUS_COMMAND:
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
             	uint8_t motor_status_flags = get_motor_status_flags();
                 set_device_status_flags(motor_status_flags);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+                sprintf(buf, "Get status: %hu\n", motor_status_flags);
+                print_debug_string(buf);
             }
             break;
         case GO_TO_CLOSED_LOOP_COMMAND:
@@ -493,7 +617,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             time_steps = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
 //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
-//            transmit(buf, strlen(buf));
+//            print_debug_string(buf);
             add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -508,7 +632,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             new_alias = parameters[8];
             rs485_allow_next_command();
         	if(unique_id == my_unique_id) {
-               	transmit("Unique ID matches\n", 18);
+               	print_debug_string("Unique ID matches\n");
         		global_settings.my_alias = new_alias;
            		save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -547,7 +671,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             time_steps = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
 //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
-//            transmit(buf, strlen(buf));
+//            print_debug_string(buf);
             add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -561,7 +685,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             new_maximum_motor_regen_current = ((uint16_t*)parameters)[1];
             rs485_allow_next_command();
             set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
-            save_global_settings();
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
 			}
@@ -573,7 +696,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
 //            char buf[100];
 //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
-//            transmit(buf, strlen(buf));
+//            print_debug_string(buf);
             if(n_moves_in_this_command > MAX_MULTI_MOVES) {
                 fatal_error(24);
             }
@@ -581,11 +704,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 if((multi_move_command_buffer.move_type_bits & 1) == 0) {
                     add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
 //                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
-//                    transmit(buf, strlen(buf));
+//                    print_debug_string(buf);
                 } else {
                     add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
 //                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
-//                    transmit(buf, strlen(buf));
+//                    print_debug_string(buf);
                 }
                 multi_move_command_buffer.move_type_bits >>= 1;
             }
@@ -598,7 +721,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             upper_limit = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
             sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
-            transmit(buf, strlen(buf));
+            print_debug_string(buf);
             set_movement_limits(lower_limit, upper_limit);
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -637,12 +760,84 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case GET_HALL_SENSOR_STATISTICS_COMMAND:
             rs485_allow_next_command();
-            get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
             if(axis != ALL_ALIAS) {
+                struct __attribute__((__packed__)) {
+                    uint8_t axis;
+                    uint8_t command;
+                    uint8_t size;
+                    hall_sensor_statistics_t hall_sensor_statistics;
+                } hall_sensor_statistics_full_response;
+                get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
                 hall_sensor_statistics_full_response.axis = 'R';
                 hall_sensor_statistics_full_response.command = '\x01';
                 hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
                 rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+            }
+            break;
+        case READ_MULTIPURPOSE_BUFFER_COMMAND:
+            rs485_allow_next_command();
+            if(axis != ALL_ALIAS) {
+                uint8_t data_type;
+                uint16_t data_size;
+                uint16_t data_size_left_to_send;
+                uint8_t *multipurpose_data_ptr;
+                get_multipurpose_data(&data_type, &data_size, &multipurpose_data_ptr);
+                {
+                    struct __attribute__((__packed__)) {
+                        uint8_t axis;
+                        uint8_t command;
+                        uint8_t size;
+                        uint16_t extended_size;
+                        uint8_t data_type;
+                    } multipurpose_data_response_header;
+                    multipurpose_data_response_header.axis = 'R';
+                    multipurpose_data_response_header.command = '\x01';
+                    multipurpose_data_response_header.size = 255;
+                    multipurpose_data_response_header.extended_size = sizeof(data_type) + data_size;
+                    multipurpose_data_response_header.data_type = data_type;
+                    rs485_transmit(&multipurpose_data_response_header, sizeof(multipurpose_data_response_header));
+                    data_size_left_to_send = data_size;
+                    while(data_size_left_to_send > 0) {
+                        uint16_t data_size_this_packet = data_size_left_to_send;
+                        if(data_size_this_packet > TRANSMIT_BUFFER_SIZE) {
+                            data_size_this_packet = TRANSMIT_BUFFER_SIZE;
+                        }
+                        rs485_transmit(multipurpose_data_ptr, data_size_this_packet);
+                        multipurpose_data_ptr += data_size_this_packet;
+                        data_size_left_to_send -= data_size_this_packet;
+                    }
+                }
+                print_debug_string("Read multipurpose data\n");
+                sprintf(buf, "Type is %hu, Size is %hu\n", data_type, data_size);
+                print_debug_string(buf);
+            }
+            break;
+        case GET_SUPPLY_VOLTAGE_COMMAND:
+            rs485_allow_next_command();
+            {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    uint16_t supply_voltage;
+                } supply_voltage_reply;
+                if(axis != ALL_ALIAS) {
+                    supply_voltage_reply.header[0] = 'R';
+                    supply_voltage_reply.header[1] = 1;
+                    supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
+                    supply_voltage_reply.supply_voltage = get_supply_voltage_volts_time_10();
+                    rs485_transmit(&supply_voltage_reply, sizeof(supply_voltage_reply));
+                }
+            }
+            break;
+        case TEST_MODE_COMMAND:
+            {
+                uint8_t test_mode = parameters[0];
+                rs485_allow_next_command();
+                set_test_mode(test_mode);
+                if(axis != ALL_ALIAS) {
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+                sprintf(buf, "Setting the test mode to %hu\n", test_mode);
+                print_debug_string(buf);
             }
             break;
         }
@@ -687,9 +882,10 @@ void process_debug_uart_commands(void)
             fast_capture_until_trigger();
             break;
     	case 'p':
-            transmit("\n", 1);
+            print_debug_string("\n");
     		print_position();
     		print_sensor_position();
+            print_external_encoder_position();
     		print_queue_stats();
     		print_current_movement();
     		print_velocity();
@@ -717,31 +913,30 @@ void process_debug_uart_commands(void)
     		decrease_motor_pwm_voltage();
     		break;
     	case 'e':
-    		enable_mosfets();
-			transmit("Enabling MOSFETs\n", 17);
+            check_current_sensor_and_enable_mosfets();
     		break;
     	case 'E':
     		disable_mosfets();
-			transmit("Disabling MOSFETs\n", 18);
+			print_debug_string("Disabling MOSFETs\n");
     		break;
     	case 'o':
     		if(get_motor_control_mode() == CLOSED_LOOP_POSITION_CONTROL) {
     			set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
-				transmit("Open loop position control\n", 27);
+				print_debug_string("Open loop position control\n");
     		}
     		else {
     			set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-				transmit("Closed loop position control\n", 29);
+				print_debug_string("Closed loop position control\n");
     		}
     		break;
     	case 'v':
     		if(get_motor_control_mode() == OPEN_LOOP_PWM_VOLTAGE_CONTROL) {
     			set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-				transmit("Closed loop position control\n", 29);
+				print_debug_string("Closed loop position control\n");
     		}
     		else {
     			set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
-				transmit("Open loop PWM voltage control\n", 30);
+				print_debug_string("Open loop PWM voltage control\n");
     		}
     		break;
     	case 'h':
@@ -751,7 +946,7 @@ void process_debug_uart_commands(void)
             start_homing(-6451200, 620000);
     		break;
     	case 'S':
-			transmit("Saving settings\n", 16);
+			print_debug_string("Saving settings\n");
             save_global_settings();
     		break;
         case 'r':
@@ -759,11 +954,9 @@ void process_debug_uart_commands(void)
             break;
         case 'g':
             add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
-//			enable_mosfets();
             break;
         case 'G':
 			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
-//			enable_mosfets();
             break;
 		}
     	command_debug_uart = 0;
@@ -802,11 +995,11 @@ void button_logic(void)
 			start_go_to_closed_loop_mode();
 		}
 		else if(time_pressed_down >= 300) {
-			enable_mosfets();
+            check_current_sensor_and_enable_mosfets();
 			add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, get_update_frequency() * 2);
 		}
 		else if(time_pressed_down >= 50) {
-			enable_mosfets();
+        	check_current_sensor_and_enable_mosfets();
 			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 2, get_update_frequency() * 2);
 		}
     }
@@ -819,16 +1012,16 @@ void print_start_message(void)
 
 	memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
 
-    transmit("Applicaiton start\n", 18);
+    print_debug_string("Applicaiton start\n");
 //    sprintf(buff, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-//    transmit(buff, strlen(buff));
+//    print_debug_string(buff);
 //    if((global_settings.my_alias >= 33) && (global_settings.my_alias <= 126)) {
 //        sprintf(buff, "Alias: %c\n", global_settings.my_alias);
 //    }
 //    else {
 //        sprintf(buff, "Alias: 0x%02hx\n", global_settings.my_alias);
 //    }
-//    transmit(buff, strlen(buff));
+//    print_debug_string(buff);
     print_hall_midlines();
     print_max_motor_current_settings();
     print_commutation_position_offset();
@@ -838,33 +1031,25 @@ int main(void)
 {
     clock_init();
     systick_init();
-    portA_init();
-    portB_init();
-    portC_init();
-    portD_init();
+    GPIO_init();
     debug_uart_init();
     rs485_init();
     adc_init();
     pwm_init();
-    step_and_direction_init();
     overvoltage_init();
+    #ifndef PRODUCT_NAME_M3
+    step_and_direction_init();
+    #endif
 
     SCB->VTOR = 0x2800; // vector table is moved to where the application starts, which is after the bootloader
 
     my_unique_id = get_unique_id();
 
     load_global_settings(); // load the settings from non-volatile memory into ram for faster access
-    set_motor_current_baseline(); // make sure to call this before set_max_motor_current() and make sure to call it when the MOSFETs are disabled. at the start of the program is fine
     if(global_settings.commutation_position_offset == 0xffffffff) {
         global_settings.commutation_position_offset = DEFAULT_COMMUTATION_POSITION_OFFSET;
     }
-    if(global_settings.max_motor_pwm_voltage == 0xffff) {
-        global_settings.max_motor_pwm_voltage = DEFAULT_MAX_MOTOR_PWM_VOLTAGE;
-    }
-    if(global_settings.max_motor_regen_pwm_voltage == 0xffff) {
-        global_settings.max_motor_regen_pwm_voltage = DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE;
-    }
-    set_max_motor_current(global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
+    set_commutation_position_offset(global_settings.commutation_position_offset);
 
     microsecond_clock_init();
 
@@ -880,7 +1065,7 @@ int main(void)
         }
 
         if(detect_devices_delay == 0) {
-            transmit("Transmitting unique ID\n", 23);
+            print_debug_string("Transmitting unique ID\n");
             transmit_unique_id();
             detect_devices_delay--;
     	}
@@ -888,7 +1073,7 @@ int main(void)
         if(process_calibration_data()) {
             disable_motor_control_loop();
             save_global_settings();
-            transmit("\nResetting\n\n", 12);
+            print_debug_string("\nResetting\n\n");
             microsecond_delay(10000);
             NVIC_SystemReset();
         }
@@ -897,18 +1082,25 @@ int main(void)
             print_fast_capture_data_result();
         }
 
+#ifdef PRODUCT_NAME_M1
         process_go_to_closed_loop_data();
+#endif
 
         process_debug_uart_commands();
         button_logic();
 
+#ifdef PRODUCT_NAME_M1
         if((GPIOA->IDR & (1 << TOUCH_BUTTON_PORT_A_PIN)) == 0) {
             red_LED_on();
         }
         else {
             red_LED_off();
         }
+#endif
+
 //    	check_if_break_condition();
+#ifndef PRODUCT_NAME_M3 
     	check_if_ADC_watchdog2_exceeded();
+#endif
     }
 }

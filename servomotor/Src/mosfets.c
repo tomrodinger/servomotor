@@ -4,20 +4,28 @@ static uint8_t mosfets_enabled = 0;
 
 void enable_mosfets(void)
 {
-    GPIOA->BSRR = 1 << 1;
+    #ifndef PRODUCT_NAME_M3
+    GPIOA->BSRR = (1 << 1);
+    #else
+    GPIOB->BSRR = (1 << 0) << 16;
+    #endif
     mosfets_enabled = 1;
 }
 
 void disable_mosfets(void)
 {
+    #ifndef PRODUCT_NAME_M3
     GPIOA->BSRR = (1 << 1) << 16;
-    TIM1->CCR1 = 65535;
-    TIM1->CCR2 = 65535;
-    TIM1->CCR3 = 65535;
+    #else
+    GPIOB->BSRR = (1 << 0);
+    #endif
+    TIM1->CCR1 = 0;
+    TIM1->CCR2 = 0;
+    TIM1->CCR3 = 0;
     mosfets_enabled = 0;
 }
 
-uint8_t get_mosfets_enabled(void)
+uint8_t is_mosfets_enabled(void)
 {
 	return mosfets_enabled;
 }

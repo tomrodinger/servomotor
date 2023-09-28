@@ -72,6 +72,13 @@ void transmit(void *s, uint8_t len)
                                // the rest of the transmission will be completed by the UART interrupt
 }
 
+// print a null terminated string to the debug port
+void print_debug_string(void *s)
+{
+    transmit(s, strlen(s));
+}
+
+
 void transmit_without_interrupts(const char *message, uint8_t len)
 {
 	int32_t i;
