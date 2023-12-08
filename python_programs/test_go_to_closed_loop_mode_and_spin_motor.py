@@ -18,6 +18,7 @@ ON_DEVICE_GOERTZEL_ALGORITHM_RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "on_
 
 VERBOSE = True
 
+POSITION_ERROR_TOLERANCE = 10000
 GET_CURRENT_TIME_COMMAND_INTERVAL = 60
 TIME_SYNC_COMMAND_INTERVAL = 0.5
 STATISTIC_PRINT_INTERVAL_SECONDS = 10
@@ -33,97 +34,6 @@ ALIAS_LIST = [ALIAS1]
 ALL_ALIASES = 255
 
 N_PINGS_TO_TEST_COMMUNICATION = 100
-
-
-class calculate_constants:
-    def calculate(self, n_samples):
-        print("Calculating the constants:")
-        self.n_samples = n_samples
-        sample_rate = n_samples
-        frequency = 1.0
-        f = frequency / sample_rate
-        print("f: " + str(f))
-        w_real = 2.0 * math.cos(2.0 * math.pi * f)
-        w_imag = math.sin(2.0 * math.pi * f)
-        print("   w_real: " + str(w_real))
-        print("   w_imag: " + str(w_imag))
-        self.w_real_shift = 20
-        self.w_real_multiplier = int(w_real * (1 << self.w_real_shift) + 0.5)
-        self.w_imag_shift = 20
-        self.w_imag_multiplier = int(w_imag * (1 << self.w_imag_shift) + 0.5)
-        print("w_real_multiplier:", self.w_real_multiplier)
-        print("w_real_shift:", self.w_real_shift)
-        print("w_imag_multiplier:", self.w_imag_multiplier)
-        print("w_imag_shift:", self.w_imag_shift)
-
-    def get_constants(self):
-        return (self.w_real_multiplier, self.w_real_shift, self.w_imag_multiplier, self.w_imag_shift)
-
-
-def goertzel_algorithm_integer_math(samples, constants):
-    (w_real_multiplier, w_real_shift, w_imag_multiplier, w_imag_shift) = constants
-    n_samples = len(samples)
-    print("n_samples: " + str(n_samples))
-    d1 = 0
-    d2 = 0
-    for n in range(n_samples):
-        d1_times_w_real_multiplier_64bit = d1 * w_real_multiplier
-        y = samples[n] + (d1_times_w_real_multiplier_64bit >> w_real_shift) - d2
-        d2 = d1
-        d1 = y
-        print("n: %d, d1_times_w_real_multiplier_64bit: %d, y: %d, d1: %d, d2: %d" % (n, d1_times_w_real_multiplier_64bit, y, d1, d2))
-    d1_times_w_real_multiplier_64bit = w_real_multiplier * d1
-    d1_times_w_imag_multiplier_64bit = d1 * w_imag_multiplier
-    d1_times_w_real_multiplier_32bit = (d1_times_w_real_multiplier_64bit >> w_real_shift)
-    d1_times_w_imag_multiplier_32bit = (d1_times_w_imag_multiplier_64bit >> w_imag_shift)
-    result = ((d1_times_w_real_multiplier_32bit >> 1) - d2, d1_times_w_imag_multiplier_32bit)
-    # append the result to a datafile
-    with open(GOERTZEL_ALGORITHM_RESULTS_FILENAME, "a") as fh:
-        fh.write(str(result[0]) + " " + str(result[1]) + "\n")
-    return result
-
-# here we compute the magnitude and phase shift of the input waveform using the goertzel algorithm
-# we use floating point math and we calculate the constants every time. This is not efficient, but
-# it is easy to understand and there should not be bugs in it.
-def goertzel_algorithm_floating_point_math(samples):
-    print("Goertzel Algotithm: Calculating using floating point math:")
-    sample_rate = float(n_samples)
-    frequency = 1.0
-    f = frequency / sample_rate
-    print("f: " + str(f))
-    w_real = 2.0 * math.cos(2.0 * math.pi * f)
-    w_imag = math.sin(2.0 * math.pi * f)
-    print("   w_real: " + str(w_real))
-    print("   w_imag: " + str(w_imag))
-    self.w_real_shift = 20
-    self.w_real_multiplier = int(w_real * (1 << self.w_real_shift) + 0.5)
-    self.w_imag_shift = 20
-    self.w_imag_multiplier = int(w_imag * (1 << self.w_imag_shift) + 0.5)
-    print("w_real_multiplier:", self.w_real_multiplier)
-    print("w_real_shift:", self.w_real_shift)
-    print("w_imag_multiplier:", self.w_imag_multiplier)
-    print("w_imag_shift:", self.w_imag_shift)
-
-    (w_real_multiplier, w_real_shift, w_imag_multiplier, w_imag_shift) = constants
-    n_samples = len(samples)
-    print("n_samples: " + str(n_samples))
-    d1 = 0
-    d2 = 0
-    for n in range(n_samples):
-        d1_times_w_real_multiplier_64bit = d1 * w_real_multiplier
-        y = samples[n] + (d1_times_w_real_multiplier_64bit >> w_real_shift) - d2
-        d2 = d1
-        d1 = y
-        print("n: %d, d1_times_w_real_multiplier_64bit: %d, y: %d, d1: %d, d2: %d" % (n, d1_times_w_real_multiplier_64bit, y, d1, d2))
-    d1_times_w_real_multiplier_64bit = w_real_multiplier * d1
-    d1_times_w_imag_multiplier_64bit = d1 * w_imag_multiplier
-    d1_times_w_real_multiplier_32bit = (d1_times_w_real_multiplier_64bit >> w_real_shift)
-    d1_times_w_imag_multiplier_32bit = (d1_times_w_imag_multiplier_64bit >> w_imag_shift)
-    result = ((d1_times_w_real_multiplier_32bit >> 1) - d2, d1_times_w_imag_multiplier_32bit)
-    # append the result to a datafile
-    with open(GOERTZEL_ALGORITHM_RESULTS_FILENAME, "a") as fh:
-        fh.write(str(result[0]) + " " + str(result[1]) + "\n")
-    return result
 
 
 def write_data(filename, int32_list):
@@ -163,8 +73,6 @@ except IOError as e:
     print("Could not open the log file for writing: %s: %s" % (output_log_file, e))
     exit(1)
 
-cc = calculate_constants()
-cc.calculate(GOERTZEL_ALGORITHM_N_SAMPLES)
 
 
 communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
@@ -198,6 +106,12 @@ if not all_devices_responsed:
     exit(1)
 print("All devices responded correctly to all the %d pings" % (N_PINGS_TO_TEST_COMMUNICATION))
 
+# Set up the dictionaries for gathering the statistics
+statistics_failed_go_to_closed_loop = {}
+statistics_total_go_to_closed_loop_attempts = {}
+for alias in ALIAS_LIST:
+    statistics_failed_go_to_closed_loop[alias] = 0
+    statistics_total_go_to_closed_loop_attempts[alias] = 0
 
 total_rotation_motor_units = 0
 for iteration_number in range(N_ITERATIONS):
@@ -228,8 +142,8 @@ for iteration_number in range(N_ITERATIONS):
         movement_time = 0.5 # do the rotation over half a second
         if movement_time > max_movement_time:
             max_movement_time = movement_time
-        movement_time_device_units = int(32150 * movement_time) 
-        parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [random_rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+        movement_time_motor_units = int(32150 * movement_time) 
+        parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [random_rotation_motor_units, movement_time_motor_units], verbose=VERBOSE)
         if len(parsed_response) != 0:
             print("ERROR: The device with alias", alias, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
             exit(1)
@@ -239,13 +153,6 @@ for iteration_number in range(N_ITERATIONS):
     for alias in ALIAS_LIST:
         execute_command(alias, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
     time.sleep(2)
-
-    # now lets set test mode number 2 for all devices, which is the test mode for the go to closed loop mode
-    for alias in ALIAS_LIST:
-        parsed_response = execute_command(alias, "TEST_MODE_COMMAND", [2], verbose=VERBOSE)
-        if len(parsed_response) != 0:
-            print("ERROR: The device with alias", alias, "did not respond correctly to the GO_TO_CLOSED_LOOP_COMMAND")
-            exit(1)
 
     # now lets go to closed loop mode on all the axes
     for alias in ALIAS_LIST:
@@ -269,42 +176,44 @@ for iteration_number in range(N_ITERATIONS):
             time.sleep(0.2)
         print("Successfully entered closed loop mode on the device with alias", alias)
 
-    # get data that was captured while going into closed loop mode
-    for alias in ALIAS_LIST:
-        parsed_response = execute_command(alias, "READ_MULTIPURPOSE_BUFFER_COMMAND", [], verbose=VERBOSE)
-        parsed_response = parsed_response[0]
-        if len(parsed_response) < 1:
-            print("Error: The device with alias", alias, "did not respond correctly to the READ_MULTIPURPOSE_BUFFER_COMMAND and did not return at least one byte")
-            exit(1)
-        data_type = parsed_response[0]
-        parsed_response = parsed_response[1:]
-        print("Go to closed loop mode number of data elements:", len(parsed_response))
-        parsed_response = bytearray(parsed_response)
-        # Reinterpret bytearray as a list of 16-bit signed integers
-        #int16_list = [struct.unpack('<h', parsed_response[i:i+2])[0] for i in range(0, len(parsed_response), 2)]
-        # Reinterpret bytearray as a list of 32-bit signed integers
-        #int32_list = [struct.unpack('<i', parsed_response[i:i+4])[0] for i in range(0, len(parsed_response), 4)]
+    expected_position_after_move = 0
+    for j in range(2): # we will move in the forward and reverse direction
+        # Rotate all devices a fixed amount quickly. We will check to see if they achieved the movement in the expected time.
+        movement_time = 0.2 # do the rotation in this amount of time
+        movement_time_motor_units = int(32150 * movement_time)
+        rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * 0.5)
+        if j == 1:
+            rotation_motor_units = -rotation_motor_units
+        expected_position_after_move += rotation_motor_units
+        for alias in ALIAS_LIST:
+            parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_motor_units], verbose=VERBOSE)
+            if len(parsed_response) != 0:
+                print("ERROR: The device with alias", alias, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
+                exit(1)
+        time.sleep(max_movement_time)
 
-        # Reinterpret bytearray as a list of 16-bit signed integers
-        #int16_list = [int.from_bytes(parsed_response[i:i+2], byteorder='little', signed=True) for i in range(0, len(parsed_response), 2)]
-        # Reinterpret bytearray as a list of 32-bit signed integers
-        int32_list = [int.from_bytes(parsed_response[i:i+4], byteorder='little', signed=True) for i in range(0, len(parsed_response), 4)]
-        if len(int32_list) != GOERTZEL_ALGORITHM_N_SAMPLES + 2:
-            print("Error: The device with alias", alias, "did not respond correctly to the READ_MULTIPURPOSE_BUFFER_COMMAND and did not return the expected number of data elements")
-            exit(1)
-        on_device_goertzel_result = (int32_list[-2], int32_list[-1])
-        int32_list = int32_list[:-2]
-        print("Received this list of int32 data:", int32_list)
-        print("There are this many values in the list:", len(int32_list))
-        print("The on-device goertzel result is:", on_device_goertzel_result)
-        filename = chr(alias) + "_data_" + str(iteration_number)
-        path_and_filename = OUTPUT_LOG_FILE_DIRECTORY + "/" + filename
-        write_data(path_and_filename, int32_list)
-        result = goertzel_algorithm_integer_math(int32_list, cc.get_constants())
-        print("The result of the goertzel algorithm is", result)
-        # append the result to a datafile
-        with open(ON_DEVICE_GOERTZEL_ALGORITHM_RESULTS_FILENAME, "a") as fh:
-            fh.write(str(on_device_goertzel_result[0]) + " " + str(on_device_goertzel_result[1]) + "\n")
+        # Check the final position to see if the motor arrived there
+        for alias in ALIAS_LIST:
+            parsed_response = execute_command(alias, "GET_HALL_SENSOR_POSITION_COMMAND", [], verbose=VERBOSE)
+            if len(parsed_response) != 1:
+                print("ERROR: The device with alias", alias, "did not respond correctly to the GET_POSITION_COMMAND")
+                exit(1)
+            sensor_position_after_move = parsed_response[0]
+            print("The sensor position after the move is:", sensor_position_after_move)
+            position_error = abs(sensor_position_after_move - expected_position_after_move)
+            print("The position error is:", position_error, "motor units")
+            if position_error > POSITION_ERROR_TOLERANCE:
+                print("ERROR: The final position is too far from the expected one. The motor did not move correctly.")
+                statistics_failed_go_to_closed_loop[alias] += 1
+            statistics_total_go_to_closed_loop_attempts[alias] += 1
+
+    # Print out all statistics for all aliases
+    print("\n=== STATISTICS ===============================================================================================")
+    for alias in ALIAS_LIST:
+        print("   Alias", alias, ":")
+        print("      Total go to closed loop attempts:", statistics_total_go_to_closed_loop_attempts[alias])
+        print("      Failed go to closed loop attempts:", statistics_failed_go_to_closed_loop[alias])
+    print("==============================================================================================================\n")
 
     # let's reset all devices to start from a clean state
     for alias in ALIAS_LIST:

@@ -551,6 +551,21 @@ inputs       = []
 response     = (u16, "The voltage. Divide this number by 10 to get the actual voltage in volts.")
 register_command(command_id, command_name, description, inputs, response)
 
+command_id   = 39
+command_name = "GET_MAX_PID_ERROR_COMMAND"
+description  = "Get the minimum and maximum error value ovserved in the PID control loop since the last read"
+inputs       = []
+response     = [(i32, "The minimum PID error value"),
+                (i32, "The maximum PID error value")]
+register_command(command_id, command_name, description, inputs, response)
+
+command_id   = 40
+command_name = "VIBRATE_COMMAND"
+description  = "Cause the motor to start to vary the voltage quickly and therefore to vibrate (or stop)."
+inputs       = [(u8, "Vibration level (0 = turn off, 1 = turn on).")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
 command_id   = 254
 command_name = "ADD_TO_QUEUE_TEST_COMMAND"
 description  = "This is used for testing of some calculations that predict of the motion will go out of the set safety limits"

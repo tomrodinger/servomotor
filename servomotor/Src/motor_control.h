@@ -25,7 +25,11 @@
 #define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
 #define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS * ((uint64_t)1 << 32))
 //#define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS)
-#define MAX_RPM                       1980 // should be divisable by 60 ideally
+#ifdef PRODUCT_NAME_M3
+#define MAX_RPM                       1020 // should be divisable by 60 ideally so that the MAX_RPS is an integer
+#else
+#define MAX_RPM                       2040 // should be divisable by 60 ideally so that the MAX_RPS is an integer
+#endif
 #define MAX_RPS                       (MAX_RPM / 60)
 #define MAX_MICROSTEPS_PER_SECOND     ((uint64_t)MAX_RPS * (uint64_t)MICROSTEPS_PER_ROTATION)
 #define MAX_MICROSTEPS_PER_TIME_STEP  ((uint64_t)MAX_MICROSTEPS_PER_SECOND / (uint64_t)TIME_STEPS_PER_SECOND)
@@ -39,11 +43,17 @@
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
 #define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
+#ifdef PRODUCT_NAME_M3
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
+#else
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
+#endif
 
 #define MULTIPURPOSE_DATA_TYPE_CALIBRATION 1
 #define MULTIPURPOSE_DATA_TYPE_GO_TO_CLOSED_LOOP 2
+#define MULTIPURPOSE_DATA_TYPE_VIBRATE 3
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
@@ -55,9 +65,11 @@ void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time);
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void print_queue_stats(void);
 void start_capture(uint8_t capture_type);
+void vibrate(uint8_t vibration_level);
 void reset_time(void);
 
 void print_position(void);
+void print_PID_data(void);
 void print_current_movement(void);
 void print_velocity(void);
 void print_time_difference(void);
@@ -98,6 +110,7 @@ void emergency_stop(void);
 int32_t get_motor_position(void);
 int32_t get_hall_position(void);
 uint8_t get_motor_status_flags(void);
+void get_max_PID_error(int32_t *_min_PID_error, int32_t *_max_PID_error);
 uint8_t is_calibration_data_available(void);
 uint8_t process_calibration_data(void);
 void set_motor_commutation_position_offset(uint32_t _commutation_position_offset);

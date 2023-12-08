@@ -8,6 +8,7 @@ import sys
 import argparse
 import matplotlib.pyplot as plt
 
+SERIAL_PORT_DEVICE = "/dev/tty.usbserial-0001"
 OUT_BIN_FILENAME = "hall_calibration_raw_data.bin"
 OUT_TEXT_FILENAME = "hall_calibration_one_rotation.txt"
 CALIBRATION_START_TEXT = bytearray(b'Calibration start\n')
@@ -54,7 +55,7 @@ args = arg_parser.parse_args()
 
 MY_AXIS = args.axis
 
-ser = serial.Serial('/dev/tty.usbserial-0001', 230400, timeout = 0.1)
+ser = serial.Serial(SERIAL_PORT_DEVICE, 230400, timeout = 0.1)
 
 print("Sending the command to start the calibration motor movements")
 command = bytearray([ord(MY_AXIS), CAPTURE_HALL_SENSOR_DATA_COMMAND, 1, CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING])

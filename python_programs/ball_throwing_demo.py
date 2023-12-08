@@ -10,16 +10,31 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-TIME_FOR_N_ROTATIONS = 0.03
-N_ROTATIONS = 0.15
+TIME_FOR_PREPARE_TO_THROW = 0.5
+N_ROTATIONS_FOR_PREPARE_TO_THROW = 0.02
+TIME_FOR_N_ROTATIONS = 0.025
+N_ROTATIONS = -0.2
 THROW_MOSFET_CURRENT = 1024
-THROW_ACCELERATON = 37108517
-THROW_VELOCITY = 1000000000
+THROW_ACCELERATOIN = 37108500
 
-N_COMMUTATION_STEPS                 = 64
-N_COMMUTATION_SUB_STEPS             = 1350
-ONE_REVOLUTION_ELECTRICAL_CYCLES    = 50
-ONE_REVOLUTION_HALL_SENSOR_CYCLES   = 25
+N_COMMUTATION_STEPS               = 64
+N_COMMUTATION_SUB_STEPS           = 1350
+ONE_REVOLUTION_ELECTRICAL_CYCLES  = 50
+ONE_REVOLUTION_HALL_SENSOR_CYCLES = 25
+
+MAX_RPM                 = 1000
+MAX_RPS                 = MAX_RPM / 60
+MICROSTEPS_PER_ROTATION = N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_ELECTRICAL_CYCLES
+TIME_STEPS_PER_SECOND   = 31250
+THROW_VELOCITY          = int(MAX_RPS * MICROSTEPS_PER_ROTATION * (1 << 32) / TIME_STEPS_PER_SECOND / (1 << 12))
+
+MM_PER_ROTATION                                   = 20
+MAX_ACCELERATION_MM_PER_SECOND_SQUARED            = 10000
+MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED     = (MAX_ACCELERATION_MM_PER_SECOND_SQUARED / MM_PER_ROTATION)
+MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED    = (MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * MICROSTEPS_PER_ROTATION)
+MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED = (MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
+THROW_ACCELERATION                                = int(MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED * (1 << 32) / (1 << 8))
+
 
 OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
 OUTPUT_LOG_FILE_NAME = "ball_throwing_demo"
@@ -95,8 +110,16 @@ if len(parsed_response) != 0:
     print("ERROR: The device with alias", ALIAS, "did not respond correctly to the ENABLE_MOSFETS_COMMAND")
     exit(1)
 
+# go to close loop position control mode
+parsed_response = execute_command(ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
+if len(parsed_response) != 0:
+    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the ENABLE_MOSFETS_COMMAND")
+    exit(1)
+
+time.sleep(0.2)
+
 # set the maximum acceleration of the throw
-parsed_response = execute_command(ALIAS, "SET_MAX_ACCELERATION_COMMAND", [THROW_ACCELERATON], verbose=VERBOSE)
+parsed_response = execute_command(ALIAS, "SET_MAX_ACCELERATION_COMMAND", [THROW_ACCELERATOIN], verbose=VERBOSE)
 if len(parsed_response) != 0:
     print("ERROR: The device with alias", ALIAS, "did not respond correctly to the SET_MAX_ACCELERATION_COMMAND")
     exit(1)
@@ -116,6 +139,14 @@ if len(parsed_response) != 0:
     exit(1)
 
 time.sleep(0.3)
+
+# we will move the motor in the forward and reverse direction a few times to give the impression that we are getting ready to throw
+movement_time_device_units = int(32150 * TIME_FOR_PREPARE_TO_THROW)
+rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS_FOR_PREPARE_TO_THROW)
+parsed_response = execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+if len(parsed_response) != 0:
+    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
+    exit(1)
 
 # we will move the motor in the forward direction quickly to throw the ball
 movement_time_device_units = int(32150 * TIME_FOR_N_ROTATIONS)
@@ -145,7 +176,7 @@ while time.time() < stop_time:
     print("Motor position:", motor_position, "Hall sensor position:", hall_sensor_position, "Position deviation:", position_deviation)
 
 # set the MOSFET current
-parsed_response = execute_command(ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [300, 300], verbose=VERBOSE)
+parsed_response = execute_command(ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [400, 400], verbose=VERBOSE)
 if len(parsed_response) != 0:
     print("ERROR: The device with alias", ALIAS, "did not respond correctly to the SET_MAXIMUM_MOTOR_CURRENT command")
     exit(1)
@@ -154,12 +185,19 @@ time.sleep(0.1)
 
 # we will return the arm back to the original position (slowly) so that we can load the next ball
 TIME_FOR_N_ROTATIONS = 1.0
-N_ROTATIONS = -N_ROTATIONS
+N_ROTATIONS = -(N_ROTATIONS + N_ROTATIONS_FOR_PREPARE_TO_THROW)
 movement_time_device_units = int(32150 * TIME_FOR_N_ROTATIONS)
 rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS)
 parsed_response = execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
 if len(parsed_response) != 0:
     print("ERROR: The device with alias", ALIAS, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
     exit(1)
+
+parsed_response = execute_command(ALIAS, "GET_MAX_PID_ERROR_COMMAND", [], verbose=VERBOSE)
+if len(parsed_response) != 2:
+    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the GET_MAX_PID_ERROR_COMMAND")
+    exit(1)
+
+print("The minimum and maximum PID error is:", parsed_response[0], parsed_response[1])
 
 log_fh.close()

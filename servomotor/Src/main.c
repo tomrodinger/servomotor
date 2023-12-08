@@ -828,6 +828,27 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
             break;
+        case GET_MAX_PID_ERROR_COMMAND:
+            rs485_allow_next_command();
+            {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    int32_t min_PID_error;
+                    int32_t max_PID_error;
+                } get_max_pid_error_reply;
+                if(axis != ALL_ALIAS) {
+                    get_max_pid_error_reply.header[0] = 'R';
+                    get_max_pid_error_reply.header[1] = 1;
+                    get_max_pid_error_reply.header[2] = sizeof(get_max_pid_error_reply) - 3;
+                    int32_t min_PID_error;
+                    int32_t max_PID_error;
+                    get_max_PID_error(&min_PID_error, &max_PID_error);
+                    get_max_pid_error_reply.min_PID_error = min_PID_error;
+                    get_max_pid_error_reply.max_PID_error = max_PID_error;
+                    rs485_transmit(&get_max_pid_error_reply, sizeof(get_max_pid_error_reply));
+                }
+            }
+            break;
         case TEST_MODE_COMMAND:
             {
                 uint8_t test_mode = parameters[0];
@@ -838,6 +859,23 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
                 sprintf(buf, "Setting the test mode to %hu\n", test_mode);
                 print_debug_string(buf);
+            }
+            break;
+        case VIBRATE_COMMAND:
+            {
+                uint8_t vibration_level = parameters[0];
+                rs485_allow_next_command();
+                vibrate(vibration_level);
+                if(axis != ALL_ALIAS) {
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+                if(vibration_level == 0) {
+                    print_debug_string("Turning off vibration\n");
+                }
+                else {
+                    sprintf(buf, "Turning on vibration with level %hu\n", vibration_level);
+                    print_debug_string(buf);
+                }
             }
             break;
         }
@@ -886,6 +924,7 @@ void process_debug_uart_commands(void)
     		print_position();
     		print_sensor_position();
             print_external_encoder_position();
+            print_PID_data();
     		print_queue_stats();
     		print_current_movement();
     		print_velocity();
@@ -957,6 +996,9 @@ void process_debug_uart_commands(void)
             break;
         case 'G':
 			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
+            break;
+        case 'V':
+            vibrate(1);
             break;
 		}
     	command_debug_uart = 0;

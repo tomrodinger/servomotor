@@ -12,7 +12,7 @@ files = sorted(glob.glob(GLOB_SEARCH_STRING), key=lambda x:int(x.split('_')[-1])
 # Loop through the files, read each one into a dataframe and plot it
 for filename in files:
     data = pd.read_csv(filename, sep=' ', header=None)
-    plt.plot(data[0], data[1], label=filename)
+    plt.plot(data[0], data[1])
 
 plt.xlabel('Index')
 plt.ylabel('Data value')

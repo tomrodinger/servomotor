@@ -111,6 +111,14 @@ static uint8_t test_mode = 0;
 static int32_t integral_term = 0;
 static int32_t previous_error = 0;
 static int32_t low_pass_filtered_error_change = 0;
+// PID informatonal variables:
+int32_t PID_error = 0;
+int32_t min_PID_error = 2147483647;
+int32_t max_PID_error = -2147483648;
+int32_t PID_P = 0;
+int32_t PID_I = 0;
+int32_t PID_D = 0;
+int32_t PID_output_value = 0;
 
 static uint8_t go_to_closed_loop_step = 0;
 #ifdef PRODUCT_NAME_M1
@@ -120,6 +128,7 @@ static uint16_t motor_current_baseline = 1350;
 static int32_t position_lower_safety_limit = -2000000000;
 static int32_t position_upper_safety_limit = 2000000000;
 static uint8_t homing_active = 0;
+static uint8_t vibration_active = 0;
 //static int8_t homing_direction = 0; // 1 for positive, -1 for negative
 static uint8_t calibration_step = 0;
 static uint8_t calibration_print_output;
@@ -416,7 +425,9 @@ void start_calibration(uint8_t print_output)
 	global_settings.motor_phases_reversed = 0;
 	global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
 	commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
+#ifdef PRODUCT_NAME_M3
 	actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
+#endif
 
     volatile uint32_t i;
     for(i = 0; i < 1000; i++); // make a delay
@@ -758,12 +769,89 @@ uint8_t process_calibration_data(void)
 
 #ifdef PRODUCT_NAME_M1
 
+#define GO_TO_CLOSED_LOOP_N_DATA_ITEMS ((VIBRATION_QUARTER_CYCLE_DURATION * 4) >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT)
+
+static volatile int32_t *go_to_closed_loop_data = (void*)&calibration; // go_to_closed_loop_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
+static volatile uint16_t go_to_closed_loop_max_data_items = sizeof(calibration) / sizeof(int32_t);
+static volatile uint16_t go_to_closed_loop_avg_counter = 0;
+static volatile uint16_t vibration_duration_counter = 0;
+static volatile uint16_t data_index = 0;
+
+#define VIBRATION_QUARTER_CYCLE_DURATION 40
+
+void start_go_to_closed_loop_mode(void)
+{
+//	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
+//		fatal_error(7); // "not in open loop" (all error text is defined in error_text.c)
+//	}
+	if(n_items_in_queue != 0) {
+		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
+	}
+	if(motor_busy) {
+		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
+	}
+	if(GO_TO_CLOSED_LOOP_N_DATA_ITEMS + 2 > sizeof(calibration) / sizeof(int32_t)) { // sanity check here. make sure we don't overflow the available memory.
+		fatal_error(29); // "debug1" (all error text is defined in error_text.c)
+	}
+
+	motor_busy = 1;
+
+	memset((void*)go_to_closed_loop_data, 0, GO_TO_CLOSED_LOOP_N_DATA_ITEMS * sizeof(int32_t));
+	
+	print_debug_string("Go to closed loop mode start\n");
+	check_current_sensor_and_enable_mosfets();
+
+	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	commutation_position_offset = global_settings.commutation_position_offset;
+	desired_motor_pwm_voltage = 50;
+	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
+	vibration_duration_counter = 0;
+	vibration_four_step = 0;
+	go_to_closed_loop_avg_counter = 0;
+	data_index = 0;
+	go_to_closed_loop_step = 1;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+}
+
+void go_to_closed_loop_mode_logic(void)
+{
+	if(go_to_closed_loop_step == 1) {
+		if(go_to_closed_loop_avg_counter < GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES) {
+			if(go_to_closed_loop_avg_counter >= (GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES >> 3)) {
+				go_to_closed_loop_data[data_index >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT] += hall_position_delta;
+			}
+			data_index++;
+
+			vibration_duration_counter++;
+			if(vibration_duration_counter >= VIBRATION_QUARTER_CYCLE_DURATION) {
+				vibration_duration_counter = 0;
+				vibration_four_step++;
+				if(vibration_four_step < 4) {	
+					commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET;
+				}
+				else {
+					commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
+					vibration_four_step = 0;
+					data_index = 0;
+					go_to_closed_loop_avg_counter++;
+				}
+			}
+		}
+		else {
+			go_to_closed_loop_step = 2;
+		}
+	}
+}
+
+#if 0
+
 #define GO_TO_CLOSED_LOOP_N_DATA_ITEMS ((GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE * 8 / DESIRED_MOTOR_PWM_VOLTAGE_STEP) >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT)
 
 static volatile int32_t *go_to_closed_loop_data = (void*)&calibration; // go_to_closed_loop_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
 static volatile uint16_t go_to_closed_loop_max_data_items = sizeof(calibration) / sizeof(int32_t);
 static volatile uint16_t go_to_closed_loop_avg_counter = 0;
 static volatile uint16_t data_index = 0;
+
 
 void start_go_to_closed_loop_mode(void)
 {
@@ -819,10 +907,10 @@ void go_to_closed_loop_mode_logic(void)
 				if(desired_motor_pwm_voltage_before_shifting <= 0) {
 					vibration_four_step++;
 					if(vibration_four_step < 8) {	
-						commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET * 2;
+						commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET;
 					}
 					else {
-						commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3 * 2);
+						commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
 						vibration_four_step = 0;
 						data_index = 0;
 						go_to_closed_loop_avg_counter++;
@@ -833,10 +921,10 @@ void go_to_closed_loop_mode_logic(void)
 		else {
 			go_to_closed_loop_step = 2;
 		}
+		desired_motor_pwm_voltage = desired_motor_pwm_voltage_before_shifting >> DESIRED_MOTOR_PWM_VOLTAGE_SHIFT;
 	}
-	desired_motor_pwm_voltage = desired_motor_pwm_voltage_before_shifting >> DESIRED_MOTOR_PWM_VOLTAGE_SHIFT;
 }
-
+#endif
 
 struct goertzel_algorithm_result_t {
     int32_t real;
@@ -910,7 +998,7 @@ void process_go_to_closed_loop_data(void)
 		print_debug_string(buf);
 		int32_t abs_result_real = abs(result.real);
 		int32_t abs_result_imag = abs(result.imag);
-		if(abs_result_real > abs_result_imag) {
+		if(abs_result_real >= abs_result_imag) {
 			if(abs_result_imag == 0) {
 				ratio = 32000;
 			}
@@ -977,8 +1065,6 @@ void start_go_to_closed_loop_mode(void)
 		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
 	}
 
-	motor_busy = 1;
-
 	print_debug_string("Go to closed loop mode start\n");
 	check_current_sensor_and_enable_mosfets();
 
@@ -988,6 +1074,96 @@ void start_go_to_closed_loop_mode(void)
 }
 
 #endif
+
+
+#define VIBRATE_STEP_SIZE 1
+#define VIBRATE_MAGNITUDE 50
+#define VIBRATE_LOOP_COUNTER 200
+#define VIBRATE_DATA_INDEX_SHIFT_RIGHT 3
+#define VIBRATE_N_DATA_ITEMS ((VIBRATE_LOOP_COUNTER * 2) >> VIBRATE_DATA_INDEX_SHIFT_RIGHT)
+static volatile int32_t *vibrate_data = (void*)&calibration; // vibrate_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
+
+void vibrate(uint8_t vibration_level)
+{
+	if(n_items_in_queue != 0) {
+		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
+	}
+
+	if(vibration_level == 0) {
+		vibration_active = 0;
+		desired_motor_pwm_voltage = 0;
+		motor_busy = 0;
+		return;
+	}
+
+	if(motor_busy) {
+		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
+	}
+
+	motor_busy = 1;
+	
+	check_current_sensor_and_enable_mosfets();
+
+	if(VIBRATE_N_DATA_ITEMS > sizeof(calibration) / sizeof(int32_t)) { // sanity check here. make sure we don't overflow the available memory.
+		fatal_error(29); // "debug1" (all error text is defined in error_text.c)
+	}
+	memset((void*)vibrate_data, 0, VIBRATE_N_DATA_ITEMS * sizeof(int32_t));
+	multipurpose_data_type = MULTIPURPOSE_DATA_TYPE_VIBRATE;
+	multipurpose_data_size = VIBRATE_N_DATA_ITEMS * sizeof(int32_t);
+
+	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	desired_motor_pwm_voltage = VIBRATE_MAGNITUDE;
+	vibration_four_step = 0;
+	go_to_closed_loop_avg_counter = 0;
+	data_index = 0;
+	set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
+	vibration_active = 1;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+}
+
+void handle_vibrate_logic(void)
+{
+	vibrate_data[data_index >> VIBRATE_DATA_INDEX_SHIFT_RIGHT] += hall_position_delta;
+	data_index++;
+	if(go_to_closed_loop_avg_counter < VIBRATE_LOOP_COUNTER) {
+		go_to_closed_loop_avg_counter++;
+		return;
+	}
+	go_to_closed_loop_avg_counter = 0;
+	vibration_four_step++;
+	if((vibration_four_step & 1) == 0) {
+		desired_motor_pwm_voltage = VIBRATE_MAGNITUDE;
+		data_index = 0;
+	}
+	else {
+		desired_motor_pwm_voltage = -VIBRATE_MAGNITUDE;
+	}
+}
+
+void handle_vibrate_logic_old(void)
+{
+	switch(vibration_four_step) {
+	case 0:
+		desired_motor_pwm_voltage += VIBRATE_STEP_SIZE;
+		if(desired_motor_pwm_voltage >= VIBRATE_MAGNITUDE) {
+			vibration_four_step++;
+		}
+		break;
+	case 1:
+		desired_motor_pwm_voltage -= VIBRATE_STEP_SIZE;
+		if(desired_motor_pwm_voltage <= -VIBRATE_MAGNITUDE) {
+			vibration_four_step++;
+		}
+		break;
+	case 2:
+		desired_motor_pwm_voltage += VIBRATE_STEP_SIZE;
+		if(desired_motor_pwm_voltage >= 0) {
+			vibration_four_step = 0;
+		}
+		break;
+	}
+	go_to_closed_loop_avg_counter++;
+}
 
 void start_capture(uint8_t capture_type)
 {
@@ -1113,6 +1289,13 @@ void print_position(void)
 {
 	char buf[100];
 	sprintf(buf, "current_position: %ld   hall_position: %ld\n", current_position.i32[1], hall_position);
+	print_debug_string(buf);
+}
+
+void print_PID_data(void)
+{
+	char buf[170];
+	sprintf(buf, "error: %ld   min_PID_error: %ld   max_PID_error: %ld   PID: %ld %ld %ld   Output: %ld\n", PID_error, min_PID_error, max_PID_error, PID_P, PID_I, PID_D, PID_output_value);
 	print_debug_string(buf);
 }
 
@@ -1583,31 +1766,34 @@ uint8_t handle_queued_movements(void)
 }
 
 
-#define PID_SHIFT_RIGHT 18
 #define ERROR_HYSTERESIS_P 0
 #define ERROR_HYSTERESIS_D 0
 
 #ifdef PRODUCT_NAME_M1
+#define PID_SHIFT_RIGHT 18
 #define PROPORTIONAL_CONSTANT_PID 5000
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   5000
 #endif
 #ifdef PRODUCT_NAME_M2
+#define PID_SHIFT_RIGHT 18
 #define PROPORTIONAL_CONSTANT_PID 20000
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   100000
 #endif
 #ifdef PRODUCT_NAME_M3
-#define PROPORTIONAL_CONSTANT_PID 200
-#define INTEGRAL_CONSTANT_PID     0
-#define DERIVATIVE_CONSTANT_PID   0
+#define PID_SHIFT_RIGHT 14
+#define PROPORTIONAL_CONSTANT_PID 10000
+#define INTEGRAL_CONSTANT_PID     10
+#define DERIVATIVE_CONSTANT_PID   100000
 #endif
 
 #define MAX_INT32         2147483647
 #define MAX_INTEGRAL_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT)
 #define MAX_OTHER_TERMS   ((MAX_INT32 - MAX_INTEGRAL_TERM) / 2)
 #define MAX_ERROR         ((MAX_OTHER_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
-#define MAX_ERROR_CHANGE  ((MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
+//#define MAX_ERROR_CHANGE  ((MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
+#define MAX_ERROR_CHANGE  (MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID)
 //#define DERIVATIVE_CONSTANT_PID 250000
 //#define DERIVATIVE_CONSTANT_PID 1280000
 
@@ -1617,9 +1803,33 @@ int32_t PID_controller(int32_t error)
     int32_t proportional_term;
     int32_t derivative_term;
 
+	if(error < min_PID_error) {
+		min_PID_error = error;
+	}
+	if(error > max_PID_error) {
+		max_PID_error = error;
+	}
+
 #ifdef PRODUCT_NAME_M2
     error >>= 3;
 #endif
+
+#if DERIVATIVE_CONSTANT_PID != 0
+    int32_t error_change = error - previous_error;
+    if(error_change > MAX_ERROR_CHANGE) {
+    	error_change = MAX_ERROR_CHANGE;
+    }
+    if(error_change < -MAX_ERROR_CHANGE) {
+    	error_change = -MAX_ERROR_CHANGE;
+    }
+    low_pass_filtered_error_change = (low_pass_filtered_error_change * 31);
+    low_pass_filtered_error_change += error_change;
+    low_pass_filtered_error_change >>= 5;
+    derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
+#else
+	derivative_term = 0;
+#endif
+    previous_error = error;
 
     if(error < -MAX_ERROR) {
         error = -MAX_ERROR;
@@ -1636,23 +1846,14 @@ int32_t PID_controller(int32_t error)
     }
     proportional_term = error * PROPORTIONAL_CONSTANT_PID;
 
-#if DERIVATIVE_CONSTANT_PID != 0
-    int32_t error_change = error - previous_error;
-    if(error_change > MAX_ERROR_CHANGE) {
-    	error_change = MAX_ERROR_CHANGE;
-    }
-    if(error_change < -MAX_ERROR_CHANGE) {
-    	error_change = -MAX_ERROR_CHANGE;
-    }
-    low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
-    low_pass_filtered_error_change += error_change;
-    low_pass_filtered_error_change >>= 4;
-    derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
-#else
-	derivative_term = 0;
-#endif
-    previous_error = error;
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
+
+	// copy this information to these variables so that we can print them in the debugging interface
+	PID_error = error;
+	PID_P = proportional_term;
+	PID_I = integral_term;
+	PID_D = derivative_term;
+	PID_output_value = output_value;
 
     return output_value;
 }
@@ -1760,6 +1961,9 @@ void motor_movement_calculations(void)
     else if(calibration_step != 0) {
         handle_calibration_logic();
     }
+	else if(vibration_active) {
+		handle_vibrate_logic();
+	}
 
     moving = handle_queued_movements();
 
@@ -1777,27 +1981,30 @@ void motor_movement_calculations(void)
 			motor_pwm_voltage = max_motor_pwm_voltage;
 		}
 		else {
-			motor_pwm_voltage = max_motor_pwm_voltage / 2;
+			motor_pwm_voltage = max_motor_pwm_voltage >> 1;
 		}
 	}
 	else {
 		commutation_position = sensor_position + commutation_position_offset;
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-			motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
-			if(motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
+			desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
+			if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
 				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
 			}
-			else if(motor_pwm_voltage < -HALL_TO_POSITION_90_DEGREE_OFFSET) {
+			else if(desired_motor_pwm_voltage < -HALL_TO_POSITION_90_DEGREE_OFFSET) {
 				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
 			}
 			else {
-				commutation_position += motor_pwm_voltage;
+				commutation_position += desired_motor_pwm_voltage;
 			}
-			if(motor_pwm_voltage < 0) {
-				motor_pwm_voltage = -motor_pwm_voltage;
+			if(desired_motor_pwm_voltage >= 0) {
+				motor_pwm_voltage = desired_motor_pwm_voltage;
 			}
-			if(motor_pwm_voltage > PWM_PERIOD) {
-				motor_pwm_voltage = PWM_PERIOD;
+			else {
+				motor_pwm_voltage = -desired_motor_pwm_voltage;
+			}
+			if(motor_pwm_voltage > max_motor_pwm_voltage) {
+				motor_pwm_voltage = max_motor_pwm_voltage;
 			}
 		}
 		else {
@@ -1817,14 +2024,24 @@ void motor_movement_calculations(void)
 #else
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = current_position.i32[1] + commutation_position_offset;
-		if(calibration_step !=0 ) {
+		if(vibration_active) {
+			if(desired_motor_pwm_voltage >= 0) {
+				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = desired_motor_pwm_voltage;
+			}
+			else {
+				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = -desired_motor_pwm_voltage;
+			}
+		}
+		else if(calibration_step != 0 ) {
 			motor_pwm_voltage = desired_motor_pwm_voltage;
 		}
 		else if(moving) {
 			motor_pwm_voltage = max_motor_pwm_voltage;
 		}
 		else {
-			motor_pwm_voltage = max_motor_pwm_voltage / 2;
+			motor_pwm_voltage = max_motor_pwm_voltage >> 1;
 		}
 	}
 	else {
@@ -2318,6 +2535,19 @@ uint8_t get_motor_status_flags(void)
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 
 	return motor_status_flags;
+}
+
+
+void get_max_PID_error(int32_t *_min_PID_error, int32_t *_max_PID_error)
+{
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	int32_t min = min_PID_error;
+	int32_t max = max_PID_error;
+	min_PID_error = 2147483647;
+	max_PID_error = -2147483648;
+    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+	*_min_PID_error = min;
+	*_max_PID_error = max;
 }
 
 
