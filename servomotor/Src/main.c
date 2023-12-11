@@ -43,7 +43,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 3
+#define BUGFIX_FIRMWARE_VERSION 4
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS

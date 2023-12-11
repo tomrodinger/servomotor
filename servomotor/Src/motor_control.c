@@ -1355,7 +1355,7 @@ void print_time_difference(void)
 #endif
 
 	snprintf(buf, sizeof(buf), "MOTOR_CONTROL_LOOP_PERIOD_PROFILER: latest: %hu max: %hu\n",
-	        profiler_get_time_difference(MOTOR_CONTROL_LOOP_PERIOD_PROFILER), profiler_get_max_time_difference(MOTOR_CONTROL_LOOP_PERIOD_PROFILER));
+	profiler_get_time_difference(MOTOR_CONTROL_LOOP_PERIOD_PROFILER), profiler_get_max_time_difference(MOTOR_CONTROL_LOOP_PERIOD_PROFILER));
 	print_debug_string(buf);
 
 	print_debug_counter();

@@ -83,5 +83,6 @@ void reset_profilers(void)
 
 	for(i = 0; i < N_PROFILERS; i++) {
 		profiler_clock_start_time[i] -= time_adjustment;
+		profiler_clock_end_time[i] -= time_adjustment;
 	}
 }
