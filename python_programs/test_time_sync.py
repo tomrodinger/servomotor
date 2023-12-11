@@ -42,7 +42,8 @@ while 1:
     current_time = time.time() - master_start_time
     current_time_us = int(current_time * 1000000)
     response = execute_command(ord(args.alias), "TIME_SYNC_COMMAND", [current_time_us], verbose=VERBOSE)
-    print(response[0])
+    time_error_us = response[0]
+    print(f"The time error is {time_error_us} microseconds")
     time.sleep(0.1)
 
 communication.close_serial_port()
