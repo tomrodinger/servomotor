@@ -6,7 +6,7 @@ import motor_commands
 import communication
 import time
 
-VERBOSE = True
+VERBOSE = False
 
 def execute_command(alias, command_str, inputs, verbose=True):
     communication.alias = alias
@@ -41,7 +41,8 @@ execute_command(ord(args.alias), "RESET_TIME_COMMAND", [], verbose=VERBOSE)
 while 1:
     current_time = time.time() - master_start_time
     current_time_us = int(current_time * 1000000)
-    execute_command(ord(args.alias), "TIME_SYNC_COMMAND", [current_time_us], verbose=VERBOSE)
+    response = execute_command(ord(args.alias), "TIME_SYNC_COMMAND", [current_time_us], verbose=VERBOSE)
+    print(response[0])
     time.sleep(0.1)
 
 communication.close_serial_port()
