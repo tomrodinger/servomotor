@@ -9,8 +9,7 @@ communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.r
                                motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
                                motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
-# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
-# and it also takes a mandatory firmware file name
+# Define the arguments for this program
 parser = argparse.ArgumentParser(description='This program will let you send any supported command to the motor')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")

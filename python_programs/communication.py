@@ -588,13 +588,13 @@ def interpret_single_response(command_id, response, verbose=True):
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
                     if verbose:
-                        print("   ---> %d" % (from_bytes_result))
+                        print("   ---> %016X" % (from_bytes_result))
                 elif data_type == command_data_types.u8_alias:
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
                     if verbose:
                         if from_bytes_result >= 33 and from_bytes_result <= 126:
-                            print("   ---> the ASCII character %c" % (from_bytes_result))
+                            print("   ---> the ASCII character %c (or the decimal number %d)" % (from_bytes_result, from_bytes_result))
                         else:
                             print("   ---> the single byte integer %d or 0x%02x in hex" % (from_bytes_result, from_bytes_result))
                 elif data_type == command_data_types.crc32:
