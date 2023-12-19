@@ -906,12 +906,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             {
                 unique_id = ((int64_t*)parameters)[0];
                 rs485_allow_next_command();
-                char buf[100];
-                uint8_t i;
-                for(i = 0; i < 8; i++) {
-                    sprintf(buf, "%02X ", (int)(((uint8_t*)&unique_id)[i]));
-                    print_debug_string(buf);
-                }
                 if(unique_id == my_unique_id) {
                     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
                     green_led_action_counter = 0;

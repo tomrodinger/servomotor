@@ -15,6 +15,7 @@ parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
 parser.add_argument('-c', '--commands', help='list all supported commands with detailed descriptions', action="store_true")
+parser.add_argument('-v', '--verbose', help='print more information about what is happening', action="store_true")
 parser.add_argument('command',
                     help = 'This is the command to be send to the motor. For example ENABLE_MOSFETS_COMMAND. Run this program with the -c option to see all supported commands.',
                     nargs='?',
@@ -51,6 +52,6 @@ gathered_inputs = communication.gather_inputs(command_id, args.inputs)
 
 communication.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the communication module
 communication.open_serial_port()
-response = communication.send_command(command_id, gathered_inputs)
+response = communication.send_command(command_id, gathered_inputs, verbose=args.verbose)
 communication.interpret_response(command_id, response)
 communication.close_serial_port()
