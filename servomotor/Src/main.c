@@ -43,7 +43,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 4
+#define BUGFIX_FIRMWARE_VERSION 5
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -58,6 +58,8 @@ extern volatile uint8_t commandReceived;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
+static uint16_t green_led_action_counter = 0;
+static uint8_t n_identify_flashes = 0;
 
 void clock_init(void)
 {
@@ -120,7 +122,11 @@ void systick_init(void)
 #define PUPDR_PULL_UP 1
 #define PUPDR_PULL_DOWN 2
 
+#ifndef PRODUCT_NAME_M3 // Below are the port pin settings for products M1 and M2
 #define BUTTON_PORT_A_PIN 13
+#else
+#define BUTTON_PORT_A_PIN 14
+#endif
 #define TOUCH_BUTTON_PORT_A_PIN 15
 
 #ifndef PRODUCT_NAME_M3 // Below are the port pin settings for products M1 and M2
@@ -255,8 +261,6 @@ void GPIO_init(void)
 
 void portA_init(void)
 {
-	#define BUTTON_PORT_A_PIN 13
-
     GPIOA->MODER =
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Direction control of the motor digital output
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // Step motor step control output (to rotate the motor)
@@ -351,13 +355,33 @@ void SysTick_Handler(void)
 {
     #define OVERVOLTAGE_PORT_B_PIN 12
 
-	static uint16_t toggle_counter = 0;
-
-	toggle_counter++;
-	if(toggle_counter >= 50) {
-	    green_LED_toggle();
-		toggle_counter = 0;
-	}
+    if(n_identify_flashes == 0) {
+        if(green_led_action_counter < 99) {
+            green_LED_off();
+            green_led_action_counter++;
+        }
+        else if(green_led_action_counter < 100) {
+            green_LED_on();
+            green_led_action_counter++;
+        }
+        else {
+            green_led_action_counter = 0;
+        }
+    }
+    else {
+        if(green_led_action_counter < 60) {
+            green_LED_on();
+            green_led_action_counter++;
+        }
+        else if(green_led_action_counter < 80) {
+            green_LED_off();
+            green_led_action_counter++;
+        }
+        else {
+            green_led_action_counter = 0;
+            n_identify_flashes--;
+        }
+    }
 
     if(detect_devices_delay > 0) {
         detect_devices_delay--;
@@ -528,7 +552,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case ZERO_POSITION_COMMAND:
             rs485_allow_next_command();
-            zero_position_and_hall_sensor();
+            zero_position();
 			if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
@@ -878,6 +902,26 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
             break;
+        case IDENTIFY_COMMAND:
+            {
+                unique_id = ((int64_t*)parameters)[0];
+                rs485_allow_next_command();
+                char buf[100];
+                uint8_t i;
+                for(i = 0; i < 8; i++) {
+                    sprintf(buf, "%02X ", (int)(((uint8_t*)&unique_id)[i]));
+                    print_debug_string(buf);
+                }
+                if(unique_id == my_unique_id) {
+                    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
+                    green_led_action_counter = 0;
+                    n_identify_flashes = 3;
+                    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
+                    print_debug_string("Identifying\n");
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+                break;
+            }
         }
     }
     else {
@@ -902,7 +946,7 @@ void process_debug_uart_commands(void)
     if(command_debug_uart != 0) {
     	switch(command_debug_uart) {
     	case 'z':
-    		zero_position_and_hall_sensor();
+    		zero_position();
     		break;
     	case 'c':
 			start_go_to_closed_loop_mode();
@@ -1012,7 +1056,11 @@ void button_logic(void)
     uint32_t time_pressed_down = 0;
     static uint8_t press_flag = 0;
 
+#ifdef PRODUCT_NAME_M1
     if((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) == 0) {
+#else
+    if((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) != 0) {
+#endif
     	if(press_flag == 0) {
 			press_start_time = get_microsecond_time();
 			press_flag = 1;

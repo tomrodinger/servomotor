@@ -18,6 +18,7 @@ typedef struct {
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3]);
 get_sensor_position_return_t get_sensor_position(void);
 void zero_hall_position(uint8_t keep_sensor_offset);
+void bound_the_sensor_position(int32_t upper_bound);
 void print_sensor_position(void);
 void print_hall_midlines(void);
 void get_hall_sensor_statistics(hall_sensor_statistics_t *hall_sensor_statistics);

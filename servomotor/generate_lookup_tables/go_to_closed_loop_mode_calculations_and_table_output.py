@@ -5,12 +5,13 @@ import math
 import cmath
 import matplotlib.pyplot as plt
 
-GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE  =80
-DESIRED_MOTOR_PWM_VOLTAGE_STEP = 1
-GO_TO_CLOSED_LOOP_SHIFT_RIGHT = 3
-GO_TO_CLOSED_LOOP_N_DATA_ITEMS = (int(GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE * 8 / DESIRED_MOTOR_PWM_VOLTAGE_STEP) >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT)
-GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES = -7 # negative number makes the plot of imaginary vs. real become rotated clockwise around the origin
-GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES = 50
+GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE = 80
+DESIRED_MOTOR_PWM_VOLTAGE_STEP = 8
+GO_TO_CLOSED_LOOP_SHIFT_RIGHT = 1
+VIBRATION_QUARTER_CYCLE_DURATION = 40
+GO_TO_CLOSED_LOOP_N_DATA_ITEMS = (int(VIBRATION_QUARTER_CYCLE_DURATION * 4) >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT)
+GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES = 9 # positive number makes the plot of imaginary vs. real become rotated counter-clockwise around the origin
+GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES = 100
 
 go_to_closed_loop_phase_adjustment_samples = GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES
 if go_to_closed_loop_phase_adjustment_samples < 0:
@@ -92,7 +93,8 @@ def save_hash_defines(filename, goertzel_constants):
         fh.write("#define GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE " + str(GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE) + "\n")
         fh.write("#define DESIRED_MOTOR_PWM_VOLTAGE_STEP " + str(DESIRED_MOTOR_PWM_VOLTAGE_STEP) + "\n")
         fh.write("#define GO_TO_CLOSED_LOOP_SHIFT_RIGHT " + str(GO_TO_CLOSED_LOOP_SHIFT_RIGHT) + "\n")
-        fh.write("#define GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES " + str(go_to_closed_loop_phase_adjustment_samples) + "\n")
+        fh.write("#define VIBRATION_QUARTER_CYCLE_DURATION " + str(VIBRATION_QUARTER_CYCLE_DURATION) + "\n")
+        fh.write("#define GO_TO_CLOSED_LOOP_PHASE_ADJUSTMENT_SAMPLES " + str(go_to_closed_loop_phase_adjustment_samples) + " // positive number makes the plot of imaginary vs. real become rotated counter-clockwise around the origin\n")
         fh.write("#define GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES " + str(GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES) + "\n")
         fh.write("\n")
         fh.write("#define W_REAL_MULTIPLIER " + str(goertzel_constants.w_real_multiplier) + "\n")

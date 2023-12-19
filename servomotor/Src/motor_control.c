@@ -44,7 +44,7 @@
 #endif
 //#define DO_DETAILED_PROFILING
 #define UINT32_MIDPOINT 2147483648
-#define COMMUTATION_POSITION_OFFSET_DEFAULT (UINT32_MIDPOINT / N_COMMUTATION_STEPS * N_COMMUTATION_STEPS) // a number that when added to the zero position will yield a lookup at index 0 in the commutation table (see commutation_table_XX.h, where XX is the product name)
+#define COMMUTATION_POSITION_OFFSET_DEFAULT (UINT32_MIDPOINT / (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) * (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS)) // a number that when added to the zero position will yield a lookup at index 0 in the commutation table (see commutation_table_XX.h, where XX is the product name)
 #define POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD 2000000000  // a position in the range -2000000000 to 2000000000 is valid
 // This is the number of microsteps to turn the motor through one quarter of one commutation cycle (not one revolution)
 #define HALL_TO_POSITION_90_DEGREE_OFFSET ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) >> 2)
@@ -100,9 +100,9 @@ static int64_t max_acceleration = MAX_ACCELERATION;
 static int64_t max_velocity = MAX_VELOCITY;
 static int32_t motor_pwm_voltage = 0;
 static int32_t desired_motor_pwm_voltage = 0;
-#ifdef PRODUCT_NAME_M1
-static int32_t desired_motor_pwm_voltage_before_shifting = 0;
-#endif
+//#ifdef PRODUCT_NAME_M1
+//static int32_t desired_motor_pwm_voltage_before_shifting = 0;
+//#endif
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 #define GO_TO_CLOSED_LOOP_MODE_TEST_MODE 2
 static uint8_t test_mode = 0;
@@ -802,9 +802,10 @@ void start_go_to_closed_loop_mode(void)
 	check_current_sensor_and_enable_mosfets();
 
 	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	zero_hall_position(1);
 	commutation_position_offset = global_settings.commutation_position_offset;
-	desired_motor_pwm_voltage = 50;
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
+	desired_motor_pwm_voltage = 50;
 	vibration_duration_counter = 0;
 	vibration_four_step = 0;
 	go_to_closed_loop_avg_counter = 0;
@@ -838,6 +839,7 @@ void go_to_closed_loop_mode_logic(void)
 			}
 		}
 		else {
+			desired_motor_pwm_voltage = 0;
 			go_to_closed_loop_step = 2;
 		}
 	}
@@ -1005,13 +1007,13 @@ void process_go_to_closed_loop_data(void)
 			else {
 				ratio = abs_result_real / abs_result_imag;
 			}
-			if(result.real >= 0.0) {
-				print_debug_string("Angle determined to be very roughly 0 degrees\n");
-				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
+			if(result.real >= 0) {
+				print_debug_string("Angle determined to be very roughly 0 degrees\n");  //                |
+				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 3); // 3 2 1 0  3 0 1 2
 			}
 			else {
 				print_debug_string("Angle determined to be very roughly 180 degrees\n");
-				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 1);
+				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 1); // 1 0 3 2  1 2 3 0
 			}
 		}
 		else {
@@ -1021,18 +1023,18 @@ void process_go_to_closed_loop_data(void)
 			else {
 				ratio = abs_result_imag / abs_result_real;
 			}
-			if(result.imag >= 0.0) {
+			if(result.imag >= 0) {
 				print_debug_string("Angle determined to be very roughly 90 degrees\n");
-				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 2);
+				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 2); // 0 3 2 1  2 3 0 1
 			}
 			else {
 				print_debug_string("Angle determined to be very roughly 270 degrees\n");
-				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 0);
+				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 0); // 2 1 0 3  0 1 2 3
 			}
 		}
-
 		sprintf(buf, "Ratio: %ld\n", ratio);
 		print_debug_string(buf);
+
 		if(ratio < 3) {
 			print_debug_string("Ratio is too small\n");
 			if(test_mode != GO_TO_CLOSED_LOOP_MODE_TEST_MODE) {
@@ -1045,7 +1047,7 @@ void process_go_to_closed_loop_data(void)
 			set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
 		}
 
-		zero_position_and_hall_sensor();
+		hall_position = current_position.i32[1]; // this is so that the motor does not move when we go into closed loop mode
 		go_to_closed_loop_step = 0;
 		motor_busy = 0;
 	}
@@ -1085,6 +1087,7 @@ static volatile int32_t *vibrate_data = (void*)&calibration; // vibrate_data use
 
 void vibrate(uint8_t vibration_level)
 {
+#ifdef PRODUCT_NAME_M1
 	if(n_items_in_queue != 0) {
 		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
 	}
@@ -1119,8 +1122,10 @@ void vibrate(uint8_t vibration_level)
 	set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
 	vibration_active = 1;
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
+#endif
 }
 
+#ifdef PRODUCT_NAME_M1
 void handle_vibrate_logic(void)
 {
 	vibrate_data[data_index >> VIBRATE_DATA_INDEX_SHIFT_RIGHT] += hall_position_delta;
@@ -1139,7 +1144,9 @@ void handle_vibrate_logic(void)
 		desired_motor_pwm_voltage = -VIBRATE_MAGNITUDE;
 	}
 }
+#endif
 
+#if 0
 void handle_vibrate_logic_old(void)
 {
 	switch(vibration_four_step) {
@@ -1164,6 +1171,7 @@ void handle_vibrate_logic_old(void)
 	}
 	go_to_closed_loop_avg_counter++;
 }
+#endif
 
 void start_capture(uint8_t capture_type)
 {
@@ -2412,7 +2420,7 @@ uint32_t get_update_frequency(void)
 	return PWM_FREQUENCY >> 1;
 }
 
-void zero_position_and_hall_sensor(void)
+void zero_position(void)
 {
 	if(n_items_in_queue != 0) {
 		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
@@ -2423,7 +2431,8 @@ void zero_position_and_hall_sensor(void)
 	current_velocity_i64 = 0;
 	hall_position = 0;
 	hall_position_delta = 0;
-	zero_hall_position(1);
+	bound_the_sensor_position(N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS);
+//	zero_hall_position(1);
 	velocity = 0;
 	integral_term = 0;
 	previous_error = 0;

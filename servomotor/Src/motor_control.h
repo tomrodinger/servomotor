@@ -100,7 +100,7 @@ void decrease_motor_pwm_voltage(void);
 void set_motor_control_mode(uint8_t new_motor_closed_loop_control);
 uint32_t get_update_frequency(void);
 uint8_t get_motor_control_mode(void);
-void zero_position_and_hall_sensor(void);
+void zero_position(void);
 void set_max_velocity(uint32_t new_max_velocity);
 int32_t get_max_velocity(void);
 int32_t get_current_position(void);

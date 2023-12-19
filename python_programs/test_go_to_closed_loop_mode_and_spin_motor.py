@@ -10,26 +10,26 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-N_ITERATIONS = 1000
-OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
-OUTPUT_LOG_FILE_NAME = "test_go_to_closed_loop_mode"
-GOERTZEL_ALGORITHM_RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "goertzel_algorithm_results.txt"
-ON_DEVICE_GOERTZEL_ALGORITHM_RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "on_device_goertzel_algorithm_results.txt"
+VERBOSE = False
 
-VERBOSE = True
-
-POSITION_ERROR_TOLERANCE = 10000
 GET_CURRENT_TIME_COMMAND_INTERVAL = 60
 STATISTIC_PRINT_INTERVAL_SECONDS = 10
 TIME_OUT_OF_SYNC_THRESHOLD_US = 4000
 GET_PICOAMP_SECONDS_COUNT_COMMAND_INTERVAL = 60
 ONE_ROTATION_MOTOR_UNITS = 357 * 256 * 7
 GOERTZEL_ALGORITHM_N_SAMPLES = 80
+TEST_MOVE_TIME = 1 # in seconds
+TEST_MOVE_ROTATIONS = 6 # in rotations
+TEST_MOVE_ROTATIONS_ERROR_TOLERANCE = 1 # in rotations
+
+TEST_MOVE_TIME_MOTOR_UNITS = int(32150 * TEST_MOVE_TIME)
+TEST_MOVE_ROTATIONS_MOTOR_UNITS = int(ONE_ROTATION_MOTOR_UNITS * TEST_MOVE_ROTATIONS)
+TEST_MOVE_ROTATIONS_ERROR_TOLERANCE_MOTOR_UNITS = int(TEST_MOVE_ROTATIONS_ERROR_TOLERANCE * ONE_ROTATION_MOTOR_UNITS)
 
 ALIAS1 = ord("X")
 ALIAS2 = ord("Y")
 ALIAS3 = ord("Z")
-ALIAS_LIST = [ALIAS1]
+ALIAS_LIST = [ord("0")]
 ALL_ALIASES = 255
 
 N_PINGS_TO_TEST_COMMUNICATION = 100
@@ -53,25 +53,6 @@ def execute_command(alias, command_str, inputs, verbose=True):
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)
     parsed_response = communication.interpret_response(command_id, response, verbose=verbose)
     return parsed_response
-
-
-# create the directory for saving the data logs if it does not already exist
-if not os.path.exists(OUTPUT_LOG_FILE_DIRECTORY):
-    try:
-        os.makedirs(OUTPUT_LOG_FILE_DIRECTORY)
-    except OSError as e:
-        print("Could not create directory for saving the log files: %s: %s" % (OUTPUT_LOG_FILE_DIRECTORY, e))
-        exit(1)
-log_file_timestamp = str(int(time.time()))
-output_log_file = OUTPUT_LOG_FILE_DIRECTORY + "/" + OUTPUT_LOG_FILE_NAME + "." + log_file_timestamp + ".log"
-
-# open the log file for writing
-try:
-    log_fh = open(output_log_file, "w")
-except IOError as e:
-    print("Could not open the log file for writing: %s: %s" % (output_log_file, e))
-    exit(1)
-
 
 
 communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
@@ -107,13 +88,13 @@ print("All devices responded correctly to all the %d pings" % (N_PINGS_TO_TEST_C
 
 # Set up the dictionaries for gathering the statistics
 statistics_failed_go_to_closed_loop = {}
-statistics_total_go_to_closed_loop_attempts = {}
+statistics_total_go_to_closed_loop_attempts = 0
 for alias in ALIAS_LIST:
     statistics_failed_go_to_closed_loop[alias] = 0
-    statistics_total_go_to_closed_loop_attempts[alias] = 0
-
+phase_angle_success_count = {}
+phase_angle_total_count = {}
 total_rotation_motor_units = 0
-for iteration_number in range(N_ITERATIONS):
+while 1:
     # enable MOSFETs on all devices
     for alias in ALIAS_LIST:
         parsed_response = execute_command(alias, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
@@ -123,7 +104,7 @@ for iteration_number in range(N_ITERATIONS):
 
     # set the MOSFET current on all devices
     for alias in ALIAS_LIST:
-        parsed_response = execute_command(alias, "SET_MAXIMUM_MOTOR_CURRENT", [200, 200], verbose=VERBOSE)
+        parsed_response = execute_command(alias, "SET_MAXIMUM_MOTOR_CURRENT", [150, 150], verbose=VERBOSE)
         if len(parsed_response) != 0:
             print("ERROR: The device with alias", alias, "did not respond correctly to the SET_MAXIMUM_MOTOR_CURRENT command")
             exit(1)
@@ -136,8 +117,8 @@ for iteration_number in range(N_ITERATIONS):
         else:
             random_rotation_motor_units = random.randint(0, ONE_ROTATION_MOTOR_UNITS)
         total_rotation_motor_units += random_rotation_motor_units
-        print("***************************************************************************** random_rotation_motor_units", random_rotation_motor_units)
-        print("***************************************************************************** Total rotation motor units:", total_rotation_motor_units)
+        print("Random rotation motor units:", random_rotation_motor_units)
+        print("Total rotation motor units:", total_rotation_motor_units)
         movement_time = 0.5 # do the rotation over half a second
         if movement_time > max_movement_time:
             max_movement_time = movement_time
@@ -153,6 +134,13 @@ for iteration_number in range(N_ITERATIONS):
         execute_command(alias, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
     time.sleep(2)
 
+    # set the MOSFET current on all devices
+    for alias in ALIAS_LIST:
+        parsed_response = execute_command(alias, "SET_MAXIMUM_MOTOR_CURRENT", [300, 300], verbose=VERBOSE)
+        if len(parsed_response) != 0:
+            print("ERROR: The device with alias", alias, "did not respond correctly to the SET_MAXIMUM_MOTOR_CURRENT command")
+            exit(1)
+
     # now lets go to closed loop mode on all the axes
     for alias in ALIAS_LIST:
         parsed_response = execute_command(alias, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
@@ -167,7 +155,8 @@ for iteration_number in range(N_ITERATIONS):
             if len(parsed_response) != 2:
                 print("ERROR: The device with alias", alias, "did not respond correctly to the GET_STATUS_COMMAND")
                 exit(1)
-            print("The motor status is", parsed_response[0], "and the fatal error code is", parsed_response[1])
+            if VERBOSE:
+                print("The motor status is", parsed_response[0], "and the fatal error code is", parsed_response[1])
             # extract bit number 2 from the motor status byte, which is the closed loop bit
             is_motor_busy = (parsed_response[0] & 0b01000000) != 0
             if not is_motor_busy:
@@ -175,21 +164,59 @@ for iteration_number in range(N_ITERATIONS):
             time.sleep(0.2)
         print("Successfully entered closed loop mode on the device with alias", alias)
 
+
+    # get data that was captured while going into closed loop mode
+    phase_angle = {}
+    for alias in ALIAS_LIST:
+        parsed_response = execute_command(alias, "READ_MULTIPURPOSE_BUFFER_COMMAND", [], verbose=VERBOSE)
+        parsed_response = parsed_response[0]
+        if len(parsed_response) < 1:
+            print("Error: The device with alias {alias} did not respond correctly to the READ_MULTIPURPOSE_BUFFER_COMMAND and did not return at least one byte")
+            exit(1)
+        data_type = parsed_response[0]
+        parsed_response = parsed_response[1:]
+        print("Go to closed loop mode number of data elements:", len(parsed_response))
+        parsed_response = bytearray(parsed_response)
+        int32_list = [int.from_bytes(parsed_response[i:i+4], byteorder='little', signed=True) for i in range(0, len(parsed_response), 4)]
+        if len(int32_list) != GOERTZEL_ALGORITHM_N_SAMPLES + 2:
+            print("Error: The device with alias {alias} did not respond correctly to the READ_MULTIPURPOSE_BUFFER_COMMAND and did not return the expected number of data elements")
+            exit(1)
+        real_part = int32_list[-2]
+        imaginary_part = int32_list[-1]
+        print("The on-device goertzel result is: {real_part} {imaginary_part}")
+        if abs(real_part) >= abs(imaginary_part):
+            if real_part >= 0.0:
+                print("Angle determined to be very roughly 0 degrees")
+                phase_angle[alias] = 0
+            else:
+                print("Angle determined to be very roughly 180 degrees")
+                phase_angle[alias] = 180
+        else:
+            if imaginary_part >= 0.0:
+                print("Angle determined to be very roughly 90 degrees")
+                phase_angle[alias] = 90
+            else:
+                print("Angle determined to be very roughly 270 degrees")
+                phase_angle[alias] = 270
+
+    time.sleep(0.2)
+
     expected_position_after_move = 0
+    failed_to_go_to_closed_loop = {}
+    for alias in ALIAS_LIST:
+        failed_to_go_to_closed_loop[alias] = False
     for j in range(2): # we will move in the forward and reverse direction
         # Rotate all devices a fixed amount quickly. We will check to see if they achieved the movement in the expected time.
-        movement_time = 0.2 # do the rotation in this amount of time
-        movement_time_motor_units = int(32150 * movement_time)
-        rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * 0.5)
+        rotation_motor_units = TEST_MOVE_ROTATIONS_MOTOR_UNITS
         if j == 1:
             rotation_motor_units = -rotation_motor_units
         expected_position_after_move += rotation_motor_units
         for alias in ALIAS_LIST:
-            parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_motor_units], verbose=VERBOSE)
+            parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, TEST_MOVE_TIME_MOTOR_UNITS], verbose=VERBOSE)
             if len(parsed_response) != 0:
                 print("ERROR: The device with alias", alias, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
                 exit(1)
-        time.sleep(max_movement_time)
+        time.sleep(TEST_MOVE_TIME)
 
         # Check the final position to see if the motor arrived there
         for alias in ALIAS_LIST:
@@ -201,17 +228,34 @@ for iteration_number in range(N_ITERATIONS):
             print("The sensor position after the move is:", sensor_position_after_move)
             position_error = abs(sensor_position_after_move - expected_position_after_move)
             print("The position error is:", position_error, "motor units")
-            if position_error > POSITION_ERROR_TOLERANCE:
+            if position_error > TEST_MOVE_ROTATIONS_ERROR_TOLERANCE_MOTOR_UNITS:
                 print("ERROR: The final position is too far from the expected one. The motor did not move correctly.")
-                statistics_failed_go_to_closed_loop[alias] += 1
-            statistics_total_go_to_closed_loop_attempts[alias] += 1
+                failed_to_go_to_closed_loop[alias] = True
+
+    # Now, udate the statistics in the main dictionary
+    statistics_total_go_to_closed_loop_attempts += 1
+    for alias in ALIAS_LIST:
+        if failed_to_go_to_closed_loop[alias]:
+            statistics_failed_go_to_closed_loop[alias] += 1
+
+    # Update the statistics for the phase angles
+    for alias in ALIAS_LIST:
+        if phase_angle[alias] not in phase_angle_success_count:
+            phase_angle_success_count[phase_angle[alias]] = 0
+            phase_angle_total_count[phase_angle[alias]] = 0
+        phase_angle_total_count[phase_angle[alias]] += 1
+        if failed_to_go_to_closed_loop[alias] == False:
+            phase_angle_success_count[phase_angle[alias]] += 1
 
     # Print out all statistics for all aliases
     print("\n=== STATISTICS ===============================================================================================")
+    print("   Total go to closed loop attempts:", statistics_total_go_to_closed_loop_attempts)
     for alias in ALIAS_LIST:
         print("   Alias", alias, ":")
-        print("      Total go to closed loop attempts:", statistics_total_go_to_closed_loop_attempts[alias])
         print("      Failed go to closed loop attempts:", statistics_failed_go_to_closed_loop[alias])
+        print("      Success perentage:", (statistics_total_go_to_closed_loop_attempts - statistics_failed_go_to_closed_loop[alias]) / statistics_total_go_to_closed_loop_attempts * 100)
+    for phase_angle in phase_angle_success_count:
+        print("   Phase angle", phase_angle, "success percentage:", phase_angle_success_count[phase_angle] / phase_angle_total_count[phase_angle] * 100)
     print("==============================================================================================================\n")
 
     # let's reset all devices to start from a clean state

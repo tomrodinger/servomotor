@@ -566,6 +566,13 @@ inputs       = [(u8, "Vibration level (0 = turn off, 1 = turn on).")]
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
+command_id   = 41
+command_name = "IDENTIFY_COMMAND"
+description  = "Make the device flash its green LED to identify itself"
+inputs       = [(u64_unique_id, "Unique ID of the target device")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
 command_id   = 254
 command_name = "ADD_TO_QUEUE_TEST_COMMAND"
 description  = "This is used for testing of some calculations that predict of the motion will go out of the set safety limits"

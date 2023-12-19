@@ -1,0 +1,148 @@
+35404046413042
+servo_motor
+Board to Board
+
+
+0
+14
+14
+servo_motor
+Board to Board 90def
+
+
+0
+14
+14
+servo_motor
+CRTM025N03L
+DD Package; 8-Lead Plastic DFN (6mm x 5mm) (see http://www.everspin.com/file/236/download)
+dfn 
+0
+25
+9
+servo_motor
+MOTOR
+
+
+0
+3
+3
+servo_motor
+Mounting Hole 3.5mm
+
+
+0
+1
+1
+servo_motor
+Pad_2mm_TopOnly
+Mounting Hole 2.2mm, M2
+mounting hole 2.2mm m2
+0
+1
+1
+servo_motor
+Pad_3mm_TopOnly
+Mounting Hole 2.2mm, M2
+mounting hole 2.2mm m2
+0
+1
+1
+servo_motor
+Pad_hole_3mm_TopOnly
+Mounting Hole 2.2mm, M2
+mounting hole 2.2mm m2
+0
+2
+1
+servo_motor
+QFN-28-1EP_5x5mm_P0.5mm_EP3.75x3.75mm_ThermalVias_0.3mm
+QFN, 28 Pin (https://www.cmlmicro.com/wp-content/uploads/2017/10/CMX901_ds.pdf), generated with kicad-footprint-generator ipc_noLead_generator.py
+QFN NoLead
+0
+79
+29
+servo_motor
+QR_M3_V1-6-6-23
+
+
+0
+0
+0
+servo_motor
+QR_M3_V2-26-06-23
+
+
+0
+0
+0
+servo_motor
+STM32G030C8T6
+
+
+0
+48
+48
+servo_motor
+TS-1088-AR02016
+Light Touch Switch, https://industrial.panasonic.com/cdbs/www-data/pdf/ATK0000/ATK0000CE7.pdf
+
+0
+2
+2
+servo_motor
+TS-1187A-B-C-B
+
+
+0
+4
+2
+servo_motor
+TestPoint 2x2.5
+
+
+0
+1
+1
+servo_motor
+TestPoint 4x2
+
+
+0
+1
+1
+servo_motor
+TestPoint 6mm
+
+
+0
+1
+1
+servo_motor
+board_to_board_female
+
+
+0
+9
+9
+servo_motor
+board_to_board_male
+
+
+0
+9
+9
+servo_motor
+hall_sensor_3
+
+
+0
+9
+9
+servo_motor
+hall_sensor_3_copy
+
+
+0
+3
+3

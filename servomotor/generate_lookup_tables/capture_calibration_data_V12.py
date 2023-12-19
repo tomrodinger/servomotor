@@ -50,7 +50,7 @@ def plot_data(data):
 # Adding the argparse logic
 arg_parser = argparse.ArgumentParser(description="Hall Calibration Data Plotter")
 arg_parser.add_argument('--no-graph', action='store_true', help="Disable the plotting of the graph")
-arg_parser.add_argument('axis', metavar='AXIS', help='Axis to calibrate (X, Y, Z, z, or E)', choices=['X', 'Y', 'Z', 'z', 'E'])
+arg_parser.add_argument('axis', metavar='AXIS', help='Axis to calibrate (for example: X, Y, Z, E, 0, 1, etc.)')
 args = arg_parser.parse_args()
 
 MY_AXIS = args.axis

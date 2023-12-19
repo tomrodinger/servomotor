@@ -212,6 +212,33 @@ void zero_hall_position(uint8_t keep_sensor_offset)
 }
 
 
+// This function will adjust the sensor position such that it is bound between 0 and upper_bound.
+// The the new sensor position will be in the range 0 to upper_bound - 1.
+// The tequnique used here to bound it is to subtract or add some multiple of upper_bound.
+void bound_the_sensor_position(int32_t upper_bound)
+{
+    while(1) {
+        if(sensor_position < 0) {
+            int32_t multiple = (-sensor_position + upper_bound - 1) / upper_bound;
+            int32_t adjustment_factor = multiple * upper_bound;
+            __disable_irq();
+            sensor_position += adjustment_factor;
+            __enable_irq();
+            continue;
+        }
+        if(sensor_position >= upper_bound) {
+            int32_t multiple = sensor_position / upper_bound;
+            int32_t adjustment_factor = multiple * upper_bound;
+            __disable_irq();
+            sensor_position -= adjustment_factor;
+            __enable_irq();
+            continue;
+        }
+        break;
+    }
+}
+
+
 void print_sensor_position(void)
 {
 	char buf[100];
