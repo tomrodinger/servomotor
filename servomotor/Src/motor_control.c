@@ -777,8 +777,6 @@ static volatile uint16_t go_to_closed_loop_avg_counter = 0;
 static volatile uint16_t vibration_duration_counter = 0;
 static volatile uint16_t data_index = 0;
 
-#define VIBRATION_QUARTER_CYCLE_DURATION 40
-
 void start_go_to_closed_loop_mode(void)
 {
 //	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
@@ -805,7 +803,7 @@ void start_go_to_closed_loop_mode(void)
 	zero_hall_position(1);
 	commutation_position_offset = global_settings.commutation_position_offset;
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
-	desired_motor_pwm_voltage = 50;
+	desired_motor_pwm_voltage = GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE;
 	vibration_duration_counter = 0;
 	vibration_four_step = 0;
 	go_to_closed_loop_avg_counter = 0;
@@ -845,88 +843,6 @@ void go_to_closed_loop_mode_logic(void)
 	}
 }
 
-#if 0
-
-#define GO_TO_CLOSED_LOOP_N_DATA_ITEMS ((GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE * 8 / DESIRED_MOTOR_PWM_VOLTAGE_STEP) >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT)
-
-static volatile int32_t *go_to_closed_loop_data = (void*)&calibration; // go_to_closed_loop_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
-static volatile uint16_t go_to_closed_loop_max_data_items = sizeof(calibration) / sizeof(int32_t);
-static volatile uint16_t go_to_closed_loop_avg_counter = 0;
-static volatile uint16_t data_index = 0;
-
-
-void start_go_to_closed_loop_mode(void)
-{
-//	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
-//		fatal_error(7); // "not in open loop" (all error text is defined in error_text.c)
-//	}
-	if(n_items_in_queue != 0) {
-		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
-	}
-	if(motor_busy) {
-		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
-	}
-	if(GO_TO_CLOSED_LOOP_N_DATA_ITEMS + 2 > sizeof(calibration) / sizeof(int32_t)) { // sanity check here. make sure we don't overflow the available memory.
-		fatal_error(29); // "debug1" (all error text is defined in error_text.c)
-	}
-
-	motor_busy = 1;
-
-	memset((void*)go_to_closed_loop_data, 0, GO_TO_CLOSED_LOOP_N_DATA_ITEMS * sizeof(int32_t));
-	
-	print_debug_string("Go to closed loop mode start\n");
-	check_current_sensor_and_enable_mosfets();
-
-	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	commutation_position_offset = global_settings.commutation_position_offset;
-	desired_motor_pwm_voltage = 0;
-	desired_motor_pwm_voltage_before_shifting = 0;
-	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
-	vibration_four_step = 0;
-	go_to_closed_loop_avg_counter = 0;
-	data_index = 0;
-	go_to_closed_loop_step = 1;
-    TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-}
-
-
-void go_to_closed_loop_mode_logic(void)
-{
-	if(go_to_closed_loop_step == 1) {
-		if(go_to_closed_loop_avg_counter < GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES) {
-			if(go_to_closed_loop_avg_counter >= (GO_TO_CLOSED_LOOP_AVERAGE_SAMPLES >> 2)) {
-				go_to_closed_loop_data[data_index >> GO_TO_CLOSED_LOOP_SHIFT_RIGHT] += hall_position_delta;
-			}
-			data_index++;
-			if((vibration_four_step & 1) == 0) {
-				desired_motor_pwm_voltage_before_shifting += DESIRED_MOTOR_PWM_VOLTAGE_STEP;
-				if(desired_motor_pwm_voltage_before_shifting >= GO_TO_CLOSED_LOOP_MOTOR_PWM_VOLTAGE) {
-					vibration_four_step++;
-				}
-			}
-			else {
-				desired_motor_pwm_voltage_before_shifting -= DESIRED_MOTOR_PWM_VOLTAGE_STEP;
-				if(desired_motor_pwm_voltage_before_shifting <= 0) {
-					vibration_four_step++;
-					if(vibration_four_step < 8) {	
-						commutation_position_offset += HALL_TO_POSITION_90_DEGREE_OFFSET;
-					}
-					else {
-						commutation_position_offset -= (HALL_TO_POSITION_90_DEGREE_OFFSET * 3);
-						vibration_four_step = 0;
-						data_index = 0;
-						go_to_closed_loop_avg_counter++;
-					}
-				}
-			}
-		}
-		else {
-			go_to_closed_loop_step = 2;
-		}
-		desired_motor_pwm_voltage = desired_motor_pwm_voltage_before_shifting >> DESIRED_MOTOR_PWM_VOLTAGE_SHIFT;
-	}
-}
-#endif
 
 struct goertzel_algorithm_result_t {
     int32_t real;
