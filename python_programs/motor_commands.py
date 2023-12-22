@@ -400,7 +400,7 @@ description  = "Detect devices"
 inputs       = []
 response     = [(u64_unique_id, "A unique ID (unique among all devices manufactured). The response is sent after a random delay of between 0 and 1 seconds."),
                 (u8_alias, "The alias of the device that has this unique ID"),
-                (crc32, "A CRC32 value for this packet. This is used to verify that the response is correct. However, currently this is hardcoded as 0x04030201")]
+                (crc32, "A CRC32 value calculated over the the unique ID and alias (total 9 bytes). This is used to verify that the response is correct since there is a risk of data collision when multiple devices respond at the same time.")]
 register_command(command_id, command_name, description, inputs, response, multiple_responses = True)
 
 command_id   = 21
@@ -568,7 +568,7 @@ register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 41
 command_name = "IDENTIFY_COMMAND"
-description  = "Make the device flash its green LED to identify itself"
+description  = "Make the device flash its green LEDs rapidly for about 3 seconds to identify itself"
 inputs       = [(u64_unique_id, "Unique ID of the target device")]
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)

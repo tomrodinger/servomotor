@@ -269,6 +269,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         }
     }
+    else {
+        rs485_allow_next_command();
+    }
 }
 
 void transmit_unique_id(void)
@@ -375,8 +378,12 @@ int main(void)
 
     while(1) {
     	if(commandReceived) {
-            processCommand(selectedAxis, command, valueBuffer);
-            commandReceived = 0;
+            if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+                rs485_allow_next_command();
+            }
+            else {
+                processCommand(selectedAxis, command, valueBuffer);
+            }
         }
 
         if(detect_devices_delay == 0) {

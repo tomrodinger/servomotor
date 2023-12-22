@@ -40,7 +40,6 @@ void rs485_init(void)
 void rs485_allow_next_command(void)
 {
     commandReceived = 0;
-//    red_LED_off();
     USART1->CR1 |= USART_CR1_RXNEIE_RXFNEIE; // enable receive interrupt
 }
 

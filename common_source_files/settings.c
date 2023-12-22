@@ -22,6 +22,12 @@ inline uint32_t calculate_crc32(uint32_t new_value)
     return ~CRC->DR;
 }
 
+inline uint32_t calculate_crc32_u8(uint8_t new_value)
+{
+    ((uint8_t *)&CRC->DR)[0] = new_value;
+    return ~CRC->DR;
+}
+
 uint8_t firmware_crc_check(void)
 {
     uint32_t firmware_size = *((uint32_t *)(FIRMWARE_START_ADDRESS));
@@ -112,8 +118,9 @@ static void write_one_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE])
     FLASH->CR = 0;
 }
 
+
 __attribute__ ((long_call, section (".RamFunc")))
-void save_global_settings(void)
+void save_global_settings_ram_function(void)
 {
     #define SINGLE_WRITE_SIZE (sizeof(uint32_t) * 2)
     uint16_t n_writes = (GLOBAL_SETTINGS_STRUCT_SIZE + (SINGLE_WRITE_SIZE - 1)) / SINGLE_WRITE_SIZE; // divide by the write size but round up
@@ -121,7 +128,6 @@ void save_global_settings(void)
     uint32_t *read_ptr = (void *)&global_settings;
     uint16_t write_index = 0;
 
-    __disable_irq();
     unlock_flash();
     erase_one_page(GLOBAL_SETTINGS_FLASH_PAGE_NUMBER);
     // Then, write the values to FLASH
@@ -136,7 +142,15 @@ void save_global_settings(void)
     }
     FLASH->SR |= FLASH_SR_EOP_Msk;
     lock_flash();
-    __enable_irq();
+}
+
+void save_global_settings(void)
+{
+    __disable_irq();
+    save_global_settings_ram_function(); // this function manipulated flash and needs to be in RAM
+    NVIC_SystemReset();
+    while(1); // this will never be reached since the reset will occur before this
+//    __enable_irq();
 }
 
 __attribute__ ((long_call, section (".RamFunc")))

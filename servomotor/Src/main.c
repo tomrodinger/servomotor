@@ -43,7 +43,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 5
+#define BUGFIX_FIRMWARE_VERSION 6
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -369,11 +369,11 @@ void SysTick_Handler(void)
         }
     }
     else {
-        if(green_led_action_counter < 60) {
+        if(green_led_action_counter < 3) {
             green_LED_on();
             green_led_action_counter++;
         }
-        else if(green_led_action_counter < 80) {
+        else if(green_led_action_counter < 8) {
             green_LED_off();
             green_led_action_counter++;
         }
@@ -656,10 +656,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             new_alias = parameters[8];
             rs485_allow_next_command();
         	if(unique_id == my_unique_id) {
-               	print_debug_string("Unique ID matches\n");
+                rs485_transmit(NO_ERROR_RESPONSE, 3); 
+               	print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
+                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message, which is about 100 bytes, at baud rate of 230400
         		global_settings.my_alias = new_alias;
-           		save_global_settings();
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
+           		save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
         	}
         	break;
         case GET_PRODUCT_INFO_COMMAND:
@@ -909,7 +910,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 if(unique_id == my_unique_id) {
                     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
                     green_led_action_counter = 0;
-                    n_identify_flashes = 3;
+                    n_identify_flashes = 30;
                     SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
                     print_debug_string("Identifying\n");
                     rs485_transmit(NO_ERROR_RESPONSE, 3);
@@ -925,7 +926,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 
 void transmit_unique_id(void)
 {
-    uint32_t crc32 = 0x04030201;
+    crc32_init();
+    calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
+    uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
     rs485_transmit("R\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
@@ -1145,7 +1148,12 @@ int main(void)
 
     while(1) {
     	if(commandReceived) {
-            processCommand(selectedAxis, command, valueBuffer);
+            if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+                rs485_allow_next_command();
+            }
+            else {
+                processCommand(selectedAxis, command, valueBuffer);
+            }
         }
 
         if(detect_devices_delay == 0) {
