@@ -9,8 +9,9 @@ import argparse
 import matplotlib.pyplot as plt
 
 SERIAL_PORT_DEVICE = "/dev/tty.usbserial-0001"
-OUT_BIN_FILENAME = "hall_calibration_raw_data.bin"
-OUT_TEXT_FILENAME = "hall_calibration_one_rotation.txt"
+OUTPUT_FILE_DIRECTORY = "collected_data"
+OUT_BIN_FILENAME_PREFIX = "hall_calibration_raw_data"
+OUT_TEXT_FILENAME_PREFIX = "hall_calibration_one_rotation"
 CAPTURE_HALL_SENSOR_DATA_COMMAND = 7
 CAPTURE_HALL_SENSOR_READINGS = 1
 CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING = 4
@@ -51,18 +52,25 @@ def plot_data(data):
     plt.show()
 
 # Adding the argparse logic
+# We have an argument --no-graph, which tells it to not make any plot on the screen
+# and we have a -i argument, which specifies the item number or name (this is a required arguement)
 arg_parser = argparse.ArgumentParser(description="Magnetic Ring Test Jig Program")
 arg_parser.add_argument('--no-graph', action='store_true', help="Disable the plotting of the graph")
+arg_parser.add_argument('-i', '--item', type=str, required=True, help="Item number or name")
 args = arg_parser.parse_args()
 
 MOTOR_AXIS = "M"
 HALL_SENSOR_AXIS = "H"
 
+# if the OUTPUT_FILE_DIRECTORY does not exist, create it
+if not os.path.exists(OUTPUT_FILE_DIRECTORY):
+    os.makedirs(OUTPUT_FILE_DIRECTORY)
+
 ser = serial.Serial(SERIAL_PORT_DEVICE, 230400, timeout = 0.1)
 
 print("Resetting all devices")
 ser.write(bytearray([0xFF, 0x1B, 0x00]))
-time.sleep(2.0)
+time.sleep(1.5)
 
 print("Flushing the serial port")
 some_data = ser.read(1000000)
@@ -95,6 +103,9 @@ while 1:
 
 print(f"Received a total of {len(data)} bytes")
 
+print("Resetting all devices")
+ser.write(bytearray([0xFF, 0x1B, 0x00]))
+
 if len(data) % BYTES_PER_HALL_SENSOR_READING != 0:
     print(f"Error: The length of the data is not a multiple of {BYTES_PER_HALL_SENSOR_READING}")
     print("The length of the data is:", len(data))
@@ -108,11 +119,13 @@ for i in range(0, len(data), BYTES_PER_HALL_SENSOR_READING):
     new_data = new_data + data[i + OVERHEAD_SIZE: i + BYTES_PER_HALL_SENSOR_READING]
 data = new_data
 
-with open(OUT_BIN_FILENAME, "wb") as fh:
+out_bin_filename_full_path = os.path.join(OUTPUT_FILE_DIRECTORY, OUT_BIN_FILENAME_PREFIX + "_" + str(args.item) + ".bin")
+with open(out_bin_filename_full_path, "wb") as fh:
     fh.write(data)
 
 i = 0
-with open(OUT_TEXT_FILENAME, "w") as fh:
+out_text_filename_full_path = os.path.join(OUTPUT_FILE_DIRECTORY, OUT_TEXT_FILENAME_PREFIX + "_" + str(args.item) + ".txt")
+with open(out_text_filename_full_path, "w") as fh:
     while(i < len(data)):
         hall1 = int.from_bytes(data[i + 0: i + 2], byteorder = "little", signed=False)
         hall2 = int.from_bytes(data[i + 2: i + 4], byteorder = "little", signed=False)
@@ -132,7 +145,7 @@ with open("MY_AXIS", "w") as fh:
 if not args.no_graph:
     file_data = []
 
-    with open(OUT_TEXT_FILENAME, 'r') as fh:
+    with open(out_text_filename_full_path, 'r') as fh:
         for line in fh:
             values = list(map(int, line.split()))
             file_data.append(values)
