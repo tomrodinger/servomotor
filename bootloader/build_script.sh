@@ -19,6 +19,7 @@ OBJECT_FILES="${DEVICE_SOURCE_FILES_DIR}/startup_stm32g030c8tx.s \
     ${COMMON_SOURCE_FILES_DIR}/error_handling.c \
     ${COMMON_SOURCE_FILES_DIR}/error_text.c \
     ${DEVICE_SOURCE_FILES_DIR}/mosfets.c \
+    ${DEVICE_SOURCE_FILES_DIR}/heater.c \
     ${COMMON_SOURCE_FILES_DIR}/leds.c \
     ${DEVICE_SOURCE_FILES_DIR}/main.c \
     ${DEVICE_SOURCE_FILES_DIR}/syscalls.c \

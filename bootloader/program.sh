@@ -28,6 +28,10 @@ case "$product_name" in
     software_compatibility_code=1
     hardware_version="0.7.0"
     ;;
+  MRTJ1)
+    software_compatibility_code=1
+    hardware_version="0.1.0"
+    ;;
   *)
     echo "Invalid product name. Please choose a valid product."
     echo "Available products: M1, M2, C1, E1"

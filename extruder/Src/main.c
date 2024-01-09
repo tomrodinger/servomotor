@@ -809,11 +809,11 @@ void process_debug_uart_commands(void)
             decrease_temperature();
             break;
         case 'g':
-            add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
+            add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 20, get_update_frequency() * 5);
 //			enable_mosfets();
             break;
         case 'G':
-			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 1, get_update_frequency() * 1);
+			add_trapezoid_move_to_queue(-BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 20, get_update_frequency() * 5);
 //			enable_mosfets();
             break;
 		}

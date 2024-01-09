@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "heater.h"
 #include "mosfets.h"
 #include "leds.h"
 #include "debug_uart.h"
@@ -120,6 +121,7 @@ void fatal_error(uint16_t error_code)
 	}
 
     __disable_irq();
+	heater_off();
     disable_mosfets();
     green_LED_off();
 	fatal_error_systick_init();
