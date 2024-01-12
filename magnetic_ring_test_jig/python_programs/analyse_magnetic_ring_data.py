@@ -6,8 +6,14 @@ import numpy as np
 import os
 import random
 import copy
+import glob
+import re
+import matplotlib.pyplot as plt
 
-OUTPUT_HEADER_FILENAME_PREFIX = "../Src/hall_sensor_constants_"
+INPUT_FOLDER = "collected_data"
+OUTPUT_FOLDER = "analysis_output"
+GLOB_FILTER = "hall_calibration_one_rotation_*.txt"
+OUTPUT_HEADER_FILENAME_PREFIX = OUTPUT_FOLDER + "/hall_sensor_constants_"
 N_HALL_SENSORS = 3
 SLOPE_CALCULATION_DELTA = 4
 BEST_FIT_SEGMENT_MIN_LENGTH = 5
@@ -69,6 +75,35 @@ if SENSOR_SEGMENT_RESOLUTION != int(SENSOR_SEGMENT_RESOLUTION):
     print("Error: SENSOR_SEGMENT_RESOLUTION is not an integer:", SENSOR_SEGMENT_RESOLUTION)
     exit(1)
 SENSOR_SEGMENT_RESOLUTION = int(SENSOR_SEGMENT_RESOLUTION)
+
+
+class Plotting:
+    def __init__(self):
+        self.data = []
+
+    def add_data(self, x_values, y_values):
+        # If x_values is None, generate x_values starting from 0
+        if x_values is None:
+            x_values = list(range(len(y_values)))
+        self.data.append((x_values, y_values))
+
+    def save_to_file(self, filename, title='Scatter Plot', x_label='x-axis', y_label='y-axis', dpi=300):
+        # Create the scatter plot with all the data lines
+        plt.figure()
+        for x_values, y_values in self.data:
+            plt.plot(x_values, y_values, linestyle='-', marker='o', markersize=2) # Points joined by lines with smaller markers
+        # Gridlines, labels, and title
+        plt.grid(which='both', axis='both', linestyle='--', linewidth=0.5) # Horizontal and vertical gridlines
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.title(title)
+        # Save the figure to a file
+        plt.savefig(filename, format='png', dpi=dpi)
+        plt.close() # Close the figure to free memory
+
+    def clear_data(self):
+        # Clear all the data lines
+        self.data = []
 
 
 def calculate_average_distance_between_lists(list1, list2):
@@ -677,6 +712,7 @@ def calculate_transition_function_v3(data):
     rmsd = 0.0
     previous_x = -1.0e10
     monotonic = True
+    i = 0
     for r in result:
         i = r[0]
         y = r[2]
@@ -688,7 +724,9 @@ def calculate_transition_function_v3(data):
         max_x = max(max_x, i)
         min_x = min(min_x, i)
         if x < previous_x:
+            print(f"index: {i} x: {x} <--- NOT MONOTONIC")
             monotonic = False
+        i = i + 1
         previous_x = x
     rmsd = math.sqrt(rmsd / len(result))
     print("Max x: %d   Min x: %d   ONE_CYCLE_DATA_POINTS: %d" % (max_x, min_x, ONE_CYCLE_DATA_POINTS))
@@ -758,499 +796,133 @@ def write_out_header_file(filename, weights):
         fh.write("#endif\n")
         fh.write("\n")
 
-    
-data = []
+# if the output folder does not exist, create it
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
 
-with open("hall_calibration_one_rotation.txt") as fh:
-    for line in fh:
-        fields = line.strip().split()
-        fields[0] = float(fields[0])
-        fields[1] = float(fields[1])
-        fields[2] = float(fields[2])
-        data.append(fields)
-data = np.array(data)
+# if the file called f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials" exists then erase it
+max_error_mm_from_all_trials_filename = f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials"
+if os.path.exists(max_error_mm_from_all_trials_filename):
+    os.remove(max_error_mm_from_all_trials_filename)
 
-mamf0 = minima_and_maxima_finder()
-mamf1 = minima_and_maxima_finder()
-mamf2 = minima_and_maxima_finder()
-for d, i in zip(data, range(len(data))):
-    mamf0.add_sensor_reading(d[0])
-    mamf1.add_sensor_reading(d[1])
-    mamf2.add_sensor_reading(d[2])
+# if the file called f"{OUTPUT_FOLDER}/best_weights_from_all_trials" exists then erase it
+best_weights_from_all_trials_filename = f"{OUTPUT_FOLDER}/best_weights_from_all_trials"
+if os.path.exists(best_weights_from_all_trials_filename):
+    os.remove(best_weights_from_all_trials_filename)
 
-mamf0.save_minima_and_maxima_to_file("local_minima_and_maxima0")
-mamf1.save_minima_and_maxima_to_file("local_minima_and_maxima1")
-mamf2.save_minima_and_maxima_to_file("local_minima_and_maxima2")
 
-midline0 = mamf0.calculate_midline()
-midline1 = mamf1.calculate_midline()
-midline2 = mamf2.calculate_midline()
-print("The midlines are: %d %d %d" % (midline0, midline1, midline2))
 
-data = shift_data(data, [-midline0, -midline1, -midline2])
-save_data_to_file(data, "data_minus_midline")
+input_file_list = glob.glob(INPUT_FOLDER + "/" + GLOB_FILTER)
+print("Found these input files:", input_file_list)
 
-#weights = [0.0, -0.2, -0.7, 0.0, 0.0, 0.2]
-weights = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-adjusted_data = adjust_data(data, weights)
-#save_data_to_file(adjusted_data, "adjusted_data")
-change_list = get_change_list_v3(adjusted_data)
-score, direction, confidence = compute_score(change_list)
-dummy, max_error_mm = calculate_transition_function_v3(adjusted_data)
-
-for i in range(1000):
-    new_weights = random_change_to_weights(weights)
-#    new_weights = random_change_to_weights_simplified(weights)
-    adjusted_data = adjust_data(data, new_weights)
-    change_list = get_change_list_v3(adjusted_data)
-    new_score, direction, confidence = compute_score(change_list)
-    dummy, new_max_error_mm = calculate_transition_function_v3(adjusted_data)
-#    if new_score > score:
-    if new_max_error_mm < max_error_mm:
-        weights = new_weights
-        score = new_score
-        max_error_mm = new_max_error_mm
-#        print("Found a better score %f with these weights:" % (new_score), new_weights)
-        print("Found a better maximum error (mm) %f with these weights:" % (new_max_error_mm), new_weights)
-        save_data_to_file(adjusted_data, "optimized_data")
-    print("Best weight so far:", weights)
-
-sorted_sections = sort_sections(adjusted_data)
-with open("sorted_sections", "w") as fh:
-    for ss in sorted_sections:
-        fh.write("%F %f %f\n" % (ss[0], ss[1], ss[2]))
-
-transition_function, max_error_mm = calculate_transition_function_v3(adjusted_data)
-with open("transition_function", "w") as fh:
-    for tf in transition_function:
-        fh.write("%d %f %f\n" % (tf[0], tf[1], tf[2]))
-
-write_out_header_file(output_header_filename, weights)
-print("Wrote out the header file:", output_header_filename)
-
-exit()
-
-################################################################################################################################
-
-for cl in change_list:
-    if cl[0][1] == cl[0][3]:
-        score = -cl[1]
+# lets iterate through all the files and process them
+for input_filename in input_file_list:
+    print("Processing:", input_filename)
+    match = re.search(r'(\d+)\.txt$', input_filename)
+    if match:
+        item_number = match.group(1)
     else:
-        score = cl[1]
-    print(cl, score)
-    
-exit()
-
-
-#    d1_adjusted = d1 - d2 * 0.7
-#    d2_adjusted = d2 + d1 * 0.2
-#    d0_adjusted = d0 - d2 * 0.2
-#    fh.write("%i %f %f %f %f %f %f\n" % (i, d0, d1, d2, d0_adjusted, d1_adjusted, d2_adjusted))
-
-
-
-with open("adjusted_data", "w") as fh:
-    for d, i in zip(data, range(len(data))):
-        d0 = d[0] - midline0
-        d1 = d[1] - midline1
-        d2 = d[2] - midline2
-        d1_adjusted = d1 - d2 * 0.7
-        d2_adjusted = d2 + d1 * 0.2
-        d0_adjusted = d0 - d2 * 0.2
-        fh.write("%i %f %f %f %f %f %f\n" % (i, d0, d1, d2, d0_adjusted, d1_adjusted, d2_adjusted))
-        
-exit()
-
-mamf0.adjust_data_for_midline()
-mamf1.adjust_data_for_midline()
-mamf2.adjust_data_for_midline()
-
-mamf0.save_minima_and_maxima_to_file("local_minima_and_maxima_adjusted_for_midline0")
-mamf1.save_minima_and_maxima_to_file("local_minima_and_maxima_adjusted_for_midline1")
-mamf2.save_minima_and_maxima_to_file("local_minima_and_maxima_adjusted_for_midline2")
-
-cycle_length0 = mamf0.calculate_average_cycle_distance()
-cycle_length1 = mamf1.calculate_average_cycle_distance()
-cycle_length2 = mamf2.calculate_average_cycle_distance()
-cycle_length = (cycle_length0 + cycle_length1 + cycle_length2) / 3.0
-print("Cycle length: %f   individual cycle lengths: %f %f %f" % (cycle_length, cycle_length0, cycle_length1, cycle_length2))
-
-minima_indeces0 = mamf0.get_minima_indeces()
-minima_indeces1 = mamf1.get_minima_indeces()
-minima_indeces2 = mamf2.get_minima_indeces()
-maxima_indeces0 = mamf0.get_maxima_indeces()
-maxima_indeces1 = mamf1.get_maxima_indeces()
-maxima_indeces2 = mamf2.get_maxima_indeces()
-minima_distance01 = calculate_average_distance_between_lists(minima_indeces0, minima_indeces1) / cycle_length
-minima_distance02 = calculate_average_distance_between_lists(minima_indeces0, minima_indeces2) / cycle_length
-minima_distance12 = calculate_average_distance_between_lists(minima_indeces1, minima_indeces2) / cycle_length
-maxima_distance01 = calculate_average_distance_between_lists(maxima_indeces0, maxima_indeces1) / cycle_length
-maxima_distance02 = calculate_average_distance_between_lists(maxima_indeces0, maxima_indeces2) / cycle_length
-maxima_distance12 = calculate_average_distance_between_lists(maxima_indeces1, maxima_indeces2) / cycle_length
-print("minima distances: %f %f %f   maxima distances: %f %f %f" % (minima_distance01, minima_distance02, minima_distance12, maxima_distance01, maxima_distance02, maxima_distance12))
-
-exit()
-
-with open("rmsd_maxima_and_minima", "w") as fh:
-    for i in range(int(MAGNETIC_RING_POLES / 2)):
-        rmsd0 = mamf0.calculate_difference()
-        rmsd1 = mamf1.calculate_difference()
-        rmsd2 = mamf2.calculate_difference()
-        rmsd = math.sqrt(rmsd0 * rmsd0 + rmsd1 * rmsd1 + rmsd2 * rmsd2)
-        print("%d times rotated" % (i))
-        print("RMSD0 =", rmsd0)
-        print("RMSD1 =", rmsd1)
-        print("RMSD2 =", rmsd2)
-        print("RMSD =", rmsd)
-        fh.write("%f %f %f %f\n" % (rmsd, rmsd0, rmsd1, rmsd2))
-        mamf0.rotate_minima_and_maxima()
-        mamf1.rotate_minima_and_maxima()
-        mamf2.rotate_minima_and_maxima()
-
-magnitude0 = mamf0.calculate_magnitude()
-magnitude1 = mamf1.calculate_magnitude()
-magnitude2 = mamf2.calculate_magnitude()
-print("The magnitudes are: %d %d %d" % (magnitude0, magnitude1, magnitude2))
-
-with open("six_step_flags", "w") as fh:
-    for d, i in zip(data, range(len(data))):
-        d0 = d[0]
-        d1 = d[1]
-        d2 = d[2]
-        six_step_flags = 0
-        if d0 > midline0:
-            six_step_flags = six_step_flags | 1
-        if d1 > midline1:
-            six_step_flags = six_step_flags | 2
-        if d2 > midline2:
-            six_step_flags = six_step_flags | 4
-        print("six step flags:", six_step_flags)
-        fh.write("%d %d %d %d %d %d %d %d %d %d %d\n" % (i, d0, midline0, d0 > midline0, d1, midline1, d1 > midline1, d2, midline2, d2 > midline2, six_step_flags))
-
-MIDLINE_SHIFT_FRACTION = 0.3
-for shift_type in range(6):
-    with open("six_step_flags_shift%d" % (shift_type), "w") as fh:
-        for d, i in zip(data, range(len(data))):
-            shifted_midline0 = midline0
-            shifted_midline1 = midline1
-            shifted_midline2 = midline2
-            if i % 2 == 0:
-                shift_direction = 1.0
-            else:
-                shift_direction = -1.0
-            if (i >> 1) % 3 == 0:
-                shifted_midline0 = shifted_midline0 + (magnitude0 * MIDLINE_SHIFT_FRACTION) * shift_direction
-            elif (i >> 1) % 3 == 1:
-                shifted_midline1 = shifted_midline1 + (magnitude1 * MIDLINE_SHIFT_FRACTION) * shift_direction
-            else:
-                shifted_midline2 = shifted_midline2 + (magnitude2 * MIDLINE_SHIFT_FRACTION) * shift_direction
-            d0 = d[0]
-            d1 = d[1]
-            d2 = d[2]
-            six_step_flags = 0
-            if d0 > shifted_midline0:
-                six_step_flags = six_step_flags | 1
-            if d1 > shifted_midline1:
-                six_step_flags = six_step_flags | 2
-            if d2 > shifted_midline2:
-                six_step_flags = six_step_flags | 4
-            fh.write("%d %d %d %d %d %d %d %d %d %d %d\n" % (i, d0, shifted_midline0, d0 > shifted_midline0, d1, shifted_midline1, d1 > shifted_midline1, d2, shifted_midline2, d2 > shifted_midline2, six_step_flags))
-
-
-exit()
-
-fh = open("hall_sensor_slopes", "w")
-fh2 = open("linearity_error", "w")
-fh3 = open("best_fit_r", "w")
-fh6 = open("shift_and_slope_reciprocal", "w")
-fh7 = open("shift_and_slope_reciprocal_rounded", "w")
-fh8 = open(output_header_filename, "w")
-fh9 = open("peak_hall_number", "w")
-
-fh8.write("#ifndef __LOOKUP_TABLE2__\n")
-fh8.write("#define __LOOKUP_TABLE2__\n")
-fh8.write("\n")
-fh8.write("#define TOTAL_NUMBER_OF_SEGMENTS %d\n" % (TOTAL_NUMBER_OF_SEGMENTS))
-fh8.write("#define HALL_SENSOR_SHIFT %d\n" % (HALL_SENSOR_SHIFT))
-fh8.write("#define SLOPE_SHIFT_RIGHT %d\n" % (SLOPE_SHIFT_RIGHT))
-fh8.write("#define HALL_SAMPLES_PER_PRINT %d\n" % (HALL_SAMPLES_PER_PRINT))
-fh8.write("#define CALIBRATION_CAPTURE_STEP_SIZE %d // this should be slow so that data can be captured and collected accurately\n" % (CALIBRATION_CAPTURE_STEP_SIZE))
-fh8.write("#define BLEND_EXTENT_SHIFT %d\n" % (BLEND_EXTENT_SHIFT))
-
-fh8.write("\n")
-fh8.write("struct hall_minima_and_maxima_struct {\n")
-fh8.write("   uint16_t minimum_or_maximum;\n")
-fh8.write("};\n")
-fh8.write("\n")
-fh8.write("#define HALL0_MINIMA_AND_MAXIMA_INITIALIZER { \\\n")
-minima_and_maxima0 = mamf0.get_minima_and_maxima()
-for m in minima_and_maxima0:
-    fh8.write("%d, \\\n" % (m))
-fh8.write("}\n\n")
-
-fh8.write("\n")
-fh8.write("#define HALL1_MINIMA_AND_MAXIMA_INITIALIZER { \\\n")
-minima_and_maxima1 = mamf1.get_minima_and_maxima()
-for m in minima_and_maxima1:
-    fh8.write("%d, \\\n" % (m))
-fh8.write("}\n\n")
-
-fh8.write("\n")
-fh8.write("#define HALL2_MINIMA_AND_MAXIMA_INITIALIZER { \\\n")
-minima_and_maxima2 = mamf2.get_minima_and_maxima()
-for m in minima_and_maxima2:
-    fh8.write("%d, \\\n" % (m))
-fh8.write("}\n\n")
-
-fh8.write("\n")
-fh8.write("struct hall_decode_data_struct {\n")
-fh8.write("   uint16_t min;\n")
-fh8.write("   uint16_t max;\n")
-fh8.write("   int32_t slope;\n")
-fh8.write("   int32_t offset;\n")
-fh8.write("   uint8_t active_hall_sensor1;\n")
-fh8.write("   uint8_t active_hall_sensor2;\n")
-fh8.write("};\n")
-fh8.write("\n")
-fh8.write("#define HALL_DECODE_DATA_INITIALIZER { \\\n")
-
-segment_start_index = 0
-segment_end_index = 0
-total_number_of_segments = 0
-peak_hall_value = -1000000
-max_hall_index = None
-max_hall_segment = None
-found_new_peak = 0
-
-one_cycle_data = []
-previous_max_slope_hall_n = -1
-previous_max_best_fit_hall_n = -1
-previous_min_best_fit_hall_n = -1
-max_best_fit_segment_end_index = 0
-min_best_fit_segment_end_index = 0
-positive_or_negative_best_fit = None
-ignore_first_qualifed_segments = 2
-i0 = 0
-im = i0 + SLOPE_CALCULATION_DELTA
-i1 = im + SLOPE_CALCULATION_DELTA
-hall_avg_value0 = 0
-hall_avg_value1 = 0
-hall_avg_value2 = 0
-n_avg = 0
-while total_number_of_segments < TOTAL_NUMBER_OF_SEGMENTS:
-    print("im = %d" % (im))
-    if i1 >= len(data):
-        print("Error: ran out of data")
+        print("Error: could not extract the item number from the filename:", input_filename)
         exit(1)
-    d0 = data[i0]
-    dm = data[im]
-    d1 = data[i1]
-    if n_avg < ONE_CYCLE_DATA_POINTS:
-        hall_avg_value0 = hall_avg_value0 + d0[0]
-        hall_avg_value1 = hall_avg_value1 + d0[1]
-        hall_avg_value2 = hall_avg_value2 + d0[2]
-        n_avg = n_avg + 1
-    else:
-        print("Finished averaging over one cycle with %d points" % (ONE_CYCLE_DATA_POINTS))
-    signed_slope0 = d1[0] - d0[0]
-    signed_slope1 = d1[1] - d0[1]
-    signed_slope2 = d1[2] - d0[2]
-    slope0 = abs(d1[0] - d0[0])
-    slope1 = abs(d1[1] - d0[1])
-    slope2 = abs(d1[2] - d0[2])
-    signed_linearity_error0 = (d0[0] + d1[0]) / 2.0 - dm[0]
-    signed_linearity_error1 = (d0[1] + d1[1]) / 2.0 - dm[1]
-    signed_linearity_error2 = (d0[2] + d1[2]) / 2.0 - dm[2]
-    linearity_error0 = abs(signed_linearity_error0)
-    linearity_error1 = abs(signed_linearity_error1)
-    linearity_error2 = abs(signed_linearity_error2)
-    output = "%f %f %f %f" % (im, linearity_error0, linearity_error1, linearity_error2)
-    fh2.write(output + "\n")
+    print("The item number is:", item_number)
+#    if item_number != "2":
+#        continue
 
-    best_fit_x_values = range(i0, i1 + 1)
-    best_fit_y_values0 = data[i0 : i1 + 1, 0]
-    best_fit_y_values1 = data[i0 : i1 + 1, 1]
-    best_fit_y_values2 = data[i0 : i1 + 1, 2]
-    r0 = get_correlation_coeff(best_fit_x_values, best_fit_y_values0)
-    r1 = get_correlation_coeff(best_fit_x_values, best_fit_y_values1)
-    r2 = get_correlation_coeff(best_fit_x_values, best_fit_y_values2)
-    best_fit_list = [(r0, 0), (r1, 1), (r2, 2)]
-    best_fit_list.sort()
-    max_best_fit_r = best_fit_list[2][0]
-    min_best_fit_r = best_fit_list[0][0]
-    max_best_fit_hall_n = best_fit_list[2][1]
-    min_best_fit_hall_n = best_fit_list[0][1]
-    output = "%f %f %f %f %f %f %f %f %f" % (im, r0, r1, r2, max_best_fit_r, min_best_fit_r, dm[0], dm[1], dm[2])
-    fh3.write(output + "\n")
+    data = []
+    with open(input_filename) as fh:
+        for line in fh:
+            fields = line.strip().split()
+            fields[0] = float(fields[0])
+            fields[1] = float(fields[1])
+            fields[2] = float(fields[2])
+            data.append(fields)
+    data = np.array(data)
+    n_data_pp = len(data)
+    # let's chop off 10% of the data on the frint and the back
+    data = data[int(n_data_pp * 0.1) : int(n_data_pp * 0.9)]
 
-    if ignore_first_qualifed_segments == 0:
-        one_cycle_data.append([im, dm[0], dm[1], dm[2]])
-        if ((MAX_OR_MIN == 1) and (dm[PEAK_HALL_NUMBER] > peak_hall_value)) or ((MAX_OR_MIN == 0) and (dm[PEAK_HALL_NUMBER] < peak_hall_value)):
-#            peak_hall_value = max(dm[0], dm[1], dm[2])
-            peak_hall_value = dm[PEAK_HALL_NUMBER]
-            max_hall_index = im
-            found_new_peak = 1
-            max_hall_segment = None
-            print("******************** Found a maximum hall sensor reading: max_hall_index %d   max_best_fit_r %f   min_best_fit_r %f" % (max_hall_index, max_best_fit_r, min_best_fit_r))
-            fh9.write("%d %d %d %d\n" % (im, peak_hall_value, max_hall_index, PEAK_HALL_NUMBER))
+    mamf0 = minima_and_maxima_finder()
+    mamf1 = minima_and_maxima_finder()
+    mamf2 = minima_and_maxima_finder()
+    for d, i in zip(data, range(len(data))):
+        mamf0.add_sensor_reading(d[0])
+        mamf1.add_sensor_reading(d[1])
+        mamf2.add_sensor_reading(d[2])
 
+    mamf0.save_minima_and_maxima_to_file(f"{OUTPUT_FOLDER}/local_minima_and_maxima0_item{item_number}")
+    mamf1.save_minima_and_maxima_to_file(f"{OUTPUT_FOLDER}/local_minima_and_maxima1_item{item_number}")
+    mamf2.save_minima_and_maxima_to_file(f"{OUTPUT_FOLDER}/local_minima_and_maxima2_item{item_number}")
 
-    m = None
-    b = None
-    if max_best_fit_hall_n != previous_max_best_fit_hall_n:
-        max_best_fit_segment_start_index = max_best_fit_segment_end_index + 1
-        max_best_fit_segment_end_index = im - 1
-        max_best_fit_segment_len = max_best_fit_segment_end_index - max_best_fit_segment_start_index + 1
-        if max_best_fit_segment_len >= BEST_FIT_SEGMENT_MIN_LENGTH:
-            print("Found new MAX best fit segment from %d to %d with qualified length %d" % (max_best_fit_segment_start_index, max_best_fit_segment_end_index, max_best_fit_segment_len))
-            if ignore_first_qualifed_segments == 0:
-                if positive_or_negative_best_fit == None:
-                    positive_or_negative_best_fit = 1
-                elif positive_or_negative_best_fit == 1:
-                    print("Error: a positive best fit does not follow a negative one. problem with the data. maybe noise")
-                    exit(1)
-                else:
-                    positive_or_negative_best_fit = 1
-                print("Doing calculations for segment %d" % (total_number_of_segments))
-                segment_calculations(fh8, total_number_of_segments, data[max_best_fit_segment_start_index : max_best_fit_segment_end_index + 1, previous_max_best_fit_hall_n], max_best_fit_segment_start_index, previous_max_best_fit_hall_n, min_best_fit_hall_n)
-                if found_new_peak and (MAX_OR_MIN == 0):
-                    max_hall_segment = total_number_of_segments
-                    found_new_peak = 0
-                    print("*** The peak hall sensor reading is at segment %d" % (max_hall_segment))
-                total_number_of_segments = total_number_of_segments + 1
+    midline0 = mamf0.calculate_midline()
+    midline1 = mamf1.calculate_midline()
+    midline2 = mamf2.calculate_midline()
+    print("The midlines are: %d %d %d" % (midline0, midline1, midline2))
+
+    data = shift_data(data, [-midline0, -midline1, -midline2])
+    save_data_to_file(data, f"{OUTPUT_FOLDER}/data_minus_midline_item{item_number}")
+
+    max_error_mm_from_all_trials = 1.0e20
+    best_weights_from_all_trials = None
+    plotting = Plotting()
+    for trial in range(3):
+        weights = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+        max_error_mm = None
+        new_max_error_mm_list = []
+        iteration_number_list = []
+        for i in range(100):
+            if i == 0:
+                new_weights = weights
             else:
-                print("Ignoring this qualified segment near the start of the data")
-                ignore_first_qualifed_segments = ignore_first_qualifed_segments - 1
-        else:
-            print("Found new MAX best fit segment with length %d" % (max_best_fit_segment_len))
-        previous_max_best_fit_hall_n = max_best_fit_hall_n
-    if min_best_fit_hall_n != previous_min_best_fit_hall_n:
-        min_best_fit_segment_start_index = min_best_fit_segment_end_index + 1
-        min_best_fit_segment_end_index = im - 1
-        min_best_fit_segment_len = min_best_fit_segment_end_index - min_best_fit_segment_start_index + 1
-        if min_best_fit_segment_len >= BEST_FIT_SEGMENT_MIN_LENGTH:
-            print("Found new min best fit segment from %d to %d with qualified length %d" % (min_best_fit_segment_start_index, min_best_fit_segment_end_index, min_best_fit_segment_len))
-            if ignore_first_qualifed_segments == 0:
-                if positive_or_negative_best_fit == None:
-                    positive_or_negative_best_fit = -1
-                elif positive_or_negative_best_fit == -1:
-                    print("Error: a negative best fit does not follow a positive one. problem with the data. maybe noise")
-                    exit(1)
-                else:
-                    positive_or_negative_best_fit = -1
-                print("Doing calculations for segnet %d" % (total_number_of_segments))
-                segment_calculations(fh8, total_number_of_segments, data[min_best_fit_segment_start_index : min_best_fit_segment_end_index + 1, previous_min_best_fit_hall_n], min_best_fit_segment_start_index, previous_min_best_fit_hall_n, max_best_fit_hall_n)
-                if found_new_peak and (MAX_OR_MIN == 1):
-                    max_hall_segment = total_number_of_segments
-                    found_new_peak = 0
-                    print("*** The peak hall sensor reading is at segment %d" % (max_hall_segment))
-                total_number_of_segments = total_number_of_segments + 1
+                new_weights = random_change_to_weights(weights)
+        #    new_weights = random_change_to_weights_simplified(weights)
+            new_adjusted_data = adjust_data(data, new_weights)
+            change_list = get_change_list_v3(new_adjusted_data)
+            new_score, direction, confidence = compute_score(change_list)
+            new_transition_function, new_max_error_mm = calculate_transition_function_v3(new_adjusted_data)
+            print("The new_max_error_mm is:", new_max_error_mm)
+            if (max_error_mm == None) or (new_max_error_mm < max_error_mm):
+                adjusted_data = new_adjusted_data
+                new_max_error_mm_list.append(new_max_error_mm)
+                iteration_number_list.append(i)
+                if new_max_error_mm < max_error_mm_from_all_trials:
+                    best_weights_from_all_trials = new_weights
+                    max_error_mm_from_all_trials = new_max_error_mm
+                weights = new_weights
+                score = new_score
+                transition_function = new_transition_function
+                max_error_mm = new_max_error_mm
+                print(f"Found a better maximum error {new_max_error_mm} mm with these weights: {new_weights}")
             else:
-                print("Ignoring this qualified segment near the start of the data")
-                ignore_first_qualifed_segments = ignore_first_qualifed_segments - 1
-        else:
-            print("Found new min best fit segment with length %d" % (min_best_fit_segment_len))
-        previous_min_best_fit_hall_n = min_best_fit_hall_n
+                print(f"The previous maximum error {max_error_mm} mm with these weights: {new_weights} was better")
 
-    i0 = i0 + 1
-    im = im + 1
-    i1 = i1 + 1
+        plotting.add_data(iteration_number_list, new_max_error_mm_list)
+        plotting.save_to_file(f"{OUTPUT_FOLDER}/max_error_mm_item{item_number}.png", "Max Error (mm) Vs. Iteration", "Iteration", "Max Error (mm)", dpi=600)
 
-if n_avg != ONE_CYCLE_DATA_POINTS:
-    print("Error: did not find enough data to calculate the average hall values over one cycle")
-    exit(1)
+        with open(f"{OUTPUT_FOLDER}/new_max_error_mm_item{item_number}", "w") as fh:
+            for new_max_error_mm in new_max_error_mm_list:
+                fh.write("%f\n" % (new_max_error_mm))
 
-if max_hall_segment == None:
-    print("Error: The hall sensor peak occured in an unknown segment")
-    exit(1)
+        save_data_to_file(adjusted_data, f"{OUTPUT_FOLDER}/optimized_data_item{item_number}_trial{trial}")
 
-hall_avg_value0 = hall_avg_value0 / n_avg
-hall_avg_value1 = hall_avg_value1 / n_avg
-hall_avg_value2 = hall_avg_value2 / n_avg
+        sorted_sections = sort_sections(adjusted_data)
+        with open(f"{OUTPUT_FOLDER}/sorted_sections_item{item_number}", "w") as fh:
+            for ss in sorted_sections:
+                fh.write("%F %f %f\n" % (ss[0], ss[1], ss[2]))
 
-fh8.write("}\n\n")
-fh8.write("#define MAX_HALL_SEGMENT %d\n" % (max_hall_segment))
-fh8.write("#define PEAK_HALL_NUMBER %d\n" % (PEAK_HALL_NUMBER))
-fh8.write("#define HALL1_MIDPOINT %d\n" % (midline0))
-fh8.write("#define HALL2_MIDPOINT %d\n" % (midline1))
-fh8.write("#define HALL3_MIDPOINT %d\n" % (midline2))
-fh8.write("\n")
-fh8.write("#endif\n")
-fh8.write("\n")
+        with open(f"{OUTPUT_FOLDER}/transition_function_item{item_number}", "w") as fh:
+            for tf in transition_function:
+                fh.write("%d %f %f\n" % (tf[0], tf[1], tf[2]))
 
-fh.close()
-fh2.close()
-fh3.close()
-fh6.close()
-fh7.close()
-fh8.close()
-fh9.close()
+        write_out_header_file(output_header_filename, weights)
+        print("Wrote out the header file:", output_header_filename)
 
-print("max_hall_index:", max_hall_index)
-
-fh10 = open("hall_sensor_data_both_directions.txt", "w")
-im = max_hall_index
-dir = 1
-for i in range(len(data) * 3):
-    dm = data[im % len(data)]
-    fh10.write("%d %d %d\n" % (dm[0], dm[1], dm[2]))
-    if dir == 1:
-        if im == len(data) - 1:
-            dir = -1
-    else:
-        if im == 0:
-            dir = 1
-    im = im + dir
-
-fh10.close()
-
-
-
-fh = open("one_cycle_data.txt", "w")
-im = max_hall_index
-dir = 1
-for d in one_cycle_data:
-    six_step_flags = 0
-    if d[1] > hall_avg_value0:
-        six_step_flags = six_step_flags | 1
-    if d[2] > hall_avg_value1:
-        six_step_flags = six_step_flags | 2
-    if d[3] > hall_avg_value2:
-        six_step_flags = six_step_flags | 4
-    fh.write("%d %d %d %d %d\n" % (d[0], d[1], d[2], d[3], six_step_flags))
-fh.close()
-
-ret = os.system("cp %s ./LookupTable2.h" % (output_header_filename))
-if ret != 0:
-    print("Error: Cannot copy file from %s to ./LookupTable.h")
-    exit(1)
-print("Compiling the C program called one_cycle_calculation.c")
-ret = os.system("gcc one_cycle_calculations.c -o one_cycle_calculations")
-if ret != 0:
-    print("Error: compile of one_cycle_calculations.c failed. Check the program please.")
-    exit(1)
-ret = os.system("./one_cycle_calculations")
-if ret != 0:
-    print("Error: cannot execute one_cycle_calculations. Check to make sure that it was able to compile.")
-    exit(1)
-
-x_data = []
-y_data = []
-fh = open("one_cycle_data_vs_index.txt", "r")
-for d in fh:
-    fields = d.strip().split()
-    x = fields[0]
-    y = fields[1]
-#    print(float(x), float(y))
-    x_data.append(float(x))
-    y_data.append(float(y))
-
-fh.close()
-
-x_data = np.array(x_data)
-y_data = np.array(y_data)
-m, b = np.polyfit(x_data, y_data, 1)
-r = np.corrcoef(x_data, y_data)[0, 1]
-print("Final fit parameters: slope: %f intercept: %f" % (m, b))
-print("Final correlarion coefficient r:", r)
-print("Parts per million from 1:", (1.0 - r) * 1000000)
+    # let's append the max_error_mm_from_all_trials value to a file along with the item_number
+    with open(max_error_mm_from_all_trials_filename, "a") as fh:
+        fh.write("%s %f\n" % (item_number, max_error_mm_from_all_trials))
+    # let's append the best_weights_from_all_trials value to a file along with the item_number
+    # but first we need to convert the weights, which is a list of floating point numbers inro a string with each weight separated by a space
+    weights_string = ""
+    for w in best_weights_from_all_trials:
+        weights_string = weights_string + " " + str(w)
+    with open(best_weights_from_all_trials_filename, "a") as fh:
+        fh.write("%s %s\n" % (item_number, weights_string))
