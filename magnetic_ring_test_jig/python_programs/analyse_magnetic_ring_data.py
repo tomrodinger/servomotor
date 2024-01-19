@@ -770,22 +770,12 @@ if not os.path.exists(OUTPUT_FOLDER):
 with open(f"{OUTPUT_FOLDER}/PRODUCT_NAME", "w") as fh:
     fh.write(product_name)
 
-# if the file called f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials" exists then erase it
-max_error_mm_from_all_trials_filename = f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials"
-if os.path.exists(max_error_mm_from_all_trials_filename):
-    os.remove(max_error_mm_from_all_trials_filename)
-
-# if the file called f"{OUTPUT_FOLDER}/best_weights_from_all_trials" exists then erase it
-best_weights_from_all_trials_filename = f"{OUTPUT_FOLDER}/best_weights_from_all_trials"
-if os.path.exists(best_weights_from_all_trials_filename):
-    os.remove(best_weights_from_all_trials_filename)
-
-
 input_file_list = glob.glob(INPUT_FOLDER + "/" + GLOB_FILTER)
 print("Found these input files:", input_file_list)
 
 # lets iterate through all the files and process them
 for input_filename in input_file_list:
+    print("======================================================================================================================================")
     print("Processing:", input_filename)
     match = re.search(r'(\d+)\.txt$', input_filename)
     if match:
@@ -794,8 +784,11 @@ for input_filename in input_file_list:
         print("Error: could not extract the item number from the filename:", input_filename)
         exit(1)
     print("The item number is:", item_number)
-#    if item_number != "2":
-#        continue
+
+    # let's check if the DONE file exists for this item number. We will check in the output folder for a file called item_number.DONE
+    if os.path.exists(f"{OUTPUT_FOLDER}/{item_number}.DONE"):
+        print("The DONE file exists for this item number. Skipping it. If you want to analyse it then delete the DONE file and run this script again.")
+        continue
 
     data = []
     with open(input_filename) as fh:
@@ -872,31 +865,37 @@ for input_filename in input_file_list:
                 print(f"The previous maximum error {max_error_mm} mm with these weights: {new_weights} was better")
 
         plotting.add_data(iteration_number_list, new_max_error_mm_list)
-        plotting.save_to_file(f"{OUTPUT_FOLDER}/max_error_mm_item{item_number}.png", "Max Error (mm) Vs. Iteration", "Iteration", "Max Error (mm)", dpi=600)
 
-        with open(f"{OUTPUT_FOLDER}/new_max_error_mm_item{item_number}", "w") as fh:
+        with open(f"{OUTPUT_FOLDER}/new_max_error_mm_item{item_number}_trial{trial}", "w") as fh:
             for new_max_error_mm in new_max_error_mm_list:
                 fh.write("%f\n" % (new_max_error_mm))
 
         save_data_to_file(adjusted_data, f"{OUTPUT_FOLDER}/optimized_data_item{item_number}_trial{trial}")
 
         sorted_sections = sort_sections(adjusted_data)
-        with open(f"{OUTPUT_FOLDER}/sorted_sections_item{item_number}", "w") as fh:
+        with open(f"{OUTPUT_FOLDER}/sorted_sections_item{item_number}_trial{trial}", "w") as fh:
             for ss in sorted_sections:
                 fh.write("%F %f %f\n" % (ss[0], ss[1], ss[2]))
 
-        with open(f"{OUTPUT_FOLDER}/transition_function_item{item_number}", "w") as fh:
+        with open(f"{OUTPUT_FOLDER}/transition_function_item{item_number}_trial{trial}", "w") as fh:
             for tf in transition_function:
                 fh.write("%d %f %f\n" % (tf[0], tf[1], tf[2]))
 
+    # Here we generate the png file from all the data that was added from all the trials
+    plotting.save_to_file(f"{OUTPUT_FOLDER}/max_error_mm_item{item_number}.png", "Max Error (mm) Vs. Iteration", "Iteration", "Max Error (mm)", dpi=600)
 
-    # let's append the max_error_mm_from_all_trials value to a file along with the item_number
-    with open(max_error_mm_from_all_trials_filename, "a") as fh:
-        fh.write("%s %f\n" % (item_number, max_error_mm_from_all_trials))
-    # let's append the best_weights_from_all_trials value to a file along with the item_number
+    # let's write out the max_error_mm_from_all_trials value to a file
+    with open(f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials_item{item_number}", "w") as fh:
+        fh.write("%f\n" % (max_error_mm_from_all_trials))
+        
+    # let's write out the best_weights_from_all_trials value to a file
     # but first we need to convert the weights, which is a list of floating point numbers inro a string with each weight separated by a space
     weights_string = ""
     for w in best_weights_from_all_trials:
         weights_string = weights_string + " " + str(w)
-    with open(best_weights_from_all_trials_filename, "a") as fh:
-        fh.write("%s %s\n" % (item_number, weights_string))
+    with open(f"{OUTPUT_FOLDER}/best_weights_from_all_trials_item{item_number}", "w") as fh:
+        fh.write("%s\n" % (weights_string))
+
+    # we are completely done the analysis for this item_number, so let's create a file called {item_number}.DONE in the output folder
+    with open(f"{OUTPUT_FOLDER}/{item_number}.DONE", "w") as fh:
+        pass
