@@ -14,20 +14,15 @@ INPUT_FOLDER = "collected_data"
 OUTPUT_FOLDER = "analysis_output"
 GLOB_FILTER = "hall_calibration_one_rotation_*.txt"
 OUTPUT_HEADER_FILENAME_PREFIX = OUTPUT_FOLDER + "/hall_sensor_constants_"
-N_HALL_SENSORS = 3
 SLOPE_CALCULATION_DELTA = 4
 BEST_FIT_SEGMENT_MIN_LENGTH = 5
-HALL_SENSOR_SHIFT = 30000
-SLOPE_SHIFT_RIGHT = 22
-OFFSET_SHIFT_RIGHT = 8
-N_HALL_SENSORS = 3
 PEAK_HALL_NUMBER = 2
 MAX_OR_MIN = 1 # 1 means search for the global maximum, 0 means search for the global minimum
-HALL_SAMPLES_PER_PRINT = 8
-CALIBRATION_CAPTURE_STEP_SIZE = 128
 #BLEND_EXTENT_SHIFT = 3
 MIN_TO_MAX_THRESHOLD = 1000
 
+N_TRIALS = 50
+N_ITERATIONS = 1000
 
 # Get the product name from the command line. The product name is something like M1 or M2 or M3, etc.
 # If the product name is not specified, then print out an error message and give the user a list of
@@ -41,23 +36,14 @@ else:
     print("Product names are M1, M2, M3, etc.")
     exit(1)
 if product_name == "M1":
-    import SETTINGS_M1
-    ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M1.ONE_REVOLUTION_ELECTRICAL_CYCLES
-    ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M1.ONE_REVOLUTION_HALL_SENSOR_CYCLES
-    N_COMMUTATION_STEPS = SETTINGS_M1.N_COMMUTATION_STEPS
-    N_COMMUTATION_SUB_STEPS = SETTINGS_M1.N_COMMUTATION_SUB_STEPS
+    from SETTINGS_M1 import N_HALL_SENSORS, N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT, N_COMMUTATION_STEPS, N_COMMUTATION_SUB_STEPS, ONE_REVOLUTION_ELECTRICAL_CYCLES, \
+                            ONE_REVOLUTION_HALL_SENSOR_CYCLES, HALL_SENSOR_SHIFT, SLOPE_SHIFT_RIGHT, OFFSET_SHIFT_RIGHT, HALL_SAMPLES_PER_PRINT, CALIBRATION_CAPTURE_STEP_SIZE
 elif product_name == "M2":
-    import SETTINGS_M2
-    ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M2.ONE_REVOLUTION_ELECTRICAL_CYCLES
-    ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M2.ONE_REVOLUTION_HALL_SENSOR_CYCLES
-    N_COMMUTATION_STEPS = SETTINGS_M2.N_COMMUTATION_STEPS
-    N_COMMUTATION_SUB_STEPS = SETTINGS_M2.N_COMMUTATION_SUB_STEPS
+    from SETTINGS_M2 import N_HALL_SENSORS, N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT, N_COMMUTATION_STEPS, N_COMMUTATION_SUB_STEPS, ONE_REVOLUTION_ELECTRICAL_CYCLES, \
+                            ONE_REVOLUTION_HALL_SENSOR_CYCLES, HALL_SENSOR_SHIFT, SLOPE_SHIFT_RIGHT, OFFSET_SHIFT_RIGHT, HALL_SAMPLES_PER_PRINT, CALIBRATION_CAPTURE_STEP_SIZE
 elif product_name == "M3":
-    import SETTINGS_M3
-    ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M3.ONE_REVOLUTION_ELECTRICAL_CYCLES
-    ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M3.ONE_REVOLUTION_HALL_SENSOR_CYCLES
-    N_COMMUTATION_STEPS = SETTINGS_M3.N_COMMUTATION_STEPS
-    N_COMMUTATION_SUB_STEPS = SETTINGS_M3.N_COMMUTATION_SUB_STEPS
+    from SETTINGS_M3 import N_HALL_SENSORS, N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT, N_COMMUTATION_STEPS, N_COMMUTATION_SUB_STEPS, ONE_REVOLUTION_ELECTRICAL_CYCLES, \
+                            ONE_REVOLUTION_HALL_SENSOR_CYCLES, HALL_SENSOR_SHIFT, SLOPE_SHIFT_RIGHT, OFFSET_SHIFT_RIGHT, HALL_SAMPLES_PER_PRINT, CALIBRATION_CAPTURE_STEP_SIZE
 else:
     print("Error: unsupported product name:", product_name)
     print("You should update this executable and create a SETTINGS_product-name.py file")
@@ -75,6 +61,8 @@ if SENSOR_SEGMENT_RESOLUTION != int(SENSOR_SEGMENT_RESOLUTION):
     print("Error: SENSOR_SEGMENT_RESOLUTION is not an integer:", SENSOR_SEGMENT_RESOLUTION)
     exit(1)
 SENSOR_SEGMENT_RESOLUTION = int(SENSOR_SEGMENT_RESOLUTION)
+EXPECTED_MINIMUM_N_MINIMA_AND_MAXIMA = MAGNETIC_RING_POLES
+EXPECTED_MAXIMUM_N_MINIMA_AND_MAXIMA = MAGNETIC_RING_POLES
 
 
 class Plotting:
@@ -117,12 +105,13 @@ def calculate_average_distance_between_lists(list1, list2):
         
 class minima_and_maxima_finder:
     def __init__(self):
+        self.n_data_points = 0
         self.current_minimum = 1000000
         self.current_minimum_index = 0
         self.current_maximum = -1000000
         self.current_maximum_index = 0
         self.minimum_or_maximum = None
-        self.ignore_first = 1
+        self.ignore_first = 3
         self.local_minima = []
         self.local_maxima = []
         self.local_minima_and_maxima = []
@@ -133,10 +122,10 @@ class minima_and_maxima_finder:
         if not self.done:
             if d < self.current_minimum:
                 self.current_minimum = d
-                self.current_minimum_index = i
+                self.current_minimum_index = self.n_data_points
             if d > self.current_maximum:
                 self.current_maximum = d
-                self.current_maximum_index = i
+                self.current_maximum_index = self.n_data_points
             if (d > self.current_minimum + MIN_TO_MAX_THRESHOLD) and (self.minimum_or_maximum != 1):
                 print("Found a minimum at index", self.current_minimum_index)
                 if self.ignore_first > 0:
@@ -169,8 +158,9 @@ class minima_and_maxima_finder:
             elif len(self.local_maxima) > MAGNETIC_RING_POLES / 2:
                 print("Error: collected too many local maxima for some strange reason")
                 exit(1)
+        self.n_data_points = self.n_data_points + 1
         return self.done
-        
+    
     def get_local_minima():
         return self.local_minima
 
@@ -208,6 +198,20 @@ class minima_and_maxima_finder:
 #            d[1] = d[1] - midline
         for d in self.local_minima_and_maxima:
             d[1] = d[1] + offset
+
+    def get_n_minima_and_maxima(self):
+        print("Local minima and maxima:", self.local_minima_and_maxima)
+        return len(self.local_minima_and_maxima)
+
+    def check_n_minima_and_maxima(self):
+        n_minima_and_maxima = self.get_n_minima_and_maxima()
+        print("The number of minima and maxima is:", n_minima_and_maxima)
+        if n_minima_and_maxima < EXPECTED_MINIMUM_N_MINIMA_AND_MAXIMA:
+            print("Error: the number of minima and maxima is less than expected:", EXPECTED_MINIMUM_N_MINIMA_AND_MAXIMA)
+            raise Exception("The number of minima and maxima is less than expected")
+        if n_minima_and_maxima > EXPECTED_MAXIMUM_N_MINIMA_AND_MAXIMA:
+            print("Error: the number of minima and maxima is greater than expected:", EXPECTED_MAXIMUM_N_MINIMA_AND_MAXIMA)
+            raise Exception("The number of minima and maxima is more than expected")
 
     def get_minima_and_maxima(self):
         minima_and_maxima = []
@@ -757,48 +761,14 @@ def sort_sections(data):
         result.append([bottom_d, middle_d, top_d])
     return result
     
-    
-    
-def write_out_header_file(filename, weights):
-    with open(filename, "w") as fh:
-        fh.write("#ifndef __HALL_SENSOR_CONSTANTS__\n")
-        fh.write("#define __HALL_SENSOR_CONSTANTS__\n")
-        fh.write("\n")
-        fh.write("#define N_HALL_SENSORS %d\n" % (N_HALL_SENSORS))
-        fh.write("#define TOTAL_NUMBER_OF_SEGMENTS %d\n" % (TOTAL_NUMBER_OF_SEGMENTS))
-        fh.write("#define HALL_SENSOR_SHIFT %d\n" % (HALL_SENSOR_SHIFT))
-        fh.write("#define SLOPE_SHIFT_RIGHT %d\n" % (SLOPE_SHIFT_RIGHT))
-        fh.write("#define OFFSET_SHIFT_RIGHT %d\n" % (OFFSET_SHIFT_RIGHT))
-        fh.write("#define HALL_SAMPLES_PER_PRINT %d\n" % (HALL_SAMPLES_PER_PRINT))
-        weights_per_hall_sensor = int(len(weights) / 3)
-        fh.write("#define WEIGHTS_PER_HALL_SENSOR %d\n" % (weights_per_hall_sensor))
-        fh.write("#define SENSOR_SEGMENT_RESOLUTION %d\n" % (SENSOR_SEGMENT_RESOLUTION))
-        fh.write("#define SENSOR_SEGMENT_RESOLUTION_DIV_2 %d\n" % (SENSOR_SEGMENT_RESOLUTION >> 1))
-        fh.write("#define CALIBRATION_CAPTURE_STEP_SIZE %d // this should be slow so that data can be captured and collected accurately\n" % (CALIBRATION_CAPTURE_STEP_SIZE))
-        fh.write("\n")
-        fh.write("\n")
-        fh.write("struct hall_weights_struct {\n")
-        fh.write("   int16_t h1[WEIGHTS_PER_HALL_SENSOR];\n")
-        fh.write("   int16_t h2[WEIGHTS_PER_HALL_SENSOR];\n")
-        fh.write("   int16_t h3[WEIGHTS_PER_HALL_SENSOR];\n")
-        fh.write("};\n")
-        fh.write("\n")
-        fh.write("#define HALL_WEIGHTS_INITIALIZER { \\\n")
-        for i in range(weights_per_hall_sensor):
-            w0 = int(weights[i * 3 + 0] * (SENSOR_SEGMENT_RESOLUTION >> 1) + 0.5)
-            w1 = int(weights[i * 3 + 1] * (SENSOR_SEGMENT_RESOLUTION >> 1) + 0.5)
-            w2 = int(weights[i * 3 + 2] * (SENSOR_SEGMENT_RESOLUTION >> 1) + 0.5)
-            if (w0 > 32767) or (w0 < -32768) or (w1 > 32767) or (w1 < -32768) or (w2 > 32767) or (w2 < -32768):
-                print("Error: one or more of the weights are out of the uint16_t range: %d %d %d" % (w0, w1, w2))
-                exit(1)
-            fh.write("    {%6d, %6d, %6d}, \\\n" % (w0, w1, w2))
-        fh.write("}\n\n")
-        fh.write("#endif\n")
-        fh.write("\n")
 
 # if the output folder does not exist, create it
 if not os.path.exists(OUTPUT_FOLDER):
     os.makedirs(OUTPUT_FOLDER)
+
+# save the product_name to a file called PRODUCT_NAME in the output folder
+with open(f"{OUTPUT_FOLDER}/PRODUCT_NAME", "w") as fh:
+    fh.write(product_name)
 
 # if the file called f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials" exists then erase it
 max_error_mm_from_all_trials_filename = f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials"
@@ -809,7 +779,6 @@ if os.path.exists(max_error_mm_from_all_trials_filename):
 best_weights_from_all_trials_filename = f"{OUTPUT_FOLDER}/best_weights_from_all_trials"
 if os.path.exists(best_weights_from_all_trials_filename):
     os.remove(best_weights_from_all_trials_filename)
-
 
 
 input_file_list = glob.glob(INPUT_FOLDER + "/" + GLOB_FILTER)
@@ -853,6 +822,13 @@ for input_filename in input_file_list:
     mamf1.save_minima_and_maxima_to_file(f"{OUTPUT_FOLDER}/local_minima_and_maxima1_item{item_number}")
     mamf2.save_minima_and_maxima_to_file(f"{OUTPUT_FOLDER}/local_minima_and_maxima2_item{item_number}")
 
+    try:
+        mamf0.check_n_minima_and_maxima()
+        mamf1.check_n_minima_and_maxima()
+        mamf2.check_n_minima_and_maxima()
+    except:
+        continue
+
     midline0 = mamf0.calculate_midline()
     midline1 = mamf1.calculate_midline()
     midline2 = mamf2.calculate_midline()
@@ -864,12 +840,12 @@ for input_filename in input_file_list:
     max_error_mm_from_all_trials = 1.0e20
     best_weights_from_all_trials = None
     plotting = Plotting()
-    for trial in range(3):
+    for trial in range(N_TRIALS):
         weights = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
         max_error_mm = None
         new_max_error_mm_list = []
         iteration_number_list = []
-        for i in range(100):
+        for i in range(N_ITERATIONS):
             if i == 0:
                 new_weights = weights
             else:
@@ -913,8 +889,6 @@ for input_filename in input_file_list:
             for tf in transition_function:
                 fh.write("%d %f %f\n" % (tf[0], tf[1], tf[2]))
 
-        write_out_header_file(output_header_filename, weights)
-        print("Wrote out the header file:", output_header_filename)
 
     # let's append the max_error_mm_from_all_trials value to a file along with the item_number
     with open(max_error_mm_from_all_trials_filename, "a") as fh:
