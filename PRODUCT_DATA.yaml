@@ -57,7 +57,7 @@
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/pcb_picture_top.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a stepper motor form factor
-    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V5/schematic.pdf
+    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V5/schematic/sch-M3-V5-24-01-24.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/V5
