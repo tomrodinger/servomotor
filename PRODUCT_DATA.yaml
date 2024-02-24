@@ -50,3 +50,21 @@
       description: Initial firmware for the servo motor
       url: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/firmware/servo-motor-fw.bin
       sha256: 43f6df3f42ae0582b1331c3ebc3eec1662dc2a7740039b04128bb06d5931dac9
+- product: M3
+  versions:
+  - version: V5
+    type: full_product
+    web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
+    picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/pcb_picture_top.jpg
+    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a stepper motor form factor
+    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V5/schematic.pdf
+    user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/V5
+    firmwares:
+    - version: 0.2.3
+      compatibility: 0
+      date: February 24, 2024
+      description: Firmware for the servomotor#3 (model M3)
+      url: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/firmware/servo-motor-fw.bin
+      sha256: 43f6df3f42ae0582b1331c3ebc3eec1662dc2a7740039b04128bb06d5931dac9
