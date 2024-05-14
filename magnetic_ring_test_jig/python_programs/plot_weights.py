@@ -3,10 +3,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from tabulate import tabulate
+import glob
 
-OUTPUT_FOLDER = "analysis_output"
+OUTPUT_FOLDER = "analysis_output_2"
 OUTPUT_HEADER_FILENAME_PREFIX = "../../servomotor/Src/hall_sensor_constants_"
-
+WEIGHTS_FILE_PREFIX = "best_weights_from_all_trials_item*"
 
 def write_out_header_file(filename, weights, product_name):
     if product_name == "M1":
@@ -68,8 +69,49 @@ def write_out_header_file(filename, weights, product_name):
         fh.write("\n")
     print("Wrote out header to file:", filename)
 
-# Read in the data and sort it
-data = pd.read_csv('analysis_output/best_weights_from_all_trials', sep="\s+", header=None)
+# Read in all of the weight data. The data is located in the files that start with WEIGHTS_FILE_PREFIX. We need to find all the files
+# and read the weights from the files. Each file will have just one row of weights and there will be 9 weights.
+file_list = glob.glob(f"{OUTPUT_FOLDER}/{WEIGHTS_FILE_PREFIX}")
+if len(file_list) == 0:
+    print(f"Error: no files found in {OUTPUT_FOLDER}/{WEIGHTS_FILE_PREFIX}*")
+    exit(1)
+print(f"Found {len(file_list)} files in {OUTPUT_FOLDER}/{WEIGHTS_FILE_PREFIX}*")
+data = []
+for filename in file_list:
+    print("  ", filename)
+    # extract the item number from the filename. The filename ends with _item<number>
+    parts = filename.split("_")
+    if len(parts) < 2:
+        print("Error: expected at least one underscore in filename:", filename)
+        continue
+    item_and_number = parts[-1]
+    if item_and_number[:4] != "item":
+        print("Error: expected filename to end with _item<number>:", filename)
+        continue
+    try:
+        item_number = int(item_and_number[4:])
+    except:
+        print("Error: expected filename to end with _item<number>:", filename)
+        continue
+    print(f"    item number: {item_number}")
+    # read in the file and make sure that there is just one line with 9 fields
+    with open(filename, 'r') as file:
+        full_file = file.read()
+        if full_file.count("\n") != 1:
+            print("Error: expected just one line in file:", filename)
+            continue
+        weights = full_file.split()
+        if len(weights) != 9:
+            print("Error: expected 9 fields in line:", full_file)
+            continue
+        # convert the weights to floats and append them to the data in the format good for pandas
+        weights = [float(w) for w in weights]
+        row = [item_number] + weights
+        data.append(row)
+
+# Convert data to a pandas dataframe
+data = pd.DataFrame(data)
+# Sort the data
 data = data.sort_values(by=0).reset_index(drop=True)
 
 # Rename columns for clarity

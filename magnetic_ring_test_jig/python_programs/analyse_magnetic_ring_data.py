@@ -10,8 +10,8 @@ import glob
 import re
 import matplotlib.pyplot as plt
 
-INPUT_FOLDER = "collected_data"
-OUTPUT_FOLDER = "analysis_output"
+INPUT_FOLDER = "collected_data_2"
+OUTPUT_FOLDER = "analysis_output_2"
 GLOB_FILTER = "hall_calibration_one_rotation_*.txt"
 OUTPUT_HEADER_FILENAME_PREFIX = OUTPUT_FOLDER + "/hall_sensor_constants_"
 SLOPE_CALCULATION_DELTA = 4
@@ -887,7 +887,7 @@ for input_filename in input_file_list:
     # let's write out the max_error_mm_from_all_trials value to a file
     with open(f"{OUTPUT_FOLDER}/max_error_mm_from_all_trials_item{item_number}", "w") as fh:
         fh.write("%f\n" % (max_error_mm_from_all_trials))
-        
+
     # let's write out the best_weights_from_all_trials value to a file
     # but first we need to convert the weights, which is a list of floating point numbers inro a string with each weight separated by a space
     weights_string = ""
