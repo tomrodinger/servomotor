@@ -154,10 +154,9 @@ void portA_init(void)
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE15_Pos);  // touch button
 
     GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT0_Pos)  | // make all the pins with analog components connected open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos)  | // also, make the switch disable pin open drain since there is no resistor between the pin and the base of a transistor
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos)  | // also, make the debug UART receive pin open drain
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos)  | // may not be necessary
-                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos)  |
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos)  | // also, make the switch disable pin open drain since there is no resistor between the pin and the base of a transistor
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos)  | // also, make the debug UART receive pin open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos)  | // may not be necessary
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos)  |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos)  |
                     (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos)  |
