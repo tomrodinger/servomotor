@@ -30,6 +30,9 @@
 #ifdef PRODUCT_NAME_M3
 #include "commutation_table_M3.h"
 #endif
+#ifdef PRODUCT_NAME_M4
+#include "commutation_table_M4.h"
+#endif
 
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
@@ -122,14 +125,14 @@ void systick_init(void)
 #define PUPDR_PULL_UP 1
 #define PUPDR_PULL_DOWN 2
 
-#ifndef PRODUCT_NAME_M3 // Below are the port pin settings for products M1 and M2
-#define BUTTON_PORT_A_PIN 13
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
+#define BUTTON_PORT_A_PIN 13 // products M1 and M2
 #else
-#define BUTTON_PORT_A_PIN 14
+#define BUTTON_PORT_A_PIN 14 // products M3 and M4
 #endif
 #define TOUCH_BUTTON_PORT_A_PIN 15
 
-#ifndef PRODUCT_NAME_M3 // Below are the port pin settings for products M1 and M2
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) // Below are the port pin settings for products M1 and M2
 void portA_init(void)
 {
     GPIOA->MODER =
@@ -256,9 +259,9 @@ void GPIO_init(void)
     portC_init();
     portD_init();
 }
+#endif
 
-#else // Below are the port pin settings for product M3
-
+#ifdef PRODUCT_NAME_M3 // Below are the port pin settings for product M3
 void portA_init(void)
 {
     GPIOA->MODER =
@@ -346,7 +349,96 @@ void GPIO_init(void)
     portB_init();
     portC_init();
 }
+#endif
 
+#ifdef PRODUCT_NAME_M4 // Below are the port pin settings for product M4
+void portA_init(void)
+{
+    GPIOA->MODER =
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Direction control of the motor digital output
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // Step motor step control output (to rotate the motor)
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // Temperature sensor (NTC) analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // Hall sensor 1 analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // Hall sensor 2 analog input
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // Hall sensor 3 analog input
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // Motor current control PWM output
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  | // Don't use. Might be connected tp PA11 internally
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting output (to set the overvoltage threshold) by PWM
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Microstepping setting (0 = 1/64 microstepping, 1 = 1/16 microstepping)
+
+//    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT10_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
+//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos);
+    GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
+    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
+
+//    GPIOA->BSRR = ((1 << 15) << 16); // set the microstepping pin sentting MS1 to low, which will set to 1/64 microstepping
+    GPIOA->BSRR = (1 << 15); // set the microstepping pin sentting MS1 to high, which will set to 1/16 microstepping
+}
+
+
+void portB_init(void)
+{
+    GPIOB->MODER =
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Motor driver enable (active low)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE3_Pos)  | // SPREAD setting (Low=StealthChop, High=SpreadCycle)
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE4_Pos)  | // DIAG (Diagnostic and StallGuard output. Hi level upon stall detection or driver error.)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE5_Pos)  | // PDN_UART signal to motor driver (low is power down; this can be used for digital communication as well)
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE8_Pos)  | // Overvoltage digital input (will shut off motor driver very fast if trigered)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
+
+//    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // Make the analog input pins open drain
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) | // RX pin make as open drain
+//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
+    GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
+    GPIOB->PUPDR = (PUPDR_PULL_UP   << GPIO_PUPDR_PUPD7_Pos) | // RX pin is pull up
+                   (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos);  // overvoltage pin is pull down
+    GPIOB->BSRR = (1 << 0) | (1 << 5); // diable the motor and set the PDN_UART pin to high so that the motor driver is not in power down mode
+}
+
+
+void portC_init(void)
+{
+    GPIOC->MODER =
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE6_Pos)  | // STDBY input to motor driver (high is standby, low is normal operation)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE14_Pos) | // Red LED
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Green LED
+//    GPIOC->OTYPER = (0);  // Make the analog input pins open drain
+    GPIOC->OSPEEDR = 0xffffffff; // very high speed
+    GPIOC->PUPDR = 0; // no pins have pulling resistors
+}
+
+
+void GPIO_init(void)
+{
+    portA_init();
+    portB_init();
+    portC_init();
+}
 #endif
 
 
@@ -395,6 +487,19 @@ void SysTick_Handler(void)
 //    }
 }
 
+
+void set_led_test_mode(uint8_t colours)
+{
+    __disable_irq();
+    disable_mosfets();
+    if (colours & 1) {
+        green_LED_on();
+    }
+    if (colours & 2) {
+        red_LED_on();
+    }
+    while(1);
+}
 
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 {
@@ -878,7 +983,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             {
                 uint8_t test_mode = parameters[0];
                 rs485_allow_next_command();
-                set_test_mode(test_mode);
+                if (test_mode < 10) {
+                    set_motor_test_mode(test_mode);
+                }
+                else {
+                    set_led_test_mode(test_mode - 10);
+                }
                 if(axis != ALL_ALIAS) {
                     rs485_transmit(NO_ERROR_RESPONSE, 3);
                 }
@@ -1124,7 +1234,7 @@ int main(void)
     adc_init();
     pwm_init();
     overvoltage_init();
-    #ifndef PRODUCT_NAME_M3
+    #if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4)
     step_and_direction_init();
     #endif
 
@@ -1191,7 +1301,7 @@ int main(void)
 #endif
 
 //    	check_if_break_condition();
-#ifndef PRODUCT_NAME_M3 
+#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4) 
     	check_if_ADC_watchdog2_exceeded();
 #endif
     }

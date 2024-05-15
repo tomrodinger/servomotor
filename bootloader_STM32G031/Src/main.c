@@ -151,6 +151,7 @@ void portB_init(void)
 //    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos); // RX pin is pull up, overvoltage pin is pull down
+    GPIOB->BSRR = (1 << 0); // diable the motor driver at first by pulling the menable line high
 }
 
 

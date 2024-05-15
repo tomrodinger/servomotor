@@ -12,6 +12,9 @@
 #ifdef PRODUCT_NAME_M3
 #include "hall_sensor_constants_M3.h"
 #endif
+#ifdef PRODUCT_NAME_M4
+#include "hall_sensor_constants_M4.h"
+#endif
 
 #define OPEN_LOOP_POSITION_CONTROL 0
 #define CLOSED_LOOP_POSITION_CONTROL 1
@@ -25,7 +28,7 @@
 #define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
 #define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS * ((uint64_t)1 << 32))
 //#define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS)
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M1
 #define MAX_RPM                       1020 // should be divisable by 60 ideally so that the MAX_RPS is an integer
 #else
 #define MAX_RPM                       2040 // should be divisable by 60 ideally so that the MAX_RPS is an integer
@@ -43,12 +46,22 @@
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
 
 #define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
+
+#ifdef PRODUCT_NAME_M1
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
+#endif
+#ifdef PRODUCT_NAME_M2
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
+#endif
 #ifdef PRODUCT_NAME_M3
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
-#else
-#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
-#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
+#endif
+#ifdef PRODUCT_NAME_M4
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
 #endif
 
 #define MULTIPURPOSE_DATA_TYPE_CALIBRATION 1
@@ -131,7 +144,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 void get_multipurpose_data(uint8_t *data_type, uint16_t *data_size, uint8_t **multipurpose_data_ptr);
 void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
-void set_test_mode(uint8_t new_test_mode);
+void set_motor_test_mode(uint8_t new_test_mode);
 void test_M3_motor_spin(void);
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

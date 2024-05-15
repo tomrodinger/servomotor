@@ -8,14 +8,14 @@ static int32_t step_count = 0;
 
 void overvoltage_init(void)
 {
-#ifdef PRODUCT_NAME_M3
-	EXTI->EXTICR[2] |= (0x01 << EXTI_EXTICR3_EXTI8_Pos); // Select Port B for EXTI8, which is the overvoltage signal on Servomotor#3
-	EXTI->IMR1 |= EXTI_IMR1_IM8; // unmask it
-	EXTI->RTSR1 |= EXTI_RTSR1_RT8; // we want to trigger an interrupt on the rising edge of PB8
-#else
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 	EXTI->EXTICR[2] |= (0x01 << EXTI_EXTICR3_EXTI9_Pos); // Select Port B for EXTI9, which is the overvoltage signal on Servomotor#1 and Servomotor#2
 	EXTI->IMR1 |= EXTI_IMR1_IM9; // unmask it
 	EXTI->RTSR1 |= EXTI_RTSR1_RT9; // we want to trigger an interrupt on the rising edge of PB9
+#else
+	EXTI->EXTICR[2] |= (0x01 << EXTI_EXTICR3_EXTI8_Pos); // Select Port B for EXTI8, which is the overvoltage signal on Servomotor#3
+	EXTI->IMR1 |= EXTI_IMR1_IM8; // unmask it
+	EXTI->RTSR1 |= EXTI_RTSR1_RT8; // we want to trigger an interrupt on the rising edge of PB8
 #endif
 	NVIC_EnableIRQ(EXTI4_15_IRQn); // enable the interrupt to this external input
 }
@@ -34,15 +34,15 @@ void step_and_direction_init(void)
 void EXTI4_15_IRQHandler(void)
 {
     // Check for ovevoltage first
-#ifdef PRODUCT_NAME_M3
-    if(EXTI->RPR1 & EXTI_RPR1_RPIF8) {
-        fatal_error(14);
-    	EXTI->RPR1 = EXTI_RPR1_RPIF8; // clear the interrupt flag
-    }
-#else
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     if(EXTI->RPR1 & EXTI_RPR1_RPIF9) {
         fatal_error(14);
     	EXTI->RPR1 = EXTI_RPR1_RPIF9; // clear the interrupt flag
+    }
+#else
+    if(EXTI->RPR1 & EXTI_RPR1_RPIF8) {
+        fatal_error(14);
+    	EXTI->RPR1 = EXTI_RPR1_RPIF8; // clear the interrupt flag
     }
 #endif
     // then check if the A line from the encoder transitioned

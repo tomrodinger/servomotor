@@ -1,12 +1,12 @@
 COMMON_SOURCE_FILES_DIR = ../common_source_files
-PRODUCT_OPTIONS := M1 M2 M3
+PRODUCT_OPTIONS := M1 M2 M3 M4
 
 # Define the directory of source files before using it
 DEVICE_SOURCE_FILES_DIR = Src
 
 # Find out the product name
 ifeq ($(PRODUCT_NAME),)
-	PRODUCT_OPTIONS := M1 M2 M3
+	PRODUCT_OPTIONS := M1 M2 M3 M4
 else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif

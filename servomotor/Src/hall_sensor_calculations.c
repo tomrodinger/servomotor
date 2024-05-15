@@ -18,6 +18,9 @@
 #ifdef PRODUCT_NAME_M3
 #include "hall_sensor_constants_M3.h"
 #endif
+#ifdef PRODUCT_NAME_M4
+#include "hall_sensor_constants_M4.h"
+#endif
 #include "global_variables.h"
 
 #define UINT32_MIDPOINT 2147483648

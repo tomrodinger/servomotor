@@ -23,7 +23,7 @@ CALIBRATION_CAPTURE_STEP_SIZE = 128
 MIN_TO_MAX_THRESHOLD = 1000
 
 
-# Get the product name from the command line. The product name is something like M1 or M2 or M3, etc.
+# Get the product name from the command line. The product name is something like M1, M2, M3, M4 etc.
 # If the product name is not specified, then print out an error message and give the user a list of
 # the available product names.
 product_name = None
@@ -32,7 +32,7 @@ if len(sys.argv) == 2:
 else:
     print("Error: please specify a product name on the command line")
     print("Usage: %s product-name" % (sys.argv[0]))
-    print("Product names are M1, M2, M3, etc.")
+    print("Product names are M1, M2, M3, M4, etc.")
     exit(1)
 if product_name == "M1":
     import SETTINGS_M1
@@ -52,6 +52,12 @@ elif product_name == "M3":
     ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M3.ONE_REVOLUTION_HALL_SENSOR_CYCLES
     N_COMMUTATION_STEPS = SETTINGS_M3.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M3.N_COMMUTATION_SUB_STEPS
+elif product_name == "M4":
+    import SETTINGS_M4
+    ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M4.ONE_REVOLUTION_ELECTRICAL_CYCLES
+    ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M4.ONE_REVOLUTION_HALL_SENSOR_CYCLES
+    N_COMMUTATION_STEPS = SETTINGS_M4.N_COMMUTATION_STEPS
+    N_COMMUTATION_SUB_STEPS = SETTINGS_M4.N_COMMUTATION_SUB_STEPS
 else:
     print("Error: unsupported product name:", product_name)
     print("You should update this executable and create a SETTINGS_product-name.py file")

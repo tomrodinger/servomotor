@@ -12,7 +12,7 @@ MODIFIED_SINE_MODE = 2
 MODE = PURE_SINE_MODE
 SIMPLE_TABLE = 0
 
-# Get the product name from the command line. The product name is something like M1 or M2 or M3, etc.
+# Get the product name from the command line. The product name is something like M1, M2, M3, M4, etc.
 # If the product name is not specified, then print out an error message and give the user a list of
 # the available product names.
 product_name = None
@@ -21,7 +21,7 @@ if len(sys.argv) == 2:
 else:
     print("Error: please specify a product name on the command line")
     print("Usage: %s product-name" % (sys.argv[0]))
-    print("Product names are M1, M2, M3, etc.")
+    print("Product names are M1, M2, M3, M4, etc.")
     exit(1)
 if product_name == "M1":
     import SETTINGS_M1
@@ -48,6 +48,14 @@ elif product_name == "M3":
     N_COMMUTATION_STEPS = SETTINGS_M3.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M3.N_COMMUTATION_SUB_STEPS
 #    N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = SETTINGS_M3.N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT
+    include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 0
+    generate_commutation_table = 0
+elif product_name == "M4":
+    import SETTINGS_M4
+    ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M4.ONE_REVOLUTION_ELECTRICAL_CYCLES
+    ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M4.ONE_REVOLUTION_HALL_SENSOR_CYCLES
+    N_COMMUTATION_STEPS = SETTINGS_M4.N_COMMUTATION_STEPS
+    N_COMMUTATION_SUB_STEPS = SETTINGS_M4.N_COMMUTATION_SUB_STEPS
     include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 0
     generate_commutation_table = 0
 else:

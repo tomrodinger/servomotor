@@ -133,7 +133,7 @@ for iteration_number in range(N_ITERATIONS):
     # we will go forwared direction and then do the same in the backward direction, collect data, then we will analyse the hysteresis and so on
     for direction in [1, -1]:
         for alias in ALIAS_LIST:
-            movement_time_device_units = int(32150 * TIME_FOR_N_ROTATIONS)
+            movement_time_device_units = int(31250 * TIME_FOR_N_ROTATIONS)
             rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS) * direction
             parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
             if len(parsed_response) != 0:

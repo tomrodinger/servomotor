@@ -53,16 +53,7 @@ void adc_init(void)
 //				   (0xf << ADC_CHSELR_SQ7_Pos) |
 //				   (0xf << ADC_CHSELR_SQ8_Pos);
 	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
-	#ifdef PRODUCT_NAME_M3
-    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
-    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
-				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
-				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
-				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-	#else
+    #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -71,6 +62,16 @@ void adc_init(void)
 				   (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
 				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
 				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+	#endif
+    #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
+    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
 	#endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 

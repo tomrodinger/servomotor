@@ -141,7 +141,7 @@ if len(parsed_response) != 0:
 time.sleep(0.3)
 
 # we will move the motor in the forward and reverse direction a few times to give the impression that we are getting ready to throw
-movement_time_device_units = int(32150 * TIME_FOR_PREPARE_TO_THROW)
+movement_time_device_units = int(31250 * TIME_FOR_PREPARE_TO_THROW)
 rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS_FOR_PREPARE_TO_THROW)
 parsed_response = execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
 if len(parsed_response) != 0:
@@ -149,7 +149,7 @@ if len(parsed_response) != 0:
     exit(1)
 
 # we will move the motor in the forward direction quickly to throw the ball
-movement_time_device_units = int(32150 * TIME_FOR_N_ROTATIONS)
+movement_time_device_units = int(31250 * TIME_FOR_N_ROTATIONS)
 rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS)
 parsed_response = execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
 if len(parsed_response) != 0:
@@ -186,7 +186,7 @@ time.sleep(0.1)
 # we will return the arm back to the original position (slowly) so that we can load the next ball
 TIME_FOR_N_ROTATIONS = 1.0
 N_ROTATIONS = -(N_ROTATIONS + N_ROTATIONS_FOR_PREPARE_TO_THROW)
-movement_time_device_units = int(32150 * TIME_FOR_N_ROTATIONS)
+movement_time_device_units = int(31250 * TIME_FOR_N_ROTATIONS)
 rotation_motor_units = int(ONE_ROTATION_MOTOR_UNITS * N_ROTATIONS)
 parsed_response = execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
 if len(parsed_response) != 0:

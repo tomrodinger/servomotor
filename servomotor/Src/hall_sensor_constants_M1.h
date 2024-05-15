@@ -20,9 +20,9 @@ struct hall_weights_struct {
 };
 
 #define HALL_WEIGHTS_INITIALIZER { \
-    {  4068,    -29,     81}, \
-    {  3666,    324,   -112}, \
-    {  3477,   -139,    218}, \
+    {  4154,     65,     41}, \
+    {  3619,    360,   -215}, \
+    {  3586,   -228,    300}, \
 }
 
 #endif

@@ -18,6 +18,9 @@
 #ifdef PRODUCT_NAME_M3
 #include "commutation_table_M3.h"
 #endif
+#ifdef PRODUCT_NAME_M4
+#include "commutation_table_M4.h"
+#endif
 #include "goertzel_algorithm_constants.h"
 #include "error_handling.h"
 #include "RS485.h"
@@ -30,7 +33,7 @@
 
 #define MAX_HOMING_ERROR 50000
 
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY PWM_PERIOD
 #else
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY (300)
@@ -58,7 +61,7 @@
 #define MAX_MOTOR_CONTROL_PERIOD_FATAL_ERROR_THRESHOLD (100) // we want to ensure that the update of the PWM happens every second PWM period (we are not able to do calculatons fast enough to updated it every peripd unfortunately)
 #define COMPUTED_VELOCITY_CALIBRATION_CONSTANT 3000
 #define COMPUTED_VELOCITY_CALIBRATION_SHIFT 16
-#ifndef PRODUCT_NAME_M3
+#if !defined (PRODUCT_NAME_M3) && !defined (PRODUCT_NAME_M4)
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 #endif
 
@@ -91,7 +94,7 @@ typedef union {
 	int32_t i32[2];  // in some cases, we need to access the 64-bit position as two 32-bit integers
 } position_union;
 static position_union current_position;
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 #define DEFAULT_ACTUAL_STEP_POSITION (COMMUTATION_POSITION_OFFSET_DEFAULT / N_COMMUTATION_SUB_STEPS) & (N_COMMUTATION_STEPS - 1)
 static uint32_t actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
 #endif
@@ -174,7 +177,7 @@ static uint16_t multipurpose_data_size = 0;
 // coast phase, the motor will rotate through one hall sensor revolution (ie. moves CALIBRATION_MOVEMENT_DISTANCE).
 #define CALIBRATION_COAST_TIME (CALIBRATION_MOVEMENT_DISTANCE / CALIBRATION_MAX_VELOCITY)
 
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP1 400
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP2 600
 #else
@@ -362,8 +365,12 @@ uint16_t hall_data_buffer[3];
 #ifdef PRODUCT_NAME_M3
 #define CALIBRATION_TIME (get_update_frequency() * 4)
 #else
+#ifdef PRODUCT_NAME_M4
+#define CALIBRATION_TIME (get_update_frequency() * 4)
 // If no servomotor is defined then exit with a compile time error
-#error "PRODUCT_NAME_M1 or PRODUCT_NAME_M2 or PRODUCT_NAME_M3 must be defined"
+#else
+#error "PRODUCT_NAME_M1 or PRODUCT_NAME_M2 or PRODUCT_NAME_M3 or PRODUCT_NAME_M4 must be defined"
+#endif
 #endif
 #endif
 #endif
@@ -425,7 +432,7 @@ void start_calibration(uint8_t print_output)
 	global_settings.motor_phases_reversed = 0;
 	global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
 	commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
-#ifdef PRODUCT_NAME_M3
+#if defined (PRODUCT_NAME_M3) || defined (PRODUCT_NAME_M4)
 	actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
 #endif
 
@@ -663,11 +670,10 @@ void compute_midlines_from_calibration_data(void)
 	}
 
 	#define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 3)
-	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA (N_POLES * 3 * 80 / (2 * 100))  // calculate the expected number of minima or maxima, which is 1.5 times the total number of poles on the magnet ring (since we will rotate the shaft 1.5 rotations) and then just take 80% of that as the minimum expected
 	uint32_t minima_and_maxima_avg[3] = {0, 0, 0};
 	uint16_t midline[3];
 	for(j = 0; j < 3; j++) {
-		if(calibration_index[j] < MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA) {
+		if(calibration_index[j] < N_POLES) {
 			fatal_error(11); // "not enough minima or maxima" (all error text is defined in error_text.c)
 		}
 
@@ -1711,6 +1717,12 @@ uint8_t handle_queued_movements(void)
 #define INTEGRAL_CONSTANT_PID     10
 #define DERIVATIVE_CONSTANT_PID   100000
 #endif
+#ifdef PRODUCT_NAME_M4
+#define PID_SHIFT_RIGHT 14
+#define PROPORTIONAL_CONSTANT_PID 10000
+#define INTEGRAL_CONSTANT_PID     10
+#define DERIVATIVE_CONSTANT_PID   100000
+#endif
 
 #define MAX_INT32         2147483647
 #define MAX_INTEGRAL_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT)
@@ -1895,7 +1907,7 @@ void motor_movement_calculations(void)
 		fatal_error(25); // "safety limit exceeded" (all error text is defined in error_text.c)
 	}
 
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = current_position.i32[1] + commutation_position_offset;
 		if(calibration_step != 0 ) {
@@ -2005,7 +2017,7 @@ void motor_movement_calculations(void)
 }
 
 
-#ifndef PRODUCT_NAME_M3
+#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4)
 void motor_phase_calculations(void)
 {
     static uint16_t commutation_step = 0;
@@ -2157,7 +2169,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 
 	// DEBUG following 8 lines
 	#define MAX_ASSUMED_MOTOR_RPM 1000
-//	#define MAX_POSITION_COUNTS_PER_CONTROL_CYCLE ((uint32_t)((int64_t)357*(int64_t)256*(int64_t)50*(int64_t)MAX_ASSUMED_MOTOR_RPM/(60*32150)))
+//	#define MAX_POSITION_COUNTS_PER_CONTROL_CYCLE ((uint32_t)((int64_t)357*(int64_t)256*(int64_t)50*(int64_t)MAX_ASSUMED_MOTOR_RPM/(60*31250)))
 	#define MAX_POSITION_COUNTS_PER_CONTROL_CYCLE (2500)
 //	if(hall_position > previous_hall_position + MAX_POSITION_COUNTS_PER_CONTROL_CYCLE) {  // we assume here that the motor will never rotate faster than 1000 rpm
 //		hall_position = previous_hall_position + MAX_POSITION_COUNTS_PER_CONTROL_CYCLE;    
@@ -2513,7 +2525,7 @@ void set_commutation_position_offset(uint32_t new_commutation_position_offset)
 }
 
 
-#ifndef PRODUCT_NAME_M3
+#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4)
 void check_current_sensor_and_enable_mosfets(void)
 {
 //	volatile uint32_t delay;
@@ -2577,7 +2589,7 @@ void get_multipurpose_data(uint8_t *data_type, uint16_t *data_size, uint8_t **mu
 }
 
 
-void set_test_mode(uint8_t new_test_mode)
+void set_motor_test_mode(uint8_t new_test_mode)
 {
 	test_mode = new_test_mode;
 }

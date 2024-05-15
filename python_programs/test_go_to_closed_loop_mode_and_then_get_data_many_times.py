@@ -129,7 +129,7 @@ for alias in ALIAS_LIST:
     movement_time = 0.5 # do the rotation over half a second
     if movement_time > max_movement_time:
         max_movement_time = movement_time
-    movement_time_device_units = int(32150 * movement_time) 
+    movement_time_device_units = int(31250 * movement_time) 
     parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [random_rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     if len(parsed_response) != 0:
         print("ERROR: The device with alias", alias, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")

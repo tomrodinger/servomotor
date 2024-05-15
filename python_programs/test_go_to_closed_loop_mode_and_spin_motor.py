@@ -22,7 +22,7 @@ TEST_MOVE_TIME = 1 # in seconds
 TEST_MOVE_ROTATIONS = 6 # in rotations
 TEST_MOVE_ROTATIONS_ERROR_TOLERANCE = 1 # in rotations
 
-TEST_MOVE_TIME_MOTOR_UNITS = int(32150 * TEST_MOVE_TIME)
+TEST_MOVE_TIME_MOTOR_UNITS = int(31250 * TEST_MOVE_TIME)
 TEST_MOVE_ROTATIONS_MOTOR_UNITS = int(ONE_ROTATION_MOTOR_UNITS * TEST_MOVE_ROTATIONS)
 TEST_MOVE_ROTATIONS_ERROR_TOLERANCE_MOTOR_UNITS = int(TEST_MOVE_ROTATIONS_ERROR_TOLERANCE * ONE_ROTATION_MOTOR_UNITS)
 
@@ -122,7 +122,7 @@ while 1:
         movement_time = 0.5 # do the rotation over half a second
         if movement_time > max_movement_time:
             max_movement_time = movement_time
-        movement_time_motor_units = int(32150 * movement_time) 
+        movement_time_motor_units = int(31250 * movement_time) 
         parsed_response = execute_command(alias, "TRAPEZOID_MOVE_COMMAND", [random_rotation_motor_units, movement_time_motor_units], verbose=VERBOSE)
         if len(parsed_response) != 0:
             print("ERROR: The device with alias", alias, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")

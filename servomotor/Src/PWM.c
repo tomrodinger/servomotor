@@ -10,7 +10,7 @@ void pwm_init(void)
     RCC->APBENR2 |= RCC_APBENR2_TIM1EN; // enable the clock to TIM1
 //    RCC->CCIPR |= RCC_CCIPR_TIM1SEL; // select the PLLQCLK as the clock source to TIM1
     TIM1->CCR4 = (334 * OVERVOLTAGE_PROTECTION_SETTING) / 12;
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
     TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
 #else
@@ -26,7 +26,7 @@ void pwm_init(void)
 
 //    TIM1->CCMR1 = TIM_CCMR1_OC1PE | (6 << TIM_CCMR1_OC1M_Pos) | TIM_CCMR1_OC2PE | (6 << TIM_CCMR1_OC2M_Pos); // enable the preload and set as PWM mode 1
 //    TIM1->CCMR2 = TIM_CCMR2_OC3PE | (6 << TIM_CCMR2_OC3M_Pos);  // enable the preload and set as PWM mode 1
-#ifdef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
     TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos); // set channels 1
     TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
     TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC4E; // enable the outputs on channels 1 and 4
