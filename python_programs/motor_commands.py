@@ -269,10 +269,10 @@ response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 4
-command_name = "SET_POSITION_AND_FINISH_TIME_COMMAND"
-description  = "Move to this new given position and finish the move at the given absolution time"
-inputs       = [(i32, "Position value"),
-                (u32, "Time value")]
+command_name = "GO_TO_POSITION_COMMAND"
+description  = "Move to this new given position in the amount of time specified. Acceleration and deceleration will be applied to make the move smooth."
+inputs       = [(i32, "New absolute position value"),
+                (u32, "Time allowed for executing the move")]
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
@@ -352,7 +352,7 @@ command_id   = 15
 command_name = "GET_HALL_SENSOR_POSITION_COMMAND"
 description  = "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)"
 inputs       = []
-response     = (i32, "The current hall sensor position")
+response     = (i32, "The current position as determined by the hall sensors")
 register_command(command_id, command_name, description, inputs, response)
 
 command_id   = 16
@@ -580,3 +580,16 @@ inputs       = []
 response     = (success_response, "Indicates success")
 register_command(command_id, command_name, description, inputs, response)
 
+command_id   = 42
+command_name = "GET_TEMPERATURE_COMMAND"
+description  = "Get the measured temperature of the motor"
+inputs       = []
+response     = (i16, "The temperature in degrees celcius. The accuracy is about +/- 3 degrees celcius and is measured at the motor driver PCB.")
+register_command(command_id, command_name, description, inputs, response)
+
+#command_id   = 43
+#command_name = "SET_MAX_TEMPERATURE_COMMAND"
+#description  = "Set maximum motor operating temperature. If it goes above this then the motor will shut off."
+#inputs       = (i16, "Maximum allowed operating temperature")
+#response     = (success_response, "Indicates success")
+#register_command(command_id, command_name, description, inputs, response)

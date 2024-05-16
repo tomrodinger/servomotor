@@ -4229,6 +4229,11 @@
     (uuid ffad5819-2de4-4432-8c4a-2d6d4de2f5f1)
   )
 
+  (text "Possible substitute for these 6 MOSFETs are parts:\nC3033447 - has stock on JLCPCB but is more expensive\nC22367225 - cheaper but no stock on JLCPCB, but should be easy to get it\nThese are both 2.4mOhm on resistance, so they exceed the specs of the curretly selected part"
+    (at 152.4 154.94 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid 02f11a16-5de4-4063-88ff-955944c4cfe7)
+  )
   (text "Mar. 30, 2023" (at 330.2 280.67 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 15ee2ef5-8b6c-441c-b6a8-3f29b7501597)

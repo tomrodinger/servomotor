@@ -1,16 +1,12 @@
 #!/usr/local/bin/python3
 
-import sys
-import serial
 from serial.serialutil import to_bytes
-import serial.tools.list_ports
-import time
-import struct
-import argparse
 import shutil
 import serial_functions
 import textwrap
 
+ALL_ALIASES = 255
+serial_port = None
 protocol_version = None
 registered_commands = None
 command_data_types = None
@@ -23,6 +19,7 @@ data_type_description_dict = None
 ser = None
 alias = 255
 detect_devices_command_id = None
+set_device_alias_command_id = None
 
 
 # When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
@@ -155,7 +152,7 @@ def send_command(command_id, gathered_inputs, verbose=True):
         print("Writing %d bytes" % (len(command)))
         print_data(command)
     ser.write(command)
-    if (alias == 255) and (command_id != detect_devices_command_id):
+    if (alias == 255) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
         if verbose:
             print("Sending a command to all devices (alias %d) and there will be no response" % (alias))
         return None
@@ -185,15 +182,6 @@ def send_command(command_id, gathered_inputs, verbose=True):
         all_response_payloads.append(response_payload)
     return all_response_payloads
 
-
-def add_standard_option_to_parser(parser):
-    # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
-    # and it also takes a mandatory firmware file name
-    parser.add_argument('-p', '--port', help='serial port device', default=None)
-    parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-    parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
-    args = parser.parse_args()
-    return 0
 
 def string_to_u8_alias(input):
     if input == "255":
@@ -263,6 +251,7 @@ def set_command_data(new_protocol_version, new_registered_commands, new_command_
     global data_type_is_integer_dict
     global data_type_description_dict
     global detect_devices_command_id
+    global set_device_alias_command_id
     protocol_version = new_protocol_version
     registered_commands = new_registered_commands
     command_data_types = new_command_data_types
@@ -273,6 +262,7 @@ def set_command_data(new_protocol_version, new_registered_commands, new_command_
     data_type_is_integer_dict = new_data_type_is_integer_dict
     data_type_description_dict = new_data_type_description_dict
     detect_devices_command_id = get_command_id("DETECT_DEVICES_COMMAND")
+    set_device_alias_command_id = get_command_id("SET_DEVICE_ALIAS_COMMAND")
     
 
 def open_serial_port(timeout = 1.2):
@@ -446,13 +436,29 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             print("The converted input is:", input_packed)
     else:
         if data_type_id == command_data_types.u8_alias:
-            input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
+            if isinstance(input, str):
+                input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
+            else:
+                if input < 0 or input > 255:
+                    print("Error: the input is not within the allowed range")
+                    print("The allowed range is: 0 to 255")
+                    exit(1)
+                input_packed = input.to_bytes(1, byteorder = "little")
         elif data_type_id == command_data_types.list_2d:
             input_packed = list_2d_string_to_packed_bytes(input)
         elif data_type_id == command_data_types.buf10:
             input_packed = buf10_to_packed_bytes(input)
         elif data_type_id == command_data_types.u64_unique_id:
-            input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
+            # first, check if this input is a string. if it is, then it must be 16 characters long and be a hexadecimal number
+            if isinstance(input, str):
+                input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
+            else:
+                # if is is not a string then it must be an integer and must fit into a 64-bit unsigned integer
+                if input < 0 or input > 0xFFFFFFFFFFFFFFFF:
+                    print(f"Error: the input ({input}) is not within the allowed range")
+                    print("The allowed range is: 0 to 0xFFFFFFFFFFFFFFFF")
+                    exit(1)
+                input_packed = input.to_bytes(8, byteorder = "little")
         else:
             print("Error: didn't yet implement a converter to handle the input type:", data_type_dict[data_type_id])
             exit(1)
@@ -525,7 +531,7 @@ def interpret_single_response(command_id, response, verbose=True):
             print("Error: the response was not the expected success response")
             exit(1)
         if verbose:
-            print("Good. The command was successful and the payload is empty as expected")
+            print("Good. The command was successful and the response payload is empty as expected")
     else:
         if verbose:
             print("The expected response for this command along with the decoded value(s) is below:"),
@@ -636,4 +642,19 @@ def interpret_response(command_id, response, verbose=True):
             for i in range(len(response)):
                 partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
                 parsed_response.append(partial_parsed_response)
+    return parsed_response
+
+
+def execute_command(_alias, command_str, inputs, verbose=True):
+    global alias
+    alias = _alias
+    command_id = get_command_id(command_str)
+    if command_id == None:
+        print("ERROR: The command", command_str, "is not supported")
+        exit(1)
+    if verbose:
+        print("The command is: %s and it has ID %d" % (command_str, command_id))
+    gathered_inputs = gather_inputs(command_id, inputs, verbose=verbose)
+    response = send_command(command_id, gathered_inputs, verbose=verbose)
+    parsed_response = interpret_response(command_id, response, verbose=verbose)
     return parsed_response

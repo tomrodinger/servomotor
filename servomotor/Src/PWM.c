@@ -4,12 +4,14 @@
 #include "GPIO_interrupts.h"
 #include "motor_control.h"
 
+#define OVERVOLTAGE_PROTECTION_SETTING1 348
+#define OVERVOLTAGE_PROTECTION_SETTING2 12
 
 void pwm_init(void)
 {
     RCC->APBENR2 |= RCC_APBENR2_TIM1EN; // enable the clock to TIM1
 //    RCC->CCIPR |= RCC_CCIPR_TIM1SEL; // select the PLLQCLK as the clock source to TIM1
-    TIM1->CCR4 = (334 * OVERVOLTAGE_PROTECTION_SETTING) / 12;
+    TIM1->CCR4 = (OVERVOLTAGE_PROTECTION_SETTING1 * OVERVOLTAGE_PROTECTION_SETTING) / OVERVOLTAGE_PROTECTION_SETTING2;
 #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
     TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM

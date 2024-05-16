@@ -39,6 +39,29 @@ def select_serial_port_from_menu():
     print("You have selected:", ports[user_input][0])
     return ports[user_input][0]
 
+
+# We will attempt to open the serial port and if we fail to open it then we will print out a detailed error message
+# and/or troubleshooting tips
+def open_serial_port_or_print_detailed_error(device_name = None, baud_rate = 230400, timeout = 0.1):
+    print("Opening the serial device:", device_name)
+    try:
+        serial_port = serial.Serial(device_name, baud_rate, timeout=timeout)
+    except serial.SerialException as e:
+        # Print out the specific error message
+        print("Error:", e)
+        errno = e.errno
+        # check for a resource busy error
+        if errno == 16:
+            print("Error: The serial port is busy. This could be because the port is already open by another program.")
+        else:
+            print("*** Troubleshooting steps: ***")
+            print("   Make sure that the hardware is connected properly and powered on")
+            print("   Make sure that the serial port name is correct. This changes sometimes (especially if plugged into a different USB port)")
+            print("   You can run this program with the -P option to list available serial ports on the system and then select a serial port from a menu")
+            exit(1)
+        serial_port = None
+    return serial_port
+
 # Open a serial port with the given device name and baud rate and timeout
 # If the port is already opened or if it cannot be opened then give an error and exit
 # If the device name is None then get the device name from a file called "serial_device.txt" from
@@ -64,24 +87,13 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
         device_name = select_serial_port_from_menu()
 
     print("Opening the serial device:", device_name)
-    try:
-        serial_port = serial.Serial(device_name, baud_rate, timeout=timeout)
-    except serial.SerialException:
-        serial_port = None
+    serial_port = open_serial_port_or_print_detailed_error(device_name, baud_rate, timeout)
     if serial_port == None:
-        print("Could not open the serial port")
-        print("Most likely, this is because the hardware is not connected properly")
-        print("or that the hardware is connected but the device name has changed. It does that sometimes,")
-        print("like when you have multiple serial devices connected and the kernel assigns something")
-        print("like random numbers to the end of device names")
         device_name = select_serial_port_from_menu()
         # now that we have gotten a serial port, let's try to open it
-        try:
-            serial_port = serial.Serial(device_name, baud_rate, timeout=timeout)
-        except serial.SerialException:
-            print("ERROR: Could not open the serial port")
+        serial_port = open_serial_port_or_print_detailed_error(device_name, baud_rate, timeout)
+        if serial_port == None:
             exit(1)
-
     print("Successfully opened:", serial_port.name)
 
     if(device_name != device_name_from_file):

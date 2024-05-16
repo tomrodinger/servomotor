@@ -131,7 +131,9 @@ static uint16_t motor_current_baseline = 1350;
 static int32_t position_lower_safety_limit = -2000000000;
 static int32_t position_upper_safety_limit = 2000000000;
 static uint8_t homing_active = 0;
+#ifdef PRODUCT_NAME_M1
 static uint8_t vibration_active = 0;
+#endif
 //static int8_t homing_direction = 0; // 1 for positive, -1 for negative
 static uint8_t calibration_step = 0;
 static uint8_t calibration_print_output;
@@ -304,6 +306,7 @@ void clear_the_queue_and_stop_no_disable_interrupt(void)
     queue_read_position = 0;
     queue_write_position = 0;
     n_items_in_queue = 0;
+	current_velocity_i64 = 0;
 }
 
 
@@ -1005,7 +1008,9 @@ void start_go_to_closed_loop_mode(void)
 #define VIBRATE_LOOP_COUNTER 200
 #define VIBRATE_DATA_INDEX_SHIFT_RIGHT 3
 #define VIBRATE_N_DATA_ITEMS ((VIBRATE_LOOP_COUNTER * 2) >> VIBRATE_DATA_INDEX_SHIFT_RIGHT)
+#ifdef PRODUCT_NAME_M1
 static volatile int32_t *vibrate_data = (void*)&calibration; // vibrate_data uses the same data as calibration (the ligic that takes it to closed loop never runs at the same time as the calibration logic)
+#endif
 
 void vibrate(uint8_t vibration_level)
 {
@@ -1176,8 +1181,7 @@ void handle_homing_logic(void)
 
 	if(position_error > HOMING_MAX_POSITION_ERROR) {
 		homing_active = 0;
-		clear_the_queue_and_stop_no_disable_interrupt();
-		current_velocity_i64 = 0; // detected a colision so stop where we are
+		clear_the_queue_and_stop_no_disable_interrupt(); // detected a colision so stop where we are
 		if(current_position.i32[1] >= hall_position) {
 			current_position.i32[1] -= HOMING_MAX_POSITION_ERROR;
 		}
@@ -1332,15 +1336,6 @@ void print_motor_current(void)
 	char buf[150];
 	int16_t current = get_motor_current();
 	sprintf(buf, "current: %hd   motor_current_baseline: %hu\n", current, motor_current_baseline);
-	print_debug_string(buf);
-}
-
-
-void print_motor_temperature(void)
-{
-	char buf[100];
-	int16_t temperature = get_temperature();
-	sprintf(buf, "Temperature: %hd\n", temperature);
 	print_debug_string(buf);
 }
 
@@ -1597,6 +1592,26 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
+
+
+void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time)
+{
+	int32_t acceleration;
+	uint32_t delta_t1;
+	uint32_t delta_t2;
+
+	// This command only supports the case of adding a move when the queue is fully empty. Let's make sure of that.
+	if(n_items_in_queue != 0) {
+		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
+	}
+	int32_t total_displacement = absolute_position - current_position.i32[1];
+	compute_trapezoid_move(total_displacement, move_time, &acceleration, &delta_t1, &delta_t2);
+
+	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+}
+
 
 //#define VELOCITY_AVERAGING_SHIFT_RIGHT 8
 //#define VELOCITY_AVERAGING_TIME_STEPS ((1 << VELOCITY_AVERAGING_SHIFT_RIGHT) - 1) // keep this maximum 255 so that our n_position_history_items counter does not overflow
@@ -1897,9 +1912,11 @@ void motor_movement_calculations(void)
     else if(calibration_step != 0) {
         handle_calibration_logic();
     }
+#ifdef PRODUCT_NAME_M1
 	else if(vibration_active) {
 		handle_vibrate_logic();
 	}
+#endif
 
     moving = handle_queued_movements();
 

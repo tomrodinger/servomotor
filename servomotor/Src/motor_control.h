@@ -93,7 +93,6 @@ void print_hall_sensor_data(void);
 void print_hall_position_delta_stats(void);
 void print_motor_pwm_voltage(void);
 void print_motor_status(void);
-void print_motor_temperature(void);
 
 void start_fast_capture_data(void);
 uint8_t is_fast_capture_data_result_ready(void);
@@ -103,6 +102,7 @@ void fast_capture_until_trigger(void);
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta);
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
 void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time);
+void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time);
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);
 void clear_the_queue_and_stop(void);

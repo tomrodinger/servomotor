@@ -7,6 +7,7 @@
 #include "RS485.h"
 #include "mosfets.h"
 #include "ADC.h"
+#include "temperature.h"
 #include "PWM.h"
 #include "hall_sensor_calculations.h"
 #include "motor_control.h"
@@ -46,7 +47,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 6
+#define BUGFIX_FIRMWARE_VERSION 7
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -504,11 +505,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 {
     uint64_t local_time;
     uint64_t time_from_master = 0;
-//    int32_t end_position;
-//    uint32_t end_time;
-//    int32_t desired_position;
-    uint32_t max_velocity;
-    uint32_t max_acceleration;
     uint8_t capture_type;
     uint8_t n_items_in_queue;
     int32_t acceleration;
@@ -517,8 +513,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint32_t frequency;
     uint64_t unique_id;
     uint8_t new_alias;
-    int32_t trapezoid_move_displacement;
-    uint32_t trapezoid_move_time;
     uint16_t new_maximum_motor_current;
     uint16_t new_maximum_motor_regen_current;
     uint8_t n_moves_in_this_command;
@@ -563,35 +557,43 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case TRAPEZOID_MOVE_COMMAND:
-            trapezoid_move_displacement = ((int32_t*)parameters)[0];
-            trapezoid_move_time = ((uint32_t*)parameters)[1];
-            rs485_allow_next_command();
-            add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
+            {
+                int32_t trapezoid_move_displacement = ((int32_t*)parameters)[0];
+                uint32_t trapezoid_move_time = ((uint32_t*)parameters)[1];
+                rs485_allow_next_command();
+                add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
+            }
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case SET_MAX_VELOCITY_COMMAND:
-            max_velocity = *(uint32_t*)parameters;
-            rs485_allow_next_command();
-            set_max_velocity(max_velocity);
+            {
+                uint32_t max_velocity = *(uint32_t*)parameters;
+                rs485_allow_next_command();
+                set_max_velocity(max_velocity);
+            }
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
-        case SET_POSITION_AND_FINISH_TIME_COMMAND:
-//            end_position = ((int32_t*)parameters)[0];
-//            end_time = ((int32_t*)parameters)[1];
-            rs485_allow_next_command();
-//            add_to_queue(end_position, end_time);
+        case GO_TO_POSITION_COMMAND:
+            {
+                int32_t end_position = ((int32_t*)parameters)[0];
+                uint32_t move_time = ((uint32_t*)parameters)[1];
+                rs485_allow_next_command();
+                add_go_to_position_to_queue(end_position, move_time);
+            }
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case SET_MAX_ACCELERATION_COMMAND:
-            max_acceleration = *(uint32_t*)parameters;
-            rs485_allow_next_command();
-            set_max_acceleration(max_acceleration);
+            {
+                uint32_t max_acceleration = *(uint32_t*)parameters;
+                rs485_allow_next_command();
+                set_max_acceleration(max_acceleration);
+            }
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
@@ -1026,6 +1028,22 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
                 break;
             }
+        case GET_TEMPERATURE_COMMAND:
+            rs485_allow_next_command();
+            {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    int16_t temperature;
+                } get_temperature_reply;
+                if(axis != ALL_ALIAS) {
+                    get_temperature_reply.header[0] = 'R';
+                    get_temperature_reply.header[1] = 1;
+                    get_temperature_reply.header[2] = sizeof(get_temperature_reply) - sizeof(get_temperature_reply.header);
+                    get_temperature_reply.temperature = get_temperature_degrees_C();
+                    rs485_transmit(&get_temperature_reply, sizeof(get_temperature_reply));
+                }
+            }
+            break;
         }
     }
     else {
@@ -1083,7 +1101,7 @@ void process_debug_uart_commands(void)
             print_hall_position_delta_stats();
             print_motor_pwm_voltage();
             print_motor_status();
-            print_motor_temperature();
+            print_temperature();
             print_supply_voltage();
 			break;
     	case 'P':
@@ -1303,5 +1321,6 @@ int main(void)
 #if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4) 
     	check_if_ADC_watchdog2_exceeded();
 #endif
+        check_if_overtemperature();
     }
 }

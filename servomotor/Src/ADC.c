@@ -206,15 +206,13 @@ uint16_t get_motor_current(void)
 }
 
 
-#define TEMPERATURE_ADC_CYCLE_INDEX 5
-uint16_t get_temperature(void)
+uint16_t get_temperature_ADC_value(void)
 {
 	uint16_t a = ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 0] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 8] +
 	             ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 16] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 24];
 	return a;
 }
 
-#define SUPPLY_VOLTAGE_ADC_CYCLE_INDEX 2
 uint16_t get_supply_voltage_ADC_value(void)
 {
 	uint16_t a = ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 0] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 8] +
