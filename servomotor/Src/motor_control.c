@@ -1740,13 +1740,42 @@ uint8_t handle_queued_movements(void)
 #endif
 
 #define MAX_INT32         2147483647
-#define MAX_INTEGRAL_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT)
-#define MAX_OTHER_TERMS   ((MAX_INT32 - MAX_INTEGRAL_TERM) / 2)
-#define MAX_ERROR         ((MAX_OTHER_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P)
-//#define MAX_ERROR_CHANGE  ((MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
-#define MAX_ERROR_CHANGE  (MAX_OTHER_TERMS / DERIVATIVE_CONSTANT_PID)
-//#define DERIVATIVE_CONSTANT_PID 250000
-//#define DERIVATIVE_CONSTANT_PID 1280000
+#define MAX_I_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT) // ~17000000
+#define MAX_PD_TERMS   ((MAX_INT32 - MAX_I_TERM) / 2) // ~1065000000
+//#define MAX_ERROR         ((MAX_PD_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P) // ~106500
+#define MAX_ERROR 106500
+//#define MAX_ERROR_CHANGE  ((MAX_PD_TERMS / DERIVATIVE_CONSTANT_PID) - ERROR_HYSTERESIS_D)
+#if DERIVATIVE_CONSTANT_PID == 0
+#define MAX_ERROR_CHANGE 0
+#else
+#define MAX_ERROR_CHANGE  (MAX_PD_TERMS / DERIVATIVE_CONSTANT_PID)  // ~10650
+#endif
+#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
+#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
+static int32_t proportional_constant_pid = PROPORTIONAL_CONSTANT_PID;
+static int32_t integral_constant_pid = INTEGRAL_CONSTANT_PID;
+static int32_t derivative_constant_pid_scaled_for_averaging = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+static int32_t max_error = MAX_ERROR;
+static int32_t max_error_change = MAX_ERROR_CHANGE;
+
+
+void set_pid_constants(uint32_t p, uint32_t i, uint32_t d)
+{
+	int32_t max_pd_terms = ((MAX_INT32 - MAX_I_TERM) / 2); // there are maximum values for the three terms. we do this so that we can calculate everything within a int32_t and don't overflow the math
+	int32_t new_max_error = ((max_pd_terms / p) - ERROR_HYSTERESIS_P);
+	int32_t new_max_error_change = 0;
+	if (d != 0) {
+		new_max_error_change = (max_pd_terms / d);
+	}
+	__disable_irq();
+	proportional_constant_pid = (int32_t)p;
+	integral_constant_pid = (int32_t)i;
+	derivative_constant_pid_scaled_for_averaging = (int32_t)(d >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
+	max_error = new_max_error;
+	max_error_change = new_max_error_change;
+	__enable_irq();
+}
+
 
 int32_t PID_controller(int32_t error)
 {
@@ -1765,37 +1794,37 @@ int32_t PID_controller(int32_t error)
     error >>= 3;
 #endif
 
-#if DERIVATIVE_CONSTANT_PID != 0
-    int32_t error_change = error - previous_error;
-    if(error_change > MAX_ERROR_CHANGE) {
-    	error_change = MAX_ERROR_CHANGE;
-    }
-    if(error_change < -MAX_ERROR_CHANGE) {
-    	error_change = -MAX_ERROR_CHANGE;
-    }
-    low_pass_filtered_error_change = (low_pass_filtered_error_change * 31);
-    low_pass_filtered_error_change += error_change;
-    low_pass_filtered_error_change >>= 5;
-    derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
-#else
-	derivative_term = 0;
-#endif
+    if (derivative_constant_pid_scaled_for_averaging != 0) {
+		int32_t error_change = error - previous_error;
+		if(error_change > max_error_change) {
+			error_change = max_error_change;
+		}
+		else if(error_change < -max_error_change) {
+			error_change = -max_error_change;
+		}
+		low_pass_filtered_error_change = (low_pass_filtered_error_change * (DERIVATIVE_CONSTANT_AVERAGING_SCALAR - 1)) >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+		low_pass_filtered_error_change += error_change;
+		derivative_term = low_pass_filtered_error_change * derivative_constant_pid_scaled_for_averaging;
+	}
+	else {
+		derivative_term = 0;
+	}
     previous_error = error;
 
-    if(error < -MAX_ERROR) {
-        error = -MAX_ERROR;
+    if(error < -max_error) {
+        error = -max_error;
     }
-    else if(error > MAX_ERROR) {
-        error = MAX_ERROR;
+    else if(error > max_error) {
+        error = max_error;
     }
-    integral_term += (error * INTEGRAL_CONSTANT_PID);
+    integral_term += (error * integral_constant_pid);
     if(integral_term > (max_motor_pwm_voltage << PID_SHIFT_RIGHT)) {
     	integral_term = max_motor_pwm_voltage << PID_SHIFT_RIGHT;
     }
     else if(integral_term < -(max_motor_pwm_voltage << PID_SHIFT_RIGHT)) {
     	integral_term = -(max_motor_pwm_voltage << PID_SHIFT_RIGHT);
     }
-    proportional_term = error * PROPORTIONAL_CONSTANT_PID;
+    proportional_term = error * proportional_constant_pid;
 
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
@@ -1819,11 +1848,11 @@ int32_t PID_controller_with_hysteresis(int32_t error)
     int32_t derivative_term;
 
 	// make sure the error is winin some range to prevent overlow of the math
-    if(error < -MAX_ERROR) {
-        error = -MAX_ERROR;
+    if(error < -max_error) {
+        error = -max_error;
     }
-    else if(error > MAX_ERROR) {
-        error = MAX_ERROR;
+    else if(error > max_error) {
+        error = max_error;
     }
 
 	// calculate the error with hysteresis to be used in the proportional term of the PID controller
@@ -1843,7 +1872,7 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 	}
 
 	// calculate the integral term of the PID controller
-    integral_term += (error * INTEGRAL_CONSTANT_PID);
+    integral_term += (error * integral_constant_pid);
     if(integral_term > (max_motor_pwm_voltage << PID_SHIFT_RIGHT)) {
     	integral_term = max_motor_pwm_voltage << PID_SHIFT_RIGHT;
     }
@@ -1852,25 +1881,25 @@ int32_t PID_controller_with_hysteresis(int32_t error)
     }
 
 	// calculate the proportional term of the PID controller
-    proportional_term = error_with_hysteresis_p * PROPORTIONAL_CONSTANT_PID;
+    proportional_term = error_with_hysteresis_p * proportional_constant_pid;
 
-#if DERIVATIVE_CONSTANT_PID != 0
-	// calculate the derivative term of the PID controller
-	int32_t error_change = error_with_hysteresis_d - previous_error;
-    previous_error = error_with_hysteresis_d;
-    if(error_change > MAX_ERROR_CHANGE) {
-    	error_change = MAX_ERROR_CHANGE;
-    }
-    if(error_change < -MAX_ERROR_CHANGE) {
-    	error_change = -MAX_ERROR_CHANGE;
-    }
-    low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
-    low_pass_filtered_error_change += error_change;
-    low_pass_filtered_error_change >>= 4;
-    derivative_term = low_pass_filtered_error_change * DERIVATIVE_CONSTANT_PID;
-#else
-	derivative_term = 0;
-#endif
+    if (derivative_constant_pid_scaled_for_averaging != 0) {
+		// calculate the derivative term of the PID controller
+		int32_t error_change = error_with_hysteresis_d - previous_error;
+		if(error_change > max_error_change) {
+			error_change = max_error_change;
+		}
+		if(error_change < -max_error_change) {
+			error_change = -max_error_change;
+		}
+		low_pass_filtered_error_change = (low_pass_filtered_error_change * (DERIVATIVE_CONSTANT_AVERAGING_SCALAR - 1)) >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+		low_pass_filtered_error_change += error_change;
+		derivative_term = low_pass_filtered_error_change * derivative_constant_pid_scaled_for_averaging;
+	}
+	else {
+		derivative_term = 0;
+	}
+	previous_error = error_with_hysteresis_d;
     // maximum value are (approximately):
     // integral term:       66000000
     // proportional term:  250000000

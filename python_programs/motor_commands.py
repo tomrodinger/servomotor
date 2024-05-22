@@ -587,7 +587,16 @@ inputs       = []
 response     = (i16, "The temperature in degrees celcius. The accuracy is about +/- 3 degrees celcius and is measured at the motor driver PCB.")
 register_command(command_id, command_name, description, inputs, response)
 
-#command_id   = 43
+command_id   = 43
+command_name = "SET_PID_CONSTANTS_COMMAND"
+description  = "Set PID constants for the control loop that will try to maintain the motion trajectory"
+inputs       = [(u32, "The proportional term constant (P)"),
+                (u32, "The integral term constant (I)"),
+                (u32, "The differential term constant (D)")]
+response     = (success_response, "Indicates success")
+register_command(command_id, command_name, description, inputs, response)
+
+#command_id   = xx
 #command_name = "SET_MAX_TEMPERATURE_COMMAND"
 #description  = "Set maximum motor operating temperature. If it goes above this then the motor will shut off."
 #inputs       = (i16, "Maximum allowed operating temperature")

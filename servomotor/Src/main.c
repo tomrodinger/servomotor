@@ -47,7 +47,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 7
+#define BUGFIX_FIRMWARE_VERSION 9
 struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -372,6 +372,7 @@ void portA_init(void)
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Microstepping setting (0 = 1/64 microstepping, 1 = 1/16 microstepping)
 
+    GPIOA->OTYPER = OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos;
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
@@ -1044,6 +1045,20 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
             break;
+        case SET_PID_CONSTANTS_COMMAND:
+            {
+                uint32_t p = ((uint32_t*)parameters)[0];
+                uint32_t i = ((uint32_t*)parameters)[1];
+                uint32_t d = ((uint32_t*)parameters)[2];
+                rs485_allow_next_command();
+                sprintf(buf, "PID constants: %lu, %lu, %lu\n", p, i, d);
+                print_debug_string(buf);
+                set_pid_constants(p, i, d);
+                if(axis != ALL_ALIAS) {
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+            }
+			break;
         }
     }
     else {
