@@ -8,7 +8,7 @@
 #ifndef SRC_STEP_DIRECTION_INPUT_H_
 #define SRC_STEP_DIRECTION_INPUT_H_
 
-#define OVERVOLTAGE_PROTECTION_SETTING 25
+#define OVERVOLTAGE_PROTECTION_SETTING 26
 
 void overvoltage_init(void);
 void step_and_direction_init(void);

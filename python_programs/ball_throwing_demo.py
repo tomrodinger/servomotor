@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 TIME_FOR_PREPARE_TO_THROW = 0.5
-N_ROTATIONS_FOR_PREPARE_TO_THROW = 0.02
-TIME_FOR_N_ROTATIONS = 0.025
-N_ROTATIONS = -0.2
+N_ROTATIONS_FOR_PREPARE_TO_THROW = 0.06
+TIME_FOR_N_ROTATIONS = 0.045
+N_ROTATIONS = -0.35
 THROW_MOSFET_CURRENT = 1024
+#THROW_ACCELERATOIN = 37108500
 THROW_ACCELERATOIN = 37108500
 
 N_COMMUTATION_STEPS               = 64
@@ -84,7 +85,7 @@ communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.r
                                motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
                                motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
-communication.serial_port = "/dev/cu.usbserial-0001"
+communication.serial_port = "/dev/cu.usbserial-1140"
 communication.open_serial_port()
 
 
@@ -103,6 +104,12 @@ if not all_devices_responsed:
     print("ERROR: The device did not respond to the PING_COMMAND")
     exit(1)
 print("The device responded correctly to all the %d pings" % (N_PINGS_TO_TEST_COMMUNICATION))
+
+# set the PID constants
+parsed_response = execute_command(ALIAS, "SET_PID_CONSTANTS_COMMAND", [9000, 1, 1500000], verbose=VERBOSE)
+if len(parsed_response) != 0:
+    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the ENABLE_MOSFETS_COMMAND")
+    exit(1)
 
 # enable MOSFETs
 parsed_response = execute_command(ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
