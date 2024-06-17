@@ -71,7 +71,7 @@
   - version: V7
     type: full_product
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
-    picture: https://raw.githubusercontent.com/tomrodinger/servomotor/Pictures/servomotor3/servomotor3.jpg
+    picture: https://raw.githubusercontent.com/tomrodinger/servomotor/main/Pictures/servomotor3/servomotor3.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a stepper motor form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V7/schematic/M3-V7-index-schTop.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
