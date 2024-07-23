@@ -57,6 +57,7 @@ void print_temperature(void)
 
 void check_if_overtemperature(void)
 {
+//    return; // for now, disable this check
     if (is_mosfets_enabled()) {
         uint16_t ADC_value = get_temperature_ADC_value();
         if (ADC_value < OVERHEAT_TEMPERATURE_THRESHOLD_ADC_VALUE) {

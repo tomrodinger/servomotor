@@ -67,6 +67,7 @@
 #define MULTIPURPOSE_DATA_TYPE_CALIBRATION 1
 #define MULTIPURPOSE_DATA_TYPE_GO_TO_CLOSED_LOOP 2
 #define MULTIPURPOSE_DATA_TYPE_VIBRATE 3
+#define MULTIPURPOSE_DATA_TYPE_PID_DEBUG_DATA 4
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
@@ -143,6 +144,7 @@ typedef struct __attribute__((__packed__)) {
 
 void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results);
 void get_multipurpose_data(uint8_t *data_type, uint16_t *data_size, uint8_t **multipurpose_data_ptr);
+void clear_multipurpose_data(void);
 void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
 void set_motor_test_mode(uint8_t new_test_mode);

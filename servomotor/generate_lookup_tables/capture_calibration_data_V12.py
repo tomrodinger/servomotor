@@ -8,7 +8,7 @@ import sys
 import argparse
 import matplotlib.pyplot as plt
 
-SERIAL_PORT_DEVICE = "/dev/tty.usbserial-120"
+SERIAL_PORT_DEVICE = "/dev/tty.usbserial-0001"
 OUT_BIN_FILENAME = "hall_calibration_raw_data.bin"
 OUT_TEXT_FILENAME = "hall_calibration_one_rotation.txt"
 CALIBRATION_START_TEXT = bytearray(b'Calibration start\n')

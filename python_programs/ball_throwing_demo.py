@@ -85,7 +85,7 @@ communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.r
                                motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
                                motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
-communication.serial_port = "/dev/cu.usbserial-1140"
+#communication.serial_port = "/dev/cu.usbserial-1140"
 communication.open_serial_port()
 
 

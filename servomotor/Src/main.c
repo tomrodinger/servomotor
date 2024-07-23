@@ -914,7 +914,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 uint16_t data_size_left_to_send;
                 uint8_t *multipurpose_data_ptr;
                 get_multipurpose_data(&data_type, &data_size, &multipurpose_data_ptr);
-                {
+                if (data_type != 0) {
                     struct __attribute__((__packed__)) {
                         uint8_t axis;
                         uint8_t command;
@@ -938,6 +938,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                         multipurpose_data_ptr += data_size_this_packet;
                         data_size_left_to_send -= data_size_this_packet;
                     }
+                    rs485_wait_for_transmit_done();
+                    clear_multipurpose_data();
                 }
                 print_debug_string("Read multipurpose data\n");
                 sprintf(buf, "Type is %hu, Size is %hu\n", data_type, data_size);
@@ -985,7 +987,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             {
                 uint8_t test_mode = parameters[0];
                 rs485_allow_next_command();
-                if (test_mode < 10) {
+                if (test_mode == 0) {
+                    set_motor_test_mode(0);
+                    set_led_test_mode(0);
+                }
+                else if (test_mode < 10) {
                     set_motor_test_mode(test_mode);
                 }
                 else {
@@ -1107,7 +1113,7 @@ void process_debug_uart_commands(void)
     		print_position();
     		print_sensor_position();
             print_external_encoder_position();
-            print_PID_data();
+//            print_PID_data();
     		print_queue_stats();
     		print_current_movement();
     		print_velocity();

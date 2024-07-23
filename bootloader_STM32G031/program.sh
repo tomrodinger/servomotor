@@ -21,8 +21,8 @@ case "$product_name" in
     hardware_version="0.8.0"
     ;;
   M3)
-    software_compatibility_code=0
-    hardware_version="0.5.0"
+    software_compatibility_code=1
+    hardware_version="0.8.0"
     ;;
   M4)
     software_compatibility_code=0

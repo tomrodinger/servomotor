@@ -157,3 +157,9 @@ void rs485_transmit(void *s, uint8_t len)
                                          // once the buffer becomes empty
     }
 }
+
+
+void rs485_wait_for_transmit_done(void)
+{
+    while(transmitCount > 0); // wait for previous transmission to finish
+}

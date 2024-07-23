@@ -42,6 +42,7 @@ char error_text[] =
     "noise error\0"                           // error 38
     "go to closed loop failed\0"              // error 39
     "overheat\0"                              // error 40
+    "test mode active\0"                      // error 41
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

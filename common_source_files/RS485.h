@@ -15,6 +15,7 @@
 void rs485_init(void);
 void rs485_allow_next_command(void);
 void rs485_transmit(void *s, uint8_t len);
+void rs485_wait_for_transmit_done(void);
 
 
 #endif /* SRC_RS485_H_ */

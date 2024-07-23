@@ -108,20 +108,25 @@ static int32_t desired_motor_pwm_voltage = 0;
 //#endif
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 #define GO_TO_CLOSED_LOOP_MODE_TEST_MODE 2
+#define READ_PID_DEBUG_DATA_TEST_MODE 3
 static uint8_t test_mode = 0;
 
 // PID position control related variables:
 static int32_t integral_term = 0;
 static int32_t previous_error = 0;
 static int32_t low_pass_filtered_error_change = 0;
-// PID informatonal variables:
-int32_t PID_error = 0;
+
+// PID error min and max variables:
 int32_t min_PID_error = 2147483647;
 int32_t max_PID_error = -2147483648;
+#if 0
+// PID informatonal variables:
+int32_t PID_error = 0;
 int32_t PID_P = 0;
 int32_t PID_I = 0;
 int32_t PID_D = 0;
 int32_t PID_output_value = 0;
+#endif
 
 static uint8_t go_to_closed_loop_step = 0;
 #ifdef PRODUCT_NAME_M1
@@ -181,7 +186,7 @@ static uint16_t multipurpose_data_size = 0;
 
 #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP1 400
-#define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP2 600
+#define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP2 400
 #else
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP1 150
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP2 250
@@ -421,6 +426,9 @@ void start_calibration(uint8_t print_output)
 	}
 	if(motor_busy) {
 		fatal_error(19); // "motor busy" (all error text is defined in error_text.c)
+	}
+	if(test_mode != 0) {
+		fatal_error(41); // "test mode active" (all error text is defined in error_text.c)
 	}
 
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
@@ -1226,12 +1234,14 @@ void print_position(void)
 	print_debug_string(buf);
 }
 
+#if 0
 void print_PID_data(void)
 {
 	char buf[170];
 	sprintf(buf, "error: %ld   min_PID_error: %ld   max_PID_error: %ld   PID: %ld %ld %ld   Output: %ld\n", PID_error, min_PID_error, max_PID_error, PID_P, PID_I, PID_D, PID_output_value);
 	print_debug_string(buf);
 }
+#endif
 
 void print_queue_stats(void)
 {
@@ -1727,9 +1737,9 @@ uint8_t handle_queued_movements(void)
 #define DERIVATIVE_CONSTANT_PID   100000
 #endif
 #ifdef PRODUCT_NAME_M3
-#define PID_SHIFT_RIGHT 14
-#define PROPORTIONAL_CONSTANT_PID 9000
-#define INTEGRAL_CONSTANT_PID     100
+#define PID_SHIFT_RIGHT 11
+#define PROPORTIONAL_CONSTANT_PID 5000
+#define INTEGRAL_CONSTANT_PID     2
 #define DERIVATIVE_CONSTANT_PID   1000000
 #endif
 #ifdef PRODUCT_NAME_M4
@@ -1740,7 +1750,7 @@ uint8_t handle_queued_movements(void)
 #endif
 
 #define MAX_INT32         2147483647
-#define MAX_I_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT) // ~17000000
+#define MAX_I_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT) // ~4194304
 #define MAX_PD_TERMS   ((MAX_INT32 - MAX_I_TERM) / 2) // ~1065000000
 //#define MAX_ERROR         ((MAX_PD_TERMS / PROPORTIONAL_CONSTANT_PID) - ERROR_HYSTERESIS_P) // ~106500
 #define MAX_ERROR 106500
@@ -1752,29 +1762,61 @@ uint8_t handle_queued_movements(void)
 #endif
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
+static uint32_t pid_p = PROPORTIONAL_CONSTANT_PID;
+static uint32_t pid_i = INTEGRAL_CONSTANT_PID;
+static uint32_t pid_d = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
 static int32_t proportional_constant_pid = PROPORTIONAL_CONSTANT_PID;
 static int32_t integral_constant_pid = INTEGRAL_CONSTANT_PID;
 static int32_t derivative_constant_pid_scaled_for_averaging = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
 static int32_t max_error = MAX_ERROR;
+static int32_t max_integral_term = MAX_ERROR * PROPORTIONAL_CONSTANT_PID;
 static int32_t max_error_change = MAX_ERROR_CHANGE;
+#define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8
+
+
+void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_motor_regen_pwm_voltage)
+{
+	int32_t new_max_error = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT));
+	if (pid_p != 0) {
+		new_max_error /= pid_p;
+	}
+	int32_t new_derivative_constant_pid_scaled_for_averaging = (pid_d >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
+	int32_t new_max_integral_term = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT));
+//	int32_t max_pd_terms = ((MAX_INT32 - MAX_I_TERM) / 2); // there are maximum values for the three terms. we do this so that we can calculate everything within a int32_t and don't overflow the math
+	int32_t new_max_error_change = 0;
+	if (pid_d != 0) {
+		new_max_error_change = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT)) / pid_d;
+	}
+	__disable_irq();
+	proportional_constant_pid = (int32_t)pid_p;
+	integral_constant_pid = (int32_t)pid_i;
+	derivative_constant_pid_scaled_for_averaging = new_derivative_constant_pid_scaled_for_averaging;
+	max_error = new_max_error;
+	max_integral_term = new_max_integral_term;
+	max_error_change = new_max_error_change;
+	max_motor_pwm_voltage = new_max_motor_pwm_voltage;
+	max_motor_regen_pwm_voltage = new_max_motor_regen_pwm_voltage;
+	__enable_irq();
+}
 
 
 void set_pid_constants(uint32_t p, uint32_t i, uint32_t d)
 {
-	int32_t max_pd_terms = ((MAX_INT32 - MAX_I_TERM) / 2); // there are maximum values for the three terms. we do this so that we can calculate everything within a int32_t and don't overflow the math
-	int32_t new_max_error = ((max_pd_terms / p) - ERROR_HYSTERESIS_P);
-	int32_t new_max_error_change = 0;
-	if (d != 0) {
-		new_max_error_change = (max_pd_terms / d);
-	}
-	__disable_irq();
-	proportional_constant_pid = (int32_t)p;
-	integral_constant_pid = (int32_t)i;
-	derivative_constant_pid_scaled_for_averaging = (int32_t)(d >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
-	max_error = new_max_error;
-	max_error_change = new_max_error_change;
-	__enable_irq();
+	pid_p = p;
+	pid_i = i;
+	pid_d = d;
+	recompute_pid_parameters_and_set_pwm_voltage(max_motor_pwm_voltage, max_motor_regen_pwm_voltage);
 }
+
+
+struct __attribute__((__packed__)) pid_debug_data_struct {
+	int32_t error;
+	int32_t proportional_term;
+	int32_t integral_term;
+	int32_t derivative_term;
+	int32_t output_value;
+};
+struct pid_debug_data_struct *pid_debug_data = (void*)&calibration; // pid_debug_data uses the same memory as calibration
 
 
 int32_t PID_controller(int32_t error)
@@ -1817,28 +1859,38 @@ int32_t PID_controller(int32_t error)
     else if(error > max_error) {
         error = max_error;
     }
-    integral_term += (error * integral_constant_pid);
-    if(integral_term > (max_motor_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = max_motor_pwm_voltage << PID_SHIFT_RIGHT;
-    }
-    else if(integral_term < -(max_motor_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = -(max_motor_pwm_voltage << PID_SHIFT_RIGHT);
-    }
+	if (integral_constant_pid != 0) {
+	    integral_term += error * integral_constant_pid;
+		if(integral_term > max_integral_term) {
+			integral_term = max_integral_term;
+		}
+		else if(integral_term < -max_integral_term) {
+			integral_term = -max_integral_term;
+		}
+	}
+	else {
+		integral_term = 0;
+	}
     proportional_term = error * proportional_constant_pid;
 
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
 	// copy this information to these variables so that we can print them in the debugging interface
-	PID_error = error;
-	PID_P = proportional_term;
-	PID_I = integral_term;
-	PID_D = derivative_term;
-	PID_output_value = output_value;
+	if ((test_mode == READ_PID_DEBUG_DATA_TEST_MODE) && (multipurpose_data_type == 0)) {
+		pid_debug_data->error = error;
+		pid_debug_data->proportional_term = proportional_term;
+		pid_debug_data->integral_term = integral_term;
+		pid_debug_data->derivative_term = derivative_term;
+		pid_debug_data->output_value = output_value;
+		multipurpose_data_size = sizeof(struct pid_debug_data_struct);
+		multipurpose_data_type = MULTIPURPOSE_DATA_TYPE_PID_DEBUG_DATA;
+	}
 
-    return output_value;
+	return output_value;
 }
 
 
+#if 0
 int32_t PID_controller_with_hysteresis(int32_t error)
 {
 	static int32_t error_with_hysteresis_p;
@@ -1923,6 +1975,7 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 
     return output_value;
 }
+#endif
 
 
 void motor_movement_calculations(void)
@@ -1979,6 +2032,7 @@ void motor_movement_calculations(void)
 			else {
 				commutation_position += desired_motor_pwm_voltage;
 			}
+			desired_motor_pwm_voltage >>= PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT;
 			if(desired_motor_pwm_voltage >= 0) {
 				motor_pwm_voltage = desired_motor_pwm_voltage;
 			}
@@ -2144,51 +2198,76 @@ void motor_phase_calculations(void)
 void motor_phase_calculations(void)
 {
 	volatile uint32_t delay;
-	uint32_t desired_step_position;
 
 	if(is_mosfets_enabled() == 0) {
 		TIM1->CCR1 = 0;
 		return;
 	}
 
+#if 0
+	// Below lines are for DEBUG
+	static uint32_t delay2 = 0;
+	delay2++;
+	if (delay2 == 16000) {
+		GPIOA->BSRR = (1 << 1); // STEP line high
+		for(delay = 0; delay < 10; delay++);
+		GPIOA->BSRR = (1 << 1) << 16; // STEP line low
+		delay2 = 0;
+	}
+	TIM1->CCR1 = 1024; // DEBUG
+	return; // DEBUG
+#endif
+
 	TIM1->CCR1 = motor_pwm_voltage;
 
-	desired_step_position = (commutation_position / N_COMMUTATION_SUB_STEPS) & (N_COMMUTATION_STEPS - 1);
-	int32_t steps_to_target = desired_step_position - actual_step_position;
+	uint32_t desired_step_position = (commutation_position / N_COMMUTATION_SUB_STEPS) & (N_COMMUTATION_STEPS - 1);
+	for (int32_t i = 0; i < 1; i++) {
+		int32_t steps_to_target = (int32_t)desired_step_position - (int32_t)actual_step_position;
 
-	if(steps_to_target > (N_COMMUTATION_STEPS >> 1)) {
-		steps_to_target -= N_COMMUTATION_STEPS;
-	}
-	else if(steps_to_target < -(N_COMMUTATION_STEPS >> 1)) {
-		steps_to_target += N_COMMUTATION_STEPS;
-	}
+		if(steps_to_target > (N_COMMUTATION_STEPS >> 1)) {
+			steps_to_target -= N_COMMUTATION_STEPS;
+		}
+		else if(steps_to_target < -(N_COMMUTATION_STEPS >> 1)) {
+			steps_to_target += N_COMMUTATION_STEPS;
+		}
+//		if ((steps_to_target >= -1) && (steps_to_target <= 1)) {
+//			break;
+//		}
+		#define HYSTERESIS 1
+		if (steps_to_target > HYSTERESIS) {
+			steps_to_target -= HYSTERESIS;
+		}
+		else if (steps_to_target < -HYSTERESIS) {
+			steps_to_target += HYSTERESIS;
+		}
 
-	#define ONE_MICROSECOND_DELAY 10
-	if(steps_to_target < 0) {
-		if(!global_settings.motor_phases_reversed) {  // control the direction line to the stepper motor driver
-		    GPIOA->BSRR = (1 << 0) << 16;
+		#define ONE_MICROSECOND_DELAY 1
+		if(steps_to_target < 0) {
+			if(!global_settings.motor_phases_reversed) {  // control the direction line to the stepper motor driver
+				GPIOA->BSRR = (1 << 0) << 16;
+			}
+			else {
+				GPIOA->BSRR = (1 << 0);
+			}
+			for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
+			actual_step_position = (actual_step_position - 1) & (N_COMMUTATION_STEPS - 1);
+			GPIOA->BSRR = (1 << 1); // STEP line high
+			for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
+			GPIOA->BSRR = (1 << 1) << 16; // STEP line low
 		}
-		else {
-		    GPIOA->BSRR = (1 << 0);
+		else if(steps_to_target > 0) {
+			if(!global_settings.motor_phases_reversed) {  // control the direction line to the stepper motor driver
+				GPIOA->BSRR = (1 << 0);
+			}
+			else {
+				GPIOA->BSRR = (1 << 0) << 16;
+			}
+			for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
+			actual_step_position = (actual_step_position + 1) & (N_COMMUTATION_STEPS - 1);
+			GPIOA->BSRR = (1 << 1); // STEP line high
+			for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
+			GPIOA->BSRR = (1 << 1) << 16; // STEP line low
 		}
-		for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
-		actual_step_position = (actual_step_position - 1) & (N_COMMUTATION_STEPS - 1);
-		GPIOA->BSRR = (1 << 1); // STEP line high
-		for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
-		GPIOA->BSRR = (1 << 1) << 16; // STEP line low
-	}
-	else if(steps_to_target > 0) {
-		if(!global_settings.motor_phases_reversed) {  // control the direction line to the stepper motor driver
-		    GPIOA->BSRR = (1 << 0);
-		}
-		else {
-		    GPIOA->BSRR = (1 << 0) << 16;
-		}
-		for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
-		actual_step_position = (actual_step_position + 1) & (N_COMMUTATION_STEPS - 1);
-		GPIOA->BSRR = (1 << 1); // STEP line high
-		for(delay = 0; delay < ONE_MICROSECOND_DELAY; delay++);
-		GPIOA->BSRR = (1 << 1) << 16; // STEP line low
 	}
 }
 #endif
@@ -2557,8 +2636,7 @@ void set_max_motor_current(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_
 	if(new_max_motor_regen_pwm_voltage > MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY) {
 		fatal_error(23);
 	}
-	max_motor_pwm_voltage = new_max_motor_pwm_voltage;
-	max_motor_regen_pwm_voltage = new_max_motor_regen_pwm_voltage;
+	recompute_pid_parameters_and_set_pwm_voltage(new_max_motor_pwm_voltage, new_max_motor_regen_pwm_voltage);
 //#ifndef PRODUCT_NAME_M3
 	calculate_and_set_analog_watchdog_limits();
 //#endif
@@ -2634,6 +2712,11 @@ void get_multipurpose_data(uint8_t *data_type, uint16_t *data_size, uint8_t **mu
 	*multipurpose_data_ptr = (uint8_t*)calibration;
 }
 
+
+void clear_multipurpose_data(void)
+{
+	multipurpose_data_type = 0;
+}
 
 void set_motor_test_mode(uint8_t new_test_mode)
 {
