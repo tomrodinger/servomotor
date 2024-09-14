@@ -1,0 +1,11 @@
+LICENCE
+README.md
+pyproject.toml
+src/servomotor/__init__.py
+src/servomotor/communication.py
+src/servomotor/motor_commands.py
+src/servomotor/serial_functions.py
+src/servomotor.egg-info/PKG-INFO
+src/servomotor.egg-info/SOURCES.txt
+src/servomotor.egg-info/dependency_links.txt
+src/servomotor.egg-info/top_level.txt

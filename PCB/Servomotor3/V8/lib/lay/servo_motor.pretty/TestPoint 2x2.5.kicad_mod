@@ -1,0 +1,17 @@
+(footprint "TestPoint 2x2.5" (version 20221018) (generator pcbnew)
+  (layer "F.Cu")
+  (attr smd)
+  (fp_text reference "REF**" (at 0.4 -3.9 unlocked) (layer "F.SilkS")
+      (effects (font (size 1 1) (thickness 0.15)))
+    (tstamp 54a9e55a-eb42-43f5-bfad-49d40f298322)
+  )
+  (fp_text value "TestPoint 2x2.5" (at 0 1 unlocked) (layer "F.Fab") hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    (tstamp fac34abe-5dd1-40ff-af54-8f2c49c20c17)
+  )
+  (fp_text user "${REFERENCE}" (at 0 2.5 unlocked) (layer "F.Fab") hide
+      (effects (font (size 1 1) (thickness 0.15)))
+    (tstamp 2ea10b35-ae28-465b-a3e8-ff1e4e14337b)
+  )
+  (pad "1" smd rect (at 0 0) (size 2 2.5) (layers "F.Cu" "F.Paste" "F.Mask") (tstamp c21078d1-2d26-44cd-9cf3-7539a5330d9b))
+)

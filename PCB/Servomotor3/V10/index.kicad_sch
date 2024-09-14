@@ -1,0 +1,399 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "152dc8ca-1ae6-4745-a4ba-ab361a35bfc2")
+	(paper "A4")
+	(title_block
+		(title "Servo motor stepper M3  - Index")
+		(date "2024-08-19")
+		(rev "V10")
+	)
+	(lib_symbols)
+	(text "5"
+		(exclude_from_sim no)
+		(at 202.565 116.84 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "0711adca-415a-4e8a-9bd4-11b57f3054da")
+	)
+	(text "3"
+		(exclude_from_sim no)
+		(at 202.565 97.79 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "11a364a0-8d31-431e-8b25-ceb35237b885")
+	)
+	(text "Power block Diagram"
+		(exclude_from_sim no)
+		(at 26.035 172.72 0)
+		(effects
+			(font
+				(size 2 2)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "17c4eb43-cb9b-4ae2-b106-b1be4df2caa5")
+	)
+	(text "6"
+		(exclude_from_sim no)
+		(at 202.565 126.365 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "1a545a67-ab44-41e6-8ca6-2fe206a54357")
+	)
+	(text "Front cover .........................................."
+		(exclude_from_sim no)
+		(at 83.185 78.74 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "21329ce4-f53b-4757-a186-68e3ce22792c")
+	)
+	(text "4"
+		(exclude_from_sim no)
+		(at 202.565 107.315 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "26f2b7c8-c2de-4596-8e7c-b877177bb530")
+	)
+	(text "Mechanical"
+		(exclude_from_sim no)
+		(at 83.185 186.69 0)
+		(effects
+			(font
+				(size 2 2)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "3cd3b2bb-8821-470a-a9b0-81952a670a46")
+	)
+	(text "Schematic top level"
+		(exclude_from_sim no)
+		(at 76.2 172.72 0)
+		(effects
+			(font
+				(size 2 2)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "4a73f08e-1815-49ea-b4f4-be684143f8c9")
+	)
+	(text "1"
+		(exclude_from_sim no)
+		(at 202.565 78.74 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "5a4b792d-7daf-49f9-a003-f77559fa2efd")
+	)
+	(text "Schematic top level ............................"
+		(exclude_from_sim no)
+		(at 83.185 116.84 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "78a44f64-78ce-43c9-9fff-a9cb12ae5e58")
+	)
+	(text "Index ...................................................."
+		(exclude_from_sim no)
+		(at 83.185 88.265 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "86ab502a-b4f3-439d-b0ba-23f8fc09431b")
+	)
+	(text "Signal block diagram .........................."
+		(exclude_from_sim no)
+		(at 83.185 107.315 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "99f42c34-2117-40cd-a543-31079bd518a5")
+	)
+	(text "Signal block Diagram"
+		(exclude_from_sim no)
+		(at 26.035 186.69 0)
+		(effects
+			(font
+				(size 2 2)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "9d999c0d-df88-4b84-9d0a-05287308d64e")
+	)
+	(text "Name:"
+		(exclude_from_sim no)
+		(at 83.185 66.04 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "abaed4f7-8b9b-42fb-b7e6-2364a8a9edf3")
+	)
+	(text "Mechanical and ERC ..........................."
+		(exclude_from_sim no)
+		(at 83.185 126.365 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "bfee3896-b3ea-4766-82d2-a13df02f2988")
+	)
+	(text "Page:"
+		(exclude_from_sim no)
+		(at 192.405 66.04 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "cc55bf8f-d3a8-4da6-a5f8-64c109c81511")
+	)
+	(text "Servo motor stepper - Index"
+		(exclude_from_sim no)
+		(at 179.07 176.53 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "cd4758c5-dbd3-49e1-a733-9b0f294e222c")
+	)
+	(text "Power block diagram ..........................."
+		(exclude_from_sim no)
+		(at 83.185 97.79 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "d2463a16-5ee1-4ea5-b724-3f5c6b12b298")
+	)
+	(text "Index:"
+		(exclude_from_sim no)
+		(at 34.925 50.165 0)
+		(effects
+			(font
+				(size 8 8)
+				(thickness 1)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "da5e2eb9-cffc-4a6d-876e-eb7dcbbad407")
+	)
+	(text "2"
+		(exclude_from_sim no)
+		(at 202.565 88.265 0)
+		(effects
+			(font
+				(size 4 4)
+			)
+			(justify left bottom)
+		)
+		(uuid "f621dca6-2e8a-4ab7-8a4b-480d0a1e895d")
+	)
+	(sheet
+		(at 19.05 165.735)
+		(size 46.355 10.795)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "3932ca5d-b3c2-447d-bb12-a2b8dbdde072")
+		(property "Sheetname" "PowerBlockDiagram"
+			(at 19.05 165.0234 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "PowerBlockDiagram.kicad_sch"
+			(at 19.05 177.1146 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "V10"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/eef31ba5-994a-4dab-8b67-8b56d6ec3764"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 69.215 165.735)
+		(size 46.355 10.795)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "51d7b191-4731-4885-91cc-26f33b9ffa53")
+		(property "Sheetname" "schTop"
+			(at 69.215 165.0234 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "schTop.kicad_sch"
+			(at 69.215 177.1146 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "V10"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/eef31ba5-994a-4dab-8b67-8b56d6ec3764"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 19.05 179.705)
+		(size 46.355 10.795)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "c3b485fe-0f1e-46fb-b3ff-8782ddd819b9")
+		(property "Sheetname" "signalBlockDiagram"
+			(at 19.05 178.9934 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "signalBlockDiagram.kicad_sch"
+			(at 19.05 191.0846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "V10"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/eef31ba5-994a-4dab-8b67-8b56d6ec3764"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 69.215 179.705)
+		(size 46.355 10.795)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "ea2c53cb-494d-4021-882d-ab19155ad94f")
+		(property "Sheetname" "mechanicalAndERC"
+			(at 69.215 178.9934 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "mechanicalAndERC.kicad_sch"
+			(at 69.215 191.0846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "V10"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/eef31ba5-994a-4dab-8b67-8b56d6ec3764"
+					(page "9")
+				)
+			)
+		)
+	)
+)

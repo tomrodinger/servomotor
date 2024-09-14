@@ -1,0 +1,22 @@
+[project]
+name = "servomotor"
+version = "0.1.2"
+authors = [
+  { name="Tom Rodinger", email="tom.rodinger@utoronto.ca" },
+]
+description = "A Python package for controlling servomotors from the company Gearotons"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://servo-tutorial.netlify.app"
+Issues = "https://servo-tutorial.netlify.app/feedback"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

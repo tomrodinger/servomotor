@@ -1,0 +1,766 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "e63e39d7-6ac0-4ffd-8aa3-1841a4541b55")
+	(paper "A4")
+	(title_block
+		(title "Servo motor stepper - M3  project")
+		(date "2024-08-19")
+		(rev "V10")
+	)
+	(lib_symbols
+		(symbol "Device:R"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "R"
+				(at 2.032 0 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "R"
+				(at 0 0 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at -1.778 0 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Resistor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "R res resistor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "R_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "R_0_1"
+				(rectangle
+					(start -1.016 -2.54)
+					(end 1.016 2.54)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "R_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 1.27)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 1.27)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
+	)
+	(no_connect
+		(at 259.715 108.585)
+		(uuid "59820ded-7336-46ad-80d4-ee87adfd754c")
+	)
+	(no_connect
+		(at 259.715 116.205)
+		(uuid "5b0ee797-631c-460b-9abc-b1145fe43e22")
+	)
+	(polyline
+		(pts
+			(xy 88.9 176.53) (xy 94.615 176.53)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 72 0 0 1)
+		)
+		(uuid "14c6f47e-1dc1-467c-8396-23a640fc3742")
+	)
+	(polyline
+		(pts
+			(xy 214.63 104.775) (xy 265.43 104.775)
+		)
+		(stroke
+			(width 0.8)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "205269b7-1b10-4287-884e-3013a5f43cc1")
+	)
+	(polyline
+		(pts
+			(xy 23.495 95.885) (xy 23.495 62.865)
+		)
+		(stroke
+			(width 0.8)
+			(type default)
+			(color 255 0 255 1)
+		)
+		(uuid "24fc7443-835f-4b76-b57b-a0cefa41df90")
+	)
+	(polyline
+		(pts
+			(xy 80.645 177.8) (xy 87.63 177.8)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 0 194 0 1)
+		)
+		(uuid "57b0541f-4f09-4f5d-aea3-3aaa112422ff")
+	)
+	(polyline
+		(pts
+			(xy 87.63 177.8) (xy 88.9 179.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 72 0 0 1)
+		)
+		(uuid "7013e00d-519d-45d9-9b6a-e13fc463c656")
+	)
+	(polyline
+		(pts
+			(xy 86.36 95.885) (xy 23.495 95.885)
+		)
+		(stroke
+			(width 0.8)
+			(type default)
+			(color 255 0 255 1)
+		)
+		(uuid "7ad5102a-93a1-46e6-9d4b-ca2d6b67a6de")
+	)
+	(polyline
+		(pts
+			(xy 265.43 119.38) (xy 214.63 119.38)
+		)
+		(stroke
+			(width 0.8)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "8733548d-b7ce-4b9e-a582-ba6cbb321ff1")
+	)
+	(polyline
+		(pts
+			(xy 265.43 104.775) (xy 265.43 119.38)
+		)
+		(stroke
+			(width 0.8)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "91a9e84e-e615-479d-b397-4b688fe3b872")
+	)
+	(polyline
+		(pts
+			(xy 88.9 179.07) (xy 94.615 179.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 72 0 0 1)
+		)
+		(uuid "96b48e0a-6227-4b8b-956c-7dba34865000")
+	)
+	(polyline
+		(pts
+			(xy 23.495 62.865) (xy 86.36 62.865)
+		)
+		(stroke
+			(width 0.8)
+			(type default)
+			(color 255 0 255 1)
+		)
+		(uuid "b6bbdc53-1fd3-4135-bf18-4b9ea2207ca4")
+	)
+	(polyline
+		(pts
+			(xy 80.645 183.515) (xy 94.615 183.515)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 0 194 0 1)
+		)
+		(uuid "d1e59cf5-a6ed-4be3-92d0-821ece1889cc")
+	)
+	(polyline
+		(pts
+			(xy 86.36 62.865) (xy 86.36 95.885)
+		)
+		(stroke
+			(width 0.8)
+			(type default)
+			(color 255 0 255 1)
+		)
+		(uuid "d8522ee7-59e3-411a-a232-b0b35ff56924")
+	)
+	(polyline
+		(pts
+			(xy 94.615 176.53) (xy 94.615 179.07)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 72 0 0 1)
+		)
+		(uuid "e72e4ec6-e11e-4e06-bf3d-110b94fbd251")
+	)
+	(polyline
+		(pts
+			(xy 214.63 119.38) (xy 214.63 104.775)
+		)
+		(stroke
+			(width 0.8)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "ea297386-76c0-45e6-a022-793011610c0a")
+	)
+	(polyline
+		(pts
+			(xy 87.63 177.8) (xy 88.9 176.53)
+		)
+		(stroke
+			(width 0)
+			(type default)
+			(color 72 0 0 1)
+		)
+		(uuid "f9d6ab19-b3db-461c-9201-b717f1bcda73")
+	)
+	(text_box "Design"
+		(exclude_from_sim no)
+		(at 30.48 127 0)
+		(size 42.545 8.89)
+		(stroke
+			(width 0.5)
+			(type default)
+			(color 255 0 0 1)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.4)
+				(bold yes)
+				(color 255 0 0 1)
+			)
+		)
+		(uuid "9038d08f-3d35-48dd-b740-732d66edc51d")
+	)
+	(text_box "user information"
+		(exclude_from_sim no)
+		(at 30.48 153.67 0)
+		(size 42.545 8.89)
+		(stroke
+			(width 0.5)
+			(type default)
+			(color 255 0 255 1)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.4)
+				(bold yes)
+				(color 255 0 255 1)
+			)
+		)
+		(uuid "ae051bfa-96cb-40c8-91a2-5f69b98254eb")
+	)
+	(text_box "Compatibility"
+		(exclude_from_sim no)
+		(at 30.48 113.665 0)
+		(size 42.545 8.89)
+		(stroke
+			(width 0.5)
+			(type default)
+			(color 0 0 255 1)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.4)
+				(bold yes)
+				(color 0 0 255 1)
+			)
+		)
+		(uuid "c2f2a0f1-53d8-4df4-8dbe-094f72307c72")
+	)
+	(text_box "Layout"
+		(exclude_from_sim no)
+		(at 30.48 140.335 0)
+		(size 42.545 8.89)
+		(stroke
+			(width 0.5)
+			(type default)
+			(color 0 255 255 1)
+		)
+		(fill
+			(type none)
+		)
+		(effects
+			(font
+				(size 2 2)
+				(thickness 0.4)
+				(bold yes)
+				(color 0 200 200 1)
+			)
+		)
+		(uuid "f26dbfee-da64-4d80-b31e-38b31ab6f702")
+	)
+	(text "Variation: No variations"
+		(exclude_from_sim no)
+		(at 98.425 95.25 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "02104479-c7fa-405e-8142-1508d71d6b28")
+	)
+	(text "${REVISION} - ${CURRENT_DATE} (DD/MM/YY)"
+		(exclude_from_sim no)
+		(at 178.435 179.705 0)
+		(effects
+			(font
+				(size 4 4)
+				(thickness 0.8)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "1a781d91-6be6-445f-96e2-06e76b7517a4")
+	)
+	(text "Status reading guide:\n\nDraft: Early stage, ignore details.\nPreliminary: Almost finished, could\nhave some errors.\nChecked: There shouldn't be any error,\ninform if that isn't the case.\nReleased: The schematic belongs to a \nboard sent to production."
+		(exclude_from_sim no)
+		(at 24.765 93.345 0)
+		(effects
+			(font
+				(size 2 2)
+			)
+			(justify left bottom)
+		)
+		(uuid "1bcce2a7-1d4a-4ce7-8492-8c5b78c6bc3e")
+	)
+	(text "Servo motor stepper project (M3)"
+		(exclude_from_sim no)
+		(at 48.26 30.48 0)
+		(effects
+			(font
+				(size 8 8)
+				(thickness 1)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "328b655f-3682-4d72-b986-09747092cdfb")
+	)
+	(text "This is a global scope label."
+		(exclude_from_sim no)
+		(at 96.52 179.07 0)
+		(effects
+			(font
+				(size 2.5 2.5)
+				(italic yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "3b398e0a-4c10-4dcc-aa1f-5dcd51a576d9")
+	)
+	(text "Micro/blind/buried vias: No"
+		(exclude_from_sim no)
+		(at 98.425 125.73 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "46c31fef-8b6d-4892-b7d6-1b9818ed82f5")
+	)
+	(text "Status: Released"
+		(exclude_from_sim no)
+		(at 98.425 74.295 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "73b1f676-64a1-4437-9380-52c422752ac5")
+	)
+	(text "Comments reading guide:"
+		(exclude_from_sim no)
+		(at 18.415 106.045 0)
+		(effects
+			(font
+				(size 3.5 3.5)
+			)
+			(justify left bottom)
+		)
+		(uuid "775fc778-7594-4b1f-8fe4-63abff69d96c")
+	)
+	(text "overvoltage and overcurrent protection"
+		(exclude_from_sim no)
+		(at 71.755 52.705 0)
+		(effects
+			(font
+				(size 5 5)
+				(thickness 1)
+				(bold yes)
+				(color 255 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "786cd47f-9b40-4ec0-91db-8e4a1f41bf96")
+	)
+	(text "Reset"
+		(exclude_from_sim no)
+		(at 89.535 182.88 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 0 0 132 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "79f97858-73ac-46a9-95e1-1da3b5237594")
+	)
+	(text "Note:"
+		(exclude_from_sim no)
+		(at 59.69 179.705 0)
+		(effects
+			(font
+				(size 4 4)
+				(italic yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "7da919a6-904e-41c7-b0f6-91d865a93890")
+	)
+	(text "Stepper motor controller with overtemperature,"
+		(exclude_from_sim no)
+		(at 56.515 43.815 0)
+		(effects
+			(font
+				(size 5 5)
+				(thickness 1)
+				(bold yes)
+				(color 255 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "81a41d77-af36-4ec3-adf9-ecd6ea389e60")
+	)
+	(text "Related files: BOM, gerber files and\npick and place data"
+		(exclude_from_sim no)
+		(at 98.425 146.05 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "99e5628a-8c61-4f9d-aa6e-5b585271b505")
+	)
+	(text "Number of sheets: 1"
+		(exclude_from_sim no)
+		(at 98.425 158.75 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "a32fe8ab-5810-40f6-8eab-48332c0ee5a0")
+	)
+	(text "This is a local (sheet) scope label."
+		(exclude_from_sim no)
+		(at 95.885 184.785 0)
+		(effects
+			(font
+				(size 2.5 2.5)
+				(italic yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "b3eebb03-af8c-48e8-a7d9-5ec3741206fa")
+	)
+	(text "Index"
+		(exclude_from_sim no)
+		(at 31.115 188.595 0)
+		(effects
+			(font
+				(size 4 4)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "c9c312d0-f746-4447-b3a4-7e610e80ec0a")
+	)
+	(text "Mark not fitted\ncomponents as:"
+		(exclude_from_sim no)
+		(at 217.805 116.84 0)
+		(effects
+			(font
+				(size 3 3)
+			)
+			(justify left bottom)
+		)
+		(uuid "d17efa21-d2b2-4414-b339-bd74f4309852")
+	)
+	(text "Number of layers: 2"
+		(exclude_from_sim no)
+		(at 98.425 113.665 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "d46f6682-7aa3-41f8-8dfe-bfed3b1f9948")
+	)
+	(text "Release date: 07/03/24 (DD/MM/YY)"
+		(exclude_from_sim no)
+		(at 98.425 85.09 0)
+		(effects
+			(font
+				(size 5 5)
+			)
+			(justify left bottom)
+		)
+		(uuid "e531cd9d-5434-42b2-897d-6e1be1346014")
+	)
+	(text "V3P3"
+		(exclude_from_sim no)
+		(at 89.408 178.562 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 72 0 0 1)
+			)
+			(justify left bottom)
+		)
+		(uuid "e7b29c9f-6e17-4eb9-aaef-33ad04c5975d")
+	)
+	(text "Servo motor stepper (M3)"
+		(exclude_from_sim no)
+		(at 178.435 172.72 0)
+		(effects
+			(font
+				(size 4 4)
+				(thickness 0.8)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "e9800da5-11f3-4507-a140-586b6e0c4238")
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 259.715 112.395 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom no)
+		(on_board no)
+		(dnp yes)
+		(uuid "7bbe4aa1-1de6-4de5-8cc8-1c4cee45752a")
+		(property "Reference" "R18"
+			(at 256.54 111.125 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1.2R"
+			(at 256.54 113.665 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 257.937 112.395 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 259.715 112.395 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 259.715 112.395 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "LCSC" ""
+			(at 259.715 112.395 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "55f35324-4195-4fff-956f-54f26dc358c7")
+		)
+		(pin "2"
+			(uuid "3647db09-eaef-4c1a-93b9-dbf254631d64")
+		)
+		(instances
+			(project "M3-V6"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(reference "R18")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(sheet
+		(at 28.575 181.61)
+		(size 21.59 8.89)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "eef31ba5-994a-4dab-8b67-8b56d6ec3764")
+		(property "Sheetname" "index"
+			(at 28.575 180.8984 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+				(hide yes)
+			)
+		)
+		(property "Sheetfile" "index.kicad_sch"
+			(at 28.575 191.0846 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+				(hide yes)
+			)
+		)
+		(instances
+			(project "V10"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+)
