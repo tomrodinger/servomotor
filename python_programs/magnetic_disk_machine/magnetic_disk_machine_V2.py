@@ -6,18 +6,23 @@ import redirect_communication as communication
 import time
 import os
 import random
-import math
-
+import argparse
+import tty
+import termios
+import threading
+#import keyboard
 
 VERBOSE = False
+DISABLE_USER_CONFIRMATION = True
 
+N_DISKS = 18
 N_POLES = 50
 
 MOSFET_CURRENT = 500
 HIGHEST_MOSFET_CURRENT = 1024
 
 # you can characterize the needed MOSFET current using the tool called characterize_homing.py
-UP_DOWN_MOSFET_CURRENT = 200
+UP_DOWN_MOSFET_CURRENT = 250
 SLIDER_MOSFET_CURRENT = 350
 DISK_SPIN_MOSFET_CURRENT = 200
 DISK_TRAY_MOSFET_CURRENT = 200
@@ -36,37 +41,11 @@ N_COMMUTATION_STEPS               = 64
 N_COMMUTATION_SUB_STEPS           = 1350
 ONE_REVOLUTION_ELECTRICAL_CYCLES  = 50
 
-CENTRING_PUSHER_REST_ANGLE = 24
-CENTRING_PUSHER_START_ANGLE = 130
-CENTRING_PUSHER_END_ANGLE = CENTRING_PUSHER_START_ANGLE - 7
-CENTERING_TIME = 12
-CENTERING_ROTATIONS = 50
-INITIAL_DISK_PUSHER_TIME = 2
-ALTERNATE_POLE_ADJUSTMENT_ANGLE = 180.0 + 7.2
-POLE_MOVE_PERCENTAGE = 0.35  # we want to move the pole so that it is nearly touching the disk
-POLE_MOVE_PERCENTAGE_BACKUP = POLE_MOVE_PERCENTAGE - 0.1  # we want to back up a little to let the pole get pulled down to the magnet that is holding it parallel to the disk
-DISK_PULLER_START_ANGLE = 360 * 1.8
-DISK_PULLER_PROBE_ANGLE1 = 100
-DISK_PULLER_PROBE_ANGLE2 = 360
-DISK_PULLER_PROBE_POSITION_TOLERANCE = 1
-DISK_PULLER_PICKUP_ANGLE = 480
-DISK_PULLER_DROP_OFF_ANGLE = -612
-
-
 MAX_RPM                 = 360
 MAX_RPS                 = MAX_RPM / 60
 MICROSTEPS_PER_ROTATION = N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_ELECTRICAL_CYCLES
-ONE_DEGREE_MICROSTEPS = MICROSTEPS_PER_ROTATION / 360
+ONE_DEGREE_MICROSTEPS = float(MICROSTEPS_PER_ROTATION) / 360.0
 TIME_STEPS_PER_SECOND   = 31250
-THROW_VELOCITY          = int(MAX_RPS * MICROSTEPS_PER_ROTATION * (1 << 32) / TIME_STEPS_PER_SECOND / (1 << 12))
-
-MM_PER_ROTATION                                   = 20
-MAX_ACCELERATION_MM_PER_SECOND_SQUARED            = 10000
-MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED     = (MAX_ACCELERATION_MM_PER_SECOND_SQUARED / MM_PER_ROTATION)
-MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED    = (MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * MICROSTEPS_PER_ROTATION)
-MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED = (MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
-THROW_ACCELERATION                                = int(MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED * (1 << 32) / (1 << 8))
-
 
 OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
 OUTPUT_LOG_FILE_NAME = "ball_throwing_demo"
@@ -86,29 +65,71 @@ TRAY_MOTOR_PULLEY_TEETH_NUMBER = 14
 DISTANCE_BETWEEN_TEETH_MM = 2.0
 DISTANCE_BETWEEN_DISKS_MM = 220 / 5
 SPACING_BETWEEN_DISKS_DEGREES = 360 * DISTANCE_BETWEEN_DISKS_MM / (TRAY_MOTOR_PULLEY_TEETH_NUMBER * DISTANCE_BETWEEN_TEETH_MM)
-UP_DOWN_RANGE_MIN = 300 # unit is degrees of the shaft rotation
-EXPECTED_UP_DOWN_RANGE = 485
-EXPECTED_DECREASED_RANGE_DUE_TO_DISK = 8
-UP_DOWN_RANGE_TOLERANCE = 15
+UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT = 455
+EXPECTED_DECREASED_RANGE_DUE_TO_DISK = 0
+#EXPECTED_DECREASED_RANGE_DUE_TO_DISK = 8
+UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK = UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT + EXPECTED_DECREASED_RANGE_DUE_TO_DISK
 UP_DOWN_POSITION_TOLERANCE = 10 # unit is degrees of the shaft rotation
-DISK_PICKUP_FIRST_POSITION = EXPECTED_UP_DOWN_RANGE * 0.6 # some of the way up but not all the way
+DISK_PICKUP_FIRST_POSITION = UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK * 0.6 # some of the way up but not all the way
 DISK_PICKUP_FIRST_TIME = 2.0
 DISK_PICKUP_SECOND_TIME = 2.0
 DISK_PICKUP_SPIN_ROTATIONS = 10
-N_DISKS = 8
+ALTERNATE_POLE_ADJUSTMENT_ANGLE = 180.0
 POLE_PLACE_ANGLE_FUDGE_FACTOR = -2.0
-EXPECTED_SLIDER_RANGE = 118.9
-SLIDER_RANGE_TOLERANCE = 3.0
-SLIDER_CENTRE_FINE_TUNE_OFFSET = -0.0
-POLE_PLACE_ANGLE = EXPECTED_SLIDER_RANGE / 2 * 0.99 # a certain fraction of the way to the end stop
+#POLE_PLACE_ANGLE_FUDGE_FACTOR = 0.0
+EXPECTED_SLIDER_RANGE = 115.0
+SLIDER_RANGE_TOLERANCE = 8.0
+SLIDER_CENTRE_FINE_TUNE_OFFSET = -0.5 # if the slider on the left side of the machine is pushing in too much such that the magnet on the left side is in too far, then you need to increase this value (or make it less negative)
+POLE_PLACE_ANGLE = EXPECTED_SLIDER_RANGE / 2 * 0.92 # a certain fraction of the way to the end stop
+DISK_PLACE_SLIDER_POSITION_TOLERANCE = 3.0
+FIRST_MAGNET_PLACE_OFFSET_ANGLE = -0.3
 
+def on_press(key):
+    if key.name == 'space':
+        print("Spacebar pressed. Emergency stop initiated.")
+        emergency_stop()
 
+def emergency_stop():
+    print("Performing emergency stop...")
+    # Disable MOSFETs for all motors
+    for alias in [DISK_SPIN_ALIAS, SLIDER_ALIAS, UP_DOWN_ALIAS, DISK_TRAY_ALIAS]:
+        communication.execute_command(alias, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+    print("All MOSFETs disabled. Exiting program.")
+    sys.exit(0)
 
-def reset_all_and_fatal_error():
+def start_keyboard_listener():
+    if DISABLE_USER_CONFIRMATION == False:
+        keyboard.on_press(on_press)
+
+def getch():
+    if DISABLE_USER_CONFIRMATION == True:
+        return None
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(sys.stdin.fileno())
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
+
+def get_user_input(prompt):
+    if DISABLE_USER_CONFIRMATION == True:
+        return None
+    print(prompt)
+    while True:
+        key = getch()
+        if key == '\r' or key == '\n':  # Enter key
+            return ''
+        elif key in ['p', 'r', 'q']:  # Add more keys as needed
+            return key
+        # Ignore other keys
+
+def reset_all_and_exit():
     # reset all motors
     parsed_response = communication.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
     time.sleep(0.5)
-    exit(1)
+    sys.exit(1)
 
 
 def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing_n_times = 1, relief_degrees = None, homing_tolerance_degrees = None, start_position = None,
@@ -116,7 +137,7 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
     # make sure all numbers are positive that need to be positive
     if max_time_s < 0 or homing_n_times < 0 or (relief_degrees is not None and relief_degrees < 0) or (homing_tolerance_degrees is not None and homing_tolerance_degrees < 0) or (expected_bidirectional_range is not None and expected_bidirectional_range < 0):
         print("ERROR: All numerical inputs (except max_degrees and start_position) must be positive")
-        reset_all_and_fatal_error()
+        reset_all_and_exit()
     rotation_speed_degrees_per_second = abs(max_degrees) / max_time_s
     print("The rotation speed is", rotation_speed_degrees_per_second, "degrees per second")
     homing_positions_degrees = []
@@ -185,13 +206,13 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
         # read the position and see if we are where we expect to be. if not then we exit
         parsed_response = communication.execute_command(alias, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         position_motor_units = parsed_response[0]
-        motor_start_position_tolerance_degrees = 1.5
+        motor_start_position_tolerance_degrees = 2.0
         if abs(position_motor_units - rotation_motor_units) > motor_start_position_tolerance_degrees * ONE_DEGREE_MICROSTEPS:
             print("ERROR: The motor did not reach the start position")
             print("The motor is at", position_motor_units / ONE_DEGREE_MICROSTEPS, "degrees")
             print("We wanted to move it to", start_position, "degrees")
             print(f"Our error is {abs(position_motor_units - rotation_motor_units) / ONE_DEGREE_MICROSTEPS} degrees and our tolerance is {motor_start_position_tolerance_degrees} degrees")
-            reset_all_and_fatal_error()
+            reset_all_and_exit()
         if zero_after_start_position_reached:
             print("Zeroing out the motor and moving it to the start position")
             # zero out the centring pusher motor
@@ -210,31 +231,50 @@ def disable_mosfets_and_read_positions():
     while 1:
         # get the positions of all three motors
         parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
-        disk_rotator_position = parsed_response[0]
+        disk_spin_position = parsed_response[0]
         parsed_response = communication.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
-        centring_position = parsed_response[0]
-        parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         slider_position = parsed_response[0]
+        parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        up_down_position = parsed_response[0]
         parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
-        disk_puller_position = parsed_response[0]
-        disk_rotor_position_angle = disk_rotator_position / ONE_DEGREE_MICROSTEPS
-        centring_position_angle = centring_position / ONE_DEGREE_MICROSTEPS
-        slider_position_angle = slider_position / ONE_DEGREE_MICROSTEPS
-        disk_puller_position_angle = disk_puller_position / ONE_DEGREE_MICROSTEPS
+        disk_tray_position = parsed_response[0]
+        disk_spin_angle = disk_spin_position / ONE_DEGREE_MICROSTEPS
+        slider_angle = slider_position / ONE_DEGREE_MICROSTEPS
+        up_down_angle = up_down_position / ONE_DEGREE_MICROSTEPS
+        disk_tray_angle = disk_tray_position / ONE_DEGREE_MICROSTEPS
         # print out all these positions in the units of shaft angle with three decimal places
-        print(f"Positions: disk rotator: {disk_rotor_position_angle:.3f}, centring: {centring_position_angle:.3f}, slider: {slider_position_angle:.3f}, disk puller: {disk_puller_position_angle:.3f}")
+        print(f"Positions: disk rotator: {disk_spin_angle:.3f}, centring: {slider_angle:.3f}, slider: {up_down_angle:.3f}, disk puller: {disk_tray_angle:.3f}")
         time.sleep(0.1)
 
 def assemble_magents_on_one_disk():
     cumulative_disk_angle = 0.0
     for i in range(N_POLES):
+        # rotate the disk spin motor to put it into the right position for assembing one magnet
+        move_time_s = 0.3
+        movement_time_device_units = int(31250 * move_time_s)
+        if i == 0:
+            cumulative_disk_angle = FIRST_MAGNET_PLACE_OFFSET_ANGLE
+        elif i % 2 == 1:
+            cumulative_disk_angle += -(ALTERNATE_POLE_ADJUSTMENT_ANGLE + POLE_PLACE_ANGLE_FUDGE_FACTOR)
+        else:
+            cumulative_disk_angle +=  (ALTERNATE_POLE_ADJUSTMENT_ANGLE + POLE_PLACE_ANGLE_FUDGE_FACTOR)
+        cumulative_disk_angle += 360.0 / N_POLES # advance the angle by one pole each time
+#        cumulative_disk_angle += 360.0 / N_POLES / 50 * 0.25 # small fudge factor to add some tolerance spacing between magnets
+        print("Cumulative angle is:", cumulative_disk_angle)
+        cumulative_position_motor_units = int(ONE_DEGREE_MICROSTEPS * cumulative_disk_angle + 0.5)
+        print("Cumulative position in motor units is:", cumulative_position_motor_units)
+        parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [cumulative_position_motor_units, movement_time_device_units], verbose=VERBOSE)
+        time.sleep(move_time_s * 1.5)
+
         print("Pole number ", i + 1, "of", N_POLES, "is next")
-        user_input = input("Press Enter when you are ready to assemble the next pole or press p + enter to pull out the disk and end this disk assembly or press r + enter to abort all this, disable the motors, and read the positions of the motors...")
+        user_input = get_user_input("Press Enter when ready for next pole, 'p' to pull disk and end assembly, 'r' to abort and read positions, or 'q' to quit:")
         if user_input == "p":
             break
         elif user_input == "r":
             disable_mosfets_and_read_positions()
-            exit(0)
+        elif user_input == "q":
+            print("Quitting the program...")
+            sys.exit(0)
 
         # now, move the motor to pick up one pole. we will do this onlt the first time. all other times, we will pick up a pole while placing another
         move_time_s = 0.3
@@ -249,27 +289,46 @@ def assemble_magents_on_one_disk():
         if i % 2 == 1:
             pole_place_angle = -pole_place_angle
 
-        # now, move the motor to place that pole onto the disk
+        # now, move the slider motor to place that pole onto the disk
         parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
-        time.sleep(move_time_s * 1.1)
+        time.sleep(move_time_s * 1.5)
 
-        # now, move the motor to the centre
+        # read back the position and make sure it is within the set tolerance
+        parsed_response = communication.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        position_motor_units = parsed_response[0]
+        position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
+        position_error = position_degrees - pole_place_angle
+        if abs(position_error) > DISK_PLACE_SLIDER_POSITION_TOLERANCE:
+            print("ERROR: The slider did not reach the position we expected. It may be that something is blocking it like a magnet")
+            print("The position is", position_degrees, "degrees")
+            print("We expect to be at:", pole_place_angle, "degrees")
+            print("The position error is", position_error, "degrees")
+            print("You should try to fix this by clearing the disk and then removing any magnets that may be blocking the slider")
+            reset_all_and_exit()
+
+        # after placing the second magnet, we will apply a motion to the slider to push the first two magents to an accurate position
+        if i == 1:
+            move_time_s = 0.3
+            user_input = get_user_input("Press a key to continue")
+            parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle * 0.9, 31250 * move_time_s], verbose=VERBOSE)
+            time.sleep(move_time_s * 1.1)
+            user_input = get_user_input("Press a key to continue")
+            disk_angle = cumulative_disk_angle + 360.0 / N_POLES * 1.5
+            parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
+            time.sleep(move_time_s * 1.1)
+            user_input = get_user_input("Press a key to continue")
+            parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * -EXPECTED_SLIDER_RANGE * 0.5, 31250 * move_time_s], verbose=VERBOSE)
+            time.sleep(move_time_s * 1.1)
+            user_input = get_user_input("Press a key to continue")
+            disk_angle = cumulative_disk_angle + 360.0 / N_POLES
+            parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
+            time.sleep(move_time_s * 1.1)
+            user_input = get_user_input("Press a key to continue")
+
+        # now, move the slidermotor to the centre
         move_time_s = 0.3
         rotation = 0
         parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * rotation, 31250 * move_time_s], verbose=VERBOSE)
-        time.sleep(move_time_s * 1.1)
-
-        # rotate one one pole
-        move_time_s = 0.3
-        movement_time_device_units = int(31250 * move_time_s)
-        if i % 2 == 0:
-            cumulative_disk_angle += -ALTERNATE_POLE_ADJUSTMENT_ANGLE - POLE_PLACE_ANGLE_FUDGE_FACTOR + 360.0 / N_POLES * 2
-        else:
-            cumulative_disk_angle += ALTERNATE_POLE_ADJUSTMENT_ANGLE + POLE_PLACE_ANGLE_FUDGE_FACTOR
-        print("Cumulative angle is:", cumulative_disk_angle)
-        cumulative_position_motor_units = int(ONE_DEGREE_MICROSTEPS * cumulative_disk_angle + 0.5)
-        print("Cumulative position in motor units is:", cumulative_position_motor_units)
-        parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [cumulative_position_motor_units, movement_time_device_units], verbose=VERBOSE)
         time.sleep(move_time_s * 1.1)
 
 
@@ -294,7 +353,14 @@ communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.r
                                motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
                                motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
-#communication.serial_port = "/dev/cu.usbserial-1140"
+# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device (or -P to choose from a menu)
+parser = argparse.ArgumentParser(description='Run the magnet placement machine')
+parser.add_argument('-p', '--port', help='serial port device', default=None)
+parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
+args = parser.parse_args()
+communication.set_serial_port_from_args(args)
+
+#communication.serial_port = "/dev/cu.usbserial-1120"
 communication.open_serial_port()
 
 # reset all motors
@@ -317,6 +383,8 @@ if not all_devices_responsed:
     print("ERROR: The device did not respond to the PING_COMMAND")
     exit(1)
 print("The device responded correctly to all the %d pings" % (N_PINGS_TO_TEST_COMMUNICATION))
+
+start_keyboard_listener()
 
 # set the PID constants for all three motors
 parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
@@ -360,8 +428,20 @@ for disk_number in range(N_DISKS):
     # Move the Disk Tray to the next position position. We will now actually start assembing disks (the first disk won't be assembled correctly). The first position may have caused magnets to be placed during homing and they will be pushed to far onto the disk
     current_disk_position = DEFAULT_TRAY_FIRST_POSITION + SPACING_BETWEEN_DISKS_DEGREES * disk_number
     print(f"Moving the disk tray to the next position and this is at position {current_disk_position} degrees")
-    input("Please press enter to confirm")
+    if disk_number > 0:
+        user_input = get_user_input("Press Enter to confirm, 'p' to pull out the disk, 'r' to read positions, or 'q' to quit:")
+        if user_input == 'p':
+            print("Pulling out the disk...")
+            # Add your disk pulling logic here
+            continue
+        elif user_input == 'r':
+            disable_mosfets_and_read_positions()
+            continue
+        elif user_input == 'q':
+            print("Quitting the program...")
+            reset_all_and_exit()
 
+    # Move the Disk Tray to the current disk position so that we can pick up the disk next
     move_time_s = 2.0
     rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * current_disk_position)
     movement_time_device_units = int(31250 * move_time_s)
@@ -369,10 +449,13 @@ for disk_number in range(N_DISKS):
     time.sleep(move_time_s * 1.1)
 
     # Now, move the Up/Down motor to part of the way to the top position (at least it must be past the point where it picks up the disk)
-    move_time_s = 2.0
-    rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * DISK_PICKUP_FIRST_POSITION)
+    # At the same time, spin the disk rotator motor (to help center the disk)
+    move_time_s = DISK_PICKUP_FIRST_TIME
     movement_time_device_units = int(31250 * move_time_s)
+    rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * DISK_PICKUP_FIRST_POSITION)
     parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * 360 * DISK_PICKUP_SPIN_ROTATIONS)
+    parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
     # check if it attained the position we wanted
     parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
@@ -380,33 +463,28 @@ for disk_number in range(N_DISKS):
     position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
     if abs(position_degrees - (-DISK_PICKUP_FIRST_POSITION)) > UP_DOWN_POSITION_TOLERANCE:
         print("ERROR: The Up/Down motor did not reach the position we wanted. It may be that something is blocking it like a disk or the tray")
-        reset_all_and_fatal_error()
-    # now start to spin the disk rotator motor (to help center the disk) and move up the rest of the way at the same time
+        reset_all_and_exit()
+
+    # Now, move up the rest of the way and spin the disk backwards to position 0
     move_time_s = DISK_PICKUP_SECOND_TIME
-    rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * 360 * DISK_PICKUP_SPIN_ROTATIONS)
     movement_time_device_units = int(31250 * move_time_s)
-    parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-    rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * EXPECTED_UP_DOWN_RANGE - EXPECTED_DECREASED_RANGE_DUE_TO_DISK)
+    rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT)
+    expected_position_degrees = -UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT
     parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-    time.sleep(move_time_s * 1.1)
-    # and spin the disk the other way back to zero using the same amount of time
-    movement_time_device_units = int(31250 * move_time_s)
     parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [0, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
-
     # check the position that the Up/Down motor is at
     parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
     position_motor_units = parsed_response[0]
     position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
     print("************* After moving up to place the disk Up/Down motor is at position", position_degrees, "degrees")
-    expected_position_degrees = -(EXPECTED_UP_DOWN_RANGE - EXPECTED_DECREASED_RANGE_DUE_TO_DISK)
     position_error = position_degrees - expected_position_degrees
     if abs(position_error) > UP_DOWN_POSITION_TOLERANCE:
         print("ERROR: The Up/Down motor did not reach the position we expected. It may be that something is blocking it like a disk or the tray")
         print("The position is", position_degrees, "degrees")
         print("We expect to be at:", expected_position_degrees, "degrees")
         print("The position error is", position_error, "degrees")
-        reset_all_and_fatal_error()
+        reset_all_and_exit()
 
     if disk_number == 0: # we will use the first disk for homing of the slider. if magents are loaded then one or two magnets will be pushed onto the disk. since they won't be positioned right, we will not full assemble the disk
         # Home the Slider in the first direction
@@ -425,7 +503,7 @@ for disk_number in range(N_DISKS):
             print("The range we measured is", slider_range, "degrees")
             print("The range we expect is", EXPECTED_SLIDER_RANGE, "degrees")
             print(f"Consider updating this variable: EXPECTED_SLIDER_RANGE = {slider_range}")
-            reset_all_and_fatal_error()
+            reset_all_and_exit()
         # now, move the slider motor to the centre and zero out the position
         move_time_s = 0.5
         movement_time_device_units = int(31250 * move_time_s)

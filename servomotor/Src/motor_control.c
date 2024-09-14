@@ -30,6 +30,7 @@
 #include "device_status.h"
 #include "global_variables.h"
 #include "profiler.h"
+#include "GC6609.h"
 
 #define MAX_HOMING_ERROR 50000
 
@@ -93,7 +94,8 @@ typedef union {
 	int64_t i64;
 	int32_t i32[2];  // in some cases, we need to access the 64-bit position as two 32-bit integers
 } position_union;
-static position_union current_position;
+static position_union current_position = {0};
+//static position_union predicted_end_of_queue_position = {0};
 #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
 #define DEFAULT_ACTUAL_STEP_POSITION (COMMUTATION_POSITION_OFFSET_DEFAULT / N_COMMUTATION_SUB_STEPS) & (N_COMMUTATION_STEPS - 1)
 static uint32_t actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
@@ -109,7 +111,21 @@ static int32_t desired_motor_pwm_voltage = 0;
 static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 #define GO_TO_CLOSED_LOOP_MODE_TEST_MODE 2
 #define READ_PID_DEBUG_DATA_TEST_MODE 3
+#define READ_GC6609_REGISTERS_TEST_MODE 4
 static uint8_t test_mode = 0;
+
+#ifdef PRODUCT_NAME_M1
+#define PID_SHIFT_RIGHT 18
+#endif
+#ifdef PRODUCT_NAME_M2
+#define PID_SHIFT_RIGHT 18
+#endif
+#ifdef PRODUCT_NAME_M3
+#define PID_SHIFT_RIGHT 11
+#endif
+#ifdef PRODUCT_NAME_M4
+#define PID_SHIFT_RIGHT 14
+#endif
 
 // PID position control related variables:
 static int32_t integral_term = 0;
@@ -119,14 +135,6 @@ static int32_t low_pass_filtered_error_change = 0;
 // PID error min and max variables:
 int32_t min_PID_error = 2147483647;
 int32_t max_PID_error = -2147483648;
-#if 0
-// PID informatonal variables:
-int32_t PID_error = 0;
-int32_t PID_P = 0;
-int32_t PID_I = 0;
-int32_t PID_D = 0;
-int32_t PID_output_value = 0;
-#endif
 
 static uint8_t go_to_closed_loop_step = 0;
 #ifdef PRODUCT_NAME_M1
@@ -431,7 +439,12 @@ void start_calibration(uint8_t print_output)
 		fatal_error(41); // "test mode active" (all error text is defined in error_text.c)
 	}
 
+
+#if defined(PRODUCT_NAME_M3) && defined(GC6609)
+//	reset_GC6609();  // DEBUG commented out
+#else
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
+#endif
 
 	if(print_output) {
 	   	rs485_transmit("Calibration start\n", 18);
@@ -440,6 +453,8 @@ void start_calibration(uint8_t print_output)
 	calibration_print_output = print_output;
 	desired_motor_pwm_voltage = CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP1;
 	current_position.i64 = 0;
+	position_after_last_queue_item = 0;
+//	predicted_end_of_queue_position.i64 = 0;
 	global_settings.motor_phases_reversed = 0;
 	global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
 	commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
@@ -449,7 +464,15 @@ void start_calibration(uint8_t print_output)
 
     volatile uint32_t i;
     for(i = 0; i < 1000; i++); // make a delay
+
+#ifdef GC6609
+    GPIOB->BSRR = (1 << 4); // set VIO high
+    GPIOB->BSRR = (1 << 5); // set other VIO high
+    GPIOB->BSRR = (1 << 0); // set MENABLE high to disable the motor
+    GPIOA->BSRR = (1 << 15); // set HOLDEN high
+#else
     GPIOA->BSRR = (1 << 15); // take the stepper motor driver out of reset by making the reset pin high
+#endif
 
 	check_current_sensor_and_enable_mosfets();
 	queue_up_calibration_moves();
@@ -1481,11 +1504,11 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 //			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
 //			print_debug_string(buf);
 		}
-		position_after_last_queue_item = predicted_final_position;
-		velocity_after_last_queue_item = predicted_final_velocity;
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
         n_items_in_queue++;
+		position_after_last_queue_item = predicted_final_position;
+		velocity_after_last_queue_item = predicted_final_velocity;
     }
 	else {
 		fatal_error(17); // "queue is full" (all error text is defined in error_text.c)
@@ -1569,12 +1592,6 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 	results->relative_position_at_turn_point = ((int32_t*)&relative_position_at_turn_point)[1];
 }
 
-void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta)
-{
-//	uint64_t local_time = get_microsecond_time();
-//	add_to_queue(desired_position - displacement, local_time + time_delta);
-}
-
 
 uint8_t get_n_items_in_queue(void)
 {
@@ -1596,6 +1613,7 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 	uint32_t delta_t1;
 	uint32_t delta_t2;
 
+//	predicted_end_of_queue_position.i32[1] += total_displacement;
 	compute_trapezoid_move(total_displacement, total_time, &acceleration, &delta_t1, &delta_t2);
 
 	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
@@ -1604,6 +1622,24 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 }
 
 
+void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time)
+{
+	int32_t acceleration;
+	uint32_t delta_t1;
+	uint32_t delta_t2;
+
+	int32_t total_displacement = absolute_position - ((int32_t*)&position_after_last_queue_item)[1];
+//	predicted_end_of_queue_position.i32[1] = absolute_position;
+//	predicted_end_of_queue_position.i32[0] = 0;
+	compute_trapezoid_move(total_displacement, move_time, &acceleration, &delta_t1, &delta_t2);
+
+	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+}
+
+
+#if 0
 void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time)
 {
 	int32_t acceleration;
@@ -1621,6 +1657,7 @@ void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time)
 	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
 	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
+#endif
 
 
 //#define VELOCITY_AVERAGING_SHIFT_RIGHT 8
@@ -1683,6 +1720,11 @@ uint8_t handle_queued_movements(void)
 			}
 		}
 		else {
+//			predicted_end_of_queue_position = current_position;
+			if(((int32_t*)&position_after_last_queue_item)[1] != current_position.i32[1]) {
+				fatal_error(42); // "position discrepancy" (all error text is defined in error_text.c)
+			}
+//			((int32_t*)&position_after_last_queue_item)[1] = current_position.i32[1];
 			decelerate_to_stop_active = 1;
 		}
 	}
@@ -1717,37 +1759,12 @@ uint8_t handle_queued_movements(void)
 	current_position.i64 += current_velocity_i64;
 
 	return (current_velocity_i64 != 0);
-
 }
 
 
 #define ERROR_HYSTERESIS_P 0
 #define ERROR_HYSTERESIS_D 0
 
-#ifdef PRODUCT_NAME_M1
-#define PID_SHIFT_RIGHT 18
-#define PROPORTIONAL_CONSTANT_PID 5000
-#define INTEGRAL_CONSTANT_PID     1
-#define DERIVATIVE_CONSTANT_PID   5000
-#endif
-#ifdef PRODUCT_NAME_M2
-#define PID_SHIFT_RIGHT 18
-#define PROPORTIONAL_CONSTANT_PID 20000
-#define INTEGRAL_CONSTANT_PID     1
-#define DERIVATIVE_CONSTANT_PID   100000
-#endif
-#ifdef PRODUCT_NAME_M3
-#define PID_SHIFT_RIGHT 11
-#define PROPORTIONAL_CONSTANT_PID 5000
-#define INTEGRAL_CONSTANT_PID     2
-#define DERIVATIVE_CONSTANT_PID   1000000
-#endif
-#ifdef PRODUCT_NAME_M4
-#define PID_SHIFT_RIGHT 14
-#define PROPORTIONAL_CONSTANT_PID 10000
-#define INTEGRAL_CONSTANT_PID     10
-#define DERIVATIVE_CONSTANT_PID   100000
-#endif
 
 #define MAX_INT32         2147483647
 #define MAX_I_TERM (MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY << PID_SHIFT_RIGHT) // ~4194304
@@ -1762,15 +1779,22 @@ uint8_t handle_queued_movements(void)
 #endif
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
-static uint32_t pid_p = PROPORTIONAL_CONSTANT_PID;
-static uint32_t pid_i = INTEGRAL_CONSTANT_PID;
-static uint32_t pid_d = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
-static int32_t proportional_constant_pid = PROPORTIONAL_CONSTANT_PID;
-static int32_t integral_constant_pid = INTEGRAL_CONSTANT_PID;
-static int32_t derivative_constant_pid_scaled_for_averaging = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
-static int32_t max_error = MAX_ERROR;
-static int32_t max_integral_term = MAX_ERROR * PROPORTIONAL_CONSTANT_PID;
-static int32_t max_error_change = MAX_ERROR_CHANGE;
+//static uint32_t pid_p = PROPORTIONAL_CONSTANT_PID;
+//static uint32_t pid_i = INTEGRAL_CONSTANT_PID;
+//static uint32_t pid_d = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+//static int32_t proportional_constant_pid = PROPORTIONAL_CONSTANT_PID;
+//static int32_t integral_constant_pid = INTEGRAL_CONSTANT_PID;
+//static int32_t derivative_constant_pid_scaled_for_averaging = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+//static int32_t max_integral_term = MAX_ERROR * PROPORTIONAL_CONSTANT_PID;
+static uint32_t pid_p = 0;
+static uint32_t pid_i = 0;
+static uint32_t pid_d = 0;
+static int32_t proportional_constant_pid = 0;
+static int32_t integral_constant_pid = 0;
+static int32_t derivative_constant_pid_scaled_for_averaging = 0;
+static int32_t max_integral_term = 0;
+static int32_t max_error = 0;
+static int32_t max_error_change = 0;
 #define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8
 
 
@@ -2241,7 +2265,7 @@ void motor_phase_calculations(void)
 			steps_to_target += HYSTERESIS;
 		}
 
-		#define ONE_MICROSECOND_DELAY 1
+		#define ONE_MICROSECOND_DELAY 3
 		if(steps_to_target < 0) {
 			if(!global_settings.motor_phases_reversed) {  // control the direction line to the stepper motor driver
 				GPIOA->BSRR = (1 << 0) << 16;
@@ -2277,6 +2301,16 @@ void motor_phase_calculations(void)
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 {
 	profiler_start_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
+
+#ifdef GC6609
+	if (test_mode == READ_GC6609_REGISTERS_TEST_MODE) {
+		bool finished = GC6608_UART_bit_bang_read_registers((uint8_t*)calibration, &multipurpose_data_size);
+		if (finished) {
+			multipurpose_data_type = MULTIPURPOSE_DATA_TYPE_GC6609_REGISTERS;
+			test_mode = 0;
+		}
+	}
+#endif
 
 	static uint8_t hall_position_delta_violation = 0;
 	get_sensor_position_return_t get_sensor_position_return;
@@ -2481,6 +2515,8 @@ void zero_position(void)
 
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	current_position.i64 = 0;
+	position_after_last_queue_item = 0;
+//	predicted_end_of_queue_position.i64 = 0;
 	current_velocity_i64 = 0;
 	hall_position = 0;
 	hall_position_delta = 0;
@@ -2720,6 +2756,9 @@ void clear_multipurpose_data(void)
 
 void set_motor_test_mode(uint8_t new_test_mode)
 {
+	if (new_test_mode == READ_GC6609_REGISTERS_TEST_MODE) {
+		multipurpose_data_size = 0; // wipre previously stored data (if any)
+	}
 	test_mode = new_test_mode;
 }
 

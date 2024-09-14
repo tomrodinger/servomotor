@@ -11,3 +11,29 @@
 #define PUPDR_NO_PULL_UP_OR_DOWN 0 // this is the default except on some pins on port A
 #define PUPDR_PULL_UP 1
 #define PUPDR_PULL_DOWN 2
+
+#ifdef PRODUCT_NAME_M1
+#define GPIO_init() GPIO_init_M1()
+#define get_button_state() get_button_state_M1()
+#endif
+#ifdef PRODUCT_NAME_M2
+#define GPIO_init() GPIO_init_M2()
+#define get_button_state() get_button_state_M2()
+#endif
+#ifdef PRODUCT_NAME_M3
+#define GPIO_init() GPIO_init_M3()
+#define get_button_state() get_button_state_M3()
+#endif
+#ifdef PRODUCT_NAME_M4
+#define GPIO_init() GPIO_init_M4()
+#define get_button_state() get_button_state_M4()
+#endif
+
+void GPIO_init_M1(void);
+void GPIO_init_M2(void);
+void GPIO_init_M3(void);
+void GPIO_init_M4(void);
+uint8_t get_button_state_M1(void);
+uint8_t get_button_state_M2(void);
+uint8_t get_button_state_M3(void);
+uint8_t get_button_state_M4(void);

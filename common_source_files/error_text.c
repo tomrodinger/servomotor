@@ -43,6 +43,7 @@ char error_text[] =
     "go to closed loop failed\0"              // error 39
     "overheat\0"                              // error 40
     "test mode active\0"                      // error 41
+    "position discrepancy\0"                  // error 42
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)
