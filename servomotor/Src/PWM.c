@@ -12,28 +12,37 @@ void pwm_init(void)
     RCC->APBENR2 |= RCC_APBENR2_TIM1EN; // enable the clock to TIM1
 //    RCC->CCIPR |= RCC_CCIPR_TIM1SEL; // select the PLLQCLK as the clock source to TIM1
     TIM1->CCR4 = (OVERVOLTAGE_PROTECTION_SETTING1 * OVERVOLTAGE_PROTECTION_SETTING) / OVERVOLTAGE_PROTECTION_SETTING2;
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
-    TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
-    GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
-#else
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     TIM1->CCR1 = 65535; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
     TIM1->CCR2 = 65535;
     TIM1->CCR3 = 65535;
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL10_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
     GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
 #endif
+#ifdef PRODUCT_NAME_M3
+    TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
+    GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
+#endif
+#ifdef PRODUCT_NAME_M4
+    TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
+    TIM1->CCR2 = 0;
+    GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
+    GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
+#endif
 
     TIM1->PSC = 0; // no prescaler
+
+    #if defined (PRODUCT_NAME_M1) || defined (PRODUCT_NAME_M2) || defined (PRODUCT_NAME_M3)
     TIM1->ARR = PWM_PERIOD;
+    #endif
+    #if defined (PRODUCT_NAME_M4)
+    TIM1->ARR = 256;
+    #endif
+
 
 //    TIM1->CCMR1 = TIM_CCMR1_OC1PE | (6 << TIM_CCMR1_OC1M_Pos) | TIM_CCMR1_OC2PE | (6 << TIM_CCMR1_OC2M_Pos); // enable the preload and set as PWM mode 1
 //    TIM1->CCMR2 = TIM_CCMR2_OC3PE | (6 << TIM_CCMR2_OC3M_Pos);  // enable the preload and set as PWM mode 1
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
-    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos); // set channels 1
-    TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
-    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC4E; // enable the outputs on channels 1 and 4
-    TIM1->BDTR = TIM_BDTR_MOE; // main output enable
-#else
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) | (6 << TIM_CCMR1_OC2M_Pos); // set channels 1 and 2 as PWM mode 1
     TIM1->CCMR2 = (6 << TIM_CCMR2_OC3M_Pos) | (6 << TIM_CCMR2_OC4M_Pos); // set channels 3 and 4 as PWM mode 1
     TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E; // enable the outputs on all 4 channels
@@ -46,6 +55,18 @@ void pwm_init(void)
 //    TIM1->AF1 = (4 << TIM1_AF1_ETRSEL_Pos) | TIM1_AF1_BKINE; // choose analog watchdog 2 as the break source, break on high signal, enable the break function
     TIM1->AF1 = (4 << TIM1_AF1_ETRSEL_Pos) | TIM1_AF1_BKINE; // choose analog watchdog 2 as the break source, break on high signal, enable the break function
 //    TIM1->AF2 = TIM1_AF2_BK2INE; // enable the break 2 function
+#endif
+#ifdef PRODUCT_NAME_M3
+    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos); // set channel 1
+    TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
+    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC4E; // enable the outputs on channels 1 and 4
+    TIM1->BDTR = TIM_BDTR_MOE; // main output enable
+#endif
+#ifdef PRODUCT_NAME_M4
+    TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) | (6 << TIM_CCMR1_OC2M_Pos); // set channels 1 and 2 as PWM mode 1
+    TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
+    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC4E; // enable the outputs on channels 1, 2 and 4
+    TIM1->BDTR = TIM_BDTR_MOE; // main output enable
 #endif
 
     TIM1->EGR |= TIM_EGR_UG;

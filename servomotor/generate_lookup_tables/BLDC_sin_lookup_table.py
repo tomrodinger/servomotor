@@ -11,6 +11,8 @@ SIX_STEP_MODE = 1
 MODIFIED_SINE_MODE = 2
 MODE = PURE_SINE_MODE
 SIMPLE_TABLE = 0
+N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = None
+N_PHASES = None
 
 # Get the product name from the command line. The product name is something like M1, M2, M3, M4, etc.
 # If the product name is not specified, then print out an error message and give the user a list of
@@ -30,8 +32,9 @@ if product_name == "M1":
     N_COMMUTATION_STEPS = SETTINGS_M1.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M1.N_COMMUTATION_SUB_STEPS
     N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = SETTINGS_M1.N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT
-    include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 1
-    generate_commutation_table = 1
+    N_PHASES = 3
+    ANGLE_BETWEEN_PHASES = 120.0
+    START_ANGLE = 30.0
 elif product_name == "M2":
     import SETTINGS_M2
     ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M2.ONE_REVOLUTION_ELECTRICAL_CYCLES
@@ -39,25 +42,24 @@ elif product_name == "M2":
     N_COMMUTATION_STEPS = SETTINGS_M2.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M2.N_COMMUTATION_SUB_STEPS
     N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = SETTINGS_M2.N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT
-    include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 1
-    generate_commutation_table = 1
+    START_ANGLE = 30.0
 elif product_name == "M3":
     import SETTINGS_M3
     ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M3.ONE_REVOLUTION_ELECTRICAL_CYCLES
     ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M3.ONE_REVOLUTION_HALL_SENSOR_CYCLES
     N_COMMUTATION_STEPS = SETTINGS_M3.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M3.N_COMMUTATION_SUB_STEPS
-#    N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = SETTINGS_M3.N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT
-    include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 0
-    generate_commutation_table = 0
+    START_ANGLE = 30.0
 elif product_name == "M4":
     import SETTINGS_M4
     ONE_REVOLUTION_ELECTRICAL_CYCLES = SETTINGS_M4.ONE_REVOLUTION_ELECTRICAL_CYCLES
     ONE_REVOLUTION_HALL_SENSOR_CYCLES = SETTINGS_M4.ONE_REVOLUTION_HALL_SENSOR_CYCLES
     N_COMMUTATION_STEPS = SETTINGS_M4.N_COMMUTATION_STEPS
     N_COMMUTATION_SUB_STEPS = SETTINGS_M4.N_COMMUTATION_SUB_STEPS
-    include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = 0
-    generate_commutation_table = 0
+    N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = SETTINGS_M4.N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT
+    N_PHASES = 2
+    ANGLE_BETWEEN_PHASES = 90.0
+    START_ANGLE = 0.0
 else:
     print("Error: unsupported product name:", product_name)
     print("You should update this executable and create a SETTINGS_product-name.py file")
@@ -65,7 +67,6 @@ else:
 
 ONE_REVOLUTION_MICROSTEPS = N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_ELECTRICAL_CYCLES
 N_HALL_SENSORS = 3
-START_ANGLE = 30.0
 ANGLE_STEP = 360.0 / N_COMMUTATION_STEPS
 AMPLITUDE = (1 << 24) - 1
 output_header_filename = f"{OUTPUT_HEADER_FILENAME_PREFIX}{product_name}.h"
@@ -81,46 +82,48 @@ def six_step_function(angle):
         return 0.0
     
 
-all_phase_data = []
-min_min_phase = 1.0e10
-max_max_phase = -1.0e10
+if N_PHASES:
+    ANGLE_BETWEEN_PHASES_RADIANS = ANGLE_BETWEEN_PHASES / 180.0 * math.pi
+    all_phase_data = []
+    min_min_phase = 1.0e10
+    max_max_phase = -1.0e10
 
-angle = START_ANGLE
-for i in range(N_COMMUTATION_STEPS):
-    if MODE == SIX_STEP_MODE:
-        phase1 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 0.0)
-        phase2 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 1.0)
-        phase3 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 2.0)
-    else:
-        phase1 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 0.0)
-        phase2 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 1.0)
-        phase3 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - 2.0 * math.pi / 3.0 * 2.0)
-    min_phase = min(phase1, phase2, phase3)
-    if MODE != PURE_SINE_MODE:
-        adjustment = -min_phase
-        phase1 = phase1 + adjustment
-        phase2 = phase2 + adjustment
-        phase3 = phase3 + adjustment
-    min_phase = min(phase1, phase2, phase3)
-    max_phase = max(phase1, phase2, phase3)
-    if min_phase < min_min_phase:
-        min_min_phase = min_phase
-    if max_phase > max_max_phase:
-        max_max_phase = max_phase
-    all_phase_data.append([angle, phase1, phase2, phase3])
-    angle = angle + ANGLE_STEP
+    angle = START_ANGLE
+    for i in range(N_COMMUTATION_STEPS):
+        if MODE == SIX_STEP_MODE:
+            phase1 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 0.0)
+            phase2 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 1.0)
+            phase3 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 2.0)
+        else:
+            phase1 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 0.0)  
+            phase2 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 1.0)
+            phase3 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 2.0)
+        min_phase = min(phase1, phase2, phase3)
+        if MODE != PURE_SINE_MODE:
+            adjustment = -min_phase
+            phase1 = phase1 + adjustment
+            phase2 = phase2 + adjustment
+            phase3 = phase3 + adjustment
+        min_phase = min(phase1, phase2, phase3)
+        max_phase = max(phase1, phase2, phase3)
+        if min_phase < min_min_phase:
+            min_min_phase = min_phase
+        if max_phase > max_max_phase:
+            max_max_phase = max_phase
+        all_phase_data.append([angle, phase1, phase2, phase3])
+        angle = angle + ANGLE_STEP
 
-shift = -min_min_phase
-scale_factor = AMPLITUDE / (max_max_phase - min_min_phase)
+    shift = -min_min_phase
+    scale_factor = AMPLITUDE / (max_max_phase - min_min_phase)
 
-new_list = []
-for a in all_phase_data:
-    angle = a[0]
-    phase1 = (a[1] + shift) * scale_factor
-    phase2 = (a[2] + shift) * scale_factor
-    phase3 = (a[3] + shift) * scale_factor
-    new_list.append([angle, phase1, phase2, phase3])
-all_phase_data = new_list
+    new_list = []
+    for a in all_phase_data:
+        angle = a[0]
+        phase1 = (a[1] + shift) * scale_factor
+        phase2 = (a[2] + shift) * scale_factor
+        phase3 = (a[3] + shift) * scale_factor
+        new_list.append([angle, phase1, phase2, phase3])
+    all_phase_data = new_list
 
 fh = open("waveforms", "w")
 fh2 = open(output_header_filename, "w")
@@ -133,24 +136,26 @@ fh2.write("// * * * DO NOT EDIT * * * Instead, edit the program that autogenerat
 fh2.write("// This file was autogenerated by executing: %s %s\n" % (sys.argv[0], product_name))
 fh2.write("// Today's date is: %s\n" % (time.strftime("%c")))
 fh2.write("\n")
-if generate_commutation_table:
+if N_PHASES == 2 or N_PHASES == 3:
     fh2.write("struct three_phase_data_struct {\n")
     fh2.write("   uint32_t phase1;\n")
     fh2.write("   uint32_t phase2;\n")
-    fh2.write("   uint32_t phase3;\n")
+    if N_PHASES == 3:
+        fh2.write("   uint32_t phase3;\n")
     fh2.write("   int32_t phase1_slope;\n")
     fh2.write("   int32_t phase2_slope;\n")
-    fh2.write("   int32_t phase3_slope;\n")
+    if N_PHASES == 3:
+        fh2.write("   int32_t phase3_slope;\n")
     fh2.write("};\n")
     fh2.write("\n")
 fh2.write("#define N_COMMUTATION_STEPS %d\n" % (N_COMMUTATION_STEPS))
 fh2.write("#define N_COMMUTATION_SUB_STEPS %d\n" % (N_COMMUTATION_SUB_STEPS))
-if include_N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT:
+if N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT:
     fh2.write("#define N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT %d\n" % (N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT))
 fh2.write("#define ONE_REVOLUTION_ELECTRICAL_CYCLES %d\n" % (ONE_REVOLUTION_ELECTRICAL_CYCLES))
 fh2.write("#define ONE_REVOLUTION_MICROSTEPS %d\n" % (ONE_REVOLUTION_MICROSTEPS))
 
-if generate_commutation_table:
+if N_PHASES == 2 or N_PHASES == 3:
     fh2.write("#define MAX_PHASE_VALUE %d\n" % (AMPLITUDE))
     fh2.write("\n")
     fh2.write("#define COMMUTATION_LOOKUP_TABLE_INITIALIZER { \\\n")
@@ -160,11 +165,16 @@ if generate_commutation_table:
             angle = phase_data[0]
             phase1 = phase_data[1]
             phase2 = phase_data[2]
-            phase3 = phase_data[3]
+            if N_PHASES == 3:
+                phase3 = phase_data[3]
             phase1_rounded = int(phase1 + 0.5)
             phase2_rounded = int(phase2 + 0.5)
-            phase3_rounded = int(phase3 + 0.5)
-            print("{%d, %d, %d}," % (phase1_rounded, phase2_rounded, phase3_rounded))
+            if N_PHASES == 3:
+                phase3_rounded = int(phase3 + 0.5)
+            if N_PHASES == 2:
+                print("{%d, %d}," % (phase1_rounded, phase2_rounded))
+            else:
+                print("{%d, %d, %d}," % (phase1_rounded, phase2_rounded, phase3_rounded))
     else:
         lookup_table = []
         for i in range(len(all_phase_data)):
@@ -176,37 +186,49 @@ if generate_commutation_table:
                 next_phase_data = all_phase_data[i + 1]
             this_phase1 = this_phase_data[1]
             this_phase2 = this_phase_data[2]
-            this_phase3 = this_phase_data[3]
+            if N_PHASES == 3:
+                this_phase3 = this_phase_data[3]
             next_phase1 = next_phase_data[1]
             next_phase2 = next_phase_data[2]
-            next_phase3 = next_phase_data[3]
+            if N_PHASES == 3:
+                next_phase3 = next_phase_data[3]
             phase1_slope = next_phase1 - this_phase1
             phase2_slope = next_phase2 - this_phase2
-            phase3_slope = next_phase3 - this_phase3
+            if N_PHASES == 3:
+                phase3_slope = next_phase3 - this_phase3
             phase1_rounded = int(this_phase1 + 0.5)
             phase2_rounded = int(this_phase2 + 0.5)
-            phase3_rounded = int(this_phase3 + 0.5)
+            if N_PHASES == 3:
+                phase3_rounded = int(this_phase3 + 0.5)
             phase1_slope_rounded = int(phase1_slope + 0.5)
             phase2_slope_rounded = int(phase2_slope + 0.5)
-            phase3_slope_rounded = int(phase3_slope + 0.5)
-    #       lookup_table.append([phase1_rounded, phase2_rounded, phase3_rounded,
-    #                            phase1_slope, phase2_slope, phase1_slope])
+            if N_PHASES == 3:
+                phase3_slope_rounded = int(phase3_slope + 0.5)
 
-            print("{%10d, %10d, %10d, %10d, %10d, %10d}," % (phase1_rounded, phase2_rounded, phase3_rounded,
-                                                phase1_slope, phase2_slope, phase3_slope))
-            fh2.write("   {%10d, %10d, %10d, %10d, %10d, %10d}, \\\n" % (phase1_rounded, phase2_rounded, phase3_rounded,
-                                                        phase1_slope, phase2_slope, phase3_slope))
+            if N_PHASES == 2:
+                print("{%10d, %10d, %10d, %10d}," % (phase1_rounded, phase2_rounded, phase1_slope, phase2_slope))
+                fh2.write("   {%10d, %10d, %10d, %10d}, \\\n" % (phase1_rounded, phase2_rounded, phase1_slope, phase2_slope))
+            else:
+                print("{%10d, %10d, %10d, %10d, %10d, %10d}," % (phase1_rounded, phase2_rounded, phase3_rounded,
+                                                    phase1_slope, phase2_slope, phase3_slope))
+                fh2.write("   {%10d, %10d, %10d, %10d, %10d, %10d}, \\\n" % (phase1_rounded, phase2_rounded, phase3_rounded,
+                                                            phase1_slope, phase2_slope, phase3_slope))
 
             angle_increment = ANGLE_STEP / N_COMMUTATION_SUB_STEPS
             phase1_increment = int(phase1_slope_rounded / N_COMMUTATION_SUB_STEPS + 0.5)
             phase2_increment = int(phase2_slope_rounded / N_COMMUTATION_SUB_STEPS + 0.5)
-            phase3_increment = int(phase3_slope_rounded / N_COMMUTATION_SUB_STEPS + 0.5)
+            if N_PHASES == 3:
+                phase3_increment = int(phase3_slope_rounded / N_COMMUTATION_SUB_STEPS + 0.5)
             for j in range(N_COMMUTATION_SUB_STEPS):
-                fh.write("%f %d %d %d\n" % (angle, phase1_rounded, phase2_rounded, phase3_rounded))
+                if N_PHASES == 2:
+                    fh.write("%f %d %d\n" % (angle, phase1_rounded, phase2_rounded))
+                else:
+                    fh.write("%f %d %d %d\n" % (angle, phase1_rounded, phase2_rounded, phase3_rounded))
                 angle = angle + angle_increment
                 phase1_rounded = phase1_rounded + phase1_increment
                 phase2_rounded = phase2_rounded + phase2_increment
-                phase3_rounded = phase3_rounded + phase3_increment
+                if N_PHASES == 3:
+                    phase3_rounded = phase3_rounded + phase3_increment
 
     fh2.write("}\n")
 

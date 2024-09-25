@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import sys
-import redirect_motor_commands as motor_commands
-import redirect_communication as communication
 import time
 import os
 import random
@@ -10,10 +8,10 @@ import argparse
 import tty
 import termios
 import threading
-#import keyboard
+import servomotor
 
 VERBOSE = False
-DISABLE_USER_CONFIRMATION = True
+DISABLE_USER_CONFIRMATION = False
 
 N_DISKS = 18
 N_POLES = 50
@@ -65,10 +63,8 @@ TRAY_MOTOR_PULLEY_TEETH_NUMBER = 14
 DISTANCE_BETWEEN_TEETH_MM = 2.0
 DISTANCE_BETWEEN_DISKS_MM = 220 / 5
 SPACING_BETWEEN_DISKS_DEGREES = 360 * DISTANCE_BETWEEN_DISKS_MM / (TRAY_MOTOR_PULLEY_TEETH_NUMBER * DISTANCE_BETWEEN_TEETH_MM)
-UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT = 455
-EXPECTED_DECREASED_RANGE_DUE_TO_DISK = 0
-#EXPECTED_DECREASED_RANGE_DUE_TO_DISK = 8
-UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK = UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT + EXPECTED_DECREASED_RANGE_DUE_TO_DISK
+UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT = 431
+UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK = UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT
 UP_DOWN_POSITION_TOLERANCE = 10 # unit is degrees of the shaft rotation
 DISK_PICKUP_FIRST_POSITION = UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK * 0.6 # some of the way up but not all the way
 DISK_PICKUP_FIRST_TIME = 2.0
@@ -77,10 +73,10 @@ DISK_PICKUP_SPIN_ROTATIONS = 10
 ALTERNATE_POLE_ADJUSTMENT_ANGLE = 180.0
 POLE_PLACE_ANGLE_FUDGE_FACTOR = -2.0
 #POLE_PLACE_ANGLE_FUDGE_FACTOR = 0.0
-EXPECTED_SLIDER_RANGE = 115.0
+EXPECTED_SLIDER_RANGE = 123.0
 SLIDER_RANGE_TOLERANCE = 8.0
 SLIDER_CENTRE_FINE_TUNE_OFFSET = -0.5 # if the slider on the left side of the machine is pushing in too much such that the magnet on the left side is in too far, then you need to increase this value (or make it less negative)
-POLE_PLACE_ANGLE = EXPECTED_SLIDER_RANGE / 2 * 0.92 # a certain fraction of the way to the end stop
+POLE_PLACE_ANGLE = EXPECTED_SLIDER_RANGE / 2 * 0.87 # a certain fraction of the way to the end stop
 DISK_PLACE_SLIDER_POSITION_TOLERANCE = 3.0
 FIRST_MAGNET_PLACE_OFFSET_ANGLE = -0.3
 
@@ -93,13 +89,9 @@ def emergency_stop():
     print("Performing emergency stop...")
     # Disable MOSFETs for all motors
     for alias in [DISK_SPIN_ALIAS, SLIDER_ALIAS, UP_DOWN_ALIAS, DISK_TRAY_ALIAS]:
-        communication.execute_command(alias, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+        servomotor.execute_command(alias, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
     print("All MOSFETs disabled. Exiting program.")
     sys.exit(0)
-
-def start_keyboard_listener():
-    if DISABLE_USER_CONFIRMATION == False:
-        keyboard.on_press(on_press)
 
 def getch():
     if DISABLE_USER_CONFIRMATION == True:
@@ -127,7 +119,7 @@ def get_user_input(prompt):
 
 def reset_all_and_exit():
     # reset all motors
-    parsed_response = communication.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
     time.sleep(0.5)
     sys.exit(1)
 
@@ -145,11 +137,11 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
         # do homing
         rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * max_degrees)
         movement_time_device_units = int(31250 * max_time_s)
-        parsed_response = communication.execute_command(alias, "HOMING_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "HOMING_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
 
         # wait for the motor to finish homing
         while True:
-            parsed_response = communication.execute_command(alias, "GET_STATUS_COMMAND", [], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(alias, "GET_STATUS_COMMAND", [], verbose=VERBOSE)
             print("The motor status is", parsed_response[0], "and the fatal error code is", parsed_response[1])
             # extract bit number 3 from the motor status byte, which is the homing bit
             homing = (parsed_response[0] & 0b00010000) != 0
@@ -159,7 +151,7 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
         print("The motor has finished homing")
 
         # we should be at one end stop now. get the hall sensor position
-        parsed_response = communication.execute_command(alias, "GET_HALL_SENSOR_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "GET_HALL_SENSOR_POSITION_COMMAND", [], verbose=VERBOSE)
         position_motor_units = parsed_response[0]
         position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
         homing_positions_degrees.append(position_degrees)
@@ -171,7 +163,7 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
             if max_degrees > 0:
                 rotation_motor_units = -rotation_motor_units
             movement_time_device_units = int(31250 * move_time_s)
-            parsed_response = communication.execute_command(alias, "GO_TO_POSITION_COMMAND", [position_motor_units + rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(alias, "GO_TO_POSITION_COMMAND", [position_motor_units + rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
             time.sleep(0.5)
     # calculate the average position for all homing runs
     average_position_degrees = sum(homing_positions_degrees) / len(homing_positions_degrees)
@@ -189,10 +181,10 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
     if zero_after_homing:
         # zero out the motor
         print("Zeroing out the motor right after homing")
-        parsed_response = communication.execute_command(alias, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
     if start_position is not None:
         print("Moving the motor to the start position")
-        parsed_response = communication.execute_command(alias, "GET_HALL_SENSOR_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "GET_HALL_SENSOR_POSITION_COMMAND", [], verbose=VERBOSE)
         position_motor_units = parsed_response[0]
         current_position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
         distance_to_start_position = start_position - current_position_degrees
@@ -201,10 +193,10 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
         print("The move time is", move_time_s, "seconds")
         movement_time_device_units = int(31250 * move_time_s)
         rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * start_position)
-        parsed_response = communication.execute_command(alias, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
         time.sleep(move_time_s * 1.1)
         # read the position and see if we are where we expect to be. if not then we exit
-        parsed_response = communication.execute_command(alias, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         position_motor_units = parsed_response[0]
         motor_start_position_tolerance_degrees = 2.0
         if abs(position_motor_units - rotation_motor_units) > motor_start_position_tolerance_degrees * ONE_DEGREE_MICROSTEPS:
@@ -216,7 +208,7 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
         if zero_after_start_position_reached:
             print("Zeroing out the motor and moving it to the start position")
             # zero out the centring pusher motor
-            parsed_response = communication.execute_command(alias, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(alias, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
 
     print("The motor has finished the first homing")
     return average_position_degrees
@@ -224,19 +216,19 @@ def do_homing_and_get_position_in_degrees(alias, max_degrees, max_time_s, homing
 
 def disable_mosfets_and_read_positions():
     # disable the MOSFETs in all three motors
-    parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-    parsed_response = communication.execute_command(SLIDER_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-    parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(SLIDER_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
     while 1:
         # get the positions of all three motors
-        parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         disk_spin_position = parsed_response[0]
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         slider_position = parsed_response[0]
-        parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         up_down_position = parsed_response[0]
-        parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         disk_tray_position = parsed_response[0]
         disk_spin_angle = disk_spin_position / ONE_DEGREE_MICROSTEPS
         slider_angle = slider_position / ONE_DEGREE_MICROSTEPS
@@ -263,7 +255,7 @@ def assemble_magents_on_one_disk():
         print("Cumulative angle is:", cumulative_disk_angle)
         cumulative_position_motor_units = int(ONE_DEGREE_MICROSTEPS * cumulative_disk_angle + 0.5)
         print("Cumulative position in motor units is:", cumulative_position_motor_units)
-        parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [cumulative_position_motor_units, movement_time_device_units], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [cumulative_position_motor_units, movement_time_device_units], verbose=VERBOSE)
         time.sleep(move_time_s * 1.5)
 
         print("Pole number ", i + 1, "of", N_POLES, "is next")
@@ -283,18 +275,18 @@ def assemble_magents_on_one_disk():
 
 #        if i == 0:
 #            # now, move the motor to place that pole onto the disk
-#            parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
+#            parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
 #            time.sleep(move_time_s * 1.1)
 
         if i % 2 == 1:
             pole_place_angle = -pole_place_angle
 
         # now, move the slider motor to place that pole onto the disk
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
         time.sleep(move_time_s * 1.5)
 
         # read back the position and make sure it is within the set tolerance
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
         position_motor_units = parsed_response[0]
         position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
         position_error = position_degrees - pole_place_angle
@@ -310,25 +302,25 @@ def assemble_magents_on_one_disk():
         if i == 1:
             move_time_s = 0.3
             user_input = get_user_input("Press a key to continue")
-            parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle * 0.9, 31250 * move_time_s], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle * 0.9, 31250 * move_time_s], verbose=VERBOSE)
             time.sleep(move_time_s * 1.1)
             user_input = get_user_input("Press a key to continue")
             disk_angle = cumulative_disk_angle + 360.0 / N_POLES * 1.5
-            parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
             time.sleep(move_time_s * 1.1)
             user_input = get_user_input("Press a key to continue")
-            parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * -EXPECTED_SLIDER_RANGE * 0.5, 31250 * move_time_s], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * -EXPECTED_SLIDER_RANGE * 0.5, 31250 * move_time_s], verbose=VERBOSE)
             time.sleep(move_time_s * 1.1)
             user_input = get_user_input("Press a key to continue")
             disk_angle = cumulative_disk_angle + 360.0 / N_POLES
-            parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
+            parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * disk_angle, 31250 * move_time_s], verbose=VERBOSE)
             time.sleep(move_time_s * 1.1)
             user_input = get_user_input("Press a key to continue")
 
         # now, move the slidermotor to the centre
         move_time_s = 0.3
         rotation = 0
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * rotation, 31250 * move_time_s], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * rotation, 31250 * move_time_s], verbose=VERBOSE)
         time.sleep(move_time_s * 1.1)
 
 
@@ -349,22 +341,22 @@ except IOError as e:
     exit(1)
 
 
-communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
-                               motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
-                               motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
+#servomotor.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
+#                               motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
+#                               motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
 
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device (or -P to choose from a menu)
 parser = argparse.ArgumentParser(description='Run the magnet placement machine')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 args = parser.parse_args()
-communication.set_serial_port_from_args(args)
+servomotor.set_serial_port_from_args(args)
 
-#communication.serial_port = "/dev/cu.usbserial-1120"
-communication.open_serial_port()
+#servomotor.serial_port = "/dev/cu.usbserial-1120"
+servomotor.open_serial_port()
 
 # reset all motors
-parsed_response = communication.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
 time.sleep(2.5)
 
 # let's ping the device many times to make sure it is there and that communication is working flawlessly
@@ -374,7 +366,7 @@ for alias in [DISK_SPIN_ALIAS, SLIDER_ALIAS, UP_DOWN_ALIAS]:
     for i in range(N_PINGS_TO_TEST_COMMUNICATION):
         # generate a bytearray with 10 completely random bytes
         random_10_bytes = bytearray(random.getrandbits(8) for _ in range(10))
-        parsed_response = communication.execute_command(alias, "PING_COMMAND", [random_10_bytes], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(alias, "PING_COMMAND", [random_10_bytes], verbose=VERBOSE)
         if len(parsed_response) != 1 or parsed_response[0] != random_10_bytes:
             print("ERROR: The device with alias", alias, "did not respond to the PING_COMMAND")
             all_devices_responsed = False
@@ -384,31 +376,29 @@ if not all_devices_responsed:
     exit(1)
 print("The device responded correctly to all the %d pings" % (N_PINGS_TO_TEST_COMMUNICATION))
 
-start_keyboard_listener()
-
 # set the PID constants for all three motors
-parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
-parsed_response = communication.execute_command(SLIDER_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
-parsed_response = communication.execute_command(UP_DOWN_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
-parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(SLIDER_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "SET_PID_CONSTANTS_COMMAND", [PID_P, PID_I, PID_D], verbose=VERBOSE)
 
 # enable MOSFETs in all three motors
-parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(SLIDER_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(UP_DOWN_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(SLIDER_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
 
 # go to close loop position control mode in all three motors
-parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "GO_TO_CLOSED_LOOP_COMMAND", [], verbose=VERBOSE)
 
 # set the MOSFET current
-parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [DISK_SPIN_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
-parsed_response = communication.execute_command(SLIDER_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [SLIDER_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
-parsed_response = communication.execute_command(UP_DOWN_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [UP_DOWN_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
-parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [DISK_TRAY_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [DISK_SPIN_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(SLIDER_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [SLIDER_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [UP_DOWN_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [DISK_TRAY_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
 time.sleep(0.2) # allow the motor to stabilize it's position
 
 
@@ -445,7 +435,7 @@ for disk_number in range(N_DISKS):
     move_time_s = 2.0
     rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * current_disk_position)
     movement_time_device_units = int(31250 * move_time_s)
-    parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
 
     # Now, move the Up/Down motor to part of the way to the top position (at least it must be past the point where it picks up the disk)
@@ -453,12 +443,12 @@ for disk_number in range(N_DISKS):
     move_time_s = DISK_PICKUP_FIRST_TIME
     movement_time_device_units = int(31250 * move_time_s)
     rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * DISK_PICKUP_FIRST_POSITION)
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * 360 * DISK_PICKUP_SPIN_ROTATIONS)
-    parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
     # check if it attained the position we wanted
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
     position_motor_units = parsed_response[0]
     position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
     if abs(position_degrees - (-DISK_PICKUP_FIRST_POSITION)) > UP_DOWN_POSITION_TOLERANCE:
@@ -470,11 +460,11 @@ for disk_number in range(N_DISKS):
     movement_time_device_units = int(31250 * move_time_s)
     rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT)
     expected_position_degrees = -UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-    parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [0, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "GO_TO_POSITION_COMMAND", [0, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
     # check the position that the Up/Down motor is at
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
     position_motor_units = parsed_response[0]
     position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
     print("************* After moving up to place the disk Up/Down motor is at position", position_degrees, "degrees")
@@ -508,9 +498,9 @@ for disk_number in range(N_DISKS):
         move_time_s = 0.5
         movement_time_device_units = int(31250 * move_time_s)
         rotation_motor_units = int(((slider_homing_position1 + slider_homing_position2) / 2 + SLIDER_CENTRE_FINE_TUNE_OFFSET) * ONE_DEGREE_MICROSTEPS)
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
         time.sleep(move_time_s * 1.1)
-        parsed_response = communication.execute_command(SLIDER_ALIAS, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
+        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "ZERO_POSITION_COMMAND", [], verbose=VERBOSE)
     else:
         assemble_magents_on_one_disk()
 
@@ -520,15 +510,15 @@ for disk_number in range(N_DISKS):
     move_time_s = 2.0
     rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * 0)
     movement_time_device_units = int(31250 * move_time_s)
-    parsed_response = communication.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
+    parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
 
 
 # disable MOSFETs
-parsed_response = communication.execute_command(DISK_SPIN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(SLIDER_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(UP_DOWN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
-parsed_response = communication.execute_command(DISK_TRAY_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(SLIDER_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
 
 # close the log file
 log_fh.close()

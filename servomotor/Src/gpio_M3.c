@@ -53,8 +53,8 @@ static void portB_init(void)
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Motor driver enable (active low)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  |
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE4_Pos)  |
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE5_Pos)  |
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE4_Pos)  | // 3.3V power supply to the IO portion of the motor driver (setting these two pins low will reset the chip)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE5_Pos)  | // 3.3V power supply to the IO portion of the motor driver (setting these two pins low will reset the chip)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE8_Pos)  | // Overvoltage digital input (will shut off motor driver very fast if trigered)

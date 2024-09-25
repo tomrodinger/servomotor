@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "servo_motor")(type "KiCad")(uri "${KIPRJMOD}/lib/sch/servo_motor.kicad_sym")(options "")(descr ""))
+  (lib (name "ao4842")(type "KiCad")(uri "/Users/tom/Downloads/ao4842.kicad_sym")(options "")(descr ""))
+)

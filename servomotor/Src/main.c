@@ -18,7 +18,6 @@
 #include "GPIO_interrupts.h"
 #include "unique_id.h"
 #include "settings.h"
-#include "GC6609.h" // if you don't want to use the GC6609 stepper motor driver chip, then comment out this line
 #include "commands.h"
 #include "product_info.h"
 #include "global_variables.h"
@@ -32,6 +31,7 @@
 #endif
 #ifdef PRODUCT_NAME_M3
 #include "commutation_table_M3.h"
+#include "GC6609.h" // if you don't want to use the GC6609 stepper motor driver chip, then comment out this line (V8 and above are using this chip)
 #endif
 #ifdef PRODUCT_NAME_M4
 #include "commutation_table_M4.h"

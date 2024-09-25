@@ -10,7 +10,7 @@ import binascii
 import struct
 import random
 import os
-import serial_functions
+import servomotor
 
 FIRMWARE_UPGRADE_COMMAND = 23
 SYSTEM_RESET_COMMAND = 27
@@ -157,7 +157,7 @@ data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4,
 
 print("Will write this many bytes:", len(data))
 
-ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
+ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
 system_reset_command(ser)
 time.sleep(0.1) # wait for it to reset

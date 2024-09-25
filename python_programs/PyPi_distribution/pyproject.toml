@@ -1,6 +1,6 @@
 [project]
 name = "servomotor"
-version = "0.1.2"
+version = "0.1.5"
 authors = [
   { name="Tom Rodinger", email="tom.rodinger@utoronto.ca" },
 ]

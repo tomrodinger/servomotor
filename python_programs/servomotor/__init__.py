@@ -15,8 +15,13 @@ from .serial_functions import (
 
 from .communication import (
     set_command_data,
+    set_standard_options_from_args,
+    set_serial_port_from_args,
     open_serial_port,
     close_serial_port,
+    get_command_id,
+    gather_inputs,
+    send_command,
     execute_command,
     interpret_response
 )
@@ -24,8 +29,12 @@ from .communication import (
 # You can define __all__ to specify what gets imported with
 # "from servomotor import *"
 __all__ = [
+    'set_standard_options_from_args',
+    'set_serial_port_from_args',
     'open_serial_port',
     'close_serial_port',
+    'get_command_id',
+    'gather_inputs',
     'send_command',
     'get_response',
     'select_serial_port_from_menu',

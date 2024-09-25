@@ -62,7 +62,7 @@
 #define MAX_MOTOR_CONTROL_PERIOD_FATAL_ERROR_THRESHOLD (100) // we want to ensure that the update of the PWM happens every second PWM period (we are not able to do calculatons fast enough to updated it every peripd unfortunately)
 #define COMPUTED_VELOCITY_CALIBRATION_CONSTANT 3000
 #define COMPUTED_VELOCITY_CALIBRATION_SHIFT 16
-#if !defined (PRODUCT_NAME_M3) && !defined (PRODUCT_NAME_M4)
+#if defined (PRODUCT_NAME_M1) || defined (PRODUCT_NAME_M2) || defined (PRODUCT_NAME_M4)
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 #endif
 
@@ -2141,7 +2141,7 @@ void motor_movement_calculations(void)
 }
 
 
-#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 void motor_phase_calculations(void)
 {
     static uint16_t commutation_step = 0;
@@ -2218,7 +2218,9 @@ void motor_phase_calculations(void)
 	    TIM1->CCR1 = phase3;
 	}
 }
-#else
+#endif
+
+#ifdef PRODUCT_NAME_M3
 void motor_phase_calculations(void)
 {
 	volatile uint32_t delay;
@@ -2227,20 +2229,6 @@ void motor_phase_calculations(void)
 		TIM1->CCR1 = 0;
 		return;
 	}
-
-#if 0
-	// Below lines are for DEBUG
-	static uint32_t delay2 = 0;
-	delay2++;
-	if (delay2 == 16000) {
-		GPIOA->BSRR = (1 << 1); // STEP line high
-		for(delay = 0; delay < 10; delay++);
-		GPIOA->BSRR = (1 << 1) << 16; // STEP line low
-		delay2 = 0;
-	}
-	TIM1->CCR1 = 1024; // DEBUG
-	return; // DEBUG
-#endif
 
 	TIM1->CCR1 = motor_pwm_voltage;
 
@@ -2296,10 +2284,101 @@ void motor_phase_calculations(void)
 }
 #endif
 
+#ifdef PRODUCT_NAME_M4
+void motor_phase_calculations(void)
+{
+    static uint16_t commutation_step = 0;
+    static uint16_t commutation_sub_step = 0;
+    static uint32_t phase1;
+    static uint32_t phase2;
+    static int32_t phase1_slope;
+    static int32_t phase2_slope;
+    static int32_t tmp32bit;
+
+	if(is_mosfets_enabled() == 0) {
+		TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
+		TIM1->CCR2 = 0;
+		return;
+	}
+
+    commutation_step = (commutation_position >> N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) % N_COMMUTATION_STEPS;
+    commutation_sub_step = (commutation_position & 0xff) >> (8 - N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT);
+
+    phase1 = commutation_lookup_table[commutation_step].phase1;
+    phase2 = commutation_lookup_table[commutation_step].phase2;
+    phase1_slope = commutation_lookup_table[commutation_step].phase1_slope;
+    phase2_slope = commutation_lookup_table[commutation_step].phase2_slope;
+
+    tmp32bit = phase1_slope;
+    tmp32bit *= commutation_sub_step;
+    tmp32bit >>= N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT;
+    phase1 = phase1 + tmp32bit;
+
+    tmp32bit = phase2_slope;
+    tmp32bit *= commutation_sub_step;
+    tmp32bit >>= N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT;
+    phase2 = phase2 + tmp32bit;
+
+	if(phase1 >= (MAX_PHASE_VALUE >> 1)) {
+		phase1 -= (MAX_PHASE_VALUE >> 1);
+		if(!global_settings.motor_phases_reversed) {
+		    GPIOA->BSRR = (1 << 0); // set MOSFETs to output high on the motor AOUT1 line
+    		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
+		}
+		else {
+		    GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
+    		GPIOA->BSRR = (1 << 15); // set MOSFETs to output high on the motor AOUT2 line
+		}
+	}
+	else {
+		phase1 = (MAX_PHASE_VALUE >> 1) - phase1;
+		if(!global_settings.motor_phases_reversed) {
+		    GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
+    		GPIOA->BSRR = (1 << 15); // set MOSFETs to output high on the motor AOUT2 line
+		}
+		else {
+		    GPIOA->BSRR = (1 << 0); // set MOSFETs to output high on the motor AOUT1 line
+    		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
+		}
+	}
+
+	if(phase2 >= (MAX_PHASE_VALUE >> 1)) {
+		phase2 -= (MAX_PHASE_VALUE >> 1);
+	    GPIOB->BSRR = (1 << 4); // set MOSFETs to output high on the motor BOUT1 line
+    	GPIOB->BSRR = ((1 << 5) << 16); // set MOSFETs to output low on the motor BOUT2 line
+	}
+	else {
+		phase2 = (MAX_PHASE_VALUE >> 1) - phase2;
+	    GPIOB->BSRR = ((1 << 4) << 16); // set MOSFETs to output low on the motor BOUT1 line
+    	GPIOB->BSRR = (1 << 5); // set MOSFETs to output high on the motor BOUT2 line
+	}
+
+    phase1 >>= 8;
+    phase1 *= (uint32_t)motor_pwm_voltage;
+    phase1 >>= 17;
+
+    phase2 >>= 8;
+    phase2 *= (uint32_t)motor_pwm_voltage;
+    phase2 >>= 17;
+
+	TIM1->CCR1 = phase1;
+	TIM1->CCR2 = phase2;
+}
+#endif
+
 
 #define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 20000
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 {
+	#ifdef PRODUCT_NAME_M4
+	static uint8_t skip_this_many = 0;
+	if(skip_this_many > 0) {
+		skip_this_many--;
+		TIM1->SR = 0; // clear the interrupt flag
+		return;
+	}
+	skip_this_many = 3;
+	#endif
 	profiler_start_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
 
 #ifdef GC6609
@@ -2685,7 +2764,7 @@ void set_commutation_position_offset(uint32_t new_commutation_position_offset)
 }
 
 
-#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 void check_current_sensor_and_enable_mosfets(void)
 {
 //	volatile uint32_t delay;
