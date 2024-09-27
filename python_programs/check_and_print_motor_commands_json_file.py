@@ -22,7 +22,7 @@ def print_formatted_json(data):
     print(formatted_json)
 
 def main():
-    filepath = 'motor_commands.json'
+    filepath = 'servomotor/motor_commands.json'
     data = read_and_validate_json(filepath)
     if data is not None:
         print_formatted_json(data)

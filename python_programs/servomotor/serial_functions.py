@@ -86,7 +86,6 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
         print("Will let the user select the serial port from a menu")
         device_name = select_serial_port_from_menu()
 
-    print("Opening the serial device:", device_name)
     serial_port = open_serial_port_or_print_detailed_error(device_name, baud_rate, timeout)
     if serial_port == None:
         device_name = select_serial_port_from_menu()

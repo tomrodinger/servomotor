@@ -3,15 +3,15 @@
         "CommandString": "Disable MOSFETs",
         "CommandEnum": 0,
         "Description": "Disables the MOSFETS (note that MOSFETs are disabled after initial power on).",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Enable MOSFETs",
         "CommandEnum": 1,
         "Description": "Enables the MOSFETS.",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Trapezoid move",
@@ -27,7 +27,7 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Set maximum velocity",
@@ -39,7 +39,7 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Go to position",
@@ -55,7 +55,7 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Set maximum acceleration",
@@ -67,14 +67,14 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Start calibration",
         "CommandEnum": 6,
         "Description": "Starts a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly",
-        "Input": "None",
-        "Output": "None"
+        "Input": null,
+        "Output": null
     },
     {
         "CommandString": "Capture hall sensor data",
@@ -97,14 +97,14 @@
         "CommandString": "Reset time",
         "CommandEnum": 8,
         "Description": "Resets the absolute time to zero (call this first before issuing any movement commands)",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Get current time",
         "CommandEnum": 9,
         "Description": "Gets the current absolute time",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u48: The current absolute time",
@@ -137,7 +137,7 @@
         "CommandString": "Get queue size",
         "CommandEnum": 11,
         "Description": "Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u8: The number of items in the movement queue. This command will return between 0 and 32. If less than 32, you can add more items to the queue to continue the movements in order without stopping.",
@@ -149,15 +149,15 @@
         "CommandString": "Emergency stop",
         "CommandEnum": 12,
         "Description": "Emergency stop (stop all movement, disable MOSFETS, clear the queue)",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Zero position",
         "CommandEnum": 13,
         "Description": "Make the current position the position zero (origin)",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Homing",
@@ -173,13 +173,13 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Get hall sensor position",
         "CommandEnum": 15,
         "Description": "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "i32: The current position as determined by the hall sensors",
@@ -191,35 +191,21 @@
         "CommandString": "Get status",
         "CommandEnum": 16,
         "Description": "Gets the status of the motor",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u8: A series of flags which are 1 bit each",
+                "Bit descriptions": [
+                    "Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)",
+                    "Bit 1: MOSFETs are enabled",
+                    "Bit 2: Motor is in closed loop mode",
+                    "Bit 3: Motor is currently executing the calibration command",
+                    "Bit 4: Motor is currently executing a homing command",
+                    "Bit 5: Motor is currently executing the procedure to go to closed loop mode",
+                    "Bit 6: Motor is currently busy doing a time consuming task and is not ready to take another command",
+                    "Bit 7: Not used, set to 0"
+                ],
                 "TooltipDisplayFormat": "%b"
-            },
-            {
-                "Description": "Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)"
-            },
-            {
-                "Description": "Bit 1: MOSFETs are enabled"
-            },
-            {
-                "Description": "Bit 2: Motor is in closed loop mode"
-            },
-            {
-                "Description": "Bit 3: Motor is currently executing the calibration command"
-            },
-            {
-                "Description": "Bit 4: Motor is currently executing a homing command"
-            },
-            {
-                "Description": "Bit 5: Motor is currently executing the procedure to go to closed loop mode"
-            },
-            {
-                "Description": "Bit 6: Motor is currently busy doing a time consuming task and is not ready to take another command"
-            },
-            {
-                "Description": "Bit 7: Not used, set to 0"
             },
             {
                 "Description": "u8: The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the SYSTEM_RESET_COMMAND to get out of the fatal error state.",
@@ -231,14 +217,14 @@
         "CommandString": "Go to closed loop",
         "CommandEnum": 17,
         "Description": "Go to closed loop position control mode",
-        "Input": "None",
-        "Output": "Success_response"
+        "Input": null,
+        "Output": "success_response"
     },
     {
         "CommandString": "Get update frequency",
         "CommandEnum": 18,
         "Description": "Get the update frequency (reciprocal of the time step)",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u32: Update frequency in Hz. This is how often the motor executes all calculations for hall sensor position, movement, PID loop, safety, etc.",
@@ -260,13 +246,13 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Detect devices",
         "CommandEnum": 20,
-        "Description": "Detect devices",
-        "Input": "None",
+        "Description": "Detect all of the devices that are connected on the RS485 interface. Devices will identify themselves at a random time within one seconde. Chance of collision is possible but unlikely. You can repeat this if you suspect a collision (like if you have devices connected but they were not discovered within one to two seconds).",
+        "Input": null,
         "Output": [
             {
                 "Description": "u64_unique_id: A unique ID (unique among all devices manufactured). The response is sent after a random delay of between 0 and 1 seconds.",
@@ -280,7 +266,8 @@
                 "Description": "crc32: A CRC32 value for this packet. This is used to verify that the response is correct.",
                 "TooltipDisplayFormat": ""
             }
-        ]
+        ],
+        "MultipleResponses": true
     },
     {
         "CommandString": "Set device alias",
@@ -296,13 +283,13 @@
                 "TooltipDisplayFormat": "%d,%c"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Get product info",
         "CommandEnum": 22,
         "Description": "Get product information",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "string8: The product code / model number (when doing a firmware upgrade, this must match between the firmware file and the target device).",
@@ -334,14 +321,18 @@
         "CommandString": "Firmware upgrade",
         "CommandEnum": 23,
         "Description": "This command will upgrade the flash memory of the servo motor. Before issuing a firmware upgrade command, you must do some calculations as shown in the examples.",
-        "Input": "Firmware file",
-        "Output": "Success_response"
+        "Input": [
+            {
+                "Description": "firmware_page: The data to upgrade one page of flash memory. Contents includes the product model code (8 bytes), firmware compatibility code (1 byte), page number (1 byte), and the page data itself (2048 bytes)."
+            }
+        ],
+        "Output": "success_response"
     },
     {
         "CommandString": "Get product description",
         "CommandEnum": 24,
         "Description": "Get the product description. Documentation to be done later.",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "string_null_term: This is a brief description of the product.",
@@ -353,7 +344,7 @@
         "CommandString": "Get firmware version",
         "CommandEnum": 25,
         "Description": "Get the firmware version. Documentation to be done later.",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u32_version_number: The firmware version stored as 4 bytes. The first byte is the development number, then patch version, followed by the minor and major versions.",
@@ -375,14 +366,14 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "System reset",
         "CommandEnum": 27,
         "Description": "System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning.",
-        "Input": "None",
-        "Output": "None"
+        "Input": null,
+        "Output": null
     },
     {
         "CommandString": "Set maximum motor current",
@@ -398,7 +389,7 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Multi-move",
@@ -418,7 +409,7 @@
                 "TooltipDisplayFormat": ""
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Set safety limits",
@@ -434,7 +425,7 @@
                 "TooltipDisplayFormat": "%d"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Ping",
@@ -463,13 +454,13 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Get hall sesor statistics",
         "CommandEnum": 33,
         "Description": "Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system.",
-        "Input": "None ",
+        "Input": null,
         "Output": [
             {
                 "Description": "u16: The maximum value of hall sensor 1 encoutered since the last statistics reset.",
@@ -517,7 +508,7 @@
         "CommandString": "Get position",
         "CommandEnum": 34,
         "Description": "Get the current desired position (which may not always be the actual position as measured by the hall sensors)",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "i32: The current desired position",
@@ -529,7 +520,7 @@
         "CommandString": "Read multipurpose buffer",
         "CommandEnum": 35,
         "Description": "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "general_data: The data in the buffer (the format and length of the data depends on what was put in the buffer)",
@@ -547,13 +538,13 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Get comprehensive position",
         "CommandEnum": 37,
         "Description": "Get the electrical commutation position, hall sensor position, and external encoder position all in one shot",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "i32: The electrical commutation position",
@@ -573,7 +564,7 @@
         "CommandString": "Get supply voltage",
         "CommandEnum": 38,
         "Description": "Get the measured voltage of the power supply.",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "u16: The voltage. Divide this number by 10 to get the actual voltage in volts.",
@@ -585,7 +576,7 @@
         "CommandString": "Get max PID error",
         "CommandEnum": 39,
         "Description": "Get the minimum and maximum error value ovserved in the PID control loop since the last read.",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "i32: The minimum PID error value.",
@@ -607,7 +598,7 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Identify",
@@ -619,13 +610,13 @@
                 "TooltipDisplayFormat": "%x"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     },
     {
         "CommandString": "Get temperature",
         "CommandEnum": 42,
         "Description": "Get the measured temperature of the motor.",
-        "Input": "None",
+        "Input": null,
         "Output": [
             {
                 "Description": "i16: The temperature in degrees celcius. The accuracy is about +/- 3 degrees celcius and is measured at the motor driver PCB.",
@@ -652,6 +643,6 @@
                 "TooltipDisplayFormat": "%u"
             }
         ],
-        "Output": "Success_response"
+        "Output": "success_response"
     }
 ]

@@ -44,10 +44,16 @@ if command_id == None:
     print("Please run this program with the -c option to see all supported commands")
     exit(1)
 
-gathered_inputs = servomotor.gather_inputs(command_id, args.inputs)
+gathered_inputs = servomotor.gather_inputs(command_id, args.inputs, verbose=args.verbose)
 
 servomotor.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the communication module
 servomotor.open_serial_port()
-response = servomotor.send_command(command_id, gathered_inputs, verbose=args.verbose)
-servomotor.interpret_response(command_id, response)
+try:
+    response = servomotor.send_command(command_id, gathered_inputs, verbose=args.verbose)
+except servomotor.communication.TimeoutError:
+    print("Timeout Error: The device did not respond in time")
+    print("This may be that your device is not connected and powered on, or that the serial port is not correct, or that the alias is not correct for your target device.")
+    servomotor.close_serial_port()
+    exit(1)
+servomotor.interpret_response(command_id, response, verbose=args.verbose)
 servomotor.close_serial_port()

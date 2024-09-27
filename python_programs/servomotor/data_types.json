@@ -1,6 +1,6 @@
 [
     {
-        "data_type_id:": 19,
+        "data_type_id": 19,
         "data_type": "buf10",
         "size": 10,
         "min_value": null,
@@ -9,7 +9,7 @@
         "description": "10 byte long buffer containing any binary data"
     },
     {
-        "data_type_id:": 17,
+        "data_type_id": 17,
         "data_type": "crc32",
         "size": 4,
         "min_value": null,
@@ -18,7 +18,7 @@
         "description": "32-bit CRC"
     },
     {
-        "data_type_id:": 2,
+        "data_type_id": 2,
         "data_type": "i16",
         "size": 2,
         "min_value": -32768,
@@ -27,7 +27,7 @@
         "description": "16-bit signed integer"
     },
     {
-        "data_type_id:": 4,
+        "data_type_id": 4,
         "data_type": "i24",
         "size": 3,
         "min_value": -8388608,
@@ -36,7 +36,7 @@
         "description": "24-bit signed integer"
     },
     {
-        "data_type_id:": 6,
+        "data_type_id": 6,
         "data_type": "i32",
         "size": 4,
         "min_value": -2147483648,
@@ -45,7 +45,7 @@
         "description": "32-bit signed integer"
     },
     {
-        "data_type_id:": 8,
+        "data_type_id": 8,
         "data_type": "i48",
         "size": 6,
         "min_value": -549755813888,
@@ -54,7 +54,7 @@
         "description": "48-bit signed integer"
     },
     {
-        "data_type_id:": 10,
+        "data_type_id": 10,
         "data_type": "i64",
         "size": 8,
         "min_value": -9223372036854775808,
@@ -63,7 +63,7 @@
         "description": "64-bit signed integer"
     },
     {
-        "data_type_id:": 0,
+        "data_type_id": 0,
         "data_type": "i8",
         "size": 1,
         "min_value": -128,
@@ -72,7 +72,7 @@
         "description": "8-bit signed integer"
     },
     {
-        "data_type_id:": 200,
+        "data_type_id": 200,
         "data_type": "list_2d",
         "size": null,
         "min_value": null,
@@ -81,7 +81,7 @@
         "description": "A two dimensional list in a Python style format, for example: [[1, 2], [3, 4]]"
     },
     {
-        "data_type_id:": 12,
+        "data_type_id": 12,
         "data_type": "string8",
         "size": 8,
         "min_value": null,
@@ -90,7 +90,7 @@
         "description": "8 byte long string with null termination if it is shorter than 8 bytes"
     },
     {
-        "data_type_id:": 201,
+        "data_type_id": 201,
         "data_type": "string_null_term",
         "size": null,
         "min_value": null,
@@ -99,16 +99,16 @@
         "description": "This is a string with a variable length and must be null terminated"
     },
     {
-        "data_type_id:": 240,
+        "data_type_id": 240,
         "data_type": "success_response",
         "size": null,
         "min_value": null,
         "max_value": null,
         "is_integer": false,
-        "description": "Indicates that the command was received successfully and is being executed. the next command can be immediately transmitted without causing a command overflow situation."
+        "description": "Indicates that the command was received successfully and is being executed. The next command can be immediately transmitted without causing a command overflow situation."
     },
     {
-        "data_type_id:": 3,
+        "data_type_id": 3,
         "data_type": "u16",
         "size": 2,
         "min_value": 0,
@@ -117,7 +117,7 @@
         "description": "16-bit unsigned integer"
     },
     {
-        "data_type_id:": 5,
+        "data_type_id": 5,
         "data_type": "u24",
         "size": 3,
         "min_value": 0,
@@ -126,7 +126,7 @@
         "description": "24-bit unsigned integer"
     },
     {
-        "data_type_id:": 13,
+        "data_type_id": 13,
         "data_type": "u24_version_number",
         "size": 3,
         "min_value": null,
@@ -135,7 +135,7 @@
         "description": "3 byte version number. the order is patch, minor, major"
     },
     {
-        "data_type_id:": 7,
+        "data_type_id": 7,
         "data_type": "u32",
         "size": 4,
         "min_value": 0,
@@ -144,7 +144,7 @@
         "description": "32-bit unsigned integer"
     },
     {
-        "data_type_id:": 14,
+        "data_type_id": 14,
         "data_type": "u32_version_number",
         "size": 4,
         "min_value": null,
@@ -153,7 +153,7 @@
         "description": "4 byte version number. the order is development number, patch, minor, major"
     },
     {
-        "data_type_id:": 9,
+        "data_type_id": 9,
         "data_type": "u48",
         "size": 6,
         "min_value": 0,
@@ -162,7 +162,7 @@
         "description": "48-bit unsigned integer"
     },
     {
-        "data_type_id:": 11,
+        "data_type_id": 11,
         "data_type": "u64",
         "size": 8,
         "min_value": 0,
@@ -171,7 +171,7 @@
         "description": "64-bit unsigned integer"
     },
     {
-        "data_type_id:": 15,
+        "data_type_id": 15,
         "data_type": "u64_unique_id",
         "size": 8,
         "min_value": null,
@@ -180,7 +180,7 @@
         "description": "The unique ID of the device (8-bytes long)"
     },
     {
-        "data_type_id:": 1,
+        "data_type_id": 1,
         "data_type": "u8",
         "size": 1,
         "min_value": 0,
@@ -189,7 +189,7 @@
         "description": "8-bit unsigned integer"
     },
     {
-        "data_type_id:": 18,
+        "data_type_id": 18,
         "data_type": "u8_alias",
         "size": 1,
         "min_value": null,
@@ -198,12 +198,30 @@
         "description": "This can hold an ASCII character where the value is represented as an ASCII character if it is in the range 33 to 126, otherwise it is represented as a number from 0 to 255"
     },
     {
-        "data_type_id:": 202,
+        "data_type_id": 202,
         "data_type": "unknown_data",
         "size": null,
         "min_value": null,
         "max_value": null,
         "is_integer": false,
         "description": "This is an unknown data type (work in progress; will be corrected and documented later)"
+    },
+    {
+        "data_type_id": 203,
+        "data_type": "firmware_page",
+        "size": 2058,
+        "min_value": null,
+        "max_value": null,
+        "is_integer": false,
+        "description": "This is the data to upgrade one page of flash memory. Contents includes the product model code (8 bytes), firmware compatibility code (1 byte), page number (1 byte), and the page data itself (2048 bytes)."
+    },
+    {
+        "data_type_id": 204,
+        "data_type": "general_data",
+        "size": null,
+        "min_value": null,
+        "max_value": null,
+        "is_integer": false,
+        "description": "This is some data. You will need to look elsewhere at some documentation or into the source code to find out what this data is."
     }
 ]

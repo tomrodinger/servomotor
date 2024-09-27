@@ -5,16 +5,16 @@ This package provides functionality for controlling servomotors
 from the company Gearotons.
 """
 
-# Import main classes and functions that should be available when
-# users import your package
-
 from .serial_functions import (
     select_serial_port_from_menu,
     open_serial_port_or_print_detailed_error
 )
 
 from .communication import (
-    set_command_data,
+    set_data_types_and_command_data,
+    print_protocol_version,
+    print_data_type_descriptions,
+    print_registered_commands,
     set_standard_options_from_args,
     set_serial_port_from_args,
     open_serial_port,
@@ -29,6 +29,9 @@ from .communication import (
 # You can define __all__ to specify what gets imported with
 # "from servomotor import *"
 __all__ = [
+    'print_protocol_version',
+    'print_data_type_descriptions',
+    'print_registered_commands',
     'set_standard_options_from_args',
     'set_serial_port_from_args',
     'open_serial_port',
@@ -48,8 +51,7 @@ __all__ = [
 #__version__ = "0.1.2"
 # ... nope, instead, the version is in the pyproject.toml file
 
-from . import motor_commands
-set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
-                 motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,
-                 motor_commands.data_type_is_integer_dict, motor_commands.data_type_description_dict)
-
+from . import command_loader
+# we will load the motor_commands.json file, which is in the same directory as this __init__.py file, so make sure to include the right path
+data_type_dict, command_dict = command_loader.load_data_types_and_commands('servomotor/data_types.json', 'servomotor/motor_commands.json')
+set_data_types_and_command_data(data_type_dict, command_dict)
