@@ -17,6 +17,7 @@ void overvoltage_init(void)
 	EXTI->IMR1 |= EXTI_IMR1_IM8; // unmask it
 	EXTI->RTSR1 |= EXTI_RTSR1_RT8; // we want to trigger an interrupt on the rising edge of PB8
 #endif
+    NVIC_SetPriority(EXTI4_15_IRQn, 0); // make this the highest priority, because we need to act fast in the case of overvoltage
 	NVIC_EnableIRQ(EXTI4_15_IRQn); // enable the interrupt to this external input
 }
 

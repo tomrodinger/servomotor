@@ -59,18 +59,6 @@ void systick_init(void)
     SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
                      SysTick_CTRL_TICKINT_Msk   |
                      SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
-
-
-
-/*
-    SysTick->CTRL = 0; // disable first in case it is already enabled
-    SysTick->LOAD  = (uint32_t)(16000000 - 1);              // set reload register to generate interrupt at 4 Hz
-//    HAL_NVIC_SetPriority(SysTick_IRQn, TICK_INT_PRIORITY, 0U);
-    SysTick->VAL   = 1600000 - 1;                                             // Load the SysTick Counter Value
-    SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
-                     SysTick_CTRL_TICKINT_Msk   |
-                     SysTick_CTRL_ENABLE_Msk;                         // Enable SysTick IRQ and SysTick Timer
-*/
 }
 
 #define MODER_DIGITAL_INPUT 0

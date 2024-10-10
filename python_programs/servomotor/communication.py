@@ -496,29 +496,24 @@ def gather_inputs(command_id, inputs, verbose=True):
 def interpret_single_response(command_id, response, verbose=True):
     parsed_response = []
     if response == None:
-        if verbose:
-            print("This command did not return a response")
+        print("This command did not return a response")
         return parsed_response
     expected_response = registered_commands[command_id]["Output"]
     if len(expected_response) == 0:
         if response != None:
             print("Error: We were expecting this command to have no response whatsoever, but we go a response")
             exit(1)
-        if verbose:
-            print("This command produced no response, which is exactly as expected")
+        print("This command produced no response, which is exactly as expected")
     elif len(expected_response) == 1 and registered_data_types[expected_response[0].data_type_id].data_type_str == "success_response":
         if response != b'':
             print("Error: the response was not the expected success response")
             exit(1)
-        if verbose:
-            print("We got the success response. Good. The response payload is empty as expected.")
+        print("We got the success response. Good. The response payload is empty as expected.")
     else:
-        if verbose:
-            print("The response for this command along with the decoded value(s) is below:"),
+        print("The response for this command along with the decoded value(s) is below:"),
         for i in range(len(expected_response)):
-            if verbose:
-                response_text = input_or_response_to_string(expected_response[i])
-                print("  ", response_text)
+            response_text = input_or_response_to_string(expected_response[i])
+            print("  ", response_text)
             data_type_id = expected_response[i].data_type_id
             data_type_str = registered_data_types[data_type_id].data_type_str
             if data_type_str == "string_null_term":
@@ -548,56 +543,46 @@ def interpret_single_response(command_id, response, verbose=True):
                     data_item_signed = False
                 from_bytes_result = int.from_bytes(data_item, byteorder = "little", signed = data_item_signed)
                 parsed_response.append(from_bytes_result)
-                if verbose:
-                    print("   --->", from_bytes_result)
+                print("   --->", from_bytes_result)
             else:
                 if data_type_str == "string8":
                     # remove the null terminator from the string
                     data_item = data_item[:-1]
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
-                    if verbose:
-                        print("   --->", data_item)
+                    print("   --->", data_item)
                 if data_type_str == "string_null_term":
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
-                    if verbose:
-                        print("   --->", data_item)
+                    print("   --->", data_item)
                 elif data_type_str == "u24_version_number":
                     parsed_response.append([data_item[0], data_item[1], data_item[2]])
-                    if verbose:
-                        print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
+                    print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
                 elif data_type_str == "u32_version_number":
                     parsed_response.append([data_item[0], data_item[1], data_item[2], data_item[3]])
-                    if verbose:
-                        print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
+                    print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
                 elif data_type_str == "u64_unique_id":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
-                        print("   ---> %016X" % (from_bytes_result))
+                    print("   ---> %016X" % (from_bytes_result))
                 elif data_type_str == "u8_alias":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
-                        if from_bytes_result >= 33 and from_bytes_result <= 126:
-                            print("   ---> the ASCII character %c (or the decimal number %d)" % (from_bytes_result, from_bytes_result))
-                        else:
-                            print("   ---> the single byte integer %d or 0x%02x in hex" % (from_bytes_result, from_bytes_result))
+                    if from_bytes_result >= 33 and from_bytes_result <= 126:
+                        print("   ---> the ASCII character %c (or the decimal number %d)" % (from_bytes_result, from_bytes_result))
+                    else:
+                        print("   ---> the single byte integer %d or 0x%02x in hex" % (from_bytes_result, from_bytes_result))
                 elif data_type_str == "crc32":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
-                        print("   ---> 0x%08X" % (from_bytes_result))
+                    print("   ---> 0x%08X" % (from_bytes_result))
                 elif data_type_str == "buf10":
                     parsed_response.append(data_item)
-                    if verbose:
-                        print("   ---> %s" % (data_item))
+                    print("   ---> %s" % (data_item))
                 elif data_type_str == "general_data":
                     parsed_response.append(data_item)
-                    if verbose:
-                        for d in data_item:
-                            print("   ---> %d (0x%02x)" % (d, d))
+                    for d in data_item:
+                        print("   ---> %d (0x%02x)" % (d, d))
                 else:
                     print("Error: the interprettation of this data type is not iplemented:", data_type_str)
                     exit(1)
@@ -613,13 +598,11 @@ def interpret_response(command_id, response, verbose=True):
         parsed_response = interpret_single_response(command_id, response, verbose=verbose)
     else:
         if len(response) == 0:
-            if verbose:
-                print("There was no response from any device(s)")
+            print("There was no response from any device(s)")
         elif len(response) == 1:
             parsed_response = interpret_single_response(command_id, response[0], verbose=verbose)
         else:
-            if verbose:
-                print("The response is a list containing multiple responses. Interpreting them:")
+            print("The response is a list containing multiple responses. Interpreting them:")
             for i in range(len(response)):
                 partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
                 parsed_response.append(partial_parsed_response)

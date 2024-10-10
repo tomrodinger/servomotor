@@ -28,12 +28,11 @@ void rs485_init(void)
 
     USART1->BRR = 278; // set baud to 230400 @ 64MHz SYSCLK
     USART1->CR1 = (0 << USART_CR1_DEAT_Pos) | (0 << USART_CR1_DEDT_Pos) | USART_CR1_FIFOEN | USART_CR1_RXNEIE_RXFNEIE; // set timing parameters for the drive enable, enable the FIFO mode, enable the receive interrupt
-//    HAL_NVIC_SetPriority(USART1_IRQn, TICK_INT_PRIORITY, 0U); // DEBUG
     USART1->CR2 = USART_CR2_RTOEN; // enable the timeout feature  (this is supported on USART1 but not supported on USART2)
     USART1->RTOR = ((230400 / 10) << USART_RTOR_RTO_Pos); // set the timeout t0 0.1 s)
     USART1->CR3 = (0 << USART_CR3_DEP_Pos) | USART_CR3_DEM | USART_CR3_EIE; // drive enable is active high, enable the drive enable, an interrupt will happen if there is an error (like overrun or framing error or noise error), 
     USART1->CR1 |= USART_CR1_TE | USART_CR1_RE | USART_CR1_UE; // enable transmitter, receiver, and the uart
-    NVIC_SetPriority(USART1_IRQn, 1); // pretty high priority but lower than the motor control interrupt
+    NVIC_SetPriority(USART1_IRQn, 2); // third highest priority. needs to be lower than the motor control interrupt (PWM.c) but otherwise this is more important than things like systick
     NVIC_EnableIRQ(USART1_IRQn);
 }
 
@@ -63,12 +62,10 @@ void USART1_IRQHandler(void)
     if((USART1->ISR & USART_ISR_RXNE_RXFNE) && (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE)) {
         if(USART1->ISR & USART_ISR_RTOF) {
             nReceivedBytes = 0;
-//            red_LED_on();
             USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
         }
         uint8_t receivedByte;
         receivedByte = USART1->RDR;
-//        red_LED_on();
         if(nReceivedBytes < 65535) {
             nReceivedBytes++;
         }
@@ -121,7 +118,6 @@ void USART1_IRQHandler(void)
     }
 
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
-//    	red_LED_on();
         USART1->TDR = transmitBuffer[transmitIndex];
         transmitCount--;
         transmitIndex++;

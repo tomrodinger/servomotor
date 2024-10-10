@@ -133,7 +133,6 @@ void systick_init(void)
 /*
     SysTick->CTRL = 0; // disable first in case it is already enabled
     SysTick->LOAD  = (uint32_t)(16000000 - 1);              // set reload register to generate interrupt at 4 Hz
-//    HAL_NVIC_SetPriority(SysTick_IRQn, TICK_INT_PRIORITY, 0U);
     SysTick->VAL   = 1600000 - 1;                                             // Load the SysTick Counter Value
     SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
                      SysTick_CTRL_TICKINT_Msk   |
@@ -656,7 +655,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     supply_voltage_reply.header[0] = 'R';
                     supply_voltage_reply.header[1] = 1;
                     supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
-                    supply_voltage_reply.supply_voltage = get_supply_voltage_volts_time_10();
+                    supply_voltage_reply.supply_voltage = get_supply_voltage_volts_times_10();
                     rs485_transmit(&supply_voltage_reply, sizeof(supply_voltage_reply));
                 }
             }
@@ -969,6 +968,7 @@ int main(void)
     rs485_init();
     adc_init();
     pwm_init();
+    motor_control_init();
     overvoltage_init();
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     step_and_direction_init();
@@ -1047,7 +1047,7 @@ int main(void)
 #endif
 
 //    	check_if_break_condition();
-#if !defined(PRODUCT_NAME_M3) && !defined(PRODUCT_NAME_M4) 
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) 
     	check_if_ADC_watchdog2_exceeded();
 #endif
         check_if_overtemperature();

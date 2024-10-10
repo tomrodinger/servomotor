@@ -10,7 +10,12 @@
 
 #define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 65535
 #define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 0
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M3)
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
+#endif
+#ifdef PRODUCT_NAME_M4
+#define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 28039
+#endif
 
 uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
@@ -31,27 +36,9 @@ void adc_init(void)
                                             // calculation: time in microseconds = 1/32000000*(1.5+12.5)*1000000
 
     ADC1->CFGR1 |= ADC_CFGR1_AWD1EN | ADC_CFGR1_AWD1SGL | (0 << ADC_CFGR1_AWD1CH_Pos); // enable analog watchdog 1 and it will monitor just one channel as selected by AWD1CH bits
-    ADC1->TR1 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
-
     ADC1->TR2 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
 
-    ADC1->TR3 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 3
-    ADC1->AWD3CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 3, this is the motor current measurement
-
-//    ADC1->CHSELR = (1 << 0) |    // select the channels to be converted, 5 channels total
-//    		       (1 << 4) |
-//				   (1 << 5) |
-//				   (1 << 6) |
-//				   (1 << 7);
-//    ADC1->CHSELR = (5 << ADC_CHSELR_SQ1_Pos) |    // select the channels to be converted, 5 channels total
-//    		       (4 << ADC_CHSELR_SQ2_Pos) |
-//				   (6 << ADC_CHSELR_SQ3_Pos) |
-//				   (0 << ADC_CHSELR_SQ4_Pos) |
-//				   (7 << ADC_CHSELR_SQ5_Pos) |
-//				   (0xf << ADC_CHSELR_SQ6_Pos) |  // these last three are not used
-//				   (0xf << ADC_CHSELR_SQ7_Pos) |
-//				   (0xf << ADC_CHSELR_SQ8_Pos);
 	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
@@ -98,6 +85,13 @@ void adc_init(void)
 
     DMA1_Channel1->CCR |= DMA_CCR_EN; // enable the DMA channel as the last step (see section 11.4.3 in the reference manual).
 
+#ifdef PRODUCT_NAME_M4
+	ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
+	ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
+	NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdof), we need to act very fast
+	NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
+#endif
+
 //    ADC->IER |= ADC_IER_EOCIE; // enable the end of conversion interrupt
 //    ADC->IER |= ADC_IER_EOSIE; // enable the end of conversion sequence interrupt
     ADC1->CR |= ADC_CR_ADSTART; // start to do the conversions one by one continuously
@@ -108,17 +102,6 @@ void check_if_break_condition(void)
 	if(TIM1->SR & TIM_SR_BIF) {
 //		red_LED_on();
 		TIM1->SR &= ~TIM_SR_BIF;
-	}
-	else {
-//		red_LED_off();
-	}
-}
-
-void check_if_ADC_watchdog1_exceeded(void)
-{
-	if(ADC1->ISR & ADC_ISR_AWD1) {
-//		red_LED_on();
-		ADC1->ISR |= ADC_ISR_AWD1;
 	}
 	else {
 //		red_LED_off();
@@ -136,15 +119,11 @@ void check_if_ADC_watchdog2_exceeded(void)
 	}
 }
 
-void check_if_ADC_watchdog3_exceeded(void)
+void ADC1_IRQHandler(void)
 {
-	if(ADC1->ISR & ADC_ISR_AWD3) {
-//		red_LED_on();
-		ADC1->ISR |= ADC_ISR_AWD3;
-	}
-	else {
-//		red_LED_off();
-	}
+	fatal_error(43); // "overcurrent" (all error text is defined in error_text.c)
+	red_LED_on();
+	ADC1->ISR |= ADC_ISR_AWD2;
 }
 
 uint16_t get_hall_sensor1_voltage(void)
@@ -221,7 +200,7 @@ uint16_t get_supply_voltage_ADC_value(void)
 }
 
 
-uint16_t get_supply_voltage_volts_time_10(void)
+uint16_t get_supply_voltage_volts_times_10(void)
 {
 	uint16_t supply_voltage = get_supply_voltage_ADC_value();
 	uint32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
@@ -246,7 +225,5 @@ void print_supply_voltage(void)
 
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
 {
-    ADC1->TR1 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 1
     ADC1->TR2 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
-    ADC1->TR3 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 3
 }

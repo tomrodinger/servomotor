@@ -11,7 +11,7 @@ void enable_mosfets(void)
     GPIOB->BSRR = (1 << 0) << 16;
     #endif
     #ifdef PRODUCT_NAME_M4
-    GPIOC->BSRR = ((1 << 0) << 16);
+    GPIOA->BSRR = (1 << 1);
     #endif
     mosfets_enabled = 1;
 }
@@ -19,17 +19,23 @@ void enable_mosfets(void)
 void disable_mosfets(void)
 {
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
-    GPIOA->BSRR = (1 << 1) << 16;
-    #endif
-    #ifdef PRODUCT_NAME_M3
-    GPIOB->BSRR = (1 << 0);
-    #endif
-    #ifdef PRODUCT_NAME_M4
-    GPIOC->BSRR = (1 << 0);
-    #endif
     TIM1->CCR1 = 0;
     TIM1->CCR2 = 0;
     TIM1->CCR3 = 0;
+    GPIOA->BSRR = (1 << 1) << 16;
+    #endif
+    #ifdef PRODUCT_NAME_M3
+    TIM1->CCR1 = 0;
+    TIM1->CCR2 = 0;
+    GPIOB->BSRR = (1 << 0);
+    #endif
+    #ifdef PRODUCT_NAME_M4
+    TIM1->CCR1 = 0;
+    TIM1->CCR2 = 0;
+    TIM3->CCR1 = 0;
+    TIM3->CCR2 = 0;
+    GPIOA->BSRR = ((1 << 1) << 16);
+    #endif
     mosfets_enabled = 0;
 }
 

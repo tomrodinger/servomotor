@@ -3,7 +3,7 @@
 // when changed by the applicaiton
 
 #ifndef __DEVICE_SEPECIFIC_SETTINGS_H_
-#define __DEVICE_SEPECIFIC_SEttinGS_H_
+#define __DEVICE_SEPECIFIC_SETTINGS_H_
 
 #include <stdint.h>
 

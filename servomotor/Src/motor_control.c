@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include "portable_stdint.h"
 #include "stm32g0xx_hal.h"
 #include "microsecond_clock.h"
 #include "debug_uart.h"
@@ -39,12 +40,20 @@
 #else
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY (300)
 #endif
-#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER (200)
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M3)
+#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER 200
+#endif
+#if defined(PRODUCT_NAME_M4)
+#define ANALOG_WATCHDOG_LIMIT_MULTIPLIER 200
+#endif
 #ifdef PRODUCT_NAME_M1
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #endif
 #ifdef PRODUCT_NAME_M2
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
+#endif
+#ifdef PRODUCT_NAME_M4
+#define VOLTS_PER_ROTATIONAL_VELOCITY 700
 #endif
 //#define DO_DETAILED_PROFILING
 #define UINT32_MIDPOINT 2147483648
@@ -312,6 +321,20 @@ struct closed_loop_struct {
     int32_t max_hall_distance;
 };
 struct closed_loop_struct closed_loop = {0};
+
+
+void motor_control_init(void)
+{
+    RCC->APBENR2 |= RCC_APBENR2_TIM16EN; // enable the clock to TIM16
+    TIM16->PSC = 0; // no prescaler
+    TIM16->ARR = PWM_PERIOD * 2;
+    TIM16->CR1 |= TIM_CR1_CEN;   // enable the counter
+    TIM16->SR = 0; // clear all the interrupt flags
+    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+
+    NVIC_SetPriority(TIM16_IRQn, 1); // second highest priority for the interrupt that controls the motor
+	NVIC_EnableIRQ(TIM16_IRQn); // enable the interrupt to this timer
+}
 
 
 void clear_the_queue_and_stop_no_disable_interrupt(void)
@@ -659,7 +682,7 @@ void compute_midlines_from_calibration_data(void)
 
 	for(j = 0; j < 3; j++) {
 		for(i = 0; i < calibration_index[j]; i++) {
-			sprintf(buf, "index: %u  local_min_or_max: %u  position: %ld\n",
+			sprintf(buf, "index: %u  local_min_or_max: %u  position: " _PRId32 "\n",
 					i, calibration[j][i].local_min_or_max, calibration[j][i].local_min_or_max_position);
 			print_debug_string(buf);
 		}
@@ -693,11 +716,11 @@ void compute_midlines_from_calibration_data(void)
 				min_peak_to_peak = peak_to_peak;
 			}
 
-			sprintf(buf, "i: %u  max to min delta: %u  position delta: %ld\n", i, peak_to_peak, position_delta);
+			sprintf(buf, "i: %u  max to min delta: %u  position delta: " _PRId32 "\n", i, peak_to_peak, position_delta);
 			print_debug_string(buf);
 		}
 
-		sprintf(buf, "min_position_delta: %ld  max_position_delta: %ld\n", min_position_delta, max_position_delta);
+		sprintf(buf, "min_position_delta: " _PRId32 "  max_position_delta: " _PRId32 "\n", min_position_delta, max_position_delta);
 		print_debug_string(buf);
 		sprintf(buf, "min_peak_to_peak: %u  max_peak_to_peak: %u\n", min_peak_to_peak, max_peak_to_peak);
 		print_debug_string(buf);
@@ -726,7 +749,7 @@ void compute_midlines_from_calibration_data(void)
 	global_settings.hall3_midline = midline[2];
 
 	for(j = 0; j < 3; j++) {
-		sprintf(buf, "The average and midline for hall sensor %hu are: %lu  %u\n", j + 1, minima_and_maxima_avg[j], midline[j]);
+		sprintf(buf, "The average and midline for hall sensor %hhu are: " _PRIu32 "  %u\n", (uint8_t)(j + 1), minima_and_maxima_avg[j], midline[j]);
 		print_debug_string(buf);
 	}
 }
@@ -744,24 +767,24 @@ void compute_commutation_offset_from_calibration_data(void)
 		sprintf(buf, "calibration_data index %hu:\n", i);
 		print_debug_string(buf);
 
-		sprintf(buf, "   hall position vs. position sums (forward and reverse phase): %ld %ld\n", (int32_t)calibration_data[i].hall_position_vs_position_sum,
+		sprintf(buf, "   hall position vs. position sums (forward and reverse phase): " _PRId32 " " _PRId32 "\n", (int32_t)calibration_data[i].hall_position_vs_position_sum,
 		                                                                                          (int32_t)calibration_data[i].hall_position_vs_position_sum_phases_reversed);
 		print_debug_string(buf);
-		sprintf(buf, "   hall position v. position count: %lu\n", calibration_data[i].hall_position_vs_position_count);
+		sprintf(buf, "   hall position v. position count: " _PRIu32 "\n", calibration_data[i].hall_position_vs_position_count);
 		print_debug_string(buf);
 
-		sprintf(buf, "   min and max hall position vs. position: %ld %ld\n", calibration_data[i].min_hall_position_vs_position,
+		sprintf(buf, "   min and max hall position vs. position: " _PRId32 " " _PRId32 "\n", calibration_data[i].min_hall_position_vs_position,
 		                                                                     calibration_data[i].max_hall_position_vs_position);
 		print_debug_string(buf);
 		int32_t min_to_max_delta = calibration_data[i].max_hall_position_vs_position - calibration_data[i].min_hall_position_vs_position;
-		sprintf(buf, "   min to max delta: %ld\n", min_to_max_delta);
+		sprintf(buf, "   min to max delta: " _PRId32 "\n", min_to_max_delta);
 		print_debug_string(buf);
 
-		sprintf(buf, "   min to max hall position v. position (phases reversed): %ld %ld\n", calibration_data[i].min_hall_position_vs_position_phases_reversed,
+		sprintf(buf, "   min to max hall position v. position (phases reversed): " _PRId32 " " _PRId32 "\n", calibration_data[i].min_hall_position_vs_position_phases_reversed,
 		                                                                                     calibration_data[i].max_hall_position_vs_position_phases_reversed);
 		print_debug_string(buf);
 		int32_t min_to_max_delta_phases_reversed = calibration_data[i].max_hall_position_vs_position_phases_reversed - calibration_data[i].min_hall_position_vs_position_phases_reversed;
-		sprintf(buf, "   min to max delta (phases reversed): %ld\n", min_to_max_delta_phases_reversed);
+		sprintf(buf, "   min to max delta (phases reversed): " _PRId32 "\n", min_to_max_delta_phases_reversed);
 		print_debug_string(buf);
 
 		int64_t average_hall_position_vs_position = calibration_data[i].hall_position_vs_position_sum / calibration_data[i].hall_position_vs_position_count;
@@ -770,18 +793,18 @@ void compute_commutation_offset_from_calibration_data(void)
 			global_settings.motor_phases_reversed = 0;
 			global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT - (int32_t)average_hall_position_vs_position;
 			commutation_position_offset = global_settings.commutation_position_offset;
-			sprintf(buf, "   average hall position vs. position: %ld\n", (int32_t)average_hall_position_vs_position);
+			sprintf(buf, "   average hall position vs. position: " _PRId32 "\n", (int32_t)average_hall_position_vs_position);
 			print_debug_string(buf);
-			sprintf(buf, "   average hall position vs. position (not used): %ld\n", (int32_t)average_hall_position_vs_position_reversed);
+			sprintf(buf, "   average hall position vs. position (not used): " _PRId32 "\n", (int32_t)average_hall_position_vs_position_reversed);
 			print_debug_string(buf);
 		}
 		else {
 			global_settings.motor_phases_reversed = 1;
 			global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT - (int32_t)average_hall_position_vs_position_reversed;
 			commutation_position_offset = global_settings.commutation_position_offset;
-			sprintf(buf, "   average hall position vs. position: %ld\n", (int32_t)average_hall_position_vs_position_reversed);
+			sprintf(buf, "   average hall position vs. position: " _PRId32 "\n", (int32_t)average_hall_position_vs_position_reversed);
 			print_debug_string(buf);
-			sprintf(buf, "   average hall position vs. position (not used): %ld\n", (int32_t)average_hall_position_vs_position);
+			sprintf(buf, "   average hall position vs. position (not used): " _PRId32 "\n", (int32_t)average_hall_position_vs_position);
 			print_debug_string(buf);
 		}
 		i++;
@@ -918,7 +941,7 @@ struct goertzel_algorithm_result_t goertzel_algorithm(volatile int32_t samples[]
 		n2++;
         d2 = d1;
         d1 = y;
-		sprintf(buf, "n: %hu, d1_times_w_real_multiplier_64bit: %ld, y: %ld, d1: %ld, d2: %ld\n",
+		sprintf(buf, "n: %hu, d1_times_w_real_multiplier_64bit: " _PRId32 ", y: " _PRId32 ", d1: " _PRId32 ", d2: " _PRId32 "\n",
                  n, (int32_t)d1_times_w_real_multiplier_64bit, y, d1, d2);
 		print_debug_string(buf);
     }
@@ -945,14 +968,14 @@ void process_go_to_closed_loop_data(void)
 		multipurpose_data_size = GO_TO_CLOSED_LOOP_N_DATA_ITEMS * sizeof(int32_t) + 2 * sizeof(int32_t); // we will send the input data plus the result of the Goertzel algorithm
 //		print_debug_string("Go to closed loop data:\n");
 //		for(i = 0; i < GO_TO_CLOSED_LOOP_N_DATA_ITEMS; i++) {
-//			sprintf(buf, "   %hu: %ld\n", i, go_to_closed_loop_data[i]);
+//			sprintf(buf, "   %hu: " _PRId32 "\n", i, go_to_closed_loop_data[i]);
 //			print_debug_string(buf);
 //		}
 		struct goertzel_algorithm_result_t result = goertzel_algorithm(go_to_closed_loop_data, (uint16_t)GO_TO_CLOSED_LOOP_N_DATA_ITEMS);
 		go_to_closed_loop_data[GO_TO_CLOSED_LOOP_N_DATA_ITEMS] = result.real;
 		go_to_closed_loop_data[GO_TO_CLOSED_LOOP_N_DATA_ITEMS + 1] = result.imag;
 		multipurpose_data_type = MULTIPURPOSE_DATA_TYPE_GO_TO_CLOSED_LOOP;
-		sprintf(buf, "Goertzel algorithm result: real: %ld, imag: %ld\n", result.real, result.imag);
+		sprintf(buf, "Goertzel algorithm result: real: " _PRId32 ", imag: " _PRId32 "\n", result.real, result.imag);
 		print_debug_string(buf);
 		int32_t abs_result_real = abs(result.real);
 		int32_t abs_result_imag = abs(result.imag);
@@ -988,7 +1011,7 @@ void process_go_to_closed_loop_data(void)
 				commutation_position_offset += (HALL_TO_POSITION_90_DEGREE_OFFSET * 0); // 2 1 0 3  0 1 2 3
 			}
 		}
-		sprintf(buf, "Ratio: %ld\n", ratio);
+		sprintf(buf, "Ratio: " _PRId32 "\n", ratio);
 		print_debug_string(buf);
 
 		if(ratio < 3) {
@@ -1253,7 +1276,7 @@ void fast_capture_until_trigger(void)
 void print_position(void)
 {
 	char buf[100];
-	sprintf(buf, "current_position: %ld   hall_position: %ld\n", current_position.i32[1], hall_position);
+	sprintf(buf, "current_position: " _PRId32 "   hall_position: " _PRId32 "\n", current_position.i32[1], hall_position);
 	print_debug_string(buf);
 }
 
@@ -1261,7 +1284,7 @@ void print_position(void)
 void print_PID_data(void)
 {
 	char buf[170];
-	sprintf(buf, "error: %ld   min_PID_error: %ld   max_PID_error: %ld   PID: %ld %ld %ld   Output: %ld\n", PID_error, min_PID_error, max_PID_error, PID_P, PID_I, PID_D, PID_output_value);
+	sprintf(buf, "error: " _PRId32 "   min_PID_error: " _PRId32 "   max_PID_error: " _PRId32 "   PID: " _PRId32 " " _PRId32 " " _PRId32 "   Output: " _PRId32 "\n", PID_error, min_PID_error, max_PID_error, PID_P, PID_I, PID_D, PID_output_value);
 	print_debug_string(buf);
 }
 #endif
@@ -1279,7 +1302,7 @@ void print_current_movement(void)
 	uint64_t current_time = get_microsecond_time();
 	print_int64("max acceleration:", (int64_t)max_acceleration);
 	print_int64("max velocity:", (int64_t)max_velocity);
-	sprintf(buf, "current_time: %lu\n", (unsigned long int)current_time);
+	sprintf(buf, "current_time: " _PRIu32 "\n", (uint32_t)current_time);
 	print_debug_string(buf);
 	sprintf(buf, "motor_control_mode: %u\n", (unsigned int)motor_control_mode);
 	print_debug_string(buf);
@@ -1289,8 +1312,8 @@ void print_current_movement(void)
 void print_velocity(void)
 {
 	char buf[150];
-//	sprintf(buf, "desired velocity: %ld   actual velocity: %ld\n", desired_velocity, velocity);
-	sprintf(buf, "velocity: %ld\n", velocity);
+//	sprintf(buf, "desired velocity: " _PRId32 "   actual velocity: " _PRId32 "\n", desired_velocity, velocity);
+	sprintf(buf, "velocity: " _PRId32 "\n", velocity);
 	print_debug_string(buf);
 }
 
@@ -1335,7 +1358,7 @@ void print_hall_position_delta_stats(void)
 	int32_t ahpd = average_hall_position_delta;
 	int32_t ahpd_count = average_hall_position_delta_count;
 	ahpd /= ahpd_count;
-	sprintf(buf, "max_hall_position_delta: %ld   min_hall_position_delta: %ld  avg_hall_position_delta: %ld\n", max_hall_position_delta, min_hall_position_delta, ahpd);
+	sprintf(buf, "max_hall_position_delta: " _PRId32 "   min_hall_position_delta: " _PRId32 "  avg_hall_position_delta: " _PRId32 "\n", max_hall_position_delta, min_hall_position_delta, ahpd);
 	print_debug_string(buf);
 	max_hall_position_delta = -2000000000;
 	min_hall_position_delta = 2000000000;
@@ -1355,10 +1378,10 @@ void print_commutation_position_offset(void)
 {
 	char buf[100];
 	if(!global_settings.motor_phases_reversed) {
-		sprintf(buf, "Commutation position offset: %lu (phases not reversed)\n", commutation_position_offset);
+		sprintf(buf, "Commutation position offset: " _PRIu32 " (phases not reversed)\n", commutation_position_offset);
 	}
 	else {
-		sprintf(buf, "Commutation position offset: %lu (phases reversed)\n", commutation_position_offset);
+		sprintf(buf, "Commutation position offset: " _PRIu32 " (phases reversed)\n", commutation_position_offset);
 	}
 	print_debug_string(buf);
 }
@@ -1384,10 +1407,10 @@ void print_hall_sensor_data(void)
 	print_debug_string(buf);
 
 	if(!global_settings.motor_phases_reversed) {
-		sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu (phases not reversed)\n", hall_position, commutation_position_offset);
+		sprintf(buf, "hall_position: " _PRId32 "   commutation_position_offset: " _PRIu32 " (phases not reversed)\n", hall_position, commutation_position_offset);
 	}
 	else {
-		sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu (phases reversed)\n", hall_position, commutation_position_offset);
+		sprintf(buf, "hall_position: " _PRId32 "   commutation_position_offset: " _PRIu32 " (phases reversed)\n", hall_position, commutation_position_offset);
 	}
 	print_debug_string(buf);
 }
@@ -1455,17 +1478,17 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 		if(movement_type == MOVE_WITH_ACCELERATION) {
 	        movement_queue[queue_write_position].acceleration = parameter;
     	    movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
-            if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
+            if(llabs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
 	            fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
             }
 			predicted_final_velocity = velocity_after_last_queue_item + movement_queue[queue_write_position].acceleration * n_time_steps;
-//			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+//			sprintf(buf, "Predicted final velocity: " _PRId32 "\n", (int32_t)(predicted_final_velocity >> 32));
 //			print_debug_string(buf);
-			if(abs(predicted_final_velocity) > max_velocity) {
+			if(llabs(predicted_final_velocity) > max_velocity) {
 				fatal_error(28); // "predicted velocity too high" (all error text is defined in error_text.c)
 			}
 			predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
-//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//			sprintf(buf, "Predicted final position: " _PRId32 "\n", (int32_t)(predicted_final_position >> 32));
 //			print_debug_string(buf);
 			if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
 				fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
@@ -1475,11 +1498,11 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 			}
 			else {
 				int64_t time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
-//				sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+//				sprintf(buf, "time_at_turn_point: " _PRIu32 "\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
 //				print_debug_string(buf);
 				if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
 					int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-//					sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+//					sprintf(buf, "relative_position_at_turn_point: " _PRId32 "\n", (int32_t)(relative_position_at_turn_point >> 32));
 //					print_debug_string(buf);
 					int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
 					if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
@@ -1495,13 +1518,13 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 	        movement_queue[queue_write_position].velocity = parameter;
     	    movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
 			predicted_final_velocity = movement_queue[queue_write_position].velocity;
-//			sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+//			sprintf(buf, "Predicted final velocity: " _PRId32 "\n", ((int32_t*)&predicted_final_velocity)[1]);
 //			print_debug_string(buf);
-            if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
+            if(llabs(movement_queue[queue_write_position].velocity) > max_velocity) {
 	            fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
             }
 			predicted_final_position = position_after_last_queue_item + movement_queue[queue_write_position].velocity * n_time_steps;
-//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//			sprintf(buf, "Predicted final position: " _PRId32 "\n", (int32_t)(predicted_final_position >> 32));
 //			print_debug_string(buf);
 		}
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
@@ -1534,17 +1557,17 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 	if(movement_type == MOVE_WITH_ACCELERATION) {
 		movement_queue_queue_write_position_acceleration = parameter;
 		movement_queue_queue_write_position_acceleration <<= ACCELERATION_SHIFT_LEFT;
-		if(abs(movement_queue_queue_write_position_acceleration) > max_acceleration) {
+		if(llabs(movement_queue_queue_write_position_acceleration) > max_acceleration) {
 			fatal_error(15); // "accel too high" (all error text is defined in error_text.c)
 		}
 		predicted_final_velocity = velocity_after_last_queue_item + movement_queue_queue_write_position_acceleration * n_time_steps;
-		sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+		sprintf(buf, "Predicted final velocity: " _PRId32 "\n", (int32_t)(predicted_final_velocity >> 32));
 		print_debug_string(buf);
-		if(abs(predicted_final_velocity) > max_velocity) {
+		if(llabs(predicted_final_velocity) > max_velocity) {
 			fatal_error(28); // "predicted velocity too high" (all error text is defined in error_text.c)
 		}
 		predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue_queue_write_position_acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
-		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+		sprintf(buf, "Predicted final position: " _PRId32 "\n", (int32_t)(predicted_final_position >> 32));
 		print_debug_string(buf);
 		if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
 			fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
@@ -1554,11 +1577,11 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 		}
 		else {
 			time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue_queue_write_position_acceleration);
-			sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+			sprintf(buf, "time_at_turn_point: " _PRIu32 "\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
 			print_debug_string(buf);
 			if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
 				relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-				sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+				sprintf(buf, "relative_position_at_turn_point: " _PRId32 "\n", (int32_t)(relative_position_at_turn_point >> 32));
 				print_debug_string(buf);
 				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
 				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
@@ -1574,13 +1597,13 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 		movement_queue_queue_write_position_velocity = parameter;
 		movement_queue_queue_write_position_velocity <<= VELOCITY_SHIFT_LEFT;
 		predicted_final_velocity = movement_queue_queue_write_position_velocity;
-		sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+		sprintf(buf, "Predicted final velocity: " _PRId32 "\n", ((int32_t*)&predicted_final_velocity)[1]);
 		print_debug_string(buf);
-		if(abs(movement_queue_queue_write_position_velocity) > max_velocity) {
+		if(llabs(movement_queue_queue_write_position_velocity) > max_velocity) {
 			fatal_error(16); // "vel too high" (all error text is defined in error_text.c)
 		}
 		predicted_final_position = position_after_last_queue_item + movement_queue_queue_write_position_velocity * n_time_steps;
-		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+		sprintf(buf, "Predicted final position: " _PRId32 "\n", (int32_t)(predicted_final_position >> 32));
 		print_debug_string(buf);
 	}
 	position_after_last_queue_item = predicted_final_position;
@@ -2030,58 +2053,7 @@ void motor_movement_calculations(void)
 		fatal_error(25); // "safety limit exceeded" (all error text is defined in error_text.c)
 	}
 
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
-	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
-		commutation_position = current_position.i32[1] + commutation_position_offset;
-		if(calibration_step != 0 ) {
-			motor_pwm_voltage = desired_motor_pwm_voltage;
-		}
-		else if(moving) {
-			motor_pwm_voltage = max_motor_pwm_voltage;
-		}
-		else {
-			motor_pwm_voltage = max_motor_pwm_voltage >> 1;
-		}
-	}
-	else {
-		commutation_position = sensor_position + commutation_position_offset;
-		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-			desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
-			if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
-				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
-			}
-			else if(desired_motor_pwm_voltage < -HALL_TO_POSITION_90_DEGREE_OFFSET) {
-				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-			}
-			else {
-				commutation_position += desired_motor_pwm_voltage;
-			}
-			desired_motor_pwm_voltage >>= PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT;
-			if(desired_motor_pwm_voltage >= 0) {
-				motor_pwm_voltage = desired_motor_pwm_voltage;
-			}
-			else {
-				motor_pwm_voltage = -desired_motor_pwm_voltage;
-			}
-			if(motor_pwm_voltage > max_motor_pwm_voltage) {
-				motor_pwm_voltage = max_motor_pwm_voltage;
-			}
-		}
-		else {
-			if(desired_motor_pwm_voltage > 0) {
-				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
-				motor_pwm_voltage = desired_motor_pwm_voltage;
-			}
-			else if(desired_motor_pwm_voltage < 0) {
-				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-				motor_pwm_voltage = -desired_motor_pwm_voltage;
-			}
-			else {
-				motor_pwm_voltage = 0;
-			}
-		}
-	}
-#else
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 		commutation_position = current_position.i32[1] + commutation_position_offset;
 		if(vibration_active) {
@@ -2138,6 +2110,115 @@ void motor_movement_calculations(void)
 		}
 	}
 #endif
+
+#if defined(PRODUCT_NAME_M3)
+	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
+		commutation_position = current_position.i32[1] + commutation_position_offset;
+		if(calibration_step != 0 ) {
+			motor_pwm_voltage = desired_motor_pwm_voltage;
+		}
+		else if(moving) {
+			motor_pwm_voltage = max_motor_pwm_voltage;
+		}
+		else {
+			motor_pwm_voltage = max_motor_pwm_voltage >> 1;
+		}
+	}
+	else {
+		commutation_position = sensor_position + commutation_position_offset;
+		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+			desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
+			if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
+				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+			}
+			else if(desired_motor_pwm_voltage < -HALL_TO_POSITION_90_DEGREE_OFFSET) {
+				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+			}
+			else {
+				commutation_position += desired_motor_pwm_voltage;
+			}
+			desired_motor_pwm_voltage >>= PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT;
+			if(desired_motor_pwm_voltage >= 0) {
+				motor_pwm_voltage = desired_motor_pwm_voltage;
+			}
+			else {
+				motor_pwm_voltage = -desired_motor_pwm_voltage;
+			}
+			if(motor_pwm_voltage > max_motor_pwm_voltage) {
+				motor_pwm_voltage = max_motor_pwm_voltage;
+			}
+		}
+		else {
+			if(desired_motor_pwm_voltage > 0) {
+				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = desired_motor_pwm_voltage;
+			}
+			else if(desired_motor_pwm_voltage < 0) {
+				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = -desired_motor_pwm_voltage;
+			}
+			else {
+				motor_pwm_voltage = 0;
+			}
+		}
+	}
+#endif
+
+#if defined(PRODUCT_NAME_M4)
+	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
+		commutation_position = current_position.i32[1] + commutation_position_offset;
+		if(calibration_step != 0 ) {
+			motor_pwm_voltage = desired_motor_pwm_voltage;
+		}
+		else if(moving) {
+			int32_t back_emf_voltage = labs((((int32_t*)&current_velocity_i64)[1] * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8);
+			motor_pwm_voltage = max_motor_pwm_voltage + back_emf_voltage;
+//			printf("back_emf_voltage = %d   max_motor_pwm_voltage = %d   motor_pwm_voltage = %d\n", back_emf_voltage, max_motor_pwm_voltage, motor_pwm_voltage);
+		}
+		else {
+			motor_pwm_voltage = max_motor_pwm_voltage >> 1;
+//			printf("max_motor_pwm_voltage = %d   motor_pwm_voltage = %d\n", max_motor_pwm_voltage, motor_pwm_voltage);
+		}
+	}
+	else {
+		commutation_position = sensor_position + commutation_position_offset;
+		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+			motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
+			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
+
+			back_emf_voltage = 0;
+			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_motor_pwm_voltage;
+			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_motor_pwm_voltage;
+			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
+				motor_pwm_voltage = motor_max_allowed_pwm_voltage;
+			}
+			if(motor_pwm_voltage < motor_min_allowed_pwm_voltage) {
+				motor_pwm_voltage = motor_min_allowed_pwm_voltage;
+			}
+			if(motor_pwm_voltage >= 0) {
+				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+			}
+			else {
+				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = -motor_pwm_voltage;
+			}
+		}
+		else {
+			if(desired_motor_pwm_voltage > 0) {
+				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = desired_motor_pwm_voltage;
+			}
+			else if(desired_motor_pwm_voltage < 0) {
+				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+				motor_pwm_voltage = -desired_motor_pwm_voltage;
+			}
+			else {
+				motor_pwm_voltage = 0;
+			}
+		}
+	}
+#endif
+
 }
 
 
@@ -2162,7 +2243,7 @@ void motor_phase_calculations(void)
 	}
 
     commutation_step = (commutation_position >> N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) % N_COMMUTATION_STEPS;
-    commutation_sub_step = (commutation_position & 0xff) >> (8 - N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT);
+    commutation_sub_step = (commutation_position & ((1 << N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) - 1));
 
     phase1 = commutation_lookup_table[commutation_step].phase1;
     phase2 = commutation_lookup_table[commutation_step].phase2;
@@ -2296,13 +2377,15 @@ void motor_phase_calculations(void)
     static int32_t tmp32bit;
 
 	if(is_mosfets_enabled() == 0) {
-		TIM1->CCR1 = 0; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
+		TIM1->CCR1 = 0;
 		TIM1->CCR2 = 0;
+		TIM3->CCR1 = 0;
+		TIM3->CCR2 = 0;
 		return;
 	}
 
     commutation_step = (commutation_position >> N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) % N_COMMUTATION_STEPS;
-    commutation_sub_step = (commutation_position & 0xff) >> (8 - N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT);
+    commutation_sub_step = (commutation_position & ((1 << N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT) - 1));
 
     phase1 = commutation_lookup_table[commutation_step].phase1;
     phase2 = commutation_lookup_table[commutation_step].phase2;
@@ -2319,66 +2402,75 @@ void motor_phase_calculations(void)
     tmp32bit >>= N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT;
     phase2 = phase2 + tmp32bit;
 
+	// Here we compensate for the supply voltage. The higher is the supply voltage, the lower we will set the PWM to to get the same resulting motor voltage.
+	int16_t supply_voltage = get_supply_voltage_ADC_value();
+	motor_pwm_voltage = (motor_pwm_voltage << 12) / supply_voltage;
+
 	if(phase1 >= (MAX_PHASE_VALUE >> 1)) {
 		phase1 -= (MAX_PHASE_VALUE >> 1);
+		phase1 >>= 8;
+		phase1 *= (uint32_t)motor_pwm_voltage;
+		phase1 >>= 15;
+		if(phase1 > 1024) {
+			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
+		}
 		if(!global_settings.motor_phases_reversed) {
-		    GPIOA->BSRR = (1 << 0); // set MOSFETs to output high on the motor AOUT1 line
-    		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
+			TIM1->CCR1 = phase1;
+			TIM1->CCR2 = 0;
 		}
 		else {
-		    GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
-    		GPIOA->BSRR = (1 << 15); // set MOSFETs to output high on the motor AOUT2 line
+			TIM1->CCR1 = 0;
+			TIM1->CCR2 = phase1;
 		}
 	}
 	else {
 		phase1 = (MAX_PHASE_VALUE >> 1) - phase1;
+		phase1 >>= 8;
+		phase1 *= (uint32_t)motor_pwm_voltage;
+		phase1 >>= 15;
+		if(phase1 > 1024) {
+			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
+		}
 		if(!global_settings.motor_phases_reversed) {
-		    GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
-    		GPIOA->BSRR = (1 << 15); // set MOSFETs to output high on the motor AOUT2 line
+			TIM1->CCR1 = 0;
+			TIM1->CCR2 = phase1;
 		}
 		else {
-		    GPIOA->BSRR = (1 << 0); // set MOSFETs to output high on the motor AOUT1 line
-    		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
+			TIM1->CCR1 = phase1;
+			TIM1->CCR2 = 0;
 		}
 	}
 
 	if(phase2 >= (MAX_PHASE_VALUE >> 1)) {
 		phase2 -= (MAX_PHASE_VALUE >> 1);
-	    GPIOB->BSRR = (1 << 4); // set MOSFETs to output high on the motor BOUT1 line
-    	GPIOB->BSRR = ((1 << 5) << 16); // set MOSFETs to output low on the motor BOUT2 line
+		phase2 >>= 8;
+		phase2 *= (uint32_t)motor_pwm_voltage;
+		phase2 >>= 15;
+		if(phase2 > 1024) {
+			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
+		}
+		TIM3->CCR1 = phase2;
+		TIM3->CCR2 = 0;
 	}
 	else {
 		phase2 = (MAX_PHASE_VALUE >> 1) - phase2;
-	    GPIOB->BSRR = ((1 << 4) << 16); // set MOSFETs to output low on the motor BOUT1 line
-    	GPIOB->BSRR = (1 << 5); // set MOSFETs to output high on the motor BOUT2 line
+		phase2 >>= 8;
+		phase2 *= (uint32_t)motor_pwm_voltage;
+		phase2 >>= 15;
+		if(phase2 > 1024) {
+			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
+		}
+		TIM3->CCR1 = 0;
+		TIM3->CCR2 = phase2;
 	}
-
-    phase1 >>= 8;
-    phase1 *= (uint32_t)motor_pwm_voltage;
-    phase1 >>= 17;
-
-    phase2 >>= 8;
-    phase2 *= (uint32_t)motor_pwm_voltage;
-    phase2 >>= 17;
-
-	TIM1->CCR1 = phase1;
-	TIM1->CCR2 = phase2;
 }
 #endif
 
 
 #define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 20000
-void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
+//void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
+void TIM16_IRQHandler(void)
 {
-	#ifdef PRODUCT_NAME_M4
-	static uint8_t skip_this_many = 0;
-	if(skip_this_many > 0) {
-		skip_this_many--;
-		TIM1->SR = 0; // clear the interrupt flag
-		return;
-	}
-	skip_this_many = 3;
-	#endif
 	profiler_start_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
 
 #ifdef GC6609
@@ -2445,7 +2537,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
 	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
 		if(hall_position_delta_violation == 0) {
-			hall_position_delta_violation = 1;
+			hall_position_delta_violation = 1; // we allow one violation only (which happens on startup). next time it will be a fatal error
 		}
 		else {
 			disable_mosfets();
@@ -2498,7 +2590,7 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 
 	profiler_end_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
 
-	TIM1->SR = 0; // clear the interrupt flag
+	TIM16->SR = 0; // clear the interrupt flag
 }
 
 
@@ -2514,7 +2606,7 @@ void increase_commutation_offset(void)
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	commutation_position_offset += ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS + 50) / 100); // the + 50 is for rounding
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-	sprintf(buf, "commutation_position_offset: %lu\n", commutation_position_offset);
+	sprintf(buf, "commutation_position_offset: " _PRIu32 "\n", commutation_position_offset);
 	print_debug_string(buf);
 }
 
@@ -2525,7 +2617,7 @@ void decrease_commutation_offset(void)
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	commutation_position_offset -= ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS + 50) / 100); // the + 50 is for rounding
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
-	sprintf(buf, "commutation_position_offset: %lu\n", commutation_position_offset);
+	sprintf(buf, "commutation_position_offset: " _PRIu32 "\n", commutation_position_offset);
 	print_debug_string(buf);
 }
 
@@ -2644,6 +2736,11 @@ int32_t get_max_acceleration(void)
 int32_t get_current_position(void)
 {
 	return current_position.i32[1];
+}
+
+int32_t get_current_velocity(void)
+{
+	return ((int32_t*)&current_velocity_i64)[1];
 }
 
 void reset_time(void)
@@ -2806,7 +2903,9 @@ void check_current_sensor_and_enable_mosfets(void)
 //	for(delay = 0; delay < 1000000; delay++);
 
 }
-#else
+#endif
+
+#if defined(PRODUCT_NAME_M3)
 void check_current_sensor_and_enable_mosfets(void)
 {
 	if(is_mosfets_enabled()) {
@@ -2816,6 +2915,34 @@ void check_current_sensor_and_enable_mosfets(void)
 	TIM1->CCR1 = 0;
 	print_debug_string("Enabling MOSFETs\n");
 	enable_mosfets();
+}
+#endif
+
+#if defined(PRODUCT_NAME_M4)
+void check_current_sensor_and_enable_mosfets(void)
+{
+	char buf[100];
+
+	if(is_mosfets_enabled()) {
+		print_debug_string("MOSFETs already enabled\n");
+		return;
+	}
+	TIM1->CCR1 = 0;
+	TIM1->CCR2 = 0;
+	TIM3->CCR1 = 0;
+	TIM3->CCR2 = 0;
+
+	motor_current_baseline = get_motor_current();
+	sprintf(buf, "motor_current_baseline: %hu\n", motor_current_baseline);
+
+	if((motor_current_baseline < MIN_MOTOR_CURRENT_BASELINE) || (motor_current_baseline > MAX_MOTOR_CURRENT_BASELINE)) {
+		fatal_error(22); // "current sensor failed". All error messages are defined in error_text.c
+	}
+	calculate_and_set_analog_watchdog_limits();
+
+	enable_mosfets();
+
+	print_debug_string("Enabled MOSFETs\n");
 }
 #endif
 

@@ -8,7 +8,12 @@
 #ifndef SRC_STEP_DIRECTION_INPUT_H_
 #define SRC_STEP_DIRECTION_INPUT_H_
 
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M3)
 #define OVERVOLTAGE_PROTECTION_SETTING 26
+#endif
+#if defined(PRODUCT_NAME_M4)
+#define OVERVOLTAGE_PROTECTION_SETTING 38
+#endif
 
 void overvoltage_init(void);
 void step_and_direction_init(void);

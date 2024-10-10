@@ -208,7 +208,7 @@
                 "TooltipDisplayFormat": "%b"
             },
             {
-                "Description": "u8: The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the SYSTEM_RESET_COMMAND to get out of the fatal error state.",
+                "Description": "u8: The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the System reset command to get out of the fatal error state.",
                 "TooltipDisplayFormat": "%u"
             }
         ]

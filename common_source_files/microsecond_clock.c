@@ -17,7 +17,7 @@ void microsecond_clock_init(void)
     TIM14->DIER = TIM_DIER_UIE; // enable the interrupt for the update event (overflow)
     TIM14->CR1 = TIM_CR1_CEN | TIM_CR1_UIFREMAP; // enable the timer and remap the rollover bit to bit 31 of the counter
     TIM14->EGR |= TIM_EGR_UG; // do an update (load and clear the prescaler)
-    NVIC_SetPriority(TIM14_IRQn, 1);
+    NVIC_SetPriority(TIM14_IRQn, 2); // third highest priority. we can accept that this is handled at a lower priority than the motor control interrupt
     NVIC_EnableIRQ(TIM14_IRQn); // enable the interrupt to this timer
 }
 

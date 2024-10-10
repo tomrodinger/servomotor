@@ -44,6 +44,8 @@ char error_text[] =
     "overheat\0"                              // error 40
     "test mode active\0"                      // error 41
     "position discrepancy\0"                  // error 42
+    "overcurrent\0"                           // error 43
+    "PWM too high\0"                          // error 44
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

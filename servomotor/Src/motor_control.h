@@ -72,6 +72,7 @@
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
+void motor_control_init(void);
 void reset_time_profiler(void);
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
 void start_calibration(uint8_t print_output);
@@ -117,6 +118,7 @@ void zero_position(void);
 void set_max_velocity(uint32_t new_max_velocity);
 int32_t get_max_velocity(void);
 int32_t get_current_position(void);
+int32_t get_current_velocity(void);
 void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);

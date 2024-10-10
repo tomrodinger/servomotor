@@ -13,6 +13,7 @@ MODE = PURE_SINE_MODE
 SIMPLE_TABLE = 0
 N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT = None
 N_PHASES = None
+SINE_EXPONENT = 1.0
 
 # Get the product name from the command line. The product name is something like M1, M2, M3, M4, etc.
 # If the product name is not specified, then print out an error message and give the user a list of
@@ -60,6 +61,7 @@ elif product_name == "M4":
     N_PHASES = 2
     ANGLE_BETWEEN_PHASES = 90.0
     START_ANGLE = 0.0
+    SINE_EXPONENT = 1.0
 else:
     print("Error: unsupported product name:", product_name)
     print("You should update this executable and create a SETTINGS_product-name.py file")
@@ -80,6 +82,15 @@ def six_step_function(angle):
         return -1.0
     else:
         return 0.0
+
+
+def exponent_keep_sign(x, exponent):
+    if x > 0.0:
+        return math.pow(x, exponent)
+    elif x < 0.0:
+        return -math.pow(-x, exponent)
+    else:
+        return 0.0
     
 
 if N_PHASES:
@@ -95,9 +106,9 @@ if N_PHASES:
             phase2 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 1.0)
             phase3 = (AMPLITUDE / 2.0) * six_step_function(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 2.0)
         else:
-            phase1 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 0.0)  
-            phase2 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 1.0)
-            phase3 = (AMPLITUDE / 2.0) * math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 2.0)
+            phase1 = (AMPLITUDE / 2.0) * exponent_keep_sign(math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 0.0), SINE_EXPONENT)
+            phase2 = (AMPLITUDE / 2.0) * exponent_keep_sign(math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 1.0), SINE_EXPONENT)
+            phase3 = (AMPLITUDE / 2.0) * exponent_keep_sign(math.sin(angle / 180.0 * math.pi - ANGLE_BETWEEN_PHASES_RADIANS * 2.0), SINE_EXPONENT)
         min_phase = min(phase1, phase2, phase3)
         if MODE != PURE_SINE_MODE:
             adjustment = -min_phase

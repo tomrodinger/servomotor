@@ -26,7 +26,7 @@ uint16_t get_hall_sensor3_voltage(void);
 uint16_t get_motor_current(void);
 uint16_t get_temperature_ADC_value(void);
 uint16_t get_supply_voltage_ADC_value(void);
-uint16_t get_supply_voltage_volts_time_10(void);
+uint16_t get_supply_voltage_volts_times_10(void);
 void print_supply_voltage(void);
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit);
 
