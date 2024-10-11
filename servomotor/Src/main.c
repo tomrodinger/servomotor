@@ -967,7 +967,9 @@ int main(void)
     debug_uart_init();
     rs485_init();
     adc_init();
+    #ifndef PRODUCT_NAME_M4
     pwm_init();
+    #endif
     motor_control_init();
     overvoltage_init();
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)

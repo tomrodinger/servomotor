@@ -30,10 +30,6 @@ void disable_mosfets(void)
     GPIOB->BSRR = (1 << 0);
     #endif
     #ifdef PRODUCT_NAME_M4
-    TIM1->CCR1 = 0;
-    TIM1->CCR2 = 0;
-    TIM3->CCR1 = 0;
-    TIM3->CCR2 = 0;
     GPIOA->BSRR = ((1 << 1) << 16);
     #endif
     mosfets_enabled = 0;

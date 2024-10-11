@@ -53,7 +53,8 @@
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #endif
 #ifdef PRODUCT_NAME_M4
-#define VOLTS_PER_ROTATIONAL_VELOCITY 700
+//#define VOLTS_PER_ROTATIONAL_VELOCITY 700 // DEBUG commented out
+#define VOLTS_PER_ROTATIONAL_VELOCITY 0 // DEBUG
 #endif
 //#define DO_DETAILED_PROFILING
 #define UINT32_MIDPOINT 2147483648
@@ -2377,10 +2378,7 @@ void motor_phase_calculations(void)
     static int32_t tmp32bit;
 
 	if(is_mosfets_enabled() == 0) {
-		TIM1->CCR1 = 0;
-		TIM1->CCR2 = 0;
-		TIM3->CCR1 = 0;
-		TIM3->CCR2 = 0;
+		set_hysteretic_motor_current_to_off();
 		return;
 	}
 
@@ -2406,63 +2404,12 @@ void motor_phase_calculations(void)
 	int16_t supply_voltage = get_supply_voltage_ADC_value();
 	motor_pwm_voltage = (motor_pwm_voltage << 12) / supply_voltage;
 
-	if(phase1 >= (MAX_PHASE_VALUE >> 1)) {
-		phase1 -= (MAX_PHASE_VALUE >> 1);
-		phase1 >>= 8;
-		phase1 *= (uint32_t)motor_pwm_voltage;
-		phase1 >>= 15;
-		if(phase1 > 1024) {
-			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
-		}
-		if(!global_settings.motor_phases_reversed) {
-			TIM1->CCR1 = phase1;
-			TIM1->CCR2 = 0;
-		}
-		else {
-			TIM1->CCR1 = 0;
-			TIM1->CCR2 = phase1;
-		}
-	}
-	else {
-		phase1 = (MAX_PHASE_VALUE >> 1) - phase1;
-		phase1 >>= 8;
-		phase1 *= (uint32_t)motor_pwm_voltage;
-		phase1 >>= 15;
-		if(phase1 > 1024) {
-			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
-		}
-		if(!global_settings.motor_phases_reversed) {
-			TIM1->CCR1 = 0;
-			TIM1->CCR2 = phase1;
-		}
-		else {
-			TIM1->CCR1 = phase1;
-			TIM1->CCR2 = 0;
-		}
-	}
-
-	if(phase2 >= (MAX_PHASE_VALUE >> 1)) {
-		phase2 -= (MAX_PHASE_VALUE >> 1);
-		phase2 >>= 8;
-		phase2 *= (uint32_t)motor_pwm_voltage;
-		phase2 >>= 15;
-		if(phase2 > 1024) {
-			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
-		}
-		TIM3->CCR1 = phase2;
-		TIM3->CCR2 = 0;
-	}
-	else {
-		phase2 = (MAX_PHASE_VALUE >> 1) - phase2;
-		phase2 >>= 8;
-		phase2 *= (uint32_t)motor_pwm_voltage;
-		phase2 >>= 15;
-		if(phase2 > 1024) {
-			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
-		}
-		TIM3->CCR1 = 0;
-		TIM3->CCR2 = phase2;
-	}
+	int32_t phase1_int32 = phase1;
+	phase1_int32 -= (MAX_PHASE_VALUE >> 1);
+	phase1_int32 >>= 8;
+	phase1_int32 *= (int32_t)motor_pwm_voltage;
+	phase1_int32 >>= 15;
+	set_hysteretic_motor_current(phase1_int32);
 }
 #endif
 
@@ -2489,7 +2436,9 @@ void TIM16_IRQHandler(void)
 #ifdef DO_DETAILED_PROFILING
 	profiler_start_time(GET_SENSOR_POSITION_PROFILER);
 #endif
-	get_sensor_position_return = get_sensor_position();
+//	get_sensor_position_return = get_sensor_position(); // DEBUG commented out
+	get_sensor_position_return.position = 0; // DEBUG
+	get_sensor_position_return.change = 0;   // DEBUG
 #ifdef DO_DETAILED_PROFILING
 	profiler_end_time(GET_SENSOR_POSITION_PROFILER);
 #endif
@@ -2849,9 +2798,9 @@ void set_max_motor_current(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_
 		fatal_error(23);
 	}
 	recompute_pid_parameters_and_set_pwm_voltage(new_max_motor_pwm_voltage, new_max_motor_regen_pwm_voltage);
-//#ifndef PRODUCT_NAME_M3
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 	calculate_and_set_analog_watchdog_limits();
-//#endif
+#endif
 }
 
 
@@ -2927,10 +2876,6 @@ void check_current_sensor_and_enable_mosfets(void)
 		print_debug_string("MOSFETs already enabled\n");
 		return;
 	}
-	TIM1->CCR1 = 0;
-	TIM1->CCR2 = 0;
-	TIM3->CCR1 = 0;
-	TIM3->CCR2 = 0;
 
 	motor_current_baseline = get_motor_current();
 	sprintf(buf, "motor_current_baseline: %hu\n", motor_current_baseline);
@@ -2938,9 +2883,10 @@ void check_current_sensor_and_enable_mosfets(void)
 	if((motor_current_baseline < MIN_MOTOR_CURRENT_BASELINE) || (motor_current_baseline > MAX_MOTOR_CURRENT_BASELINE)) {
 		fatal_error(22); // "current sensor failed". All error messages are defined in error_text.c
 	}
-	calculate_and_set_analog_watchdog_limits();
+	set_motor_current_baseline(motor_current_baseline);
 
 	enable_mosfets();
+	turn_on_mosfet_for_first_time();
 
 	print_debug_string("Enabled MOSFETs\n");
 }

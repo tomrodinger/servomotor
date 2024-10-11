@@ -9,8 +9,11 @@
 #include "debug_uart.h"
 
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
+#define EXPECTED_MOTOR_CURRENT_BASELINE 1152
 
 #define MAX_UINT16 ((1 << 16) - 1)
+
+uint16_t hysteretic_motor_current = 0;
 
 void adc_init(void)
 {
@@ -84,5 +87,26 @@ void print_supply_voltage(void)
 
 
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
+{
+}
+
+
+void turn_on_mosfet_for_first_time(void)
+{
+}
+
+
+void set_hysteretic_motor_current(uint16_t new_hysteretic_motor_current)
+{
+	hysteretic_motor_current = new_hysteretic_motor_current;
+}
+
+
+uint16_t get_motor_current(void)
+{
+	return EXPECTED_MOTOR_CURRENT_BASELINE;
+}
+
+void set_hysteretic_motor_current_to_off(void)
 {
 }

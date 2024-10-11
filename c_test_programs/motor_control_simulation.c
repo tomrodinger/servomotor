@@ -16,6 +16,8 @@
 #define MAX_TIME 320000
 
 void TIM16_IRQHandler(void);
+extern uint16_t hysteretic_motor_current;
+
 
 double max_velocity = 21532835718365;
 double max_acceleration = 10133099161;
@@ -93,7 +95,7 @@ int main(void)
     // Write header to file
     fprintf(fp, "# TimeStep CurrentPosition CurrentVelocity TIM1_CH1 TIM1_CH2 TIM3_CH1 TIM3_CH2\n");
 
-    set_max_motor_current(500, 500);
+    set_max_motor_current(200, 200);
     enable_mosfets();
 
     uint32_t n_random_moves = 0;
@@ -104,7 +106,7 @@ int main(void)
             int32_t total_displacement = (rand() % (2 * MAX_DISPLACEMENT + 1)) - MAX_DISPLACEMENT;
             // For the time, choose a random number between 0 and MAX_TIME
             uint32_t time_for_move = rand() % (MAX_TIME + 1);
-            total_displacement = 52000000;
+            total_displacement = 100000;
             time_for_move = 64000;
             add_trapezoid_move_to_queue_simulated(total_displacement, time_for_move);
             add_trapezoid_move_to_queue(total_displacement, time_for_move);
@@ -114,7 +116,7 @@ int main(void)
         int32_t current_position = get_current_position();
         int32_t current_velocity = get_current_velocity();
         // Log data to file
-        fprintf(fp, "%u %d %d %u %u %u %u\n", time_step, current_position, current_velocity, TIM1->CCR1, TIM1->CCR2, TIM3->CCR1, TIM3->CCR2);
+        fprintf(fp, "%u %d %d %u\n", time_step, current_position, current_velocity, hysteretic_motor_current);
         time_step++;
         if (n_items_in_queue != 0) {
             min_time_steps = time_step + EXTRA_TIME_STEPS_AFTER_QUEUE_EMPTY;

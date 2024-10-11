@@ -11,7 +11,6 @@ void fatal_error(uint16_t error_code)
   void adjust_hall_sensor_readings(void) {}
   void bound_the_sensor_position(void) {}
   void get_microsecond_time(void) {}
-  void get_motor_current(void) {}
   void get_sensor_position(void) {}
   void global_settings(void) {}
   void print_debug_counter(void) {}

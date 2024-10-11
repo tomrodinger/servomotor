@@ -15,7 +15,7 @@ static void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // Hall sensor 1 analog input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // Hall sensor 2 analog input
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // Hall sensor 3 analog input
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE8_Pos)  | // Motor phase A voltage control PWM output (TIM1_CH1)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE8_Pos)  | // Motor phase A voltage control PWM output (TIM1_CH1)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  | // Don't use. Might be connected tp PA11 internally
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting PWM output (to set the overvoltage threshold) by TIM1_CH4
@@ -37,6 +37,7 @@ static void portA_init(void)
     GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
     GPIOA->BSRR = ((1 << 1) << 16); // set the MOSFET enable line low so that the motor driver is disabled to start with
+    GPIOA->BSRR = ((1 << 8) << 16); // set one of the lines low for controlling the MOSFET
 }
 
 
@@ -45,9 +46,9 @@ static void portB_init(void)
     GPIOB->MODER =
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE0_Pos)  | //
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // Motor phase A voltage control PWM output (TIM1_CH2)
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE4_Pos)  | // Motor phase B voltage control PWM output (TIM3_CH1)
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE5_Pos)  | // Motor phase B voltage control PWM output (TIM3_CH2)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE3_Pos)  | // Motor phase A voltage control PWM output (TIM1_CH2)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE4_Pos)  | // Motor phase B voltage control PWM output (TIM3_CH1)
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE5_Pos)  | // Motor phase B voltage control PWM output (TIM3_CH2)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE8_Pos)  | // Overvoltage digital input (will shut off motor driver very fast if trigered)
@@ -67,6 +68,9 @@ static void portB_init(void)
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOB->PUPDR = (PUPDR_PULL_UP   << GPIO_PUPDR_PUPD7_Pos) | // RX pin is pull up
                    (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos);  // overvoltage pin is pull down
+    GPIOB->BSRR = ((1 << 3) << 16); // set one of the lines low for controlling the MOSFET
+    GPIOB->BSRR = ((1 << 4) << 16); // set one of the lines low for controlling the MOSFET
+    GPIOB->BSRR = ((1 << 5) << 16); // set one of the lines low for controlling the MOSFET
 }
 
 

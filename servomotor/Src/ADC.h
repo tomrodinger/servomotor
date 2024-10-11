@@ -29,6 +29,12 @@ uint16_t get_supply_voltage_ADC_value(void);
 uint16_t get_supply_voltage_volts_times_10(void);
 void print_supply_voltage(void);
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit);
+void set_motor_current_baseline(uint16_t new_motor_current_baseline);
+void set_hysteretic_motor_current(int32_t new_hysteretic_motor_current);
+void set_hysteretic_motor_current_to_off(void);
+void turn_on_mosfet_for_first_time(void);
+
+
 
 
 #endif /* SRC_ADC_H_ */
