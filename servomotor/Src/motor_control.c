@@ -35,10 +35,14 @@
 
 #define MAX_HOMING_ERROR 50000
 
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
-#define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY PWM_PERIOD
-#else
-#define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY (300)
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
+#define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY 300
+#endif
+#if defined(PRODUCT_NAME_M3)
+#define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY 390
+#endif
+#if defined(PRODUCT_NAME_M4)
+#define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY PWM_PERIOD_TIM1
 #endif
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M3)
 #define ANALOG_WATCHDOG_LIMIT_MULTIPLIER 200
@@ -327,7 +331,7 @@ void motor_control_init(void)
 {
     RCC->APBENR2 |= RCC_APBENR2_TIM16EN; // enable the clock to TIM16
     TIM16->PSC = 0; // no prescaler
-    TIM16->ARR = PWM_PERIOD * 2;
+    TIM16->ARR = PWM_PERIOD_TIM16;
     TIM16->CR1 |= TIM_CR1_CEN;   // enable the counter
     TIM16->SR = 0; // clear all the interrupt flags
     TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
@@ -464,7 +468,7 @@ void start_calibration(uint8_t print_output)
 
 
 #if defined(PRODUCT_NAME_M3) && defined(GC6609)
-//	reset_GC6609();  // DEBUG commented out
+	reset_GC6609();
 #else
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
 #endif
@@ -1818,7 +1822,7 @@ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
 static int32_t max_integral_term = 0;
 static int32_t max_error = 0;
 static int32_t max_error_change = 0;
-#define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8
+#define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8 // 8 seems good
 
 
 void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_motor_regen_pwm_voltage)
@@ -2468,7 +2472,6 @@ void motor_phase_calculations(void)
 
 
 #define MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD 20000
-//void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 void TIM16_IRQHandler(void)
 {
 	profiler_start_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
@@ -2631,11 +2634,11 @@ void increase_motor_pwm_voltage(void)
 		desired_motor_pwm_voltage++;
 	}
 	else {
-		if(desired_motor_pwm_voltage < (PWM_PERIOD - MOTOR_PWM_VOLTAGE_MANUAL_STEP)) {
+		if(desired_motor_pwm_voltage < (PWM_PERIOD_TIM16 - MOTOR_PWM_VOLTAGE_MANUAL_STEP)) {
 			desired_motor_pwm_voltage += MOTOR_PWM_VOLTAGE_MANUAL_STEP;
 		}
 		else {
-			desired_motor_pwm_voltage = PWM_PERIOD;
+			desired_motor_pwm_voltage = PWM_PERIOD_TIM16;
 		}
 	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
@@ -2651,11 +2654,11 @@ void decrease_motor_pwm_voltage(void)
 		desired_motor_pwm_voltage--;
 	}
 	else {
-		if(desired_motor_pwm_voltage > -(PWM_PERIOD - MOTOR_PWM_VOLTAGE_MANUAL_STEP)) {
+		if(desired_motor_pwm_voltage > -(PWM_PERIOD_TIM16 - MOTOR_PWM_VOLTAGE_MANUAL_STEP)) {
 			desired_motor_pwm_voltage -= MOTOR_PWM_VOLTAGE_MANUAL_STEP;
 		}
 		else {
-			desired_motor_pwm_voltage = -PWM_PERIOD;
+			desired_motor_pwm_voltage = -PWM_PERIOD_TIM16;
 		}
 	}
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt

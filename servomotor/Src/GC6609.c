@@ -127,49 +127,8 @@ void Write_6609_REG(uint8_t WReg_addrr, uint32_t Write_data)
     Send_char(Write_data_temp, 8); // Send 8 bytes of data to 6609through serial port
 }
 
-void enable_128_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000000c5); // mstep_reg_select set to 1
-    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x11010053); // MRES set to 0x0001, which will enable 128 microstepping
-}
-
-void enable_64_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000001c1); // mstep_reg_select set to 1
-//    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x12010053); // MRES set to 0x0001, which will enable 128 microstepping
-}
-
-void enable_32_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000001c1); // mstep_reg_select set to 1
-//    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x13010053); // MRES set to 0x0001, which will enable 128 microstepping
-}
 
 void enable_16_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000001c1); // mstep_reg_select set to 1
-    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x14010053); // MRES set to 0x0001, which will enable 128 microstepping
-}
-
-void experimental_8_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000000c5); // mstep_reg_select set to 1
-    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x15010053); // set MRES
-}
-
-void experimental_16_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000000c5); // mstep_reg_select set to 1
-    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x14010053); // set MRES
-}
-
-void experimental_16_microstepping2(void)
 {
     #define EN_SC 1 // 1 means use SCC mode always, 0 means use SCC at high speed and SC2 at low speed
     #define MULTISTEP_FILT 0 // 0 = no filtering, 1 = filtering
@@ -182,10 +141,12 @@ void experimental_16_microstepping2(void)
 //    Write_6609_REG(0x70, 0xcf010e24); // set some PWM parameters
 
     #define INTPOL 0 // interpolate to 256 microsteps enable flag
-    #define TBL 2 // 2 bits, default is 2
+    #define TBL 2 // 2 bits, default is 2, blanking time 16, 24, 32 or 40 clocks
     #define MRES 4 // 1/16 microstepping
-    #define TOFF 3
-    Write_6609_REG(0x6c, 0x00000050 | (INTPOL << 28) | (TBL << 15) | (MRES << 24) | (TOFF << 0)); // intpol set to 0, set MRES to 1/16 microstepping
+    #define HEND 9 // default 0 (maps to -3)  0 to 15 maps to -3 to 12
+    #define HSTRT 7 // default 5 (maps to 6)  0 to 7 maps to 1 to 8    HEND+HSTRT=16
+    #define TOFF 1 // default 3 (don't use 0 because that will disable the driver. if using 1 then TBL should be >= 2), a lower value here seems to decrease high pitched sounds
+    Write_6609_REG(0x6c, (HSTRT << 4) | (HEND << 7) | (INTPOL << 28) | (TBL << 15) | (MRES << 24) | (TOFF << 0)); // intpol set to 0, set MRES to 1/16 microstepping
 
     #define PWM_LIM 12      // 4 bits (default 12)
     #define PWM_REG 8       // 4 bits (default 8)
@@ -207,21 +168,6 @@ void experimental_16_microstepping2(void)
     Write_6609_REG(0x13, (TPWMTHRS << 0));
 } 
 
-void experimental_32_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000000c5); // mstep_reg_select set to 1
-    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x13010053); // set MRES
-}
-
-
-void enable_8_microstepping(void)
-{
-    Write_6609_REG(0x00, 0x000001c1); // mstep_reg_select set to 1
-//    Write_6609_REG(0x6c, 0x14010053); // intpol set to 0
-    Write_6609_REG(0x6c, 0x15010053); // MRES set to 0x0001, which will enable 128 microstepping
-}
-
 
 void reset_chip(void)
 {
@@ -234,8 +180,7 @@ void reset_chip(void)
 // it using a sync byte at the beginning of each transmission.
 void init_GC6609_through_UART(void)
 {
-    experimental_16_microstepping2();
-//    enable_8_microstepping();
+    enable_16_microstepping();
 //    reset_chip();
 //    Write_6609_REG(0x22, 0x000000ff); // cause the motor to turn by itself without pulses to the step pin
 //    Write_6609_REG(0x00, 0x00000141); // HOLDEN input function disabled. Set this bit when using the UART interface!

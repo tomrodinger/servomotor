@@ -4,8 +4,6 @@
 #include "GPIO_interrupts.h"
 #include "motor_control.h"
 
-#define OVERVOLTAGE_PROTECTION_SETTING1 290
-#define OVERVOLTAGE_PROTECTION_SETTING2 12
 
 void pwm_init(void)
 {
@@ -31,7 +29,7 @@ void pwm_init(void)
 #endif
 
     TIM1->PSC = 0; // no prescaler
-    TIM1->ARR = PWM_PERIOD;
+    TIM1->ARR = PWM_PERIOD_TIM1;
     TIM1->CNT = 0;
 
 
