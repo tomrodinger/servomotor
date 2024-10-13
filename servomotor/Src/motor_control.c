@@ -2319,7 +2319,8 @@ void motor_phase_calculations(void)
     tmp32bit >>= N_COMMUTATION_SUB_STEPS_SHIFT_RIGHT;
     phase2 = phase2 + tmp32bit;
 
-	if(phase1 >= (MAX_PHASE_VALUE >> 1)) {
+	#define CURRENT_REVERSAL_OFFSET 0
+	if (phase1 >= (MAX_PHASE_VALUE >> 1) + CURRENT_REVERSAL_OFFSET) {
 		phase1 -= (MAX_PHASE_VALUE >> 1);
 		if(!global_settings.motor_phases_reversed) {
 		    GPIOA->BSRR = (1 << 0); // set MOSFETs to output high on the motor AOUT1 line
@@ -2330,7 +2331,7 @@ void motor_phase_calculations(void)
     		GPIOA->BSRR = (1 << 15); // set MOSFETs to output high on the motor AOUT2 line
 		}
 	}
-	else {
+	else if (phase1 <= (MAX_PHASE_VALUE >> 1) - CURRENT_REVERSAL_OFFSET) {
 		phase1 = (MAX_PHASE_VALUE >> 1) - phase1;
 		if(!global_settings.motor_phases_reversed) {
 		    GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
@@ -2341,16 +2342,24 @@ void motor_phase_calculations(void)
     		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
 		}
 	}
+	else {
+		GPIOA->BSRR = ((1 << 0) << 16); // set MOSFETs to output low on the motor AOUT1 line
+		GPIOA->BSRR = ((1 << 15) << 16); // set MOSFETs to output low on the motor AOUT2 line
+	}
 
-	if(phase2 >= (MAX_PHASE_VALUE >> 1)) {
+	if (phase2 >= (MAX_PHASE_VALUE >> 1) + CURRENT_REVERSAL_OFFSET) {
 		phase2 -= (MAX_PHASE_VALUE >> 1);
 	    GPIOB->BSRR = (1 << 4); // set MOSFETs to output high on the motor BOUT1 line
     	GPIOB->BSRR = ((1 << 5) << 16); // set MOSFETs to output low on the motor BOUT2 line
 	}
-	else {
+	else if (phase2 <= (MAX_PHASE_VALUE >> 1) - CURRENT_REVERSAL_OFFSET) {
 		phase2 = (MAX_PHASE_VALUE >> 1) - phase2;
 	    GPIOB->BSRR = ((1 << 4) << 16); // set MOSFETs to output low on the motor BOUT1 line
     	GPIOB->BSRR = (1 << 5); // set MOSFETs to output high on the motor BOUT2 line
+	}
+	else {
+		GPIOB->BSRR = ((1 << 4) << 16); // set MOSFETs to output low on the motor BOUT1 line
+		GPIOB->BSRR = ((1 << 5) << 16); // set MOSFETs to output low on the motor BOUT2 line
 	}
 
     phase1 >>= 8;
