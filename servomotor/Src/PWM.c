@@ -73,8 +73,8 @@ void pwm_init(void)
     GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL4_Pos) | (1 << GPIO_AFRL_AFSEL5_Pos); // select the alternative function 1 for pins PB4 and PB5
 
     TIM3->PSC = 0; // no prescaler
-    TIM3->ARR = PWM_PERIOD;
-    TIM3->CNT = (PWM_PERIOD >> 1);
+    TIM3->ARR = PWM_PERIOD_TIM1;
+    TIM3->CNT = (PWM_PERIOD_TIM1 >> 1);
     TIM3->CCR1 = 0;
     TIM3->CCR2 = 0;
 
