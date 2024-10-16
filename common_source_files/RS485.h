@@ -6,6 +6,9 @@
 #include "product_info.h"
 
 #define ALL_ALIAS 255 // to address all devices on the bus at the same time
+#define RESPONSE_CHARACTER 254 // this is the character that is used to indicate that the response is coming from the device that is being addressed
+#define RESPONSE_CHARACTER_TEXT "\xFE" // this needs to match the above value (but converted to hex)
+#define NO_ERROR_RESPONSE (RESPONSE_CHARACTER_TEXT "\x00\x00")
 
 #define USART1_TIMEOUT 5 // one count is 10ms, so this is a timeout of about 50 ms
 

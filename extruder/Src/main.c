@@ -391,7 +391,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
                 local_time = get_microsecond_time();
-                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&local_time, 6);
             }
             break;
@@ -401,7 +401,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
             if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&time_error, 4);
                 rs485_transmit(&clock_calibration_value, 2);
             }
@@ -410,7 +410,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
         	n_items_in_queue = get_n_items_in_queue();
             if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x01", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
                 rs485_transmit(&n_items_in_queue, 1);
             }
             break;
@@ -444,7 +444,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
             	motor_position = get_actual_motor_position();
-                rs485_transmit("R\x01\x04", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
            		rs485_transmit(&motor_position, sizeof(motor_position));
             }
             break;
@@ -467,7 +467,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
 			frequency = get_update_frequency();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01\x04", 3);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
 				rs485_transmit(&frequency, 4);
 			}
 			break;
@@ -500,7 +500,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				rs485_transmit(&product_info_length, 1);
@@ -510,7 +510,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_DESCRIPTION_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
 				rs485_transmit(&product_description_length, 1);
 				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
@@ -519,7 +519,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_FIRMWARE_VERSION_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t firmware_version_length = sizeof(firmware_version);
 				rs485_transmit(&firmware_version_length, 1);
 				rs485_transmit(&firmware_version, sizeof(firmware_version));
@@ -591,7 +591,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_results);
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x10", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x10", 3);
                 rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
 			}
 			break;
@@ -599,7 +599,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
-                ping_response_buffer[0] = 'R';
+                ping_response_buffer[0] = RESPONSE_CHARACTER;
                 ping_response_buffer[1] = '\x01';
                 ping_response_buffer[2] = PING_PAYLOAD_SIZE;
                 rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
@@ -622,7 +622,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
             if(axis != ALL_ALIAS) {
-                hall_sensor_statistics_full_response.axis = 'R';
+                hall_sensor_statistics_full_response.axis = RESPONSE_CHARACTER;
                 hall_sensor_statistics_full_response.command = '\x01';
                 hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
                 rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
@@ -655,7 +655,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
         	if(axis != ALL_ALIAS) {
                 sensor_val_extruder = get_heater_temperature();
-        		rs485_transmit("R\x01\x02", 3);
+        		rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x02", 3);
         		rs485_transmit(&sensor_val_extruder, 2);
             }
             break;
@@ -688,7 +688,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             PID_values = get_PID_values();
             if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x0c", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0c", 3);
                 rs485_transmit(&PID_values, sizeof(PID_values));
             }
             break;
@@ -703,7 +703,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 void transmit_unique_id(void)
 {
     uint32_t crc32 = 0x04030201;
-    rs485_transmit("R\x01\x0d", 3);
+    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
     rs485_transmit(&crc32, 4);

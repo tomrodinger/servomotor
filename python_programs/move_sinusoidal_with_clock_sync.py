@@ -40,7 +40,7 @@ def read_and_print(ser):
 
 def wait_for_command_success(ser):
     data = ser.read(3)
-    if data == b'R\x00\x00':
+    if data == b'\xFE\x00\x00':
         print("Command success")
     else:
         print("Error: didn't receive command success reply")
@@ -88,7 +88,7 @@ def send_clock_sync_command():
     if len(data) != 9:
         print("Did not receive the 9 byte response. Got this instead:", data)
         exit(1)
-    if data[0:3] != b'R\x01\x06':
+    if data[0:3] != b'\xFE\x01\x06':
         print("The first three bytes in the response were not right. The full response is this:", data)
     time_error = int.from_bytes(data[3:7], byteorder='little', signed=True)
     register_value = int.from_bytes(data[7:8], byteorder='little', signed=False)
@@ -105,7 +105,7 @@ def send_n_items_in_queue_command():
     if len(data) != 4:
         print("Did not receive the 4 byte response. Instead, received this:", data)
         exit(1)
-    if data[0:3] != b'R\x01\x01':
+    if data[0:3] != b'\xFE\x01\x01':
         print("The first three bytes in the response were not right. The full response is this:", data)
     n_items_in_queue = int.from_bytes(data[3:4], byteorder='little', signed=False)
     return n_items_in_queue

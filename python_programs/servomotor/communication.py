@@ -14,6 +14,7 @@ ser = None
 alias = 255
 detect_devices_command_id = None
 set_device_alias_command_id = None
+RESPONSE_CHARACTER = 254
 
 
 # When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
@@ -47,8 +48,9 @@ def get_response(verbose=True):
         raise CommunicationError("Error: the response is not 3 bytes long")
     if verbose:
         print_data("Received a response: ", response, print_size=True)
-    if response[0] != ord('R'):
-        raise CommunicationError("Error: the first byte is not the expected R")
+    if response[0] != RESPONSE_CHARACTER:
+        error_text = f"Error: the first byte (which should indeicate a response) is not the expected {RESPONSE_CHARACTER}"
+        raise CommunicationError(error_text)
     payload_size = response[2]
     if payload_size == 0xff:
         response2 = ser.read(2)
@@ -192,8 +194,8 @@ def string_to_u8_alias(input):
         if converted_input < 0 or converted_input > 255:
             print("Error: it is not within the allowed range. The allowed range is 0 to 255")
             exit(1)
-    if converted_input == ord('R'):
-        print("Error: the alias R is not allowed because it is reserved to indicate a response")
+    if converted_input == RESPONSE_CHARACTER:
+        print(f"Error: the alias {RESPONSE_CHARACTER} is not allowed because it is reserved to indicate a response")
         exit(1)
     return converted_input
 

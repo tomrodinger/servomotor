@@ -33,7 +33,7 @@ DETECT_DEVICES_COMMAND = 20
 SET_DEVICE_ALIAS_COMMAND = 21
 GET_PRODUCT_INFO_COMMAND = 22
 MOVE_WITH_ACCELERATION_COMMAND = 19
-ADD_TO_QUEUE_TEST_COMMAND = 254
+ADD_TO_QUEUE_TEST_COMMAND = 253
 
 MOVE_WITH_ACCELERATION = 0
 MOVE_WITH_VELOCITY = 1
@@ -53,8 +53,8 @@ def get_response(ser):
         print("Error: didn't receive enough bytes in the response. Got %d bytes" % (len(response)))
         exit(1)
     print("Received a response: ", response)
-    if response[0] != ord('R'):
-        print("Error: the first is not the expected R")
+    if response[0] != RESPONSE_CHARACTER:
+        print(f"Error: the first is not the expected {RESPONSE_CHARACTER}")
         exit(1)
     payload_size = response[2]
     if payload_size == 0:

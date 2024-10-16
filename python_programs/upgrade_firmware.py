@@ -59,8 +59,8 @@ def get_response(ser):
         print("Error: didn't receive enough bytes in the response")
         exit(1)
     print("Received a response: ", response)
-    if response[0] != ord('R'):
-        print("Error: the first is not the expected R")
+    if response[0] != RESPONSE_CHARACTER:
+        print(f"Error: the first is not the expected {RESPONSE_CHARACTER}")
         exit(1)
     payload_size = response[2]
     if payload_size == 0:

@@ -273,7 +273,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
 				rs485_transmit(&product_info_length, 1);
@@ -300,7 +300,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 void transmit_unique_id(void)
 {
     uint32_t crc32 = 0x04030201;
-	rs485_transmit("R\x01\x0d", 3);
+	rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
 	rs485_transmit(&my_unique_id, 8);
 	rs485_transmit(&global_settings.my_alias, 1);
 	rs485_transmit(&crc32, 4);

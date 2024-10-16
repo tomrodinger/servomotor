@@ -1,6 +1,7 @@
+#include "RS485.h"
 #include "device_status.h"
 
-static struct device_status_struct device_status = {'R', 1, sizeof(struct device_status_struct) - 3, 0, 0};
+static struct device_status_struct device_status = {RESPONSE_CHARACTER, 1, sizeof(struct device_status_struct) - 3, 0, 0};
 
 struct device_status_struct *get_device_status(void)
 {

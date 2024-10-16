@@ -43,7 +43,7 @@ void start_calibration(uint8_t capture_length)
 		return;
 	}
 
-	hall_sensor_data.alias = 'R';
+	hall_sensor_data.alias = RESPONSE_CHARACTER;
 	hall_sensor_data.command = '1';
 	hall_sensor_data.length = 6;
 

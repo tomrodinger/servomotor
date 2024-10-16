@@ -95,7 +95,7 @@ void USART1_IRQHandler(void)
             }
 
             if(receiveIndex >= valueLength) {
-                if(selectedAxis != 'R' && (selectedAxis == global_settings.my_alias || selectedAxis == 255)) {
+                if(selectedAxis != RESPONSE_CHARACTER && (selectedAxis == global_settings.my_alias || selectedAxis == 255)) {
                     if(valueLength <= MAX_VALUE_BUFFER_LENGTH) {
                         USART1->CR1 &= ~USART_CR1_RXNEIE_RXFNEIE; // disable receive interrupt until this command is processed
                                                                     // in the mean time, received bytes will be put in the hardware fifo

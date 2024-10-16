@@ -325,7 +325,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
                 local_time = get_microsecond_time();
-                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&local_time, 6);
             }
             break;
@@ -335,7 +335,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
             if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x06", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&time_error, 4);
                 rs485_transmit(&clock_calibration_value, 2);
             }
@@ -344,7 +344,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
         	n_items_in_queue = get_n_items_in_queue();
             if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x01", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
                 rs485_transmit(&n_items_in_queue, 1);
             }
             break;
@@ -380,7 +380,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 int32_t motor_position;
                 if(axis != ALL_ALIAS) {
                     motor_position = get_motor_position();
-                    rs485_transmit("R\x01\x04", 3);
+                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
                     rs485_transmit(&motor_position, sizeof(motor_position));
                 }
             }
@@ -391,7 +391,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 int32_t hall_sensor_position;
                 if(axis != ALL_ALIAS) {
                     hall_sensor_position = get_hall_position();
-                    rs485_transmit("R\x01\x04", 3);
+                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
                     rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
                 }
             }
@@ -406,7 +406,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int32_t external_encoder_position;
                 } comprehensive_position;
                 if(axis != ALL_ALIAS) {
-                    comprehensive_position.header[0] = 'R';
+                    comprehensive_position.header[0] = RESPONSE_CHARACTER;
                     comprehensive_position.header[1] = 1;
                     comprehensive_position.header[2] = sizeof(comprehensive_position) - 3;
                     comprehensive_position.motor_position = get_motor_position();
@@ -437,7 +437,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             rs485_allow_next_command();
 			frequency = get_update_frequency();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01\x04", 3);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
 				rs485_transmit(&frequency, 4);
 			}
 			break;
@@ -471,7 +471,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				rs485_transmit(&product_info_length, 1);
@@ -481,7 +481,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_PRODUCT_DESCRIPTION_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
 				rs485_transmit(&product_description_length, 1);
 				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
@@ -490,7 +490,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_FIRMWARE_VERSION_COMMAND:
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-				rs485_transmit("R\x01", 2);
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t firmware_version_length = sizeof(firmware_version);
 				rs485_transmit(&firmware_version_length, 1);
 				rs485_transmit(&firmware_version, sizeof(firmware_version));
@@ -561,7 +561,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_results);
             rs485_allow_next_command();
 			if(axis != ALL_ALIAS) {
-                rs485_transmit("R\x01\x10", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x10", 3);
                 rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
 			}
 			break;
@@ -569,7 +569,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
-                ping_response_buffer[0] = 'R';
+                ping_response_buffer[0] = RESPONSE_CHARACTER;
                 ping_response_buffer[1] = '\x01';
                 ping_response_buffer[2] = PING_PAYLOAD_SIZE;
                 rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
@@ -598,7 +598,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     hall_sensor_statistics_t hall_sensor_statistics;
                 } hall_sensor_statistics_full_response;
                 get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
-                hall_sensor_statistics_full_response.axis = 'R';
+                hall_sensor_statistics_full_response.axis = RESPONSE_CHARACTER;
                 hall_sensor_statistics_full_response.command = '\x01';
                 hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
                 rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
@@ -620,7 +620,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                         uint16_t extended_size;
                         uint8_t data_type;
                     } multipurpose_data_response_header;
-                    multipurpose_data_response_header.axis = 'R';
+                    multipurpose_data_response_header.axis = RESPONSE_CHARACTER;
                     multipurpose_data_response_header.command = '\x01';
                     multipurpose_data_response_header.size = 255; // when size is 255 then we get the actual size from the next 16 bit number (thus allowing sizes up to 65535)
                     multipurpose_data_response_header.extended_size = sizeof(data_type) + data_size;
@@ -652,7 +652,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     uint16_t supply_voltage;
                 } supply_voltage_reply;
                 if(axis != ALL_ALIAS) {
-                    supply_voltage_reply.header[0] = 'R';
+                    supply_voltage_reply.header[0] = RESPONSE_CHARACTER;
                     supply_voltage_reply.header[1] = 1;
                     supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
                     supply_voltage_reply.supply_voltage = get_supply_voltage_volts_times_10();
@@ -669,7 +669,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int32_t max_PID_error;
                 } get_max_pid_error_reply;
                 if(axis != ALL_ALIAS) {
-                    get_max_pid_error_reply.header[0] = 'R';
+                    get_max_pid_error_reply.header[0] = RESPONSE_CHARACTER;
                     get_max_pid_error_reply.header[1] = 1;
                     get_max_pid_error_reply.header[2] = sizeof(get_max_pid_error_reply) - 3;
                     int32_t min_PID_error;
@@ -741,7 +741,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int16_t temperature;
                 } get_temperature_reply;
                 if(axis != ALL_ALIAS) {
-                    get_temperature_reply.header[0] = 'R';
+                    get_temperature_reply.header[0] = RESPONSE_CHARACTER;
                     get_temperature_reply.header[1] = 1;
                     get_temperature_reply.header[2] = sizeof(get_temperature_reply) - sizeof(get_temperature_reply.header);
                     get_temperature_reply.temperature = get_temperature_degrees_C();
@@ -775,7 +775,7 @@ void transmit_unique_id(void)
     crc32_init();
     calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
     uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
-    rs485_transmit("R\x01\x0d", 3);
+    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
     rs485_transmit(&crc32, 4);

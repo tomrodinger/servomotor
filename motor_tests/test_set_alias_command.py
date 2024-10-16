@@ -14,7 +14,7 @@ and make sure that the new aliases are set correctly. The test will pass if all 
 '''
 
 VERBOSE = False
-ALIASES_TO_AVOID = [ord('R'), 254, 255]
+ALIASES_TO_AVOID = [254, 255]
 
 common_functions.print_test_description(test_description)
 
