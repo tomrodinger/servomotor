@@ -123,10 +123,10 @@ void adc_init(void)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+				   (4  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3) // DEBUG converting the motor current disabled for the time being
 				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
 				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+				   (4  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6) // DEBUG converting the motor current disabled for the time being
 				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
@@ -192,7 +192,7 @@ TODO TODO
 volatile static uint8_t conduction_direction = 0;
 volatile static uint16_t motor_current_baseline = 0;
 volatile static int32_t hysteretic_motor_current = 0;
-volatile static uint16_t motor_current_hysteresis = 65;
+volatile static uint16_t motor_current_hysteresis = 8;
 //static uint32_t red_LED_counter = 0;
 
 void ADC1_IRQHandler(void)
@@ -240,7 +240,7 @@ void ADC1_IRQHandler(void)
 //		red_LED_counter = 0;
 //	}
 	volatile uint32_t delay;
-	for(delay = 0; delay < 25; delay++);
+	for(delay = 0; delay < 5; delay++);
 	ADC1->ISR |= ADC_ISR_AWD2;
 }
 
@@ -330,10 +330,10 @@ uint16_t get_motor_current(void)
 	uint16_t i;
 
 	for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
-		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX1] +
-					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX2] +
-					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX3];
-		n += 3;
+		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX1]; // +
+//					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX2] + // DEBUG disabled this motor current channel
+//					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX3]; // DEBUG disabled this motor current channel
+		n += 1; // DEBUG changed 3 -> 1
 		buffer_index += ADC_CYCLE_INDEXES;
 	}
 	current_avg /= n;
