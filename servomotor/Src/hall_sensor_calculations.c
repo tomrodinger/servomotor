@@ -43,6 +43,7 @@ static uint8_t hall_sensor_statitics_active = 0;
 static hall_sensor_statistics_t hall_sensor_statistics;
 static volatile int32_t latest_hall_position = 0;
 
+static const int32_t segment_change_values_table[3][3] = SEGMENT_CHANGE_VALUES_TABLE_INITIALIZER;
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
@@ -170,34 +171,14 @@ get_sensor_position_return_t get_sensor_position(void)
         else {
             sensor_position = 0;
         }
-        previous_largest_sensor = largest_sensor;
     }
     else {
         hall_position_return_value.change = fraction - previous_fraction;
-        if (largest_sensor != previous_largest_sensor) {
-            if (largest_sensor - previous_largest_sensor == 1) {
-                hall_position_return_value.change += (int32_t)SENSOR_SEGMENT_RESOLUTION;
-            }
-            else if (largest_sensor - previous_largest_sensor == -1) {
-                hall_position_return_value.change -= (int32_t)SENSOR_SEGMENT_RESOLUTION;
-            }
-            else if (largest_sensor - previous_largest_sensor == -2) {
-                hall_position_return_value.change += (int32_t)SENSOR_SEGMENT_RESOLUTION;
-            }
-            else {
-                hall_position_return_value.change -= (int32_t)SENSOR_SEGMENT_RESOLUTION;
-            }
-            previous_largest_sensor = largest_sensor;
-        }
+        hall_position_return_value.change += segment_change_values_table[previous_largest_sensor][largest_sensor];
     }
     previous_fraction = fraction;
+    previous_largest_sensor = largest_sensor;
     sensor_position += hall_position_return_value.change;
-//    if(sensor_position >= ONE_CYCLE_HALL_COUNTS) {
-//        sensor_position -= ONE_CYCLE_HALL_COUNTS;
-//    }
-//    else if(sensor_position < 0) {
-//        sensor_position += ONE_CYCLE_HALL_COUNTS;
-//    }
     latest_sensor_position = sensor_position;
     hall_position_return_value.position = sensor_position;
 	return hall_position_return_value;
