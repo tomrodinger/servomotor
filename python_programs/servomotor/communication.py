@@ -418,7 +418,7 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             print_data("The converted input is:", input_packed)
 #            print("The converted input is:", input_packed)
     else:
-        if data_type_id == data_types.command_data_types.u8_alias:
+        if registered_data_types[data_type_id].data_type_str == "u8_alias":
             if isinstance(input, str):
                 input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
             else:
@@ -427,11 +427,11 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
                     print("The allowed range is: 0 to 255")
                     exit(1)
                 input_packed = input.to_bytes(1, byteorder = "little")
-        elif data_type_id == data_types.command_data_types.list_2d:
+        elif registered_data_types[data_type_id].data_type_str == "list_2d":
             input_packed = list_2d_string_to_packed_bytes(input)
-        elif data_type_id == data_types.command_data_types.buf10:
+        elif registered_data_types[data_type_id].data_type_str == "buf10":
             input_packed = buf10_to_packed_bytes(input)
-        elif data_type_id == data_types.command_data_types.u64_unique_id:
+        elif registered_data_types[data_type_id].data_type_str == "u64_unique_id":
             # first, check if this input is a string. if it is, then it must be 16 characters long and be a hexadecimal number
             if isinstance(input, str):
                 input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
@@ -443,7 +443,7 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
                     exit(1)
                 input_packed = input.to_bytes(8, byteorder = "little")
         else:
-            print("Error: didn't yet implement a converter to handle the input type:", data_types.data_type_dict[data_type_id])
+            print("Error: didn't yet implement a converter to handle the input type:", registered_data_types[data_type_id].data_type_str)
             exit(1)
     return input_packed
 
@@ -553,7 +553,7 @@ def interpret_single_response(command_id, response, verbose=True):
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
                     print("   --->", data_item)
-                if data_type_str == "string_null_term":
+                elif data_type_str == "string_null_term":
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
                     print("   --->", data_item)
