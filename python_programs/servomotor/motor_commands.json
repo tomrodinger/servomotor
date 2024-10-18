@@ -182,7 +182,7 @@
         "Input": null,
         "Output": [
             {
-                "Description": "i32: The current position as determined by the hall sensors",
+                "Description": "i64: The current position as determined by the hall sensors",
                 "TooltipDisplayFormat": "%d"
             }
         ]
@@ -417,11 +417,11 @@
         "Description": "Set safety limits (to prevent motion from exceeding set bounds)",
         "Input": [
             {
-                "Description": "i32: The lower limit in microsteps.",
+                "Description": "i64: The lower limit in microsteps.",
                 "TooltipDisplayFormat": "%d"
             },
             {
-                "Description": "i32: The upper limit in microsteps.",
+                "Description": "i64: The upper limit in microsteps.",
                 "TooltipDisplayFormat": "%d"
             }
         ],
@@ -507,11 +507,11 @@
     {
         "CommandString": "Get position",
         "CommandEnum": 34,
-        "Description": "Get the current desired position (which may not always be the actual position as measured by the hall sensors)",
+        "Description": "Get the current desired position (which may differ a bit from the actual position as measured by the hall sensors)",
         "Input": null,
         "Output": [
             {
-                "Description": "i32: The current desired position",
+                "Description": "i64: The current desired position",
                 "TooltipDisplayFormat": "%d"
             }
         ]
@@ -543,15 +543,15 @@
     {
         "CommandString": "Get comprehensive position",
         "CommandEnum": 37,
-        "Description": "Get the electrical commutation position, hall sensor position, and external encoder position all in one shot",
+        "Description": "Get the desired motor position, hall sensor position, and external encoder position all in one shot",
         "Input": null,
         "Output": [
             {
-                "Description": "i32: The electrical commutation position",
+                "Description": "i64: The commanded position (which may differ from actual)",
                 "TooltipDisplayFormat": "%d"
             },
             {
-                "Description": "i32: The hall sensor position",
+                "Description": "i64: The hall sensor position (or you could say the actual measured position)",
                 "TooltipDisplayFormat": "%d"
             },
             {

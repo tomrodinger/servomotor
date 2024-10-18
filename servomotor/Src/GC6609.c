@@ -144,7 +144,7 @@ void enable_16_microstepping(void)
     #define TBL 2 // 2 bits, default is 2, blanking time 16, 24, 32 or 40 clocks
     #define MRES 4 // 1/16 microstepping
     #define HEND 9 // default 0 (maps to -3)  0 to 15 maps to -3 to 12
-    #define HSTRT 7 // default 5 (maps to 6)  0 to 7 maps to 1 to 8    HEND+HSTRT=16
+    #define HSTRT 7 // default 5 (maps to 6)  0 to 7 maps to 1 to 8    HEND+HSTRT<=16 (see user manual for GC6609 section 3.4.1 CHOPCONF – Chopper Configuration)
     #define TOFF 1 // default 3 (don't use 0 because that will disable the driver. if using 1 then TBL should be >= 2), a lower value here seems to decrease high pitched sounds
     Write_6609_REG(0x6c, (HSTRT << 4) | (HEND << 7) | (INTPOL << 28) | (TBL << 15) | (MRES << 24) | (TOFF << 0)); // intpol set to 0, set MRES to 1/16 microstepping
 

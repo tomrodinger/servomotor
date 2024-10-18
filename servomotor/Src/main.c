@@ -217,8 +217,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t n_moves_in_this_command;
     int32_t max_homing_travel_displacement;
     uint32_t max_homing_time;
-    int32_t lower_limit;
-    int32_t upper_limit;
     add_to_queue_test_results_t add_to_queue_test_results;
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
     uint8_t control_hall_sensor_statistics_subcommand;
@@ -377,10 +375,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_POSITION_COMMAND:
             rs485_allow_next_command();
             {
-                int32_t motor_position;
+//                int32_t motor_position;
+                int64_t motor_position;
                 if(axis != ALL_ALIAS) {
                     motor_position = get_motor_position();
-                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+//                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
                     rs485_transmit(&motor_position, sizeof(motor_position));
                 }
             }
@@ -388,10 +388,12 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_HALL_SENSOR_POSITION_COMMAND:
             rs485_allow_next_command();
             {
-                int32_t hall_sensor_position;
+//                int32_t hall_sensor_position;
+                int64_t hall_sensor_position;
                 if(axis != ALL_ALIAS) {
                     hall_sensor_position = get_hall_position();
-                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+//                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
                     rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
                 }
             }
@@ -401,8 +403,10 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             {
                 struct __attribute__((__packed__)) {
                     uint8_t header[3];
-                    int32_t motor_position;
-                    int32_t hall_sensor_position;
+//                    int32_t motor_position;
+                    int64_t motor_position;
+//                    int32_t hall_sensor_position;
+                    int64_t hall_sensor_position;
                     int32_t external_encoder_position;
                 } comprehensive_position;
                 if(axis != ALL_ALIAS) {
@@ -547,15 +551,21 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case SET_SAFETY_LIMITS_COMMAND:
-            lower_limit = ((int32_t*)parameters)[0];
-            upper_limit = ((uint32_t*)parameters)[1];
-            rs485_allow_next_command();
-            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
-            print_debug_string(buf);
-            set_movement_limits(lower_limit, upper_limit);
-			if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-			}
+            {
+        //            lower_limit = ((int32_t*)parameters)[0];
+        //            upper_limit = ((int32_t*)parameters)[1];
+                int64_t lower_limit = ((int64_t*)parameters)[0];
+                int64_t upper_limit = ((int64_t*)parameters)[1];
+                rs485_allow_next_command();
+        //            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
+        //            print_debug_string(buf);
+                set_movement_limits(lower_limit, upper_limit);
+                print_int64("lower_limit:", lower_limit);
+                print_int64("upper_limit:", upper_limit);
+                if(axis != ALL_ALIAS) {
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+            }
 			break;
         case ADD_TO_QUEUE_TEST_COMMAND:
             add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_results);
@@ -731,8 +741,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     print_debug_string("Identifying\n");
                     rs485_transmit(NO_ERROR_RESPONSE, 3);
                 }
-                break;
             }
+            break;
         case GET_TEMPERATURE_COMMAND:
             rs485_allow_next_command();
             {
@@ -1030,6 +1040,7 @@ int main(void)
             print_fast_capture_data_result();
         }
 
+        check_if_actual_vs_desired_position_deviated_too_much();
 #ifdef PRODUCT_NAME_M1
         process_go_to_closed_loop_data();
 #endif

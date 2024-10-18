@@ -21,8 +21,8 @@ char error_text[] =
     "queue is full\0"                         // error 17
     "run out of queue items\0"                // error 18
     "motor busy\0"                            // error 19
-    "position out of range\0"                 // error 20
-    "hall position out of range\0"            // error 21
+    "position out of range\0"                 // error 20   TO BE DEPRECATED
+    "hall position out of range\0"            // error 21   TO BE DEPRECATED
     "current sensor failed\0"                 // error 22
     "max pwm voltage too high\0"              // error 23
     "multi-move more than 32 moves\0"         // error 24
@@ -46,6 +46,8 @@ char error_text[] =
     "position discrepancy\0"                  // error 42
     "overcurrent\0"                           // error 43
     "PWM too high\0"                          // error 44
+    "position deviation too large\0"          // error 45
+    "move too far\0"                          // error 46
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

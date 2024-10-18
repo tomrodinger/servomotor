@@ -111,7 +111,7 @@ int main(void)
             n_random_moves++;
         }
         TIM16_IRQHandler();
-        int32_t current_position = get_current_position();
+        int32_t current_position = get_motor_position();
         int32_t current_velocity = get_current_velocity();
         // Log data to file
         fprintf(fp, "%u %d %d %u %u %u %u\n", time_step, current_position, current_velocity, TIM1->CCR1, TIM1->CCR2, TIM3->CCR1, TIM3->CCR2);

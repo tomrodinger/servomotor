@@ -91,7 +91,7 @@ void adc_init(void)
 #ifdef PRODUCT_NAME_M4
 	ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
 	ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
-	NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdof), we need to act very fast
+	NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdog), we need to act very fast
 	NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
 #endif
 
