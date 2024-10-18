@@ -7,7 +7,7 @@
 static void portA_init(void)
 {
     GPIOA->MODER =
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // Amplified motor current sense voltage (Phase A + B)
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // Amplified motor current sense voltage (Phase A)
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // MOSFET enable control (active high)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
@@ -44,7 +44,7 @@ static void portA_init(void)
 static void portB_init(void)
 {
     GPIOB->MODER =
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE0_Pos)  | //
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE0_Pos)  | // Amplified motor current sense voltage (Phase B)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE3_Pos)  | // Motor phase A voltage control PWM output (TIM1_CH2)
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE4_Pos)  | // Motor phase B voltage control PWM output (TIM3_CH1)

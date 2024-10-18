@@ -2886,6 +2886,9 @@ void check_current_sensor_and_enable_mosfets(void)
 	set_motor_current_baseline(motor_current_baseline);
 
 	enable_mosfets();
+
+	// here we need a delay, because we need to wait for the power supply to the gate driver chip to come up and stabilize
+	for (volatile uint32_t delay = 0; delay < 1000000; delay++);
 	turn_on_mosfet_for_first_time();
 
 	print_debug_string("Enabled MOSFETs\n");

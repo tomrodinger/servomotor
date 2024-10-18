@@ -51,7 +51,7 @@ void adc_init(void)
 				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
 				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
 	#endif
-    #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+    #if defined(PRODUCT_NAME_M3)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -120,13 +120,13 @@ void adc_init(void)
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
 
 	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
-    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
+    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (4  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3) // DEBUG converting the motor current disabled for the time being
+				   (8  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
 				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
 				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (4  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6) // DEBUG converting the motor current disabled for the time being
+				   (4  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG this is converting the temperature channel, but we are not using this
 				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
@@ -192,7 +192,7 @@ TODO TODO
 volatile static uint8_t conduction_direction = 0;
 volatile static uint16_t motor_current_baseline = 0;
 volatile static int32_t hysteretic_motor_current = 0;
-volatile static uint16_t motor_current_hysteresis = 8;
+volatile static uint16_t motor_current_hysteresis = 15; // 8
 //static uint32_t red_LED_counter = 0;
 
 void ADC1_IRQHandler(void)
@@ -280,6 +280,8 @@ void set_hysteretic_motor_current_to_off(void)
 	NVIC_DisableIRQ(ADC1_IRQn); // disable the ADC interrupt
 	GPIOA->BSRR = ((1 << 8) << 16); // turn off all MOSFETs first
 	GPIOB->BSRR = ((1 << 3) << 16); // turn off all MOSFETs first
+	GPIOB->BSRR = ((1 << 4) << 16); // turn off all MOSFETs first
+	GPIOB->BSRR = ((1 << 5) << 16); // turn off all MOSFETs first
 	hysteretic_motor_current = 0;
 	conduction_direction = 0;
 	red_LED_off();
