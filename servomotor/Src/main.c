@@ -1061,6 +1061,10 @@ int main(void)
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) 
     	check_if_ADC_watchdog2_exceeded();
 #endif
+#if defined(PRODUCT_NAME_M1)
+    check_if_ADC_watchdog2_exceeded();
+    check_if_ADC_watchdog3_exceeded();
+#endif
         check_if_overtemperature();
     }
 }

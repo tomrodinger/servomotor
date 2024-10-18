@@ -40,7 +40,9 @@ void adc_init(void)
 
     ADC1->CFGR1 |= ADC_CFGR1_AWD1EN | ADC_CFGR1_AWD1SGL | (0 << ADC_CFGR1_AWD1CH_Pos); // enable analog watchdog 1 and it will monitor just one channel as selected by AWD1CH bits
     ADC1->TR2 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR3 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR3_LT3_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR3_HT3_Pos); // select the lower and upper threshold for the ADC watchdog 3
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
+    ADC1->AWD3CR = (1 << 3); // only select channel 3 to be monitored by the watchdog 3, this is the motor current measurement
 
 	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
@@ -53,7 +55,7 @@ void adc_init(void)
 				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
 				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
 	#endif
-    #if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+    #if defined(PRODUCT_NAME_M3)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
     		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
 				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -61,6 +63,16 @@ void adc_init(void)
 				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
 				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
 				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+	#endif
+    #if defined(PRODUCT_NAME_M4)
+    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
+    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+				   (8  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
+				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+				   (4  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
 				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
 	#endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
@@ -90,9 +102,11 @@ void adc_init(void)
 
 #ifdef PRODUCT_NAME_M4
 	ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
+	ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
 	ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
+	ADC1->IER |= ADC_IER_AWD3IE; // enable the watchdog 3 interrupt
 	NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdog), we need to act very fast
-	NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
+//	NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
 #endif
 
 //    ADC->IER |= ADC_IER_EOCIE; // enable the end of conversion interrupt
@@ -122,11 +136,23 @@ void check_if_ADC_watchdog2_exceeded(void)
 	}
 }
 
+void check_if_ADC_watchdog3_exceeded(void)
+{
+	if(ADC1->ISR & ADC_ISR_AWD3) {
+		red_LED_on();
+		ADC1->ISR |= ADC_ISR_AWD3;
+	}
+	else {
+		red_LED_off();
+	}
+}
+
 void ADC1_IRQHandler(void)
 {
 	fatal_error(43); // "overcurrent" (all error text is defined in error_text.c)
 	red_LED_on();
 	ADC1->ISR |= ADC_ISR_AWD2;
+	ADC1->ISR |= ADC_ISR_AWD3;
 }
 
 uint16_t get_hall_sensor1_voltage(void)
@@ -174,10 +200,8 @@ uint16_t get_motor_current(void)
 	uint16_t i;
 
 	for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
-		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX1] +
-					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX2] +
-					   ADC_buffer[buffer_index + MOTOR_CURRENT_CYCLE_INDEX3];
-		n += 3;
+		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_A_CYCLE_INDEX] + ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_B_CYCLE_INDEX];
+		n += 2;
 		buffer_index += ADC_CYCLE_INDEXES;
 	}
 	current_avg /= n;
@@ -229,4 +253,5 @@ void print_supply_voltage(void)
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
 {
     ADC1->TR2 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
+    ADC1->TR3 = (lower_limit << ADC_TR3_LT3_Pos) | (upper_limit << ADC_TR3_HT3_Pos); // select the lower and upper threshold for the ADC watchdog 3
 }
