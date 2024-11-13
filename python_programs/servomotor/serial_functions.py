@@ -1,6 +1,6 @@
 import os
-import serial
-import serial.tools.list_ports
+from .vendor import serial
+from .vendor.serial.tools import list_ports
 
 SAVED_SERIAL_DEVICE_FILENAME = "serial_device.txt"
 
@@ -9,7 +9,7 @@ def select_serial_port_from_menu():
     while(1):
         print("Here are the current serial ports detected on your computer:")
         print("Now getting the list")
-        ports = list(serial.tools.list_ports.comports())
+        ports = list(list_ports.comports())
         for i in range(len(ports)):
             p = ports[i][0]
             print("%d. %s" % (i + 1, p))
@@ -108,4 +108,3 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
             print("ERROR: Could not open the file for writing (could not save the serial port name):", device_file_path)
             
     return serial_port
-
