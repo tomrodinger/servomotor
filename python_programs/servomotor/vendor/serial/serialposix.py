@@ -38,8 +38,8 @@ import struct
 import sys
 import termios
 
-import serial
-from serial.serialutil import SerialBase, SerialException, to_bytes, \
+from . import serialutil as serial
+from .serialutil import SerialBase, SerialException, to_bytes, \
     PortNotOpenError, SerialTimeoutException, Timeout
 
 
