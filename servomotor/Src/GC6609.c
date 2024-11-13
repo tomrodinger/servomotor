@@ -6,7 +6,7 @@
 #define GPIOA_GC6609_UART_PIN 15
 #define GPIOA_GC6609_UART_MODER_POS GPIO_MODER_MODE15_Pos // set this correspondingly to whatever GPIOA_GC6609_UART_PIN is set to
 
-void delay_us(uint32_t us)
+static void delay_us(uint32_t us)
 {
     // This function will delay for the specified number of microseconds
     uint32_t delay = us * 4;
@@ -21,7 +21,7 @@ void delay_us(uint32_t us)
 }
 
 
-void Delay_ms(uint32_t ms)
+static void Delay_ms(uint32_t ms)
 {
     // This function will delay for the specified number of milliseconds
     for (int i = 0; i < ms; i++) {
@@ -33,7 +33,7 @@ void Delay_ms(uint32_t ms)
 // We will send a but, which involves setting the state of the GPIO pin and then waiting for the correct amount of time for the baud rate that we want
 // Interrupts are disabled in this operation, so there is no risk that the time delay will be interrupted and extended.
 // The UART interface of the GC6609 is connected to the pin stated in GPIOA_GC6609_UART_PIN, so we will use this pin to send the data.
-void send_bit(uint8_t bit)
+static void send_bit(uint8_t bit)
 {
     if (bit) {
         GPIOA->BSRR = (1 << GPIOA_GC6609_UART_PIN);   
@@ -46,7 +46,7 @@ void send_bit(uint8_t bit)
 
 
 // This function sends a byte over the UART interface. Each byte is 8 bts ovbiously, but we also need a start bit before and a stop bit after.
-void send_byte(uint8_t byte)
+static void send_byte(uint8_t byte)
 {
     // Send start bit
     send_bit(0);
@@ -62,7 +62,7 @@ void send_byte(uint8_t byte)
 
 
 // This function sends several bytes from a buffer over the UART interface
-void Send_char(uint8_t *buffer, uint8_t length)
+static void Send_char(uint8_t *buffer, uint8_t length)
 {
     // Send the bytes one by one by calling the send_byte function
     for (int i = 0; i < length; i++) {
@@ -74,7 +74,7 @@ void Send_char(uint8_t *buffer, uint8_t length)
 // 6609 Serial communication verification algorithm (colied from their reference manual)
 // CRC calculation
 // CRC = (CRC << 1) OR (CRC.7 XOR CRC.1 XOR CRC.0 XOR [new incoming bit]) //CRC = x8 + x2 + x1 + x0
-void swuart_calcCRC(uint8_t* datagram, uint8_t datagramLength)
+static void swuart_calcCRC(uint8_t* datagram, uint8_t datagramLength)
 {
     int i, j;
     uint8_t *crc = datagram + (datagramLength - 1); // CRC located in last byte of message
@@ -97,7 +97,7 @@ void swuart_calcCRC(uint8_t* datagram, uint8_t datagramLength)
 
 
 // Write 6609 register
-void Write_6609_REG(uint8_t WReg_addrr, uint32_t Write_data)
+static void Write_6609_REG(uint8_t WReg_addrr, uint32_t Write_data)
 {
     uint8_t Write_data_temp[8];
     uint8_t Write_data3, Write_data2, Write_data1, Write_data0;
@@ -128,7 +128,7 @@ void Write_6609_REG(uint8_t WReg_addrr, uint32_t Write_data)
 }
 
 
-void enable_16_microstepping(void)
+static void enable_16_microstepping(void)
 {
     #define EN_SC 1 // 1 means use SCC mode always, 0 means use SCC at high speed and SC2 at low speed
     #define MULTISTEP_FILT 0 // 0 = no filtering, 1 = filtering
@@ -169,11 +169,13 @@ void enable_16_microstepping(void)
 } 
 
 
-void reset_chip(void)
+#if 0
+static void reset_chip(void)
 {
     Write_6609_REG(0x00, 0x00000141); // HOLDEN input function disabled. Set this bit when using the UART interface!
     Write_6609_REG(0x01, 0x00000001); // reset the chip
 }
+#endif
 
 // We will bit-bang out some initialization data for the GC6609 motor driver chip, which has a UART interface.
 // The minimum baud rate is around 9600 baud. It can be any baud rate above this minimum. The chip will autodetect
@@ -215,7 +217,7 @@ void reset_GC6609(void)
     Delay_ms(10);
 }
 
-inline void set_UART_pin_as_output(void)
+static inline void set_UART_pin_as_output(void)
 {
     #ifndef SIMULATION
     GPIOA->MODER |= (MODER_DIGITAL_OUTPUT << GPIOA_GC6609_UART_MODER_POS); // set the pin to output mode by setting the two bits corresponding to the port to a value of 0x1
@@ -225,7 +227,7 @@ inline void set_UART_pin_as_output(void)
     #endif
 }
 
-void set_UART_pin_as_input(void)
+static void set_UART_pin_as_input(void)
 {
     #ifndef SIMULATION
     GPIOA->MODER &= ~(0x3 << GPIOA_GC6609_UART_MODER_POS); // set the pin to input mode by clearing the two bits in the MODER register
@@ -235,7 +237,7 @@ void set_UART_pin_as_input(void)
     #endif
 }
 
-void set_UART_pin_high(void)
+static void set_UART_pin_high(void)
 {
     #ifndef SIMULATION
     GPIOA->BSRR = (1 << GPIOA_GC6609_UART_PIN);   
@@ -245,7 +247,7 @@ void set_UART_pin_high(void)
     #endif
 }
 
-void set_UART_pin_low(void)
+static void set_UART_pin_low(void)
 {
     #ifndef SIMULATION
     GPIOA->BSRR = ((1 << GPIOA_GC6609_UART_PIN) << 16);
@@ -401,7 +403,7 @@ bool GC6608_UART_bit_bang_read_registers(uint8_t *returned_data, uint16_t *retur
     return false;
 }
 
-void test_motor_stepping(void)
+void test_motor_stepping_GC6609(void)
 {
     uint32_t acceleration_delay = 1000;
     GPIOA->BSRR = (1 << 0); // set DIR high

@@ -48,6 +48,7 @@ char error_text[] =
     "PWM too high\0"                          // error 44
     "position deviation too large\0"          // error 45
     "move too far\0"                          // error 46
+    "hall position delta too large\0"         // error 47
     "\0";                                     // this marks the end of the error messages
 
 char *get_error_text(uint16_t error_code)

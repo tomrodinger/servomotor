@@ -16,14 +16,16 @@ from .communication import (
     print_data_type_descriptions,
     print_registered_commands,
     set_standard_options_from_args,
-#    set_serial_port_from_args,
+    set_serial_port_from_args,
 #    open_serial_port,
 #    close_serial_port,
     get_command_id,
     gather_inputs,
     send_command,
 #    execute_command,
-    interpret_response
+    interpret_response,
+    flush_receive_buffer,
+    RESPONSE_CHARACTER
 )
 
 from .communication import (

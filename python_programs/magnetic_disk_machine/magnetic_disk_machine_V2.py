@@ -11,9 +11,9 @@ import threading
 import servomotor
 
 VERBOSE = False
-DISABLE_USER_CONFIRMATION = False
+DISABLE_USER_CONFIRMATION = True
 
-N_DISKS = 18
+N_DISKS = 6 # 18 is maximum in the current setup
 N_POLES = 50
 
 MOSFET_CURRENT = 500
@@ -63,7 +63,7 @@ TRAY_MOTOR_PULLEY_TEETH_NUMBER = 14
 DISTANCE_BETWEEN_TEETH_MM = 2.0
 DISTANCE_BETWEEN_DISKS_MM = 220 / 5
 SPACING_BETWEEN_DISKS_DEGREES = 360 * DISTANCE_BETWEEN_DISKS_MM / (TRAY_MOTOR_PULLEY_TEETH_NUMBER * DISTANCE_BETWEEN_TEETH_MM)
-UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT = 431
+UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT = 428
 UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK = UP_DOWN_POSITION_FOR_MAGNET_PLACEMENT
 UP_DOWN_POSITION_TOLERANCE = 10 # unit is degrees of the shaft rotation
 DISK_PICKUP_FIRST_POSITION = UP_DOWN_POSITION_FOR_SLIDER_RANGE_CHECK * 0.6 # some of the way up but not all the way
@@ -513,6 +513,9 @@ for disk_number in range(N_DISKS):
     parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "GO_TO_POSITION_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
     time.sleep(move_time_s * 1.1)
 
+    print("Disk number", disk_number + 1, "is assembled")
+
+print("All disks are assembled")
 
 # disable MOSFETs
 parsed_response = servomotor.execute_command(DISK_SPIN_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)

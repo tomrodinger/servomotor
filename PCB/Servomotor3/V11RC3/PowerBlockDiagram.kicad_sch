@@ -1,0 +1,793 @@
+(kicad_sch
+	(version 20231120)
+	(generator "eeschema")
+	(generator_version "8.0")
+	(uuid "55f62029-af66-4168-97aa-c791fab7ce0f")
+	(paper "A4")
+	(title_block
+		(title "Servo motor stepper M3 -  Power block diagram")
+		(date "2024-10-30")
+		(rev "V11RC3")
+	)
+	(lib_symbols)
+	(polyline
+		(pts
+			(xy 127 70.485) (xy 127 44.45)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "0760f922-2895-47c8-a6ac-e5453a24274d")
+	)
+	(polyline
+		(pts
+			(xy 96.52 71.755) (xy 96.52 93.345)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "08c47f13-917d-4967-bdcf-cab49ca7036e")
+	)
+	(polyline
+		(pts
+			(xy 201.93 91.44) (xy 274.955 91.44)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "099af3c6-e3ba-45f4-b115-78786c9de062")
+	)
+	(polyline
+		(pts
+			(xy 26.035 132.08) (xy 86.36 132.08)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "0ba0ecb6-3dc6-4de1-9b14-3b7c63aa9e7a")
+	)
+	(polyline
+		(pts
+			(xy 96.52 22.86) (xy 96.52 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "0ee46013-6e34-43a2-8af6-0693c051eacf")
+	)
+	(polyline
+		(pts
+			(xy 212.09 22.86) (xy 212.09 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "128a59eb-eaaf-451f-983f-338d4ba8ee69")
+	)
+	(polyline
+		(pts
+			(xy 90.805 147.955) (xy 86.995 142.875)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "1aa5f4c7-b818-4ec8-9295-80ca81b64cf7")
+	)
+	(polyline
+		(pts
+			(xy 207.01 28.575) (xy 210.82 33.655)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "20153b9a-29ce-4242-9855-7c2667f4ca7e")
+	)
+	(polyline
+		(pts
+			(xy 264.16 62.23) (xy 264.16 83.82)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "2046a2cc-5efb-4571-9198-a8edae1c2bae")
+	)
+	(polyline
+		(pts
+			(xy 60.325 174.625) (xy 55.245 178.435)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "23e82d5a-b466-4558-b326-a9fdf51f09f5")
+	)
+	(polyline
+		(pts
+			(xy 264.795 122.555) (xy 264.795 144.145)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "2428bfad-0835-479a-a280-ebaeda221c39")
+	)
+	(polyline
+		(pts
+			(xy 55.245 131.445) (xy 50.165 127.635)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "29e97d34-7e5e-4696-b8e9-50a7155d98c8")
+	)
+	(polyline
+		(pts
+			(xy 159.385 44.45) (xy 96.52 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "2a516e6a-7e5e-428c-b6d7-67e08c240ef1")
+	)
+	(polyline
+		(pts
+			(xy 55.245 131.445) (xy 55.245 46.355)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "2d90fd2e-e5af-4678-9923-5ffb94099eec")
+	)
+	(polyline
+		(pts
+			(xy 161.29 71.755) (xy 161.29 93.345)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "30c1cc30-6501-42b7-80db-5f617a73f3f6")
+	)
+	(polyline
+		(pts
+			(xy 210.82 33.655) (xy 207.01 38.735)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "31edefd9-cfc3-40d1-8704-b81334c4b41e")
+	)
+	(polyline
+		(pts
+			(xy 86.995 142.875) (xy 127 142.875)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "32dd8a82-f8b8-4819-a7bf-df61169fb3e4")
+	)
+	(polyline
+		(pts
+			(xy 95.25 33.655) (xy 91.44 38.735)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "356f78ec-2114-48cc-a20d-3b215cdd62a1")
+	)
+	(polyline
+		(pts
+			(xy 208.28 67.945) (xy 212.09 73.025)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "367c22a1-23f0-45ac-b95a-293cfc30708c")
+	)
+	(polyline
+		(pts
+			(xy 265.43 44.45) (xy 212.09 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "36f20d3e-3191-4bef-af56-4bf7234e707a")
+	)
+	(polyline
+		(pts
+			(xy 86.36 153.67) (xy 26.035 153.67)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "381b195a-bace-43c4-8204-3a834659cbe8")
+	)
+	(polyline
+		(pts
+			(xy 127 142.875) (xy 127 93.98)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "38f319de-e7c2-4041-a1ab-41f641d20965")
+	)
+	(polyline
+		(pts
+			(xy 212.09 122.555) (xy 212.09 144.145)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "3bd52679-f842-4ea3-bb03-5129678342c7")
+	)
+	(polyline
+		(pts
+			(xy 55.245 178.435) (xy 50.165 174.625)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "3e98546b-be11-4ff5-8db1-9ecefb755382")
+	)
+	(polyline
+		(pts
+			(xy 265.43 22.86) (xy 265.43 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "4058ad47-4cdf-47a2-9011-706ec242ee8c")
+	)
+	(polyline
+		(pts
+			(xy 211.455 133.35) (xy 207.645 138.43)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "459ba489-5eae-4fed-9361-18c988a93af8")
+	)
+	(polyline
+		(pts
+			(xy 264.795 144.145) (xy 212.09 144.145)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "49de5d49-f763-40fa-824b-9e53a19975f3")
+	)
+	(polyline
+		(pts
+			(xy 60.325 127.635) (xy 55.245 131.445)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "5baae11c-6968-424f-b23a-0056d7943a49")
+	)
+	(polyline
+		(pts
+			(xy 86.36 132.08) (xy 86.36 153.67)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "61ea01bd-207b-4932-99e6-13c7385b9dee")
+	)
+	(polyline
+		(pts
+			(xy 201.295 101.6) (xy 197.485 106.68)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "6724632d-0639-41e3-80ab-dad4a22b709d")
+	)
+	(polyline
+		(pts
+			(xy 211.455 133.35) (xy 127.635 133.35)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "6dc5cba6-da1c-4784-831d-e888a364cd5e")
+	)
+	(polyline
+		(pts
+			(xy 94.615 33.655) (xy 68.58 33.655)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "707ad863-5e98-48b7-adc8-edb6ab032d65")
+	)
+	(polyline
+		(pts
+			(xy 96.52 22.86) (xy 159.385 22.86)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "7467e8b2-452d-46a7-8e8a-70600058dcb6")
+	)
+	(polyline
+		(pts
+			(xy 161.29 93.345) (xy 96.52 93.345)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "7812acbc-d29d-45ed-9aef-20fc3fb835f8")
+	)
+	(polyline
+		(pts
+			(xy 212.09 73.025) (xy 208.28 78.105)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "7b43c578-3a13-4222-8412-1649f9e52d9f")
+	)
+	(polyline
+		(pts
+			(xy 212.09 73.025) (xy 180.975 73.025)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "7b89f781-14a3-4feb-a1a9-3528769478eb")
+	)
+	(polyline
+		(pts
+			(xy 132.08 67.31) (xy 127 71.12)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "7e7fea60-e562-4b7d-bbfd-97d7dab99a19")
+	)
+	(polyline
+		(pts
+			(xy 213.36 62.23) (xy 213.36 83.82)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "82382b04-0f6c-4c3f-a50d-dfd6b4f996c2")
+	)
+	(polyline
+		(pts
+			(xy 207.645 128.27) (xy 211.455 133.35)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "82b8dfc2-6417-4b95-97aa-f612454a96ea")
+	)
+	(polyline
+		(pts
+			(xy 86.995 142.875) (xy 90.805 137.795)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "892f7940-218a-4aa4-8242-2e3b3fe4bac8")
+	)
+	(polyline
+		(pts
+			(xy 212.09 22.86) (xy 265.43 22.86)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "89829829-87be-4c85-be83-fc20e956cf86")
+	)
+	(polyline
+		(pts
+			(xy 96.52 71.755) (xy 161.29 71.755)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "8c9f6409-9e9f-402b-8c66-ca125160792d")
+	)
+	(polyline
+		(pts
+			(xy 159.385 22.86) (xy 159.385 44.45)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "915d7184-04c9-49ca-aaa9-914f0b084126")
+	)
+	(polyline
+		(pts
+			(xy 212.09 122.555) (xy 264.795 122.555)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "9273b747-ff37-4646-9d50-211c9b60cad8")
+	)
+	(polyline
+		(pts
+			(xy 180.34 132.715) (xy 180.34 73.025)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "958ae777-dc01-40ba-90b2-af4885f9205c")
+	)
+	(polyline
+		(pts
+			(xy 201.93 91.44) (xy 201.93 113.03)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "97be4e87-00c1-47b9-ae02-61aa380c54df")
+	)
+	(polyline
+		(pts
+			(xy 91.44 28.575) (xy 95.25 33.655)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "b72b35d9-e30f-4b66-83b6-d5fb0b51651e")
+	)
+	(polyline
+		(pts
+			(xy 55.245 178.435) (xy 55.245 154.94)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "c0725f64-cc8e-41ea-9323-849eae6d83f0")
+	)
+	(polyline
+		(pts
+			(xy 127 71.12) (xy 121.92 67.31)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "c5e854f3-6e43-4130-803e-3de3b4c4ea52")
+	)
+	(polyline
+		(pts
+			(xy 213.36 62.23) (xy 264.16 62.23)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "cc5a85f9-17a2-4bf2-9873-fa03998a4d5b")
+	)
+	(polyline
+		(pts
+			(xy 274.955 113.03) (xy 201.93 113.03)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "d58f85aa-62bc-4a1e-94de-47de0a707117")
+	)
+	(polyline
+		(pts
+			(xy 201.295 101.6) (xy 180.34 101.6)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "d740958a-8a63-47a5-aab0-f0eb054261e7")
+	)
+	(polyline
+		(pts
+			(xy 26.035 132.08) (xy 26.035 153.67)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "e5daab75-81a4-448b-be38-25c688377312")
+	)
+	(polyline
+		(pts
+			(xy 264.16 83.82) (xy 213.36 83.82)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "e8ce1f4f-5f86-4146-a9a3-1c7386e3ba0d")
+	)
+	(polyline
+		(pts
+			(xy 274.955 91.44) (xy 274.955 113.03)
+		)
+		(stroke
+			(width 1)
+			(type solid)
+			(color 0 0 255 1)
+		)
+		(uuid "f4509fee-ea51-418d-82b2-57cba5c2dbb1")
+	)
+	(polyline
+		(pts
+			(xy 197.485 96.52) (xy 201.295 101.6)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "f4fcbbe6-8768-4f2a-b704-669d57c34748")
+	)
+	(polyline
+		(pts
+			(xy 209.55 33.655) (xy 160.655 33.655)
+		)
+		(stroke
+			(width 1.27)
+			(type solid)
+			(color 255 0 0 1)
+		)
+		(uuid "f6fb95ec-ea08-4301-9b4e-f50074fec474")
+	)
+	(text "+3.3V"
+		(exclude_from_sim no)
+		(at 130.175 127.635 0)
+		(effects
+			(font
+				(size 4 4)
+				(thickness 1.016)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "0f88e1cd-1acc-420c-a5d3-2b2eca6196f4")
+	)
+	(text "Stepper driver\n   (GC6609)"
+		(exclude_from_sim no)
+		(at 27.94 149.86 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "19018dad-7b0b-4c6e-a3c7-90eb56308765")
+	)
+	(text "+10V"
+		(exclude_from_sim no)
+		(at 177.8 30.48 0)
+		(effects
+			(font
+				(size 4 4)
+				(thickness 1.016)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "2c3160ad-858d-4dff-893e-77c80c13788a")
+	)
+	(text "  RS485\n(SP3485EN)"
+		(exclude_from_sim no)
+		(at 215.265 80.01 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "2c4caf99-ebe7-45d6-8908-5ef97d1b90d0")
+	)
+	(text "Hall sensors\n (AH49HSC)"
+		(exclude_from_sim no)
+		(at 213.995 140.335 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "3b6efd3a-08c3-47dc-ae7a-fadb9eb86e60")
+	)
+	(text "Servo motor stepper - Power block diagram"
+		(exclude_from_sim no)
+		(at 180.34 175.895 0)
+		(effects
+			(font
+				(size 3 3)
+			)
+			(justify left bottom)
+		)
+		(uuid "3fd9ddcc-72d2-42be-a9e9-473134046d15")
+	)
+	(text "+3.3V regulator\n  (HT7533-1)"
+		(exclude_from_sim no)
+		(at 97.79 89.535 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "4dbb7f0c-22df-430f-a188-c2182b71f188")
+	)
+	(text "+10V regulator\n   (L78L10)"
+		(exclude_from_sim no)
+		(at 98.425 40.64 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "55a4fa1e-976e-4f25-96df-811fa8284673")
+	)
+	(text "OV detection\n  (LM321)"
+		(exclude_from_sim no)
+		(at 213.995 40.64 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "5dc3ea5d-7825-4e74-8a8e-029be85986e7")
+	)
+	(text "Input power\n  (+24V)"
+		(exclude_from_sim no)
+		(at 23.495 38.1 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+				(thickness 1.016)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "67344b4e-ad4a-4184-bd91-314fb3bafa12")
+	)
+	(text "+10V"
+		(exclude_from_sim no)
+		(at 106.68 58.42 0)
+		(effects
+			(font
+				(size 4 4)
+				(thickness 1.016)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "6cf449ce-8883-4dbf-b286-7a011785b9e1")
+	)
+	(text "Stepper motor"
+		(exclude_from_sim no)
+		(at 27.94 187.325 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+				(thickness 1.016)
+				(bold yes)
+			)
+			(justify left bottom)
+		)
+		(uuid "c91e233b-d3d2-4a41-8739-7709e0090b2f")
+	)
+	(text "      MCU\n(STM32G031G8U6)"
+		(exclude_from_sim no)
+		(at 203.835 109.22 0)
+		(effects
+			(font
+				(size 5.08 5.08)
+			)
+			(justify left bottom)
+		)
+		(uuid "fd1596d0-6040-4fee-89c6-7e7f3ad65f37")
+	)
+)

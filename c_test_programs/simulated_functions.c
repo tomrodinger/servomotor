@@ -27,3 +27,4 @@ void fatal_error(uint16_t error_code)
   void reset_profilers(void) {}
   void rs485_transmit(void) {}
   void zero_hall_position(void) {}
+  void reset_AT5833(void) {}

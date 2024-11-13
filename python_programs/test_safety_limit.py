@@ -3,7 +3,7 @@
 import random
 import struct
 import argparse
-import serial_functions
+import servomotor
 
 
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
@@ -29,10 +29,6 @@ else:
 
 n_moves = int(args.n_moves)
 
-DETECT_DEVICES_COMMAND = 20
-SET_DEVICE_ALIAS_COMMAND = 21
-GET_PRODUCT_INFO_COMMAND = 22
-MOVE_WITH_ACCELERATION_COMMAND = 19
 ADD_TO_QUEUE_TEST_COMMAND = 253
 
 MOVE_WITH_ACCELERATION = 0
@@ -53,8 +49,8 @@ def get_response(ser):
         print("Error: didn't receive enough bytes in the response. Got %d bytes" % (len(response)))
         exit(1)
     print("Received a response: ", response)
-    if response[0] != RESPONSE_CHARACTER:
-        print(f"Error: the first is not the expected {RESPONSE_CHARACTER}")
+    if response[0] != servomotor.RESPONSE_CHARACTER:
+        print(f"Error: the first is not the expected {servomotor.RESPONSE_CHARACTER}")
         exit(1)
     payload_size = response[2]
     if payload_size == 0:
@@ -275,7 +271,7 @@ def convert_to_motor_units(acceleration_mm_per_second_squared, time_seconds):
     return acceleration_to_send, time_steps
 
 
-ser = serial_functions.open_serial_port(serial_port, 230400, 0.05)
+ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.5)
 
 for i in range(n_moves):
     while 1:
@@ -298,7 +294,7 @@ for i in range(n_moves):
 
     send_add_to_queue_test_command(ser, alias, acceleration_to_send, time_steps, MOVE_WITH_ACCELERATION)
     payload = get_response(ser)
-    if (payload == None) or (len(payload) != 16):
+    if (payload == None) or (len(payload) != 20):
         print("Received an invalid response")
         exit(1)
     print("Command succeeded")
@@ -307,7 +303,7 @@ for i in range(n_moves):
 	#   int32_t predicted_final_position;
 	#   uint32_t time_step_at_turn_point;
 	#   int32_t relative_position_at_turn_point;
-    (predicted_final_velocity_from_motor, predicted_final_position_from_motor, time_step_at_turn_point_from_motor, relative_position_at_turn_point_from_motor) = struct.unpack("<iiii", payload)
+    (predicted_final_velocity_from_motor, predicted_final_position_from_motor, time_step_at_turn_point_from_motor, relative_position_at_turn_point_from_motor) = struct.unpack("<iqii", payload)
 
     print("")
     print("Predicted final velocity:", predicted_final_velocity)

@@ -20,11 +20,13 @@
         "Input": [
             {
                 "Description": "i32: The displacement to travel. Can be positive or negative.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "displacement"
             },
             {
                 "Description": "u32: The time over which to do the move.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "duration"
             }
         ],
         "Output": "success_response"
@@ -36,7 +38,8 @@
         "Input": [
             {
                 "Description": "u32: Maximum velocity.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maximumVelocity"
             }
         ],
         "Output": "success_response"
@@ -48,11 +51,13 @@
         "Input": [
             {
                 "Description": "i32: New absolute position value.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "position"
             },
             {
                 "Description": "u32: Time allowed for executing the move.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "duration"
             }
         ],
         "Output": "success_response"
@@ -64,7 +69,8 @@
         "Input": [
             {
                 "Description": "u32: The maximum acceleration.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maximumAcceleration"
             }
         ],
         "Output": "success_response"
@@ -83,13 +89,15 @@
         "Input": [
             {
                 "Description": "u8: Indicates the type of data to read. Currently 1 to 4 are valid. 0 indicates turning off the reading.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "dataType"
             }
         ],
         "Output": [
             {
                 "Description": "unknown_data: Various data. This is work in progress.",
-                "TooltipDisplayFormat": ""
+                "TooltipDisplayFormat": "",
+                "ParameterName": "data"
             }
         ]
     },
@@ -108,7 +116,8 @@
         "Output": [
             {
                 "Description": "u48: The current absolute time",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "currentTime"
             }
         ]
     },
@@ -119,29 +128,33 @@
         "Input": [
             {
                 "Description": "u48: The motor absolute time that the motor should sync to (in microseconds).",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "masterTime"
             }
         ],
         "Output": [
             {
                 "Description": "i32: The error in the motor's time compared to the master time.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "timeError"
             },
             {
                 "Description": "u16: The contents of the RCC-ICSCR register (holds the HSICAL and HSITRIM settings).",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "rccIcscr"
             }
         ]
     },
     {
-        "CommandString": "Get queue size",
+        "CommandString": "Get n queued items",
         "CommandEnum": 11,
         "Description": "Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)",
         "Input": null,
         "Output": [
             {
                 "Description": "u8: The number of items in the movement queue. This command will return between 0 and 32. If less than 32, you can add more items to the queue to continue the movements in order without stopping.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "queueSize"
             }
         ]
     },
@@ -166,11 +179,13 @@
         "Input": [
             {
                 "Description": "i32: The maximum distance to move (if a crash does not occur). This can be positive or negative. the sign determines the direction of movement.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "maxDistance"
             },
             {
                 "Description": "u32: The maximum time to allow for homing. Make sure to give enough time for the motor to cover the maximum distance or the motor may move too fast or throw a fatal error.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maxDuration"
             }
         ],
         "Output": "success_response"
@@ -183,7 +198,8 @@
         "Output": [
             {
                 "Description": "i64: The current position as determined by the hall sensors",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "hallSensorPosition"
             }
         ]
     },
@@ -205,11 +221,13 @@
                     "Bit 6: Motor is currently busy doing a time consuming task and is not ready to take another command",
                     "Bit 7: Not used, set to 0"
                 ],
-                "TooltipDisplayFormat": "%b"
+                "TooltipDisplayFormat": "%b",
+                "ParameterName": "statusFlags"
             },
             {
                 "Description": "u8: The fatal error code. If 0 then there is no fatal error. Once a fatal error happens, the motor becomes disabled and cannot do much anymore until reset. You can press the reset button on the motor or you can execute the System reset command to get out of the fatal error state.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "fatalErrorCode"
             }
         ]
     },
@@ -228,7 +246,8 @@
         "Output": [
             {
                 "Description": "u32: Update frequency in Hz. This is how often the motor executes all calculations for hall sensor position, movement, PID loop, safety, etc.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "updateFrequency"
             }
         ]
     },
@@ -239,11 +258,13 @@
         "Input": [
             {
                 "Description": "i32: The acceleration (the unit is microsteps per time step per time step * 2^24).",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "acceleration"
             },
             {
                 "Description": "u32: The number of time steps to apply this acceleration. Use command 18 to get the frequency of the time steps. After this many time steps, the acceleration will go to zero and velocity will be maintained.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "timeSteps"
             }
         ],
         "Output": "success_response"
@@ -256,15 +277,18 @@
         "Output": [
             {
                 "Description": "u64_unique_id: A unique ID (unique among all devices manufactured). The response is sent after a random delay of between 0 and 1 seconds.",
-                "TooltipDisplayFormat": ""
+                "TooltipDisplayFormat": "",
+                "ParameterName": "uniqueId"
             },
             {
                 "Description": "u8_alias: The alias of the device that has this unique ID.",
-                "TooltipDisplayFormat": "%d,%c"
+                "TooltipDisplayFormat": "%d,%c",
+                "ParameterName": "alias"
             },
             {
                 "Description": "crc32: A CRC32 value for this packet. This is used to verify that the response is correct.",
-                "TooltipDisplayFormat": ""
+                "TooltipDisplayFormat": "",
+                "ParameterName": "crc"
             }
         ],
         "MultipleResponses": true
@@ -276,11 +300,13 @@
         "Input": [
             {
                 "Description": "u64_unique_id: Unique ID of the target device.",
-                "TooltipDisplayFormat": "%x"
+                "TooltipDisplayFormat": "%x",
+                "ParameterName": "uniqueId"
             },
             {
                 "Description": "u8_alias: The alias (short one byte ID) ranging from 0 to 253. Cannot be 254 or 255 because those are reserved.",
-                "TooltipDisplayFormat": "%d,%c"
+                "TooltipDisplayFormat": "%d,%c",
+                "ParameterName": "alias"
             }
         ],
         "Output": "success_response"
@@ -293,27 +319,33 @@
         "Output": [
             {
                 "Description": "string8: The product code / model number (when doing a firmware upgrade, this must match between the firmware file and the target device).",
-                "TooltipDisplayFormat": "%s"
+                "TooltipDisplayFormat": "%s",
+                "ParameterName": "productCode"
             },
             {
                 "Description": "u8: A firmware compatibility code (when doing a firmware upgrade, this must match between the firmware file and the target device).",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "firmwareCompatibility"
             },
             {
                 "Description": "u24_version_number: The hardware version stored as 3 bytes. The first byte is the patch version, followed by the minor and major versions.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "hardwareVersion"
             },
             {
                 "Description": "u32: The serial number.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "serialNumber"
             },
             {
                 "Description": "u64_unique_id: The unique ID for the product.",
-                "TooltipDisplayFormat": "%x"
+                "TooltipDisplayFormat": "%x",
+                "ParameterName": "uniqueId"
             },
             {
                 "Description": "u32: Not currently used.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "reserved"
             }
         ]
     },
@@ -323,7 +355,8 @@
         "Description": "This command will upgrade the flash memory of the servo motor. Before issuing a firmware upgrade command, you must do some calculations as shown in the examples.",
         "Input": [
             {
-                "Description": "firmware_page: The data to upgrade one page of flash memory. Contents includes the product model code (8 bytes), firmware compatibility code (1 byte), page number (1 byte), and the page data itself (2048 bytes)."
+                "Description": "firmware_page: The data to upgrade one page of flash memory. Contents includes the product model code (8 bytes), firmware compatibility code (1 byte), page number (1 byte), and the page data itself (2048 bytes).",
+                "ParameterName": "firmwarePage"
             }
         ],
         "Output": "success_response"
@@ -336,7 +369,8 @@
         "Output": [
             {
                 "Description": "string_null_term: This is a brief description of the product.",
-                "TooltipDisplayFormat": "%s"
+                "TooltipDisplayFormat": "%s",
+                "ParameterName": "productDescription"
             }
         ]
     },
@@ -348,7 +382,8 @@
         "Output": [
             {
                 "Description": "u32_version_number: The firmware version stored as 4 bytes. The first byte is the development number, then patch version, followed by the minor and major versions.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "firmwareVersion"
             }
         ]
     },
@@ -359,11 +394,13 @@
         "Input": [
             {
                 "Description": "i32: The velocity (the unit is microsteps per time step * 2^20).",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "velocity"
             },
             {
                 "Description": "u32: The number of time steps to maintain this velocity. Use command 18 to get the frequency of the time steps. After this many time steps, If the queue becomes empty, the motor will maintain the last velocity indefinitely. The velocity will take affect immediately if the queue is empty or will take affect immediately when this queued item is reached.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "timeSteps"
             }
         ],
         "Output": "success_response"
@@ -382,11 +419,13 @@
         "Input": [
             {
                 "Description": "u16: The motor current. The units are some arbitrary units and not amps. A value of 150 or 200 is suitable.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorCurrent"
             },
             {
                 "Description": "u16: The motor regeneration current (while it is braking). This parameter is currently not used for anything.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "regenerationCurrent"
             }
         ],
         "Output": "success_response"
@@ -398,15 +437,18 @@
         "Input": [
             {
                 "Description": "u8: Specify how many moves are being communicated in this one shot.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "moveCount"
             },
             {
                 "Description": "u32: Each bit specifies if the move is a (bit = 0) MOVE_WITH_ACCELERATION_COMMAND or a (bit = 1) MOVE_WITH_VELOCITY_COMMAND.",
-                "TooltipDisplayFormat": "%b"
+                "TooltipDisplayFormat": "%b",
+                "ParameterName": "moveTypes"
             },
             {
                 "Description": "list_2d: A 2D list in Python format (list of lists). Each item in the list is of type [i32, u32] representing a series of move commands. Each move command specifies the acceleration to move at or the velocity to instantly change to (according to the bits above) and the number of time steps over which this command is to be executed. For example: '[[100, 30000], [-200, 60000]]'. There is a limit of 32 move commands that can be listed in this one multi-move command. Each of the moves takes up one queue spot, so make sure there is enough space in the queue to store all of the commands.",
-                "TooltipDisplayFormat": ""
+                "TooltipDisplayFormat": "",
+                "ParameterName": "moveList"
             }
         ],
         "Output": "success_response"
@@ -418,11 +460,13 @@
         "Input": [
             {
                 "Description": "i64: The lower limit in microsteps.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "lowerLimit"
             },
             {
                 "Description": "i64: The upper limit in microsteps.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "upperLimit"
             }
         ],
         "Output": "success_response"
@@ -434,13 +478,15 @@
         "Input": [
             {
                 "Description": "buf10: Any binary data payload to send to the device.",
-                "TooltipDisplayFormat": "%s"
+                "TooltipDisplayFormat": "%s",
+                "ParameterName": "pingData"
             }
         ],
         "Output": [
             {
                 "Description": "buf10: The same data that was sent to the device will be returned if all went well.",
-                "TooltipDisplayFormat": "%s"
+                "TooltipDisplayFormat": "%s",
+                "ParameterName": "responsePayload"
             }
         ]
     },
@@ -451,56 +497,67 @@
         "Input": [
             {
                 "Description": "u8: 0 = turn off statistics gathering, 1 = reset statistics and turn on gathering.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "control"
             }
         ],
         "Output": "success_response"
     },
     {
-        "CommandString": "Get hall sesor statistics",
+        "CommandString": "Get hall sensor statistics",
         "CommandEnum": 33,
         "Description": "Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system.",
         "Input": null,
         "Output": [
             {
                 "Description": "u16: The maximum value of hall sensor 1 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maxHall1"
             },
             {
                 "Description": "u16: The maximum value of hall sensor 2 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maxHall2"
             },
             {
                 "Description": "u16: The maximum value of hall sensor 3 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "maxHall3"
             },
             {
                 "Description": "u16: The minimum value of hall sensor 1 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "minHall1"
             },
             {
                 "Description": "u16: The minimum value of hall sensor 2 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "minHall2"
             },
             {
                 "Description": "u16: The minimum value of hall sensor 3 encoutered since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "minHall3"
             },
             {
                 "Description": "u64: The sum of hall sensor 1 values collected since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "sumHall1"
             },
             {
                 "Description": "u64: The sum of hall sensor 2 values collected since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "sumHall2"
             },
             {
                 "Description": "u64: The sum of hall sensor 3 values collected since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "sumHall3"
             },
             {
                 "Description": "u32: The number of times the hall sensors were measured since the last statistics reset.",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "measurementCount"
             }
         ]
     },
@@ -512,7 +569,8 @@
         "Output": [
             {
                 "Description": "i64: The current desired position",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "position"
             }
         ]
     },
@@ -524,7 +582,8 @@
         "Output": [
             {
                 "Description": "general_data: The data in the buffer (the format and length of the data depends on what was put in the buffer)",
-                "TooltipDisplayFormat": ""
+                "TooltipDisplayFormat": "",
+                "ParameterName": "bufferData"
             }
         ]
     },
@@ -535,7 +594,8 @@
         "Input": [
             {
                 "Description": "u8: The test mode to use (0 = normal operation).",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "testMode"
             }
         ],
         "Output": "success_response"
@@ -548,15 +608,18 @@
         "Output": [
             {
                 "Description": "i64: The commanded position (which may differ from actual)",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "commandedPosition"
             },
             {
                 "Description": "i64: The hall sensor position (or you could say the actual measured position)",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "hallSensorPosition"
             },
             {
                 "Description": "i32: The external encoder position. This needs special hardware attached to the motor to work",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "externalEncoderPosition"
             }
         ]
     },
@@ -568,7 +631,8 @@
         "Output": [
             {
                 "Description": "u16: The voltage. Divide this number by 10 to get the actual voltage in volts.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "supplyVoltage"
             }
         ]
     },
@@ -580,11 +644,13 @@
         "Output": [
             {
                 "Description": "i32: The minimum PID error value.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "minPidError"
             },
             {
                 "Description": "i32: The maximum PID error value.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "maxPidError"
             }
         ]
     },
@@ -595,7 +661,8 @@
         "Input": [
             {
                 "Description": "u8: Vibration level (0 = turn off, 1 = turn on).",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "vibrationLevel"
             }
         ],
         "Output": "success_response"
@@ -607,7 +674,8 @@
         "Input": [
             {
                 "Description": "u64_unique_id: Unique ID of the target device.",
-                "TooltipDisplayFormat": "%x"
+                "TooltipDisplayFormat": "%x",
+                "ParameterName": "uniqueId"
             }
         ],
         "Output": "success_response"
@@ -620,9 +688,10 @@
         "Output": [
             {
                 "Description": "i16: The temperature in degrees celcius. The accuracy is about +/- 3 degrees celcius and is measured at the motor driver PCB.",
-                "TooltipDisplayFormat": "%d"
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "temperature"
             }
-       
+           
         ]
     },
     {
@@ -632,17 +701,48 @@
         "Input": [
             {
                 "Description": "u32: The proportional term constant (P)",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "kP"
             },
             {
                 "Description": "u32: The integral term constant (I)",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "kI"
             },
             {
                 "Description": "u32: The differential term constant (D)",
-                "TooltipDisplayFormat": "%u"
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "kD"
             }
         ],
         "Output": "success_response"
+    },
+    {
+        "CommandString": "Get debug values",
+        "CommandEnum": 252,
+        "Description": "Get some debug values. End customer should not use this command. It is for developers and testers.",
+        "Input": null,
+        "Output": [
+            {
+                "Description": "i64: Debug value 1",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "debugValue1"
+            },
+            {
+                "Description": "i64: Debug value 2",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "debugValue2"
+            },
+            {
+                "Description": "i64: Debug value 3",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "debugValue3"
+            },
+            {
+                "Description": "i64: Debug value 4",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "debugValue4"
+            }
+        ]
     }
 ]

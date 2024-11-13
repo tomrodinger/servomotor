@@ -45,11 +45,12 @@ def get_response(verbose=True):
         raise TimeoutError("Error: timeout")
     if len(response) != 3:
         # Thow a general communication error
+        print("Received:", response)
         raise CommunicationError("Error: the response is not 3 bytes long")
     if verbose:
         print_data("Received a response: ", response, print_size=True)
     if response[0] != RESPONSE_CHARACTER:
-        error_text = f"Error: the first byte (which should indeicate a response) is not the expected {RESPONSE_CHARACTER}"
+        error_text = f"Error: the first byte (which should indicate a response) is not the expected {RESPONSE_CHARACTER}"
         raise CommunicationError(error_text)
     payload_size = response[2]
     if payload_size == 0xff:
@@ -129,17 +130,6 @@ def sniffer():
     return alias, command_id, payload
 
 
-def parse_response(response):
-    if len(response) != 13:
-        return None, None
-    unique_id = int.from_bytes(response[0:8], "little")
-    alias = int(response[4])
-    crc32 = int.from_bytes(response[5:9], "little")
-    if crc32 != 0x04030201:
-        return None, None
-    return unique_id, alias
-
-
 def flush_receive_buffer():
     ser.reset_input_buffer()
 
@@ -152,31 +142,28 @@ def send_command(command_id, gathered_inputs, verbose=True):
     if (alias == 255) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
         if verbose:
             print("Sending a command to all devices (alias %d) and we expect there will be no response from any of them" % (alias))
-        return None
-    if registered_commands[command_id]["Output"] == []:
+        return []
+    for command_index, item in enumerate(registered_commands):
+        if command_id == item["CommandEnum"]:
+            break
+    if registered_commands[command_index]["Output"] == []:
         if verbose:
             print("This command is expected to not return any response")
-        return None
+        return []
     all_response_payloads = []
     while(1):
         try:
             response_payload = get_response(verbose=verbose)
+            all_response_payloads.append(response_payload)
         except TimeoutError:
             if alias == 255: # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
-            if registered_commands[command_id]["MultipleResponses"] == True: # check if this commmand may have any number of responses (including none)
+            if registered_commands[command_index]["MultipleResponses"] == True: # check if this commmand may have any number of responses (including none)
                 break
             # There is no legitamate reason that we should get a timeout here, so we need to raise this Timeout error again
             raise TimeoutError("Error: timeout")
-#        except CommunicationError as e:
-#            print("Communication Error:", e)
-#            exit(1)
-#        except PayloadError as e:
-#            print("Payload Error:", e)
-#            exit(1)
-        if registered_commands[command_id]["MultipleResponses"] == False:
-            return response_payload
-        all_response_payloads.append(response_payload)
+        if registered_commands[command_index]["MultipleResponses"] == False:
+            break
     return all_response_payloads
 
 
@@ -449,7 +436,10 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
 
 def gather_inputs(command_id, inputs, verbose=True):
     print("Gathering inputs for command %d" % (command_id))
-    expected_inputs = registered_commands[command_id]["Input"]
+    for command_index, item in enumerate(registered_commands):
+        if command_id == item["CommandEnum"]:
+            break
+    expected_inputs = registered_commands[command_index]["Input"]
     if len(expected_inputs) == 0:
         if verbose:
             print("This command takes no inputs")
@@ -500,7 +490,10 @@ def interpret_single_response(command_id, response, verbose=True):
     if response == None:
         print("This command did not return a response")
         return parsed_response
-    expected_response = registered_commands[command_id]["Output"]
+    for command_index, item in enumerate(registered_commands):
+        if command_id == item["CommandEnum"]:
+            break
+    expected_response = registered_commands[command_index]["Output"]
     if len(expected_response) == 0:
         if response != None:
             print("Error: We were expecting this command to have no response whatsoever, but we go a response")
@@ -596,18 +589,11 @@ def interpret_single_response(command_id, response, verbose=True):
 
 def interpret_response(command_id, response, verbose=True):
     parsed_response = []
-    if not isinstance(response, list):
-        parsed_response = interpret_single_response(command_id, response, verbose=verbose)
-    else:
-        if len(response) == 0:
-            print("There was no response from any device(s)")
-        elif len(response) == 1:
-            parsed_response = interpret_single_response(command_id, response[0], verbose=verbose)
-        else:
-            print("The response is a list containing multiple responses. Interpreting them:")
-            for i in range(len(response)):
-                partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
-                parsed_response.append(partial_parsed_response)
+    if len(response) == 0:
+        print("There was no response from any device(s)")
+    for i in range(len(response)):
+        partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
+        parsed_response.append(partial_parsed_response)
     return parsed_response
 
 

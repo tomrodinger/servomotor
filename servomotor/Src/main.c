@@ -31,7 +31,8 @@
 #endif
 #ifdef PRODUCT_NAME_M3
 #include "commutation_table_M3.h"
-#include "GC6609.h" // if you don't want to use the GC6609 stepper motor driver chip, then comment out this line (V8 and above are using this chip)
+//#include "GC6609.h" // if using the GC6609 stepper motor driver chip, then make sure to uncomment this (V8, V9, V10, and V11RC1 are using this chip)
+#include "AT5833.h" // if using the AT5833 stepper motor driver chip, then make sure to uncomment this (V11RC2 is using this chip)
 #endif
 #ifdef PRODUCT_NAME_M4
 #include "commutation_table_M4.h"
@@ -46,11 +47,11 @@ struct __attribute__((__packed__)) firmware_version_struct {
 	uint8_t major;
 	uint8_t not_used;
 };
-#define NOT_USED 0xff
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 10
-struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, NOT_USED};
+#define BUGFIX_FIRMWARE_VERSION 11
+#define DEVELOPMENt_FIRMWARE_VERSION 1 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+struct firmware_version_struct firmware_version = {DEVELOPMENt_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
 
@@ -72,9 +73,9 @@ struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR
 #define INTEGRAL_CONSTANT_PID     5
 #define DERIVATIVE_CONSTANT_PID   175000
 #else
-#define PROPORTIONAL_CONSTANT_PID 5000
-#define INTEGRAL_CONSTANT_PID     2
-#define DERIVATIVE_CONSTANT_PID   1000000
+#define PROPORTIONAL_CONSTANT_PID 2000
+#define INTEGRAL_CONSTANT_PID     5
+#define DERIVATIVE_CONSTANT_PID   175000
 #endif
 #endif
 #ifdef PRODUCT_NAME_M4
@@ -217,7 +218,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t n_moves_in_this_command;
     int32_t max_homing_travel_displacement;
     uint32_t max_homing_time;
-    add_to_queue_test_results_t add_to_queue_test_results;
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
     uint8_t control_hall_sensor_statistics_subcommand;
 
@@ -568,12 +568,20 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
 			break;
         case ADD_TO_QUEUE_TEST_COMMAND:
-            add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_results);
-            rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x10", 3);
-                rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
-			}
+            {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    add_to_queue_test_results_t add_to_queue_test_results;
+                } add_to_queue_test_reply;
+                add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_reply.add_to_queue_test_results);
+                rs485_allow_next_command();
+                if(axis != ALL_ALIAS) {
+                    add_to_queue_test_reply.header[0] = RESPONSE_CHARACTER;
+                    add_to_queue_test_reply.header[1] = 1;
+                    add_to_queue_test_reply.header[2] = sizeof(add_to_queue_test_reply) - sizeof(add_to_queue_test_reply.header);
+                    rs485_transmit(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply));
+                }
+            }
 			break;
         case PING_COMMAND:
         	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
@@ -773,6 +781,33 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
 			break;
+        case GET_DEBUG_VALUES_COMMAND:
+            {
+                rs485_allow_next_command();
+                if(axis != ALL_ALIAS) {
+                    int64_t debug_value1;
+                    int64_t debug_value2;
+                    int64_t debug_value3;
+                    int64_t debug_value4;
+                    get_debug_values(&debug_value1, &debug_value2, &debug_value3, &debug_value4);
+                    struct __attribute__((__packed__)) {
+                        uint8_t header[3];
+                        int64_t debug_value1;
+                        int64_t debug_value2;
+                        int64_t debug_value3;
+                        int64_t debug_value4;
+                    } get_debug_values_reply;
+                    get_debug_values_reply.header[0] = RESPONSE_CHARACTER;
+                    get_debug_values_reply.header[1] = 1;
+                    get_debug_values_reply.header[2] = sizeof(get_debug_values_reply) - sizeof(get_debug_values_reply.header);
+                    get_debug_values_reply.debug_value1 = debug_value1;
+                    get_debug_values_reply.debug_value2 = debug_value2;
+                    get_debug_values_reply.debug_value3 = debug_value3;
+                    get_debug_values_reply.debug_value4 = debug_value4;
+                    rs485_transmit(&get_debug_values_reply, sizeof(get_debug_values_reply));
+                }
+            }
+            break;
         }
     }
     else {

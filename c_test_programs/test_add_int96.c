@@ -5,7 +5,7 @@
 #include <limits.h>
 
 #define LOG_FILENAME "test_add_i96.log"
-#define RUN_TIME_SECONDS 3
+#define RUN_TIME_SECONDS 30
 #define MAX_N_TRIALS 0 // set to zero for unlimited
 
 typedef struct {
@@ -62,9 +62,12 @@ __int128_t int96_to_int128(int96_t *value) {
     return result;
 }
 
+int8_t flip_a_coin(void) {
+    return (rand() % 2) ? 1 : -1;
+}
+
 uint32_t random_uint32(void) {
-    // Combine two rand() calls to get a 32-bit number
-    uint32_t r = ((uint32_t)rand() << 16) | ((uint32_t)rand() & 0xFFFF);
+    uint32_t r = (int32_t)(drand48() * ((double)UINT32_MAX + 1));
     return r;
 }
 
@@ -72,6 +75,7 @@ int32_t random_int32(void) {
     uint32_t r = random_uint32();
     return (int32_t)r;
 }
+
 
 int main(void)
 {
@@ -83,7 +87,7 @@ int main(void)
     printf("Test Start\n");
 
     // Set the random seed based on the current time
-    srand(time(NULL));
+    srand48(time(NULL));
 
     // Open file for writing
     fp = fopen(LOG_FILENAME, "w");
@@ -106,15 +110,24 @@ int main(void)
         __int128_t actual_result;
 
         // Generate random values for the inputs for a and b
-        int32_t a_high = random_int32();
-        uint32_t a_mid = random_uint32();
         uint32_t a_low = random_uint32();
-        a = ((__int128_t)a_high << 64) | ((__int128_t)a_mid << 32) | a_low;
+        uint32_t a_mid = random_uint32();
+        int32_t a_high = random_int32();
+        ((uint32_t*)&a)[0] = a_low;
+        ((uint32_t*)&a)[1] = a_mid;
+        ((int32_t*)&a)[2] = a_high;
+        if (a_high >= 0) {
+            ((int32_t*)&a)[3] = 0;        
+        }
+        else {
+            ((int32_t*)&a)[3] = -1;
+        }
 
-        int32_t b_high = random_int32();
         uint32_t b_low = random_uint32();
-        b = ((int64_t)b_high << 32) | b_low;
-
+        int32_t b_high = random_int32();
+        ((uint32_t*)&b)[0] = b_low;
+        ((int32_t*)&b)[1] = b_high;
+        
         // Calculate the expected result
         expected_result = a + b;
 

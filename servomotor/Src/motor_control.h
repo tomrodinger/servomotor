@@ -2,19 +2,25 @@
 #define SRC_MOTOR_CONTROL_H_
 
 #include <stdint.h>
+#include "PWM.h"
 
 #ifdef PRODUCT_NAME_M1
 #include "hall_sensor_constants_M1.h"
+#include "commutation_table_M1.h"
 #endif
 #ifdef PRODUCT_NAME_M2
 #include "hall_sensor_constants_M2.h"
 #endif
 #ifdef PRODUCT_NAME_M3
 #include "hall_sensor_constants_M3.h"
+#include "commutation_table_M3.h"
 #endif
 #ifdef PRODUCT_NAME_M4
 #include "hall_sensor_constants_M4.h"
+#include "commutation_table_M4.h"
 #endif
+
+#define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
 
 #define OPEN_LOOP_POSITION_CONTROL 0
 #define CLOSED_LOOP_POSITION_CONTROL 1
@@ -44,6 +50,9 @@
 #define MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED     ((uint64_t)MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * (uint64_t)MICROSTEPS_PER_ROTATION)
 #define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
+
+#define ACCELERATION_SHIFT_LEFT 8
+#define VELOCITY_SHIFT_LEFT 12
 
 #define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
 
@@ -156,5 +165,6 @@ void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
 void set_motor_test_mode(uint8_t new_test_mode);
 void test_M3_motor_spin(void);
+void get_debug_values(int64_t *debug_value1_ptr, int64_t *debug_value2_ptr, int64_t *debug_value3_ptr, int64_t *debug_value4_ptr);
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

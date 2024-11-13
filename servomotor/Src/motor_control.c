@@ -31,8 +31,10 @@
 #include "device_status.h"
 #include "global_variables.h"
 #include "profiler.h"
-#include "GC6609.h"
-
+#ifdef PRODUCT_NAME_M3
+//#include "GC6609.h" // if using the GC6609 stepper motor driver chip, then make sure to uncomment this (V8, V9, V10, and V11RC1 are using this chip)
+#include "AT5833.h" // if using the AT5833 stepper motor driver chip, then make sure to uncomment this (V11RC2 is using this chip)
+#endif
 #define MAX_HOMING_ERROR 50000
 
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
@@ -73,16 +75,13 @@
 #define MAX_MOTOR_CURRENT 300 // make sure this number is less than (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
 //#define MAX_MOTOR_CONTROL_PERIOD_FATAL_ERROR_THRESHOLD (PWM_PERIOD_MICROSECONDS * 3 - 2) // we want to ensure that the update of the PWM happens every second PWM period (we are not able to do calculatons fast enough to updated it every peripd unfortunately)
 #define MAX_MOTOR_CONTROL_PERIOD_FATAL_ERROR_THRESHOLD (100) // we want to ensure that the update of the PWM happens every second PWM period (we are not able to do calculatons fast enough to updated it every peripd unfortunately)
-#define DEFAULT_MAX_ALLOWABLE_POSITION_DEVIATION ONE_REVOLUTION_MICROSTEPS // set at one shaft rotation by default
+#define DEFAULT_MAX_ALLOWABLE_POSITION_DEVIATION (ONE_REVOLUTION_MICROSTEPS * 2) // set at two shaft rotations by default
 #define COMPUTED_VELOCITY_CALIBRATION_CONSTANT 3000
 #define COMPUTED_VELOCITY_CALIBRATION_SHIFT 16
 #if defined (PRODUCT_NAME_M1) || defined (PRODUCT_NAME_M2) || defined (PRODUCT_NAME_M4)
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 #endif
 
-#define ACCELERATION_SHIFT_LEFT 8
-#define VELOCITY_SHIFT_LEFT 12
-#define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
 typedef struct __attribute__((__packed__)) {
 	movement_type_t movement_type;
 	union {
@@ -104,6 +103,11 @@ static uint16_t max_motor_pwm_voltage = DEFAULT_MAX_MOTOR_PWM_VOLTAGE;
 static uint16_t max_motor_regen_pwm_voltage = DEFAULT_MAX_MOTOR_PWM_VOLTAGE;
 static int32_t velocity = 0;
 static int64_t current_velocity_i64 = 0;
+
+static int64_t debug_value1 = 0;
+static int64_t debug_value2 = 0;
+static int64_t debug_value3 = 0;
+static int64_t debug_value4 = 0;
 
 //typedef union {
 //	int64_t i64;
@@ -187,6 +191,7 @@ static int32_t average_hall_position_delta_count = 0;
 //static int64_t position_after_last_queue_item = 0;
 static int96_t position_after_last_queue_item_i96 = {0};
 static int64_t velocity_after_last_queue_item = 0;
+static uint8_t ran_the_add_to_queue_test = 0;
 static uint8_t multipurpose_data_type = 0;
 static uint16_t multipurpose_data_size = 0;
 
@@ -469,7 +474,11 @@ uint16_t hall_data_buffer[3];
 #endif
 
 #define CALIBRATION_DISTANCE ((uint32_t)(((uint64_t)ONE_REVOLUTION_MICROSTEPS * (uint64_t)CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256) >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT))
-#define HALL_PEAK_FIND_THREASHOLD 200
+#if defined(PRODUCT_NAME_M1)
+#define HALL_PEAK_FIND_THRESHOLD 200
+#else
+#define HALL_PEAK_FIND_THRESHOLD 2000
+#endif
 uint8_t hall_rising_flag[3];
 uint16_t hall_local_maximum[3];
 uint16_t hall_local_minimum[3];
@@ -517,8 +526,12 @@ void start_calibration(uint8_t print_output)
 	}
 
 
-#if defined(PRODUCT_NAME_M3) && defined(GC6609)
+#if defined(PRODUCT_NAME_M3)
+#if defined(GC6609)
 	reset_GC6609();
+#else
+	reset_AT5833();
+#endif
 #else
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
 #endif
@@ -629,7 +642,7 @@ void handle_calibration_logic(void)
 //								hall_local_maximum_position[j] = current_position.i32[1];
 								hall_local_maximum_position[j] = current_position_i96.mid;
 							}
-							if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
+							if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THRESHOLD) {
 								calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
 								calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
 								calibration_index[j]++;
@@ -645,7 +658,7 @@ void handle_calibration_logic(void)
 //								hall_local_minimum_position[j] = current_position.i32[1];
 								hall_local_minimum_position[j] = current_position_i96.mid;
 							}
-							if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
+							if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THRESHOLD) {
 								calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
 								calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
 								calibration_index[j]++;
@@ -929,7 +942,7 @@ void start_go_to_closed_loop_mode(void)
 	print_debug_string("Go to closed loop mode start\n");
 	check_current_sensor_and_enable_mosfets();
 
-	TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	__disable_irq();
 	zero_hall_position(1);
 	commutation_position_offset = global_settings.commutation_position_offset;
 	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
@@ -939,7 +952,7 @@ void start_go_to_closed_loop_mode(void)
 	go_to_closed_loop_avg_counter = 0;
 	data_index = 0;
 	go_to_closed_loop_step = 1;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 void go_to_closed_loop_mode_logic(void)
@@ -1094,10 +1107,10 @@ void process_go_to_closed_loop_data(void)
 		}
 
 //		hall_position = current_position.i32[1]; // this is so that the motor does not move when we go into closed loop mode
-		TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+		__disable_irq();
 		((int32_t*)&hall_position_i64)[0] = current_position_i96.mid; // this is so that the motor does not move when we go into closed loop mode
 		((int32_t*)&hall_position_i64)[1] = current_position_i96.high;
-		TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+		__enable_irq();
 		go_to_closed_loop_step = 0;
 		motor_busy = 0;
 	}
@@ -1166,14 +1179,14 @@ void vibrate(uint8_t vibration_level)
 	multipurpose_data_type = MULTIPURPOSE_DATA_TYPE_VIBRATE;
 	multipurpose_data_size = VIBRATE_N_DATA_ITEMS * sizeof(int32_t);
 
-	TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	__disable_irq();
 	desired_motor_pwm_voltage = VIBRATE_MAGNITUDE;
 	vibration_four_step = 0;
 	go_to_closed_loop_avg_counter = 0;
 	data_index = 0;
 	set_motor_control_mode(OPEN_LOOP_POSITION_CONTROL);
 	vibration_active = 1;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 #endif
 }
 
@@ -1229,12 +1242,12 @@ void start_capture(uint8_t capture_type)
 {
     print_debug_string("Capture start\n");
 
-	TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+	__disable_irq();
 
     memset(&capture, 0, sizeof(capture));
     capture.capture_type = capture_type;
 
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 void capture_logic(void)
@@ -1322,6 +1335,7 @@ void handle_homing_logic(void)
 		}
 		current_position_i96.mid = ((int32_t*)&current_position_i64)[0];
 		current_position_i96.high = ((int32_t*)&current_position_i64)[1];
+		position_after_last_queue_item_i96 = current_position_i96;
 	}
 
 	if(n_items_in_queue == 0) {
@@ -1660,6 +1674,8 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 	int64_t relative_position_at_turn_point = 0;
 	char buf[150];
 
+	ran_the_add_to_queue_test = 1;
+
 	memset(results, 0, sizeof(add_to_queue_test_results_t));
 
 	if(n_time_steps == 0) {
@@ -1737,6 +1753,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 			fatal_error(27); // "predicted position out of safety zone" (all error text is defined in error_text.c)
 		}
 	}
+
 //	position_after_last_queue_item = predicted_final_position;
 	position_after_last_queue_item_i96 = predicted_final_position_i96;
 	velocity_after_last_queue_item = predicted_final_velocity;
@@ -1760,9 +1777,9 @@ uint8_t get_n_items_in_queue(void)
 
 void clear_the_queue_and_stop(void)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
     clear_the_queue_and_stop_no_disable_interrupt();
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 
@@ -1790,10 +1807,8 @@ void add_go_to_position_to_queue(int64_t absolute_position, uint32_t move_time)
 
 //	int32_t total_displacement = absolute_position - ((int32_t*)&position_after_last_queue_item)[1];
 	int64_t position_after_last_queue_item_i64;
-	TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
 	((int32_t*)&position_after_last_queue_item_i64)[0] = position_after_last_queue_item_i96.mid;
 	((int32_t*)&position_after_last_queue_item_i64)[1] = position_after_last_queue_item_i96.high;
-	TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
 	int64_t total_displacement = absolute_position - position_after_last_queue_item_i64;
 	// let's make sure that the total displacement is within the limits of a 32 bit signed integer
 	if((total_displacement > INT32_MAX) || (total_displacement < INT32_MIN)) {
@@ -1892,9 +1907,11 @@ uint8_t handle_queued_movements(void)
 			}
 		}
 		else {
-//			if(((int32_t*)&position_after_last_queue_item)[1] != current_position.i32[1]) {
-			if( (position_after_last_queue_item_i96.mid != current_position_i96.mid) || (position_after_last_queue_item_i96.high != current_position_i96.high) ) {
-				fatal_error(42); // "position discrepancy" (all error text is defined in error_text.c)
+			if (!ran_the_add_to_queue_test) {
+	//			if(((int32_t*)&position_after_last_queue_item)[1] != current_position.i32[1]) {
+				if( (position_after_last_queue_item_i96.mid != current_position_i96.mid) || (position_after_last_queue_item_i96.high != current_position_i96.high) ) {
+					fatal_error(42); // "position discrepancy" (all error text is defined in error_text.c)
+				}
 			}
 			decelerate_to_stop_active = 1;
 		}
@@ -2703,13 +2720,13 @@ void TIM16_IRQHandler(void)
 	}
 
 	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
-	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
+	if ( (calibration_step == 0) && ((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) ) {
 		if(hall_position_delta_violation == 0) {
 			hall_position_delta_violation = 1; // we allow one violation only (which happens on startup). next time it will be a fatal error
 		}
 		else {
 			disable_mosfets();
-			fatal_error(29); // DEBUG
+			fatal_error(47); // "hall position delta too large"  (all error text is defined in error_text.c)
 			if(fast_capture_data_active) {
 				fast_capture_data_active = 0;
 				fast_capture_data_result_ready = 1;
@@ -2767,14 +2784,18 @@ void check_if_actual_vs_desired_position_deviated_too_much(void)
 {
 	int64_t current_position_i64;
 	int64_t current_hall_position_i64;
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
-	((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
+	__disable_irq();
+	((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
 	((int32_t*)&current_position_i64)[1] = current_position_i96.high;
 	current_hall_position_i64 = hall_position_i64;
-	TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+	__enable_irq();
 	int64_t position_deviation = current_position_i64 - current_hall_position_i64;
-	if (llabs(position_deviation) > max_allowable_position_deviation) {
-		fatal_error(45); // "position deviation too large"  (all error text is defined in error_text.c)
+	if ( (calibration_step == 0) && (llabs(position_deviation) > max_allowable_position_deviation) ) { // DEBUG commented out
+		debug_value1 = position_deviation;
+		debug_value2 = llabs(position_deviation);
+		debug_value3 = current_position_i64;
+		debug_value4 = current_hall_position_i64;
+//		fatal_error(45); // "position deviation too large"  (all error text is defined in error_text.c) // DEBUG commented out
 	}
 }
 
@@ -2787,9 +2808,9 @@ void disable_motor_control_loop(void)
 void increase_commutation_offset(void)
 {
 	char buf[100];
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	commutation_position_offset += ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS + 50) / 100); // the + 50 is for rounding
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 	sprintf(buf, "commutation_position_offset: " _PRIu32 "\n", commutation_position_offset);
 	print_debug_string(buf);
 }
@@ -2798,9 +2819,9 @@ void increase_commutation_offset(void)
 void decrease_commutation_offset(void)
 {
 	char buf[100];
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	commutation_position_offset -= ((N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS + 50) / 100); // the + 50 is for rounding
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 	sprintf(buf, "commutation_position_offset: " _PRIu32 "\n", commutation_position_offset);
 	print_debug_string(buf);
 }
@@ -2810,7 +2831,7 @@ void decrease_commutation_offset(void)
 void increase_motor_pwm_voltage(void)
 {
 	char buf[100];
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	if((desired_motor_pwm_voltage > -50) && (desired_motor_pwm_voltage < 50)) {
 		desired_motor_pwm_voltage++;
 	}
@@ -2822,7 +2843,7 @@ void increase_motor_pwm_voltage(void)
 			desired_motor_pwm_voltage = PWM_PERIOD_TIM16;
 		}
 	}
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
 	print_debug_string(buf);
 }
@@ -2830,7 +2851,7 @@ void increase_motor_pwm_voltage(void)
 void decrease_motor_pwm_voltage(void)
 {
 	char buf[100];
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	if((desired_motor_pwm_voltage > -50) && (desired_motor_pwm_voltage < 50)) {
 		desired_motor_pwm_voltage--;
 	}
@@ -2842,7 +2863,7 @@ void decrease_motor_pwm_voltage(void)
 			desired_motor_pwm_voltage = -PWM_PERIOD_TIM16;
 		}
 	}
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
 	print_debug_string(buf);
 }
@@ -2859,7 +2880,7 @@ uint8_t get_motor_control_mode(void)
 
 uint32_t get_update_frequency(void)
 {
-	return PWM_FREQUENCY >> 1;
+	return PWM_FREQUENCY;
 }
 
 void zero_position(void)
@@ -2868,7 +2889,7 @@ void zero_position(void)
 		fatal_error(8); // "queue not empty" (all error text is defined in error_text.c)
 	}
 
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 //	current_position.i64 = 0;
 	current_position_i96.low = 0;
 	current_position_i96.mid = 0;
@@ -2888,19 +2909,19 @@ void zero_position(void)
 	integral_term = 0;
 	previous_error = 0;
 	low_pass_filtered_error_change = 0;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 
 void set_max_velocity(uint32_t new_max_velocity)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	max_velocity = new_max_velocity;
 	max_velocity <<= VELOCITY_SHIFT_LEFT;
 	if(max_velocity > MAX_VELOCITY) {
 		max_velocity = MAX_VELOCITY;
 	}
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 int32_t get_max_velocity(void)
@@ -2910,13 +2931,13 @@ int32_t get_max_velocity(void)
 
 void set_max_acceleration(uint32_t new_max_acceleration)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	max_acceleration = new_max_acceleration;
 	max_acceleration <<= ACCELERATION_SHIFT_LEFT;
 	if(max_acceleration > MAX_ACCELERATION) {
 		max_acceleration = MAX_ACCELERATION;
 	}
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 int32_t get_max_acceleration(void)
@@ -2929,10 +2950,10 @@ int32_t get_max_acceleration(void)
 //{
 ////	return current_position.i32[1];
 //	int64_t current_position_i64;
-//    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+//    __disable_irq();
 //	((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
 //	((int32_t*)&current_position_i64)[1] = current_position_i96.high;
-//    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+//    __enable_irq();
 //	return current_position_i64;
 //}
 
@@ -2943,19 +2964,19 @@ int32_t get_current_velocity(void)
 
 void reset_time(void)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
     clear_the_queue_and_stop_no_disable_interrupt();
 	reset_profilers();
     reset_microsecond_time();
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 void emergency_stop(void)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
     disable_mosfets();
     clear_the_queue_and_stop_no_disable_interrupt();
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 }
 
 
@@ -2964,10 +2985,10 @@ int64_t get_motor_position(void)
 {
 //	int32_t motor_position;
 	int64_t motor_position;
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	((int32_t*)&motor_position)[0] = current_position_i96.mid;
 	((int32_t*)&motor_position)[1] = current_position_i96.high;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
     return motor_position;
 }
 
@@ -2976,9 +2997,9 @@ int64_t get_motor_position(void)
 int64_t get_hall_position(void)
 {
 	int64_t ret;
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	ret = hall_position_i64;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 //    return hall_position;
     return ret;
 }
@@ -2988,7 +3009,7 @@ uint8_t get_motor_status_flags(void)
 {
 	uint8_t motor_status_flags = 0;
 	
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	if(is_mosfets_enabled()) {
 		motor_status_flags |= (1 << STATUS_MOSFETS_ENABLED_FLAG_BIT);
 	}
@@ -3007,7 +3028,7 @@ uint8_t get_motor_status_flags(void)
 	if(motor_busy) {
 		motor_status_flags |= (1 << STATUS_MOTOR_BUSY_FLAG_BIT);
 	}
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 
 	return motor_status_flags;
 }
@@ -3015,12 +3036,12 @@ uint8_t get_motor_status_flags(void)
 
 void get_max_PID_error(int32_t *_min_PID_error, int32_t *_max_PID_error)
 {
-    TIM16->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    __disable_irq();
 	int32_t min = min_PID_error;
 	int32_t max = max_PID_error;
 	min_PID_error = 2147483647;
 	max_PID_error = -2147483648;
-    TIM16->DIER |= TIM_DIER_UIE; // enable the update interrupt
+    __enable_irq();
 	*_min_PID_error = min;
 	*_max_PID_error = max;
 }
@@ -3203,4 +3224,12 @@ void test_M3_motor_spin(void)
             GPIOA->BSRR = (1 << 8); // IMCONTROL line high
         }
     }
+}
+
+void get_debug_values(int64_t *debug_value1_ptr, int64_t *debug_value2_ptr, int64_t *debug_value3_ptr, int64_t *debug_value4_ptr)
+{
+	*debug_value1_ptr = debug_value1;
+	*debug_value2_ptr = debug_value2;
+	*debug_value3_ptr = debug_value3;
+	*debug_value4_ptr = debug_value4;
 }

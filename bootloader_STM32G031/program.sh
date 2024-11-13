@@ -22,7 +22,7 @@ case "$product_name" in
     ;;
   M3)
     software_compatibility_code=1
-    hardware_version="0.10.0"
+    hardware_version="0.11.3"
     ;;
   M4)
     software_compatibility_code=0
@@ -61,6 +61,8 @@ else
 fi
 
 # Flash the device
-../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all
-../programmer_essentials/STM32_Programmer_CLI -c port=SWD -w build/bootloader_with_product_info.bin 0x08000000 
-../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst
+#../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all
+#../programmer_essentials/STM32_Programmer_CLI -c port=SWD -w build/bootloader_with_product_info.bin 0x08000000
+#../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -g
+
+../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all -w build/bootloader_with_product_info.bin 0x08000000 -g

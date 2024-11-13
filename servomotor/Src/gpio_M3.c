@@ -24,6 +24,7 @@ static void portA_init(void)
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // If A4988 chip: Stepper motor driver reset (reset low, normal operation high) 
                                                                   // If GC6609 chip: UART communicatioin pin (keep high when not communicating)
+                                                                  // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
 
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
@@ -52,7 +53,7 @@ static void portB_init(void)
     GPIOB->MODER =
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Motor driver enable (active low)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  |
+            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  | // In case of AT5833 chip: this is the ~nFault line, which will indicate a condition like undervoltage or overtemperature
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE4_Pos)  | // 3.3V power supply to the IO portion of the motor driver (setting these two pins low will reset the chip)
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE5_Pos)  | // 3.3V power supply to the IO portion of the motor driver (setting these two pins low will reset the chip)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
