@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 
-from serial.serialutil import to_bytes
+from .vendor.serial.serialutil import to_bytes
 import shutil
 from . import serial_functions
 import textwrap
@@ -615,4 +615,3 @@ def execute_command(_alias, command_id_or_str, inputs, verbose=True):
     response = send_command(command_id, gathered_inputs, verbose=verbose)
     parsed_response = interpret_response(command_id, response, verbose=verbose)
     return parsed_response
-
