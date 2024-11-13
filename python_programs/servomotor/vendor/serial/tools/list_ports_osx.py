@@ -25,7 +25,7 @@ from __future__ import absolute_import
 
 import ctypes
 
-from serial.tools import list_ports_common
+from . import list_ports_common
 
 iokit = ctypes.cdll.LoadLibrary('/System/Library/Frameworks/IOKit.framework/IOKit')
 cf = ctypes.cdll.LoadLibrary('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')

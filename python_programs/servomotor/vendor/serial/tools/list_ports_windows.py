@@ -21,9 +21,10 @@ from ctypes.wintypes import LONG
 from ctypes.wintypes import ULONG
 from ctypes.wintypes import HKEY
 from ctypes.wintypes import BYTE
-import serial
-from serial.win32 import ULONG_PTR
-from serial.tools import list_ports_common
+from .. import serialutil as serial
+from ..win32 import ULONG_PTR
+from . import list_ports_common
+
 
 
 def ValidHandle(value, func, arguments):

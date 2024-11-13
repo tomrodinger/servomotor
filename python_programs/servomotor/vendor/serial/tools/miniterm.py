@@ -14,9 +14,10 @@ import os
 import sys
 import threading
 
-import serial
-from serial.tools.list_ports import comports
-from serial.tools import hexlify_codec
+from .. import serialutil as serial
+from . import list_ports
+comports = list_ports.comports
+from . import hexlify_codec
 
 # pylint: disable=wrong-import-order,wrong-import-position
 

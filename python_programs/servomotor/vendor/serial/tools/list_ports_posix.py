@@ -21,16 +21,16 @@ from __future__ import absolute_import
 import glob
 import sys
 import os
-from serial.tools import list_ports_common
+from . import list_ports_common
 
 # try to detect the OS so that a device can be selected...
 plat = sys.platform.lower()
 
 if plat[:5] == 'linux':    # Linux (confirmed)  # noqa
-    from serial.tools.list_ports_linux import comports
+    from .list_ports_linux import comports
 
 elif plat[:6] == 'darwin':   # OS X (confirmed)
-    from serial.tools.list_ports_osx import comports
+    from .list_ports_osx import comports
 
 elif plat == 'cygwin':       # cygwin/win32
     # cygwin accepts /dev/com* in many contexts
@@ -98,7 +98,7 @@ elif plat[:3] == 'aix':      # AIX
 
 else:
     # platform detection has failed...
-    import serial
+    from .. import serialutil as serial
     sys.stderr.write("""\
 don't know how to enumerate ttys on this system.
 ! I you know how the serial ports are named send this information to
