@@ -521,7 +521,7 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "Manufacture-files/",
+      "plot": "tmp-files/",
       "pos_files": "",
       "specctra_dsn": "",
       "step": "3D/3D-M3-V5-24-01-24.step",

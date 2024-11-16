@@ -59,7 +59,7 @@
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #endif
 #ifdef PRODUCT_NAME_M4
-#define VOLTS_PER_ROTATIONAL_VELOCITY 700
+#define VOLTS_PER_ROTATIONAL_VELOCITY 200
 #endif
 //#define DO_DETAILED_PROFILING
 #define UINT32_MIDPOINT 2147483648
@@ -142,19 +142,6 @@ static uint8_t motor_control_mode = OPEN_LOOP_POSITION_CONTROL;
 #define READ_PID_DEBUG_DATA_TEST_MODE 3
 #define READ_GC6609_REGISTERS_TEST_MODE 4
 static uint8_t test_mode = 0;
-
-#ifdef PRODUCT_NAME_M1
-#define PID_SHIFT_RIGHT 18
-#endif
-#ifdef PRODUCT_NAME_M2
-#define PID_SHIFT_RIGHT 18
-#endif
-#ifdef PRODUCT_NAME_M3
-#define PID_SHIFT_RIGHT 11
-#endif
-#ifdef PRODUCT_NAME_M4
-#define PID_SHIFT_RIGHT 14
-#endif
 
 // PID position control related variables:
 static int32_t integral_term = 0;
@@ -1317,8 +1304,9 @@ void handle_homing_logic(void)
 //	int32_t position_error;
 //	position_error = abs(current_position.i32[1] - hall_position);
 	int64_t current_position_i64;
-	((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
-	((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+//	((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
+//	((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+	current_position_i64 = *((int64_t*)&current_position_i96.mid);
 	int64_t position_error = llabs(current_position_i64 - hall_position_i64);
 
 	if(position_error > HOMING_MAX_POSITION_ERROR) {
@@ -1807,8 +1795,9 @@ void add_go_to_position_to_queue(int64_t absolute_position, uint32_t move_time)
 
 //	int32_t total_displacement = absolute_position - ((int32_t*)&position_after_last_queue_item)[1];
 	int64_t position_after_last_queue_item_i64;
-	((int32_t*)&position_after_last_queue_item_i64)[0] = position_after_last_queue_item_i96.mid;
-	((int32_t*)&position_after_last_queue_item_i64)[1] = position_after_last_queue_item_i96.high;
+//	((int32_t*)&position_after_last_queue_item_i64)[0] = position_after_last_queue_item_i96.mid;
+//	((int32_t*)&position_after_last_queue_item_i64)[1] = position_after_last_queue_item_i96.high;
+	position_after_last_queue_item_i64 = *((int64_t *)&position_after_last_queue_item_i96.mid);
 	int64_t total_displacement = absolute_position - position_after_last_queue_item_i64;
 	// let's make sure that the total displacement is within the limits of a 32 bit signed integer
 	if((total_displacement > INT32_MAX) || (total_displacement < INT32_MIN)) {
@@ -1965,8 +1954,6 @@ uint8_t handle_queued_movements(void)
 #else
 #define MAX_ERROR_CHANGE  (MAX_PD_TERMS / DERIVATIVE_CONSTANT_PID)  // ~10650
 #endif
-#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
-#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
 //static uint32_t pid_p = PROPORTIONAL_CONSTANT_PID;
 //static uint32_t pid_i = INTEGRAL_CONSTANT_PID;
 //static uint32_t pid_d = DERIVATIVE_CONSTANT_PID >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
@@ -1983,7 +1970,6 @@ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
 static int32_t max_integral_term = 0;
 static int32_t max_error = 0;
 static int32_t max_error_change = 0;
-#define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8 // 8 seems good
 
 
 void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_motor_regen_pwm_voltage)
@@ -2031,11 +2017,50 @@ struct __attribute__((__packed__)) pid_debug_data_struct {
 struct pid_debug_data_struct *pid_debug_data = (void*)&calibration; // pid_debug_data uses the same memory as calibration
 
 
+int32_t PID_controller_debug(int32_t error) // DEBUG this whole function, restore the one below later
+{
+    int32_t output_value;
+    int32_t proportional_term;
+    int32_t derivative_term;
+
+//	printf("PID_controller: error = %d\n", error);
+
+    if(error < -max_error) {
+        error = -max_error;
+    }
+    else if(error > max_error) {
+        error = max_error;
+    }
+
+	if (integral_constant_pid != 0) {
+	    integral_term += error * integral_constant_pid;
+		if(integral_term > max_integral_term) {
+			integral_term = max_integral_term;
+		}
+		else if(integral_term < -max_integral_term) {
+			integral_term = -max_integral_term;
+		}
+	}
+	else {
+		integral_term = 0;
+	}
+
+    proportional_term = error * proportional_constant_pid;
+
+    output_value = (integral_term + proportional_term) >> PID_SHIFT_RIGHT;
+
+	return output_value;
+}
+
+
+//int32_t PID_controller_use_this_one__above_one_is_for_debug_only(int32_t error)
 int32_t PID_controller(int32_t error)
 {
     int32_t output_value;
     int32_t proportional_term;
     int32_t derivative_term;
+
+//	printf("PID_controller: error = %d\n", error);
 
 	if(error < min_PID_error) {
 		min_PID_error = error;
@@ -2043,6 +2068,8 @@ int32_t PID_controller(int32_t error)
 	if(error > max_PID_error) {
 		max_PID_error = error;
 	}
+
+//	printf("PID_controller: error = %d\n", error);
 
 #ifdef PRODUCT_NAME_M2
     error >>= 3;
@@ -2304,7 +2331,7 @@ void motor_movement_calculations(void)
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //			desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
 			int64_t current_position_i64;
-			((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
+			((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
 			((int32_t*)&current_position_i64)[1] = current_position_i96.high;
 			desired_motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
 			if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
@@ -2365,12 +2392,11 @@ void motor_movement_calculations(void)
 		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //			motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
 			int64_t current_position_i64;
-			((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
+			((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
 			((int32_t*)&current_position_i64)[1] = current_position_i96.high;
 			motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
 			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
-
-			back_emf_voltage = 0;
+//			back_emf_voltage = 0; // DEBUG
 			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_motor_pwm_voltage;
 			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_motor_pwm_voltage;
 			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
@@ -2595,7 +2621,7 @@ void motor_phase_calculations(void)
 		phase1 >>= 8;
 		phase1 *= (uint32_t)motor_pwm_voltage;
 		phase1 >>= 15;
-		if(phase1 > 1024) {
+		if(phase1 > PWM_PERIOD_TIM1) {
 			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
 		}
 		if(!global_settings.motor_phases_reversed) {
@@ -2612,7 +2638,7 @@ void motor_phase_calculations(void)
 		phase1 >>= 8;
 		phase1 *= (uint32_t)motor_pwm_voltage;
 		phase1 >>= 15;
-		if(phase1 > 1024) {
+		if(phase1 > PWM_PERIOD_TIM1) {
 			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
 		}
 		if(!global_settings.motor_phases_reversed) {
@@ -2630,7 +2656,7 @@ void motor_phase_calculations(void)
 		phase2 >>= 8;
 		phase2 *= (uint32_t)motor_pwm_voltage;
 		phase2 >>= 15;
-		if(phase2 > 1024) {
+		if(phase2 > PWM_PERIOD_TIM1) {
 			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
 		}
 		TIM3->CCR1 = phase2;
@@ -2641,7 +2667,7 @@ void motor_phase_calculations(void)
 		phase2 >>= 8;
 		phase2 *= (uint32_t)motor_pwm_voltage;
 		phase2 >>= 15;
-		if(phase2 > 1024) {
+		if(phase2 > PWM_PERIOD_TIM1) {
 			fatal_error(44); // "PWM too high" (all error text is defined in error_text.c)
 		}
 		TIM3->CCR1 = 0;
@@ -2790,12 +2816,12 @@ void check_if_actual_vs_desired_position_deviated_too_much(void)
 	current_hall_position_i64 = hall_position_i64;
 	__enable_irq();
 	int64_t position_deviation = current_position_i64 - current_hall_position_i64;
-	if ( (calibration_step == 0) && (llabs(position_deviation) > max_allowable_position_deviation) ) { // DEBUG commented out
+	if ( (calibration_step == 0) && (llabs(position_deviation) > max_allowable_position_deviation) ) {
 		debug_value1 = position_deviation;
 		debug_value2 = llabs(position_deviation);
 		debug_value3 = current_position_i64;
 		debug_value4 = current_hall_position_i64;
-//		fatal_error(45); // "position deviation too large"  (all error text is defined in error_text.c) // DEBUG commented out
+		fatal_error(45); // "position deviation too large"  (all error text is defined in error_text.c)
 	}
 }
 
@@ -3077,6 +3103,12 @@ void set_max_motor_current(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_
 //#ifndef PRODUCT_NAME_M3
 	calculate_and_set_analog_watchdog_limits();
 //#endif
+}
+
+
+void set_max_allowable_position_deviation(int64_t new_max_allowable_position_deviation)
+{
+	max_allowable_position_deviation = new_max_allowable_position_deviation;
 }
 
 

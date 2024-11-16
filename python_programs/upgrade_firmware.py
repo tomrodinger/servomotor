@@ -2,14 +2,9 @@
 
 import sys
 import argparse
-import serial
-from serial.serialutil import to_bytes
-import serial.tools.list_ports
 import time
 import binascii
 import struct
-import random
-import os
 import servomotor
 
 FIRMWARE_UPGRADE_COMMAND = 23

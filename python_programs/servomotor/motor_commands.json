@@ -718,6 +718,19 @@
         "Output": "success_response"
     },
     {
+        "CommandString": "Set Max allowable position deviation",
+        "CommandEnum": 44,
+        "Description": "Set the amount of microsteps that the actual motor position (as measured by the hall sensors) is allowed to deviate from the desired position. Throw a fatal error if this is exceeded.",
+        "Input": [
+            {
+                "Description": "i64: The new maximum allowable position deviation setting",
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "maxAllowablePositionDeviation"
+            }
+        ],
+        "Output": "success_response"
+    },
+    {
         "CommandString": "Get debug values",
         "CommandEnum": 252,
         "Description": "Get some debug values. End customer should not use this command. It is for developers and testers.",

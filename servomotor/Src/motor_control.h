@@ -57,6 +57,49 @@
 #define DEFAULT_COMMUTATION_POSITION_OFFSET 2147483648
 
 #ifdef PRODUCT_NAME_M1
+#define PROPORTIONAL_CONSTANT_PID 5000
+#define INTEGRAL_CONSTANT_PID     1
+#define DERIVATIVE_CONSTANT_PID   5000
+#endif
+#ifdef PRODUCT_NAME_M2
+#define PROPORTIONAL_CONSTANT_PID 20000
+#define INTEGRAL_CONSTANT_PID     1
+#define DERIVATIVE_CONSTANT_PID   100000
+#endif
+#ifdef PRODUCT_NAME_M3
+#ifdef GC6609
+#define PROPORTIONAL_CONSTANT_PID 2000
+#define INTEGRAL_CONSTANT_PID     5
+#define DERIVATIVE_CONSTANT_PID   175000
+#else
+#define PROPORTIONAL_CONSTANT_PID 2000
+#define INTEGRAL_CONSTANT_PID     5
+#define DERIVATIVE_CONSTANT_PID   175000
+#endif
+#endif
+#ifdef PRODUCT_NAME_M4
+#define PROPORTIONAL_CONSTANT_PID 500
+#define INTEGRAL_CONSTANT_PID     1
+#define DERIVATIVE_CONSTANT_PID   1000
+#endif
+
+#ifdef PRODUCT_NAME_M1
+#define PID_SHIFT_RIGHT 18
+#endif
+#ifdef PRODUCT_NAME_M2
+#define PID_SHIFT_RIGHT 18
+#endif
+#ifdef PRODUCT_NAME_M3
+#define PID_SHIFT_RIGHT 11
+#endif
+#ifdef PRODUCT_NAME_M4
+#define PID_SHIFT_RIGHT 14
+#endif
+#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
+#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
+#define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8 // 8 seems good
+
+#ifdef PRODUCT_NAME_M1
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
 #endif
@@ -69,8 +112,8 @@
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
 #endif
 #ifdef PRODUCT_NAME_M4
-#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 50
-#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 50
+#define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
+#define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
 #endif
 
 #define MULTIPURPOSE_DATA_TYPE_CALIBRATION 1
@@ -149,6 +192,7 @@ void check_if_actual_vs_desired_position_deviated_too_much(void);
 void disable_motor_control_loop(void);
 uint8_t is_go_to_closed_loop_data_available(void);
 void process_go_to_closed_loop_data(void);
+void set_max_allowable_position_deviation(int64_t new_max_allowable_position_deviation);
 
 typedef struct __attribute__((__packed__)) {
 	int32_t predicted_final_velocity;

@@ -57,33 +57,6 @@ struct firmware_version_struct firmware_version = {DEVELOPMENt_FIRMWARE_VERSION,
 
 #define PING_PAYLOAD_SIZE 10
 
-#ifdef PRODUCT_NAME_M1
-#define PROPORTIONAL_CONSTANT_PID 5000
-#define INTEGRAL_CONSTANT_PID     1
-#define DERIVATIVE_CONSTANT_PID   5000
-#endif
-#ifdef PRODUCT_NAME_M2
-#define PROPORTIONAL_CONSTANT_PID 20000
-#define INTEGRAL_CONSTANT_PID     1
-#define DERIVATIVE_CONSTANT_PID   100000
-#endif
-#ifdef PRODUCT_NAME_M3
-#ifdef GC6609
-#define PROPORTIONAL_CONSTANT_PID 2000
-#define INTEGRAL_CONSTANT_PID     5
-#define DERIVATIVE_CONSTANT_PID   175000
-#else
-#define PROPORTIONAL_CONSTANT_PID 2000
-#define INTEGRAL_CONSTANT_PID     5
-#define DERIVATIVE_CONSTANT_PID   175000
-#endif
-#endif
-#ifdef PRODUCT_NAME_M4
-#define PROPORTIONAL_CONSTANT_PID 10000
-#define INTEGRAL_CONSTANT_PID     10
-#define DERIVATIVE_CONSTANT_PID   100000
-#endif
-
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 extern char selectedAxis;
 extern uint8_t command;
@@ -776,6 +749,16 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 sprintf(buf, "PID constants: %lu, %lu, %lu\n", p, i, d);
                 print_debug_string(buf);
                 set_pid_constants(p, i, d);
+                if(axis != ALL_ALIAS) {
+                    rs485_transmit(NO_ERROR_RESPONSE, 3);
+                }
+            }
+			break;
+        case SET_MAX_ALLOWABLE_POSITION_DEVIATION:
+            {
+                int64_t new_max_allowable_position_deviation = llabs(((int64_t*)parameters)[0]);
+                rs485_allow_next_command();
+                set_max_allowable_position_deviation(new_max_allowable_position_deviation);
                 if(axis != ALL_ALIAS) {
                     rs485_transmit(NO_ERROR_RESPONSE, 3);
                 }
