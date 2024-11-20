@@ -27,8 +27,8 @@ class CommunicationError(Exception):
 class PayloadError(Exception):
     pass
 
-def print_data(prefix_message, data, print_size=True, verbose=True):
-    if verbose:
+def print_data(prefix_message, data, print_size=True, verbose=2):
+    if verbose == 2:
         print(prefix_message, end = '')
         for d in data:
             print("0x%02X " % (d), end='')
@@ -36,7 +36,14 @@ def print_data(prefix_message, data, print_size=True, verbose=True):
             print("[%d] bytes" % (len(data)), end='')
         print("")
 
-def get_response(verbose=True):
+def get_human_readable_alias(alias):
+    if alias >= 33 and alias <= 126:
+        alias_str = "%c (%d)" % (alias, alias)
+    else:
+        alias_str = "%d (0x%02x)" % (alias, alias)
+    return alias_str
+
+def get_response(verbose=2):
     response = ser.read(3)
     if len(response) == 0:
         # Throw an exception if we don't get a response
@@ -45,7 +52,7 @@ def get_response(verbose=True):
         # Thow a general communication error
         print("Received:", response)
         raise CommunicationError("Error: the response is not 3 bytes long")
-    if verbose:
+    if verbose == 2:
         print_data("Received a response: ", response, print_size=True, verbose=verbose)
     if response[0] != RESPONSE_CHARACTER:
         error_text = f"Error: the first byte (which should indicate a response) is not the expected {RESPONSE_CHARACTER}"
@@ -60,7 +67,7 @@ def get_response(verbose=True):
             # Thow a general communication error
             raise CommunicationError("Error: the response indicated a size of 255 and then the second response is not 2 bytes long")
         payload_size = response2[0] + (response2[1] << 8)
-        if verbose:
+        if verbose == 2:
             print("Received an extended size:", payload_size)
     if payload_size == 0:
         if response[1] != 0:
@@ -70,7 +77,7 @@ def get_response(verbose=True):
             raise CommunicationError("Error: the second byte should be 1 if there is a payload")
 
     if payload_size == 0:
-        if verbose:
+        if verbose == 2:
             print("This response indicates SUCCESS and has no payload")
         return b''
 
@@ -78,7 +85,7 @@ def get_response(verbose=True):
     if len(payload) != payload_size:
         raise PayloadError("Error: didn't receive the right length (%d bytes) payload. Received (%d bytes): %s" % (payload_size, len(payload), payload))
 
-    if verbose:
+    if verbose == 2:
         print("Got a valid payload:")
         print_data("Got a valid payload:", payload, verbose=verbose)
 
@@ -130,21 +137,21 @@ def sniffer():
 def flush_receive_buffer():
     ser.reset_input_buffer()
 
-def send_command(command_id, gathered_inputs, verbose=True):
+def send_command(command_id, gathered_inputs, verbose=2):
     command_payload_len = len(gathered_inputs)
     command = bytearray([alias, command_id, command_payload_len]) + gathered_inputs
-    if verbose:
+    if verbose == 2:
         print_data("Sending command: ", command, print_size=True, verbose=verbose)
     ser.write(command)
     if (alias == 255) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
-        if verbose:
+        if verbose == 2:
             print("Sending a command to all devices (alias %d) and we expect there will be no response from any of them" % (alias))
         return []
     for command_index, item in enumerate(registered_commands):
         if command_id == item["CommandEnum"]:
             break
     if registered_commands[command_index]["Output"] == []:
-        if verbose:
+        if verbose == 2:
             print("This command is expected to not return any response")
         return []
     all_response_payloads = []
@@ -212,8 +219,8 @@ def set_standard_options_from_args(args):
         print("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help.")
         exit(1)
 
-    print("Getting the alias of the device we want to communicate with (%s)" % (alias))
     alias = string_to_u8_alias(alias)
+    print("The alias of the device we want to communicate with is %s" % (get_human_readable_alias(alias)))
 
 def set_data_types_and_command_data(new_data_types, new_registered_commands):
     global registered_data_types
@@ -371,7 +378,7 @@ def buf10_to_packed_bytes(input):
         exit(1)
     return input_packed
 
-def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value, verbose=True):
+def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer, input_data_min_value, input_data_max_value, verbose=2):
     if is_integer:
         try:
             input_int = int(input)
@@ -419,33 +426,33 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             exit(1)
     return input_packed
 
-def gather_inputs(command_id, inputs, verbose=True):
-    if verbose:
+def gather_inputs(command_id, inputs, verbose=2):
+    if verbose == 2:
         print("Gathering inputs for command %d" % (command_id))
     for command_index, item in enumerate(registered_commands):
         if command_id == item["CommandEnum"]:
             break
     expected_inputs = registered_commands[command_index]["Input"]
     if len(expected_inputs) == 0:
-        if verbose:
+        if verbose == 2:
             print("This command takes no inputs")
     else:
         if len(expected_inputs) == 1:
-            if verbose:
+            if verbose == 2:
                 print("The expected input for this command is:"),
         else:
-            if verbose:
+            if verbose == 2:
                 print("The expected inputs for this command are:"),
         for i in range(len(expected_inputs)):
             input_text = input_or_response_to_string(expected_inputs[i])
-            if verbose:
+            if verbose == 2:
                 print("  ", input_text)
-    if verbose:
+    if verbose == 2:
         print("%d input(s) were given" % (len(inputs)))
     if len(inputs) != len(expected_inputs):
         print("Error: the number of inputs given for this command is not right. Check above to see what this command is expecting.")
         exit(1)
-    if verbose:
+    if verbose == 2:
         print("You gave the correct number of inputs.")
     
     concatenated_inputs = bytearray()
@@ -461,7 +468,7 @@ def gather_inputs(command_id, inputs, verbose=True):
             input_data_max_value = None
         input_data_type_string = registered_data_types[data_type_id].data_type_str
         input_data_type_description = registered_data_types[data_type_id].description
-        if verbose:
+        if verbose == 2:
             print("Converting input number %d (%s)" % (i + 1, inputs[i]))
         converted_data = convert_input_to_right_type(data_type_id, inputs[i], input_data_size, input_data_is_integer, input_data_min_value, input_data_max_value, verbose=verbose)
         if converted_data == None:
@@ -471,10 +478,10 @@ def gather_inputs(command_id, inputs, verbose=True):
         concatenated_inputs += converted_data
     return concatenated_inputs
 
-def interpret_single_response(command_id, response, verbose=True):
+def interpret_single_response(command_id, response, verbose=2):
     parsed_response = []
     if response == None:
-        if verbose:
+        if verbose >= 1:
             print("This command did not return a response")
         return parsed_response
     for command_index, item in enumerate(registered_commands):
@@ -485,20 +492,20 @@ def interpret_single_response(command_id, response, verbose=True):
         if response != None:
             print("Error: We were expecting this command to have no response whatsoever, but we go a response")
             exit(1)
-        if verbose:
+        if verbose >= 1:
             print("This command produced no response, which is exactly as expected")
     elif len(expected_response) == 1 and registered_data_types[expected_response[0].data_type_id].data_type_str == "success_response":
         if response != b'':
             print("Error: the response was not the expected success response")
             exit(1)
-        if verbose:
+        if verbose >= 1:
             print("We got the success response. Good. The response payload is empty as expected.")
     else:
-        if verbose:
+        if verbose >= 1:
             print("The response for this command along with the decoded value(s) is below:"),
         for i in range(len(expected_response)):
             response_text = input_or_response_to_string(expected_response[i])
-            if verbose:
+            if verbose >= 1:
                 print("  ", response_text)
             data_type_id = expected_response[i].data_type_id
             data_type_str = registered_data_types[data_type_id].data_type_str
@@ -529,7 +536,7 @@ def interpret_single_response(command_id, response, verbose=True):
                     data_item_signed = False
                 from_bytes_result = int.from_bytes(data_item, byteorder = "little", signed = data_item_signed)
                 parsed_response.append(from_bytes_result)
-                if verbose:
+                if verbose >= 1:
                     print("   --->", from_bytes_result)
             else:
                 if data_type_str == "string8":
@@ -537,30 +544,30 @@ def interpret_single_response(command_id, response, verbose=True):
                     data_item = data_item[:-1]
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
-                    if verbose:
+                    if verbose >= 1:
                         print("   --->", data_item)
                 elif data_type_str == "string_null_term":
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
-                    if verbose:
+                    if verbose >= 1:
                         print("   --->", data_item)
                 elif data_type_str == "u24_version_number":
                     parsed_response.append([data_item[0], data_item[1], data_item[2]])
-                    if verbose:
+                    if verbose >= 1:
                         print("   ---> %d.%d.%d" % (data_item[2], data_item[1], data_item[0]))
                 elif data_type_str == "u32_version_number":
                     parsed_response.append([data_item[0], data_item[1], data_item[2], data_item[3]])
-                    if verbose:
+                    if verbose >= 1:
                         print("   ---> %d.%d.%d.%d" % (data_item[3], data_item[2], data_item[1], data_item[0]))
                 elif data_type_str == "u64_unique_id":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
+                    if verbose >= 1:
                         print("   ---> %016X" % (from_bytes_result))
                 elif data_type_str == "u8_alias":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
+                    if verbose >= 1:
                         if from_bytes_result >= 33 and from_bytes_result <= 126:
                             print("   ---> the ASCII character %c (or the decimal number %d)" % (from_bytes_result, from_bytes_result))
                         else:
@@ -568,15 +575,15 @@ def interpret_single_response(command_id, response, verbose=True):
                 elif data_type_str == "crc32":
                     from_bytes_result = int.from_bytes(data_item, byteorder = "little")
                     parsed_response.append(from_bytes_result)
-                    if verbose:
+                    if verbose >= 1:
                         print("   ---> 0x%08X" % (from_bytes_result))
                 elif data_type_str == "buf10":
                     parsed_response.append(data_item)
-                    if verbose:
+                    if verbose >= 1:
                         print("   ---> %s" % (data_item))
                 elif data_type_str == "general_data":
                     parsed_response.append(data_item)
-                    if verbose:
+                    if verbose >= 1:
                         for d in data_item:
                             print("   ---> %d (0x%02x)" % (d, d))
                 else:
@@ -587,19 +594,17 @@ def interpret_single_response(command_id, response, verbose=True):
             exit(1)
     return parsed_response
 
-
-def interpret_response(command_id, response, verbose=True):
+def interpret_response(command_id, response, verbose=2):
     parsed_response = []
     if len(response) == 0:
-        if verbose:
+        if verbose >= 1:
             print("There was no response from any device(s)")
     for i in range(len(response)):
         partial_parsed_response = interpret_single_response(command_id, response[i], verbose=verbose)
         parsed_response.append(partial_parsed_response)
     return parsed_response
 
-
-def execute_command(_alias, command_id_or_str, inputs, verbose=True):
+def execute_command(_alias, command_id_or_str, inputs, verbose=2):
     global alias
     alias = _alias
     if isinstance(command_id_or_str, int):
@@ -611,7 +616,7 @@ def execute_command(_alias, command_id_or_str, inputs, verbose=True):
     if command_id == None:
         print("ERROR: The command", command_id_or_str, "is not supported")
         exit(1)
-    if verbose:
+    if verbose >= 1:
         print("The command is: %s and it has ID %d" % (command_str, command_id))
     gathered_inputs = gather_inputs(command_id, inputs, verbose=verbose)
     response = send_command(command_id, gathered_inputs, verbose=verbose)

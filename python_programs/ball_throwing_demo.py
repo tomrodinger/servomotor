@@ -41,7 +41,7 @@ OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
 OUTPUT_LOG_FILE_NAME = "ball_throwing_demo"
 
 
-VERBOSE = True
+VERBOSE = 2
 
 ONE_ROTATION_MOTOR_UNITS = N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_ELECTRICAL_CYCLES
 
@@ -50,13 +50,13 @@ ALIAS = ord("X")
 N_PINGS_TO_TEST_COMMUNICATION = 10
 
 
-def execute_command(alias, command_str, inputs, verbose=True):
+def execute_command(alias, command_str, inputs, verbose=2):
     communication.alias = alias
     command_id = communication.get_command_id(command_str)
     if command_id == None:
         print("ERROR: The command", command_str, "is not supported")
         exit(1)
-    if verbose:
+    if verbose == 2:
         print("The command is: %s and it has ID %d" % (command_str, command_id))
     gathered_inputs = communication.gather_inputs(command_id, inputs, verbose=verbose)
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)

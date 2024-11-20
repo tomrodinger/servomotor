@@ -10,7 +10,7 @@ def generate_random_10_byte_string():
     return bytes([random.randint(0, 255) for i in range(10)])
 
 
-motorX = servomotor.M3("X", motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=True)
+motorX = servomotor.M3("X", motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=2)
 
 servomotor.open_serial_port()
 motorX.system_reset()

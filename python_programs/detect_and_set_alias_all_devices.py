@@ -38,14 +38,6 @@ def find_unused_alias(alias_list, min_alias, max_alias):
     exit(1)
 
 
-def get_human_readable_alias(alias):
-    if alias >= 33 and alias <= 126:
-        alias_str = "%c (%d)" % (alias, alias)
-    else:
-        alias_str = "%d (0x%02x)" % (alias, alias)
-    return alias_str
-
-
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
 parser = argparse.ArgumentParser(description='Add some random moves to the queue to test the calculations of the safety limits')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
@@ -143,11 +135,11 @@ print("\nDevice report:")
 print("Unique ID        | Original Alias  | Reassigned Alias")
 print("-----------------------------------------------------")
 for unique_id, device in device_dict.items():
-    alias_str = get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias(device.alias)
     if device.reassigned_alias is None:
         reassigned_alias_str = "                 "
     else:
-        reassigned_alias_str = get_human_readable_alias(device.reassigned_alias)
+        reassigned_alias_str = servomotor.get_human_readable_alias(device.reassigned_alias)
     print(f"{unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
 print("-----------------------------------------------------")
 print(f"A total of {len(device_dict)} devices were detected")

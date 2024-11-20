@@ -43,10 +43,11 @@ def select_serial_port_from_menu():
 # We will attempt to open the serial port and if we fail to open it then we will print out a detailed error message
 # and/or troubleshooting tips
 def open_serial_port_or_print_detailed_error(device_name = None, baud_rate = 230400, timeout = 0.1):
-    print("Opening the serial device:", device_name)
     try:
         serial_port = serial.Serial(device_name, baud_rate, timeout=timeout)
+        print("Successfully opened the serial port:", serial_port.name)
     except serial.SerialException as e:
+        print("Failed to open the serial port:", device_name)
         # Print out the specific error message
         print("Error:", e)
         errno = e.errno
@@ -93,7 +94,6 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
         serial_port = open_serial_port_or_print_detailed_error(device_name, baud_rate, timeout)
         if serial_port == None:
             exit(1)
-    print("Successfully opened:", serial_port.name)
 
     if(device_name != device_name_from_file):
         # we have successfully opened the serial port at this point, and now we want to save the device name

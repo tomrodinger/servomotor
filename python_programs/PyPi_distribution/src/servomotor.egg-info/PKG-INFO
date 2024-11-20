@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: servomotor
-Version: 0.1.5
+Version: 0.2.0
 Summary: A Python package for controlling servomotors from the company Gearotons
 Author-email: Tom Rodinger <tom.rodinger@utoronto.ca>
 Project-URL: Homepage, https://servo-tutorial.netlify.app

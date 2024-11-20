@@ -41,7 +41,7 @@ def test_acceleration_units():
         current_unit='amps',
         voltage_unit='volts',
         temperature_unit='celsius',
-        verbose=False
+        verbose=0
     )
 
     try:

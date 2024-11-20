@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from enum import Enum
 import json
 import os
@@ -244,9 +246,9 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
 
     return command_function
 
-def define_commands(m3_class, data_type_dict, command_dict, verbose=True):
+def define_commands(m3_class, data_type_dict, command_dict, verbose=2):
     """Define command functions on the M3 class"""
-    if verbose:
+    if verbose == 2:
         print('Defining command functions...')
         print(f"Number of commands: {len(command_dict)}")
     
@@ -325,7 +327,7 @@ class AllMotors:
         self._temperature_unit = TemperatureUnit(new_unit)
 
 class M3(AllMotors):
-    def __init__(self, alias, motor_type, time_unit, position_unit, velocity_unit, acceleration_unit, current_unit, voltage_unit, temperature_unit, verbose=True):
+    def __init__(self, alias, motor_type, time_unit, position_unit, velocity_unit, acceleration_unit, current_unit, voltage_unit, temperature_unit, verbose=2):
         super().__init__(alias, time_unit, position_unit, velocity_unit, acceleration_unit, temperature_unit, verbose)
         self._current_unit = CurrentUnit(current_unit)
         self._voltage_unit = VoltageUnit(voltage_unit)

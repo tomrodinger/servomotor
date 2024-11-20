@@ -102,14 +102,6 @@ def compute_crc32(data_64bit, data_8bit):
     return crc32_value
 
 
-def get_human_readable_alias(alias):
-    if alias >= 33 and alias <= 126:
-        alias_str = "%c (%d)" % (alias, alias)
-    else:
-        alias_str = "%d (0x%02x)" % (alias, alias)
-    return alias_str
-
-
 def check_device_with_ping(motor, required_successful_pings):
     for ping_number in range(required_successful_pings):
         try:

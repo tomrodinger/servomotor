@@ -10,7 +10,7 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-VERBOSE = False
+VERBOSE = 0
 
 GET_CURRENT_TIME_COMMAND_INTERVAL = 60
 STATISTIC_PRINT_INTERVAL_SECONDS = 10
@@ -41,13 +41,13 @@ def write_data(filename, int32_list):
             fh.write(str(i) + " " + str(int32_list[i]) + "\n")
 
 
-def execute_command(alias, command_str, inputs, verbose=True):
+def execute_command(alias, command_str, inputs, verbose=2):
     communication.alias = alias
     command_id = communication.get_command_id(command_str)
     if command_id == None:
         print("ERROR: The command", command_str, "is not supported")
         exit(1)
-    if verbose:
+    if verbose == 2:
         print("The command is: %s and it has ID %d" % (command_str, command_id))
     gathered_inputs = communication.gather_inputs(command_id, inputs, verbose=verbose)
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)
@@ -155,7 +155,7 @@ while 1:
             if len(parsed_response) != 2:
                 print("ERROR: The device with alias", alias, "did not respond correctly to the GET_STATUS_COMMAND")
                 exit(1)
-            if VERBOSE:
+            if VERBOSE == 2:
                 print("The motor status is", parsed_response[0], "and the fatal error code is", parsed_response[1])
             # extract bit number 2 from the motor status byte, which is the closed loop bit
             is_motor_busy = (parsed_response[0] & 0b01000000) != 0

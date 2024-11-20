@@ -10,7 +10,7 @@ MAX_VELOCITY = 200.0
 MOVE_DISPLACEMENT_MOTOR_UNITS_PER_ROTATION = 4320000
 MOVE_TIME_MOTOR_UNITS_PER_SECOND = 31250
 
-motorX = servomotor.M3("X", motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=True)
+motorX = servomotor.M3("X", motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=2)
 
 servomotor.open_serial_port()
 motorX.system_reset()
@@ -59,4 +59,3 @@ while 1:
 
 servomotor.close_serial_port()
 del motorX
-

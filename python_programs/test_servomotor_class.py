@@ -14,7 +14,7 @@ def test_different_position_units():
                           current_unit="amps", 
                           voltage_unit="volts", 
                           temperature_unit="celsius", 
-                          verbose=True)
+                          verbose=2)
 
     try:
         servomotor.open_serial_port()

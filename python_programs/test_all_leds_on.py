@@ -10,7 +10,7 @@ import math
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-VERBOSE = True
+VERBOSE = 2
 
 ALL_ALIASES = 255
 
@@ -20,7 +20,7 @@ def write_data(filename, int32_list):
             fh.write(str(i) + " " + str(int32_list[i]) + "\n")
 
 
-def execute_command(alias, command_str, inputs, verbose=True):
+def execute_command(alias, command_str, inputs, verbose=2):
     communication.alias = alias
     command_id = communication.get_command_id(command_str)
     if command_id == None:
@@ -32,8 +32,6 @@ def execute_command(alias, command_str, inputs, verbose=True):
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)
     parsed_response = communication.interpret_response(command_id, response, verbose=verbose)
     return parsed_response
-
-
 
 communication.set_command_data(motor_commands.PROTOCOL_VERSION, motor_commands.registered_commands, motor_commands.command_data_types, motor_commands.data_type_dict,
                                motor_commands.data_type_to_size_dict, motor_commands.data_type_min_value_dict, motor_commands.data_type_max_value_dict,

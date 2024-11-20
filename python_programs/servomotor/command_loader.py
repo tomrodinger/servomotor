@@ -93,7 +93,7 @@ def convert_input_or_output(json_format, data_type_dict, success_response_data_t
     return converted_format
 
 
-def load_data_types_and_commands(data_type_json_file, commands_json_file, verbose=False):
+def load_data_types_and_commands(data_type_json_file, commands_json_file, verbose=2):
     if verbose:
         print("\nLoading data types and commands...")
     

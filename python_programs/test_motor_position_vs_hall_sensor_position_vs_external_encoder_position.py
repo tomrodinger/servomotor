@@ -17,7 +17,7 @@ OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
 OUTPUT_LOG_FILE_NAME = "position_vs_hall_sensor_position_vs_external_encoder_position"
 RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "position.txt"
 
-VERBOSE = True
+VERBOSE = 2
 
 GET_CURRENT_TIME_COMMAND_INTERVAL = 60
 STATISTIC_PRINT_INTERVAL_SECONDS = 10
@@ -41,13 +41,13 @@ def write_data(filename, int32_list):
             fh.write(str(i) + " " + str(int32_list[i]) + "\n")
 
 
-def execute_command(alias, command_str, inputs, verbose=True):
+def execute_command(alias, command_str, inputs, verbose=2):
     communication.alias = alias
     command_id = communication.get_command_id(command_str)
     if command_id == None:
         print("ERROR: The command", command_str, "is not supported")
         exit(1)
-    if verbose:
+    if verbose == 2:
         print("The command is: %s and it has ID %d" % (command_str, command_id))
     gathered_inputs = communication.gather_inputs(command_id, inputs, verbose=verbose)
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)

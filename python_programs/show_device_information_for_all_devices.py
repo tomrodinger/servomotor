@@ -40,14 +40,6 @@ def find_unused_alias(alias_dict, min_alias, max_alias):
     exit(1)
 
 
-def get_human_readable_alias(alias):
-    if alias >= 33 and alias <= 126:
-        alias_str = "%c (%d)" % (alias, alias)
-    else:
-        alias_str = "%d (0x%02x)" % (alias, alias)
-    return alias_str
-
-
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
 parser = argparse.ArgumentParser(description='Add some random moves to the queue to test the calculations of the safety limits')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
@@ -134,7 +126,7 @@ for unique_id, device in device_dict.items():
     if device.alias == 255:
         print(f"Skipping device with alias {device.alias} as it wont respond to this multicast alias")
         continue
-    alias_str = get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias(device.alias)
     print(f"Getting product info for device with unique ID {unique_id:016X} and alias {alias_str}")
     motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
     try:
@@ -165,7 +157,7 @@ print("\nDevice report:")
 print("Unique ID        |         Alias  | Product Code   | Firmware Compatibility Code | Hardware Version   | Serial Number | Firmware Version")
 print("----------------------------------------------------------------------------------------------------------------------------------------")
 for unique_id, device in device_dict.items():
-    alias_str = get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias(device.alias)
     if device.alias == 255:
         print(f"{unique_id:016X} | {alias_str:14s} | *** Warning: No alias assigned: Cannot communicate until an alias is set ***")
     elif device.alias in duplicate_alias_list:

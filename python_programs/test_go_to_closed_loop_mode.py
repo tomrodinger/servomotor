@@ -16,7 +16,7 @@ OUTPUT_LOG_FILE_NAME = "test_go_to_closed_loop_mode"
 GOERTZEL_ALGORITHM_RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "goertzel_algorithm_results.txt"
 ON_DEVICE_GOERTZEL_ALGORITHM_RESULTS_FILENAME = OUTPUT_LOG_FILE_DIRECTORY + "on_device_goertzel_algorithm_results.txt"
 
-VERBOSE = True
+VERBOSE = 2
 
 GET_CURRENT_TIME_COMMAND_INTERVAL = 60
 STATISTICS_PRINT_INTERVAL_SECONDS = 10
@@ -192,7 +192,7 @@ def write_data(filename, int32_list):
             fh.write(str(i) + " " + str(int32_list[i]) + "\n")
 
 
-def execute_command(alias, command_str, inputs, verbose=True):
+def execute_command(alias, command_str, inputs, verbose=2):
     # check if the alias is a string and if it is then convert it to an integer
     if isinstance(alias, str):
         alias = communication.string_to_u8_alias(alias)
@@ -201,7 +201,7 @@ def execute_command(alias, command_str, inputs, verbose=True):
     if command_id == None:
         print("ERROR: The command", command_str, "is not supported")
         exit(1)
-    if verbose:
+    if verbose == 2:
         print("The command is: %s and it has ID %d" % (command_str, command_id))
     gathered_inputs = communication.gather_inputs(command_id, inputs, verbose=verbose)
     response = communication.send_command(command_id, gathered_inputs, verbose=verbose)

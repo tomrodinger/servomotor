@@ -37,7 +37,7 @@ def test_velocity_units():
                           current_unit="amps", 
                           voltage_unit="volts", 
                           temperature_unit="celsius", 
-                          verbose=False)  # Set verbose=False to reduce output
+                          verbose=0)  # Set verbose=0 to reduce output
 
     try:
         servomotor.open_serial_port()
