@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 import glob
+import sys
+sys.path.append("../../")  # Add parent directory to Python path to find settings files
 
 OUTPUT_FOLDER = "analysis_output_2"
 OUTPUT_HEADER_FILENAME_PREFIX = "../../servomotor/Src/hall_sensor_constants_"

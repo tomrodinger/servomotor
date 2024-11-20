@@ -4,6 +4,8 @@ import sys
 import time
 import sensor_segment_resolution_calculation
 
+sys.path.append("../../")  # Add parent directory to Python path to find settings files
+
 OUTPUT_HEADER_FILENAME_PREFIX = "../Src/commutation_table_"
 
 PURE_SINE_MODE = 0
@@ -247,4 +249,3 @@ fh2.write("\n#endif\n")
 
 fh.close()
 fh2.close()
-

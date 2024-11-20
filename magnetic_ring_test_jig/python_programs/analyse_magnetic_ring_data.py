@@ -10,6 +10,8 @@ import glob
 import re
 import matplotlib.pyplot as plt
 
+sys.path.append("../../")  # Add parent directory to Python path to find settings files
+
 INPUT_FOLDER = "collected_data_2"
 OUTPUT_FOLDER = "analysis_output_2"
 GLOB_FILTER = "hall_calibration_one_rotation_*.txt"

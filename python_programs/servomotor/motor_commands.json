@@ -21,12 +21,22 @@
             {
                 "Description": "i32: The displacement to travel. Can be positive or negative.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "displacement"
+                "ParameterName": "displacement",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "u32: The time over which to do the move.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "duration"
+                "ParameterName": "duration",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "timesteps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -39,7 +49,12 @@
             {
                 "Description": "u32: Maximum velocity.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "maximumVelocity"
+                "ParameterName": "maximumVelocity",
+                "UnitConversion": {
+                    "Type": "velocity",
+                    "InternalUnit": "counts_per_timestep",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -52,12 +67,22 @@
             {
                 "Description": "i32: New absolute position value.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "position"
+                "ParameterName": "position",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "u32: Time allowed for executing the move.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "duration"
+                "ParameterName": "duration",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "timesteps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -70,7 +95,12 @@
             {
                 "Description": "u32: The maximum acceleration.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "maximumAcceleration"
+                "ParameterName": "maximumAcceleration",
+                "UnitConversion": {
+                    "Type": "acceleration",
+                    "InternalUnit": "counts_per_timestep_squared",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -117,10 +147,16 @@
             {
                 "Description": "u48: The current absolute time",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "currentTime"
+                "ParameterName": "currentTime",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "time_steps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
-    },
+    }
+,
     {
         "CommandString": "Time sync",
         "CommandEnum": 10,
@@ -144,7 +180,8 @@
                 "ParameterName": "rccIcscr"
             }
         ]
-    },
+    }
+,
     {
         "CommandString": "Get n queued items",
         "CommandEnum": 11,
@@ -180,12 +217,22 @@
             {
                 "Description": "i32: The maximum distance to move (if a crash does not occur). This can be positive or negative. the sign determines the direction of movement.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "maxDistance"
+                "ParameterName": "maxDistance",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "u32: The maximum time to allow for homing. Make sure to give enough time for the motor to cover the maximum distance or the motor may move too fast or throw a fatal error.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "maxDuration"
+                "ParameterName": "maxDuration",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "timesteps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -199,7 +246,12 @@
             {
                 "Description": "i64: The current position as determined by the hall sensors",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "hallSensorPosition"
+                "ParameterName": "hallSensorPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
     },
@@ -259,12 +311,22 @@
             {
                 "Description": "i32: The acceleration (the unit is microsteps per time step per time step * 2^24).",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "acceleration"
+                "ParameterName": "acceleration",
+                "UnitConversion": {
+                    "Type": "acceleration",
+                    "InternalUnit": "counts_per_timestep_squared",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "u32: The number of time steps to apply this acceleration. Use command 18 to get the frequency of the time steps. After this many time steps, the acceleration will go to zero and velocity will be maintained.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "timeSteps"
+                "ParameterName": "timeSteps",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "timesteps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -395,12 +457,22 @@
             {
                 "Description": "i32: The velocity (the unit is microsteps per time step * 2^20).",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "velocity"
+                "ParameterName": "velocity",
+                "UnitConversion": {
+                    "Type": "velocity",
+                    "InternalUnit": "counts_per_timestep",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
-                "Description": "u32: The number of time steps to maintain this velocity. Use command 18 to get the frequency of the time steps. After this many time steps, If the queue becomes empty, the motor will maintain the last velocity indefinitely. The velocity will take affect immediately if the queue is empty or will take affect immediately when this queued item is reached.",
+                "Description": "u32: The time to maintain this velocity.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "timeSteps"
+                "ParameterName": "duration",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "timesteps",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -420,12 +492,22 @@
             {
                 "Description": "u16: The motor current. The units are some arbitrary units and not amps. A value of 150 or 200 is suitable.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "motorCurrent"
+                "ParameterName": "motorCurrent",
+                "UnitConversion": {
+                    "Type": "current",
+                    "InternalUnit": "arbitrary_units",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "u16: The motor regeneration current (while it is braking). This parameter is currently not used for anything.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "regenerationCurrent"
+                "ParameterName": "regenerationCurrent",
+                "UnitConversion": {
+                    "Type": "current",
+                    "InternalUnit": "arbitrary_units",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -461,12 +543,22 @@
             {
                 "Description": "i64: The lower limit in microsteps.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "lowerLimit"
+                "ParameterName": "lowerLimit",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "i64: The upper limit in microsteps.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "upperLimit"
+                "ParameterName": "upperLimit",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"
@@ -570,7 +662,12 @@
             {
                 "Description": "i64: The current desired position",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "position"
+                "ParameterName": "position",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
     },
@@ -609,17 +706,32 @@
             {
                 "Description": "i64: The commanded position (which may differ from actual)",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "commandedPosition"
+                "ParameterName": "commandedPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "i64: The hall sensor position (or you could say the actual measured position)",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "hallSensorPosition"
+                "ParameterName": "hallSensorPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "i32: The external encoder position. This needs special hardware attached to the motor to work",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "externalEncoderPosition"
+                "ParameterName": "externalEncoderPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
     },
@@ -632,7 +744,12 @@
             {
                 "Description": "u16: The voltage. Divide this number by 10 to get the actual voltage in volts.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "supplyVoltage"
+                "ParameterName": "supplyVoltage",
+                "UnitConversion": {
+                    "Type": "voltage",
+                    "InternalUnit": "decivolts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
     },
@@ -645,12 +762,22 @@
             {
                 "Description": "i32: The minimum PID error value.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "minPidError"
+                "ParameterName": "minPidError",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             },
             {
                 "Description": "i32: The maximum PID error value.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "maxPidError"
+                "ParameterName": "maxPidError",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ]
     },
@@ -689,9 +816,13 @@
             {
                 "Description": "i16: The temperature in degrees celcius. The accuracy is about +/- 3 degrees celcius and is measured at the motor driver PCB.",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "temperature"
+                "ParameterName": "temperature",
+                "UnitConversion": {
+                    "Type": "temperature",
+                    "InternalUnit": "celsius",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
-           
         ]
     },
     {
@@ -725,7 +856,12 @@
             {
                 "Description": "i64: The new maximum allowable position deviation setting",
                 "TooltipDisplayFormat": "%d",
-                "ParameterName": "maxAllowablePositionDeviation"
+                "ParameterName": "maxAllowablePositionDeviation",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response"

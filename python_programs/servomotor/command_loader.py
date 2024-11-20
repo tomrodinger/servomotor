@@ -93,12 +93,22 @@ def convert_input_or_output(json_format, data_type_dict, success_response_data_t
     return converted_format
 
 
-def load_data_types_and_commands(data_type_json_file, commands_json_file):
+def load_data_types_and_commands(data_type_json_file, commands_json_file, verbose=False):
+    if verbose:
+        print("\nLoading data types and commands...")
+    
+    # Load data types
     data_type_dict = {}
     success_response_data_type_id = None
     success_response_data_type_description = None
+    
+    if verbose:
+        print(f"Loading data types from {data_type_json_file}")
     with open(data_type_json_file, 'r') as file:
         data_types_list = json.load(file)
+    if verbose:
+        print(f"Found {len(data_types_list)} data types")
+    
     for data_type in data_types_list:
         size = data_type['size']
         min_value = data_type['min_value']
@@ -112,9 +122,16 @@ def load_data_types_and_commands(data_type_json_file, commands_json_file):
         if data_type_str == "success_response":
             success_response_data_type_id = data_type_id # this is frequently used in many commands, so let's store the data type id (for efficiency)
             success_response_data_type_description = description
+            if verbose:
+                print("Found success_response data type")
 
+    # Load commands
+    if verbose:
+        print(f"\nLoading commands from {commands_json_file}")
     with open(commands_json_file, 'r') as file:
         commands = json.load(file)
+    if verbose:
+        print(f"Found {len(commands)} commands in JSON")
 
     # go through all the commands and convert the inputs and outputs to tuples where the first element is the data type and the second element is the description
     # The json file has the input either as null or as a list of dictionaries. The output can be a string saying "success_response" or ot may
@@ -136,22 +153,27 @@ def load_data_types_and_commands(data_type_json_file, commands_json_file):
     #        }
     #    ]
     #},
+    if verbose:
+        print("\nConverting commands...")
+    converted_commands = []
     for command in commands:
-        command["Input"] = convert_input_or_output(command["Input"], data_type_dict, success_response_data_type_id, success_response_data_type_description)
-        command["Output"] = convert_input_or_output(command["Output"], data_type_dict, success_response_data_type_id, success_response_data_type_description)
-        if "MultipleResponses" not in command.keys():
-            command["MultipleResponses"] = False
+        try:
+            if verbose:
+                print(f"Converting command: {command['CommandString']} (ID: {command['CommandEnum']})")
+            command_copy = command.copy()
+            command_copy["Input"] = convert_input_or_output(
+                command["Input"], data_type_dict, 
+                success_response_data_type_id, success_response_data_type_description)
+            command_copy["Output"] = convert_input_or_output(
+                command["Output"], data_type_dict, 
+                success_response_data_type_id, success_response_data_type_description)
+            if "MultipleResponses" not in command_copy:
+                command_copy["MultipleResponses"] = False
+            converted_commands.append(command_copy)
+        except Exception as e:
+            print(f"Error converting command {command.get('CommandString', 'unknown')}: {e}")
+            continue
 
-    return data_type_dict, commands
-
-#def get_command_id(command_name):
-#    # Convert command name to match the format in motor_commands.json
-#    # Normalize the command name by removing spaces and underscores and converting to lowercase
-#    normalized_command_name = command_name.replace("_COMMAND", "").replace(" ", "").replace("_", "").lower()
-#    commands = load_commands(os.path.join(os.path.dirname(__file__), 'motor_commands.json'))
-#    for command in commands:
-#        # Normalize the CommandString in the same way
-#        normalized_command_string = command['CommandString'].replace(" ", "").lower()
-#        if normalized_command_string == normalized_command_name:
-#            return command['CommandEnum']
-#    return None
+    if verbose:
+        print(f"\nSuccessfully converted {len(converted_commands)} commands")
+    return data_type_dict, converted_commands

@@ -1,0 +1,103 @@
+{
+  "metadata": {
+    "motor_type": "M3",
+    "generated_at": "2024-11-19T15:24:03.717620",
+    "description": "Automatically generated unit conversion factors",
+    "scaling_note": "Velocity conversion factors include a 2^20 scaling factor and acceleration conversion factors include a 2^24 scaling factor to maintain precision when transmitting as integers"
+  },
+  "units": {
+    "time": [
+      "milliseconds",
+      "seconds",
+      "minutes"
+    ],
+    "position": [
+      "shaft_rotations",
+      "degrees",
+      "radians",
+      "encoder_counts"
+    ],
+    "velocity": [
+      "rpm",
+      "degrees_per_second",
+      "radians_per_second",
+      "counts_per_second"
+    ],
+    "acceleration": [
+      "rotations_per_second_squared",
+      "rpm_per_second",
+      "degrees_per_second_squared",
+      "radians_per_second_squared",
+      "counts_per_second_squared"
+    ],
+    "current": [
+      "milliamps",
+      "amps"
+    ],
+    "voltage": [
+      "volts",
+      "millivolts"
+    ],
+    "temperature": [
+      "celsius",
+      "fahrenheit",
+      "kelvin"
+    ]
+  },
+  "conversion_factors": {
+    "rpm": 1832519.3796266667,
+    "degrees_per_second": 305419.8966044445,
+    "radians_per_second": 17499271.05475665,
+    "counts_per_second": 33.554432,
+    "shaft_rotations": 3276800,
+    "degrees": 9102.222222222223,
+    "radians": 521518.9175235227,
+    "encoder_counts": 1,
+    "milliseconds": 31.25,
+    "seconds": 31250.0,
+    "minutes": 1875000.0,
+    "rotations_per_second_squared": 56294.9953421312,
+    "rpm_per_second": 938.2499223688534,
+    "degrees_per_second_squared": 156.37498706147557,
+    "radians_per_second_squared": 8959.626780035405,
+    "counts_per_second_squared": 0.017179869184
+  },
+  "verification": {
+    "velocity": {
+      "note": "All these values should be approximately equal as they represent 1 rotation per second",
+      "values": {
+        "60_rpm": 109951162.7776,
+        "360_degrees_per_second": 109951162.77760002,
+        "2pi_radians_per_second": 109951162.77759999,
+        "one_rotation_counts_per_second": 109951162.77759999
+      }
+    },
+    "position": {
+      "note": "All these values should be approximately equal as they represent 1 rotation",
+      "values": {
+        "1_rotation": 3276800,
+        "360_degrees": 3276800.0,
+        "2pi_radians": 3276800.0,
+        "one_rotation_counts": 3276800
+      }
+    },
+    "time": {
+      "note": "All these values should be approximately equal as they represent 1 second",
+      "values": {
+        "1000_milliseconds": 31250.0,
+        "1_second": 31250.0,
+        "1_60th_minute": 31250.0
+      }
+    },
+    "acceleration": {
+      "note": "All these values should be approximately equal as they represent 1 rotation per second squared",
+      "values": {
+        "1_rotation_per_second_squared": 56294.9953421312,
+        "60_rpm_per_second": 56294.9953421312,
+        "360_degrees_per_second_squared": 56294.9953421312,
+        "2pi_radians_per_second_squared": 56294.9953421312,
+        "one_rotation_counts_per_second_squared": 56294.9953421312
+      }
+    }
+  }
+}

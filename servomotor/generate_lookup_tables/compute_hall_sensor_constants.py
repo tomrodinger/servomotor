@@ -8,6 +8,8 @@ import random
 import copy
 import time
 
+sys.path.append("../../")  # Add parent directory to Python path to find settings files
+
 OUTPUT_HEADER_FILENAME_PREFIX = "../Src/hall_sensor_constants_"
 N_HALL_SENSORS = 3
 SLOPE_CALCULATION_DELTA = 4
