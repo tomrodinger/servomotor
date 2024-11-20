@@ -106,10 +106,9 @@ def format_warning(text):
     return format_text(f"{symbol} {text}", STYLE.YELLOW, STYLE.BOLD)
 
 def format_info(text):
-    """Format info messages with blue color and info symbol."""
-    symbol = STYLE.get_symbol("ℹ️", "i")
-    return format_text(f"{symbol} {text}", STYLE.BLUE)
+    """Format info messages with no color or formatting."""
+    return text
 
 def format_debug(text):
-    """Format debug messages with cyan color."""
-    return format_text(text, STYLE.CYAN)
+    """Format debug messages with no color or formatting."""
+    return text
