@@ -9,8 +9,7 @@ import servomotor
 
 REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3
 MIN_ALIAS = 1
-#MAX_ALIAS = 253
-MAX_ALIAS = 6
+MAX_ALIAS = 253
 
 def compute_crc32(data_64bit, data_8bit):
     # Convert to bytes in little-endian format
@@ -27,6 +26,51 @@ class Device:
         self.alias = alias
         self.need_to_reassign_alias = False
         self.reassigned_alias = None
+
+
+def detect_all_devices_multiple_passes(n_passes):
+    # Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
+    device_dict = {}
+    successful_detect_devices_count = 0
+    detect_devices_attempt_count = 0
+    while 1:
+        print("Resetting the system")
+        motor255.system_reset()
+        time.sleep(1.5)
+
+        if successful_detect_devices_count >= n_passes:
+            break
+
+        print("Flushing the receive buffer")
+        servomotor.flush_receive_buffer()
+        print(f"Detecting devices attempt {detect_devices_attempt_count+1}/{n_passes}")
+        try:
+            response = motor255.detect_devices()
+            successful_detect_devices_count += 1
+        except Exception as e:
+            print(f"Communication error: {e}")
+            continue
+        detect_devices_attempt_count += 1
+        print("Detected devices:")
+        for device in response:
+            unique_id = device[0]
+            alias = device[1]
+            crc = device[2]
+            # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
+            crc32_value = compute_crc32(unique_id, alias)
+            # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
+            if crc == crc32_value:
+                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK IS OK)")
+                if unique_id in device_dict:
+                    print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                    if alias != device_dict[unique_id].alias:
+                        print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
+                else:
+                    new_device = Device(unique_id, alias)
+                    device_dict[unique_id] = new_device
+            else:
+                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
+    return device_dict
 
 
 def find_unused_alias(alias_list, min_alias, max_alias):
@@ -51,54 +95,13 @@ servomotor.set_serial_port_from_args(args)
 reassign_aliases = args.reassign
 do_calibration = args.calibration
 
-motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                        velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                        current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
+                        verbose=args.verbose)
 servomotor.open_serial_port()
 
-# Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
-device_dict = {}
-successful_detect_devices_count = 0
-detect_devices_attempt_count = 0
-while 1:
-    print("Resetting the system")
-    motor255.system_reset()
-    time.sleep(1.5)
-
-    if successful_detect_devices_count >= REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT:
-        break
-
-    print("Flushing the receive buffer")
-    servomotor.flush_receive_buffer()
-    print(f"Detecting devices attempt {detect_devices_attempt_count+1}")
-    try:
-        response = motor255.detect_devices()
-        successful_detect_devices_count += 1
-    except Exception as e:
-        print(f"Communication error: {e}")
-        continue
-    detect_devices_attempt_count += 1
-    print("Detected devices:")
-    for device in response:
-        print("Device:", device)
-        unique_id = device[0]
-        alias = device[1]
-        crc = device[2]
-        # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
-        crc32_value = compute_crc32(unique_id, alias)
-        # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
-        print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X}")
-        if crc == crc32_value:
-            print("CRC32 matches")
-            if unique_id in device_dict:
-                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                if alias != device_dict[unique_id].alias:
-                    print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
-            else:
-                new_device = Device(unique_id, alias)
-                device_dict[unique_id] = new_device
-        else:
-            print("CRC32 does not match:")
-            print("   The CRC32 value computed is:", crc32_value)
-            print("   The CRC32 value received from the device is:", crc)
+device_dict = detect_all_devices_multiple_passes(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
 
 # Let's count how many of each alias there is in all the devices and the print out a report
 print()
@@ -134,15 +137,18 @@ for unique_id, device in device_dict.items():
 print("\nDevice report:")
 print("Unique ID        | Original Alias  | Reassigned Alias")
 print("-----------------------------------------------------")
+n_reassigned_aliases = 0
 for unique_id, device in device_dict.items():
     alias_str = servomotor.get_human_readable_alias(device.alias)
     if device.reassigned_alias is None:
         reassigned_alias_str = "                 "
     else:
         reassigned_alias_str = servomotor.get_human_readable_alias(device.reassigned_alias)
+        n_reassigned_aliases += 1
     print(f"{unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
 print("-----------------------------------------------------")
 print(f"A total of {len(device_dict)} devices were detected")
+print(f"and {n_reassigned_aliases} aliases were reassigned")
 print("-----------------------------------------------------\n")
 
 # Now, let's reassign the aliases (if the user has specified to do so) to the devices by running the "Set device alias" command for each device that needs to be reassigned
@@ -159,7 +165,9 @@ if do_calibration:
     print("Calibration mode activated")
     for unique_id, device in device_dict.items():
         print(f"Calibrating the device with unique ID {unique_id:016X} and alias {device.alias}")
-        motor_to_calibrate = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+        motor_to_calibrate = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                                           velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                                           current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
         response = motor_to_calibrate.start_calibration()
         print("Response from Start Calibration command:", response)
         time.sleep(30)

@@ -31,6 +31,51 @@ class Device:
         self.firmware_version = None
 
 
+def detect_all_devices_multiple_passes(n_passes):
+    # Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
+    device_dict = {}
+    successful_detect_devices_count = 0
+    detect_devices_attempt_count = 0
+    while 1:
+        print("Resetting the system")
+        motor255.system_reset()
+        time.sleep(1.5)
+
+        if successful_detect_devices_count >= n_passes:
+            break
+
+        print("Flushing the receive buffer")
+        servomotor.flush_receive_buffer()
+        print(f"Detecting devices attempt {detect_devices_attempt_count+1}/{n_passes}")
+        try:
+            response = motor255.detect_devices()
+            successful_detect_devices_count += 1
+        except Exception as e:
+            print(f"Communication error: {e}")
+            continue
+        detect_devices_attempt_count += 1
+        print("Detected devices:")
+        for device in response:
+            unique_id = device[0]
+            alias = device[1]
+            crc = device[2]
+            # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
+            crc32_value = compute_crc32(unique_id, alias)
+            # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
+            if crc == crc32_value:
+                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK IS OK)")
+                if unique_id in device_dict:
+                    print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                    if alias != device_dict[unique_id].alias:
+                        print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
+                else:
+                    new_device = Device(unique_id, alias)
+                    device_dict[unique_id] = new_device
+            else:
+                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
+    return device_dict
+
+
 def find_unused_alias(alias_dict, min_alias, max_alias):
     for alias in range(min_alias, max_alias + 1):
         if alias not in alias_dict:
@@ -48,54 +93,13 @@ args = parser.parse_args()
 
 serial_port = args.port
 
-motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                        velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                        current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
+                        verbose=args.verbose)
 servomotor.open_serial_port()
 
-# Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
-device_dict = {}
-successful_detect_devices_count = 0
-detect_devices_attempt_count = 0
-while 1:
-    print("Resetting the system")
-    motor255.system_reset()
-    time.sleep(1.5)
-
-    if successful_detect_devices_count >= REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT:
-        break
-
-    print("Flushing the receive buffer")
-    servomotor.flush_receive_buffer()
-    print(f"Detecting devices attempt {detect_devices_attempt_count+1}")
-    try:
-        response = motor255.detect_devices()
-        successful_detect_devices_count += 1
-    except Exception as e:
-        print(f"Communication error: {e}")
-        continue
-    detect_devices_attempt_count += 1
-    print("Detected devices:")
-    for device in response:
-        print("Device:", device)
-        unique_id = device[0]
-        alias = device[1]
-        crc = device[2]
-        # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
-        crc32_value = compute_crc32(unique_id, alias)
-        # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
-        print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X}")
-        if crc == crc32_value:
-            print("CRC32 matches")
-            if unique_id in device_dict:
-                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                if alias != device_dict[unique_id].alias:
-                    print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
-            else:
-                new_device = Device(unique_id, alias)
-                device_dict[unique_id] = new_device
-        else:
-            print("CRC32 does not match:")
-            print("   The CRC32 value computed is:", crc32_value)
-            print("   The CRC32 value received from the device is:", crc)
+device_dict = detect_all_devices_multiple_passes(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
 
 # Let's count how many of each alias there is in all the devices and the print out a report
 # At the same time, let's check if there are any duplicate aliases
@@ -128,7 +132,9 @@ for unique_id, device in device_dict.items():
         continue
     alias_str = servomotor.get_human_readable_alias(device.alias)
     print(f"Getting product info for device with unique ID {unique_id:016X} and alias {alias_str}")
-    motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+    motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                    velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                    current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
     try:
         response = motor.get_product_info()
         device.product_code = response[0]

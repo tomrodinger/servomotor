@@ -210,9 +210,7 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
             
             # Convert output parameters based on unit conversion definitions
             if isinstance(response, list) and command.get('Output'):
-                json_cmd = next((cmd for cmd in unit_converter.command_definitions 
-                              if cmd['CommandString'] == command['CommandString']), None)
-                
+                json_cmd = next((cmd for cmd in unit_converter.command_definitions if cmd['CommandString'] == command['CommandString']), None)
                 if json_cmd and isinstance(json_cmd.get('Output'), list):
                     converted_response = []
                     for i, value in enumerate(response):
@@ -229,10 +227,19 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
                                 converted_response.append(value)
                         else:
                             converted_response.append(value)
-                    response = converted_response[0] if len(converted_response) == 1 else converted_response
+                    response = converted_response
             
-            if multiple_responses == False and isinstance(response, list) and len(response) == 1:
-                response = response[0]
+            if multiple_responses == False:
+                if not isinstance(response, list):
+                    print("Error: Expected the response to be a list, but got: ", response)
+                    exit(1)
+                if len(response) > 1:
+                    print("Error: Expected only one item in the list of an empty list, but got: ", response)
+                    exit(1)
+                if len(response) == 1:
+                    response = response[0]
+                if isinstance(response, list) and len(response) == 1:
+                    response = response[0]
             return response
             
         except communication.TimeoutError:
@@ -342,3 +349,7 @@ class M3(AllMotors):
     def set_voltage_unit(self, new_unit):
         """Change the voltage unit dynamically"""
         self._voltage_unit = VoltageUnit(new_unit)
+
+    def set_alias(self, new_alias):
+        """Change the alias of the motor"""
+        self.alias = new_alias
