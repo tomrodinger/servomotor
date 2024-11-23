@@ -1,0 +1,786 @@
+{
+    "errors": [
+        {
+            "code": 0,
+            "enum": "ERROR_NONE",
+            "short_desc": "",
+            "long_desc": "No error condition",
+            "causes": ["Normal operation"],
+            "solutions": ["No action needed"]
+        },
+        {
+            "code": 1,
+            "enum": "ERROR_TIME_WENT_BACKWARDS",
+            "short_desc": "time went backwards",
+            "long_desc": "The system detected that time appeared to move backwards, which indicates a problem with the microsecond clock",
+            "causes": [
+                "Timer overflow",
+                "Hardware clock malfunction",
+                "Software bug in time tracking"
+            ],
+            "solutions": [
+                "Reset the device",
+                "Check for timer configuration issues",
+                "Verify timer interrupt priorities"
+            ]
+        },
+        {
+            "code": 2,
+            "enum": "ERROR_FLASH_UNLOCK_FAIL",
+            "short_desc": "flash unlock fail",
+            "long_desc": "Failed to unlock the flash memory for writing",
+            "causes": [
+                "Flash memory is locked",
+                "Incorrect unlock sequence",
+                "Hardware protection enabled"
+            ],
+            "solutions": [
+                "Reset the device",
+                "Check flash memory protection settings",
+                "Verify flash unlock sequence in code"
+            ]
+        },
+        {
+            "code": 3,
+            "enum": "ERROR_FLASH_WRITE_FAIL",
+            "short_desc": "flash write fail",
+            "long_desc": "Failed to write data to flash memory",
+            "causes": [
+                "Flash memory write protection active",
+                "Write operation timeout",
+                "Invalid flash address",
+                "Insufficient power during write"
+            ],
+            "solutions": [
+                "Check flash write protection settings",
+                "Verify flash write timing",
+                "Ensure stable power supply",
+                "Check flash address calculations"
+            ]
+        },
+        {
+            "code": 4,
+            "enum": "ERROR_TOO_MANY_BYTES",
+            "short_desc": "too many bytes",
+            "long_desc": "Data size exceeds buffer or memory limits",
+            "causes": [
+                "Command data too large",
+                "Buffer overflow attempt",
+                "Incorrect data length calculation"
+            ],
+            "solutions": [
+                "Reduce data size",
+                "Split data into smaller chunks",
+                "Check data length calculations",
+                "Verify buffer size constraints"
+            ]
+        },
+        {
+            "code": 5,
+            "enum": "ERROR_COMMAND_OVERFLOW",
+            "short_desc": "command overflow",
+            "long_desc": "Command buffer overflow detected",
+            "causes": [
+                "Too many commands sent too quickly",
+                "Command buffer full",
+                "Command processing too slow"
+            ],
+            "solutions": [
+                "Reduce command frequency",
+                "Wait for command completion",
+                "Implement command flow control",
+                "Check command processing speed"
+            ]
+        },
+        {
+            "code": 6,
+            "enum": "ERROR_COMMAND_TOO_LONG",
+            "short_desc": "command too long",
+            "long_desc": "Individual command exceeds maximum allowed length",
+            "causes": [
+                "Command data exceeds limit",
+                "Malformed command",
+                "Protocol violation"
+            ],
+            "solutions": [
+                "Reduce command length",
+                "Split into multiple commands",
+                "Check command format",
+                "Verify protocol compliance"
+            ]
+        },
+        {
+            "code": 7,
+            "enum": "ERROR_NOT_IN_OPEN_LOOP",
+            "short_desc": "not in open loop",
+            "long_desc": "An operation that requires open loop control mode was attempted while the motor was in a different control mode",
+            "causes": [
+                "Attempting calibration while not in open loop mode",
+                "Incorrect mode transition sequence"
+            ],
+            "solutions": [
+                "Switch to open loop mode before calibration",
+                "Reset motor control mode to open loop",
+                "Check mode transition logic in code"
+            ]
+        },
+        {
+            "code": 8,
+            "enum": "ERROR_QUEUE_NOT_EMPTY",
+            "short_desc": "queue not empty",
+            "long_desc": "An operation that requires an empty movement queue was attempted while the queue still had pending movements",
+            "causes": [
+                "Starting calibration with pending movements",
+                "Starting homing with pending movements",
+                "Attempting mode change with active movements"
+            ],
+            "solutions": [
+                "Wait for all movements to complete",
+                "Clear the movement queue",
+                "Call clear_the_queue_and_stop() before operation"
+            ]
+        },
+        {
+            "code": 9,
+            "enum": "ERROR_HALL_SENSOR",
+            "short_desc": "hall sensor error",
+            "long_desc": "Hall sensor readings are invalid or out of expected range",
+            "causes": [
+                "Hall sensor malfunction",
+                "Sensor connection issues",
+                "Magnetic interference",
+                "Sensor power issues"
+            ],
+            "solutions": [
+                "Check hall sensor connections",
+                "Verify sensor power supply",
+                "Shield from magnetic interference",
+                "Replace faulty sensors"
+            ]
+        },
+        {
+            "code": 10,
+            "enum": "ERROR_CALIBRATION_OVERFLOW",
+            "short_desc": "calibration overflow",
+            "long_desc": "Calibration data buffer overflow during motor calibration",
+            "causes": [
+                "Too many calibration points collected",
+                "Calibration buffer size exceeded",
+                "Incorrect calibration sequence"
+            ],
+            "solutions": [
+                "Check calibration data buffer size",
+                "Verify calibration point collection logic",
+                "Reset and retry calibration"
+            ]
+        },
+        {
+            "code": 11,
+            "enum": "ERROR_NOT_ENOUGH_MINIMA_OR_MAXIMA",
+            "short_desc": "not enough minima or maxima",
+            "long_desc": "Insufficient number of peaks detected during hall sensor calibration",
+            "causes": [
+                "Poor sensor signals",
+                "Incorrect motor movement during calibration",
+                "Sensor sensitivity issues",
+                "Mechanical problems"
+            ],
+            "solutions": [
+                "Check hall sensor signal quality",
+                "Verify motor movement during calibration",
+                "Adjust sensor sensitivity",
+                "Check for mechanical binding"
+            ]
+        },
+        {
+            "code": 12,
+            "enum": "ERROR_VIBRATION_FOUR_STEP",
+            "short_desc": "vibration four step",
+            "long_desc": "Error in four-step vibration sequence during motor testing",
+            "causes": [
+                "Incorrect vibration sequence",
+                "Motor movement obstruction",
+                "Control timing issues"
+            ],
+            "solutions": [
+                "Check vibration sequence timing",
+                "Verify motor freedom of movement",
+                "Check control loop timing"
+            ]
+        },
+        {
+            "code": 13,
+            "enum": "ERROR_NOT_IN_CLOSED_LOOP",
+            "short_desc": "not in closed loop",
+            "long_desc": "An operation that requires closed loop control mode was attempted while in a different mode",
+            "causes": [
+                "Attempting position control in wrong mode",
+                "Incorrect mode transition",
+                "Mode change during operation"
+            ],
+            "solutions": [
+                "Switch to closed loop mode first",
+                "Check mode transition sequence",
+                "Verify control mode logic"
+            ]
+        },
+        {
+            "code": 14,
+            "enum": "ERROR_OVERVOLTAGE",
+            "short_desc": "overvoltage",
+            "long_desc": "Motor supply voltage exceeds maximum allowed limit",
+            "causes": [
+                "Power supply voltage too high",
+                "Regenerative braking voltage spike",
+                "Voltage measurement error"
+            ],
+            "solutions": [
+                "Check power supply voltage",
+                "Add regenerative braking resistor",
+                "Verify voltage measurements",
+                "Implement voltage limiting"
+            ]
+        },
+        {
+            "code": 15,
+            "enum": "ERROR_ACCEL_TOO_HIGH",
+            "short_desc": "accel too high",
+            "long_desc": "The requested acceleration exceeds the maximum allowed acceleration limit",
+            "causes": [
+                "Movement command with excessive acceleration",
+                "Acceleration parameter too high",
+                "Incorrect acceleration calculation"
+            ],
+            "solutions": [
+                "Reduce the requested acceleration",
+                "Check acceleration calculations",
+                "Verify max_acceleration setting"
+            ]
+        },
+        {
+            "code": 16,
+            "enum": "ERROR_VEL_TOO_HIGH",
+            "short_desc": "vel too high",
+            "long_desc": "The requested velocity exceeds the maximum allowed velocity limit",
+            "causes": [
+                "Movement command with excessive velocity",
+                "Velocity parameter too high",
+                "Acceleration leading to excessive velocity"
+            ],
+            "solutions": [
+                "Reduce the requested velocity",
+                "Check velocity calculations",
+                "Verify max_velocity setting"
+            ]
+        },
+        {
+            "code": 17,
+            "enum": "ERROR_QUEUE_IS_FULL",
+            "short_desc": "queue is full",
+            "long_desc": "Movement queue is full and cannot accept more commands",
+            "causes": [
+                "Too many queued movements",
+                "Commands sent too quickly",
+                "Queue not being processed"
+            ],
+            "solutions": [
+                "Wait for queue space",
+                "Reduce command frequency",
+                "Check queue processing",
+                "Clear unnecessary movements"
+            ]
+        },
+        {
+            "code": 18,
+            "enum": "ERROR_RUN_OUT_OF_QUEUE_ITEMS",
+            "short_desc": "run out of queue items",
+            "long_desc": "Movement queue unexpectedly empty during operation",
+            "causes": [
+                "Movement sequence incomplete",
+                "Queue processing error",
+                "Timing synchronization issue"
+            ],
+            "solutions": [
+                "Check movement sequence completeness",
+                "Verify queue processing logic",
+                "Ensure proper movement timing"
+            ]
+        },
+        {
+            "code": 19,
+            "enum": "ERROR_MOTOR_BUSY",
+            "short_desc": "motor busy",
+            "long_desc": "An operation was attempted while the motor was busy with another operation like calibration or homing",
+            "causes": [
+                "Attempting new movement during calibration",
+                "Starting operation while homing active",
+                "Multiple concurrent motor operations"
+            ],
+            "solutions": [
+                "Wait for current operation to complete",
+                "Check motor_busy flag before operations",
+                "Implement proper operation sequencing"
+            ]
+        },
+        {
+            "code": 20,
+            "enum": "ERROR_POSITION_OUT_OF_RANGE",
+            "short_desc": "position out of range",
+            "long_desc": "Motor position value has exceeded valid range (deprecated)",
+            "causes": [
+                "Position overflow",
+                "Position calculation error",
+                "Movement beyond limits"
+            ],
+            "solutions": [
+                "Check position calculations",
+                "Verify movement limits",
+                "Update to new position tracking"
+            ]
+        },
+        {
+            "code": 21,
+            "enum": "ERROR_HALL_POSITION_OUT_OF_RANGE",
+            "short_desc": "hall position out of range",
+            "long_desc": "Hall sensor position value has exceeded valid range (deprecated)",
+            "causes": [
+                "Hall position overflow",
+                "Position calculation error",
+                "Sensor reading issues"
+            ],
+            "solutions": [
+                "Check hall position calculations",
+                "Verify sensor readings",
+                "Update to new position tracking"
+            ]
+        },
+        {
+            "code": 22,
+            "enum": "ERROR_CURRENT_SENSOR_FAILED",
+            "short_desc": "current sensor failed",
+            "long_desc": "The motor current sensor readings are outside expected baseline range",
+            "causes": [
+                "Current sensor hardware failure",
+                "Incorrect sensor calibration",
+                "Wiring issues",
+                "Power supply problems"
+            ],
+            "solutions": [
+                "Check current sensor connections",
+                "Verify power supply voltage",
+                "Calibrate current sensor",
+                "Check for hardware damage"
+            ]
+        },
+        {
+            "code": 23,
+            "enum": "ERROR_MAX_PWM_VOLTAGE_TOO_HIGH",
+            "short_desc": "max pwm voltage too high",
+            "long_desc": "Configured maximum PWM voltage exceeds hardware limits",
+            "causes": [
+                "Incorrect PWM voltage setting",
+                "Configuration error",
+                "Hardware limitation violation"
+            ],
+            "solutions": [
+                "Reduce max PWM voltage setting",
+                "Check voltage configurations",
+                "Verify hardware specifications"
+            ]
+        },
+        {
+            "code": 24,
+            "enum": "ERROR_MULTI_MOVE_MORE_THAN_32_MOVES",
+            "short_desc": "multi-move more than 32 moves",
+            "long_desc": "Multi-move sequence exceeds maximum allowed number of moves",
+            "causes": [
+                "Too many moves in sequence",
+                "Movement splitting error",
+                "Command sequence too long"
+            ],
+            "solutions": [
+                "Reduce number of moves",
+                "Split into multiple sequences",
+                "Optimize movement planning"
+            ]
+        },
+        {
+            "code": 25,
+            "enum": "ERROR_SAFETY_LIMIT_EXCEEDED",
+            "short_desc": "safety limit exceeded",
+            "long_desc": "The motor position has exceeded the configured safety limits",
+            "causes": [
+                "Movement command beyond safety bounds",
+                "Incorrect safety limit configuration",
+                "Motor overshooting target position"
+            ],
+            "solutions": [
+                "Adjust movement within safety limits",
+                "Check safety limit settings",
+                "Verify position calculations",
+                "Implement proper deceleration"
+            ]
+        },
+        {
+            "code": 26,
+            "enum": "ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE",
+            "short_desc": "turn point out of safety zone",
+            "long_desc": "Calculated movement turn point exceeds safety zone limits",
+            "causes": [
+                "Movement trajectory error",
+                "Safety zone misconfiguration",
+                "Trajectory calculation error"
+            ],
+            "solutions": [
+                "Adjust movement trajectory",
+                "Check safety zone settings",
+                "Verify turn point calculations"
+            ]
+        },
+        {
+            "code": 27,
+            "enum": "ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE",
+            "short_desc": "predicted position out of safety zone",
+            "long_desc": "Movement trajectory would exceed safety zone limits",
+            "causes": [
+                "Movement command too large",
+                "Safety zone too restrictive",
+                "Position prediction error"
+            ],
+            "solutions": [
+                "Reduce movement distance",
+                "Check safety zone limits",
+                "Verify position predictions"
+            ]
+        },
+        {
+            "code": 28,
+            "enum": "ERROR_PREDICTED_VELOCITY_TOO_HIGH",
+            "short_desc": "predicted velocity too high",
+            "long_desc": "Movement would result in velocity exceeding limits",
+            "causes": [
+                "Acceleration too high",
+                "Movement distance too large",
+                "Velocity limit too low"
+            ],
+            "solutions": [
+                "Reduce acceleration",
+                "Increase movement time",
+                "Check velocity limits"
+            ]
+        },
+        {
+            "code": 29,
+            "enum": "ERROR_DEBUG1",
+            "short_desc": "debug1",
+            "long_desc": "Debug error used for development testing",
+            "causes": [
+                "Development testing",
+                "Debug condition met"
+            ],
+            "solutions": [
+                "Check debug conditions",
+                "Contact developer"
+            ]
+        },
+        {
+            "code": 30,
+            "enum": "ERROR_CONTROL_LOOP_TOOK_TOO_LONG",
+            "short_desc": "control loop took too long",
+            "long_desc": "The motor control loop calculations exceeded the maximum allowed time",
+            "causes": [
+                "Complex calculations taking too long",
+                "Interrupt conflicts",
+                "System overload"
+            ],
+            "solutions": [
+                "Optimize control loop code",
+                "Check interrupt priorities",
+                "Reduce control loop complexity",
+                "Verify timer configurations"
+            ]
+        },
+        {
+            "code": 31,
+            "enum": "ERROR_INDEX_OUT_OF_RANGE",
+            "short_desc": "index out of range",
+            "long_desc": "Array or buffer index exceeds valid range",
+            "causes": [
+                "Buffer overflow attempt",
+                "Index calculation error",
+                "Memory access violation"
+            ],
+            "solutions": [
+                "Check index calculations",
+                "Verify buffer sizes",
+                "Add range checking"
+            ]
+        },
+        {
+            "code": 32,
+            "enum": "ERROR_CANT_PULSE_WHEN_INTERVALS_ACTIVE",
+            "short_desc": "can't pulse when intervals are active",
+            "long_desc": "Pulse command attempted while interval timing active",
+            "causes": [
+                "Timing conflict",
+                "Incorrect pulse sequencing",
+                "Mode conflict"
+            ],
+            "solutions": [
+                "Wait for intervals to complete",
+                "Check timing sequence",
+                "Verify mode compatibility"
+            ]
+        },
+        {
+            "code": 33,
+            "enum": "ERROR_INVALID_RUN_MODE",
+            "short_desc": "invalid run mode",
+            "long_desc": "Attempted to set invalid motor run mode",
+            "causes": [
+                "Invalid mode selection",
+                "Mode transition error",
+                "Configuration error"
+            ],
+            "solutions": [
+                "Check mode selection",
+                "Verify mode transitions",
+                "Use valid run modes"
+            ]
+        },
+        {
+            "code": 34,
+            "enum": "ERROR_PARAMETER_OUT_OF_RANGE",
+            "short_desc": "parameter out of range",
+            "long_desc": "Configuration parameter exceeds valid range",
+            "causes": [
+                "Invalid parameter value",
+                "Configuration error",
+                "Calculation error"
+            ],
+            "solutions": [
+                "Check parameter values",
+                "Verify configuration",
+                "Use valid parameter ranges"
+            ]
+        },
+        {
+            "code": 35,
+            "enum": "ERROR_DISABLE_MOSFETS_FIRST",
+            "short_desc": "disable MOSFETs first",
+            "long_desc": "Operation requires MOSFETs to be disabled first",
+            "causes": [
+                "MOSFETs still enabled",
+                "Incorrect operation sequence",
+                "Safety check failure"
+            ],
+            "solutions": [
+                "Disable MOSFETs before operation",
+                "Check operation sequence",
+                "Verify MOSFET control"
+            ]
+        },
+        {
+            "code": 36,
+            "enum": "ERROR_FRAMING",
+            "short_desc": "framing error",
+            "long_desc": "Communication framing error detected",
+            "causes": [
+                "Serial communication error",
+                "Incorrect baud rate",
+                "Signal integrity issues"
+            ],
+            "solutions": [
+                "Check communication settings",
+                "Verify baud rate",
+                "Check signal integrity"
+            ]
+        },
+        {
+            "code": 37,
+            "enum": "ERROR_OVERRUN",
+            "short_desc": "overrun error",
+            "long_desc": "Communication buffer overrun detected",
+            "causes": [
+                "Data received too quickly",
+                "Buffer processing too slow",
+                "Flow control issues"
+            ],
+            "solutions": [
+                "Implement flow control",
+                "Increase buffer size",
+                "Optimize data processing"
+            ]
+        },
+        {
+            "code": 38,
+            "enum": "ERROR_NOISE",
+            "short_desc": "noise error",
+            "long_desc": "Communication noise detected",
+            "causes": [
+                "Electrical interference",
+                "Poor signal quality",
+                "Wiring issues"
+            ],
+            "solutions": [
+                "Check wiring shielding",
+                "Reduce interference",
+                "Improve signal quality"
+            ]
+        },
+        {
+            "code": 39,
+            "enum": "ERROR_GO_TO_CLOSED_LOOP_FAILED",
+            "short_desc": "go to closed loop failed",
+            "long_desc": "Failed to transition from open loop to closed loop control mode",
+            "causes": [
+                "Poor signal quality during transition",
+                "Incorrect phase detection",
+                "Motor position instability"
+            ],
+            "solutions": [
+                "Check hall sensor signals",
+                "Verify motor phase sequence",
+                "Ensure stable motor position before transition",
+                "Calibrate motor before transition"
+            ]
+        },
+        {
+            "code": 40,
+            "enum": "ERROR_OVERHEAT",
+            "short_desc": "overheat",
+            "long_desc": "Motor or controller temperature too high",
+            "causes": [
+                "Excessive motor current",
+                "Insufficient cooling",
+                "High ambient temperature",
+                "Mechanical binding"
+            ],
+            "solutions": [
+                "Reduce motor load",
+                "Improve cooling",
+                "Check for mechanical issues",
+                "Allow system to cool"
+            ]
+        },
+        {
+            "code": 41,
+            "enum": "ERROR_TEST_MODE_ACTIVE",
+            "short_desc": "test mode active",
+            "long_desc": "Operation not allowed while test mode is active",
+            "causes": [
+                "Test mode enabled",
+                "Mode conflict",
+                "Incorrect operation sequence"
+            ],
+            "solutions": [
+                "Disable test mode",
+                "Complete test sequence",
+                "Reset controller"
+            ]
+        },
+        {
+            "code": 42,
+            "enum": "ERROR_POSITION_DISCREPANCY",
+            "short_desc": "position discrepancy",
+            "long_desc": "Mismatch between expected and actual position after movement",
+            "causes": [
+                "Position tracking error",
+                "Movement calculation error",
+                "Mechanical issues"
+            ],
+            "solutions": [
+                "Check position calculations",
+                "Verify movement execution",
+                "Calibrate system"
+            ]
+        },
+        {
+            "code": 43,
+            "enum": "ERROR_OVERCURRENT",
+            "short_desc": "overcurrent",
+            "long_desc": "Motor current exceeds maximum allowed limit",
+            "causes": [
+                "Excessive motor load",
+                "Short circuit",
+                "Motor binding",
+                "Incorrect current limit"
+            ],
+            "solutions": [
+                "Reduce motor load",
+                "Check for shorts",
+                "Verify current limits",
+                "Check mechanical system"
+            ]
+        },
+        {
+            "code": 44,
+            "enum": "ERROR_PWM_TOO_HIGH",
+            "short_desc": "PWM too high",
+            "long_desc": "The calculated PWM duty cycle exceeds the maximum allowed value",
+            "causes": [
+                "PID controller output too high",
+                "Incorrect PWM calculations",
+                "Motor load too high"
+            ],
+            "solutions": [
+                "Adjust PID parameters",
+                "Check PWM calculation logic",
+                "Verify motor load conditions",
+                "Reduce movement demands"
+            ]
+        },
+        {
+            "code": 45,
+            "enum": "ERROR_POSITION_DEVIATION_TOO_LARGE",
+            "short_desc": "position deviation too large",
+            "long_desc": "The difference between commanded position and actual position exceeds allowed limits",
+            "causes": [
+                "Mechanical obstruction",
+                "Motor stall",
+                "Insufficient torque",
+                "Incorrect PID tuning"
+            ],
+            "solutions": [
+                "Check for mechanical blockages",
+                "Verify motor power",
+                "Adjust PID parameters",
+                "Reduce acceleration/velocity demands"
+            ]
+        },
+        {
+            "code": 46,
+            "enum": "ERROR_MOVE_TOO_FAR",
+            "short_desc": "move too far",
+            "long_desc": "Requested movement distance exceeds system limits",
+            "causes": [
+                "Movement command too large",
+                "Position calculation overflow",
+                "Invalid target position"
+            ],
+            "solutions": [
+                "Reduce movement distance",
+                "Split into smaller moves",
+                "Check position calculations"
+            ]
+        },
+        {
+            "code": 47,
+            "enum": "ERROR_HALL_POSITION_DELTA_TOO_LARGE",
+            "short_desc": "hall position delta too large",
+            "long_desc": "The change in hall sensor position between updates is larger than expected",
+            "causes": [
+                "Hall sensor noise",
+                "Sensor malfunction",
+                "Motor moving too fast",
+                "Incorrect sensor readings"
+            ],
+            "solutions": [
+                "Check hall sensor connections",
+                "Verify sensor signal quality",
+                "Reduce motor speed",
+                "Check for electromagnetic interference"
+            ]
+        }
+    ]
+}

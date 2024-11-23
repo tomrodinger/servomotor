@@ -205,51 +205,51 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
                 # If we can't find the command in JSON definitions, round any float values to integers
                 converted_inputs = [int(round(v)) if isinstance(v, float) else v for v in (list(args) + list(kwargs.values()))]
 
-        try:
-            response = communication.execute_command(self.alias, command_id, converted_inputs, verbose=self.verbose)
-            
-            # Convert output parameters based on unit conversion definitions
-            if isinstance(response, list) and command.get('Output'):
-                json_cmd = next((cmd for cmd in unit_converter.command_definitions if cmd['CommandString'] == command['CommandString']), None)
-                if json_cmd and isinstance(json_cmd.get('Output'), list):
-                    converted_response = []
-                    for i, value in enumerate(response):
-                        if i < len(json_cmd['Output']):
-                            param = json_cmd['Output'][i]
-                            if isinstance(param, dict) and 'UnitConversion' in param:
-                                conv = param['UnitConversion']
-                                unit_type = conv['Type']
-                                target_unit = getattr(self, f"_{unit_type}_unit").value
-                                converted_value = unit_converter.convert_from_internal(
-                                    value, command['CommandString'], param['ParameterName'], target_unit)
-                                converted_response.append(converted_value)
-                            else:
-                                converted_response.append(value)
+#        try:
+        response = communication.execute_command(self.alias, command_id, converted_inputs, verbose=self.verbose)
+        
+        # Convert output parameters based on unit conversion definitions
+        if isinstance(response, list) and command.get('Output'):
+            json_cmd = next((cmd for cmd in unit_converter.command_definitions if cmd['CommandString'] == command['CommandString']), None)
+            if json_cmd and isinstance(json_cmd.get('Output'), list):
+                converted_response = []
+                for i, value in enumerate(response):
+                    if i < len(json_cmd['Output']):
+                        param = json_cmd['Output'][i]
+                        if isinstance(param, dict) and 'UnitConversion' in param:
+                            conv = param['UnitConversion']
+                            unit_type = conv['Type']
+                            target_unit = getattr(self, f"_{unit_type}_unit").value
+                            converted_value = unit_converter.convert_from_internal(
+                                value, command['CommandString'], param['ParameterName'], target_unit)
+                            converted_response.append(converted_value)
                         else:
                             converted_response.append(value)
-                    response = converted_response
+                    else:
+                        converted_response.append(value)
+                response = converted_response
+        
+        if multiple_responses == False:
+            if not isinstance(response, list):
+                print("Error: Expected the response to be a list, but got: ", response)
+                exit(1)
+            if len(response) > 1:
+                print("Error: Expected only one item in the list of an empty list, but got: ", response)
+                exit(1)
+            if len(response) == 1:
+                response = response[0]
+            if isinstance(response, list) and len(response) == 1:
+                response = response[0]
+        return response
             
-            if multiple_responses == False:
-                if not isinstance(response, list):
-                    print("Error: Expected the response to be a list, but got: ", response)
-                    exit(1)
-                if len(response) > 1:
-                    print("Error: Expected only one item in the list of an empty list, but got: ", response)
-                    exit(1)
-                if len(response) == 1:
-                    response = response[0]
-                if isinstance(response, list) and len(response) == 1:
-                    response = response[0]
-            return response
-            
-        except communication.TimeoutError:
-            print("\nTimeout occurred! Checking motor status...")
-            try:
-                status = self.get_status()
-                print(f"Motor Status: {status}")
-            except Exception as e:
-                print(f"Failed to get motor status: {e}")
-            raise
+#        except communication.TimeoutError:
+#            print("\nTimeout occurred! Checking motor status...")
+#            try:
+#                status = self.get_status()
+#                print(f"Motor Status: {status}")
+#            except Exception as e:
+#                print(f"Failed to get motor status: {e}")
+#            raise
 
     return command_function
 

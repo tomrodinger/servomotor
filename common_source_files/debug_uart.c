@@ -7,6 +7,7 @@ static char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
 static volatile uint8_t command_debug_uart = 0;
+static uint8_t debug_printing_enabled = 1;
 
 
 void debug_uart_init(void)
@@ -21,6 +22,12 @@ void debug_uart_init(void)
     USART2->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE | USART_CR1_RXNEIE_RXFNEIE; // enable transmitter, receiver, and the receive interrupt
     NVIC_SetPriority(USART2_IRQn, 3); // lowest priority for the debug UART
     NVIC_EnableIRQ(USART2_IRQn);
+}
+
+
+void disable_or_enable_debug_printing(uint8_t enable)
+{
+    debug_printing_enabled = enable;
 }
 
 
@@ -45,6 +52,9 @@ void USART2_IRQHandler(void)
 
 void transmit(void *s, uint8_t len)
 {
+    if (debug_printing_enabled == 0) {
+        return;
+    }
     if(len == 0) {
         return;
     }
@@ -75,14 +85,19 @@ void transmit(void *s, uint8_t len)
 // print a null terminated string to the debug port
 void print_debug_string(void *s)
 {
+    if (debug_printing_enabled == 0) {
+        return;
+    }
     transmit(s, strlen(s));
 }
 
 
 void transmit_without_interrupts(const char *message, uint8_t len)
 {
-	int32_t i;
-	for(i = 0; i < len; i++) {
+    if (debug_printing_enabled == 0) {
+        return;
+    }
+	for(int32_t i = 0; i < len; i++) {
 		while(!(USART2->ISR & USART_ISR_TXE_TXFNF_Msk));
 		USART2->TDR = message[i];
 	}
@@ -117,6 +132,9 @@ void convert_uint16_to_byte_array(char *output, uint16_t input)
 
 void print_number(char *message_prefix, uint16_t n)
 {
+    if (debug_printing_enabled == 0) {
+        return;
+    }
     static char message[100];
     uint8_t message_prefix_len = strlen(message_prefix);
     strcpy(message, message_prefix);
@@ -165,6 +183,9 @@ void convert_int64_to_byte_array(char *output, int64_t input)
 
 void print_int64(char *message_prefix, int64_t n)
 {
+    if (debug_printing_enabled == 0) {
+        return;
+    }
     static char message[115];
     uint8_t message_prefix_len = strlen(message_prefix);
     strcpy(message, message_prefix);
@@ -174,7 +195,7 @@ void print_int64(char *message_prefix, int64_t n)
 }
 
 
-uint8_t get_command_debug_uart(void)
+uint8_t get_command_from_debug_uart(void)
 {
 	uint8_t tmp = command_debug_uart;
 	if(tmp != 0) {

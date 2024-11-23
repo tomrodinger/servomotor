@@ -208,9 +208,9 @@
         "Description": "Make the current position the position zero (origin)",
         "Input": null,
         "Output": "success_response"
-    },
-    {
-        "CommandString": "Homing",
+            },
+            {
+                "CommandString": "Homing",
         "CommandEnum": 14,
         "Description": "Homing (or in other words, move until a crash and then stop immediately)",
         "Input": [
@@ -236,8 +236,8 @@
             }
         ],
         "Output": "success_response"
-    },
-    {
+            },
+{
         "CommandString": "Get hall sensor position",
         "CommandEnum": 15,
         "Description": "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)",
@@ -372,9 +372,9 @@
             }
         ],
         "Output": "success_response"
-    },
-    {
-        "CommandString": "Get product info",
+            },
+            {
+                "CommandString": "Get product info",
         "CommandEnum": 22,
         "Description": "Get product information",
         "Input": null,
@@ -422,9 +422,9 @@
             }
         ],
         "Output": "success_response"
-    },
-    {
-        "CommandString": "Get product description",
+            },
+            {
+                "CommandString": "Get product description",
         "CommandEnum": 24,
         "Description": "Get the product description. Documentation to be done later.",
         "Input": null,
@@ -670,9 +670,9 @@
                 }
             }
         ]
-    },
-    {
-        "CommandString": "Read multipurpose buffer",
+            },
+            {
+                "CommandString": "Read multipurpose buffer",
         "CommandEnum": 35,
         "Description": "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)",
         "Input": null,
@@ -806,9 +806,9 @@
             }
         ],
         "Output": "success_response"
-    },
-    {
-        "CommandString": "Get temperature",
+            },
+            {
+                "CommandString": "Get temperature",
         "CommandEnum": 42,
         "Description": "Get the measured temperature of the motor.",
         "Input": null,
@@ -869,9 +869,29 @@
     {
         "CommandString": "Get debug values",
         "CommandEnum": 252,
-        "Description": "Get some debug values. End customer should not use this command. It is for developers and testers.",
+        "Description": "Get debug values including motor control parameters, profiler times, hall sensor data, and other diagnostic information.",
         "Input": null,
         "Output": [
+            {
+                "Description": "i64: Maximum acceleration setting",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "maxAcceleration"
+            },
+            {
+                "Description": "i64: Maximum velocity setting",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "maxVelocity"
+            },
+            {
+                "Description": "i64: Current velocity",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "currentVelocity"
+            },
+            {
+                "Description": "i32: Measured velocity",
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "measuredVelocity"
+            },
             {
                 "Description": "i64: Debug value 1",
                 "TooltipDisplayFormat": "%lld",
@@ -891,6 +911,111 @@
                 "Description": "i64: Debug value 4",
                 "TooltipDisplayFormat": "%lld",
                 "ParameterName": "debugValue4"
+            },
+            {
+                "Description": "u16: All motor control calculations profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "allMotorControlCalculationsProfilerTime"
+            },
+            {
+                "Description": "u16: All motor control calculations profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "allMotorControlCalculationsProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Get sensor position profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "getSensorPositionProfilerTime"
+            },
+            {
+                "Description": "u16: Get sensor position profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "getSensorPositionProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Compute velocity profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "computeVelocityProfilerTime"
+            },
+            {
+                "Description": "u16: Compute velocity profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "computeVelocityProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Motor movement calculations profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorMovementCalculationsProfilerTime"
+            },
+            {
+                "Description": "u16: Motor movement calculations profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorMovementCalculationsProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Motor phase calculations profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorPhaseCalculationsProfilerTime"
+            },
+            {
+                "Description": "u16: Motor phase calculations profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorPhaseCalculationsProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Motor control loop period profiler time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorControlLoopPeriodProfilerTime"
+            },
+            {
+                "Description": "u16: Motor control loop period profiler maximum time",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorControlLoopPeriodProfilerMaxTime"
+            },
+            {
+                "Description": "u16: Hall sensor 1 voltage",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "hallSensor1Voltage"
+            },
+            {
+                "Description": "u16: Hall sensor 2 voltage",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "hallSensor2Voltage"
+            },
+            {
+                "Description": "u16: Hall sensor 3 voltage",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "hallSensor3Voltage"
+            },
+            {
+                "Description": "u32: Commutation position offset",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "commutationPositionOffset"
+            },
+            {
+                "Description": "u8: Motor phases reversed flag",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorPhasesReversed"
+            },
+            {
+                "Description": "i32: Maximum hall position delta",
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "maxHallPositionDelta"
+            },
+            {
+                "Description": "i32: Minimum hall position delta",
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "minHallPositionDelta"
+            },
+            {
+                "Description": "i32: Average hall position delta",
+                "TooltipDisplayFormat": "%d",
+                "ParameterName": "averageHallPositionDelta"
+            },
+            {
+                "Description": "u8: Motor PWM voltage",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "motorPwmVoltage"
             }
         ]
     }

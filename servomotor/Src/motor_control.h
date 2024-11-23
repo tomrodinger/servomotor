@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include "PWM.h"
 
+#ifdef PRODUCT_NAME_M3
+//#include "GC6609.h" // if using the GC6609 stepper motor driver chip, then make sure to uncomment this (V8, V9, V10, and V11RC1 are using this chip)
+#include "AT5833.h" // if using the AT5833 stepper motor driver chip, then make sure to uncomment this (V11RC2 is using this chip)
+#endif
+
 #ifdef PRODUCT_NAME_M1
 #include "hall_sensor_constants_M1.h"
 #include "commutation_table_M1.h"
@@ -140,12 +145,21 @@ void print_PID_data(void);
 void print_current_movement(void);
 void print_velocity(void);
 void print_time_difference(void);
+void get_profiled_times(uint16_t *all_motor_control_calulations_profiler_time, uint16_t *all_motor_control_calulations_profiler_max_time,
+                        uint16_t *get_sensor_position_profiler_time, uint16_t *get_sensor_position_profiler_max_time,
+						uint16_t *compute_velocity_profiler_time, uint16_t *compute_velocity_profiler_max_time,
+                        uint16_t *motor_movement_calculations_profiler_time, uint16_t *motor_movement_calculations_profiler_max_time,
+						uint16_t *motor_phase_calculations_profiler_time, uint16_t *motor_phase_calculations_profiler_max_time, 
+						uint16_t *motor_control_loop_period_profiler_time, uint16_t *motor_control_loop_period_profiler_max_time);
 void print_max_motor_current_settings(void);
 void print_commutation_position_offset(void);
 void print_motor_current(void);
 void print_hall_sensor_data(void);
+void get_hall_sensor_data(uint16_t *hall_sensor1_voltage, uint16_t *hall_sensor2_voltage, uint16_t *hall_sensor3_voltage, uint32_t *commutation_position_offset, uint8_t *motor_phases_reversed);
 void print_hall_position_delta_stats(void);
+void get_hall_position_delta_stats(int32_t *max_hall_position_delta, int32_t *min_hall_position_delta, int32_t *average_hall_position_delta);
 void print_motor_pwm_voltage(void);
+void get_motor_pwm_voltage(uint8_t *motor_pwm_voltage);
 void print_motor_status(void);
 
 void start_fast_capture_data(void);
@@ -209,6 +223,6 @@ void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
 void set_motor_test_mode(uint8_t new_test_mode);
 void test_M3_motor_spin(void);
-void get_debug_values(int64_t *debug_value1_ptr, int64_t *debug_value2_ptr, int64_t *debug_value3_ptr, int64_t *debug_value4_ptr);
+void get_motor_control_debug_values(int64_t *max_acceleration, int64_t *max_velocity, int64_t *currenbt_velocity, int32_t* measured_velocity, int64_t *debug_value1_ptr, int64_t *debug_value2_ptr, int64_t *debug_value3_ptr, int64_t *debug_value4_ptr);
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

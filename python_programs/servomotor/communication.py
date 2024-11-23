@@ -73,10 +73,10 @@ def get_response(verbose=2):
             print(format_debug(f"Received an extended size: {payload_size}"))
     if payload_size == 0:
         if response[1] != 0:
-            raise CommunicationError("Error: the second byte should be 0 if there is no payload")
+            raise CommunicationError(f"Error: the second byte should be 0 if there is no payload, instad it is: {response[1]}")
     else:
         if response[1] != 1:
-            raise CommunicationError("Error: the second byte should be 1 if there is a payload")
+            raise CommunicationError(f"Error: the second byte should be 1 if there is a payload, instead it is: {response[1]}")
 
     if payload_size == 0:
         if verbose == 2:
@@ -621,3 +621,6 @@ def execute_command(_alias, command_id_or_str, inputs, verbose=2):
     response = send_command(command_id, gathered_inputs, verbose=verbose)
     parsed_response = interpret_response(command_id, response, verbose=verbose)
     return parsed_response
+
+def read_raw_byte():
+    return ser.read(1)

@@ -8,15 +8,18 @@ from collections import defaultdict
 import zlib
 
 # Configuration parameters
-N_ENABLED_DEVICES_AT_SAME_TIME = 7  # Number of devices to enable simultaneously and make them spin
+N_ENABLED_DEVICES_AT_SAME_TIME = 8  # Number of devices to enable simultaneously and make them spin
 REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3  # Number of successful device detections required
 MIN_ALIAS = 1
 MAX_ALIAS = 253  # Maximum possible alias value
 MAX_MOTOR_CURRENT = 390  # Maximum current value
 PING_TIMEOUT_RETRIES = 3  # Number of retries on ping timeout
-DETECT_DEVICES_INTERVAL = 60  # Reset the system and Detect devices every this number of seconds
+DETECT_DEVICES_INTERVAL = 60 * 5  # Reset the system and Detect devices every this number of seconds
 PRINT_TEST_STATISTICS_INTERVAL = 30  # Print test statistics every this number of seconds
 PRINT_TEST_DESCRIPTION_INTERVAL = 60 * 5  # Print test description every this number of seconds, so that the user knows what test is running
+MIN_VELOCITY = 0.1  # Minimum velocity in rotations per second
+MAX_VELOCITY = 5.0  # Maximum velocity in rotations per second
+STATUS_CHECK_PASSES = 5
 
 def compute_crc32(unique_id, alias):
     """Compute CRC32 for device detection response"""
@@ -93,6 +96,18 @@ def detect_all_devices_multiple_passes(motor255, n_passes):
     return device_dict
 
 
+# This function will merge data from new_device_dict into device_dict keeping existing statistics intact. If there is a conflict, it will print an error message
+def merge_device_dict(device_dict, new_device_dict):
+    print("\nMerging new devices into the existing device dictionary...")
+    for unique_id, new_device in new_device_dict.items():
+        if unique_id in device_dict:
+            print(f"Unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+            if new_device.alias != device_dict[unique_id].alias:
+                print(f"Error: we discovered an inconsistency: the alias is different: {new_device.alias} vs {device_dict[unique_id].alias}")
+        else:
+            device_dict[unique_id] = new_device
+
+
 def assign_unique_aliases(motor255, device_dict):
     """Assign unique aliases to all devices"""
     if len(device_dict) > MAX_ALIAS - MIN_ALIAS + 1:
@@ -113,7 +128,7 @@ def assign_unique_aliases(motor255, device_dict):
         try:
             new_alias = next(i for i in range(MIN_ALIAS, MAX_ALIAS + 1) if i not in used_aliases)
             used_aliases.append(new_alias)
-            print(f"Reassigning device {device.unique_id} from alias {device.alias} to {new_alias}")
+            print(f"Reassigning device {device.unique_id:016X} from alias {device.alias} to {new_alias}")
             response = motor255.set_device_alias(device.unique_id, new_alias)
             device.alias = new_alias
             # Add delay after each reassignment
@@ -132,12 +147,14 @@ def run_ping_test(motor255, device_dict, verbose=2):
     """Run ping test on all devices"""
     ping_test_passed = True
     print("\nRunning ping test on all devices...")
+
+    motor = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                        velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                        current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose)
+
     for ping_round in range(10):
         for unique_id, device in device_dict.items():
-            motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                                velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                                current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose)
-            
+            motor.set_alias(device.alias)
             # Try ping with retries
             for retry in range(PING_TIMEOUT_RETRIES):
                 try:
@@ -146,17 +163,17 @@ def run_ping_test(motor255, device_dict, verbose=2):
                     response = motor.ping(ping_data)
                     if response != ping_data:
                         ping_test_passed = False
-                        print(f"Ping test round {ping_round + 1}/10 failed for device {unique_id} (Alias: {device.alias})")
+                        print(f"Ping test round {ping_round + 1}/10 failed for device {unique_id:016X} (Alias: {device.alias})")
                         print(f"Sent: {ping_data}")
                         print(f"Received: {response}")
                     else:
-                        print(f"Ping test round {ping_round + 1}/10 successful for device {unique_id} (Alias: {device.alias})")
+                        print(f"Ping test round {ping_round + 1}/10 successful for device {unique_id:016X} (Alias: {device.alias})")
                     break  # Success, exit retry loop
                 except Exception as e:
                     ping_test_passed = False
-                    print(f"Ping test round {ping_round + 1}/10 attempt {retry + 1}/{PING_TIMEOUT_RETRIES} failed for device {unique_id} (Alias: {device.alias}): {e}")
+                    print(f"Ping test round {ping_round + 1}/10 attempt {retry + 1}/{PING_TIMEOUT_RETRIES} failed for device {unique_id:016X} (Alias: {device.alias}): {e}")
                     if retry == PING_TIMEOUT_RETRIES - 1:  # Last retry
-                        print(f"All ping retries failed for device {unique_id} (Alias: {device.alias})")
+                        print(f"All ping retries failed for device {unique_id:016X} (Alias: {device.alias})")
                     else:
                         time.sleep(0.1)  # Delay before retry
         
@@ -164,20 +181,44 @@ def run_ping_test(motor255, device_dict, verbose=2):
         time.sleep(0.1)
     return ping_test_passed
 
-def print_statistics(device_dict, start_time, movement_iterations_done):
+def print_statistics(device_dict, start_time, movement_iterations_done, iterations_with_errors, n_devices_detected_historgram):
     """Print statistics about devices and errors"""
     print("\n============================================================ Test Statistics ============================================================")
     print(f"Test running for: {int(time.time() - start_time)} seconds")
     print(f"Total movement iterations: {movement_iterations_done}")
-    print(f"Total devices: {len(device_dict)}")
+    print(f"Total iterations with errors: {iterations_with_errors}")
+    if movement_iterations_done > 0:
+        print(f"Percentage of iterations with errors: {100 * iterations_with_errors / movement_iterations_done:.2f}%")
+    print(f"Total unique devices detected in all detections: {len(device_dict)}")
+    # Print a histogram from 0 to len(device_dict) of the number of devices detected and show the number and the bar graph as a bunch of # signs
+    # Make sure to normalize to a bar length of 50 if the number of devices detected is greater than 50
+    max_devices_detected = max(n_devices_detected_historgram.keys())
+    if max_devices_detected > 50:
+        scale_factor = 50 / max_devices_detected
+    else:
+        scale_factor = 1
+    print("Histogram of number of devices detected:")
+    for i in range(max_devices_detected + 1):
+        if i in n_devices_detected_historgram:
+            print(f"{i:2d} devices: {'#' * int(n_devices_detected_historgram[i] * scale_factor)} ({n_devices_detected_historgram[i]})")
+        else:
+            print(f"{i:2d} devices: 0")
     
+    error_type_counts = {}
     for unique_id, device in device_dict.items():
-        print(f"\nDevice {unique_id} (Alias: {device.alias}):")
-        print(f"Total fatal errors: {device.total_fatal_errors}")
+        print(f"\nDevice {unique_id:016X} (Alias: {device.alias}):")
+        print(f"   Total fatal errors: {device.total_fatal_errors}")
         if device.fatal_error_counts:
-            print("Fatal error breakdown:")
+            print("      Fatal error breakdown:")
             for error_code, count in device.fatal_error_counts.items():
-                print(f"  Error code {error_code}: {count} occurrences")
+                print(f"      Error code {error_code}: {count} occurrences")
+                if error_code in error_type_counts:
+                    error_type_counts[error_code] += count
+                else:
+                    error_type_counts[error_code] = count
+    print("\nSum over error types:")
+    for error_code, count in error_type_counts.items():
+        print(f"   Error code {error_code}: {count} total occurrences")
     print("\n=========================================================================================================================================")
 
 def print_test_description():
@@ -272,6 +313,13 @@ def main():
     device_dict = {}
     fatal_error_detected = False
     movement_iterations_done = 0
+    iterations_with_errors = 0
+    n_devices_detected_historgram = defaultdict(int)
+
+    motor = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+                    velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                    current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
+
 
     while True:
         current_time = time.time()
@@ -286,10 +334,14 @@ def main():
             fatal_error_detected = False
 
             # Detect devices (multiple times)
-            device_dict = detect_all_devices_multiple_passes(motor255, REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
-            print(f"\nDetected {len(device_dict)} devices:")
-            for unique_id, device in device_dict.items():
-                print(f"  Device {unique_id} (Alias: {device.alias})")
+            new_device_dict = detect_all_devices_multiple_passes(motor255, REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
+            print(f"\nDetected {len(new_device_dict)} devices:")
+            for unique_id, device in new_device_dict.items():
+                print(f"  Device {unique_id:016X} (Alias: {device.alias})")
+            n_devices_detected_historgram[len(new_device_dict)] += 1
+            merge_device_dict(device_dict, new_device_dict)
+
+#            motor255.set_max_allowable_position_deviation(360 * 1000000) # This will prevent a fatal error if the motor tries to spin too fast and loose too many steps
 
         # If no devices detected, don't go on, instead go back to the beginning to try resetting and detecting devices again
         if not device_dict:
@@ -311,7 +363,7 @@ def main():
                 print("\nPing test failed! Please check the communication with the devices")
                 print("Exiting test...")
                 exit(1)
-          
+
         # Every certain number of seconds, print test description
         if current_time - last_description_time >= PRINT_TEST_DESCRIPTION_INTERVAL:
             print_test_description()
@@ -319,17 +371,13 @@ def main():
 
         # Every 10 seconds, print statistics
         if current_time - last_stats_time >= PRINT_TEST_STATISTICS_INTERVAL:
-            print_statistics(device_dict, start_time, movement_iterations_done)
+            print_statistics(device_dict, start_time, movement_iterations_done, iterations_with_errors, n_devices_detected_historgram)
             last_stats_time = current_time
 
         # Randomly select N devices to test
         test_devices = random.sample(list(device_dict.values()), 
                                     min(N_ENABLED_DEVICES_AT_SAME_TIME, len(device_dict)))
         
-        motor = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                            velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                            current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
-
         try:
             # Enable MOSFETs and set current for selected devices
             for device in test_devices:
@@ -342,7 +390,7 @@ def main():
                 motor.set_alias(device.alias)
                 
                 # Random speed between 0.1 and 3 rotations per second (convert to degrees/second)
-                speed = random.uniform(0.1, 3.0) * 360  # Convert rotations/sec to degrees/sec
+                speed = random.uniform(MIN_VELOCITY, MAX_VELOCITY) * 360  # Convert rotations/sec to degrees/sec
                 
                 # Move at random speed for 2 seconds
                 motor.move_with_velocity(speed, 2.0)  # Pass as positional args
@@ -352,36 +400,65 @@ def main():
             # Small delay to let movements complete
             time.sleep(2.1)  # 2 seconds + 0.01 seconds + small buffer
 
-            movement_iterations_done += 1
-
         except Exception as e:
             print(f"Error during random speed stress test: {e}")
             fatal_error_detected = True
 
+        movement_iterations_done += 1
+
         # disable all MOSFETs at once. This cannot fail as it is a multicast command and not devices will respond
         motor255.disable_mosfets()
-
+        time.sleep(0.2)  # Small delay to make sure transmitted commands are flushed out before checking status
+        motor255.disable_mosfets()
+        time.sleep(0.2)  # Small delay to make sure transmitted commands are flushed out before checking status
+        motor255.disable_mosfets()
+        time.sleep(0.2)  # Small delay to make sure transmitted commands are flushed out before checking status
+        motor255.get_status()
         # Check status of all motors. If any fatal error is detected then set a flag, and we will reset the whole system later if this flag is set
-        for device in test_devices:
-            motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                                velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                                current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
-            
-            # Get status and check for errors
-            try:
-                status = motor.get_status()
-                if len(status) >= 2 and status[1] != 0:
-                    error_code = status[1]
-                    device.fatal_error_counts[error_code] += 1
-                    device.total_fatal_errors += 1
-                    print(f"\nFatal error {error_code} detected on device {device.unique_id}")
+        time.sleep(0.2)  # Small delay to make sure transmitted commands are flushed out before checking status
+        servomotor.flush_receive_buffer()
+        motor255.get_status()
+        unknown_errors_detected = {}
+        known_errors_detected = {}
+        # Let's do multiple passes to try to read the status of all the devices, ince I found that this step is unreliable
+        for i in range(STATUS_CHECK_PASSES):
+            found_an_error = False
+            for device in device_dict.values():
+                motor.set_alias(device.alias)
+                # Get status and check for errors
+                try:
+                    time.sleep(0.15)
+                    status = motor.get_status()
+                    if len(status) >= 2 and status[1] != 0:
+                        known_errors_detected[device.unique_id] = status[1]
+                        error_code = status[1]
+#                        device.fatal_error_counts[error_code] += 1
+#                        device.total_fatal_errors += 1
+                        print(f"\nFatal error {error_code} detected on device {device.unique_id:016X}")
+                        found_an_error = True
+                        fatal_error_detected = True
+                except Exception as e:
+                    unknown_errors_detected[device.unique_id] = 1
+#                    device.fatal_error_counts[0] += 1
+#                    device.total_fatal_errors += 1
+                    print(f"Error checking status for device {device.unique_id:016X}: {e}")
+                    found_an_error = True
                     fatal_error_detected = True
-            except Exception as e:
-                device.fatal_error_counts[0] += 1
-                device.total_fatal_errors += 1
-                print(f"Error checking status for device {device.unique_id}: {e}")
-                fatal_error_detected = True
-            
+            if len(unknown_errors_detected.keys()) == 0:
+                print("No unknown errors detected this time, so no need to check again")
+                break
+        # Now that we have gathered the errors, let's increment our error statistics appropriately
+        if fatal_error_detected:
+            for device in test_devices:
+                if device.unique_id in known_errors_detected:
+                    device.fatal_error_counts[known_errors_detected[device.unique_id]] += 1
+                    device.total_fatal_errors += 1
+                    print(f"After all checking, we found that device {device.unique_id:016X} suffered a {known_errors_detected[device.unique_id]} fatal error ")
+                elif device.unique_id in unknown_errors_detected:
+                    device.fatal_error_counts[0] += 1
+                    device.total_fatal_errors += 1
+                    print(f"After all checking, we found that device {device.unique_id:016X} suffered an unknown fatal error ")
+            iterations_with_errors += 1
 
 if __name__ == "__main__":
     main()

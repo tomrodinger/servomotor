@@ -12,6 +12,9 @@
 #include "error_text.h"
 #include "device_status.h"
 
+// Error text array initialization using macro from error_text.h
+static const char error_text[] = ERROR_TEXT_INITIALIZER;
+
 #define SYSTICK_LOAD_VALUE 16000000 // this must be less than 2^24 because the systick timer is 24 bits
 #define FATAL_ERROR_COMMAND_BUFFER_SIZE 3
 
@@ -134,16 +137,31 @@ void fatal_error(uint16_t error_code)
     		if((error_code == 0) || (e < error_code)) {
     			red_LED_on(); // flash the red LED to indicate error, or keep it on continuously if the error code is 0
     		}
-
 			systick_half_cycle_delay_plus_handle_commands(error_code);
-
 			if(error_code != 0) { // if the error code is 0 then we will just leave the red LED on continuously
 				red_LED_off();
 			}
 			transmit_without_interrupts(message, strlen(message));
+			systick_half_cycle_delay_plus_handle_commands(error_code);
 			transmit_without_interrupts(buf, strlen(buf));
-
 			systick_half_cycle_delay_plus_handle_commands(error_code);
     	}
     }
+}
+
+const char *get_error_text(uint16_t error_code)
+{
+    const char *ptr = error_text;
+    uint16_t i;
+
+    for(i = 0; i < error_code; i++) {
+        while(*ptr != 0) {
+            ptr += 1;
+        }
+        ptr += 1;
+        if(*ptr == 0) {
+            return "unknown error";
+        }
+    }
+    return ptr;
 }

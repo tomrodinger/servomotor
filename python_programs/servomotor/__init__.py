@@ -20,6 +20,7 @@ from .communication import (
     RESPONSE_CHARACTER,
     open_serial_port,
     close_serial_port,
+    read_raw_byte,
     execute_command,
 )
 
