@@ -47,9 +47,9 @@ static const int32_t segment_change_values_table[3][3] = SEGMENT_CHANGE_VALUES_T
 
 void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjusted_hall_sensor_readings[3])
 {
-	int32_t d0_shifted = (int32_t)hall_sensor_readings[0] - (int32_t)global_settings.hall1_midline;
-	int32_t d1_shifted = (int32_t)hall_sensor_readings[1] - (int32_t)global_settings.hall2_midline;
-	int32_t d2_shifted = (int32_t)hall_sensor_readings[2] - (int32_t)global_settings.hall3_midline;
+    int32_t d0_shifted = (int32_t)hall_sensor_readings[0] - (int32_t)global_settings.hall1_midline;
+    int32_t d1_shifted = (int32_t)hall_sensor_readings[1] - (int32_t)global_settings.hall2_midline;
+    int32_t d2_shifted = (int32_t)hall_sensor_readings[2] - (int32_t)global_settings.hall3_midline;
     int32_t d0 = (d0_shifted * hall_weights.h1[0] + d1_shifted * hall_weights.h1[1] + d2_shifted * hall_weights.h1[2]);
     int32_t d1 = (d1_shifted * hall_weights.h2[0] + d2_shifted * hall_weights.h2[1] + d0_shifted * hall_weights.h2[2]);
     int32_t d2 = (d2_shifted * hall_weights.h3[0] + d0_shifted * hall_weights.h3[1] + d1_shifted * hall_weights.h3[2]);
@@ -62,22 +62,22 @@ void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjus
 get_sensor_position_return_t get_sensor_position(void)
 {
     uint16_t hall_sensor_readings[3];
-	int32_t d[3];
+    int32_t d[3];
     int8_t largest_sensor;
     int32_t numerator;
     int32_t denominator;
     int32_t fraction;
 #ifdef DO_DETAILED_PROFILING
     static uint16_t start_time;
-	static uint16_t end_time;
+    static uint16_t end_time;
 #endif
     get_sensor_position_return_t hall_position_return_value = {0, 0};
 
-	hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
+    hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
                                 ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[1] = ((ADC_buffer[HALL2_ADC_CYCLE_INDEX] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] +
+    hall_sensor_readings[1] = ((ADC_buffer[HALL2_ADC_CYCLE_INDEX] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] +
                                 ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
-	hall_sensor_readings[2] = ((ADC_buffer[HALL3_ADC_CYCLE_INDEX] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] +
+    hall_sensor_readings[2] = ((ADC_buffer[HALL3_ADC_CYCLE_INDEX] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] +
                                 ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
 
     if(hall_sensor_statitics_active) {
@@ -97,7 +97,7 @@ get_sensor_position_return_t get_sensor_position(void)
         }
     }
 
-	adjust_hall_sensor_readings(hall_sensor_readings, d);
+    adjust_hall_sensor_readings(hall_sensor_readings, d);
 
     if((d[0] >= d[1]) && (d[0] >= d[2])) { // check if d[0] is the highest
         largest_sensor = 0;
@@ -181,7 +181,7 @@ get_sensor_position_return_t get_sensor_position(void)
     sensor_position += hall_position_return_value.change;
     latest_sensor_position = sensor_position;
     hall_position_return_value.position = sensor_position;
-	return hall_position_return_value;
+    return hall_position_return_value;
 }
 
 
@@ -225,13 +225,13 @@ void bound_the_sensor_position(int32_t upper_bound)
 
 void print_sensor_position(void)
 {
-	char buf[100];
+    char buf[100];
 #ifdef DO_DETAILED_PROFILING
-	sprintf(buf, "sensor_position: %ld   time_difference_div: %hu\n", latest_sensor_position, time_difference_div);
+    sprintf(buf, "sensor_position: %ld   time_difference_div: %hu\n", latest_sensor_position, time_difference_div);
 #else
-	sprintf(buf, "sensor_position: %ld\n", latest_sensor_position);
+    sprintf(buf, "sensor_position: %ld\n", latest_sensor_position);
 #endif
-	print_debug_string(buf);
+    print_debug_string(buf);
 }
 
 
@@ -245,7 +245,7 @@ void print_hall_midlines(void)
 
 void get_hall_sensor_statistics(hall_sensor_statistics_t *hall_sensor_statistics_output)
 {
-	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     memcpy(hall_sensor_statistics_output, &hall_sensor_statistics, sizeof(hall_sensor_statistics));
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 }
@@ -259,7 +259,7 @@ void hall_sensor_turn_off_statistics(void)
 
 void hall_sensor_turn_on_and_reset_statistics(void)
 {
-	TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
+    TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     for(uint8_t h = 0; h < 3; h++) {
         hall_sensor_statistics.min_value[h] = 0xFFFF;
         hall_sensor_statistics.max_value[h] = 0;

@@ -60,8 +60,8 @@ static void portB_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
 
     GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // step input make as open drain
-    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
-    		        (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) | // direction input make as open drain
+                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos);  // RX pin make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD4_Pos)   | // Encoder A
                    (PUPDR_PULL_UP << GPIO_PUPDR_PUPD5_Pos)   | // Encoder B

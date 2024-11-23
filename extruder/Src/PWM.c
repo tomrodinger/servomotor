@@ -71,8 +71,8 @@ void pwm_init(void)
     TIM1->EGR |= TIM_EGR_UG;  // generate an update event. this should also clear the counter.
     TIM3->EGR |= TIM_EGR_UG;  // generate an update event. this should also clear the counter.
     NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 0); // the interrupt that controls the motor has the highest priority
-	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);      // enable the interrupt to this timer
+    NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);      // enable the interrupt to this timer
 //    NVIC_SetPriority(TIM3_IRQn, 0); // the interrupt that controls the motor has the highest priority
-//	NVIC_EnableIRQ(TIM3_IRQn); // enable the interrupt to this timer
+//  NVIC_EnableIRQ(TIM3_IRQn); // enable the interrupt to this timer
 }
 

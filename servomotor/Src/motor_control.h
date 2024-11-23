@@ -147,10 +147,10 @@ void print_velocity(void);
 void print_time_difference(void);
 void get_profiled_times(uint16_t *all_motor_control_calulations_profiler_time, uint16_t *all_motor_control_calulations_profiler_max_time,
                         uint16_t *get_sensor_position_profiler_time, uint16_t *get_sensor_position_profiler_max_time,
-						uint16_t *compute_velocity_profiler_time, uint16_t *compute_velocity_profiler_max_time,
+                        uint16_t *compute_velocity_profiler_time, uint16_t *compute_velocity_profiler_max_time,
                         uint16_t *motor_movement_calculations_profiler_time, uint16_t *motor_movement_calculations_profiler_max_time,
-						uint16_t *motor_phase_calculations_profiler_time, uint16_t *motor_phase_calculations_profiler_max_time, 
-						uint16_t *motor_control_loop_period_profiler_time, uint16_t *motor_control_loop_period_profiler_max_time);
+                        uint16_t *motor_phase_calculations_profiler_time, uint16_t *motor_phase_calculations_profiler_max_time, 
+                        uint16_t *motor_control_loop_period_profiler_time, uint16_t *motor_control_loop_period_profiler_max_time);
 void print_max_motor_current_settings(void);
 void print_commutation_position_offset(void);
 void print_motor_current(void);
@@ -209,11 +209,11 @@ void process_go_to_closed_loop_data(void);
 void set_max_allowable_position_deviation(int64_t new_max_allowable_position_deviation);
 
 typedef struct __attribute__((__packed__)) {
-	int32_t predicted_final_velocity;
-//	int32_t predicted_final_position;
-	int64_t predicted_final_position;
-	int32_t time_step_at_turn_point;
-	int32_t relative_position_at_turn_point;
+    int32_t predicted_final_velocity;
+//  int32_t predicted_final_position;
+    int64_t predicted_final_position;
+    int32_t time_step_at_turn_point;
+    int32_t relative_position_at_turn_point;
 } add_to_queue_test_results_t;
 
 void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results);

@@ -50,17 +50,17 @@ static void receive(void)
 
         if(!commandReceived) {
             if(nReceivedBytes == 1) {
-				selectedAxis = receivedByte;
+                selectedAxis = receivedByte;
             }
             else if(nReceivedBytes == 2) {
                 command = receivedByte;
             }
             else if(nReceivedBytes == 3) {
-				valueLength = receivedByte;
-				if((selectedAxis != RESPONSE_CHARACTER) && (selectedAxis == global_settings.my_alias || selectedAxis == 255) && (valueLength == 0)) {
-					commandReceived = 1;
-				}
-				nReceivedBytes = 0;
+                valueLength = receivedByte;
+                if((selectedAxis != RESPONSE_CHARACTER) && (selectedAxis == global_settings.my_alias || selectedAxis == 255) && (valueLength == 0)) {
+                    commandReceived = 1;
+                }
+                nReceivedBytes = 0;
             }
         }
     }
@@ -69,14 +69,14 @@ static void receive(void)
 
 static void rs485_transmit_status(uint8_t error_code)
 {
-	struct device_status_struct *device_status = get_device_status(); 
-	uint8_t *device_status_uint8_t = (uint8_t *)device_status;
-	uint8_t i;
+    struct device_status_struct *device_status = get_device_status(); 
+    uint8_t *device_status_uint8_t = (uint8_t *)device_status;
+    uint8_t i;
 
-	set_device_error_code(error_code);
+    set_device_error_code(error_code);
 
-	for(i = 0; i < sizeof(struct device_status_struct); i++) {
-		while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0);
+    for(i = 0; i < sizeof(struct device_status_struct); i++) {
+        while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0);
         USART1->TDR = device_status_uint8_t[i];
     }
 }
@@ -84,68 +84,68 @@ static void rs485_transmit_status(uint8_t error_code)
 
 static void handle_commands(uint8_t error_code)
 {
-	receive(); // this will receive any commands through the RS485 interface
+    receive(); // this will receive any commands through the RS485 interface
 
-	// we are specifically interested in the reset command
-	if(commandReceived) {
-		switch(command) {
+    // we are specifically interested in the reset command
+    if(commandReceived) {
+        switch(command) {
         case SYSTEM_RESET_COMMAND:
             NVIC_SystemReset();
             break;
-		case GET_STATUS_COMMAND:
-			rs485_transmit_status(error_code); // this indicates that there was a fatal error and the particular error code is made available for query 
-			break;
-		}
-		commandReceived = 0;
-	}
+        case GET_STATUS_COMMAND:
+            rs485_transmit_status(error_code); // this indicates that there was a fatal error and the particular error code is made available for query 
+            break;
+        }
+        commandReceived = 0;
+    }
 }
 
 
 static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
 {
-	do {
-		handle_commands(error_code);
-		systick_previous_value = systick_new_value;
-		systick_new_value = SysTick->VAL;
-	} while ((systick_new_value < (SYSTICK_LOAD_VALUE >> 1)) == (systick_previous_value < (SYSTICK_LOAD_VALUE >> 1)));
+    do {
+        handle_commands(error_code);
+        systick_previous_value = systick_new_value;
+        systick_new_value = SysTick->VAL;
+    } while ((systick_new_value < (SYSTICK_LOAD_VALUE >> 1)) == (systick_previous_value < (SYSTICK_LOAD_VALUE >> 1)));
 }
 
 
 void fatal_error(uint16_t error_code)
 {
-	uint32_t e;
-	char buf[10];
-	const char *message;
+    uint32_t e;
+    char buf[10];
+    const char *message;
 
-	// Avoid the fatal error recusrice loop. We will enter the fatal error routine only one, and can get
-	// out of it only by full system reset, which can be triggered by the reset command.
-	if(fatal_error_occurred) { 
-		return;
-	}
+    // Avoid the fatal error recusrice loop. We will enter the fatal error routine only one, and can get
+    // out of it only by full system reset, which can be triggered by the reset command.
+    if(fatal_error_occurred) { 
+        return;
+    }
 
     __disable_irq();
-	heater_off();
+    heater_off();
     disable_mosfets();
     green_LED_off();
-	fatal_error_systick_init();
-	fatal_error_occurred = 1;
+    fatal_error_systick_init();
+    fatal_error_occurred = 1;
 
-	message = get_error_text(error_code);
+    message = get_error_text(error_code);
     sprintf(buf, ": %hu\n", error_code);
     while(1) { // print out the error message continuously forever
-    	for(e = 0; e < error_code + 3; e++) {
-    		if((error_code == 0) || (e < error_code)) {
-    			red_LED_on(); // flash the red LED to indicate error, or keep it on continuously if the error code is 0
-    		}
-			systick_half_cycle_delay_plus_handle_commands(error_code);
-			if(error_code != 0) { // if the error code is 0 then we will just leave the red LED on continuously
-				red_LED_off();
-			}
-			transmit_without_interrupts(message, strlen(message));
-			systick_half_cycle_delay_plus_handle_commands(error_code);
-			transmit_without_interrupts(buf, strlen(buf));
-			systick_half_cycle_delay_plus_handle_commands(error_code);
-    	}
+        for(e = 0; e < error_code + 3; e++) {
+            if((error_code == 0) || (e < error_code)) {
+                red_LED_on(); // flash the red LED to indicate error, or keep it on continuously if the error code is 0
+            }
+            systick_half_cycle_delay_plus_handle_commands(error_code);
+            if(error_code != 0) { // if the error code is 0 then we will just leave the red LED on continuously
+                red_LED_off();
+            }
+            transmit_without_interrupts(message, strlen(message));
+            systick_half_cycle_delay_plus_handle_commands(error_code);
+            transmit_without_interrupts(buf, strlen(buf));
+            systick_half_cycle_delay_plus_handle_commands(error_code);
+        }
     }
 }
 

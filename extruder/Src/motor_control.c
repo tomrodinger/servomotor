@@ -50,11 +50,11 @@ static PID_value_t PID_values;
 #define VELOCITY_SHIFT_LEFT 12
 #define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
 typedef struct __attribute__((__packed__)) {
-	movement_type_t movement_type;
-	union {
-	    int64_t acceleration; // we use this variable if the movement_type == MOVE_WITH_ACCELERATION
-	    int64_t velocity;     // we use this variable if the movement_type == MOVE_WITH_VELOCITY
-	};
+    movement_type_t movement_type;
+    union {
+        int64_t acceleration; // we use this variable if the movement_type == MOVE_WITH_ACCELERATION
+        int64_t velocity;     // we use this variable if the movement_type == MOVE_WITH_VELOCITY
+    };
     uint32_t n_time_steps;
 } movement_queue_t;
 static movement_queue_t movement_queue[MOVEMENT_QUEUE_SIZE];
@@ -193,15 +193,15 @@ static int64_t velocity_after_last_queue_item = 0;
 #define CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 (384)
 #define CALIBRATION_DATA_SIZE ((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT))
 struct calibration_struct {
-	uint16_t local_min_or_max;
-	int32_t local_min_or_max_position;
+    uint16_t local_min_or_max;
+    int32_t local_min_or_max_position;
 };
 struct calibration_struct calibration[2][CALIBRATION_DATA_SIZE];
 
 struct __attribute__((__packed__)) fast_capture_data_struct {
-	uint16_t hall1;
-	uint16_t hall2;
-	uint16_t hall_position_16bit;
+    uint16_t hall1;
+    uint16_t hall2;
+    uint16_t hall_position_16bit;
 };
 struct fast_capture_data_struct *fast_capture_data = (void*)&calibration;
 uint16_t fast_capture_data_size = sizeof(calibration) / sizeof(struct fast_capture_data_struct);
@@ -252,7 +252,7 @@ struct closed_loop_struct closed_loop = {0};
 
 void reset_time_profiler(void)
 {
-	previous_motor_control_tick_time = TIM14->CNT;
+    previous_motor_control_tick_time = TIM14->CNT;
 }
 
 
@@ -279,31 +279,31 @@ acceleration = int(delta_d / ((delta_t1 + delta_t2) * delta_t1) + 0.5)
 
 void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int32_t *acceleration_returned, uint32_t *delta_t1_returned, uint32_t *delta_t2_returned)
 {
-	int64_t delta_d = (int64_t)total_displacement << 24;
-//	uint32_t delta_t1 = ((max_acceleration >> 1) + max_velocity) / max_acceleration; // calculating detal_t1 with rounding
-	int64_t delta_t1 = max_velocity / max_acceleration; // calculating detal_t1 without rounding
-	if((delta_t1 << 1) > total_time) {
-	    delta_t1 = total_time >> 1;
-	}
-	uint32_t delta_t2 = total_time - (delta_t1 << 1);
-	int64_t numerator = delta_d;
-	int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
-	int64_t acceleration = numerator / denominator;
+    int64_t delta_d = (int64_t)total_displacement << 24;
+//  uint32_t delta_t1 = ((max_acceleration >> 1) + max_velocity) / max_acceleration; // calculating detal_t1 with rounding
+    int64_t delta_t1 = max_velocity / max_acceleration; // calculating detal_t1 without rounding
+    if((delta_t1 << 1) > total_time) {
+        delta_t1 = total_time >> 1;
+    }
+    uint32_t delta_t2 = total_time - (delta_t1 << 1);
+    int64_t numerator = delta_d;
+    int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
+    int64_t acceleration = numerator / denominator;
 
-	print_int64("max_velocity: ", max_velocity);
-	print_int64("max_acceleration: ", max_acceleration);
-	print_int64("delta_d: ", (int64_t)delta_d);
-	print_int64("delta_t: ", (int64_t)total_time);
-	print_int64("delta_t1: ", (int64_t)delta_t1);
-	print_int64("delta_t2: ", (int64_t)delta_t2);
-	print_int64("numerator: ", (int64_t)numerator);
-	print_int64("denominator: ", (int64_t)denominator);
-	print_int64("acceleration: ", (int64_t)acceleration);
+    print_int64("max_velocity: ", max_velocity);
+    print_int64("max_acceleration: ", max_acceleration);
+    print_int64("delta_d: ", (int64_t)delta_d);
+    print_int64("delta_t: ", (int64_t)total_time);
+    print_int64("delta_t1: ", (int64_t)delta_t1);
+    print_int64("delta_t2: ", (int64_t)delta_t2);
+    print_int64("numerator: ", (int64_t)numerator);
+    print_int64("denominator: ", (int64_t)denominator);
+    print_int64("acceleration: ", (int64_t)acceleration);
 
-//	acceleration >>= 8;
-	*acceleration_returned = acceleration;
-	*delta_t1_returned = (uint32_t)delta_t1;
-	*delta_t2_returned = (uint32_t)delta_t2;
+//  acceleration >>= 8;
+    *acceleration_returned = acceleration;
+    *delta_t1_returned = (uint32_t)delta_t1;
+    *delta_t2_returned = (uint32_t)delta_t2;
 }
 
 
@@ -325,256 +325,256 @@ uint8_t calibration_data_available = 0;
 
 void start_calibration(uint8_t print_output)
 {
-	int32_t acceleration;
-	uint32_t delta_t1;
-	uint32_t delta_t2;
-	uint8_t j;
+    int32_t acceleration;
+    uint32_t delta_t1;
+    uint32_t delta_t2;
+    uint8_t j;
 
-	if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
-		fatal_error(ERROR_NOT_IN_OPEN_LOOP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if(motor_control_mode != OPEN_LOOP_POSITION_CONTROL) {
+        fatal_error(ERROR_NOT_IN_OPEN_LOOP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	if(n_items_in_queue != 0) {
-		fatal_error(ERROR_QUEUE_NOT_EMPTY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if(n_items_in_queue != 0) {
+        fatal_error(ERROR_QUEUE_NOT_EMPTY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	if((M_index != 0) && (M_index != 1)) {
-		fatal_error(ERROR_INVALID_RUN_MODE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if((M_index != 0) && (M_index != 1)) {
+        fatal_error(ERROR_INVALID_RUN_MODE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	if(print_output) {
-	   	rs485_transmit("Calibration start\n", 18);
-	}
-	calibration_print_output = print_output;
+    if(print_output) {
+        rs485_transmit("Calibration start\n", 18);
+    }
+    calibration_print_output = print_output;
 
-	enable_mosfets();
+    enable_mosfets();
 
-	compute_trapezoid_move(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2, &acceleration, &delta_t1, &delta_t2);
+    compute_trapezoid_move(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2, &acceleration, &delta_t1, &delta_t2);
 
-	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-	add_to_queue(acceleration, delta_t1 * 2, MOVE_WITH_ACCELERATION);
-	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+    add_to_queue(acceleration, delta_t1 * 2, MOVE_WITH_ACCELERATION);
+    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 
-	motor_busy = 1;
+    motor_busy = 1;
 
 /*
-	max_velocity = MAX_VELOCITY;
-	max_acceleration = MAX_ACCELERATION;
+    max_velocity = MAX_VELOCITY;
+    max_acceleration = MAX_ACCELERATION;
 
-	add_trapezoid_move_to_queue(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
-	add_trapezoid_move_to_queue(-CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
+    add_trapezoid_move_to_queue(CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
+    add_trapezoid_move_to_queue(-CALIBRATION_DISTANCE, CALIBRATION_TIME / 2);
 */
-	hall_calibration_start_position = ((int32_t *)&current_position_i64)[1];
-	for(j = 0; j < 2; j++) {
-		hall_rising_flag[j] = 1;
-		hall_local_maximum[j] = 0;
-		hall_local_minimum[j] = 65535;
-		hall_local_maximum_position[j] = 0;
-		hall_local_minimum_position[j] = 0;
-		calibration_index[j] = 0;
-	}
+    hall_calibration_start_position = ((int32_t *)&current_position_i64)[1];
+    for(j = 0; j < 2; j++) {
+        hall_rising_flag[j] = 1;
+        hall_local_maximum[j] = 0;
+        hall_local_minimum[j] = 65535;
+        hall_local_maximum_position[j] = 0;
+        hall_local_minimum_position[j] = 0;
+        calibration_index[j] = 0;
+    }
 
-	hall1_sum = 0;
-	hall2_sum = 0;
-	avg_counter = 0;
+    hall1_sum = 0;
+    hall2_sum = 0;
+    avg_counter = 0;
 
-	calibration_data_available = 0;
-	calibration_active = 1;
+    calibration_data_available = 0;
+    calibration_active = 1;
 }
 
 
 void handle_calibration_logic(void)
 {
-	uint16_t hall_reading;
-	int32_t calibration_relative_position = ((int32_t *)&current_position_i64)[1] - hall_calibration_start_position;
-	uint8_t j;
+    uint16_t hall_reading;
+    int32_t calibration_relative_position = ((int32_t *)&current_position_i64)[1] - hall_calibration_start_position;
+    uint8_t j;
 
-	if(n_items_in_queue == 2) {
-		if(calibration_print_output) {
-			if(M_index == 0) {
-				hall1_sum += get_hall_sensor1_voltage();
-				hall2_sum += get_hall_sensor2_voltage();
-			}
-			else {
-				hall1_sum += get_hall_sensor3_voltage();
-				hall2_sum += get_hall_sensor4_voltage();
-			}
-			avg_counter++;
-			if(avg_counter == 16) {
-				hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
-				hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
-				rs485_transmit((void*)hall_data_buffer, sizeof(hall_data_buffer));
-				avg_counter = 0;
-				hall1_sum = 0;
-				hall2_sum = 0;
-			}
-		}
-		else {
-			for(j = 0; j < 2; j++) {
-				if(calibration_index[j] < CALIBRATION_DATA_SIZE) {
-					switch(j) {
-					case 0:
-						if(M_index == 0) {
-							hall_reading = get_hall_sensor1_voltage();
-						}
-						else {
-							hall_reading = get_hall_sensor3_voltage();
-						}
-						break;
-					case 1:
-						if(M_index == 0) {
-							hall_reading = get_hall_sensor2_voltage();
-						}
-						else {
-							hall_reading = get_hall_sensor4_voltage();
-						}
-						break;
-					}
-					if(hall_rising_flag[j]) {
-						if(hall_reading > hall_local_maximum[j]) {
-							hall_local_maximum[j] = hall_reading;
-							hall_local_maximum_position[j] = calibration_relative_position;
-						}
-						if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
-							calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
-							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
-							calibration_index[j]++;
-							hall_local_minimum[j] = hall_reading;
-							hall_local_minimum_position[j] = calibration_relative_position;
-							hall_rising_flag[j] = 0;
-						}
-					}
-					else {
-						if(hall_reading < hall_local_minimum[j]) {
-							hall_local_minimum[j] = hall_reading;
-							hall_local_minimum_position[j] = calibration_relative_position;
-						}
-						if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
-							calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
-							calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
-							calibration_index[j]++;
-							hall_local_maximum[j] = hall_reading;
-							hall_local_maximum_position[j] = calibration_relative_position;
-							hall_rising_flag[j] = 1;
-						}
-					}
-				}
-				else {
-					fatal_error(ERROR_CALIBRATION_OVERFLOW); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-				}
-			}
-		}
-	}
-	else if(n_items_in_queue == 0) {
-		calibration_active = 0;
-		disable_mosfets();
-		if(calibration_print_output) {
-	       	rs485_transmit("Calibration capture done\n", 25);
-	   		motor_busy = 0;
-		}
-		else {
-			calibration_data_available = 1;
-		}
-	}
+    if(n_items_in_queue == 2) {
+        if(calibration_print_output) {
+            if(M_index == 0) {
+                hall1_sum += get_hall_sensor1_voltage();
+                hall2_sum += get_hall_sensor2_voltage();
+            }
+            else {
+                hall1_sum += get_hall_sensor3_voltage();
+                hall2_sum += get_hall_sensor4_voltage();
+            }
+            avg_counter++;
+            if(avg_counter == 16) {
+                hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
+                hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
+                rs485_transmit((void*)hall_data_buffer, sizeof(hall_data_buffer));
+                avg_counter = 0;
+                hall1_sum = 0;
+                hall2_sum = 0;
+            }
+        }
+        else {
+            for(j = 0; j < 2; j++) {
+                if(calibration_index[j] < CALIBRATION_DATA_SIZE) {
+                    switch(j) {
+                    case 0:
+                        if(M_index == 0) {
+                            hall_reading = get_hall_sensor1_voltage();
+                        }
+                        else {
+                            hall_reading = get_hall_sensor3_voltage();
+                        }
+                        break;
+                    case 1:
+                        if(M_index == 0) {
+                            hall_reading = get_hall_sensor2_voltage();
+                        }
+                        else {
+                            hall_reading = get_hall_sensor4_voltage();
+                        }
+                        break;
+                    }
+                    if(hall_rising_flag[j]) {
+                        if(hall_reading > hall_local_maximum[j]) {
+                            hall_local_maximum[j] = hall_reading;
+                            hall_local_maximum_position[j] = calibration_relative_position;
+                        }
+                        if(hall_local_maximum[j] - hall_reading > HALL_PEAK_FIND_THREASHOLD) {
+                            calibration[j][calibration_index[j]].local_min_or_max = hall_local_maximum[j];
+                            calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_maximum_position[j];
+                            calibration_index[j]++;
+                            hall_local_minimum[j] = hall_reading;
+                            hall_local_minimum_position[j] = calibration_relative_position;
+                            hall_rising_flag[j] = 0;
+                        }
+                    }
+                    else {
+                        if(hall_reading < hall_local_minimum[j]) {
+                            hall_local_minimum[j] = hall_reading;
+                            hall_local_minimum_position[j] = calibration_relative_position;
+                        }
+                        if(hall_reading - hall_local_minimum[j] > HALL_PEAK_FIND_THREASHOLD) {
+                            calibration[j][calibration_index[j]].local_min_or_max = hall_local_minimum[j];
+                            calibration[j][calibration_index[j]].local_min_or_max_position = hall_local_minimum_position[j];
+                            calibration_index[j]++;
+                            hall_local_maximum[j] = hall_reading;
+                            hall_local_maximum_position[j] = calibration_relative_position;
+                            hall_rising_flag[j] = 1;
+                        }
+                    }
+                }
+                else {
+                    fatal_error(ERROR_CALIBRATION_OVERFLOW); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+                }
+            }
+        }
+    }
+    else if(n_items_in_queue == 0) {
+        calibration_active = 0;
+        disable_mosfets();
+        if(calibration_print_output) {
+            rs485_transmit("Calibration capture done\n", 25);
+            motor_busy = 0;
+        }
+        else {
+            calibration_data_available = 1;
+        }
+    }
 }
 
 uint8_t is_calibration_data_available(void)
 {
-	return calibration_data_available;
+    return calibration_data_available;
 }
 
 void process_calibration_data(void)
 {
-	uint16_t i;
-	int32_t position_delta;
-	uint16_t peak_to_peak;
-	int32_t min_position_delta;
-	int32_t max_position_delta;
-	uint16_t min_peak_to_peak;
-	uint16_t max_peak_to_peak;
-	uint8_t min_or_max;
-	char buf[150];
-	uint8_t j;
+    uint16_t i;
+    int32_t position_delta;
+    uint16_t peak_to_peak;
+    int32_t min_position_delta;
+    int32_t max_position_delta;
+    uint16_t min_peak_to_peak;
+    uint16_t max_peak_to_peak;
+    uint8_t min_or_max;
+    char buf[150];
+    uint8_t j;
 
-	for(j = 0; j < 2; j++) {
-		for(i = 0; i < calibration_index[j]; i++) {
-			sprintf(buf, "index: %u  local_min_or_max: %u  position: %ld\n",
-					i, calibration[j][i].local_min_or_max, calibration[j][i].local_min_or_max_position);
-			transmit(buf, strlen(buf));
-		}
+    for(j = 0; j < 2; j++) {
+        for(i = 0; i < calibration_index[j]; i++) {
+            sprintf(buf, "index: %u  local_min_or_max: %u  position: %ld\n",
+                    i, calibration[j][i].local_min_or_max, calibration[j][i].local_min_or_max_position);
+            transmit(buf, strlen(buf));
+        }
 
-		min_or_max = 0;
-		min_position_delta = 2147483640;
-		max_position_delta = -2147483640;
-		min_peak_to_peak = 65535;
-		max_peak_to_peak = 0;
-		for(i = 1; i < calibration_index[j]; i++) {
-			position_delta = calibration[j][i].local_min_or_max_position - calibration[j][i - 1].local_min_or_max_position;
-			if(position_delta > max_position_delta) {
-				max_position_delta = position_delta;
-			}
-			if(position_delta < min_position_delta) {
-				min_position_delta = position_delta;
-			}
+        min_or_max = 0;
+        min_position_delta = 2147483640;
+        max_position_delta = -2147483640;
+        min_peak_to_peak = 65535;
+        max_peak_to_peak = 0;
+        for(i = 1; i < calibration_index[j]; i++) {
+            position_delta = calibration[j][i].local_min_or_max_position - calibration[j][i - 1].local_min_or_max_position;
+            if(position_delta > max_position_delta) {
+                max_position_delta = position_delta;
+            }
+            if(position_delta < min_position_delta) {
+                min_position_delta = position_delta;
+            }
 
-			if(min_or_max == 0) {
-				peak_to_peak = calibration[j][i - 1].local_min_or_max - calibration[j][i].local_min_or_max;
-				min_or_max = 1;
-			}
-			else {
-				peak_to_peak = calibration[j][i].local_min_or_max - calibration[j][i - 1].local_min_or_max;
-				min_or_max = 0;
-			}
-			if(peak_to_peak > max_peak_to_peak) {
-				max_peak_to_peak = peak_to_peak;
-			}
-			if(peak_to_peak < min_peak_to_peak) {
-				min_peak_to_peak = peak_to_peak;
-			}
+            if(min_or_max == 0) {
+                peak_to_peak = calibration[j][i - 1].local_min_or_max - calibration[j][i].local_min_or_max;
+                min_or_max = 1;
+            }
+            else {
+                peak_to_peak = calibration[j][i].local_min_or_max - calibration[j][i - 1].local_min_or_max;
+                min_or_max = 0;
+            }
+            if(peak_to_peak > max_peak_to_peak) {
+                max_peak_to_peak = peak_to_peak;
+            }
+            if(peak_to_peak < min_peak_to_peak) {
+                min_peak_to_peak = peak_to_peak;
+            }
 
-			sprintf(buf, "i: %u  max to min delta: %u  position delta: %ld\n", i, peak_to_peak, position_delta);
-			transmit(buf, strlen(buf));
-		}
+            sprintf(buf, "i: %u  max to min delta: %u  position delta: %ld\n", i, peak_to_peak, position_delta);
+            transmit(buf, strlen(buf));
+        }
 
-		sprintf(buf, "min_position_delta: %ld  max_position_delta: %ld\n", min_position_delta, max_position_delta);
-		transmit(buf, strlen(buf));
-		sprintf(buf, "min_peak_to_peak: %u  max_peak_to_peak: %u\n", min_peak_to_peak, max_peak_to_peak);
-		transmit(buf, strlen(buf));
-	}
+        sprintf(buf, "min_position_delta: %ld  max_position_delta: %ld\n", min_position_delta, max_position_delta);
+        transmit(buf, strlen(buf));
+        sprintf(buf, "min_peak_to_peak: %u  max_peak_to_peak: %u\n", min_peak_to_peak, max_peak_to_peak);
+        transmit(buf, strlen(buf));
+    }
 
-	#define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 2)
-	#define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 14  // make sure this is larger than N_POLES
-	uint32_t minima_and_maxima_avg[2] = {0, 0};
-	uint16_t midline[4];
-	for(j = 0; j < 2; j++) {
-		if(calibration_index[j] < MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA) {
-			fatal_error(ERROR_NOT_ENOUGH_MINIMA_OR_MAXIMA); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
+    #define N_POLES (TOTAL_NUMBER_OF_SEGMENTS / 2)
+    #define MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA 14  // make sure this is larger than N_POLES
+    uint32_t minima_and_maxima_avg[2] = {0, 0};
+    uint16_t midline[4];
+    for(j = 0; j < 2; j++) {
+        if(calibration_index[j] < MIN_CALIBRATION_LOCAL_MINIMA_OR_MAXIMA) {
+            fatal_error(ERROR_NOT_ENOUGH_MINIMA_OR_MAXIMA); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
 
-		uint16_t start_calibration_index = (calibration_index[j] - N_POLES);
-		for(i = start_calibration_index; i < calibration_index[j]; i++) {
-			minima_and_maxima_avg[j] += (uint32_t)calibration[j][i].local_min_or_max;
-			sprintf(buf, "Averaging: index: %u  local_min_or_max: %u\n", i, calibration[j][i].local_min_or_max);
-			transmit(buf, strlen(buf));
-		}
-		minima_and_maxima_avg[j] /= N_POLES;
-		midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j] << 3) - HALL_SENSOR_SHIFT);
-	}
+        uint16_t start_calibration_index = (calibration_index[j] - N_POLES);
+        for(i = start_calibration_index; i < calibration_index[j]; i++) {
+            minima_and_maxima_avg[j] += (uint32_t)calibration[j][i].local_min_or_max;
+            sprintf(buf, "Averaging: index: %u  local_min_or_max: %u\n", i, calibration[j][i].local_min_or_max);
+            transmit(buf, strlen(buf));
+        }
+        minima_and_maxima_avg[j] /= N_POLES;
+        midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j] << 3) - HALL_SENSOR_SHIFT);
+    }
 
-	global_settings.hall1_midline = midline[0];
-	global_settings.hall2_midline = midline[1];
-	global_settings.hall3_midline = midline[2];
-	global_settings.hall4_midline = midline[3];
+    global_settings.hall1_midline = midline[0];
+    global_settings.hall2_midline = midline[1];
+    global_settings.hall3_midline = midline[2];
+    global_settings.hall4_midline = midline[3];
 
-	for(j = 0; j < 2; j++) {
-		sprintf(buf, "The average and midline for hall sensor %hu are: %lu  %u\n", j + 1, minima_and_maxima_avg[j], midline[j]);
-		transmit(buf, strlen(buf));
-	}
+    for(j = 0; j < 2; j++) {
+        sprintf(buf, "The average and midline for hall sensor %hu are: %lu  %u\n", j + 1, minima_and_maxima_avg[j], midline[j]);
+        transmit(buf, strlen(buf));
+    }
 
-	calibration_data_available = 0;
-	motor_busy = 0;
+    calibration_data_available = 0;
+    motor_busy = 0;
 }
 
 #define MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM 10
@@ -587,123 +587,123 @@ void process_calibration_data(void)
 #define MOVING_AVERAGE_SHIFT_RIGHT 7
 void start_go_to_closed_loop_mode(void)
 {
-	motor_busy = 1;
+    motor_busy = 1;
 
-	transmit("Go to closed loop mode start\n", 29);
+    transmit("Go to closed loop mode start\n", 29);
 
-	DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
+    DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
 
-	clear_the_queue_and_stop_no_disable_interrupt();
-	set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
-	enable_mosfets();
-	commutation_position_offset = UINT32_MIDPOINT;
-	vibration_four_step = 0;
-	commutation_scan_microsteps = 0;
-	desired_motor_pwm_voltage = 0;
-	go_to_closed_loop_mode_active = 1;
-	motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
-	sum_delta = 0;
-	vibration_polarity_moving_average = 0;
-	max_motor_pwm_voltage_limit = 0;
-	zero_hall_position();
-	previous_hall_position = 0;
+    clear_the_queue_and_stop_no_disable_interrupt();
+    set_motor_control_mode(OPEN_LOOP_PWM_VOLTAGE_CONTROL);
+    enable_mosfets();
+    commutation_position_offset = UINT32_MIDPOINT;
+    vibration_four_step = 0;
+    commutation_scan_microsteps = 0;
+    desired_motor_pwm_voltage = 0;
+    go_to_closed_loop_mode_active = 1;
+    motor_pwm_voltage_limit = MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM;
+    sum_delta = 0;
+    vibration_polarity_moving_average = 0;
+    max_motor_pwm_voltage_limit = 0;
+    zero_hall_position();
+    previous_hall_position = 0;
 
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
 }
 
 void go_to_closed_loop_mode_logic(void)
 {
-//	char buf[30];
-	if(commutation_scan_microsteps < COMMUTATION_SCAN_MICROSTEPS) {
-		switch(vibration_four_step) {
-		case 0:
-			sum_delta += hall_position_delta;
-			desired_motor_pwm_voltage++;
-			if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
-				vibration_four_step++;
-			}
-			break;
-		case 1:
-		case 2:
-			sum_delta -= hall_position_delta;
-			desired_motor_pwm_voltage--;
-			if(desired_motor_pwm_voltage <= -motor_pwm_voltage_limit) {
-				vibration_four_step++;
-			}
-			break;
-		case 3:
-			sum_delta += hall_position_delta;
-			desired_motor_pwm_voltage++;
-			if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
-				vibration_four_step = 0;
-				int32_t step_size = (MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM - motor_pwm_voltage_limit + 1) * COMMUTATION_SCAN_STEP_FACTOR;
-				if(step_size < COMMUTATION_SCAN_MIN_STEP_SIZE) {
-					step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
-				}
-				commutation_scan_microsteps += step_size;
-				if(sum_delta > 0) {
-					if(vibration_polarity_moving_average >= 0) {
-						vibration_polarity_moving_average++;
-					}
-					else {
-						vibration_polarity_moving_average += 2;
-					}
-				}
-				else if(sum_delta < 0) {
-					if(vibration_polarity_moving_average <= 0) {
-						vibration_polarity_moving_average--;
-					}
-					else {
-						vibration_polarity_moving_average -= 2;
-					}
-				}
-//				vibration_polarity_moving_average = (vibration_polarity_moving_average * ((1 << MOVING_AVERAGE_SHIFT_RIGHT) - 1) + sum_delta) >> MOVING_AVERAGE_SHIFT_RIGHT;
-				if(sum_delta >= 0) {
-//					print_number("", (uint16_t)sum_delta);
-				}
-				else {
-					sum_delta = -sum_delta;
-//					print_number("-", (uint16_t)sum_delta);
-				}
-				if(sum_delta > GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE) {
-					if(motor_pwm_voltage_limit > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM) {
-						motor_pwm_voltage_limit--;
-					}
-				}
-				else {
-					if(motor_pwm_voltage_limit < MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM) {
-						motor_pwm_voltage_limit++;
-					}
-				}
-				if(motor_pwm_voltage_limit > max_motor_pwm_voltage_limit) {
-					max_motor_pwm_voltage_limit = motor_pwm_voltage_limit;
-					commutation_position_offset_at_max = commutation_position_offset;
-					if(vibration_polarity_moving_average < 0) {
-						commutation_position_offset_at_max -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-					}
-					else {
-						commutation_position_offset_at_max += HALL_TO_POSITION_90_DEGREE_OFFSET;
-					}
-				}
-				commutation_position_offset += step_size;
-//				sprintf(buf, "%hu %ld\n", (uint16_t)motor_pwm_voltage_limit, vibration_polarity_moving_average);
-//				transmit(buf, strlen(buf));
-				sum_delta = 0;
-			}
-			break;
-		default:
-			fatal_error(ERROR_VIBRATION_FOUR_STEP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-	}
-	else {
-		commutation_position_offset = commutation_position_offset_at_max;
-		current_position_i64 = 0;
-		current_velocity_i64 = 0;
-		motor_pwm_voltage = 0;
-		set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
-		hall_position = get_hall_position();
-		go_to_closed_loop_mode_active = 0;
-		motor_busy = 0;
+//  char buf[30];
+    if(commutation_scan_microsteps < COMMUTATION_SCAN_MICROSTEPS) {
+        switch(vibration_four_step) {
+        case 0:
+            sum_delta += hall_position_delta;
+            desired_motor_pwm_voltage++;
+            if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
+                vibration_four_step++;
+            }
+            break;
+        case 1:
+        case 2:
+            sum_delta -= hall_position_delta;
+            desired_motor_pwm_voltage--;
+            if(desired_motor_pwm_voltage <= -motor_pwm_voltage_limit) {
+                vibration_four_step++;
+            }
+            break;
+        case 3:
+            sum_delta += hall_position_delta;
+            desired_motor_pwm_voltage++;
+            if(desired_motor_pwm_voltage >= motor_pwm_voltage_limit) {
+                vibration_four_step = 0;
+                int32_t step_size = (MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM - motor_pwm_voltage_limit + 1) * COMMUTATION_SCAN_STEP_FACTOR;
+                if(step_size < COMMUTATION_SCAN_MIN_STEP_SIZE) {
+                    step_size = COMMUTATION_SCAN_MIN_STEP_SIZE;
+                }
+                commutation_scan_microsteps += step_size;
+                if(sum_delta > 0) {
+                    if(vibration_polarity_moving_average >= 0) {
+                        vibration_polarity_moving_average++;
+                    }
+                    else {
+                        vibration_polarity_moving_average += 2;
+                    }
+                }
+                else if(sum_delta < 0) {
+                    if(vibration_polarity_moving_average <= 0) {
+                        vibration_polarity_moving_average--;
+                    }
+                    else {
+                        vibration_polarity_moving_average -= 2;
+                    }
+                }
+//              vibration_polarity_moving_average = (vibration_polarity_moving_average * ((1 << MOVING_AVERAGE_SHIFT_RIGHT) - 1) + sum_delta) >> MOVING_AVERAGE_SHIFT_RIGHT;
+                if(sum_delta >= 0) {
+//                  print_number("", (uint16_t)sum_delta);
+                }
+                else {
+                    sum_delta = -sum_delta;
+//                  print_number("-", (uint16_t)sum_delta);
+                }
+                if(sum_delta > GO_TO_CLOSED_LOOP_VIBRATION_MAGNITUDE) {
+                    if(motor_pwm_voltage_limit > MOTOR_PWM_VOLTAGE_LIMIT_MINIMUM) {
+                        motor_pwm_voltage_limit--;
+                    }
+                }
+                else {
+                    if(motor_pwm_voltage_limit < MOTOR_PWM_VOLTAGE_LIMIT_MAXIMUM) {
+                        motor_pwm_voltage_limit++;
+                    }
+                }
+                if(motor_pwm_voltage_limit > max_motor_pwm_voltage_limit) {
+                    max_motor_pwm_voltage_limit = motor_pwm_voltage_limit;
+                    commutation_position_offset_at_max = commutation_position_offset;
+                    if(vibration_polarity_moving_average < 0) {
+                        commutation_position_offset_at_max -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+                    }
+                    else {
+                        commutation_position_offset_at_max += HALL_TO_POSITION_90_DEGREE_OFFSET;
+                    }
+                }
+                commutation_position_offset += step_size;
+//              sprintf(buf, "%hu %ld\n", (uint16_t)motor_pwm_voltage_limit, vibration_polarity_moving_average);
+//              transmit(buf, strlen(buf));
+                sum_delta = 0;
+            }
+            break;
+        default:
+            fatal_error(ERROR_VIBRATION_FOUR_STEP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+    }
+    else {
+        commutation_position_offset = commutation_position_offset_at_max;
+        current_position_i64 = 0;
+        current_velocity_i64 = 0;
+        motor_pwm_voltage = 0;
+        set_motor_control_mode(CLOSED_LOOP_POSITION_CONTROL);
+        hall_position = get_hall_position();
+        go_to_closed_loop_mode_active = 0;
+        motor_busy = 0;
     }
 }
 
@@ -727,26 +727,26 @@ void capture_logic(void)
     static uint16_t counter = 0;
 
     if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
-    	if(counter == 0) {
+        if(counter == 0) {
             counter = 256;
             hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[2] = 65535;
             rs485_transmit((char*)hall_data_buffer, 6);
-    	}
-    	counter--;
+        }
+        counter--;
     }
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
-    	if(counter == 0) {
+        if(counter == 0) {
             counter = 256;
             int32_t hall_position = get_hall_position();
             memcpy(hall_data_buffer + 2, &hall_position, sizeof(hall_position));
             rs485_transmit((char*)hall_data_buffer, 10);
-    	}
-    	counter--;
+        }
+        counter--;
     }
     else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
-    	if(counter == 0) {
+        if(counter == 0) {
             counter = 256;
             int32_t hall_position = get_hall_position();
             adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
@@ -755,456 +755,456 @@ void capture_logic(void)
             memcpy(hall_data_buffer + 2, &hall_position, sizeof(hall_position));
             hall_data_buffer[4] = 65535; // magic number to indicate the end of the data
             rs485_transmit((char*)hall_data_buffer, 10);
-    	}
-    	counter--;
+        }
+        counter--;
     }
 }
 
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
 {
-	if(motor_control_mode != CLOSED_LOOP_POSITION_CONTROL) {
-		fatal_error(ERROR_NOT_IN_CLOSED_LOOP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if(motor_control_mode != CLOSED_LOOP_POSITION_CONTROL) {
+        fatal_error(ERROR_NOT_IN_CLOSED_LOOP); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	if(n_items_in_queue != 0) {
-		fatal_error(ERROR_QUEUE_NOT_EMPTY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if(n_items_in_queue != 0) {
+        fatal_error(ERROR_QUEUE_NOT_EMPTY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	add_trapezoid_move_to_queue(max_homing_displacement, max_homing_time);
+    add_trapezoid_move_to_queue(max_homing_displacement, max_homing_time);
 
-	motor_busy = 1;
+    motor_busy = 1;
 
-	homing_active = 1;
+    homing_active = 1;
 }
 
 #define HOMING_MAX_POSITION_ERROR 50000
 void handle_homing_logic(void)
 {
-	int32_t position_error;
-	position_error = abs(((int32_t *)&current_position_i64)[1] - hall_position);
+    int32_t position_error;
+    position_error = abs(((int32_t *)&current_position_i64)[1] - hall_position);
 
-	if(position_error > HOMING_MAX_POSITION_ERROR) {
-		homing_active = 0;
-		clear_the_queue_and_stop_no_disable_interrupt();
-		current_velocity_i64 = 0; // detected a colision so stop where we are
-		if(((int32_t *)&current_position_i64)[1] >= hall_position) {
-			((int32_t *)&current_position_i64)[1] -= HOMING_MAX_POSITION_ERROR;
-		}
-		else {
-			((int32_t *)&current_position_i64)[1] += HOMING_MAX_POSITION_ERROR;
-		}
-	}
+    if(position_error > HOMING_MAX_POSITION_ERROR) {
+        homing_active = 0;
+        clear_the_queue_and_stop_no_disable_interrupt();
+        current_velocity_i64 = 0; // detected a colision so stop where we are
+        if(((int32_t *)&current_position_i64)[1] >= hall_position) {
+            ((int32_t *)&current_position_i64)[1] -= HOMING_MAX_POSITION_ERROR;
+        }
+        else {
+            ((int32_t *)&current_position_i64)[1] += HOMING_MAX_POSITION_ERROR;
+        }
+    }
 
-	if(n_items_in_queue == 0) {
-		homing_active = 0;
-//		if(homing_direction == -1) {
-//			position_lower_safety_limit = ((int32_t *)&current_position_i64)[1];
-//		}
-//		else {
-//			position_upper_safety_limit = ((int32_t *)&current_position_i64)[1];
-//		}
-		motor_busy = 0;
-	}
+    if(n_items_in_queue == 0) {
+        homing_active = 0;
+//      if(homing_direction == -1) {
+//          position_lower_safety_limit = ((int32_t *)&current_position_i64)[1];
+//      }
+//      else {
+//          position_upper_safety_limit = ((int32_t *)&current_position_i64)[1];
+//      }
+        motor_busy = 0;
+    }
 }
 
 
 void start_fast_capture_data(void)
 {
-	transmit("Fast capture data\n", 18);
-	fast_capture_data_index = 0;
-	fast_capture_data_active = 1;
+    transmit("Fast capture data\n", 18);
+    fast_capture_data_index = 0;
+    fast_capture_data_active = 1;
 }
 
 
 void fast_capture_until_trigger(void)
 {
-	memset(fast_capture_data, 0, fast_capture_data_size * sizeof(struct fast_capture_data_struct));
-	fast_capture_data_index = 0;
-	fast_capture_data_active = 2;
+    memset(fast_capture_data, 0, fast_capture_data_size * sizeof(struct fast_capture_data_struct));
+    fast_capture_data_index = 0;
+    fast_capture_data_active = 2;
 }
 
 
 void print_position(void)
 {
-	char buf[100];
-	sprintf(buf, "current_position: %ld\n", ((int32_t *)&current_position_i64)[1]);
-	transmit(buf, strlen(buf));
+    char buf[100];
+    sprintf(buf, "current_position: %ld\n", ((int32_t *)&current_position_i64)[1]);
+    transmit(buf, strlen(buf));
 }
 
 void print_queue_stats(void)
 {
-	char buf[100];
-	sprintf(buf, "n_items_in_queue: %u\n", (unsigned int)n_items_in_queue);
-	transmit(buf, strlen(buf));
+    char buf[100];
+    sprintf(buf, "n_items_in_queue: %u\n", (unsigned int)n_items_in_queue);
+    transmit(buf, strlen(buf));
 }
 
 void print_current_movement(void)
 {
-	char buf[150];
-	uint64_t current_time = get_microsecond_time();
-	print_int64("max acceleration:", (int64_t)max_acceleration);
-	print_int64("max velocity:", (int64_t)max_velocity);
-	sprintf(buf, "current_time: %lu\n", (unsigned long int)current_time);
-	transmit(buf, strlen(buf));
-	sprintf(buf, "motor_control_mode: %u\n", (unsigned int)motor_control_mode);
-	transmit(buf, strlen(buf));
+    char buf[150];
+    uint64_t current_time = get_microsecond_time();
+    print_int64("max acceleration:", (int64_t)max_acceleration);
+    print_int64("max velocity:", (int64_t)max_velocity);
+    sprintf(buf, "current_time: %lu\n", (unsigned long int)current_time);
+    transmit(buf, strlen(buf));
+    sprintf(buf, "motor_control_mode: %u\n", (unsigned int)motor_control_mode);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_velocity(void)
 {
-	char buf[150];
-//	sprintf(buf, "desired velocity: %ld   actual velocity: %ld\n", desired_velocity, velocity);
-	sprintf(buf, "velocity: %ld\n", velocity);
-	transmit(buf, strlen(buf));
+    char buf[150];
+//  sprintf(buf, "desired velocity: %ld   actual velocity: %ld\n", desired_velocity, velocity);
+    sprintf(buf, "velocity: %ld\n", velocity);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_time_difference(void)
 {
-	char buf[150];
-	sprintf(buf, "time_difference1: %hu   max_time_difference1: %hu\n", time_difference1, max_time_difference1);
-	transmit(buf, strlen(buf));
-	max_time_difference1 = 0;
+    char buf[150];
+    sprintf(buf, "time_difference1: %hu   max_time_difference1: %hu\n", time_difference1, max_time_difference1);
+    transmit(buf, strlen(buf));
+    max_time_difference1 = 0;
 
-	sprintf(buf, "time_difference2: %hu   max_time_difference2: %hu\n", time_difference2, max_time_difference2);
-	transmit(buf, strlen(buf));
-	max_time_difference2 = 0;
+    sprintf(buf, "time_difference2: %hu   max_time_difference2: %hu\n", time_difference2, max_time_difference2);
+    transmit(buf, strlen(buf));
+    max_time_difference2 = 0;
 
-	sprintf(buf, "time_difference3: %hu   max_time_difference3: %hu\n", time_difference3, max_time_difference3);
-	transmit(buf, strlen(buf));
-	max_time_difference3 = 0;
+    sprintf(buf, "time_difference3: %hu   max_time_difference3: %hu\n", time_difference3, max_time_difference3);
+    transmit(buf, strlen(buf));
+    max_time_difference3 = 0;
 
-	sprintf(buf, "time_difference4: %hu   max_time_difference4: %hu\n", time_difference4, max_time_difference4);
-	transmit(buf, strlen(buf));
-	max_time_difference4 = 0;
+    sprintf(buf, "time_difference4: %hu   max_time_difference4: %hu\n", time_difference4, max_time_difference4);
+    transmit(buf, strlen(buf));
+    max_time_difference4 = 0;
 
-	sprintf(buf, "time_difference5: %hu   max_time_difference5: %hu\n", time_difference5, max_time_difference5);
-	transmit(buf, strlen(buf));
-	max_time_difference5 = 0;
+    sprintf(buf, "time_difference5: %hu   max_time_difference5: %hu\n", time_difference5, max_time_difference5);
+    transmit(buf, strlen(buf));
+    max_time_difference5 = 0;
 
-	sprintf(buf, "current_time_captured: %u\n", (unsigned int)current_time_captured);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "current_time_captured: %u\n", (unsigned int)current_time_captured);
+    transmit(buf, strlen(buf));
 
-	sprintf(buf, "motor_control_time_difference: %hu   max_motor_control_time_difference: %hu\n", motor_control_time_difference, max_motor_control_time_difference);
-	transmit(buf, strlen(buf));
-	max_motor_control_time_difference = 0;
+    sprintf(buf, "motor_control_time_difference: %hu   max_motor_control_time_difference: %hu\n", motor_control_time_difference, max_motor_control_time_difference);
+    transmit(buf, strlen(buf));
+    max_motor_control_time_difference = 0;
 
-	sprintf(buf, "motor_control_tick_time_difference: %hu   max_motor_control_tick_time_difference: %hu\n", motor_control_tick_time_difference, max_motor_control_tick_time_difference);
-	transmit(buf, strlen(buf));
-	max_motor_control_tick_time_difference = 0;
+    sprintf(buf, "motor_control_tick_time_difference: %hu   max_motor_control_tick_time_difference: %hu\n", motor_control_tick_time_difference, max_motor_control_tick_time_difference);
+    transmit(buf, strlen(buf));
+    max_motor_control_tick_time_difference = 0;
 
-//	uint32_t pr = NVIC_GetPriority(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
-//	sprintf(buf, "interrupt priority: %u\n", (unsigned int)pr);
-//	transmit(buf, strlen(buf));
+//  uint32_t pr = NVIC_GetPriority(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
+//  sprintf(buf, "interrupt priority: %u\n", (unsigned int)pr);
+//  transmit(buf, strlen(buf));
 
-	current_time_captured = 1;
+    current_time_captured = 1;
 }
 
 
 void print_hall_position_delta_stats(void)
 {
-	char buf[150];
-	int32_t ahpd = average_hall_position_delta;
-	int32_t ahpd_count = average_hall_position_delta_count;
-	ahpd /= ahpd_count;
-	sprintf(buf, "max_hall_position_delta: %ld   min_hall_position_delta: %ld  avg_hall_position_delta: %ld\n", max_hall_position_delta, min_hall_position_delta, ahpd);
-	transmit(buf, strlen(buf));
-	max_hall_position_delta = -2000000000;
-	min_hall_position_delta = 2000000000;
-	average_hall_position_delta = 0;
-	average_hall_position_delta_count = 0;
+    char buf[150];
+    int32_t ahpd = average_hall_position_delta;
+    int32_t ahpd_count = average_hall_position_delta_count;
+    ahpd /= ahpd_count;
+    sprintf(buf, "max_hall_position_delta: %ld   min_hall_position_delta: %ld  avg_hall_position_delta: %ld\n", max_hall_position_delta, min_hall_position_delta, ahpd);
+    transmit(buf, strlen(buf));
+    max_hall_position_delta = -2000000000;
+    min_hall_position_delta = 2000000000;
+    average_hall_position_delta = 0;
+    average_hall_position_delta_count = 0;
 }
 
 void print_max_motor_current_settings(void)
 {
-	char buf[150];
-	sprintf(buf, "Maximum motor pwm voltage: %hu   Maximum motor regeneration pwm voltage: %hu\n", global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
-	transmit(buf, strlen(buf));
+    char buf[150];
+    sprintf(buf, "Maximum motor pwm voltage: %hu   Maximum motor regeneration pwm voltage: %hu\n", global_settings.max_motor_pwm_voltage, global_settings.max_motor_regen_pwm_voltage);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_motor_current(void)
 {
-	char buf[150];
-	int16_t current = get_motor_current();
-	sprintf(buf, "current: %hd   motor_current_baseline: %hu\n", current, motor_current_baseline);
-	transmit(buf, strlen(buf));
+    char buf[150];
+    int16_t current = get_motor_current();
+    sprintf(buf, "current: %hd   motor_current_baseline: %hu\n", current, motor_current_baseline);
+    transmit(buf, strlen(buf));
 }
 
 /*
 void print_motor_temperature(void)
 {
-	char buf[100];
-	int16_t temperature = get_temperature_sensor_voltage();
-	sprintf(buf, "Temperature sensor: %hd\n", temperature);
-	transmit(buf, strlen(buf));
+    char buf[100];
+    int16_t temperature = get_temperature_sensor_voltage();
+    sprintf(buf, "Temperature sensor: %hd\n", temperature);
+    transmit(buf, strlen(buf));
 }
 */
 
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
 void print_supply_voltage(void)
 {
-	char buf[100];
-	int16_t supply_voltage = get_supply_voltage();
-	int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
-	int16_t whole_number = supply_voltage_calibrated / 10;
-	int16_t decimal = (supply_voltage_calibrated % 10);
-	sprintf(buf, "Supply voltage: %hd.%hu \n", whole_number, decimal);
-	transmit(buf, strlen(buf));
+    char buf[100];
+    int16_t supply_voltage = get_supply_voltage();
+    int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+    int16_t whole_number = supply_voltage_calibrated / 10;
+    int16_t decimal = (supply_voltage_calibrated % 10);
+    sprintf(buf, "Supply voltage: %hd.%hu \n", whole_number, decimal);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_hall_sensor_data(void)
 {
-	char buf[100];
-	uint16_t hall1 = get_hall_sensor1_voltage();
-	uint16_t hall2 = get_hall_sensor2_voltage();
-	uint16_t hall3 = get_hall_sensor3_voltage();
-	uint16_t hall4 = get_hall_sensor4_voltage();
+    char buf[100];
+    uint16_t hall1 = get_hall_sensor1_voltage();
+    uint16_t hall2 = get_hall_sensor2_voltage();
+    uint16_t hall3 = get_hall_sensor3_voltage();
+    uint16_t hall4 = get_hall_sensor4_voltage();
 
-	sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu   hall4: %hu\n", hall1, hall2, hall3, hall4);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "hall1: %hu   hall2: %hu   hall3: %hu   hall4: %hu\n", hall1, hall2, hall3, hall4);
+    transmit(buf, strlen(buf));
 
-	sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, commutation_position_offset);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "hall_position: %ld   commutation_position_offset: %lu\n", hall_position, commutation_position_offset);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_motor_status(void)
 {
-	char buf[100];
-	uint32_t tim1_cnt;
-	uint32_t tim3_cnt;
+    char buf[100];
+    uint32_t tim1_cnt;
+    uint32_t tim3_cnt;
 
-	uint8_t motor_status_flags = get_motor_status_flags();
-	sprintf(buf, "status: %hu\n", motor_status_flags);
-	transmit(buf, strlen(buf));
-	DISABLE_MOTOR_UPDATES();
-	tim1_cnt = TIM1->CNT;
-	tim3_cnt = TIM3->CNT;
-	ENABLE_MOTOR_UPDATES();
-	sprintf(buf, "TIM1 CNT: %u   TIM3 CNT: %u\n", (unsigned int)tim1_cnt, (unsigned int)tim3_cnt);
-	transmit(buf, strlen(buf));
+    uint8_t motor_status_flags = get_motor_status_flags();
+    sprintf(buf, "status: %hu\n", motor_status_flags);
+    transmit(buf, strlen(buf));
+    DISABLE_MOTOR_UPDATES();
+    tim1_cnt = TIM1->CNT;
+    tim3_cnt = TIM3->CNT;
+    ENABLE_MOTOR_UPDATES();
+    sprintf(buf, "TIM1 CNT: %u   TIM3 CNT: %u\n", (unsigned int)tim1_cnt, (unsigned int)tim3_cnt);
+    transmit(buf, strlen(buf));
 }
 
 
 uint8_t is_fast_capture_data_result_ready(void)
 {
-	return fast_capture_data_result_ready;
+    return fast_capture_data_result_ready;
 }
 
 
 void print_fast_capture_data_result(void)
 {
-	uint16_t i;
-	char buf[100];
+    uint16_t i;
+    char buf[100];
 
-	for(i = 0; i < fast_capture_data_size; i++) {
-		sprintf(buf, "%hu %hu %hu\n", fast_capture_data[fast_capture_data_index].hall1, fast_capture_data[fast_capture_data_index].hall2,
-		                              fast_capture_data[fast_capture_data_index].hall_position_16bit);
-		transmit(buf, strlen(buf));
-		fast_capture_data_index++;
-		if(fast_capture_data_index >= fast_capture_data_size) {
-			fast_capture_data_index = 0;
-		}
-	}
+    for(i = 0; i < fast_capture_data_size; i++) {
+        sprintf(buf, "%hu %hu %hu\n", fast_capture_data[fast_capture_data_index].hall1, fast_capture_data[fast_capture_data_index].hall2,
+                                      fast_capture_data[fast_capture_data_index].hall_position_16bit);
+        transmit(buf, strlen(buf));
+        fast_capture_data_index++;
+        if(fast_capture_data_index >= fast_capture_data_size) {
+            fast_capture_data_index = 0;
+        }
+    }
 
-	fast_capture_data_result_ready = 0;
+    fast_capture_data_result_ready = 0;
 }
 
 #define TURN_POINT_CALCULATION_SHIFT 4
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type)
 {
-	int64_t predicted_final_velocity;
-	int64_t predicted_final_position;
-//	char buf[150];
+    int64_t predicted_final_velocity;
+    int64_t predicted_final_position;
+//  char buf[150];
 
-	if(motor_busy) {
-		fatal_error(ERROR_MOTOR_BUSY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if(motor_busy) {
+        fatal_error(ERROR_MOTOR_BUSY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	DISABLE_MOTOR_UPDATES();
+    DISABLE_MOTOR_UPDATES();
 
-	if(n_time_steps == 0) {
-		return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
-	}
+    if(n_time_steps == 0) {
+        return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
+    }
 
     if(n_items_in_queue >= MOVEMENT_QUEUE_SIZE) {
-		fatal_error(ERROR_QUEUE_IS_FULL); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+        fatal_error(ERROR_QUEUE_IS_FULL); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	movement_queue[queue_write_position].movement_type = movement_type;
-	if(movement_type == MOVE_WITH_ACCELERATION) {
-		movement_queue[queue_write_position].acceleration = parameter;
-		movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
-		if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
-			fatal_error(ERROR_ACCEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_velocity = velocity_after_last_queue_item + movement_queue[queue_write_position].acceleration * n_time_steps;
-//			sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
-//			transmit(buf, strlen(buf));
-		if(abs(predicted_final_velocity) > max_velocity) {
-			fatal_error(ERROR_PREDICTED_VELOCITY_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
-//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-//			transmit(buf, strlen(buf));
-		if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
-			fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		if(movement_queue[queue_write_position].acceleration == 0) {
-//				transmit("No turn point (acceleration == 0)\n", 34);
-		}
-		else {
-			int64_t time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
-//				sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
-//				transmit(buf, strlen(buf));
-			if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
-				int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-//					sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
-//					transmit(buf, strlen(buf));
-				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
-				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
-					fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-				}
-			}
-			else {
-//					transmit("No turn point\n", 14);
-			}
-		}
-	}
-	else {
-		movement_queue[queue_write_position].velocity = parameter;
-		movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
-		predicted_final_velocity = movement_queue[queue_write_position].velocity;
-//			sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
-//			transmit(buf, strlen(buf));
-		if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
-			fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_position = position_after_last_queue_item + movement_queue[queue_write_position].velocity * n_time_steps;
-//			sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-//			transmit(buf, strlen(buf));
-	}
-	position_after_last_queue_item = predicted_final_position;
-	velocity_after_last_queue_item = predicted_final_velocity;
-	movement_queue[queue_write_position].n_time_steps = n_time_steps;
-	queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-	n_items_in_queue++;
-	ENABLE_MOTOR_UPDATES();
+    movement_queue[queue_write_position].movement_type = movement_type;
+    if(movement_type == MOVE_WITH_ACCELERATION) {
+        movement_queue[queue_write_position].acceleration = parameter;
+        movement_queue[queue_write_position].acceleration <<= ACCELERATION_SHIFT_LEFT;
+        if(abs(movement_queue[queue_write_position].acceleration) > max_acceleration) {
+            fatal_error(ERROR_ACCEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_velocity = velocity_after_last_queue_item + movement_queue[queue_write_position].acceleration * n_time_steps;
+//          sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+//          transmit(buf, strlen(buf));
+        if(abs(predicted_final_velocity) > max_velocity) {
+            fatal_error(ERROR_PREDICTED_VELOCITY_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
+//          sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//          transmit(buf, strlen(buf));
+        if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
+            fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        if(movement_queue[queue_write_position].acceleration == 0) {
+//              transmit("No turn point (acceleration == 0)\n", 34);
+        }
+        else {
+            int64_t time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue[queue_write_position].acceleration);
+//              sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+//              transmit(buf, strlen(buf));
+            if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
+                int64_t relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+//                  sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+//                  transmit(buf, strlen(buf));
+                int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
+                if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
+                    fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+                }
+            }
+            else {
+//                  transmit("No turn point\n", 14);
+            }
+        }
+    }
+    else {
+        movement_queue[queue_write_position].velocity = parameter;
+        movement_queue[queue_write_position].velocity <<= VELOCITY_SHIFT_LEFT;
+        predicted_final_velocity = movement_queue[queue_write_position].velocity;
+//          sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+//          transmit(buf, strlen(buf));
+        if(abs(movement_queue[queue_write_position].velocity) > max_velocity) {
+            fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_position = position_after_last_queue_item + movement_queue[queue_write_position].velocity * n_time_steps;
+//          sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+//          transmit(buf, strlen(buf));
+    }
+    position_after_last_queue_item = predicted_final_position;
+    velocity_after_last_queue_item = predicted_final_velocity;
+    movement_queue[queue_write_position].n_time_steps = n_time_steps;
+    queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+    n_items_in_queue++;
+    ENABLE_MOTOR_UPDATES();
 }
 
 
 void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type, add_to_queue_test_results_t *results)
 {
-	int64_t movement_queue_queue_write_position_acceleration;
-	int64_t movement_queue_queue_write_position_velocity;
-	int64_t predicted_final_velocity;
-	int64_t predicted_final_position;
-	int64_t time_step_at_turn_point_shifted = 0;
-	int64_t relative_position_at_turn_point = 0;
-	char buf[150];
+    int64_t movement_queue_queue_write_position_acceleration;
+    int64_t movement_queue_queue_write_position_velocity;
+    int64_t predicted_final_velocity;
+    int64_t predicted_final_position;
+    int64_t time_step_at_turn_point_shifted = 0;
+    int64_t relative_position_at_turn_point = 0;
+    char buf[150];
 
-	memset(results, 0, sizeof(add_to_queue_test_results_t));
+    memset(results, 0, sizeof(add_to_queue_test_results_t));
 
-	if(n_time_steps == 0) {
-		return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
-	}
-	if(movement_type == MOVE_WITH_ACCELERATION) {
-		movement_queue_queue_write_position_acceleration = parameter;
-		movement_queue_queue_write_position_acceleration <<= ACCELERATION_SHIFT_LEFT;
-		if(abs(movement_queue_queue_write_position_acceleration) > max_acceleration) {
-			fatal_error(ERROR_ACCEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_velocity = velocity_after_last_queue_item + movement_queue_queue_write_position_acceleration * n_time_steps;
-		sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
-		transmit(buf, strlen(buf));
-		if(abs(predicted_final_velocity) > max_velocity) {
-			fatal_error(ERROR_PREDICTED_VELOCITY_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue_queue_write_position_acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
-		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-		transmit(buf, strlen(buf));
-		if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
-			fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		if(movement_queue_queue_write_position_acceleration == 0) {
-			transmit("No turn point (acceleration == 0)\n", 34);
-		}
-		else {
-			time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue_queue_write_position_acceleration);
-			sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
-			transmit(buf, strlen(buf));
-			if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
-				relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
-				sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
-				transmit(buf, strlen(buf));
-				int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
-				if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
-					fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-				}
-			}
-			else {
-				transmit("No turn point\n", 14);
-			}
-		}
-	}
-	else {
-		movement_queue_queue_write_position_velocity = parameter;
-		movement_queue_queue_write_position_velocity <<= VELOCITY_SHIFT_LEFT;
-		predicted_final_velocity = movement_queue_queue_write_position_velocity;
-		sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
-		transmit(buf, strlen(buf));
-		if(abs(movement_queue_queue_write_position_velocity) > max_velocity) {
-			fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-		predicted_final_position = position_after_last_queue_item + movement_queue_queue_write_position_velocity * n_time_steps;
-		sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
-		transmit(buf, strlen(buf));
-	}
-	position_after_last_queue_item = predicted_final_position;
-	velocity_after_last_queue_item = predicted_final_velocity;
+    if(n_time_steps == 0) {
+        return; // in the case that the number if time steps is zero, it makes sense to not add anything to the queue
+    }
+    if(movement_type == MOVE_WITH_ACCELERATION) {
+        movement_queue_queue_write_position_acceleration = parameter;
+        movement_queue_queue_write_position_acceleration <<= ACCELERATION_SHIFT_LEFT;
+        if(abs(movement_queue_queue_write_position_acceleration) > max_acceleration) {
+            fatal_error(ERROR_ACCEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_velocity = velocity_after_last_queue_item + movement_queue_queue_write_position_acceleration * n_time_steps;
+        sprintf(buf, "Predicted final velocity: %ld\n", (int32_t)(predicted_final_velocity >> 32));
+        transmit(buf, strlen(buf));
+        if(abs(predicted_final_velocity) > max_velocity) {
+            fatal_error(ERROR_PREDICTED_VELOCITY_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_position = position_after_last_queue_item + velocity_after_last_queue_item * n_time_steps + movement_queue_queue_write_position_acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
+        sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+        transmit(buf, strlen(buf));
+        if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
+            fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        if(movement_queue_queue_write_position_acceleration == 0) {
+            transmit("No turn point (acceleration == 0)\n", 34);
+        }
+        else {
+            time_step_at_turn_point_shifted = -(int64_t)((velocity_after_last_queue_item << TURN_POINT_CALCULATION_SHIFT) / movement_queue_queue_write_position_acceleration);
+            sprintf(buf, "time_at_turn_point: %lu\n", (uint32_t)(time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT));
+            transmit(buf, strlen(buf));
+            if((time_step_at_turn_point_shifted > 0) && ((time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT) < n_time_steps)) {
+                relative_position_at_turn_point = (int64_t)(velocity_after_last_queue_item * (int64_t)((int64_t)time_step_at_turn_point_shifted - (int64_t)(1 << TURN_POINT_CALCULATION_SHIFT))) >> (TURN_POINT_CALCULATION_SHIFT + 1);
+                sprintf(buf, "relative_position_at_turn_point: %ld\n", (int32_t)(relative_position_at_turn_point >> 32));
+                transmit(buf, strlen(buf));
+                int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
+                if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
+                    fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+                }
+            }
+            else {
+                transmit("No turn point\n", 14);
+            }
+        }
+    }
+    else {
+        movement_queue_queue_write_position_velocity = parameter;
+        movement_queue_queue_write_position_velocity <<= VELOCITY_SHIFT_LEFT;
+        predicted_final_velocity = movement_queue_queue_write_position_velocity;
+        sprintf(buf, "Predicted final velocity: %ld\n", ((int32_t*)&predicted_final_velocity)[1]);
+        transmit(buf, strlen(buf));
+        if(abs(movement_queue_queue_write_position_velocity) > max_velocity) {
+            fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        predicted_final_position = position_after_last_queue_item + movement_queue_queue_write_position_velocity * n_time_steps;
+        sprintf(buf, "Predicted final position: %ld\n", (int32_t)(predicted_final_position >> 32));
+        transmit(buf, strlen(buf));
+    }
+    position_after_last_queue_item = predicted_final_position;
+    velocity_after_last_queue_item = predicted_final_velocity;
 
-	results->predicted_final_velocity = ((int32_t*)&predicted_final_velocity)[1];
-	results->predicted_final_position = ((int32_t*)&predicted_final_position)[1];
-	results->time_step_at_turn_point = (time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT);
-	results->relative_position_at_turn_point = ((int32_t*)&relative_position_at_turn_point)[1];
+    results->predicted_final_velocity = ((int32_t*)&predicted_final_velocity)[1];
+    results->predicted_final_position = ((int32_t*)&predicted_final_position)[1];
+    results->time_step_at_turn_point = (time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT);
+    results->relative_position_at_turn_point = ((int32_t*)&relative_position_at_turn_point)[1];
 }
 
 void move_n_steps_in_m_time(int32_t displacement, uint32_t time_delta)
 {
-//	uint64_t local_time = get_microsecond_time();
-//	add_to_queue(desired_position - displacement, local_time + time_delta);
+//  uint64_t local_time = get_microsecond_time();
+//  add_to_queue(desired_position - displacement, local_time + time_delta);
 }
 
 
 uint8_t get_n_items_in_queue(void)
 {
-	return n_items_in_queue;
+    return n_items_in_queue;
 }
 
 
 void clear_the_queue_and_stop(void)
 {
-	DISABLE_MOTOR_UPDATES();
+    DISABLE_MOTOR_UPDATES();
     clear_the_queue_and_stop_no_disable_interrupt();
-	ENABLE_MOTOR_UPDATES();
+    ENABLE_MOTOR_UPDATES();
 }
 
 
 void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time)
 {
-	int32_t acceleration;
-	uint32_t delta_t1;
-	uint32_t delta_t2;
+    int32_t acceleration;
+    uint32_t delta_t1;
+    uint32_t delta_t2;
 
-	compute_trapezoid_move(total_displacement, total_time, &acceleration, &delta_t1, &delta_t2);
+    compute_trapezoid_move(total_displacement, total_time, &acceleration, &delta_t1, &delta_t2);
 
-	add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-	add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-	add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
 }
 
 #define VELOCITY_AVERAGING_SHIFT_RIGHT 8
@@ -1212,70 +1212,70 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 
 void compute_velocity(void)
 {
-	static int32_t velocity_moving_average = 0;
+    static int32_t velocity_moving_average = 0;
 
-	velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
-	velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
+    velocity_moving_average = (VELOCITY_AVERAGING_TIME_STEPS * velocity_moving_average + (hall_position_delta << 8) + (1 << (VELOCITY_AVERAGING_SHIFT_RIGHT - 1))) >> VELOCITY_AVERAGING_SHIFT_RIGHT;
+    velocity = ((velocity_moving_average + (1 << (8 - 1))) >> 8);
 }
 
 uint8_t handle_queued_movements(void)
 {
-	if(!decelerate_to_stop_active) {
-		if(n_items_in_queue > 0) {
-			// there is an assumption here that any item in the queue will always have one or more time steps
-			// see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
-			if(movement_queue[queue_read_position].movement_type == MOVE_WITH_ACCELERATION) {
-				current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
-				movement_queue[queue_read_position].n_time_steps--;
-				if(movement_queue[queue_read_position].n_time_steps == 0) {
-					queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-					n_items_in_queue--;
-				}
-			}
-			else {
-				current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity is constant during this time step
-				movement_queue[queue_read_position].n_time_steps--;
-				if(movement_queue[queue_read_position].n_time_steps == 0) {
-					queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-					n_items_in_queue--;
-				}
-			}
-		}
-		else {
-			decelerate_to_stop_active = 1;
-		}
-	}
-	if(decelerate_to_stop_active) {
-		if(current_velocity_i64 != 0) {
-			fatal_error(ERROR_RUN_OUT_OF_QUEUE_ITEMS); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-//		if(current_velocity_i64 >= 0) {
-//			if(current_velocity_i64 > max_acceleration) {
-//				current_velocity_i64 -= max_acceleration;
-//			}
-//			else {
-//				current_velocity_i64 = 0;
-//			}
-//		}
-//		else {
-//			if(-current_velocity_i64 > max_acceleration) {
-//				current_velocity_i64 += max_acceleration;
-//			}
-//			else {
-//				current_velocity_i64 = 0;
-//			}
-//		}
-		if(current_velocity_i64 == 0) {
-			decelerate_to_stop_active = 0;
-		}
-	}
+    if(!decelerate_to_stop_active) {
+        if(n_items_in_queue > 0) {
+            // there is an assumption here that any item in the queue will always have one or more time steps
+            // see the add_to_queue function where we make sure to never add an item to the queue with zero time steps
+            if(movement_queue[queue_read_position].movement_type == MOVE_WITH_ACCELERATION) {
+                current_velocity_i64 += movement_queue[queue_read_position].acceleration; // consume one time step worth of acceleration
+                movement_queue[queue_read_position].n_time_steps--;
+                if(movement_queue[queue_read_position].n_time_steps == 0) {
+                    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+                    n_items_in_queue--;
+                }
+            }
+            else {
+                current_velocity_i64 = movement_queue[queue_read_position].velocity; // velocity is constant during this time step
+                movement_queue[queue_read_position].n_time_steps--;
+                if(movement_queue[queue_read_position].n_time_steps == 0) {
+                    queue_read_position = (queue_read_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
+                    n_items_in_queue--;
+                }
+            }
+        }
+        else {
+            decelerate_to_stop_active = 1;
+        }
+    }
+    if(decelerate_to_stop_active) {
+        if(current_velocity_i64 != 0) {
+            fatal_error(ERROR_RUN_OUT_OF_QUEUE_ITEMS); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+//      if(current_velocity_i64 >= 0) {
+//          if(current_velocity_i64 > max_acceleration) {
+//              current_velocity_i64 -= max_acceleration;
+//          }
+//          else {
+//              current_velocity_i64 = 0;
+//          }
+//      }
+//      else {
+//          if(-current_velocity_i64 > max_acceleration) {
+//              current_velocity_i64 += max_acceleration;
+//          }
+//          else {
+//              current_velocity_i64 = 0;
+//          }
+//      }
+        if(current_velocity_i64 == 0) {
+            decelerate_to_stop_active = 0;
+        }
+    }
 
-	if((current_velocity_i64 > max_velocity) || (current_velocity_i64 < -max_velocity)) {
-		fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
-	current_position_i64 += current_velocity_i64;
+    if((current_velocity_i64 > max_velocity) || (current_velocity_i64 < -max_velocity)) {
+        fatal_error(ERROR_VEL_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
+    current_position_i64 += current_velocity_i64;
 
-	return (current_velocity_i64 != 0);
+    return (current_velocity_i64 != 0);
 
 }
 
@@ -1314,19 +1314,19 @@ int32_t PID_controller(int32_t error)
     }
     integral_term += (error * INTEGRAL_CONSTANT_PID);
     if(integral_term > (max_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
+        integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
     }
     else if(integral_term < -(max_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
+        integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
     }
     proportional_term = error * PROPORTIONAL_CONSTANT_PID;
 
     error_change = error - previous_error;
     if(error_change > MAX_ERROR_CHANGE) {
-    	error_change = MAX_ERROR_CHANGE;
+        error_change = MAX_ERROR_CHANGE;
     }
     if(error_change < -MAX_ERROR_CHANGE) {
-    	error_change = -MAX_ERROR_CHANGE;
+        error_change = -MAX_ERROR_CHANGE;
     }
 
     low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
@@ -1367,42 +1367,42 @@ int32_t PID_controller_with_hysteresis(int32_t error)
         error = MAX_ERROR;
     }
 
-	// calculate the error with hysteresis to be used in the proportional term of the PID controller
-	if(error - (ERROR_HYSTERESIS_P >> 1) > error_with_hysteresis_p) {
-		error_with_hysteresis_p = error - (ERROR_HYSTERESIS_P >> 1);
-	}
-	else if(error + (ERROR_HYSTERESIS_P >> 1) < error_with_hysteresis_p) {
-		error_with_hysteresis_p = error + (ERROR_HYSTERESIS_P >> 1);
-	}
+    // calculate the error with hysteresis to be used in the proportional term of the PID controller
+    if(error - (ERROR_HYSTERESIS_P >> 1) > error_with_hysteresis_p) {
+        error_with_hysteresis_p = error - (ERROR_HYSTERESIS_P >> 1);
+    }
+    else if(error + (ERROR_HYSTERESIS_P >> 1) < error_with_hysteresis_p) {
+        error_with_hysteresis_p = error + (ERROR_HYSTERESIS_P >> 1);
+    }
 
-	// calculate the error with hysteresis to be used in the derivative term of the PID controller
-	if(error - (ERROR_HYSTERESIS_D >> 1) > error_with_hysteresis_d) {
-		error_with_hysteresis_d = error - (ERROR_HYSTERESIS_D >> 1);
-	}
-	else if(error + (ERROR_HYSTERESIS_D >> 1) < error_with_hysteresis_d) {
-		error_with_hysteresis_d = error + (ERROR_HYSTERESIS_D >> 1);
-	}
+    // calculate the error with hysteresis to be used in the derivative term of the PID controller
+    if(error - (ERROR_HYSTERESIS_D >> 1) > error_with_hysteresis_d) {
+        error_with_hysteresis_d = error - (ERROR_HYSTERESIS_D >> 1);
+    }
+    else if(error + (ERROR_HYSTERESIS_D >> 1) < error_with_hysteresis_d) {
+        error_with_hysteresis_d = error + (ERROR_HYSTERESIS_D >> 1);
+    }
 
-	// calculate the integral term of the PID controller
+    // calculate the integral term of the PID controller
     integral_term += (error * INTEGRAL_CONSTANT_PID);
     if(integral_term > (max_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
+        integral_term = max_pwm_voltage << PID_SHIFT_RIGHT;
     }
     else if(integral_term < -(max_pwm_voltage << PID_SHIFT_RIGHT)) {
-    	integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
+        integral_term = -(max_pwm_voltage << PID_SHIFT_RIGHT);
     }
 
-	// calculate the proportional term of the PID controller
+    // calculate the proportional term of the PID controller
     proportional_term = error_with_hysteresis_p * PROPORTIONAL_CONSTANT_PID;
 
-	// calculate the derivative term of the PID controller
-	error_change = error_with_hysteresis_d - previous_error;
+    // calculate the derivative term of the PID controller
+    error_change = error_with_hysteresis_d - previous_error;
     previous_error = error_with_hysteresis_d;
     if(error_change > MAX_ERROR_CHANGE) {
-    	error_change = MAX_ERROR_CHANGE;
+        error_change = MAX_ERROR_CHANGE;
     }
     if(error_change < -MAX_ERROR_CHANGE) {
-    	error_change = -MAX_ERROR_CHANGE;
+        error_change = -MAX_ERROR_CHANGE;
     }
     low_pass_filtered_error_change = (low_pass_filtered_error_change * 15);
     low_pass_filtered_error_change += error_change;
@@ -1420,7 +1420,7 @@ int32_t PID_controller_with_hysteresis(int32_t error)
     // proportional term:  953
     // derivative term:   4768
     // sum:               6971
-	// sum together the P, I, and D terms to get the final output value
+    // sum together the P, I, and D terms to get the final output value
     output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
 
 //    if(output_value < -max_pwm_voltage) {
@@ -1436,7 +1436,7 @@ int32_t PID_controller_with_hysteresis(int32_t error)
 
 void motor_movement_calculations(void)
 {
-	uint8_t moving = 0; // 1 indicates that the motor is moving, 0 indicates that it is stopped
+    uint8_t moving = 0; // 1 indicates that the motor is moving, 0 indicates that it is stopped
 
     if(go_to_closed_loop_mode_active) {
         go_to_closed_loop_mode_logic();
@@ -1450,51 +1450,51 @@ void motor_movement_calculations(void)
 
     moving = handle_queued_movements();
 
-	if( (((int32_t *)&current_position_i64)[1] > position_upper_safety_limit) || (((int32_t *)&current_position_i64)[1] < position_lower_safety_limit) ) {
-		fatal_error(ERROR_SAFETY_LIMIT_EXCEEDED); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    if( (((int32_t *)&current_position_i64)[1] > position_upper_safety_limit) || (((int32_t *)&current_position_i64)[1] < position_lower_safety_limit) ) {
+        fatal_error(ERROR_SAFETY_LIMIT_EXCEEDED); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
-		commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
-		if(moving) {
-			motor_pwm_voltage = max_pwm_voltage;
-		}
-		else {
-			motor_pwm_voltage = max_pwm_voltage / 2;
-		}
-	}
-	else {
-		commutation_position = hall_position + commutation_position_offset;
-		if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-			motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
-			int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8; 
-			int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_pwm_voltage;
-			int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_pwm_voltage;
-			if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
-				motor_pwm_voltage = motor_max_allowed_pwm_voltage;
-			}
-			if(motor_pwm_voltage < motor_min_allowed_pwm_voltage) {
-				motor_pwm_voltage = motor_min_allowed_pwm_voltage;
-			}
-			if(motor_pwm_voltage >= 0) {
-				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
-			}
-			else {
-				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-				motor_pwm_voltage = -motor_pwm_voltage;
-			}
-		}
-		else {
-			if(desired_motor_pwm_voltage >= 0) {
-				commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
-				motor_pwm_voltage = desired_motor_pwm_voltage;
-			}
-			else {
-				commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
-				motor_pwm_voltage = -desired_motor_pwm_voltage;
-			}
-		}
-	}
+    if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
+        commutation_position = ((int32_t *)&current_position_i64)[1] + commutation_position_offset;
+        if(moving) {
+            motor_pwm_voltage = max_pwm_voltage;
+        }
+        else {
+            motor_pwm_voltage = max_pwm_voltage / 2;
+        }
+    }
+    else {
+        commutation_position = hall_position + commutation_position_offset;
+        if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+            motor_pwm_voltage = PID_controller(((int32_t *)&current_position_i64)[1] - hall_position);
+            int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8; 
+            int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_pwm_voltage;
+            int32_t motor_min_allowed_pwm_voltage = back_emf_voltage - max_pwm_voltage;
+            if(motor_pwm_voltage > motor_max_allowed_pwm_voltage) {
+                motor_pwm_voltage = motor_max_allowed_pwm_voltage;
+            }
+            if(motor_pwm_voltage < motor_min_allowed_pwm_voltage) {
+                motor_pwm_voltage = motor_min_allowed_pwm_voltage;
+            }
+            if(motor_pwm_voltage >= 0) {
+                commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+            }
+            else {
+                commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+                motor_pwm_voltage = -motor_pwm_voltage;
+            }
+        }
+        else {
+            if(desired_motor_pwm_voltage >= 0) {
+                commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
+                motor_pwm_voltage = desired_motor_pwm_voltage;
+            }
+            else {
+                commutation_position -= HALL_TO_POSITION_90_DEGREE_OFFSET;
+                motor_pwm_voltage = -desired_motor_pwm_voltage;
+            }
+        }
+    }
 }
 
 
@@ -1512,9 +1512,9 @@ void motor_phase_calculations(void)
 //    char buf[200];
 //    volatile uint32_t delay;
 
-	if(get_mosfets_enabled() == 0) {
-		return;
-	}
+    if(get_mosfets_enabled() == 0) {
+        return;
+    }
 
 //    sprintf(buf, "commutation_position: %u\n", (unsigned int)commutation_position);
 //    transmit(buf, strlen(buf));
@@ -1569,16 +1569,16 @@ void motor_phase_calculations(void)
     phase3 >>= 16;
     phase3 += 13;
 
-	if(M_index == 0) {
-		TIM1->CCR1 = phase1;
-		TIM1->CCR2 = phase2;
-		TIM1->CCR3 = phase3;
-	}
-	else {
-		TIM3->CCR1 = phase1;
-		TIM3->CCR2 = phase2;
-		TIM3->CCR3 = phase3;
-	}
+    if(M_index == 0) {
+        TIM1->CCR1 = phase1;
+        TIM1->CCR2 = phase2;
+        TIM1->CCR3 = phase3;
+    }
+    else {
+        TIM3->CCR1 = phase1;
+        TIM3->CCR2 = phase2;
+        TIM3->CCR3 = phase3;
+    }
 //    sprintf(buf, "Ph: %u %u %u   Motor voltage: %u\n", (unsigned int)phase1, (unsigned int)phase2, (unsigned int)phase3, (unsigned int)motor_pwm_voltage);
 //    transmit(buf, strlen(buf));
 }
@@ -1587,146 +1587,146 @@ void motor_phase_calculations(void)
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 //void TIM3_IRQHandler(void)
 {
-	uint16_t start_time;
-	uint16_t start_time2;
-	uint16_t end_time;
-	uint16_t end_time2;
-	uint16_t motor_control_tick_time;
-	uint16_t time_difference_delay;
+    uint16_t start_time;
+    uint16_t start_time2;
+    uint16_t end_time;
+    uint16_t end_time2;
+    uint16_t motor_control_tick_time;
+    uint16_t time_difference_delay;
 
-	start_time = TIM14->CNT;
-	start_time2 = start_time;
-//	hall_position = get_hall_position();
-	end_time = TIM14->CNT;
-	time_difference1 = end_time - start_time;
-	if(time_difference1 > max_time_difference1) {
-    	max_time_difference1 = time_difference1;
-	}
+    start_time = TIM14->CNT;
+    start_time2 = start_time;
+//  hall_position = get_hall_position();
+    end_time = TIM14->CNT;
+    time_difference1 = end_time - start_time;
+    if(time_difference1 > max_time_difference1) {
+        max_time_difference1 = time_difference1;
+    }
 
-	hall_position_delta = hall_position - previous_hall_position;
-	previous_hall_position = hall_position;
+    hall_position_delta = hall_position - previous_hall_position;
+    previous_hall_position = hall_position;
 
-	if(hall_position_delta > max_hall_position_delta) {
-		max_hall_position_delta = hall_position_delta;
-	}
-	if(hall_position_delta < min_hall_position_delta) {
-		min_hall_position_delta = hall_position_delta;
-	}
-	average_hall_position_delta += hall_position_delta;
-	average_hall_position_delta_count++;
+    if(hall_position_delta > max_hall_position_delta) {
+        max_hall_position_delta = hall_position_delta;
+    }
+    if(hall_position_delta < min_hall_position_delta) {
+        min_hall_position_delta = hall_position_delta;
+    }
+    average_hall_position_delta += hall_position_delta;
+    average_hall_position_delta_count++;
 
-	if(fast_capture_data_active != 0) {
-		if(M_index == 0) {
-			fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor1_voltage();
-			fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor2_voltage();
-		}
-		else {
-			fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor3_voltage();
-			fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor4_voltage();
-		}
-		fast_capture_data[fast_capture_data_index].hall_position_16bit = (uint16_t)hall_position;
-		fast_capture_data_index++;
-		if(fast_capture_data_index >= fast_capture_data_size) {
-			if(fast_capture_data_active == 1) {
-				fast_capture_data_active = 0;
-				fast_capture_data_result_ready = 1;
-			}
-			else {
-				fast_capture_data_index = 0;
-			}
-		}
-	}
+    if(fast_capture_data_active != 0) {
+        if(M_index == 0) {
+            fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor1_voltage();
+            fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor2_voltage();
+        }
+        else {
+            fast_capture_data[fast_capture_data_index].hall1 = get_hall_sensor3_voltage();
+            fast_capture_data[fast_capture_data_index].hall2 = get_hall_sensor4_voltage();
+        }
+        fast_capture_data[fast_capture_data_index].hall_position_16bit = (uint16_t)hall_position;
+        fast_capture_data_index++;
+        if(fast_capture_data_index >= fast_capture_data_size) {
+            if(fast_capture_data_active == 1) {
+                fast_capture_data_active = 0;
+                fast_capture_data_result_ready = 1;
+            }
+            else {
+                fast_capture_data_index = 0;
+            }
+        }
+    }
 
-	// check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
-	/*
-	if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
-		disable_mosfets();
+    // check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
+    /*
+    if((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) {
+        disable_mosfets();
         fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		if(fast_capture_data_active) {
-			fast_capture_data_active = 0;
-			fast_capture_data_result_ready = 1;
-		}
-	}
-	*/
-	start_time = TIM14->CNT;
-	compute_velocity();
-	end_time = TIM14->CNT;
-	time_difference2 = end_time - start_time;
-	if(time_difference2 > max_time_difference2) {
-    	max_time_difference2 = time_difference2;
-	}
+        if(fast_capture_data_active) {
+            fast_capture_data_active = 0;
+            fast_capture_data_result_ready = 1;
+        }
+    }
+    */
+    start_time = TIM14->CNT;
+    compute_velocity();
+    end_time = TIM14->CNT;
+    time_difference2 = end_time - start_time;
+    if(time_difference2 > max_time_difference2) {
+        max_time_difference2 = time_difference2;
+    }
 
-	start_time = TIM14->CNT;
-	motor_movement_calculations();
-	end_time = TIM14->CNT;
-	time_difference3 = end_time - start_time;
-	if(time_difference3 > max_time_difference3) {
-    	max_time_difference3 = time_difference3;
-	}
+    start_time = TIM14->CNT;
+    motor_movement_calculations();
+    end_time = TIM14->CNT;
+    time_difference3 = end_time - start_time;
+    if(time_difference3 > max_time_difference3) {
+        max_time_difference3 = time_difference3;
+    }
 
-	// check that the position values don't go out of range (overflow)
-	if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error(ERROR_POSITION_OUT_OF_RANGE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    // check that the position values don't go out of range (overflow)
+    if((((int32_t *)&current_position_i64)[1] > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (((int32_t *)&current_position_i64)[1] < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+        fatal_error(ERROR_POSITION_OUT_OF_RANGE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	// check that the hall sensor position doesn't go out of range (overflow)
-	if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
-		fatal_error(ERROR_HALL_POSITION_OUT_OF_RANGE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    // check that the hall sensor position doesn't go out of range (overflow)
+    if((hall_position > POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD) || (hall_position < -POSITION_OUT_OF_RANGE_FATAL_ERROR_THRESHOLD)) {
+        fatal_error(ERROR_HALL_POSITION_OUT_OF_RANGE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 
-	start_time = TIM14->CNT;
-	motor_phase_calculations();
-	end_time = TIM14->CNT;
-	time_difference4 = end_time - start_time;
-	if(time_difference4 > max_time_difference4) {
-    	max_time_difference4 = time_difference4;
-	}
+    start_time = TIM14->CNT;
+    motor_phase_calculations();
+    end_time = TIM14->CNT;
+    time_difference4 = end_time - start_time;
+    if(time_difference4 > max_time_difference4) {
+        max_time_difference4 = time_difference4;
+    }
 
-	motor_control_tick_time = TIM14->CNT;
-	motor_control_tick_time_difference = motor_control_tick_time - previous_motor_control_tick_time;
-	if(motor_control_tick_time_difference > max_motor_control_tick_time_difference) {
-    	max_motor_control_tick_time_difference = motor_control_tick_time_difference;
-		if(max_motor_control_tick_time_difference > MAX_MOTOR_CONTROL_TICK_TIME_DIFFERENCE_FATAL_ERROR_THRESHOLD) {
-			fatal_error(ERROR_CONTROL_LOOP_TOOK_TOO_LONG); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-		}
-	}
-	previous_motor_control_tick_time = motor_control_tick_time;
+    motor_control_tick_time = TIM14->CNT;
+    motor_control_tick_time_difference = motor_control_tick_time - previous_motor_control_tick_time;
+    if(motor_control_tick_time_difference > max_motor_control_tick_time_difference) {
+        max_motor_control_tick_time_difference = motor_control_tick_time_difference;
+        if(max_motor_control_tick_time_difference > MAX_MOTOR_CONTROL_TICK_TIME_DIFFERENCE_FATAL_ERROR_THRESHOLD) {
+            fatal_error(ERROR_CONTROL_LOOP_TOOK_TOO_LONG); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+    }
+    previous_motor_control_tick_time = motor_control_tick_time;
 
-	end_time2 = TIM14->CNT;
-	motor_control_time_difference = end_time2 - start_time2;
-	if(motor_control_time_difference > max_motor_control_time_difference) {
-    	max_motor_control_time_difference = motor_control_time_difference;
-	}
-	if(motor_control_time_difference < 20) { // if the calculation was too fast, introduce an artificial delay here
-		start_time = TIM14->CNT;              // let's improve this in the future with a better algorithm, ok?
-		do {
-			end_time = TIM14->CNT;
-			time_difference_delay = end_time - start_time;
-		} while(time_difference_delay < 20 - motor_control_time_difference);
-	}
+    end_time2 = TIM14->CNT;
+    motor_control_time_difference = end_time2 - start_time2;
+    if(motor_control_time_difference > max_motor_control_time_difference) {
+        max_motor_control_time_difference = motor_control_time_difference;
+    }
+    if(motor_control_time_difference < 20) { // if the calculation was too fast, introduce an artificial delay here
+        start_time = TIM14->CNT;              // let's improve this in the future with a better algorithm, ok?
+        do {
+            end_time = TIM14->CNT;
+            time_difference_delay = end_time - start_time;
+        } while(time_difference_delay < 20 - motor_control_time_difference);
+    }
 
-	TIM1->SR = 0; // clear the interrupt flag
-//	TIM3->SR = 0; // clear the interrupt flag
+    TIM1->SR = 0; // clear the interrupt flag
+//  TIM3->SR = 0; // clear the interrupt flag
 }
 
 
 void switch_motor(void)
 {
     char buf[50];
-	uint8_t new_M_index;
+    uint8_t new_M_index;
 
     DISABLE_MOTOR_UPDATES();
     clear_the_queue_and_stop_no_disable_interrupt();
-	if(M_index >= NUMBER_OF_MOTORS - 1) {
-		M_index = 0;
-	}
-	else {
-		M_index++;
-	}
-	set_active_mosfets_index(M_index);
-	new_M_index = M_index;
+    if(M_index >= NUMBER_OF_MOTORS - 1) {
+        M_index = 0;
+    }
+    else {
+        M_index++;
+    }
+    set_active_mosfets_index(M_index);
+    new_M_index = M_index;
     ENABLE_MOTOR_UPDATES();
-	sprintf(buf, "Now using the motor with index %d\n", (int)new_M_index);
+    sprintf(buf, "Now using the motor with index %d\n", (int)new_M_index);
     transmit(buf, strlen(buf));
 }
 
@@ -1735,10 +1735,10 @@ void set_current_motor_index(int8_t index)
 {
     if((index < 0) || (index >= NUMBER_OF_MOTORS)) {
         fatal_error(ERROR_PARAMETER_OUT_OF_RANGE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    }
     DISABLE_MOTOR_UPDATES();
-	M_index = index;
-	set_active_mosfets_index(M_index);
+    M_index = index;
+    set_active_mosfets_index(M_index);
     ENABLE_MOTOR_UPDATES();
 }
 
@@ -1751,48 +1751,48 @@ void disable_motor_control_loop(void)
 
 void increase_motor_pwm_voltage(void)
 {
-	char buf[100];
+    char buf[100];
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	desired_motor_pwm_voltage++;
+    desired_motor_pwm_voltage++;
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
-	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
+    transmit(buf, strlen(buf));
 }
 
 void decrease_motor_pwm_voltage(void)
 {
-	char buf[100];
+    char buf[100];
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	desired_motor_pwm_voltage--;
+    desired_motor_pwm_voltage--;
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
-	sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "desired_motor_pwm_voltage: %d\n", (int)desired_motor_pwm_voltage);
+    transmit(buf, strlen(buf));
 }
 
 void set_motor_control_mode(uint8_t new_motor_control_mode)
 {
-	motor_control_mode = new_motor_control_mode;
+    motor_control_mode = new_motor_control_mode;
 }
 
 uint8_t get_motor_control_mode(void)
 {
-	return motor_control_mode;
+    return motor_control_mode;
 }
 
 uint32_t get_update_frequency(void)
 {
-	return PWM_FREQUENCY >> 1;
+    return PWM_FREQUENCY >> 1;
 }
 
 void zero_position_and_hall_sensor(void)
 {
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
     clear_the_queue_and_stop_no_disable_interrupt();
-//	commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
-	commutation_position_offset = commutation_position_offset + get_hall_position();
+//  commutation_position_offset = commutation_position_offset - ((int32_t *)&current_position_i64)[1];
+    commutation_position_offset = commutation_position_offset + get_hall_position();
     zero_hall_position();
-	current_position_i64 = 0;
-	current_velocity_i64 = 0;
+    current_position_i64 = 0;
+    current_velocity_i64 = 0;
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
 }
 
@@ -1800,38 +1800,38 @@ void zero_position_and_hall_sensor(void)
 void set_max_velocity(uint32_t new_max_velocity)
 {
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	max_velocity = new_max_velocity;
-	max_velocity <<= VELOCITY_SHIFT_LEFT;
-	if(max_velocity > MAX_VELOCITY) {
-		max_velocity = MAX_VELOCITY;
-	}
+    max_velocity = new_max_velocity;
+    max_velocity <<= VELOCITY_SHIFT_LEFT;
+    if(max_velocity > MAX_VELOCITY) {
+        max_velocity = MAX_VELOCITY;
+    }
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
 }
 
 int32_t get_max_velocity(void)
 {
-	return max_velocity;
+    return max_velocity;
 }
 
 void set_max_acceleration(uint32_t new_max_acceleration)
 {
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	max_acceleration = new_max_acceleration;
-	max_acceleration <<= ACCELERATION_SHIFT_LEFT;
-	if(max_acceleration > MAX_ACCELERATION) {
-		max_acceleration = MAX_ACCELERATION;
-	}
+    max_acceleration = new_max_acceleration;
+    max_acceleration <<= ACCELERATION_SHIFT_LEFT;
+    if(max_acceleration > MAX_ACCELERATION) {
+        max_acceleration = MAX_ACCELERATION;
+    }
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
 }
 
 int32_t get_max_acceleration(void)
 {
-	return max_acceleration;
+    return max_acceleration;
 }
 
 int32_t get_current_position(void)
 {
-	return ((int32_t *)&current_position_i64)[1];
+    return ((int32_t *)&current_position_i64)[1];
 }
 
 void reset_time(void)
@@ -1853,88 +1853,88 @@ void emergency_stop(void)
 
 int32_t get_actual_motor_position(void)
 {
-	int32_t ret;
+    int32_t ret;
 
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-		ret = hall_position;
-	}
-	else {
-		ret = ((int32_t *)&current_position_i64)[1];
-	}
+    if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+        ret = hall_position;
+    }
+    else {
+        ret = ((int32_t *)&current_position_i64)[1];
+    }
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
     return ret;
 }
 
 uint8_t get_motor_status_flags(void)
 {
-	uint8_t motor_status_flags = 0;
+    uint8_t motor_status_flags = 0;
     DISABLE_MOTOR_UPDATES(); // disable the update interrupt during this operation
-	if(get_mosfets_enabled()) {
-		motor_status_flags |= (1 << STATUS_MOSFETS_ENABLED_FLAG_BIT);
-	}
-	if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
-		motor_status_flags |= (1 << STATUS_CLOSED_LOOP_FLAG_BIT);
-	}
-	if(calibration_active) {
-		motor_status_flags |= (1 << STATUS_CALIBRATING_FLAG_BIT);
-	}
-	if(homing_active) {
-		motor_status_flags |= (1 << STATUS_HOMING_FLAG_BIT);
-	}
+    if(get_mosfets_enabled()) {
+        motor_status_flags |= (1 << STATUS_MOSFETS_ENABLED_FLAG_BIT);
+    }
+    if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
+        motor_status_flags |= (1 << STATUS_CLOSED_LOOP_FLAG_BIT);
+    }
+    if(calibration_active) {
+        motor_status_flags |= (1 << STATUS_CALIBRATING_FLAG_BIT);
+    }
+    if(homing_active) {
+        motor_status_flags |= (1 << STATUS_HOMING_FLAG_BIT);
+    }
     ENABLE_MOTOR_UPDATES(); // enable the update interrupt
 
-	return motor_status_flags;
+    return motor_status_flags;
 }
 
 // This needs to be called before the MOSFETs are activated, so that the current flow through them is 0
 void set_motor_current_baseline(void)
 {
-	motor_current_baseline = get_motor_current();
-	if((motor_current_baseline < MIN_MOTOR_CURRENT_BASELINE) || (motor_current_baseline > MAX_MOTOR_CURRENT_BASELINE)) {
-		fatal_error(ERROR_CURRENT_SENSOR_FAILED); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
+    motor_current_baseline = get_motor_current();
+    if((motor_current_baseline < MIN_MOTOR_CURRENT_BASELINE) || (motor_current_baseline > MAX_MOTOR_CURRENT_BASELINE)) {
+        fatal_error(ERROR_CURRENT_SENSOR_FAILED); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
 }
 
 void set_max_motor_current(uint16_t new_max_pwm_voltage, uint16_t new_max_regen_pwm_voltage)
 {
-	if(new_max_pwm_voltage > MAX_PWM_VOLTAGE) {
-		fatal_error(ERROR_MAX_PWM_VOLTAGE_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
-	max_pwm_voltage = new_max_pwm_voltage;
-	global_settings.max_motor_pwm_voltage = new_max_pwm_voltage;
-	global_settings.max_motor_regen_pwm_voltage = new_max_regen_pwm_voltage;
-	int32_t analog_watchdog_lower_limit = (int32_t)global_settings.max_motor_regen_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
-	int32_t analog_watchdog_upper_limit = (int32_t)global_settings.max_motor_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
-	set_analog_watchdog_limits(motor_current_baseline - analog_watchdog_lower_limit, motor_current_baseline + analog_watchdog_upper_limit);
+    if(new_max_pwm_voltage > MAX_PWM_VOLTAGE) {
+        fatal_error(ERROR_MAX_PWM_VOLTAGE_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
+    max_pwm_voltage = new_max_pwm_voltage;
+    global_settings.max_motor_pwm_voltage = new_max_pwm_voltage;
+    global_settings.max_motor_regen_pwm_voltage = new_max_regen_pwm_voltage;
+    int32_t analog_watchdog_lower_limit = (int32_t)global_settings.max_motor_regen_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
+    int32_t analog_watchdog_upper_limit = (int32_t)global_settings.max_motor_pwm_voltage * (int32_t)ANALOG_WATCHDOG_LIMIT_MULTIPLIER / (int32_t)128;
+    set_analog_watchdog_limits(motor_current_baseline - analog_watchdog_lower_limit, motor_current_baseline + analog_watchdog_upper_limit);
 }
 
 void set_movement_limits(int32_t lower_limit, int32_t upper_limit)
 {
-	position_lower_safety_limit = lower_limit;
-	position_upper_safety_limit = upper_limit;
+    position_lower_safety_limit = lower_limit;
+    position_upper_safety_limit = upper_limit;
 }
 
 void set_P_value(int32_t P)
 {
-	PID_values.P = P;
+    PID_values.P = P;
 }
 
 
 void set_I_value(int32_t I)
 {
-	PID_values.I = I;
+    PID_values.I = I;
 }
 
 
 void set_D_value(int32_t D)
 {
-	PID_values.D = D;
+    PID_values.D = D;
 }
 
 
 PID_value_t get_PID_values(void)
 {
-	return PID_values;
+    return PID_values;
 }
 

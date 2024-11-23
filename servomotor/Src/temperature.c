@@ -45,13 +45,13 @@ int16_t get_temperature_degrees_C(void)
 
 void print_temperature(void)
 {
-	char buf[60];
-	int16_t adc_value = get_temperature_ADC_value();
-	sprintf(buf, "Motor temperature ADC value: %d\n", (int)adc_value);
-	transmit(buf, strlen(buf));
+    char buf[60];
+    int16_t adc_value = get_temperature_ADC_value();
+    sprintf(buf, "Motor temperature ADC value: %d\n", (int)adc_value);
+    transmit(buf, strlen(buf));
     int16_t temeprature_degrees_C = convert_adc_value_to_degrees_C(adc_value);
-	sprintf(buf, "Motor temperature (degrees C): %d\n", (int)temeprature_degrees_C);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "Motor temperature (degrees C): %d\n", (int)temeprature_degrees_C);
+    transmit(buf, strlen(buf));
 }
 
 

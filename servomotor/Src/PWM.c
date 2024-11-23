@@ -94,5 +94,5 @@ void pwm_init(void)
 
 
 //    NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 1); // second highest priority for the interrupt that controls the motor
-//	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
+//  NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
 }

@@ -32,10 +32,10 @@
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
 typedef struct __attribute__((__packed__)) {
-	int32_t predicted_final_velocity;
-	int32_t predicted_final_position;
-	int32_t time_step_at_turn_point;
-	int32_t relative_position_at_turn_point;
+    int32_t predicted_final_velocity;
+    int32_t predicted_final_position;
+    int32_t time_step_at_turn_point;
+    int32_t relative_position_at_turn_point;
 } add_to_queue_test_results_t;
 
 typedef struct __attribute__((__packed__)) {

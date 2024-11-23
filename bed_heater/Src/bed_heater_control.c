@@ -75,26 +75,26 @@ void bed_heater_calculations(uint32_t current, uint32_t voltage, uint32_t temper
 void print_bed_resistance(void)
 {
     char buf[50];
-	sprintf(buf, "Baseline current: %lu\n", baseline_current);
-	transmit(buf, strlen(buf));
-	sprintf(buf, "Current minus baseline: %lu\n", current_minus_baseline);
-	transmit(buf, strlen(buf));
-	sprintf(buf, "Bed heater resistance: %lu\n", bed_heater_resistance);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "Baseline current: %lu\n", baseline_current);
+    transmit(buf, strlen(buf));
+    sprintf(buf, "Current minus baseline: %lu\n", current_minus_baseline);
+    transmit(buf, strlen(buf));
+    sprintf(buf, "Bed heater resistance: %lu\n", bed_heater_resistance);
+    transmit(buf, strlen(buf));
 }
 
 
 void print_bed_temperature(void)
 {
     char buf[40];
-	sprintf(buf, "Bed temperature: %hu\n", actual_temperature_times_10);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "Bed temperature: %hu\n", actual_temperature_times_10);
+    transmit(buf, strlen(buf));
 }
 
 // This is the interrupt routine that is called each time the PWM timer (timer 1) overflows back to 0
 void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
 {
 
-	TIM1->SR = 0; // clear the interrupt flag
+    TIM1->SR = 0; // clear the interrupt flag
 }
 

@@ -126,11 +126,11 @@ int16_t convert_adc_value_to_degrees_C(int16_t adc_value)
 
 void print_heater_temperature(void)
 {
-	char buf[60];
-	int16_t adc_value = get_heater_temperature();
-	sprintf(buf, "Extruder temperature ADC value: %d\n", (int)adc_value);
-	transmit(buf, strlen(buf));
+    char buf[60];
+    int16_t adc_value = get_heater_temperature();
+    sprintf(buf, "Extruder temperature ADC value: %d\n", (int)adc_value);
+    transmit(buf, strlen(buf));
     int16_t temeprature_degrees_C = convert_adc_value_to_degrees_C(adc_value);
-	sprintf(buf, "Extruder temperature (degrees C): %d\n", (int)temeprature_degrees_C);
-	transmit(buf, strlen(buf));
+    sprintf(buf, "Extruder temperature (degrees C): %d\n", (int)temeprature_degrees_C);
+    transmit(buf, strlen(buf));
 }

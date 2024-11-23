@@ -44,37 +44,37 @@ void adc_init(void)
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
     ADC1->AWD3CR = (1 << 3); // only select channel 3 to be monitored by the watchdog 3, this is the motor current measurement
 
-	// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
+    // select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
-    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
-				   (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
-				   (4  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-				   (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
-				   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-	#endif
+                   (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+                   (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+                   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+                   (4  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+                   (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+                   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+                   (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+    #endif
     #if defined(PRODUCT_NAME_M3)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
-    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
-				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
-				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
-				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-	#endif
+                   (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+                   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+                   (0  << ADC_CHSELR_SQ4_Pos) |  // motor current          (index 3)
+                   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+                   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+                   (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
+                   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+    #endif
     #if defined(PRODUCT_NAME_M4)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
-    		       (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
-				   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-				   (8  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
-				   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-				   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-				   (4  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
-				   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-	#endif
+                   (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+                   (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
+                   (8  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
+                   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+                   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+                   (4  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
+                   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+    #endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
     for(i = 0; i < 100000; i++); // allow time for the voltage regulator to stabilize
@@ -101,12 +101,12 @@ void adc_init(void)
     DMA1_Channel1->CCR |= DMA_CCR_EN; // enable the DMA channel as the last step (see section 11.4.3 in the reference manual).
 
 #ifdef PRODUCT_NAME_M4
-	ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
-	ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
-	ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
-	ADC1->IER |= ADC_IER_AWD3IE; // enable the watchdog 3 interrupt
-	NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdog), we need to act very fast
-//	NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
+    ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
+    ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
+    ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
+    ADC1->IER |= ADC_IER_AWD3IE; // enable the watchdog 3 interrupt
+    NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdog), we need to act very fast
+//  NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
 #endif
 
 //    ADC->IER |= ADC_IER_EOCIE; // enable the end of conversion interrupt
@@ -116,137 +116,137 @@ void adc_init(void)
 
 void check_if_break_condition(void)
 {
-	if(TIM1->SR & TIM_SR_BIF) {
-//		red_LED_on();
-		TIM1->SR &= ~TIM_SR_BIF;
-	}
-	else {
-//		red_LED_off();
-	}
+    if(TIM1->SR & TIM_SR_BIF) {
+//      red_LED_on();
+        TIM1->SR &= ~TIM_SR_BIF;
+    }
+    else {
+//      red_LED_off();
+    }
 }
 
 void check_if_ADC_watchdog2_exceeded(void)
 {
-	if(ADC1->ISR & ADC_ISR_AWD2) {
-		red_LED_on();
-		ADC1->ISR |= ADC_ISR_AWD2;
-	}
-	else {
-		red_LED_off();
-	}
+    if(ADC1->ISR & ADC_ISR_AWD2) {
+        red_LED_on();
+        ADC1->ISR |= ADC_ISR_AWD2;
+    }
+    else {
+        red_LED_off();
+    }
 }
 
 void check_if_ADC_watchdog3_exceeded(void)
 {
-	if(ADC1->ISR & ADC_ISR_AWD3) {
-		red_LED_on();
-		ADC1->ISR |= ADC_ISR_AWD3;
-	}
-	else {
-		red_LED_off();
-	}
+    if(ADC1->ISR & ADC_ISR_AWD3) {
+        red_LED_on();
+        ADC1->ISR |= ADC_ISR_AWD3;
+    }
+    else {
+        red_LED_off();
+    }
 }
 
 void ADC1_IRQHandler(void)
 {
-	fatal_error(ERROR_OVERCURRENT); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	red_LED_on();
-	ADC1->ISR |= ADC_ISR_AWD2;
-	ADC1->ISR |= ADC_ISR_AWD3;
+    fatal_error(ERROR_OVERCURRENT); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    red_LED_on();
+    ADC1->ISR |= ADC_ISR_AWD2;
+    ADC1->ISR |= ADC_ISR_AWD3;
 }
 
 uint16_t get_hall_sensor1_voltage(void)
 {
-	uint16_t a = ADC_buffer[HALL1_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24];
-/*	if(a < 8500 - 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
-	if(a > 8500 + 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	} */
-	return a;
+    uint16_t a = ADC_buffer[HALL1_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24];
+/*  if(a < 8500 - 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
+    if(a > 8500 + 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    } */
+    return a;
 }
 
 uint16_t get_hall_sensor2_voltage(void)
 {
-	uint16_t a = ADC_buffer[HALL2_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24];
-/*	if(a < 8500 - 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
-	if(a > 8500 + 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	} */
-	return a;
+    uint16_t a = ADC_buffer[HALL2_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24];
+/*  if(a < 8500 - 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
+    if(a > 8500 + 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    } */
+    return a;
 }
 
 uint16_t get_hall_sensor3_voltage(void)
 {
-	uint16_t a = ADC_buffer[HALL3_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24];
-/*	if(a < 8500 - 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	}
-	if(a > 8500 + 2000) {
-		fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-	} */
-	return a;
+    uint16_t a = ADC_buffer[HALL3_ADC_CYCLE_INDEX + 0] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24];
+/*  if(a < 8500 - 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    }
+    if(a > 8500 + 2000) {
+        fatal_error(ERROR_DEBUG1); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+    } */
+    return a;
 }
 
 
 uint16_t get_motor_current(void)
 {
-	uint32_t current_avg = 0;
-	uint16_t buffer_index = 0;
-	uint16_t n = 0;
-	uint16_t i;
+    uint32_t current_avg = 0;
+    uint16_t buffer_index = 0;
+    uint16_t n = 0;
+    uint16_t i;
 
-	for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
-		current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_A_CYCLE_INDEX] + ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_B_CYCLE_INDEX];
-		n += 2;
-		buffer_index += ADC_CYCLE_INDEXES;
-	}
-	current_avg /= n;
+    for(i = 0; i < ADC_BUFFER_CYCLE_REPETITIONS; i++) {
+        current_avg += ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_A_CYCLE_INDEX] + ADC_buffer[buffer_index + MOTOR_CURRENT_PHASE_B_CYCLE_INDEX];
+        n += 2;
+        buffer_index += ADC_CYCLE_INDEXES;
+    }
+    current_avg /= n;
 
-//	return 1151; // DEBUG
+//  return 1151; // DEBUG
 
-	return (uint16_t)current_avg;
+    return (uint16_t)current_avg;
 }
 
 
 uint16_t get_temperature_ADC_value(void)
 {
-	uint16_t a = ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 0] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 8] +
-	             ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 16] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 24];
-	return a;
+    uint16_t a = ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 0] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 8] +
+                 ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 16] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 24];
+    return a;
 }
 
 uint16_t get_supply_voltage_ADC_value(void)
 {
-	uint16_t a = ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 0] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 8] +
-	             ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 16] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 24];
-	return a;
+    uint16_t a = ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 0] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 8] +
+                 ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 16] + ADC_buffer[SUPPLY_VOLTAGE_ADC_CYCLE_INDEX + 24];
+    return a;
 }
 
 
 uint16_t get_supply_voltage_volts_times_10(void)
 {
-	uint16_t supply_voltage = get_supply_voltage_ADC_value();
-	uint32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+    uint16_t supply_voltage = get_supply_voltage_ADC_value();
+    uint32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
 
-	return (uint16_t)supply_voltage_calibrated;
+    return (uint16_t)supply_voltage_calibrated;
 }
 
 
 void print_supply_voltage(void)
 {
-	char buf[100];
-	int16_t supply_voltage = get_supply_voltage_ADC_value();
-	sprintf(buf, "Supply voltage (ADC value): %hd\n", supply_voltage);
-	print_debug_string(buf);
-	int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
-	int16_t whole_number = supply_voltage_calibrated / 10;
-	int16_t decimal = (supply_voltage_calibrated % 10);
-	sprintf(buf, "Supply voltage: %hd.%hu\n", whole_number, decimal);
-	print_debug_string(buf);
+    char buf[100];
+    int16_t supply_voltage = get_supply_voltage_ADC_value();
+    sprintf(buf, "Supply voltage (ADC value): %hd\n", supply_voltage);
+    print_debug_string(buf);
+    int32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
+    int16_t whole_number = supply_voltage_calibrated / 10;
+    int16_t decimal = (supply_voltage_calibrated % 10);
+    sprintf(buf, "Supply voltage: %hd.%hu\n", whole_number, decimal);
+    print_debug_string(buf);
 }
 
 

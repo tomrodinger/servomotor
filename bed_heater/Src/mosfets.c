@@ -16,5 +16,5 @@ void disable_mosfets(void)
 
 uint8_t get_mosfets_enabled(void)
 {
-	return mosfets_enabled;
+    return mosfets_enabled;
 }

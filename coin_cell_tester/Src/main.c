@@ -22,10 +22,10 @@
 char PRODUCT_DESCRIPTION[] = "Print bed heater";
 
 struct __attribute__((__packed__)) firmware_version_struct {
-	uint8_t bugfix;
-	uint8_t minor;
-	uint8_t major;
-	uint8_t not_used;
+    uint8_t bugfix;
+    uint8_t minor;
+    uint8_t major;
+    uint8_t not_used;
 };
 struct firmware_version_struct firmware_version = {0, 8, 0, 0};
 
@@ -103,7 +103,7 @@ void systick_init(void)
 
 void portA_init(void)
 {
-	#define BUTTON_PORT_A_PIN 13
+    #define BUTTON_PORT_A_PIN 13
     #define FAN1_CONTROL_PORT_A_PIN 7
     #define FAN2_CONTROL_PORT_A_PIN 8
 
@@ -229,13 +229,13 @@ void SysTick_Handler(void)
 {
     #define OVERVOLTAGE_PORT_B_PIN 12
 
-	static uint16_t toggle_counter = 0;
+    static uint16_t toggle_counter = 0;
 
-	toggle_counter++;
-	if(toggle_counter >= 50) {
-	    green_LED_toggle();
-		toggle_counter = 0;
-	}
+    toggle_counter++;
+    if(toggle_counter >= 50) {
+        green_LED_toggle();
+        toggle_counter = 0;
+    }
 
     if(detect_devices_delay > 0) {
         detect_devices_delay--;
@@ -304,7 +304,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         }
         case RESET_TIME_COMMAND:
             rs485_allow_next_command();
-        	reset_microsecond_time();
+            reset_microsecond_time();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
@@ -318,11 +318,11 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case TIME_SYNC_COMMAND:
-        	memcpy(&time_from_master, parameters, 6);
+            memcpy(&time_from_master, parameters, 6);
             rs485_allow_next_command();
-			transmit("Time sync\n", 10);
-        	int32_t time_error = time_sync(time_from_master);
-        	uint16_t clock_calibration_value = get_clock_calibration_value();
+            transmit("Time sync\n", 10);
+            int32_t time_error = time_sync(time_from_master);
+            uint16_t clock_calibration_value = get_clock_calibration_value();
             if(axis != ALL_ALIAS) {
                 rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&time_error, 4);
@@ -332,61 +332,61 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case GET_STATUS_COMMAND:
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
-            	uint8_t device_status_flags = get_device_status_flags();
+                uint8_t device_status_flags = get_device_status_flags();
                 set_device_status_flags(device_status_flags);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
             }
             break;
         case DETECT_DEVICES_COMMAND:
             rs485_allow_next_command();
-        	detect_devices_delay = get_random_number(99);
-			break;
+            detect_devices_delay = get_random_number(99);
+            break;
         case SET_DEVICE_ALIAS_COMMAND:
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
             rs485_allow_next_command();
-        	if(unique_id == my_unique_id) {
-               	transmit("Unique ID matches\n", 18);
-        		global_settings.my_alias = new_alias;
-           		save_global_settings();
+            if(unique_id == my_unique_id) {
+                transmit("Unique ID matches\n", 18);
+                global_settings.my_alias = new_alias;
+                save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
-        	}
-        	break;
+            }
+            break;
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-				uint8_t product_info_length = sizeof(struct product_info_struct);
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+                uint8_t product_info_length = sizeof(struct product_info_struct);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-				rs485_transmit(&product_info_length, 1);
-				rs485_transmit(product_info, sizeof(struct product_info_struct));
-			}
-			break;
+                rs485_transmit(&product_info_length, 1);
+                rs485_transmit(product_info, sizeof(struct product_info_struct));
+            }
+            break;
         case GET_PRODUCT_DESCRIPTION_COMMAND:
             rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-				rs485_transmit(&product_description_length, 1);
-				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
-			}
-			break;
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+                uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+                rs485_transmit(&product_description_length, 1);
+                rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+            }
+            break;
         case GET_FIRMWARE_VERSION_COMMAND:
             rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-				uint8_t firmware_version_length = sizeof(firmware_version);
-				rs485_transmit(&firmware_version_length, 1);
-				rs485_transmit(&firmware_version, sizeof(firmware_version));
-			}
-			break;
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+                uint8_t firmware_version_length = sizeof(firmware_version);
+                rs485_transmit(&firmware_version_length, 1);
+                rs485_transmit(&firmware_version, sizeof(firmware_version));
+            }
+            break;
         case SYSTEM_RESET_COMMAND:
             NVIC_SystemReset();
             break;
         case PING_COMMAND:
-        	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+            memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
             rs485_allow_next_command();
-   			transmit("Ping\n", 5);
+            transmit("Ping\n", 5);
             if(axis != ALL_ALIAS) {
                 ping_response_buffer[0] = RESPONSE_CHARACTER;
                 ping_response_buffer[1] = '\x01';
@@ -398,7 +398,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         {
             uint8_t get_data_record_response_buffer[3 + sizeof(data_record_t)];
             rs485_allow_next_command();
-			transmit("Get data record\n", 16);
+            transmit("Get data record\n", 16);
             if(axis != ALL_ALIAS) {
                 get_data_record_response_buffer[0] = RESPONSE_CHARACTER;
                 get_data_record_response_buffer[1] = '\x01';
@@ -413,7 +413,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             uint64_t picoamp_seconds_count;
             uint8_t get_data_record_response_buffer[3 + sizeof(uint64_t)];
             rs485_allow_next_command();
-			transmit("Get picoamp seconds\n", 20);
+            transmit("Get picoamp seconds\n", 20);
             if(axis != ALL_ALIAS) {
                 get_data_record_response_buffer[0] = RESPONSE_CHARACTER;
                 get_data_record_response_buffer[1] = '\x01';
@@ -448,8 +448,8 @@ void process_debug_uart_commands(void)
     uint8_t command_debug_uart = get_command_debug_uart();
 
     if(command_debug_uart != 0) {
-    	switch(command_debug_uart) {
-    	case 'p':
+        switch(command_debug_uart) {
+        case 'p':
             print_ADC_values();
             print_pulse_stats();
             print_picoamp_seconds_count();
@@ -457,59 +457,59 @@ void process_debug_uart_commands(void)
             print_time_difference();
             break;
         case 'u':
-    		apply_pulse(500, 2);
-			transmit("Applying pulse\n", 15);
-    		break;
+            apply_pulse(500, 2);
+            transmit("Applying pulse\n", 15);
+            break;
         case 'g':
             get_data_record_and_print_it();
             break;
         case '1':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '2':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '3':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '4':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '5':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '6':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '7':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
         case '8':
-    		load_toggle_on_or_off(command_debug_uart - '1');
+            load_toggle_on_or_off(command_debug_uart - '1');
             toggle_load_message[14] = command_debug_uart;
-			transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
-    		break;
-    	case 'S':
-			transmit("Saving settings\n", 16);
+            transmit(toggle_load_message, sizeof(toggle_load_message) - 1);
+            break;
+        case 'S':
+            transmit("Saving settings\n", 16);
             save_global_settings();
-    		break;
-		}
-    	command_debug_uart = 0;
-	}
+            break;
+        }
+        command_debug_uart = 0;
+    }
 }
 
 
@@ -520,40 +520,40 @@ void button_logic(void)
     static uint8_t press_flag = 0;
 
     if((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) == 0) {
-    	if(press_flag == 0) {
-			press_start_time = get_microsecond_time();
-			press_flag = 1;
-    	}
+        if(press_flag == 0) {
+            press_start_time = get_microsecond_time();
+            press_flag = 1;
+        }
     }
     else if(press_flag) {
-    	press_flag = 0;
-    	time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
-    	if(time_pressed_down > 5000000) {
-    		time_pressed_down = 5000000;
-    	}
-    	time_pressed_down = time_pressed_down / 1000;
+        press_flag = 0;
+        time_pressed_down = (uint32_t)(get_microsecond_time() - press_start_time);
+        if(time_pressed_down > 5000000) {
+            time_pressed_down = 5000000;
+        }
+        time_pressed_down = time_pressed_down / 1000;
 
-    	if(time_pressed_down > 0) {
-    		print_number("Button press time: ", time_pressed_down);
-    	}
+        if(time_pressed_down > 0) {
+            print_number("Button press time: ", time_pressed_down);
+        }
 
-		if(time_pressed_down >= 2000) {
+        if(time_pressed_down >= 2000) {
 
-		}
-		else if(time_pressed_down >= 300) {
+        }
+        else if(time_pressed_down >= 300) {
 
-		}
-		else if(time_pressed_down >= 50) {
+        }
+        else if(time_pressed_down >= 50) {
 
-		}
+        }
     }
 }
 
 void print_start_message(void)
 {
-	uint32_t my_unique_id_u32_array[2];
+    uint32_t my_unique_id_u32_array[2];
 
-	memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
+    memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
 
     transmit("Applicaiton start\n", 18);
 }
@@ -586,10 +586,10 @@ int main(void)
 //    rs485_transmit("Start\n", 6);
 
     while(1) {
-//    	check_if_break_condition();
-//    	check_if_ADC_watchdog2_exceeded();
+//      check_if_break_condition();
+//      check_if_ADC_watchdog2_exceeded();
 
-    	if(commandReceived) {
+        if(commandReceived) {
             processCommand(selectedAxis, command, valueBuffer);
         }
 
@@ -597,7 +597,7 @@ int main(void)
             transmit("Transmitting unique ID\n", 23);
             transmit_unique_id();
             detect_devices_delay--;
-    	}
+        }
 
         process_debug_uart_commands();
         button_logic();

@@ -38,13 +38,13 @@ uint8_t PI_controller(int32_t error)
 int32_t time_sync(uint64_t time_from_master)
 {
     uint64_t local_time = get_microsecond_time();
-	int32_t time_error = (int32_t)(time_from_master - local_time);
-	uint8_t new_clock_cal_value = PI_controller(time_error);
-	RCC->ICSCR = new_clock_cal_value << RCC_ICSCR_HSITRIM_Pos;
-	return time_error;
+    int32_t time_error = (int32_t)(time_from_master - local_time);
+    uint8_t new_clock_cal_value = PI_controller(time_error);
+    RCC->ICSCR = new_clock_cal_value << RCC_ICSCR_HSITRIM_Pos;
+    return time_error;
 }
 
 uint16_t get_clock_calibration_value(void)
 {
-	return (uint16_t)(RCC->ICSCR & 0xffff);
+    return (uint16_t)(RCC->ICSCR & 0xffff);
 }

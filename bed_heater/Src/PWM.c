@@ -42,6 +42,6 @@ void pwm_init(void)
     TIM1->DIER |= TIM_DIER_UIE; // enable the update interrupt
 
     NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 0); // the interrupt that controls the motor has the highest priority
-	NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
+    NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn); // enable the interrupt to this timer
 }
 

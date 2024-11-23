@@ -51,7 +51,7 @@ void set_active_mosfets_index(int8_t index)
 
 uint8_t get_mosfets_enabled(void)
 {
-	return mosfets_enabled;
+    return mosfets_enabled;
 }
 
 uint8_t get_active_mosfets_index(void)

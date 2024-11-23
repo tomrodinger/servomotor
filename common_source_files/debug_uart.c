@@ -97,10 +97,10 @@ void transmit_without_interrupts(const char *message, uint8_t len)
     if (debug_printing_enabled == 0) {
         return;
     }
-	for(int32_t i = 0; i < len; i++) {
-		while(!(USART2->ISR & USART_ISR_TXE_TXFNF_Msk));
-		USART2->TDR = message[i];
-	}
+    for(int32_t i = 0; i < len; i++) {
+        while(!(USART2->ISR & USART_ISR_TXE_TXFNF_Msk));
+        USART2->TDR = message[i];
+    }
 }
 
 
@@ -197,10 +197,10 @@ void print_int64(char *message_prefix, int64_t n)
 
 uint8_t get_command_from_debug_uart(void)
 {
-	uint8_t tmp = command_debug_uart;
-	if(tmp != 0) {
-		command_debug_uart = 0;
-	}
-	return tmp;
+    uint8_t tmp = command_debug_uart;
+    if(tmp != 0) {
+        command_debug_uart = 0;
+    }
+    return tmp;
 }
 

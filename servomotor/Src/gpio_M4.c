@@ -60,10 +60,10 @@ static void portB_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
 
 //    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // Make the analog input pins open drain
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) | // RX pin make as open drain
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
+//                  (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
+//                  (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
+//                  (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) | // RX pin make as open drain
+//                  (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOB->PUPDR = (PUPDR_PULL_UP   << GPIO_PUPDR_PUPD7_Pos) | // RX pin is pull up
                    (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos);  // overvoltage pin is pull down
