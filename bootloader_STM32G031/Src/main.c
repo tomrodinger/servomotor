@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "gpio.h"
 #include "leds.h"
 #include "debug_uart.h"
 #include "RS485.h"
@@ -24,7 +25,6 @@ static int16_t detect_devices_delay = -1;
 
 #define LAUNCH_APPLICATION_DELAY 50
 static int32_t launch_applicaiton = -1;
-
 
 void clock_init(void)
 {
@@ -61,110 +61,16 @@ void systick_init(void)
                      SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
 }
 
-#define MODER_DIGITAL_INPUT 0
-#define MODER_DIGITAL_OUTPUT 1
-#define MODER_ALTERNATE_FUNCTION 2
-#define MODER_ANALOG_INPUT 3 // this is the default after power up
-#define OTYPER_PUSH_PULL 0 // this is the default after power up
-#define OTYPER_OPEN_DRAIN 1
-#define OSPEEDR_VERY_LOW_SPEED 0 // this is the default except some pins on port A
-#define OSPEEDR_LOW_SPEED 1
-#define OSPEEDR_HIGH_SPEED 2
-#define OSPEEDR_VERY_HIGH_SPEED 3
-#define PUPDR_NO_PULL_UP_OR_DOWN 0 // this is the default except on some pins on port A
-#define PUPDR_PULL_UP 1
-#define PUPDR_PULL_DOWN 2
-
-void portA_init(void)
-{
-	#define BUTTON_PORT_A_PIN 13
-
-    GPIOA->MODER =
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Direction control of the motor digital output
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE1_Pos)  | // Step motor step control output (to rotate the motor)
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE2_Pos)  | // serial port TX
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE3_Pos)  | // serial port RX
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  | // Temperature sensor (NTC) analog input
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  | // Hall sensor 1 analog input
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  | // Hall sensor 2 analog input
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE7_Pos)  | // Hall sensor 3 analog input
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE8_Pos)  | // Motor current control PWM output
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  | // Don't use. Might be connected tp PA11 internally
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting output (to set the overvoltage threshold) by PWM
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
-
-//    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT6_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT9_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT10_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT13_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT14_Pos) |
-//                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT15_Pos);
-    GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
-}
-
-
-void portB_init(void)
-{
-    GPIOB->MODER =
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE0_Pos)  | // Motor driver enable (active low)
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE1_Pos)  | // Supply voltage (24V) analog input (after divider)
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE3_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE4_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE5_Pos)  |
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE6_Pos)  | // RS485 Data out
-            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE7_Pos)  | // RS485 Data receive
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE8_Pos)  | // Overvoltage digital input (will shut off motor driver very fast if trigered)
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE9_Pos)  |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE11_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE12_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE14_Pos) |
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE15_Pos);
-
-//    GPIOB->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // Make the analog input pins open drain
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) |
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT5_Pos) |
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT7_Pos) | // RX pin make as open drain
-//    	            (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
-    GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
-    GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos); // RX pin is pull up, overvoltage pin is pull down
-    GPIOB->BSRR = (1 << 0); // diable the motor driver at first by pulling the menable line high
-}
-
-
-void portC_init(void)
-{
-    GPIOC->MODER =
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  |
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE14_Pos) | // Red LED
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Green LED
-//    GPIOC->OTYPER = (0);  // Make the analog input pins open drain
-    GPIOC->OSPEEDR = 0xffffffff; // very high speed
-    GPIOC->PUPDR = 0; // no pins have pulling resistors
-}
-
-
 // This interrupt will be called 100 times per second
 void SysTick_Handler(void)
 {
-	static uint16_t toggle_counter = 0;
+    static uint16_t toggle_counter = 0;
 
-	toggle_counter++;
-	if(toggle_counter >= 5) {
-	    green_LED_toggle();
-		toggle_counter = 0;
-	}
+    toggle_counter++;
+    if(toggle_counter >= 5) {
+        green_LED_toggle();
+        toggle_counter = 0;
+    }
 
     if(detect_devices_delay > 0) {
         detect_devices_delay--;
@@ -175,44 +81,31 @@ void SysTick_Handler(void)
     }
 }
 
-
 void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 {
-	uint64_t unique_id;
-	uint8_t new_alias;
+    uint64_t unique_id;
+    uint8_t new_alias;
     uint8_t error_code;
     char message[100];
-//    print_number("Received a command with length: ", commandLen);
     if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
         launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
-//        print_number("Axis:", axis);
-//        print_number("command:", command);
         switch(command) {
         case DETECT_DEVICES_COMMAND:
             rs485_allow_next_command();
-//            sprintf(message, "DETECT_DEVICES_COMMAND\n");
-//            transmit(message, strlen(message));
-        	detect_devices_delay = get_random_number(99);
-			break;
+            detect_devices_delay = get_random_number(99);
+            break;
         case SET_DEVICE_ALIAS_COMMAND:
-//            sprintf(message, "SET_DEVICE_ALIAS_COMMAND\n");
-//            transmit(message, strlen(message));
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
             rs485_allow_next_command();
 
-//            uint32_t my_unique_id_u32_array[2];
-//            memcpy(my_unique_id_u32_array, &unique_id, sizeof(unique_id));
-//            sprintf(message, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-//            transmit(message, strlen(message));
-
-        	if(unique_id == my_unique_id) {
+            if(unique_id == my_unique_id) {
                 transmit("Match\n", 6);
-        		global_settings.my_alias = new_alias;
-           		save_global_settings();
+                global_settings.my_alias = new_alias;
+                save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
-        	}
-        	break;
+            }
+            break;
         case FIRMWARE_UPGRADE_COMMAND:
         {
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
@@ -234,18 +127,18 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 }
             }
             rs485_allow_next_command();
-			break;
+            break;
         }
         case GET_PRODUCT_INFO_COMMAND:
             rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-				uint8_t product_info_length = sizeof(struct product_info_struct);
-				rs485_transmit(&product_info_length, 1);
-				rs485_transmit(product_info, sizeof(struct product_info_struct));
-			}
-			break;
+                uint8_t product_info_length = sizeof(struct product_info_struct);
+                rs485_transmit(&product_info_length, 1);
+                rs485_transmit(product_info, sizeof(struct product_info_struct));
+            }
+            break;
         case GET_STATUS_COMMAND:
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
@@ -266,35 +159,34 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 void transmit_unique_id(void)
 {
     uint32_t crc32 = 0x04030201;
-	rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
-	rs485_transmit(&my_unique_id, 8);
-	rs485_transmit(&global_settings.my_alias, 1);
-	rs485_transmit(&crc32, 4);
+    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
+    rs485_transmit(&my_unique_id, 8);
+    rs485_transmit(&global_settings.my_alias, 1);
+    rs485_transmit(&crc32, 4);
 }
-
 
 void process_debug_uart_commands(void)
 {
     uint8_t command_debug_uart = get_command_from_debug_uart();
 
     if(command_debug_uart != 0) {
-    	switch(command_debug_uart) {
-    	case 'S':
-			transmit("Saving settings\n", 16);
-    		save_global_settings();
-    		break;
-		}
-    	command_debug_uart = 0;
-	}
+        switch(command_debug_uart) {
+        case 'S':
+            transmit("Saving settings\n", 16);
+            save_global_settings();
+            break;
+        }
+        command_debug_uart = 0;
+    }
 }
 
 void print_start_message()
 {
-	char buff[200];
-	uint32_t my_unique_id_u32_array[2];
+    char buff[200];
+    uint32_t my_unique_id_u32_array[2];
     struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 
-	memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
+    memcpy(my_unique_id_u32_array, &my_unique_id, sizeof(my_unique_id));
 
     transmit("Bootloader start\n", 17);
     transmit("Model code: ", 12);
@@ -313,18 +205,14 @@ void print_start_message()
     transmit(buff, strlen(buff));
 }
 
-
 int main(void)
 {
-//	volatile int i;
     typedef void (*pFunction)(void);
     pFunction jumpToApplication = 0;
 
     clock_init();
     systick_init();
-    portA_init();
-    portB_init();
-    portC_init();
+    GPIO_init(); // Now using product-specific GPIO initialization
     debug_uart_init();
     rs485_init();
 
@@ -338,11 +226,6 @@ int main(void)
 
     print_start_message();
 
-//    uint32_t buffer[4];
-    char message[100];
-//    buffer[0] = 0;
-//    uint32_t crc32 = calculate_crc32_buffer(buffer, 1);
-//    sprintf(message, "crc32: %08lX\n", crc32);
     uint32_t firmware_size = get_firmware_size();
     if(firmware_size == 0xFFFFFFFF) {
         transmit("No application firmware is present\n", 35);
@@ -354,8 +237,6 @@ int main(void)
             transmit("Firmware CRC check passed\n", 26);
             uint32_t jumpAddress = *(__IO uint32_t*)(APPLICATION_ADDRESS_PTR);
             jumpToApplication = (pFunction)jumpAddress; 
-    //        sprintf(message, "Application start address: %08lx\n", jumpAddress);
-    //        transmit(message, strlen(message));
             launch_applicaiton = LAUNCH_APPLICATION_DELAY; // launch the application after a short delay
         }
         else {
@@ -363,10 +244,8 @@ int main(void)
         }
     }
 
-//    rs485_transmit("Start\n", 6);
-
     while(1) {
-    	if(commandReceived) {
+        if(commandReceived) {
             if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
                 rs485_allow_next_command();
             }
@@ -377,8 +256,8 @@ int main(void)
 
         if(detect_devices_delay == 0) {
             transmit_unique_id();
-    		detect_devices_delay--;
-    	}
+            detect_devices_delay--;
+        }
 
         if(launch_applicaiton == 0) {
             // the bootloader code will no longer be valid. the application code will reset the stack pointer and reinitialize things
