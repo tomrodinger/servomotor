@@ -11,12 +11,16 @@ else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif
 
-MAJOR := $(shell awk '/#define MAJOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
-MINOR := $(shell awk '/#define MINOR_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
-BUGFIX := $(shell awk '/#define BUGFIX_FIRMWARE_VERSION/{print $$3}' ${DEVICE_SOURCE_FILES_DIR}/main.c)
-FIRMWARE_VERSION := $(MAJOR).$(MINOR).$(BUGFIX)
-SOFTWARE_COMPATIBILITY_CODE := $(shell while read product_name version sw_compat_code; do if [ "$$product_name" = "$(PRODUCT_NAME)" ]; then echo $$sw_compat_code; break; fi; done < VERSIONS)
-HARDWARE_VERSION := $(shell while read product_name hw_version sw_compat_code; do if [ "$$product_name" = "$(PRODUCT_NAME)" ]; then echo $$hw_version; break; fi; done < VERSIONS)
+# Extract version information from main.c
+MAJOR := $(shell awk '/^\#define[[:space:]]+MAJOR_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
+MINOR := $(shell awk '/^\#define[[:space:]]+MINOR_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
+BUGFIX := $(shell awk '/^\#define[[:space:]]+BUGFIX_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
+DEVELOPMENT := $(shell awk '/^\#define[[:space:]]+DEVELOPMENT_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
+FIRMWARE_VERSION := $(MAJOR).$(MINOR).$(BUGFIX).$(DEVELOPMENT)
+
+# Extract hardware version and software compatibility code from VERSIONS file
+SOFTWARE_COMPATIBILITY_CODE := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$3}' VERSIONS)
+HARDWARE_VERSION := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$2}' VERSIONS)
 VERSION := $(PRODUCT_NAME)_$(HARDWARE_VERSION)_fw$(FIRMWARE_VERSION)
 
 # Determine what platform we are building on
@@ -69,7 +73,6 @@ ${BUILD_DIR}/%.o: ${DEVICE_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | 
 	$(GCC_DIR)/arm-none-eabi-gcc $< $(BUILD_FLAGS) -c $(INCLUDE_DIRS) $(MORE_BUILD_FLAGS) \
 	-Wa,-adhlns=${BUILD_DIR}/$*.lst -g \
 	-MF"${BUILD_DIR}/$*.d" -MT"${BUILD_DIR}/$*.o" -o "${BUILD_DIR}/$*.o"
-
 
 ${BUILD_DIR}/%.o: ${COMMON_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | ${BUILD_DIR}
 	$(GCC_DIR)/arm-none-eabi-gcc $< $(BUILD_FLAGS) -c $(INCLUDE_DIRS) $(MORE_BUILD_FLAGS) -MF"${BUILD_DIR}/$*.d" -MT"${BUILD_DIR}/$*.o" -o "${BUILD_DIR}/$*.o"

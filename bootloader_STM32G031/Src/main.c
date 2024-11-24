@@ -275,7 +275,7 @@ void transmit_unique_id(void)
 
 void process_debug_uart_commands(void)
 {
-    uint8_t command_debug_uart = get_command_debug_uart();
+    uint8_t command_debug_uart = get_command_from_debug_uart();
 
     if(command_debug_uart != 0) {
     	switch(command_debug_uart) {
