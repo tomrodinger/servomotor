@@ -24,6 +24,7 @@ build_bootloader() {
     BUILD_DIR=build
     GCC_DIR=../toolchain_essentials_mac/bin/
 
+    # Note: PRODUCT_NAME_${product_name} will expand to e.g. PRODUCT_NAME_M1
     C_FLAGS="-DPRODUCT_NAME_${product_name} -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G031xx -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -MMD -MP -mfloat-abi=soft -mthumb"
 
     LINKER_FLAGS="-mcpu=cortex-m0plus -TSTM32G031G8UX_FLASH.ld --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group"
@@ -43,7 +44,11 @@ build_bootloader() {
         ${COMMON_SOURCE_FILES_DIR}/unique_id.c \
         ${COMMON_SOURCE_FILES_DIR}/settings.c \
         ${COMMON_SOURCE_FILES_DIR}/product_info.c \
-        ${COMMON_SOURCE_FILES_DIR}/device_status.c"
+        ${COMMON_SOURCE_FILES_DIR}/device_status.c \
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M1.c \
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M2.c \
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M3.c \
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M4.c"
 
     # Create build directory if it doesn't exist
     mkdir -p ${BUILD_DIR}
