@@ -208,6 +208,7 @@ void print_start_message()
 int main(void)
 {
     typedef void (*pFunction)(void);
+    char message[100];
     pFunction jumpToApplication = 0;
 
     clock_init();

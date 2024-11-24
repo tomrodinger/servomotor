@@ -1,3 +1,8 @@
+#ifndef GPIO_H
+#define GPIO_H
+
+#include <stdint.h>
+
 #define MODER_DIGITAL_INPUT 0
 #define MODER_DIGITAL_OUTPUT 1
 #define MODER_ALTERNATE_FUNCTION 2
@@ -12,21 +17,21 @@
 #define PUPDR_PULL_UP 1
 #define PUPDR_PULL_DOWN 2
 
-#ifdef PRODUCT_NAME_M1
-#define GPIO_init() GPIO_init_M1()
-#define get_button_state() get_button_state_M1()
-#endif
-#ifdef PRODUCT_NAME_M2
-#define GPIO_init() GPIO_init_M2()
-#define get_button_state() get_button_state_M2()
-#endif
-#ifdef PRODUCT_NAME_M3
-#define GPIO_init() GPIO_init_M3()
-#define get_button_state() get_button_state_M3()
-#endif
-#ifdef PRODUCT_NAME_M4
-#define GPIO_init() GPIO_init_M4()
-#define get_button_state() get_button_state_M4()
+// Check for valid product define
+#if defined(PRODUCT_NAME_M1)
+    #define GPIO_init() GPIO_init_M1()
+    #define get_button_state() get_button_state_M1()
+#elif defined(PRODUCT_NAME_M2)
+    #define GPIO_init() GPIO_init_M2()
+    #define get_button_state() get_button_state_M2()
+#elif defined(PRODUCT_NAME_M3)
+    #define GPIO_init() GPIO_init_M3()
+    #define get_button_state() get_button_state_M3()
+#elif defined(PRODUCT_NAME_M4)
+    #define GPIO_init() GPIO_init_M4()
+    #define get_button_state() get_button_state_M4()
+#else
+    #error "Invalid or missing PRODUCT_NAME_X define. Must be one of: PRODUCT_NAME_M1, PRODUCT_NAME_M2, PRODUCT_NAME_M3, PRODUCT_NAME_M4"
 #endif
 
 void GPIO_init_M1(void);
@@ -37,3 +42,5 @@ uint8_t get_button_state_M1(void);
 uint8_t get_button_state_M2(void);
 uint8_t get_button_state_M3(void);
 uint8_t get_button_state_M4(void);
+
+#endif // GPIO_H

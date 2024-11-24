@@ -132,10 +132,13 @@ build_new_bootloader() {
         fi
     done
 
+    # Get current time as epoch timestamp
+    local timestamp=$(date +%s)
+
     # Build the bootloader
     if build_bootloader "$product_name"; then
-        # Create release filename
-        release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_sw${sw_compat}.bin"
+        # Create release filename with timestamp
+        release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_sw${sw_compat}_${timestamp}.bin"
         
         # Copy the built bootloader to releases directory
         cp build/bootloader.bin "$release_file"
@@ -152,28 +155,32 @@ while true; do
     echo
     echo "Available bootloaders:"
     
-    # Store bootloader files in an array
-    mapfile -t bootloader_files < <(ls bootloader_releases/bootloader_*.bin 2>/dev/null)
+    # Create bootloader_releases directory if it doesn't exist
+    mkdir -p bootloader_releases
+
+    # Get unique list of bootloader files sorted by date
+    readarray -t bootloader_files < <(find bootloader_releases -name "bootloader_*.bin" -type f -exec stat -f "%m %N" {} \; | sort -n | cut -d' ' -f2-)
     
     # Print existing bootloaders with numbers
     for i in "${!bootloader_files[@]}"; do
+        file="${bootloader_files[i]}"
+        # Get file creation date/time in human readable format
+        creation_datetime=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$file")
+        
         # Extract info from filename
-        filename=$(basename "${bootloader_files[i]}")
-        if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+).bin ]]; then
+        filename=$(basename "$file")
+        if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+)(_[0-9]+)?.bin ]]; then
             product="${BASH_REMATCH[1]}"
             hw_ver="${BASH_REMATCH[2]}"
             sw_compat="${BASH_REMATCH[3]}"
-            printf "%2d) Product: %s, HW: %s, SW Compat: %s\n" \
-                   $((i+1)) "$product" "$hw_ver" "$sw_compat"
+            printf "%2d) Product name: %s, Hardware Version: %s, Software Compatibility Code: %s\n    Build Date/Time: %s\n" \
+                   $((i+1)) "$product" "$hw_ver" "$sw_compat" "$creation_datetime"
         fi
     done
-
-    # Add build new option
-    build_new_option=$((${#bootloader_files[@]}+1))
-    printf "%2d) Build new bootloader\n" "$build_new_option"
+    printf "%2d) Build new bootloader\n" "$((${#bootloader_files[@]}+1))"
     
     # Get user selection
-    echo -e "\nPlease select an option (1-${build_new_option}) or 'q' to quit:"
+    echo -e "\nPlease select an option (1-$((${#bootloader_files[@]}+1))) or 'q' to quit:"
     read selection
 
     # Handle quit option
@@ -189,7 +196,7 @@ while true; do
     fi
 
     # Handle build new option
-    if [ "$selection" -eq "$build_new_option" ]; then
+    if [ "$selection" -eq "$((${#bootloader_files[@]}+1))" ]; then
         build_new_bootloader
         continue
     fi
@@ -199,18 +206,22 @@ while true; do
 
     # Validate selection is in range
     if [ "$index" -lt 0 ] || [ "$index" -ge "${#bootloader_files[@]}" ]; then
-        echo "Please select a number between 1 and ${build_new_option}"
+        echo "Please select a number between 1 and $((${#bootloader_files[@]}+1))"
         continue
     fi
 
-    # Show selected bootloader details
+    # Get selected file and its creation date/time
     selected_file="${bootloader_files[index]}"
+    creation_datetime=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$selected_file")
+    
+    # Show selected bootloader details
     filename=$(basename "$selected_file")
-    if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+).bin ]]; then
+    if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+)(_[0-9]+)?.bin ]]; then
         echo -e "\nSelected bootloader:"
-        echo "  Product: ${BASH_REMATCH[1]}"
+        echo "  Product name: ${BASH_REMATCH[1]}"
         echo "  Hardware Version: ${BASH_REMATCH[2]}"
-        echo "  Software Compatibility: ${BASH_REMATCH[3]}"
+        echo "  Software Compatibility Code: ${BASH_REMATCH[3]}"
+        echo "  Build Date/Time: $creation_datetime"
     fi
 
     while true; do
