@@ -44,7 +44,7 @@ COMMON_HEADERS = $(wildcard ${COMMON_SOURCE_FILES_DIR}/*.h)
 DEVICE_OBJECTS = $(addprefix ${BUILD_DIR}/,$(notdir $(patsubst %.c, %.o,$(wildcard ${DEVICE_SOURCE_FILES_DIR}/*.c))))
 COMMON_OBJECTS = $(addprefix ${BUILD_DIR}/,$(notdir $(patsubst %.c, %.o,$(wildcard ${COMMON_SOURCE_FILES_DIR}/*.c))))
 OBJECTS = $(DEVICE_OBJECTS) $(COMMON_OBJECTS) ${BUILD_DIR}/startup_stm32g030c8tx.o
-BUILD_FLAGS = -D PRODUCT_NAME_$(PRODUCT_NAME) -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx
+BUILD_FLAGS = -DPRODUCT_NAME_$(PRODUCT_NAME) -DSOFTWARE_COMPATIBILITY_CODE=$(SOFTWARE_COMPATIBILITY_CODE) -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G030xx
 MORE_BUILD_FLAGS = -O3 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP --specs=nano.specs -mfloat-abi=soft -mthumb
 INCLUDE_DIRS = \
 	-I${DEVICE_SOURCE_FILES_DIR} \

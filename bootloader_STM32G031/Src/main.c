@@ -158,7 +158,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 
 void transmit_unique_id(void)
 {
-    uint32_t crc32 = 0x04030201;
+    crc32_init();
+    calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
+    uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
     rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
@@ -213,7 +215,7 @@ int main(void)
 
     clock_init();
     systick_init();
-    GPIO_init(); // Now using product-specific GPIO initialization
+    GPIO_init(); // Using product-specific GPIO initialization. gpio.h will select a specific init function for the product. Look at files like gpio_M1.c, gpio_M2.c, gpio_M3.c, gpio_M4.c, etc.
     debug_uart_init();
     rs485_init();
 

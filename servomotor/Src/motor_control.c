@@ -512,7 +512,8 @@ void start_calibration(uint8_t print_output)
 #if defined(PRODUCT_NAME_M3)
 #if defined(GC6609)
     reset_GC6609();
-#else
+#endif
+#if defined(AT5833)
     reset_AT5833();
 #endif
 #else

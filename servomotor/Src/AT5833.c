@@ -33,7 +33,6 @@ void power_on_AT5833(void)
     GPIOB->BSRR = (1 << 4); // set VIO high
     GPIOB->BSRR = (1 << 5); // set other VIO high
     GPIOB->BSRR = (1 << 0); // set MENABLE high to disable the motor for now
-    GPIOA->BSRR = (1 << 15); // set HOLDEN high (we will use this for communication over the UART)
 }
 
 void power_off_AT5833(void)
@@ -41,10 +40,7 @@ void power_off_AT5833(void)
     TIM1->CCR1 = 0; // set the PWM duty cycle to 0, which controls the current control reference
     GPIOA->BSRR = ((1 << 0) << 16); // set DIR low
     GPIOA->BSRR = ((1 << 1) << 16); // set STEP low
-    GPIOA->BSRR = ((1 << 15) << 16); // set HOLDEN low
-    GPIOB->BSRR = ((1 << 4) << 16); // set VIO low
-    GPIOB->BSRR = ((1 << 5) << 16); // set other VIO low
-    GPIOB->BSRR = ((1 << 0) << 16); // set MENABLE low so that VIO is not driven high through the clamping diodes
+    GPIOB->BSRR = (((1 << 0) | (1 << 4) | (1 << 5)) << 16); // set MENABLE low and set the two pins that control the VIO (3.3V power supply to the motor driver chip) low
 }
 
 

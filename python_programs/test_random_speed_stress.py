@@ -18,7 +18,7 @@ DETECT_DEVICES_INTERVAL = 60 * 5  # Reset the system and Detect devices every th
 PRINT_TEST_STATISTICS_INTERVAL = 30  # Print test statistics every this number of seconds
 PRINT_TEST_DESCRIPTION_INTERVAL = 60 * 5  # Print test description every this number of seconds, so that the user knows what test is running
 MIN_VELOCITY = 0.1  # Minimum velocity in rotations per second
-MAX_VELOCITY = 5.0  # Maximum velocity in rotations per second
+MAX_VELOCITY = 3.0  # Maximum velocity in rotations per second
 STATUS_CHECK_PASSES = 5
 
 def compute_crc32(unique_id, alias):

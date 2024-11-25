@@ -14,6 +14,7 @@ print_large_message() {
 # Function to build bootloader
 build_bootloader() {
     local product_name=$1
+    local software_compatibility_code=$2
     
     # Enable command echoing for build process
     set -x
@@ -25,7 +26,7 @@ build_bootloader() {
     GCC_DIR=../toolchain_essentials_mac/bin/
 
     # Note: PRODUCT_NAME_${product_name} will expand to e.g. PRODUCT_NAME_M1
-    C_FLAGS="-DPRODUCT_NAME_${product_name} -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G031xx -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -MMD -MP -mfloat-abi=soft -mthumb"
+    C_FLAGS="-DPRODUCT_NAME_${product_name} -DSOFTWARE_COMPATIBILITY_CODE=${software_compatibility_code} -mcpu=cortex-m0plus -std=gnu11 -DUSE_HAL_DRIVER -DSTM32G031xx -I${DEVICE_SOURCE_FILES_DIR} -I${COMMON_SOURCE_FILES_DIR} -I${DRIVERS_DIR}/STM32G0xx_HAL_Driver/Inc -I${DRIVERS_DIR}/CMSIS/Device/ST/STM32G0xx/Include -I${DRIVERS_DIR}/CMSIS/Include -O3 -ffunction-sections -fdata-sections -Wall -MMD -MP -mfloat-abi=soft -mthumb"
 
     LINKER_FLAGS="-mcpu=cortex-m0plus -TSTM32G031G8UX_FLASH.ld --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group"
 
@@ -74,6 +75,9 @@ build_bootloader() {
 # Function to program device
 program_device() {
     local bin_file=$1
+    local product_name=$2
+    local software_compatibility_code=$3
+    local hardware_version=$4
 
     # Detect which platform (OS) is being used
     platform='unknown'
@@ -84,8 +88,20 @@ program_device() {
         CYGWIN*|MINGW*) platform='windows' ;;
     esac
 
+    # Call generate_product_info with the appropriate arguments to get a bin file with product specific info
+    if [ "$platform" = linux ]; then
+    ../toolchain_essentials_linux/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
+    elif [ "$platform" = mac ]; then
+    ../toolchain_essentials_mac/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
+    elif [ "$platform" = windows ]; then
+    ../toolchain_essentials_windows/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
+    else
+    echo "Platform not supported."
+    exit 2
+    fi
+
     # Flash the device
-    if ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all -w "$bin_file" 0x08000000 -g; then
+    if ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all -w build/bootloader_with_product_info.bin 0x08000000 -g; then
         print_large_message "Programming Success"
         return 0
     else
@@ -136,7 +152,7 @@ build_new_bootloader() {
     local timestamp=$(date +%s)
 
     # Build the bootloader
-    if build_bootloader "$product_name"; then
+    if build_bootloader "$product_name" "$sw_compat"; then
         # Create release filename with timestamp
         release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_sw${sw_compat}_${timestamp}.bin"
         
@@ -236,7 +252,7 @@ while true; do
         elif [ "$choice" = "b" ]; then
             break
         elif [ "$choice" = "" ]; then
-            program_device "$selected_file"
+            program_device "$selected_file" "${BASH_REMATCH[1]}" "${BASH_REMATCH[3]}" "${BASH_REMATCH[2]}"
         else
             echo "Invalid choice. Please try again."
         fi

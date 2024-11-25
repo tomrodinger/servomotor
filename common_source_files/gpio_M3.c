@@ -22,10 +22,12 @@ static void portA_init(void)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // If A4988 chip: Stepper motor driver reset (reset low, normal operation high) 
-                                                                  // If GC6609 chip: UART communicatioin pin (keep high when not communicating)
-                                                                  // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
-
+#if SOFTWARE_COMPATIBILITY_CODE == 2 // this is the version with AT5833 chip
+            (MODER_DIGITAL_INPUT     << GPIO_MODER_MODE15_Pos);   // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
+#else 
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // If GC6609 chip: UART communicatioin pin (keep high when not communicating)
+                                                                  // If A4988 chip: Stepper motor driver reset (reset low, normal operation high)
+#endif
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT4_Pos) | // may not be necessary
@@ -39,7 +41,7 @@ static void portA_init(void)
     GPIOA->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOA->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD3_Pos); // apply pull up on the RS485 receive pin
 
-#ifndef GC6609
+#if SOFTWARE_COMPATIBILITY_CODE == 0 // If A4988 chip:
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
     volatile uint32_t i;
     for(i = 0; i < 1000; i++); // make a delay
@@ -74,6 +76,9 @@ static void portB_init(void)
 //                  (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT8_Pos);  // Overvoltage digital input make as open drain
     GPIOB->OSPEEDR = 0xffffffff; // make all pins very high speed
     GPIOB->PUPDR = (PUPDR_PULL_UP << GPIO_PUPDR_PUPD7_Pos) | (PUPDR_PULL_DOWN << GPIO_PUPDR_PUPD8_Pos); // RX pin is pull up, overvoltage pin is pull down
+#if SOFTWARE_COMPATIBILITY_CODE >= 2 // this is the version with AT5833 chip
+    GPIOB->BSRR = ((1 << 0) | (1 << 4) | (1 << 5)); // Make the motor driver enable pin and supply pins high, otherwise the motor driver chip seems to draw too much power and heat up
+#endif
 }
 
 

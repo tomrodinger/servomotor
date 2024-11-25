@@ -86,7 +86,7 @@ def find_unused_alias(alias_list, min_alias, max_alias):
 parser = argparse.ArgumentParser(description='Add some random moves to the queue to test the calculations of the safety limits')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-parser.add_argument('-r', '--reassign', help='reassign aliases (if necessary) so that there is no conflict and all aliases fall in the given range from MIN_ALIAS to MAX_ALIAS (which is specified inside the program)', action='store_true')
+parser.add_argument('-r', '--reassign', help='reassign aliases (if necessary) so that there is no conflict ann devices have a non-255 alias and all aliases fall in the given range from MIN_ALIAS to MAX_ALIAS (which is specified inside the program)', action='store_true')
 parser.add_argument('-c', '--calibration', help='do the calibration of all motors one by one (so as to not overload the power supply)', action='store_true')
 parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
 args = parser.parse_args()
@@ -136,7 +136,10 @@ for unique_id, device in device_dict.items():
 # Include a header and make sure to print such that all the columns are aligned
 print("\nDevice report:")
 print("Unique ID        | Original Alias  | Reassigned Alias")
-print("-----------------------------------------------------")
+if not reassign_aliases:
+    print("                 |                 | (use -r option to actually")
+    print("                 |                 | execute the reassignments)")
+print("---------------------------------------------------------------")
 n_reassigned_aliases = 0
 for unique_id, device in device_dict.items():
     alias_str = servomotor.get_human_readable_alias(device.alias)
@@ -146,10 +149,10 @@ for unique_id, device in device_dict.items():
         reassigned_alias_str = servomotor.get_human_readable_alias(device.reassigned_alias)
         n_reassigned_aliases += 1
     print(f"{unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
-print("-----------------------------------------------------")
+print("---------------------------------------------------------------")
 print(f"A total of {len(device_dict)} devices were detected")
 print(f"and {n_reassigned_aliases} aliases were reassigned")
-print("-----------------------------------------------------\n")
+print("---------------------------------------------------------------\n")
 
 # Now, let's reassign the aliases (if the user has specified to do so) to the devices by running the "Set device alias" command for each device that needs to be reassigned
 if reassign_aliases:
