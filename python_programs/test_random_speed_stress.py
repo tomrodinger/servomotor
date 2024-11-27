@@ -6,6 +6,9 @@ import argparse
 import servomotor
 from collections import defaultdict
 import zlib
+import paho.mqtt.client as mqtt
+import json
+import uuid
 
 # Configuration parameters
 N_ENABLED_DEVICES_AT_SAME_TIME = 8  # Number of devices to enable simultaneously and make them spin
@@ -20,6 +23,73 @@ PRINT_TEST_DESCRIPTION_INTERVAL = 60 * 5  # Print test description every this nu
 MIN_VELOCITY = 0.1  # Minimum velocity in rotations per second
 MAX_VELOCITY = 3.0  # Maximum velocity in rotations per second
 STATUS_CHECK_PASSES = 5
+
+# MQTT Configuration
+MQTT_BROKER = "broker.hivemq.com"
+MQTT_PORT = 1883
+MQTT_TOPIC = "servomotor/statistics"
+mqtt_client = None
+
+def setup_mqtt():
+    """Setup MQTT client with non-blocking connection"""
+    global mqtt_client
+    # Generate a unique client ID
+    client_id = f'servomotor_publisher_{str(uuid.uuid4())[:8]}'
+    mqtt_client = mqtt.Client(client_id=client_id)
+    
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT broker")
+        else:
+            print(f"Failed to connect to MQTT broker with code: {rc}")
+    
+    mqtt_client.on_connect = on_connect
+    
+    try:
+        mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+        mqtt_client.loop_start()  # Start the loop in a background thread
+    except Exception as e:
+        print(f"Failed to connect to MQTT broker: {e}")
+        mqtt_client = None
+
+def send_statistics_to_mqtt(device_dict, start_time, movement_iterations_done, iterations_with_errors, n_devices_detected_historgram):
+    """Send statistics to MQTT broker"""
+    if mqtt_client is None:
+        return
+    
+    try:
+        # Prepare the data in a similar format to print_statistics
+        data = {
+            "test_duration": int(time.time() - start_time),
+            "total_iterations": movement_iterations_done,
+            "iterations_with_errors": iterations_with_errors,
+            "total_devices": len(device_dict),
+            "devices_histogram": {str(k): v for k, v in n_devices_detected_historgram.items()},
+            "devices": [],
+            "total_error_counts": defaultdict(int)
+        }
+        
+        # Add per-device statistics
+        for unique_id, device in device_dict.items():
+            device_data = {
+                "unique_id": f"{unique_id:016X}",
+                "alias": device.alias,
+                "total_fatal_errors": device.total_fatal_errors,
+                "error_counts": {str(k): v for k, v in device.fatal_error_counts.items()}
+            }
+            data["devices"].append(device_data)
+            
+            # Accumulate total error counts
+            for error_code, count in device.fatal_error_counts.items():
+                data["total_error_counts"][str(error_code)] += count
+        
+        # Convert defaultdict to regular dict for JSON serialization
+        data["total_error_counts"] = dict(data["total_error_counts"])
+        
+        # Publish with a 1-second timeout
+        mqtt_client.publish(MQTT_TOPIC, json.dumps(data), qos=1).wait_for_publish(timeout=1.0)
+    except Exception as e:
+        print(f"Failed to send statistics to MQTT: {e}")
 
 def compute_crc32(unique_id, alias):
     """Compute CRC32 for device detection response"""
@@ -220,6 +290,9 @@ def print_statistics(device_dict, start_time, movement_iterations_done, iteratio
     for error_code, count in error_type_counts.items():
         print(f"   Error code {error_code}: {count} total occurrences")
     print("\n=========================================================================================================================================")
+    
+    # Send statistics to MQTT
+    send_statistics_to_mqtt(device_dict, start_time, movement_iterations_done, iterations_with_errors, n_devices_detected_historgram)
 
 def print_test_description():
     """Print a detailed description of the test"""
@@ -302,6 +375,9 @@ def main():
                             current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
                             verbose=verbose_level)
     servomotor.open_serial_port()
+
+    # Setup MQTT connection
+    setup_mqtt()
 
     # Main test loop
     print("\nStarting main test loop...")

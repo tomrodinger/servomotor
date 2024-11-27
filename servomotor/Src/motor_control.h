@@ -5,8 +5,11 @@
 #include "PWM.h"
 
 #ifdef PRODUCT_NAME_M3
-//#include "GC6609.h" // if using the GC6609 stepper motor driver chip, then make sure to uncomment this (V8, V9, V10, and V11RC1 are using this chip)
+#if SOFTWARE_COMPATIBILITY_CODE >= 2
 #include "AT5833.h" // if using the AT5833 stepper motor driver chip, then make sure to uncomment this (V11RC2 is using this chip)
+#elif SOFTWARE_COMPATIBILITY_CODE == 1
+#include "GC6609.h" // if using the GC6609 stepper motor driver chip, then make sure to uncomment this (V8, V9, V10, and V11RC1 are using this chip)
+#endif
 #endif
 
 #ifdef PRODUCT_NAME_M1

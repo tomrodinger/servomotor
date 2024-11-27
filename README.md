@@ -1,2 +1,2 @@
-# servomotor
-firmware for a servomotor
+# This is the Servomotor repository by Gearotons
+All software, firmware, and PCB source files are here

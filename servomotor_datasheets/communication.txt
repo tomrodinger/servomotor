@@ -1,0 +1,2 @@
+The M3 Series Servomotors use RS-485 for communication, enabling multiple motors to be daisy-chained together. Each motor can be assigned a unique alias (0-253) for individual control in a chain. There is also a broadcast alias, which is 255. The protocol supports a comprehensive set of commands for motion control, configuration, and status monitoring. Firmware update through the RS-485 interfce is supported.
+Communication baud rate is 230400
