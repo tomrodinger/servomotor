@@ -154,7 +154,7 @@ build_new_bootloader() {
     # Build the bootloader
     if build_bootloader "$product_name" "$sw_compat"; then
         # Create release filename with timestamp
-        release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_sw${sw_compat}_${timestamp}.bin"
+        release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_scc${sw_compat}_${timestamp}.bin"
         
         # Copy the built bootloader to releases directory
         cp build/bootloader.bin "$release_file"
@@ -185,7 +185,7 @@ while true; do
         
         # Extract info from filename
         filename=$(basename "$file")
-        if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+)(_[0-9]+)?.bin ]]; then
+        if [[ $filename =~ bootloader_(.+)_hw(.+)_scc([0-9]+)(_[0-9]+)?.bin ]]; then
             product="${BASH_REMATCH[1]}"
             hw_ver="${BASH_REMATCH[2]}"
             sw_compat="${BASH_REMATCH[3]}"
@@ -232,7 +232,7 @@ while true; do
     
     # Show selected bootloader details
     filename=$(basename "$selected_file")
-    if [[ $filename =~ bootloader_(.+)_hw(.+)_sw([0-9]+)(_[0-9]+)?.bin ]]; then
+    if [[ $filename =~ bootloader_(.+)_hw(.+)_scc([0-9]+)(_[0-9]+)?.bin ]]; then
         echo -e "\nSelected bootloader:"
         echo "  Product name: ${BASH_REMATCH[1]}"
         echo "  Hardware Version: ${BASH_REMATCH[2]}"

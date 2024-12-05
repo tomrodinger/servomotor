@@ -46,9 +46,9 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t not_used;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 8
-#define BUGFIX_FIRMWARE_VERSION 11
-#define DEVELOPMENT_FIRMWARE_VERSION 4 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+#define MINOR_FIRMWARE_VERSION 9
+#define BUGFIX_FIRMWARE_VERSION 0
+#define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS

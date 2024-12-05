@@ -11,6 +11,10 @@ else
 	PRODUCT_OPTIONS := $(PRODUCT_NAME)
 endif
 
+# Extract hardware version and software compatibility code from VERSIONS file
+SOFTWARE_COMPATIBILITY_CODE := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$3}' VERSIONS)
+HARDWARE_VERSION := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$2}' VERSIONS)
+
 # Extract version information from main.c
 MAJOR := $(shell awk '/^\#define[[:space:]]+MAJOR_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
 MINOR := $(shell awk '/^\#define[[:space:]]+MINOR_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
@@ -18,10 +22,8 @@ BUGFIX := $(shell awk '/^\#define[[:space:]]+BUGFIX_FIRMWARE_VERSION[[:space:]]+
 DEVELOPMENT := $(shell awk '/^\#define[[:space:]]+DEVELOPMENT_FIRMWARE_VERSION[[:space:]]+[0-9]+/{print $$3}' $(DEVICE_SOURCE_FILES_DIR)/main.c)
 FIRMWARE_VERSION := $(MAJOR).$(MINOR).$(BUGFIX).$(DEVELOPMENT)
 
-# Extract hardware version and software compatibility code from VERSIONS file
-SOFTWARE_COMPATIBILITY_CODE := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$3}' VERSIONS)
-HARDWARE_VERSION := $(shell awk '$$1 == "$(PRODUCT_NAME)" {print $$2}' VERSIONS)
-VERSION := $(PRODUCT_NAME)_$(HARDWARE_VERSION)_fw$(FIRMWARE_VERSION)
+# Define a version string that contains all the versioning information for using to name the output file
+VERSION := $(PRODUCT_NAME)_fw$(FIRMWARE_VERSION)_scc$(SOFTWARE_COMPATIBILITY_CODE)_hw$(HARDWARE_VERSION)
 
 # Determine what platform we are building on
 HOST_OS := $(shell uname -s)
@@ -60,7 +62,7 @@ ifeq ($(PRODUCT_NAME),)
 	@echo "Please provide a PRODUCT_NAME. Acceptable options are: $(PRODUCT_OPTIONS)"
 	@echo "Example: make PRODUCT_NAME=M1"
 else
-	${MAKE} ${BUILD_DIR}/motor_firmware_${VERSION}.firmware && echo "* * * SUCCESS * * *" || echo "* * * BUILD FAILED * * *"
+	${MAKE} ${BUILD_DIR}/servomotor_${VERSION}.firmware && echo "* * * SUCCESS * * *" || echo "* * * BUILD FAILED * * *"
 endif
 
 ${BUILD_DIR}:
@@ -77,23 +79,23 @@ ${BUILD_DIR}/%.o: ${DEVICE_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | 
 ${BUILD_DIR}/%.o: ${COMMON_SOURCE_FILES_DIR}/%.c ${HEADERS} ${COMMON_HEADERS} | ${BUILD_DIR}
 	$(GCC_DIR)/arm-none-eabi-gcc $< $(BUILD_FLAGS) -c $(INCLUDE_DIRS) $(MORE_BUILD_FLAGS) -MF"${BUILD_DIR}/$*.d" -MT"${BUILD_DIR}/$*.o" -o "${BUILD_DIR}/$*.o"
 
-.PHONY: ${BUILD_DIR}/motor_firmware_${VERSION}.firmware
-${BUILD_DIR}/motor_firmware_${VERSION}.elf: $(OBJECTS) ${COMMON_SOURCE_FILES_DIR}/memory_layout.ld
-	$(GCC_DIR)/arm-none-eabi-gcc -o "${BUILD_DIR}/motor_firmware_${VERSION}.elf" $(OBJECTS) -mcpu=cortex-m0plus -T"${COMMON_SOURCE_FILES_DIR}/memory_layout.ld" --specs=nosys.specs -Wl,-Map="${BUILD_DIR}/motor_firmware_${VERSION}.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-	$(GCC_DIR)/arm-none-eabi-size ${BUILD_DIR}/motor_firmware_${VERSION}.elf
-	$(GCC_DIR)/arm-none-eabi-objdump -h -S ${BUILD_DIR}/motor_firmware_${VERSION}.elf > "${BUILD_DIR}/motor_firmware_${VERSION}.list"
+.PHONY: ${BUILD_DIR}/servomotor_${VERSION}.firmware
+${BUILD_DIR}/servomotor_${VERSION}.elf: $(OBJECTS) ${COMMON_SOURCE_FILES_DIR}/memory_layout.ld
+	$(GCC_DIR)/arm-none-eabi-gcc -o "${BUILD_DIR}/servomotor_${VERSION}.elf" $(OBJECTS) -mcpu=cortex-m0plus -T"${COMMON_SOURCE_FILES_DIR}/memory_layout.ld" --specs=nosys.specs -Wl,-Map="${BUILD_DIR}/servomotor_${VERSION}.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	$(GCC_DIR)/arm-none-eabi-size ${BUILD_DIR}/servomotor_${VERSION}.elf
+	$(GCC_DIR)/arm-none-eabi-objdump -h -S ${BUILD_DIR}/servomotor_${VERSION}.elf > "${BUILD_DIR}/servomotor_${VERSION}.list"
 
-${BUILD_DIR}/motor_firmware_${VERSION}.bin: ${BUILD_DIR}/motor_firmware_${VERSION}.elf
-	$(GCC_DIR)/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/motor_firmware_${VERSION}.elf "${BUILD_DIR}/motor_firmware_${VERSION}.bin"
+${BUILD_DIR}/servomotor_${VERSION}.bin: ${BUILD_DIR}/servomotor_${VERSION}.elf
+	$(GCC_DIR)/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/servomotor_${VERSION}.elf "${BUILD_DIR}/servomotor_${VERSION}.bin"
 
-${BUILD_DIR}/motor_firmware_${VERSION}.firmware: ${BUILD_DIR}/motor_firmware_${VERSION}.bin
-	${TOOLCHAIN_DIR}/bin2firmware ${BUILD_DIR}/motor_firmware_${VERSION}.bin ${BUILD_DIR}/motor_firmware_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
-	cp ${BUILD_DIR}/motor_firmware_${VERSION}.firmware firmware_releases/
+${BUILD_DIR}/servomotor_${VERSION}.firmware: ${BUILD_DIR}/servomotor_${VERSION}.bin
+	${TOOLCHAIN_DIR}/bin2firmware ${BUILD_DIR}/servomotor_${VERSION}.bin ${BUILD_DIR}/servomotor_${VERSION}.firmware $(PRODUCT_NAME) $(SOFTWARE_COMPATIBILITY_CODE)
+	cp ${BUILD_DIR}/servomotor_${VERSION}.firmware firmware_releases/
 
 .PHONY: clean
 clean:
 	$(RM) ${BUILD_DIR}/*
 
 .PHONY: program
-program: ${BUILD_DIR}/motor_firmware_${VERSION}.firmware
-	../python_programs/upgrade_firmware.py ${BUILD_DIR}/motor_firmware_${VERSION}.firmware
+program: ${BUILD_DIR}/servomotor_${VERSION}.firmware
+	../python_programs/upgrade_firmware.py ${BUILD_DIR}/servomotor_${VERSION}.firmware
