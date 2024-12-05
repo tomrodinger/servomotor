@@ -1,7 +1,7 @@
 #include "stm32g0xx_hal.h"
 #include "gpio.h"
 
-#define BUTTON_PORT_A_PIN 14 // products M3 and M4
+#define BUTTON_PORT_A_PIN 13 // products M3 and M4
 #define TOUCH_BUTTON_PORT_A_PIN 15
 
 static void portA_init(void)
@@ -20,8 +20,8 @@ static void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting output (to set the overvoltage threshold) by PWM
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming) and button input
+            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
 #if SOFTWARE_COMPATIBILITY_CODE == 2 // this is the version with AT5833 chip
             (MODER_DIGITAL_INPUT     << GPIO_MODER_MODE15_Pos);   // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
 #else 
@@ -103,5 +103,5 @@ void GPIO_init_M3(void)
 
 inline uint8_t get_button_state_M3(void)
 {
-    return ((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) != 0);
+    return ((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) == 0);
 }

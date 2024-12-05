@@ -26,7 +26,7 @@ def verify_position(motor, expected_position, tolerance=10):
 
 def test_position_units():
     # Initialize motor with encoder counts as default position unit for precise verification
-    motorX = servomotor.M3("X", motor_type="M3", 
+    motorX = servomotor.M3("X", 
                           time_unit="seconds", 
                           position_unit="encoder_counts", 
                           velocity_unit="rpm", 

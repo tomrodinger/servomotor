@@ -15,7 +15,7 @@ def add_technical_specs(story, style):
     # Create elements to keep together
     elements = []
     elements.append(Paragraph('Technical Specifications', create_heading_style()))
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 6))  # Reduced spacing
     
     data = [
         ['Parameter', 'M3-60', 'M3-48', 'M3-40'],
@@ -31,10 +31,9 @@ def add_technical_specs(story, style):
     table = Table(data, colWidths=[col_width] * 4)
     table.setStyle(create_table_style())
     elements.append(table)
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, 8))
     
     # Keep heading and table together
-    story.append(PageBreak())
     story.append(KeepTogether(elements))
 
 def add_mechanical_specs(story, style):
@@ -58,10 +57,10 @@ def add_mechanical_specs(story, style):
     table = Table(data, colWidths=[col_width] * 4)
     table.setStyle(create_table_style())
     elements.append(table)
-    elements.append(Spacer(1, 8))  # Reduced spacing after table
+    elements.append(Spacer(1, 4))  # Reduced spacing after table
     
-    # Fixed height for all images (in points) - increased by another 5%
-    fixed_height = 173  # Previously 165
+    # Fixed height for all images - restored to original size
+    fixed_height = 173
     
     # Add dimension images with fixed height
     for model in ['M3-60', 'M3-48', 'M3-40']:
@@ -74,7 +73,7 @@ def add_mechanical_specs(story, style):
         tech_img = Image(img_path, width=new_width, height=fixed_height)
         tech_img.hAlign = 'CENTER'
         elements.append(tech_img)
-        elements.append(Spacer(1, 8))  # Reduced spacing between images
+        elements.append(Spacer(1, 4))  # Keep minimal spacing between images
     
     # Keep everything together on one page
     story.append(KeepTogether(elements))
@@ -84,7 +83,7 @@ def add_operating_conditions(story, style):
     # Create elements to keep together
     elements = []
     elements.append(Paragraph('Operating Conditions', create_heading_style()))
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 6))
     
     data = [
         ['Parameter', 'Specification'],
@@ -100,7 +99,7 @@ def add_operating_conditions(story, style):
     table = Table(data, colWidths=[col1_width, col2_width])
     table.setStyle(create_table_style())
     elements.append(table)
-    elements.append(Spacer(1, 8))  # Reduced from 15 to 8
+    elements.append(Spacer(1, 4))
     
     # Keep heading and table together
     story.append(KeepTogether(elements))

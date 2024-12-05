@@ -14,62 +14,60 @@ Y_ALIAS = ord('Y')
 Z_ALIAS = ord('Z')
 GLUE_DISPENSE_ALIAS = ord('G')
 ALL_MOTORS_ALIAS = 255
-#ALIAS_LIST = [X_ALIAS, Y_ALIAS, Z_ALIAS, GLUE_DISPENSE_ALIAS]
 
+PLUNGER_ENABLED = False
 TIME_SYNC_PERIOD = 0.1
 TIME_SYNC_PRINT_STATISTICS_PERIOD = 1.0
 REQUIRED_SUCCESSFUL_PINGS = 30
 X_Y_MOTOR_CURRENT_SETTING = 50
 Z_MOTOR_CURRENT_SETTING = 100
-ONE_ROTATION_MICROSTEPS = 64 * 1024 * 50
 X_Y_REDUCTION_RATIO = 28 / 14
 Z_REDUCTION_RATIO = 18.0 / 14
 PULLEY_N_TEETH = 14
 BELT_TOOTH_PITCH = 2.0
-N_CIRCLES = 3
-N_CIRCLES_DISPENSING_GLUE = N_CIRCLES - 1
 MM_PER_PULLEY_ROTATION = BELT_TOOTH_PITCH * PULLEY_N_TEETH / X_Y_REDUCTION_RATIO
 X_Y_SPAN_MM = 227.0
 X_Y_SPAN_ROTATIONS = X_Y_SPAN_MM / MM_PER_PULLEY_ROTATION * X_Y_REDUCTION_RATIO
-X_Y_SPAN_MICROSTEPS = X_Y_SPAN_ROTATIONS * ONE_ROTATION_MICROSTEPS
 Z_SPAN_MM = 120.0
 Z_LEAD_SCREW_MM_PER_ROTATION = 4.0 / Z_REDUCTION_RATIO
 Z_SPAN_ROTATIONS = Z_SPAN_MM / Z_LEAD_SCREW_MM_PER_ROTATION
-Z_SPAN_MICROSTEPS = Z_SPAN_ROTATIONS * ONE_ROTATION_MICROSTEPS
 INTERNAL_TIME_UNIT_HZ = 64000000 / 2048
 HOMING_MAX_TIME_S = 10.0
 GLUE_CIRCLE1_DIAMETER = 24.0
+GLUE_CIRCLE_TIME = 20.0
+HOPPING = True
+N_HOPS = 40
+HOP_TIME_SECONDS = GLUE_CIRCLE_TIME / N_HOPS
+GLUE_DISPENSE_VOLUME_MM_CUBED_PER_STATOR = 800.0
+N_CIRCLES = 3
+N_CIRCLES_DISPENSING_GLUE = N_CIRCLES - 1
+GLUE_DISPENSE_VOLUME_MM_CUBED_PER_CIRCLE = GLUE_DISPENSE_VOLUME_MM_CUBED_PER_STATOR / N_CIRCLES_DISPENSING_GLUE
 X_START_POSITION_MM = 6.0 + GLUE_CIRCLE1_DIAMETER
 X_GO_TO_START_TIME = 2.0
 Y_START_POSITION_MM = 6.0 + GLUE_CIRCLE1_DIAMETER / 2
 Y_GO_TO_START_TIME = 2.0
-Z_START_POSITION_MM = 50.0
-Z_GO_TO_START_TIME = 4.0
-Z_DISPENSE_POSITION_MM = 60.0
+Z_DISPENSE_POSITION_MM = 90.0 # the higher is this number, the further up will be the machine base with the stators, hence the closer will be the glue dispensing to the stators
 Z_GO_TO_DISPENSE_POSITION_TIME = 1.0
+Z_START_POSITION_MM = Z_DISPENSE_POSITION_MM - 20.0 # we will move the stators down 20mm when moving the glue dispenser to the next unit
+Z_GO_TO_START_TIME = 4.0
 QUEUE_SIZE = 32
 DISTANCE_BETWEEN_UNITS = 61.0
-HOPPING = True
 GLUE_DOT_HOP_HEIGHT_MM = 4.0
-HOP_TIME_SECONDS = 0.5
-GLUE_DISPENSER_SPAN_MM = 94.0
-GLUE_DISPENSER_PULLEY_N_TEETH = 14
-GLUE_DISPENSER_MM_PER_PULLEY_ROTATION = BELT_TOOTH_PITCH * GLUE_DISPENSER_PULLEY_N_TEETH
-GLUE_DISPENSER_SPAN_ROTATIONS = GLUE_DISPENSER_SPAN_MM / GLUE_DISPENSER_MM_PER_PULLEY_ROTATION
-GLUE_DISPENSER_SPAN_MICROSTEPS = GLUE_DISPENSER_SPAN_ROTATIONS * ONE_ROTATION_MICROSTEPS
-DETECT_GLUE_PLUNGER_POSITION_MOTOR_CURRENT_SETTING = 40
-DETECT_GLUE_PLUNGER_POSITION_HOMING_MAX_TIME_S = 5
-GLUE_DISPENSER_MOTOR_CURRENT_SETTING = 390
-GLUE_PLUNGER_CROSS_SECTION_AREA = math.pi * (19.0 / 2.0) ** 2
+PLUNGER_SPAN_MM = 94.0
+PLUNGER_PULLEY_N_TEETH = 14
+PLUNGER_MM_PER_PULLEY_ROTATION = BELT_TOOTH_PITCH * PLUNGER_PULLEY_N_TEETH
+PLUNGER_SPAN_ROTATIONS = PLUNGER_SPAN_MM / PLUNGER_MM_PER_PULLEY_ROTATION
+DETECT_PLUNGER_POSITION_MOTOR_CURRENT_SETTING = 40
+DETECT_PLUNGER_POSITION_HOMING_MAX_TIME_S = 5
+PLUNGER_MOTOR_CURRENT_SETTING = 390
+PLUNGER_CROSS_SECTION_AREA = math.pi * (19.0 / 2.0) ** 2
 GLUE_N_PLUNGERS = 2 # we are mixing two parts of glue to make the finished glue, which will be dispensed
-GLUE_DISPENSE_VOLUME_PER_PLUNGER_MM = GLUE_PLUNGER_CROSS_SECTION_AREA * 1.0
-GLUE_DISPENSE_VOLUME_MM_CUBED_PER_CIRCLE = 400.0
+GLUE_DISPENSE_VOLUME_PER_PLUNGER_MM = PLUNGER_CROSS_SECTION_AREA * 1.0
 PLUNGER_MOVE_DISTANCE_MM_PER_CIRCLE = GLUE_DISPENSE_VOLUME_MM_CUBED_PER_CIRCLE / GLUE_DISPENSE_VOLUME_PER_PLUNGER_MM
-PLUNGER_MOVE_DISTANCE_PER_CIRCLE_MOTOR_UNITS = PLUNGER_MOVE_DISTANCE_MM_PER_CIRCLE / GLUE_DISPENSER_MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS
-N_GLUE_DOTS = 40
-PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_MOTOR_UNITS = PLUNGER_MOVE_DISTANCE_PER_CIRCLE_MOTOR_UNITS / N_GLUE_DOTS
+PLUNGER_SHAFT_ROTATIONS_PER_CIRCLE = PLUNGER_MOVE_DISTANCE_MM_PER_CIRCLE / PLUNGER_MM_PER_PULLEY_ROTATION
+PLUNGER_VELOCITY_ROTATIONS_PER_SECOND = PLUNGER_SHAFT_ROTATIONS_PER_CIRCLE / GLUE_CIRCLE_TIME
+PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_SHAFT_ROTATIONS = PLUNGER_SHAFT_ROTATIONS_PER_CIRCLE / N_HOPS
 PLUNGER_PULL_BACK_MM_TO_STOP_DISPENSING = -10.0
-PLUNGER_PULL_BACK_MICROSTEPS_TO_STOP_DISPENSING = PLUNGER_PULL_BACK_MM_TO_STOP_DISPENSING / GLUE_DISPENSER_MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS
 PLUNGER_PULL_BACK_TIME = 0.2 * 10
 
 
@@ -108,7 +106,7 @@ def check_device_with_ping(motor, required_successful_pings):
             # Let's generate a random byte array with 10 bytes and send it to the device
             random_10_bytes = bytes([random.randint(0, 255) for _ in range(10)])
             response = motor.ping(random_10_bytes)
-            if len(response) == 1 and response[0] == random_10_bytes:
+            if response == random_10_bytes:
                 print(f"Ping {ping_number + 1} successful")
             else:
                 print(f"Error: Ping {ping_number + 1} failed. Expected response: {random_10_bytes}, but got: {response}")
@@ -121,14 +119,17 @@ def check_device_with_ping(motor, required_successful_pings):
 
 
 def do_homing(motor, motor_current_setting, max_displacement, max_time):
-    print(f"Setting the current of the motor with alias {motor.alias} to {motor_current_setting} (which is some arbitrary unit)")
+    human_readable_alias = servomotor.get_human_readable_alias(motor.alias)
+    print(f"Setting the current of the motor with alias {human_readable_alias} to {motor_current_setting} (which is some arbitrary unit)")
     response = motor.set_maximum_motor_current(motor_current_setting, motor_current_setting)
     print("Response:", response)
     print("Going into closed loop mode now")
     response = motor.go_to_closed_loop()
     print("Response:", response)
-    print(f"Homing the motor with alias {motor.alias}")
-    response = motor.homing(int(max_displacement), int(max_time))
+#    motor.set_position_unit("shaft_rotations")
+#    motor.set_time_unit("seconds")
+    print(f"Homing the motor with alias {human_readable_alias}. The maximum displacement is {max_displacement} and the maximum time is {max_time} seconds")
+    response = motor.homing(max_displacement, max_time)
     print("Response:", response)
     # wait for the motor to finish homing
     while True:
@@ -239,8 +240,8 @@ def wait_for_queue_space(motors):
     while True:
         queue_sizes = []
         for motor in motors:
-            response = motor.get_n_queued_items()
-            queue_sizes.append(response[0])
+            n_queued_items = motor.get_n_queued_items()
+            queue_sizes.append(n_queued_items)
         if all(queue_size < QUEUE_SIZE for queue_size in queue_sizes):
             break
         time.sleep(0.1)
@@ -250,8 +251,8 @@ def wait_queue_empty(motors):
     while True:
         queue_sizes = []
         for motor in motors:
-            response = motor.get_n_queued_items()
-            queue_sizes.append(response[0])
+            n_queud_items = motor.get_n_queued_items()
+            queue_sizes.append(n_queud_items)
         if all(queue_size == 0 for queue_size in queue_sizes):
             break
         time.sleep(0.1)
@@ -281,11 +282,11 @@ args = parser.parse_args()
 
 servomotor.set_serial_port_from_args(args)
 
-motor255 = servomotor.M3(ALL_MOTORS_ALIAS, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
-motorX = servomotor.M3(X_ALIAS, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
-motorY = servomotor.M3(Y_ALIAS, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
-motorZ = servomotor.M3(Z_ALIAS, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
-motorG = servomotor.M3(GLUE_DISPENSE_ALIAS, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+motor255 = servomotor.M3(ALL_MOTORS_ALIAS, verbose=args.verbose)
+motorX = servomotor.M3(X_ALIAS, verbose=args.verbose)
+motorY = servomotor.M3(Y_ALIAS, verbose=args.verbose)
+motorZ = servomotor.M3(Z_ALIAS, verbose=args.verbose)
+motorG = servomotor.M3(GLUE_DISPENSE_ALIAS, verbose=args.verbose)
 servomotor.open_serial_port()
 
 # Reset all devices
@@ -299,30 +300,26 @@ check_device_with_ping(motorZ, REQUIRED_SUCCESSFUL_PINGS)
 check_device_with_ping(motorG, REQUIRED_SUCCESSFUL_PINGS)
 
 # Let's now set the motor current and do homing on all the axes
-do_homing(motorZ, Z_MOTOR_CURRENT_SETTING,   -Z_SPAN_MICROSTEPS + ONE_ROTATION_MICROSTEPS * 1,      HOMING_MAX_TIME_S * INTERNAL_TIME_UNIT_HZ)
-do_homing(motorX, X_Y_MOTOR_CURRENT_SETTING, -X_Y_SPAN_MICROSTEPS + ONE_ROTATION_MICROSTEPS * 0.25, HOMING_MAX_TIME_S * INTERNAL_TIME_UNIT_HZ)
-do_homing(motorY, X_Y_MOTOR_CURRENT_SETTING, -X_Y_SPAN_MICROSTEPS + ONE_ROTATION_MICROSTEPS * 0.25, HOMING_MAX_TIME_S * INTERNAL_TIME_UNIT_HZ)
+do_homing(motorZ, Z_MOTOR_CURRENT_SETTING,   -Z_SPAN_ROTATIONS + 1,      HOMING_MAX_TIME_S)
+do_homing(motorX, X_Y_MOTOR_CURRENT_SETTING, -X_Y_SPAN_ROTATIONS + 0.25, HOMING_MAX_TIME_S)
+do_homing(motorY, X_Y_MOTOR_CURRENT_SETTING, -X_Y_SPAN_ROTATIONS + 0.25, HOMING_MAX_TIME_S)
 
 # Let's zero all the positions
 response = motorX.zero_position()
 response = motorY.zero_position()
 response = motorZ.zero_position()
 
-
-
-response = motorZ.go_to_position(Z_START_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION * ONE_ROTATION_MICROSTEPS, Z_GO_TO_START_TIME * INTERNAL_TIME_UNIT_HZ)
+response = motorZ.go_to_position(Z_START_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_START_TIME)
 wait_queue_empty([motorZ])
 
-# Last is to move the plunger to the place where the glue starts, which is where there is resistance
-do_homing(motorG, DETECT_GLUE_PLUNGER_POSITION_MOTOR_CURRENT_SETTING, GLUE_DISPENSER_SPAN_MICROSTEPS + ONE_ROTATION_MICROSTEPS * 0.25, DETECT_GLUE_PLUNGER_POSITION_HOMING_MAX_TIME_S * INTERNAL_TIME_UNIT_HZ)
-response = motorG.zero_position()
-print(f"Setting the current of the motor with alias {motorG.alias} to {GLUE_DISPENSER_MOTOR_CURRENT_SETTING} (which is some arbitrary unit)")
-response = motorG.set_maximum_motor_current(GLUE_DISPENSER_MOTOR_CURRENT_SETTING, GLUE_DISPENSER_MOTOR_CURRENT_SETTING)
-print("Response:", response)
 
-# Pull back the plunger a little bit, so as not to dispense any glue yet
-#response = motorG.go_to_position(PLUNGER_PULL_BACK_MICROSTEPS_TO_STOP_DISPENSING, PLUNGER_PULL_BACK_TIME * INTERNAL_TIME_UNIT_HZ)
-#wait_queue_empty([motorG])
+# Last is to move the plunger to the place where the glue starts, which is where there is resistance
+if PLUNGER_ENABLED:
+    do_homing(motorG, DETECT_PLUNGER_POSITION_MOTOR_CURRENT_SETTING, PLUNGER_SPAN_ROTATIONS, DETECT_PLUNGER_POSITION_HOMING_MAX_TIME_S)
+    response = motorG.zero_position()
+    print(f"Setting the current of the motor with alias {motorG.alias} to {PLUNGER_MOTOR_CURRENT_SETTING} (which is some arbitrary unit)")
+    response = motorG.set_maximum_motor_current(PLUNGER_MOTOR_CURRENT_SETTING, PLUNGER_MOTOR_CURRENT_SETTING)
+    print("Response:", response)
 
 time.sleep(5)
 
@@ -335,32 +332,32 @@ for position_x, position_y in POSITIONS:
     # Let's move the axes to the start position
     position_x = position_x + X_START_POSITION_MM
     position_y = position_y + Y_START_POSITION_MM
-    response = motorX.go_to_position(position_x / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS, X_GO_TO_START_TIME * INTERNAL_TIME_UNIT_HZ)
-    response = motorY.go_to_position(position_y / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS, Y_GO_TO_START_TIME * INTERNAL_TIME_UNIT_HZ)
+    response = motorX.go_to_position(position_x / MM_PER_PULLEY_ROTATION, X_GO_TO_START_TIME)
+    response = motorY.go_to_position(position_y / MM_PER_PULLEY_ROTATION, Y_GO_TO_START_TIME)
     # Wait until the queues for X and Y and Z are all empty
     while 1:
-        responseX = motorX.get_n_queued_items()
-        responseY = motorY.get_n_queued_items()
-        responseZ = motorZ.get_n_queued_items()
-        if responseX[0] == 0 and responseY[0] == 0 and responseZ[0] == 0:
+        n_queud_items_X = motorX.get_n_queued_items()
+        n_queud_items_Y = motorY.get_n_queued_items()
+        n_queud_items_Z = motorZ.get_n_queued_items()
+        if n_queud_items_X == 0 and n_queud_items_Y == 0 and n_queud_items_Z == 0:
             break
         time.sleep(0.1)
 
     # Move Z such that we are ready to dispense glue
-    response = motorZ.go_to_position(Z_DISPENSE_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION * ONE_ROTATION_MICROSTEPS, Z_GO_TO_DISPENSE_POSITION_TIME * INTERNAL_TIME_UNIT_HZ)
+    response = motorZ.go_to_position(Z_DISPENSE_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
 
     # Now we need to move the dispenser in a circular fashion. We will queue up a bunch of "Move with velocity commnads" to do this
-    n_circle_points = N_GLUE_DOTS
+    n_circle_points = N_HOPS
     circle_diameter = 24.0
-    time_per_circle = 5.0
+    time_per_circle = GLUE_CIRCLE_TIME
     time_per_circle_step = time_per_circle / n_circle_points
     angle_step_radians = 2 * math.pi / n_circle_points
     for circle_counter in range(N_CIRCLES):
         x_velocities_converted = []
         y_velocities_converted = []
         z_velocities_converted = []
-        glue_velocities_converted = []
-        move_times_converted = []
+        glue_velocities = []
+        move_times = []
         for i in range(n_circle_points):
             angle = i * angle_step_radians
             next_angle = angle + angle_step_radians
@@ -369,67 +366,67 @@ for position_x, position_y in POSITIONS:
             next_x = circle_diameter * 0.5 * (math.cos(next_angle) + 1)
             next_y = circle_diameter * 0.5 * (math.sin(next_angle) + 1)
             if HOPPING:
-                trajectory_velocities, move_times, trajectory_points = compute_half_ellipse_trajectory([x, y, 0], [next_x, next_y, 0], GLUE_DOT_HOP_HEIGHT_MM, [0, 0, -1], 10, HOP_TIME_SECONDS)
-                glue_velocity_converted = PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_MOTOR_UNITS / INTERNAL_TIME_UNIT_HZ * (2**20)
+                trajectory_velocities, _move_times, trajectory_points = compute_half_ellipse_trajectory([x, y, 0], [next_x, next_y, 0], GLUE_DOT_HOP_HEIGHT_MM, [0, 0, -1], 10, HOP_TIME_SECONDS)
+                move_times.extend(_move_times)
+                glue_velocity = PLUNGER_VELOCITY_ROTATIONS_PER_SECOND
                 # Let's convert all the velocities into the right unit for the motors
                 for velocity in trajectory_velocities:
                     x_velocity_mm_per_s = velocity[0]
                     y_velocity_mm_per_s = velocity[1]
                     z_velocity_mm_per_s = velocity[2]
                     # and convert the velocity from mm/s to microsteps per motor time unit
-                    x_velocities_converted.append(x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS / INTERNAL_TIME_UNIT_HZ * (2**20))
-                    y_velocities_converted.append(y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS / INTERNAL_TIME_UNIT_HZ * (2**20))
-                    z_velocities_converted.append(z_velocity_mm_per_s / Z_LEAD_SCREW_MM_PER_ROTATION * ONE_ROTATION_MICROSTEPS / INTERNAL_TIME_UNIT_HZ * (2**20))
+                    x_velocities_converted.append(x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
+                    y_velocities_converted.append(y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
+                    z_velocities_converted.append(z_velocity_mm_per_s / Z_LEAD_SCREW_MM_PER_ROTATION)
                     if circle_counter < N_CIRCLES_DISPENSING_GLUE:
-                        glue_velocities_converted.append(glue_velocity_converted)
+                        glue_velocities.append(glue_velocity)
                     else:
-                        glue_velocities_converted.append(0.0)
-                for move_time in move_times:
-                    move_times_converted.append(move_time * INTERNAL_TIME_UNIT_HZ)
+                        glue_velocities.append(0.0)
             else:
                 delta_x = next_x - x
                 delta_y = next_y - y
                 x_velocity_mm_per_s = delta_x / time_per_circle_step
                 y_velocity_mm_per_s = delta_y / time_per_circle_step
                 # and convert the velocity from mm/s to microsteps per motor time unit
-                x_velocity_converted = x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS / INTERNAL_TIME_UNIT_HZ * (2**20)
-                y_velocity_converted = y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION * ONE_ROTATION_MICROSTEPS / INTERNAL_TIME_UNIT_HZ * (2**20)
-                glue_velocity_converted = PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_MOTOR_UNITS / INTERNAL_TIME_UNIT_HZ * (2**20)
+                x_velocity_converted = x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
+                y_velocity_converted = y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
+                glue_velocity = PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_SHAFT_ROTATIONS
                 x_velocities_converted.append(x_velocity_converted)
                 y_velocities_converted.append(y_velocity_converted)
                 z_velocities_converted.append(0.0)
                 if circle_counter < N_CIRCLES_DISPENSING_GLUE:
-                    glue_velocities_converted.append(glue_velocity_converted)
+                    glue_velocities.append(glue_velocity)
                 else:
-                    glue_velocities_converted.append(0.0)
-                move_times.append(time_per_circle_step * INTERNAL_TIME_UNIT_HZ)
+                    glue_velocities.append(0.0)
+                move_times.append(time_per_circle_step)
         if circle_counter >= N_CIRCLES - 1:  # stop the motion at the end of doing all circle
             x_velocities_converted.append(0.0)
             y_velocities_converted.append(0.0)
             z_velocities_converted.append(0.0)
-            glue_velocities_converted.append(0.0)
-            move_times_converted.append(1)
+            glue_velocities.append(0.0)
+            move_times.append(0.001)
         # Let's iterate through all the moves and execute them
-        for x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity_converted, move_time_converted in zip(x_velocities_converted, y_velocities_converted, z_velocities_converted, glue_velocities_converted, move_times_converted):
+        for x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity, move_time in zip(x_velocities_converted, y_velocities_converted, z_velocities_converted, glue_velocities, move_times):
             # Let's check how many queued items there are and if the queue is full then we should wait for it to get space
             wait_for_queue_space([motorX, motorY, motorZ, motorG])
-            response = motorX.move_with_velocity(x_velocity_converted, move_time_converted)
-            response = motorY.move_with_velocity(y_velocity_converted, move_time_converted)
-            response = motorZ.move_with_velocity(z_velocity_converted, move_time_converted)
-            response = motorG.move_with_velocity(glue_velocity_converted, move_time_converted)
-            if glue_velocity_converted != 0.0:
-                enable_or_disable_glue_dispenser(motorG, True)
-            else:
-                enable_or_disable_glue_dispenser(motorG, False)
-            # Get the comprehensive positions of the glue dispenser motor, to see if we dispensed the expected amount of glue. Log it to a file
-            response = motorG.get_comprehensive_position()
-            # Log all the data that is returned in the response to the log file, one item per column
-            log_fh.write(" ".join([str(item) for item in response]) + "\n")
-            time_sync.logic()
+            response = motorX.move_with_velocity(x_velocity_converted, move_time)
+            response = motorY.move_with_velocity(y_velocity_converted, move_time)
+            response = motorZ.move_with_velocity(z_velocity_converted, move_time)
+            if PLUNGER_ENABLED:
+                response = motorG.move_with_velocity(glue_velocity, move_time)
+                if glue_velocity != 0.0:
+                    enable_or_disable_glue_dispenser(motorG, True)
+                else:
+                    enable_or_disable_glue_dispenser(motorG, False)
+                # Get the comprehensive positions of the glue dispenser motor, to see if we dispensed the expected amount of glue. Log it to a file
+                response = motorG.get_comprehensive_position()
+                # Log all the data that is returned in the response to the log file, one item per column
+                log_fh.write(" ".join([str(item) for item in response]) + "\n")
+                time_sync.logic()
 
     wait_queue_empty([motorX, motorY, motorZ])
 
-    response = motorZ.go_to_position(Z_START_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION * ONE_ROTATION_MICROSTEPS, Z_GO_TO_DISPENSE_POSITION_TIME * INTERNAL_TIME_UNIT_HZ)
+    response = motorZ.go_to_position(Z_START_POSITION_MM / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
 
     time.sleep(Z_GO_TO_DISPENSE_POSITION_TIME * 1.1)
 

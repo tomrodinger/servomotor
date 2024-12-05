@@ -288,7 +288,7 @@ def define_commands(m3_class, data_type_dict, command_dict, verbose=2):
     communication.set_data_types_and_command_data(data_type_dict, command_dict)
 
 class AllMotors:
-    def __init__(self, alias, time_unit, position_unit, velocity_unit, acceleration_unit, temperature_unit, verbose):
+    def __init__(self, alias, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
         # Convert string alias to integer if needed
         if isinstance(alias, str):
             if len(alias) == 1:
@@ -302,12 +302,35 @@ class AllMotors:
                     raise ValueError("Alias must be between 0-255")
         else:
             self.alias = alias
-            
+
+        if time_unit == None:
+            time_unit = next(iter(TimeUnit)).value
         self._time_unit = TimeUnit(time_unit)
+        
+        if position_unit == None:
+            position_unit = next(iter(PositionUnit)).value
         self._position_unit = PositionUnit(position_unit)
+        
+        if velocity_unit == None:
+            velocity_unit = next(iter(VelocityUnit)).value
         self._velocity_unit = VelocityUnit(velocity_unit)
+        
+        if acceleration_unit == None:
+            acceleration_unit = next(iter(AccelerationUnit)).value
         self._acceleration_unit = AccelerationUnit(acceleration_unit)
+        
+        if temperature_unit == None:
+            temperature_unit = next(iter(TemperatureUnit)).value
         self._temperature_unit = TemperatureUnit(temperature_unit)
+
+        if current_unit == None:
+            current_unit = next(iter(CurrentUnit)).value
+        self._current_unit = CurrentUnit(current_unit)
+        
+        if voltage_unit == None:
+            voltage_unit = next(iter(VoltageUnit)).value
+        self._voltage_unit = VoltageUnit(voltage_unit)
+        
         self.verbose = verbose
 
     def __del__(self):
@@ -315,40 +338,61 @@ class AllMotors:
 
     def set_position_unit(self, new_unit):
         """Change the position unit dynamically"""
-        self._position_unit = PositionUnit(new_unit)
+        if new_unit != None:
+            self._position_unit = PositionUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._position_unit = PositionUnit(next(iter(PositionUnit)).value)
 
     def set_time_unit(self, new_unit):
         """Change the time unit dynamically"""
-        self._time_unit = TimeUnit(new_unit)
+        if new_unit != None:
+            self._time_unit = TimeUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._time_unit = TimeUnit(next(iter(TimeUnit)).value)        
 
     def set_velocity_unit(self, new_unit):
         """Change the velocity unit dynamically"""
-        self._velocity_unit = VelocityUnit(new_unit)
+        if new_unit != None:
+            self._velocity_unit = VelocityUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._velocity_unit = VelocityUnit(next(iter(VelocityUnit)).value)
 
     def set_acceleration_unit(self, new_unit):
         """Change the acceleration unit dynamically"""
-        self._acceleration_unit = AccelerationUnit(new_unit)
+        if new_unit != None:
+            self._acceleration_unit = AccelerationUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._acceleration_unit = AccelerationUnit(next(iter(AccelerationUnit)).value)
 
     def set_temperature_unit(self, new_unit):
         """Change the temperature unit dynamically"""
-        self._temperature_unit = TemperatureUnit(new_unit)
-
-class M3(AllMotors):
-    def __init__(self, alias, motor_type, time_unit, position_unit, velocity_unit, acceleration_unit, current_unit, voltage_unit, temperature_unit, verbose=2):
-        super().__init__(alias, time_unit, position_unit, velocity_unit, acceleration_unit, temperature_unit, verbose)
-        self._current_unit = CurrentUnit(current_unit)
-        self._voltage_unit = VoltageUnit(voltage_unit)
-
-    def __del__(self):
-        super().__del__()
+        if new_unit != None:
+            self._temperature_unit = TemperatureUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._temperature_unit = TemperatureUnit(next(iter(TemperatureUnit)).value)
 
     def set_current_unit(self, new_unit):
         """Change the current unit dynamically"""
-        self._current_unit = CurrentUnit(new_unit)
+        if new_unit != None:
+            self._current_unit = CurrentUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._current_unit = CurrentUnit(next(iter(CurrentUnit)).value)
 
     def set_voltage_unit(self, new_unit):
         """Change the voltage unit dynamically"""
-        self._voltage_unit = VoltageUnit(new_unit)
+        if new_unit != None:
+            self._voltage_unit = VoltageUnit(new_unit)
+        else: # in the case that the user specifies None, we choose a default as the first item in the enum
+            self._voltage_unit = VoltageUnit(next(iter(VoltageUnit)).value)
+
+class M3(AllMotors):
+    def __init__(self, alias, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
+        super().__init__(alias, time_unit=time_unit, position_unit=position_unit, velocity_unit=velocity_unit, 
+                        acceleration_unit=acceleration_unit, temperature_unit=temperature_unit,
+                        current_unit=current_unit, voltage_unit=voltage_unit, verbose=verbose)
+
+    def __del__(self):
+        super().__del__()
 
     def set_alias(self, new_alias):
         """Change the alias of the motor"""

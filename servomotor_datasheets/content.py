@@ -50,8 +50,7 @@ def add_introduction(story, style):
     story.append(Paragraph('Introduction', create_heading_style()))
     intro_text = read_file_content('introduction.txt')
     story.append(Paragraph(intro_text, style))
-    story.append(Spacer(1, 15))
-    story.append(PageBreak())
+    story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_features(story, style):
     """Add key features section"""
@@ -60,7 +59,7 @@ def add_features(story, style):
     feature_style = create_feature_style()
     for feature in features:
         story.append(Paragraph(feature, feature_style))
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_connection_diagram(story, style):
     """Add connection diagram section"""
@@ -75,7 +74,7 @@ def add_connection_diagram(story, style):
     diagram_img = get_processed_image('connection_diagram.jpg', content_width)
     diagram_img.hAlign = 'CENTER'
     story.append(diagram_img)
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_unit_system(story, style):
     """Add unit system section"""
@@ -84,7 +83,7 @@ def add_unit_system(story, style):
     
     # Add heading and description
     elements.append(Paragraph('Unit System', create_heading_style()))
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 4))  # Reduced spacing
     
     elements.append(Paragraph(
         'The M3 Series Servomotors have certain internal units so that they can perform the calculations '
@@ -92,7 +91,7 @@ def add_unit_system(story, style):
         'software to support multiple units of measurement for various quantities. Our Python library handles '
         'unit conversions automatically, allowing you to work with your preferred units. Below are the supported '
         'units for each quantity:', style))
-    elements.append(Spacer(1, 8))
+    elements.append(Spacer(1, 4))  # Reduced spacing
     
     # Calculate content width to match main.py
     page_width, _ = A4
@@ -129,7 +128,7 @@ def add_unit_system(story, style):
     # Create table with width matching content_width
     col1_width = content_width * 0.25  # 25% of content width
     col2_width = content_width * 0.75  # 75% of content width
-    table = Table(table_data, colWidths=[col1_width, col2_width])
+    table = Table(data=table_data, colWidths=[col1_width, col2_width])
     table.setStyle(TableStyle([
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('BACKGROUND', (0, 0), (-1, 0), PRIMARY_COLOR),
@@ -137,20 +136,18 @@ def add_unit_system(story, style):
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('TOPPADDING', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
-        ('TOPPADDING', (0, 1), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),  # Reduced padding
+        ('TOPPADDING', (0, 0), (-1, 0), 8),  # Reduced padding
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 6),  # Reduced padding
+        ('TOPPADDING', (0, 1), (-1, -1), 6),  # Reduced padding
         ('LEFTPADDING', (0, 0), (-1, -1), 6),
         ('RIGHTPADDING', (0, 0), (-1, -1), 6),
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
     ]))
     
     elements.append(table)
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, 6))  # Reduced spacing
     
-    # Add page break before the section if needed
-    story.append(PageBreak())
     # Keep all elements together
     story.append(KeepTogether(elements))
 
@@ -173,10 +170,10 @@ def add_getting_started_section(story, style):
     ]
     
     feature_style = create_feature_style()
-    for feature in guide_features:
+    for feature in guide_features:  # Fixed: using guide_features instead of features
         story.append(Paragraph(feature, feature_style))
     
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 4))  # Reduced spacing
     
     # Calculate content width
     page_width, _ = A4
@@ -191,7 +188,7 @@ def add_getting_started_section(story, style):
         content_width
     )
     story.append(icon_link)
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_all_content(story, style):
     """Add all content sections"""

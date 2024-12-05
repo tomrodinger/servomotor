@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+This program generates unit conversion factors for different motor types.
+DO NOT EDIT THE OUTPUT JSON FILE DIRECTLY! Instead, modify this program.
+"""
+
 import sys
 import os
 import json
@@ -7,6 +12,7 @@ import math
 import argparse
 import importlib.util
 from datetime import datetime
+from collections import OrderedDict
 
 def import_settings(motor_type):
     """
@@ -56,6 +62,11 @@ def calculate_time_conversions(INTERNAL_TIME_UNIT_HZ):
     """Calculate time unit conversion factors"""
     print("\nCalculating time unit conversions...")
     
+    # Seconds to timesteps
+    print("\nSeconds Conversion Calculation:")
+    sec_factor = INTERNAL_TIME_UNIT_HZ
+    print(f"1. Final value = {sec_factor:,} timesteps/second")
+
     # Milliseconds to timesteps
     print("\nMilliseconds Conversion Calculation:")
     print(f"1. INTERNAL_TIME_UNIT_HZ = {INTERNAL_TIME_UNIT_HZ:,} Hz")
@@ -66,11 +77,6 @@ def calculate_time_conversions(INTERNAL_TIME_UNIT_HZ):
     ms_factor = INTERNAL_TIME_UNIT_HZ * ms_to_sec
     print(f"3. Final value = {ms_factor:,} timesteps/millisecond")
 
-    # Seconds to timesteps
-    print("\nSeconds Conversion Calculation:")
-    sec_factor = INTERNAL_TIME_UNIT_HZ
-    print(f"1. Final value = {sec_factor:,} timesteps/second")
-
     # Minutes to timesteps
     print("\nMinutes Conversion Calculation:")
     min_to_sec = 60
@@ -79,19 +85,19 @@ def calculate_time_conversions(INTERNAL_TIME_UNIT_HZ):
     min_factor = INTERNAL_TIME_UNIT_HZ * min_to_sec
     print(f"2. Final value = {min_factor:,} timesteps/minute")
 
-    # Store time conversion factors
-    time_factors = {
-        "milliseconds": ms_factor,
-        "seconds": sec_factor,
-        "minutes": min_factor
-    }
+    # Store time conversion factors with seconds first
+    time_factors = OrderedDict([
+        ("seconds", sec_factor),
+        ("milliseconds", ms_factor),
+        ("minutes", min_factor)
+    ])
 
     # Calculate time verification values
-    time_verification = {
-        "1000_milliseconds": 1000 * ms_factor,
-        "1_second": 1 * sec_factor,
-        "1_60th_minute": (1/60) * min_factor
-    }
+    time_verification = OrderedDict([
+        ("1_second", 1 * sec_factor),
+        ("1000_milliseconds", 1000 * ms_factor),
+        ("1_60th_minute", (1/60) * min_factor)
+    ])
 
     return time_factors, time_verification
 
@@ -184,22 +190,33 @@ def calculate_velocity_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_H
     """Calculate velocity unit conversion factors"""
     print("\nCalculating velocity unit conversions...")
     
-    # RPM to counts_per_timestep
-    print("\nRPM Conversion Calculation:")
+    # Rotations per second to counts_per_timestep
+    print("\nRotations per Second Conversion Calculation:")
     print(f"1. ONE_ROTATION_MICROSTEPS = {ONE_ROTATION_MICROSTEPS:,} counts/rotation")
     print(f"2. INTERNAL_TIME_UNIT_HZ = {INTERNAL_TIME_UNIT_HZ:,} Hz")
     
+    rps_counts_per_second = ONE_ROTATION_MICROSTEPS
+    print(f"3. Counts/second = {rps_counts_per_second:,}")
+    
+    rps_counts_per_timestep = rps_counts_per_second / INTERNAL_TIME_UNIT_HZ
+    print(f"4. Counts/timestep = {rps_counts_per_timestep}")
+    
+    rps_factor = rps_counts_per_timestep * (2**20)
+    print(f"5. Final value (scaled by 2^20 for integer transmission) = {rps_factor:,}")
+
+    # RPM to counts_per_timestep
+    print("\nRPM Conversion Calculation:")
     rpm_to_rps = 1/60
-    print(f"3. 1 RPM = {rpm_to_rps} rotations/second")
+    print(f"1. 1 RPM = {rpm_to_rps} rotations/second")
     
     rpm_counts_per_second = rpm_to_rps * ONE_ROTATION_MICROSTEPS
-    print(f"4. Counts/second = {rpm_counts_per_second:,}")
+    print(f"2. Counts/second = {rpm_counts_per_second:,}")
     
     rpm_counts_per_timestep = rpm_counts_per_second / INTERNAL_TIME_UNIT_HZ
-    print(f"5. Counts/timestep = {rpm_counts_per_timestep}")
+    print(f"3. Counts/timestep = {rpm_counts_per_timestep}")
     
     rpm_factor = rpm_counts_per_timestep * (2**20)
-    print(f"6. Final value (scaled by 2^20 for integer transmission) = {rpm_factor:,}")
+    print(f"4. Final value (scaled by 2^20 for integer transmission) = {rpm_factor:,}")
 
     # Degrees/second to counts_per_timestep
     print("\nDegrees/Second Conversion Calculation:")
@@ -239,6 +256,7 @@ def calculate_velocity_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_H
 
     # Store velocity conversion factors
     velocity_factors = {
+        "rotations_per_second": rps_factor,
         "rpm": rpm_factor,
         "degrees_per_second": deg_factor,
         "radians_per_second": rad_factor,
@@ -247,6 +265,7 @@ def calculate_velocity_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_H
 
     # Calculate velocity verification values
     velocity_verification = {
+        "1_rotation_per_second": 1 * rps_factor,
         "60_rpm": 60 * rpm_factor,
         "360_degrees_per_second": 360 * deg_factor,
         "2pi_radians_per_second": 2 * math.pi * rad_factor,
@@ -320,49 +339,85 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
                                  time_factors, time_verification,
                                  acceleration_factors, acceleration_verification):
     """Generate the combined unit conversions JSON file"""
-    data = {
-        "metadata": {
-            "motor_type": motor_type,
-            "generated_at": datetime.now().isoformat(),
-            "description": "Automatically generated unit conversion factors",
-            "scaling_note": "Velocity conversion factors include a 2^20 scaling factor and acceleration conversion factors include a 2^24 scaling factor to maintain precision when transmitting as integers"
-        },
-        "units": {
-            "time": list(time_factors.keys()),
-            "position": list(position_factors.keys()),
-            "velocity": list(velocity_factors.keys()),
-            "acceleration": list(acceleration_factors.keys()),
-            "current": ["milliamps", "amps"],
-            "voltage": ["volts", "millivolts"],
-            "temperature": ["celsius", "fahrenheit", "kelvin"]
-        },
-        "conversion_factors": {
-            **velocity_factors,
-            **position_factors,
-            **time_factors,
-            **acceleration_factors
-        },
-        "verification": {
-            "velocity": {
-                "note": "All these values should be approximately equal as they represent 1 rotation per second",
-                "values": velocity_verification
-            },
-            "position": {
-                "note": "All these values should be approximately equal as they represent 1 rotation",
-                "values": position_verification
-            },
-            "time": {
-                "note": "All these values should be approximately equal as they represent 1 second",
-                "values": time_verification
-            },
-            "acceleration": {
-                "note": "All these values should be approximately equal as they represent 1 rotation per second squared",
-                "values": acceleration_verification
-            }
-        }
-    }
     
+    data = OrderedDict([
+        ("metadata", OrderedDict([
+            ("warning", "DO NOT EDIT THIS FILE DIRECTLY! Instead, modify the autogenerate_unit_conversions.py program."),
+            ("generation_note", f"Generated on: {datetime.now().isoformat()}"),
+            ("motor_type", motor_type),
+            ("generated_at", datetime.now().isoformat()),
+            ("description", "Automatically generated unit conversion factors"),
+            ("scaling_note", "Velocity conversion factors include a 2^20 scaling factor and acceleration conversion factors include a 2^24 scaling factor to maintain precision when transmitting as integers")
+        ])),
+        ("units", OrderedDict([
+            ("time", list(time_factors.keys())),  # Use the order from time_factors OrderedDict
+            ("position", ["shaft_rotations", "degrees", "radians", "encoder_counts"]),
+            ("velocity", ["rotations_per_second", "rpm", "degrees_per_second", "radians_per_second", "counts_per_second"]),
+            ("acceleration", ["rotations_per_second_squared", "rpm_per_second", "degrees_per_second_squared", "radians_per_second_squared", "counts_per_second_squared"]),
+            ("current", ["milliamps", "amps"]),
+            ("voltage", ["millivolts", "volts"]),
+            ("temperature", ["celsius", "fahrenheit", "kelvin"])
+        ])),
+        ("conversion_factors", OrderedDict([
+            # Velocity factors in order
+            ("rotations_per_second", velocity_factors["rotations_per_second"]),
+            ("rpm", velocity_factors["rpm"]),
+            ("degrees_per_second", velocity_factors["degrees_per_second"]),
+            ("radians_per_second", velocity_factors["radians_per_second"]),
+            ("counts_per_second", velocity_factors["counts_per_second"]),
+            # Position factors
+            ("shaft_rotations", position_factors["shaft_rotations"]),
+            ("degrees", position_factors["degrees"]),
+            ("radians", position_factors["radians"]),
+            ("encoder_counts", position_factors["encoder_counts"]),
+            # Time factors with seconds first
+            ("seconds", time_factors["seconds"]),
+            ("milliseconds", time_factors["milliseconds"]),
+            ("minutes", time_factors["minutes"]),
+            # Acceleration factors
+            ("rotations_per_second_squared", acceleration_factors["rotations_per_second_squared"]),
+            ("rpm_per_second", acceleration_factors["rpm_per_second"]),
+            ("degrees_per_second_squared", acceleration_factors["degrees_per_second_squared"]),
+            ("radians_per_second_squared", acceleration_factors["radians_per_second_squared"]),
+            ("counts_per_second_squared", acceleration_factors["counts_per_second_squared"])
+        ])),
+        ("verification", OrderedDict([
+            ("velocity", OrderedDict([
+                ("note", "All these values should be approximately equal as they represent 1 rotation per second"),
+                ("values", OrderedDict([
+                    ("1_rotation_per_second", velocity_verification["1_rotation_per_second"]),
+                    ("60_rpm", velocity_verification["60_rpm"]),
+                    ("360_degrees_per_second", velocity_verification["360_degrees_per_second"]),
+                    ("2pi_radians_per_second", velocity_verification["2pi_radians_per_second"]),
+                    ("one_rotation_counts_per_second", velocity_verification["one_rotation_counts_per_second"])
+                ]))
+            ])),
+            ("position", OrderedDict([
+                ("note", "All these values should be approximately equal as they represent 1 rotation"),
+                ("values", position_verification)
+            ])),
+            ("time", OrderedDict([
+                ("note", "All these values should be approximately equal as they represent 1 second"),
+                ("values", OrderedDict([
+                    ("1_second", time_verification["1_second"]),
+                    ("1000_milliseconds", time_verification["1000_milliseconds"]),
+                    ("1_60th_minute", time_verification["1_60th_minute"])
+                ]))
+            ])),
+            ("acceleration", OrderedDict([
+                ("note", "All these values should be approximately equal as they represent 1 rotation per second squared"),
+                ("values", acceleration_verification)
+            ]))
+        ]))
+    ])
+    
+    print("\nGenerating unit conversion factors JSON file from this data:")
+    print(data)
+    
+    print("\nSaving to JSON file...")
+
     output_file = f"unit_conversions_{motor_type}.json"
+    
     with open(output_file, 'w') as f:
         json.dump(data, f, indent=2)
     
@@ -421,11 +476,12 @@ def main():
     print("\nFinal Conversion Factors:")
     print("-------------------------")
     print("\nTime Conversion Factors:")
-    print(f"Milliseconds to timesteps:            {time_factors['milliseconds']:,.6f}")
     print(f"Seconds to timesteps:                 {time_factors['seconds']:,.6f}")
+    print(f"Milliseconds to timesteps:            {time_factors['milliseconds']:,.6f}")
     print(f"Minutes to timesteps:                 {time_factors['minutes']:,.6f}")
     
     print("\nVelocity Conversion Factors (includes 2^20 scaling):")
+    print(f"Rotations/sec to counts_per_timestep: {velocity_factors['rotations_per_second']:,.6f}")
     print(f"RPM to counts_per_timestep:           {velocity_factors['rpm']:,.6f}")
     print(f"Degrees/sec to counts_per_timestep:   {velocity_factors['degrees_per_second']:,.6f}")
     print(f"Radians/sec to counts_per_timestep:   {velocity_factors['radians_per_second']:,.6f}")
@@ -438,6 +494,7 @@ def main():
     print(f"Encoder counts to encoder counts:     {position_factors['encoder_counts']:,.6f}")
     
     print("\nAcceleration Conversion Factors (includes 2^24 scaling):")
+    print(f"Rotations/sec² to counts_per_timestep²: {acceleration_factors['rotations_per_second_squared']:,.6f}")
     print(f"RPM/sec to counts_per_timestep²:      {acceleration_factors['rpm_per_second']:,.6f}")
     print(f"Degrees/sec² to counts_per_timestep²: {acceleration_factors['degrees_per_second_squared']:,.6f}")
     print(f"Radians/sec² to counts_per_timestep²: {acceleration_factors['radians_per_second_squared']:,.6f}")
@@ -445,12 +502,13 @@ def main():
     
     print("\nTime Verification (all should give same internal value):")
     print("------------------------------------------------")
-    print(f"1000 milliseconds:        {time_verification['1000_milliseconds']:,.6f}")
     print(f"1 second:                 {time_verification['1_second']:,.6f}")
+    print(f"1000 milliseconds:        {time_verification['1000_milliseconds']:,.6f}")
     print(f"1/60th minute:            {time_verification['1_60th_minute']:,.6f}")
     
     print("\nVelocity Verification (all should give same internal value):")
     print("------------------------------------------------")
+    print(f"1 rotation/second:        {velocity_verification['1_rotation_per_second']:,.6f}")
     print(f"60 RPM:                   {velocity_verification['60_rpm']:,.6f}")
     print(f"360 degrees/second:       {velocity_verification['360_degrees_per_second']:,.6f}")
     print(f"2π radians/second:        {velocity_verification['2pi_radians_per_second']:,.6f}")

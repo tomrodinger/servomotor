@@ -29,7 +29,7 @@ def verify_timing(elapsed_time, expected_time, tolerance=0.1):
 
 def test_velocity_units():
     # Initialize motor with encoder counts as default position unit for precise verification
-    motorX = servomotor.M3("X", motor_type="M3", 
+    motorX = servomotor.M3("X",
                           time_unit="seconds", 
                           position_unit="encoder_counts", 
                           velocity_unit="rpm", 
@@ -49,8 +49,24 @@ def test_velocity_units():
         motorX.enable_mosfets()
         time.sleep(0.5)
 
+        # Test velocity in rotations per second
+        print("\nTesting velocity in rotations per second...")
+        motorX.set_velocity_unit("rotations_per_second")
+        print("Moving at 1 rotation per second for 2 seconds...")
+        start_time = time.time()
+        motorX.move_with_velocity(velocity=1, duration=2)  # 2 seconds at 1 rotation/s
+        motorX.move_with_velocity(velocity=0, duration=0.001)  # Stop with minimal duration
+        wait_for_moves_to_complete(motorX)
+        elapsed_time = time.time() - start_time
+        print(f"Move completed in {elapsed_time:.3f} seconds")
+        verify_timing(elapsed_time, 2.001)  # Expected time: 2s velocity + 0.001s stop
+        # At 1 rotation per second for 2 seconds, we expect 2 rotations
+        expected_position = 2 * 3276800  # 2 rotations * counts per rotation
+        verify_position(motorX, expected_position)
+
         # Test velocity in RPM (1 rotation per second = 60 RPM)
         print("\nTesting velocity in RPM...")
+        motorX.set_velocity_unit("rpm")
         print("Moving at 60 RPM (1 rotation per second) for 2 seconds...")
         start_time = time.time()
         motorX.move_with_velocity(velocity=60, duration=2)  # 2 seconds at 60 RPM
@@ -59,8 +75,8 @@ def test_velocity_units():
         elapsed_time = time.time() - start_time
         print(f"Move completed in {elapsed_time:.3f} seconds")
         verify_timing(elapsed_time, 2.001)  # Expected time: 2s velocity + 0.001s stop
-        # At 60 RPM (1 rotation per second) for 2 seconds, we expect 2 rotations
-        expected_position = 2 * 3276800  # 2 rotations * counts per rotation
+        # At 60 RPM (1 rotation per second) for 2 seconds, we expect 2 more rotations
+        expected_position += 2 * 3276800  # Add 2 more rotations
         verify_position(motorX, expected_position)
 
         # Test velocity in degrees per second (360 deg/s = 1 rotation per second)

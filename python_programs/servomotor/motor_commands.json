@@ -4,14 +4,16 @@
         "CommandEnum": 0,
         "Description": "Disables the MOSFETS (note that MOSFETs are disabled after initial power on).",
         "Input": null,
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Basic Control"
     },
     {
         "CommandString": "Enable MOSFETs",
         "CommandEnum": 1,
         "Description": "Enables the MOSFETS.",
         "Input": null,
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Basic Control"
     },
     {
         "CommandString": "Trapezoid move",
@@ -39,7 +41,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "Set maximum velocity",
@@ -57,7 +60,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Go to position",
@@ -85,7 +89,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "Set maximum acceleration",
@@ -103,14 +108,16 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Start calibration",
         "CommandEnum": 6,
         "Description": "Starts a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly",
         "Input": null,
-        "Output": null
+        "Output": null,
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Capture hall sensor data",
@@ -129,14 +136,16 @@
                 "TooltipDisplayFormat": "",
                 "ParameterName": "data"
             }
-        ]
+        ],
+        "CommandGroup": "Other"
     },
     {
         "CommandString": "Reset time",
         "CommandEnum": 8,
         "Description": "Resets the absolute time to zero (call this first before issuing any movement commands)",
         "Input": null,
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Basic Control"
     },
     {
         "CommandString": "Get current time",
@@ -154,9 +163,9 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
-    }
-,
+        ],
+        "CommandGroup": "Status & Monitoring"
+    },
     {
         "CommandString": "Time sync",
         "CommandEnum": 10,
@@ -179,9 +188,9 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "rccIcscr"
             }
-        ]
-    }
-,
+        ],
+        "CommandGroup": "Device Management"
+    },
     {
         "CommandString": "Get n queued items",
         "CommandEnum": 11,
@@ -193,24 +202,27 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "queueSize"
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Emergency stop",
         "CommandEnum": 12,
         "Description": "Emergency stop (stop all movement, disable MOSFETS, clear the queue)",
         "Input": null,
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Basic Control"
     },
     {
         "CommandString": "Zero position",
         "CommandEnum": 13,
         "Description": "Make the current position the position zero (origin)",
         "Input": null,
-        "Output": "success_response"
-            },
-            {
-                "CommandString": "Homing",
+        "Output": "success_response",
+        "CommandGroup": "Basic Control"
+    },
+    {
+        "CommandString": "Homing",
         "CommandEnum": 14,
         "Description": "Homing (or in other words, move until a crash and then stop immediately)",
         "Input": [
@@ -235,9 +247,10 @@
                 }
             }
         ],
-        "Output": "success_response"
-            },
-{
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
+    },
+    {
         "CommandString": "Get hall sensor position",
         "CommandEnum": 15,
         "Description": "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)",
@@ -253,7 +266,8 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Get status",
@@ -281,14 +295,16 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "fatalErrorCode"
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Go to closed loop",
         "CommandEnum": 17,
         "Description": "Go to closed loop position control mode",
         "Input": null,
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "Get update frequency",
@@ -301,7 +317,8 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "updateFrequency"
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Move with acceleration",
@@ -329,7 +346,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "Detect devices",
@@ -353,7 +371,8 @@
                 "ParameterName": "crc"
             }
         ],
-        "MultipleResponses": true
+        "MultipleResponses": true,
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Set device alias",
@@ -371,10 +390,11 @@
                 "ParameterName": "alias"
             }
         ],
-        "Output": "success_response"
-            },
-            {
-                "CommandString": "Get product info",
+        "Output": "success_response",
+        "CommandGroup": "Device Management"
+    },
+    {
+        "CommandString": "Get product info",
         "CommandEnum": 22,
         "Description": "Get product information",
         "Input": null,
@@ -409,7 +429,8 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "reserved"
             }
-        ]
+        ],
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Firmware upgrade",
@@ -421,10 +442,11 @@
                 "ParameterName": "firmwarePage"
             }
         ],
-        "Output": "success_response"
-            },
-            {
-                "CommandString": "Get product description",
+        "Output": "success_response",
+        "CommandGroup": "Device Management"
+    },
+    {
+        "CommandString": "Get product description",
         "CommandEnum": 24,
         "Description": "Get the product description. Documentation to be done later.",
         "Input": null,
@@ -434,7 +456,8 @@
                 "TooltipDisplayFormat": "%s",
                 "ParameterName": "productDescription"
             }
-        ]
+        ],
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Get firmware version",
@@ -447,7 +470,8 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "firmwareVersion"
             }
-        ]
+        ],
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Move with velocity",
@@ -475,14 +499,16 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "System reset",
         "CommandEnum": 27,
         "Description": "System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning.",
         "Input": null,
-        "Output": null
+        "Output": null,
+        "CommandGroup": "Basic Control"
     },
     {
         "CommandString": "Set maximum motor current",
@@ -510,7 +536,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Multi-move",
@@ -533,7 +560,8 @@
                 "ParameterName": "moveList"
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
     },
     {
         "CommandString": "Set safety limits",
@@ -561,7 +589,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Ping",
@@ -580,7 +609,8 @@
                 "TooltipDisplayFormat": "%s",
                 "ParameterName": "responsePayload"
             }
-        ]
+        ],
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Control hall sensor statistics",
@@ -593,7 +623,8 @@
                 "ParameterName": "control"
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Get hall sensor statistics",
@@ -651,7 +682,8 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "measurementCount"
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Get position",
@@ -669,10 +701,11 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
-            },
-            {
-                "CommandString": "Read multipurpose buffer",
+        ],
+        "CommandGroup": "Status & Monitoring"
+    },
+    {
+        "CommandString": "Read multipurpose buffer",
         "CommandEnum": 35,
         "Description": "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)",
         "Input": null,
@@ -682,7 +715,8 @@
                 "TooltipDisplayFormat": "",
                 "ParameterName": "bufferData"
             }
-        ]
+        ],
+        "CommandGroup": "Other"
     },
     {
         "CommandString": "Test mode",
@@ -695,7 +729,8 @@
                 "ParameterName": "testMode"
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Get comprehensive position",
@@ -733,7 +768,8 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Get supply voltage",
@@ -751,7 +787,8 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Get max PID error",
@@ -779,7 +816,8 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Vibrate",
@@ -792,7 +830,8 @@
                 "ParameterName": "vibrationLevel"
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Identify",
@@ -805,10 +844,11 @@
                 "ParameterName": "uniqueId"
             }
         ],
-        "Output": "success_response"
-            },
-            {
-                "CommandString": "Get temperature",
+        "Output": "success_response",
+        "CommandGroup": "Device Management"
+    },
+    {
+        "CommandString": "Get temperature",
         "CommandEnum": 42,
         "Description": "Get the measured temperature of the motor.",
         "Input": null,
@@ -823,7 +863,8 @@
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     },
     {
         "CommandString": "Set PID constants",
@@ -846,7 +887,8 @@
                 "ParameterName": "kD"
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Set Max allowable position deviation",
@@ -864,7 +906,8 @@
                 }
             }
         ],
-        "Output": "success_response"
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
     },
     {
         "CommandString": "Get debug values",
@@ -1017,6 +1060,7 @@
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "motorPwmVoltage"
             }
-        ]
+        ],
+        "CommandGroup": "Status & Monitoring"
     }
 ]

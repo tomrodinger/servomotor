@@ -13,7 +13,7 @@ import servomotor
 VERBOSE = False
 DISABLE_USER_CONFIRMATION = True
 
-N_DISKS = 6 # 18 is maximum in the current setup
+N_DISKS = 18 # 18 is maximum in the current setup
 N_POLES = 50
 
 MOSFET_CURRENT = 500
@@ -93,8 +93,8 @@ def emergency_stop():
     print("All MOSFETs disabled. Exiting program.")
     sys.exit(0)
 
-def getch():
-    if DISABLE_USER_CONFIRMATION == True:
+def getch(override_disable_user_confirmation = False):
+    if DISABLE_USER_CONFIRMATION == True and override_disable_user_confirmation == False:
         return None
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -105,17 +105,19 @@ def getch():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
-def get_user_input(prompt):
-    if DISABLE_USER_CONFIRMATION == True:
+def get_user_input(prompt, override_disable_user_confirmation = False):
+    if DISABLE_USER_CONFIRMATION == True and override_disable_user_confirmation == False:
         return None
     print(prompt)
     while True:
-        key = getch()
+        key = getch(override_disable_user_confirmation = override_disable_user_confirmation)
+        if key == None:
+            continue
         if key == '\r' or key == '\n':  # Enter key
             return ''
-        elif key in ['p', 'r', 'q']:  # Add more keys as needed
+        elif key in ['p', 'r', 'q']:
             return key
-        # Ignore other keys
+        time.sleep(0.05)
 
 def reset_all_and_exit():
     # reset all motors
@@ -281,22 +283,38 @@ def assemble_magents_on_one_disk():
         if i % 2 == 1:
             pole_place_angle = -pole_place_angle
 
-        # now, move the slider motor to place that pole onto the disk
-        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
-        time.sleep(move_time_s * 1.5)
+        while 1:
+            # now, move the slider motor to place that pole onto the disk
+            parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [ONE_DEGREE_MICROSTEPS * pole_place_angle, 31250 * move_time_s], verbose=VERBOSE)
+            time.sleep(move_time_s * 1.5)
 
-        # read back the position and make sure it is within the set tolerance
-        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
-        position_motor_units = parsed_response[0]
-        position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
-        position_error = position_degrees - pole_place_angle
-        if abs(position_error) > DISK_PLACE_SLIDER_POSITION_TOLERANCE:
-            print("ERROR: The slider did not reach the position we expected. It may be that something is blocking it like a magnet")
-            print("The position is", position_degrees, "degrees")
-            print("We expect to be at:", pole_place_angle, "degrees")
-            print("The position error is", position_error, "degrees")
-            print("You should try to fix this by clearing the disk and then removing any magnets that may be blocking the slider")
-            reset_all_and_exit()
+            # read back the position and make sure it is within the set tolerance
+            parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GET_POSITION_COMMAND", [], verbose=VERBOSE)
+            position_motor_units = parsed_response[0]
+            position_degrees = position_motor_units / ONE_DEGREE_MICROSTEPS
+            position_error = position_degrees - pole_place_angle
+            if abs(position_error) > DISK_PLACE_SLIDER_POSITION_TOLERANCE:
+                print("ERROR: The slider did not reach the position we expected. It may be that something is blocking it like a magnet")
+                print("The position is", position_degrees, "degrees")
+                print("We expect to be at:", pole_place_angle, "degrees")
+                print("The position error is", position_error, "degrees")
+                print("You should try to fix this by clearing the disk and then removing any magnets that may be blocking the slider")
+                # now, move the slider motor to place that pole onto the disk
+                parsed_response = servomotor.execute_command(SLIDER_ALIAS, "GO_TO_POSITION_COMMAND", [0, 31250 * move_time_s], verbose=VERBOSE)
+                time.sleep(move_time_s * 1.5)
+                parsed_response = servomotor.execute_command(SLIDER_ALIAS, "DISABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+                # Give the user some options: to quite with q or resume with r
+                while 1:
+                    user_input = get_user_input("Press 'r' ENTER to retry or 'q' ENTER to quit:", override_disable_user_confirmation = True)
+                    if user_input == "q":
+                        reset_all_and_exit()
+                    elif user_input == "r":
+                        parsed_response = servomotor.execute_command(SLIDER_ALIAS, "ENABLE_MOSFETS_COMMAND", [], verbose=VERBOSE)
+                        break
+            else:
+                break
+
+
 
         # after placing the second magnet, we will apply a motion to the slider to push the first two magents to an accurate position
         if i == 1:
@@ -401,7 +419,6 @@ parsed_response = servomotor.execute_command(UP_DOWN_ALIAS, "SET_MAXIMUM_MOTOR_C
 parsed_response = servomotor.execute_command(DISK_TRAY_ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [DISK_TRAY_MOSFET_CURRENT, MOSFET_CURRENT], verbose=VERBOSE)
 time.sleep(0.2) # allow the motor to stabilize it's position
 
-
 # Home the Up/Down motor to the bottom position
 do_homing_and_get_position_in_degrees(UP_DOWN_ALIAS, max_degrees = 360 * 4, max_time_s = 4, homing_n_times = 3, relief_degrees = 50, homing_tolerance_degrees = 10, start_position = 0,
                                           bidirectional = False, expected_bidirectional_range = None, zero_after_start_position_reached = True)
@@ -411,7 +428,7 @@ do_homing_and_get_position_in_degrees(UP_DOWN_ALIAS, max_degrees = 360 * 4, max_
 #print("Press enter to start the first procedure")
 #input()
 
-do_homing_and_get_position_in_degrees(DISK_TRAY_ALIAS, max_degrees = -360 * 15, max_time_s = 15, homing_n_times = 3, relief_degrees = 30, homing_tolerance_degrees = 5, start_position = 0,
+do_homing_and_get_position_in_degrees(DISK_TRAY_ALIAS, max_degrees = -360 * 30, max_time_s = 30, homing_n_times = 3, relief_degrees = 30, homing_tolerance_degrees = 5, start_position = 0,
                                           bidirectional = False, expected_bidirectional_range = None, zero_after_homing = True, zero_after_start_position_reached = False)
 
 for disk_number in range(N_DISKS):

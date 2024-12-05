@@ -33,7 +33,6 @@ def test_acceleration_units():
     """Test acceleration in different units"""
     motorX = servomotor.M3(
         alias='X',
-        motor_type='M3',
         time_unit='seconds',
         position_unit='encoder_counts',
         velocity_unit='counts_per_second',
