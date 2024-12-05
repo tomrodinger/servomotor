@@ -99,7 +99,7 @@ def add_unit_system(story, style):
     content_width = page_width - (2 * margin)
     
     # Load unit conversion data
-    unit_data = load_json_file('unit_conversions_M3.json')
+    unit_data = load_json_file('../python_programs/servomotor/unit_conversions_M3.json')
     units = unit_data['units']
     
     # Create a paragraph style for table cells
