@@ -48,7 +48,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 9
 #define BUGFIX_FIRMWARE_VERSION 0
-#define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+#define DEVELOPMENT_FIRMWARE_VERSION 1 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -770,6 +770,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int64_t max_velocity;
                     int64_t currenbt_velocity;
                     int32_t measured_velocity;
+                    uint32_t n_time_steps;
                     int64_t debug_value1;
                     int64_t debug_value2;
                     int64_t debug_value3;
@@ -796,7 +797,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int32_t average_hall_position_delta;
                     uint8_t motor_pwm_voltage;
 
-                    get_motor_control_debug_values(&max_acceleration, &max_velocity, &currenbt_velocity, &measured_velocity, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
+                    get_motor_control_debug_values(&max_acceleration, &max_velocity, &currenbt_velocity, &measured_velocity, &n_time_steps, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
                     get_profiled_times(&all_motor_control_calulations_profiler_time, &all_motor_control_calulations_profiler_max_time,
                                         &get_sensor_position_profiler_time, &get_sensor_position_profiler_max_time,
                                         &compute_velocity_profiler_time, &compute_velocity_profiler_max_time,
@@ -813,6 +814,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                         int64_t max_velocity;
                         int64_t currenbt_velocity;
                         int32_t measured_velocity;
+                        uint32_t n_time_steps;
                         int64_t debug_value1;
                         int64_t debug_value2;
                         int64_t debug_value3;
@@ -846,6 +848,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     get_debug_values_reply.max_velocity = max_velocity;
                     get_debug_values_reply.currenbt_velocity = currenbt_velocity;
                     get_debug_values_reply.measured_velocity = measured_velocity;
+                    get_debug_values_reply.n_time_steps = n_time_steps;
                     get_debug_values_reply.debug_value1 = debug_value1;
                     get_debug_values_reply.debug_value2 = debug_value2;
                     get_debug_values_reply.debug_value3 = debug_value3;

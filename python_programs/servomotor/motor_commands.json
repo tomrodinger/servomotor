@@ -891,7 +891,7 @@
         "CommandGroup": "Configuration"
     },
     {
-        "CommandString": "Set Max allowable position deviation",
+        "CommandString": "Set max allowable position deviation",
         "CommandEnum": 44,
         "Description": "Set the amount of microsteps that the actual motor position (as measured by the hall sensors) is allowed to deviate from the desired position. Throw a fatal error if this is exceeded.",
         "Input": [
@@ -934,6 +934,11 @@
                 "Description": "i32: Measured velocity",
                 "TooltipDisplayFormat": "%d",
                 "ParameterName": "measuredVelocity"
+            },
+            {
+                "Description": "u32: Number of time steps left in the current move",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "nTimeSteps"
             },
             {
                 "Description": "i64: Debug value 1",

@@ -1691,7 +1691,9 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
         }
         movement_queue[queue_write_position].n_time_steps = n_time_steps;
         queue_write_position = (queue_write_position + 1) & (MOVEMENT_QUEUE_SIZE - 1);
-        n_items_in_queue++;
+        __disable_irq();
+        n_items_in_queue++; // we need to make sure that this operation is atomic
+        __enable_irq();
 //      position_after_last_queue_item = predicted_final_position;
         position_after_last_queue_item_i96 = predicted_final_position_i96;
         velocity_after_last_queue_item = predicted_final_velocity;
@@ -3308,12 +3310,13 @@ void test_M3_motor_spin(void)
     }
 }
 
-void get_motor_control_debug_values(int64_t *_max_acceleration, int64_t *_max_velocity, int64_t *_currenbt_velocity, int32_t *_measured_velocity, int64_t *_debug_value1, int64_t *_debug_value2, int64_t *_debug_value3, int64_t *_debug_value4)
+void get_motor_control_debug_values(int64_t *_max_acceleration, int64_t *_max_velocity, int64_t *_current_velocity, int32_t *_measured_velocity, uint32_t *_n_time_steps, int64_t *_debug_value1, int64_t *_debug_value2, int64_t *_debug_value3, int64_t *_debug_value4)
 {
     *_max_acceleration = max_acceleration;
     *_max_velocity = max_velocity;
-    *_currenbt_velocity = current_velocity_i64;
+    *_current_velocity = current_velocity_i64;
     *_measured_velocity = velocity;
+    *_n_time_steps = movement_queue[queue_read_position].n_time_steps;
     *_debug_value1 = debug_value1;
     *_debug_value2 = debug_value2;
     *_debug_value3 = debug_value3;

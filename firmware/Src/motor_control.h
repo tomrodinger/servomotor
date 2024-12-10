@@ -226,6 +226,6 @@ void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
 void set_motor_test_mode(uint8_t new_test_mode);
 void test_M3_motor_spin(void);
-void get_motor_control_debug_values(int64_t *max_acceleration, int64_t *max_velocity, int64_t *currenbt_velocity, int32_t* measured_velocity, int64_t *debug_value1_ptr, int64_t *debug_value2_ptr, int64_t *debug_value3_ptr, int64_t *debug_value4_ptr);
+void get_motor_control_debug_values(int64_t *_max_acceleration, int64_t *_max_velocity, int64_t *_current_velocity, int32_t *_measured_velocity, uint32_t *_n_time_steps, int64_t *_debug_value1, int64_t *_debug_value2, int64_t *_debug_value3, int64_t *_debug_value4);
 
 #endif /* SRC_MOTOR_CONTROL_H_ */

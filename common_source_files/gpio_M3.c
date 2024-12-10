@@ -22,11 +22,12 @@ static void portA_init(void)
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming) and button input
             (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
-#if SOFTWARE_COMPATIBILITY_CODE == 2 // this is the version with AT5833 chip
+#if SOFTWARE_COMPATIBILITY_CODE == 2 // this is the version with AT5833 chip and this pin is used for the ~INDEX line
             (MODER_DIGITAL_INPUT     << GPIO_MODER_MODE15_Pos);   // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
 #else 
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // If GC6609 chip: UART communicatioin pin (keep high when not communicating)
                                                                   // If A4988 chip: Stepper motor driver reset (reset low, normal operation high)
+                                                                  // V11RC4 and beyong use this pin as MS1 for setting the microstepping mode
 #endif
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain
@@ -47,6 +48,10 @@ static void portA_init(void)
     for(i = 0; i < 1000; i++); // make a delay
     GPIOA->BSRR = (1 << 15); // take the stepper motor driver out of reset by making the reset pin high
 #endif
+#if SOFTWARE_COMPATIBILITY_CODE >= 3
+    GPIOA->BSRR = (1 << 15); // set the MS1 pin high
+#endif
+
 }
 
 
@@ -85,12 +90,13 @@ static void portB_init(void)
 static void portC_init(void)
 {
     GPIOC->MODER =
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE6_Pos)  |
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE6_Pos)  | // if the SOFTWARE_COMPATIBILITY_CODE is 3 or higher, then this is MS2 used for setting the microstepping mode in the AT5833 chip, otherwise this pin is not connected and not used
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE14_Pos) | // Red LED
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Green LED
 //    GPIOC->OTYPER = (0);  // Make the analog input pins open drain
     GPIOC->OSPEEDR = 0xffffffff; // very high speed
     GPIOC->PUPDR = 0; // no pins have pulling resistors
+    GPIOC->BSRR = (1 << 6); // set the MS2 pin high
 }
 
 

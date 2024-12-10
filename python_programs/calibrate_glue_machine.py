@@ -5,6 +5,7 @@ import time
 import json
 import os
 import servomotor
+import math
 
 # Motor aliases
 X_ALIAS = ord('X')
@@ -31,8 +32,12 @@ REQUIRED_SUCCESSFUL_PINGS = 30
 # Calibration settings
 CALIBRATION_FILE = "glue_machine_calibration.json"
 MOVE_TIME = 5.0  # Time to move to positions
-MOSFET_ENABLE_DELAY = 1.0  # Delay between enabling Z and X/Y MOSFETs
-Z_SAFETY_OFFSET_MM = 10.0  # Distance to subtract from Z position during movements
+MOVE_TIME_COLLISION_AVOIDANCE = 3.0
+MOSFET_ENABLE_DELAY = 0.1  # Delay between enabling Z and X/Y MOSFETs
+INTERPOLATION_XY_DISTANCE_MM = 6.0  # Distance from corner points to the estimated zref points in the XY plane
+COLLISION_AVOIDANCE_Z_OFFSET = 30.0  # Distance to move Z before moveing X and Y to avoid collisions during long "across the board" moves
+Z_OFFSET_BEFORE_MANUAL_CAPTURE_MM = 10.0  # Distance to subtract from Z position during movements
+ZREF_HEIGHT_OFFSET_MM = 8.0  # Additional Z height added to zref points to account for height difference between corner points and the zref plane 
 
 # Default positions if no calibration file exists
 DEFAULT_POSITIONS = {
@@ -49,7 +54,8 @@ def load_calibration_data():
             with open(CALIBRATION_FILE, 'r') as f:
                 data = json.load(f)
                 print(f"Loaded existing calibration data from {CALIBRATION_FILE}")
-                return data
+                # Only use the first 4 points if file contains 8 points
+                return {k: data[k] for k in ["corner1", "corner2", "corner3", "corner4"]}
     except Exception as e:
         print(f"Error reading calibration file: {e}")
     
@@ -102,7 +108,6 @@ def move_to_position_mm(motor, position_mm, move_time, is_z_axis=False):
     """Move motor to position in millimeters."""
     if is_z_axis:
         # Subtract safety offset from Z position during movement
-        position_mm -= Z_SAFETY_OFFSET_MM
         position_rotations = position_mm / Z_LEAD_SCREW_MM_PER_ROTATION
     else:
         position_rotations = position_mm / MM_PER_PULLEY_ROTATION
@@ -127,22 +132,7 @@ def capture_position(motorX, motorY, motorZ):
     x_pos = get_position_mm(motorX)
     y_pos = get_position_mm(motorY)
     z_pos = get_position_mm(motorZ, True)
-    
     print(f"Captured position - X: {x_pos:.2f}mm, Y: {y_pos:.2f}mm, Z: {z_pos:.2f}mm")
-    
-    # Now re-enable motors in sequence to prevent collisions
-    print("Re-enabling Z axis...")
-    motorZ.enable_mosfets()
-    motorZ.go_to_closed_loop()
-    time.sleep(MOSFET_ENABLE_DELAY)  # Wait before enabling X/Y
-    
-    print("Re-enabling X and Y axes...")
-    motorX.enable_mosfets()
-    motorY.enable_mosfets()
-    motorX.go_to_closed_loop()
-    motorY.go_to_closed_loop()
-    time.sleep(0.5)  # Wait for motors to stabilize
-    
     return {"x": x_pos, "y": y_pos, "z": z_pos}
 
 def calculate_opposite_corners(corner1, corner2):
@@ -150,6 +140,80 @@ def calculate_opposite_corners(corner1, corner2):
     corner3 = {"x": corner1["x"], "y": corner2["y"], "z": corner1["z"]}
     corner4 = {"x": corner2["x"], "y": corner1["y"], "z": corner1["z"]}
     return corner3, corner4
+
+def calculate_center_point(corners):
+    """Calculate the center point from the four corner points."""
+    x_sum = sum(corner["x"] for corner in corners.values())
+    y_sum = sum(corner["y"] for corner in corners.values())
+    z_sum = sum(corner["z"] for corner in corners.values())
+    return {
+        "x": x_sum / 4,
+        "y": y_sum / 4,
+        "z": z_sum / 4
+    }
+
+def calculate_interpolated_point(center, corner):
+    """Calculate a point between center and corner at specified distance from corner."""
+    # Calculate vector from corner to center
+    dx = corner["x"] - center["x"]
+    dy = corner["y"] - center["y"]
+    dz = corner["z"] - center["z"]
+    
+    # Calculate distance between points
+    distance = math.sqrt(dx**2 + dy**2 + dz**2)
+    
+    # Calculate ratio for interpolation (12mm from corner)
+    ratio = INTERPOLATION_XY_DISTANCE_MM / distance
+    
+    # Calculate interpolated point
+    return {
+        "x": corner["x"] + dx * ratio,
+        "y": corner["y"] + dy * ratio,
+        "z": corner["z"] + dz * ratio - ZREF_HEIGHT_OFFSET_MM
+    }
+
+def calculate_zref_points(corners):
+    """Calculate the four zref points based on corners and center point."""
+    center = calculate_center_point(corners)
+    zref_points = {}
+    
+    for i, corner_key in enumerate(["corner1", "corner2", "corner3", "corner4"], 1):
+        zref_points[f"zref{i}"] = calculate_interpolated_point(center, corners[corner_key])
+    
+    return zref_points
+
+def move_to_a_corner_and_disable_mosfets_and_get_user_input_and_capture_position(position, motorX, motorY, motorZ, move_time):
+    # Now re-enable motors in sequence to prevent collisions
+    print("Enabling Z axis...")
+    motorZ.enable_mosfets()
+    time.sleep(MOSFET_ENABLE_DELAY)  # Wait before enabling X/Y
+    move_to_position_mm(motorZ, position["z"] - COLLISION_AVOIDANCE_Z_OFFSET, MOVE_TIME_COLLISION_AVOIDANCE, True)
+    wait_for_move_complete([motorZ])
+    
+    print("Enabling X and Y axes...")
+    motorX.enable_mosfets()
+    motorY.enable_mosfets()
+    time.sleep(0.5)  # Wait for motors to stabilize
+
+    move_to_position_mm(motorX, position["x"], MOVE_TIME)
+    move_to_position_mm(motorY, position["y"], MOVE_TIME)
+    wait_for_move_complete([motorX, motorY])
+
+    move_to_position_mm(motorZ, position["z"] - Z_OFFSET_BEFORE_MANUAL_CAPTURE_MM, MOVE_TIME_COLLISION_AVOIDANCE, True)
+    wait_for_move_complete([motorZ])
+
+    # Disable motors for manual adjustment
+    print("\nDisabling motors for manual adjustment of first corner...")
+    motorX.disable_mosfets()
+    motorY.disable_mosfets()
+    motorZ.disable_mosfets()
+    input("Adjust position manually and press Enter when done...")
+
+    # Capture first corner position
+    position = capture_position(motorX, motorY, motorZ)
+    print(f"Captured position: {position}")
+    return position
+
 
 def main():
     # Parse arguments
@@ -192,77 +256,59 @@ def main():
         motorY.zero_position()
         motorZ.zero_position()
 
-        # Move to first corner position using calibration data
-        print("\nMoving to first corner position...")
-        move_to_position_mm(motorX, calibration_data["corner1"]["x"], MOVE_TIME)
-        move_to_position_mm(motorY, calibration_data["corner1"]["y"], MOVE_TIME)
-        move_to_position_mm(motorZ, calibration_data["corner1"]["z"], MOVE_TIME, True)
-        wait_for_move_complete([motorX, motorY, motorZ])
+        motorX.set_max_allowable_position_deviation(20.0)
+        motorY.set_max_allowable_position_deviation(20.0)
+        motorZ.set_max_allowable_position_deviation(20.0)
 
-        # Disable motors for manual adjustment
-        print("\nDisabling motors for manual adjustment of first corner...")
-        motorX.disable_mosfets()
-        motorY.disable_mosfets()
-        motorZ.disable_mosfets()
-        input("Adjust position manually and press Enter when done...")
+        # Move to corners one at a time and capture positions
+        captured_corners = []
+        first_z_move = True
+        for corner_key in ["corner1", "corner2", "corner3", "corner4"]:
+            if corner_key == "corner3":
+                calibration_data["corner3"], calibration_data["corner4"] = calculate_opposite_corners(captured_corners[0], captured_corners[1])
+            print(f"\nMoving to {corner_key} position...")
+            if first_z_move:
+                move_time = 10.0
+                first_z_move = False
+            else:
+                move_time = MOVE_TIME
+            print(f"Move time: {move_time}")
+            corner = move_to_a_corner_and_disable_mosfets_and_get_user_input_and_capture_position(calibration_data[corner_key], motorX, motorY, motorZ, move_time)
+            captured_corners.append(corner)
 
-        # Capture first corner position
-        corner1 = capture_position(motorX, motorY, motorZ)
-        print(f"First corner position: {corner1}")
-
-        # Move to second corner using calibration data
-        print("\nMoving to second corner position...")
-        move_to_position_mm(motorX, calibration_data["corner2"]["x"], MOVE_TIME)
-        move_to_position_mm(motorY, calibration_data["corner2"]["y"], MOVE_TIME)
-        wait_for_move_complete([motorX, motorY, motorZ])
-
-        # Disable motors for manual adjustment
-        print("\nDisabling motors for manual adjustment of second corner...")
-        motorX.disable_mosfets()
-        motorY.disable_mosfets()
-        motorZ.disable_mosfets()
-        input("Adjust position manually and press Enter when done...")
-
-        # Capture second corner position
-        corner2 = capture_position(motorX, motorY, motorZ)
-        print(f"Second corner position: {corner2}")
-
-        # Calculate other corners
-        corner3, corner4 = calculate_opposite_corners(corner1, corner2)
-
-        # Verify corner 3
-        print("\nMoving to third corner for verification...")
-        move_to_position_mm(motorX, corner3["x"], MOVE_TIME)
-        move_to_position_mm(motorY, corner3["y"], MOVE_TIME)
-        wait_for_move_complete([motorX, motorY, motorZ])
-
-        print("\nDisabling motors for manual adjustment of third corner...")
-        motorX.disable_mosfets()
-        motorY.disable_mosfets()
-        motorZ.disable_mosfets()
-        input("Adjust position manually and press Enter when done...")
-        corner3 = capture_position(motorX, motorY, motorZ)
-
-        # Verify corner 4
-        print("\nMoving to fourth corner for verification...")
-        move_to_position_mm(motorX, corner4["x"], MOVE_TIME)
-        move_to_position_mm(motorY, corner4["y"], MOVE_TIME)
-        wait_for_move_complete([motorX, motorY, motorZ])
-
-        print("\nDisabling motors for manual adjustment of fourth corner...")
-        motorX.disable_mosfets()
-        motorY.disable_mosfets()
-        motorZ.disable_mosfets()
-        input("Adjust position manually and press Enter when done...")
-        corner4 = capture_position(motorX, motorY, motorZ)
-
-        # Save calibration data
-        calibration_data = {
-            "corner1": corner1,
-            "corner2": corner2,
-            "corner3": corner3,
-            "corner4": corner4
+        # Store corner positions
+        corners = {
+            "corner1": captured_corners[0],
+            "corner2": captured_corners[1],
+            "corner3": captured_corners[2],
+            "corner4": captured_corners[3]
         }
+
+        # Calculate zref points
+        zref_points = calculate_zref_points(corners)
+
+        # Move to corners one at a time and capture positions
+        captured_zref_points = []
+        for zref_point in ["zref1", "zref2", "zref3", "zref4"]:
+            print(f"\nMoving to {zref_point} position...")
+            zref = move_to_a_corner_and_disable_mosfets_and_get_user_input_and_capture_position(zref_points[zref_point], motorX, motorY, motorZ, MOVE_TIME)
+            captured_zref_points.append(zref)
+
+        # Store zref positions
+        zref_points = {
+            "zref1": captured_zref_points[0],
+            "zref2": captured_zref_points[1],
+            "zref3": captured_zref_points[2],
+            "zref4": captured_zref_points[3]
+        }
+
+        print("The final corners are:")
+        print(corners)
+        print("The final zref points are:")
+        print(zref_points)
+
+        # Combine all points and save calibration data
+        calibration_data = {**corners, **zref_points}
 
         with open(CALIBRATION_FILE, 'w') as f:
             json.dump(calibration_data, f, indent=4)

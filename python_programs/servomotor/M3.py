@@ -109,8 +109,12 @@ class UnitConverter:
         if current_unit not in factors:
             return value
         
+        factor = factors[current_unit]
+        result = value * factor
+        
         # Round the result to avoid truncation errors
-        return round(value * factors[current_unit])
+        rounded = round(result)
+        return rounded
 
     def convert_from_internal(self, value, command_string, param_name, target_unit):
         """Convert from internal unit to target unit"""
@@ -149,7 +153,23 @@ class UnitConverter:
                     return cmd['Input'][param_index]
         return None
 
-def create_command_function(command, command_id, multiple_responses, unit_converter):
+def create_command_function(command, command_id, multiple_responses, unit_converter, verbose=2):
+    if verbose >= 2:
+        print(f"Creating function for command: {command['CommandString']} (ID {command_id})")
+    json_cmd = next((cmd for cmd in unit_converter.command_definitions if cmd['CommandString'] == command['CommandString']), None)
+    if not json_cmd:
+        print(f"Error: Could not find command {command['CommandString']} in JSON definitions")
+        exit(1)
+    if verbose >= 2:
+        print(f"json command: {json_cmd}")
+    if json_cmd.get('Output'):
+        if not isinstance(json_cmd.get('Output'), list) and json_cmd.get('Output') != "success_response":
+            print(f"Error: Expected 'Output' to be a list or success_response, but got: {json_cmd.get('Output')}")
+            exit(1)
+        has_outputs = True
+    else:
+        has_outputs = False
+
     def command_function(self, *args, **kwargs):
         if self.verbose:
             print(f"Executing: {command['CommandString']} (ID {command_id}) with args: {args} and kwargs: {kwargs}")
@@ -205,42 +225,48 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
                 # If we can't find the command in JSON definitions, round any float values to integers
                 converted_inputs = [int(round(v)) if isinstance(v, float) else v for v in (list(args) + list(kwargs.values()))]
 
-#        try:
-        response = communication.execute_command(self.alias, command_id, converted_inputs, verbose=self.verbose)
-        
+        # Execute the command and get response
+        possibly_multiple_responses = communication.execute_command(self.alias, command_id, converted_inputs, verbose=self.verbose)
+
+        if not isinstance(possibly_multiple_responses, list):
+            print("Error: Expected the response to be a list, but got: ", possibly_multiple_responses)
+            exit(1)
+        if multiple_responses == False and len(possibly_multiple_responses) > 1:
+            print("Error: Expected only one item in the list or an empty list, but got: ", possibly_multiple_responses)
+            exit(1)
+
         # Convert output parameters based on unit conversion definitions
-        if isinstance(response, list) and command.get('Output'):
-            json_cmd = next((cmd for cmd in unit_converter.command_definitions if cmd['CommandString'] == command['CommandString']), None)
-            if json_cmd and isinstance(json_cmd.get('Output'), list):
+        converted_multiple_responses = []
+        if has_outputs:
+            for response in possibly_multiple_responses:
                 converted_response = []
                 for i, value in enumerate(response):
-                    if i < len(json_cmd['Output']):
-                        param = json_cmd['Output'][i]
-                        if isinstance(param, dict) and 'UnitConversion' in param:
-                            conv = param['UnitConversion']
-                            unit_type = conv['Type']
-                            target_unit = getattr(self, f"_{unit_type}_unit").value
-                            converted_value = unit_converter.convert_from_internal(
-                                value, command['CommandString'], param['ParameterName'], target_unit)
-                            converted_response.append(converted_value)
-                        else:
-                            converted_response.append(value)
+                    json_cmd_output = json_cmd['Output']
+                    if i >= len(json_cmd_output):
+                        print("Error: More response values than we have data for in the JSON definition")
+                        exit(1)
+                    
+                    param = json_cmd_output[i]
+                    if isinstance(param, dict) and 'UnitConversion' in param:
+                        conv = param['UnitConversion']
+                        unit_type = conv['Type']
+                        target_unit = getattr(self, f"_{unit_type}_unit").value
+                        converted_value = unit_converter.convert_from_internal(value, command['CommandString'], param['ParameterName'], target_unit)
+                        converted_response.append(converted_value)
                     else:
                         converted_response.append(value)
-                response = converted_response
-        
-        if multiple_responses == False:
-            if not isinstance(response, list):
-                print("Error: Expected the response to be a list, but got: ", response)
-                exit(1)
-            if len(response) > 1:
-                print("Error: Expected only one item in the list of an empty list, but got: ", response)
-                exit(1)
-            if len(response) == 1:
-                response = response[0]
-            if isinstance(response, list) and len(response) == 1:
-                response = response[0]
-        return response
+                converted_multiple_responses.append(converted_response)
+        else:
+            converted_multiple_responses = possibly_multiple_responses
+
+        # Handle single response case
+        if not multiple_responses:
+            if len(converted_multiple_responses) == 1:
+                converted_multiple_responses = converted_multiple_responses[0]  # remove outer list since it has just one item
+            if isinstance(converted_multiple_responses, list) and len(converted_multiple_responses) == 1:
+                converted_multiple_responses = converted_multiple_responses[0]  # remove inner list since it has just one item
+
+        return converted_multiple_responses
             
 #        except communication.TimeoutError:
 #            print("\nTimeout occurred! Checking motor status...")
@@ -263,6 +289,8 @@ def define_commands(m3_class, data_type_dict, command_dict, verbose=2):
     
     # Create a function for each command
     for command in command_dict:
+        if verbose >= 2:
+            print(f"Command: {command}")
         command_id = command['CommandEnum']
         command_str = command['CommandString']
         multiple_responses = command.get('MultipleResponses', False)
@@ -270,7 +298,7 @@ def define_commands(m3_class, data_type_dict, command_dict, verbose=2):
         if verbose:
             print(f"Creating function: {function_name} for command: {command_str}")
         # Define the function in the M3 class
-        setattr(m3_class, function_name, create_command_function(command, command_id, multiple_responses, unit_converter))
+        setattr(m3_class, function_name, create_command_function(command, command_id, multiple_responses, unit_converter, verbose=verbose))
         # Verify the function was created
         if verbose:
             if hasattr(m3_class, function_name):

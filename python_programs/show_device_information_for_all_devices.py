@@ -93,10 +93,7 @@ args = parser.parse_args()
 
 serial_port = args.port
 
-motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                        velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                        current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
-                        verbose=args.verbose)
+motor255 = servomotor.M3(255, verbose=args.verbose)
 servomotor.open_serial_port()
 
 device_dict = detect_all_devices_multiple_passes(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
@@ -132,9 +129,7 @@ for unique_id, device in device_dict.items():
         continue
     alias_str = servomotor.get_human_readable_alias(device.alias)
     print(f"Getting product info for device with unique ID {unique_id:016X} and alias {alias_str}")
-    motor = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                    velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                    current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
+    motor = servomotor.M3(device.alias, verbose=args.verbose)
     try:
         response = motor.get_product_info()
         device.product_code = response[0]
