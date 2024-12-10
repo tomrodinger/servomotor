@@ -23,7 +23,7 @@ BELT_TOOTH_PITCH = 2.0
 MM_PER_PULLEY_ROTATION = BELT_TOOTH_PITCH * PULLEY_N_TEETH / X_Y_REDUCTION_RATIO
 X_Y_SPAN_MM = 227.0
 X_Y_SPAN_ROTATIONS = X_Y_SPAN_MM / MM_PER_PULLEY_ROTATION * X_Y_REDUCTION_RATIO
-Z_SPAN_MM = 120.0
+Z_SPAN_MM = 150.0
 Z_LEAD_SCREW_MM_PER_ROTATION = 4.0 / Z_REDUCTION_RATIO
 Z_SPAN_ROTATIONS = Z_SPAN_MM / Z_LEAD_SCREW_MM_PER_ROTATION
 HOMING_MAX_TIME_S = 10.0
@@ -36,7 +36,7 @@ MOVE_TIME_COLLISION_AVOIDANCE = 3.0
 MOSFET_ENABLE_DELAY = 0.1  # Delay between enabling Z and X/Y MOSFETs
 INTERPOLATION_XY_DISTANCE_MM = 6.0  # Distance from corner points to the estimated zref points in the XY plane
 COLLISION_AVOIDANCE_Z_OFFSET = 30.0  # Distance to move Z before moveing X and Y to avoid collisions during long "across the board" moves
-Z_OFFSET_BEFORE_MANUAL_CAPTURE_MM = 10.0  # Distance to subtract from Z position during movements
+Z_OFFSET_BEFORE_MANUAL_CAPTURE_MM = 20.0  # Distance to subtract from Z position during movements
 ZREF_HEIGHT_OFFSET_MM = 8.0  # Additional Z height added to zref points to account for height difference between corner points and the zref plane 
 
 # Default positions if no calibration file exists
