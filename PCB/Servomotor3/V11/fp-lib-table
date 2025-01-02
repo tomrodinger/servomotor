@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "servo_motor")(type "KiCad")(uri "${KIPRJMOD}/lib/lay/servo_motor.pretty")(options "")(descr ""))
+)

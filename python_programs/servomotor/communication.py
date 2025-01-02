@@ -73,7 +73,7 @@ def get_response(verbose=2):
             print(format_debug(f"Received an extended size: {payload_size}"))
     if payload_size == 0:
         if response[1] != 0:
-            raise CommunicationError(f"Error: the second byte should be 0 if there is no payload, instad it is: {response[1]}")
+            raise CommunicationError(f"Error: the second byte should be 0 if there is no payload, instead it is: {response[1]}")
     else:
         if response[1] != 1:
             raise CommunicationError(f"Error: the second byte should be 1 if there is a payload, instead it is: {response[1]}")
@@ -495,8 +495,7 @@ def interpret_single_response(command_id, response, verbose=2):
             print(format_success("This command produced no response, which is exactly as expected"))
     elif len(expected_response) == 1 and registered_data_types[expected_response[0].data_type_id].data_type_str == "success_response":
         if response != b'':
-            print(format_error("Error: the response was not the expected success response"))
-            exit(1)
+            raise CommunicationError("Error: the response was not the expected success response")
         if verbose >= 1:
             print(format_success("We got the success response. Good. The response payload is empty as expected."))
     else:
@@ -513,16 +512,14 @@ def interpret_single_response(command_id, response, verbose=2):
                 null_terminator_index = response.find(b'\x00')
                 # if it didn't fina a null terminator then throw an error
                 if null_terminator_index == -1:
-                    print(format_error("Error: the response from the device is not null terminated. This is a bug in the device or some sort of communication error"))
-                    exit(1)
+                    raise CommunicationError("Error: the response from the device is not null terminated. This is a bug in the device or some sort of communication error")
                 data_type_size = null_terminator_index + 1
             elif data_type_str == "general_data":
                 data_type_size = len(response)
             else:
                 data_type_size = registered_data_types[data_type_id].size
             if len(response) < data_type_size:
-                print(format_error("Error: the response does not contain enough bytes to decode this data type"))
-                exit(1)
+                raise CommunicationError("Error: the response does not contain enough bytes to decode this data type")
             data_item = response[:data_type_size]
             response = response[data_type_size:]
             data_item_is_integer = registered_data_types[data_type_id].is_integer
@@ -586,11 +583,9 @@ def interpret_single_response(command_id, response, verbose=2):
                         for d in data_item:
                             print(format_info(f"   ---> {d} (0x{d:02x})"))
                 else:
-                    print(format_error(f"Error: the interpretation of this data type is not implemented: {data_type_str}"))
-                    exit(1)
+                    raise CommunicationError(f"Error: the interpretation of this data type is not implemented: {data_type_str}")
         if len(response) != 0:
-            print(format_error("Error: there unexpected bytes left in the response after interpreting the expected response"))
-            exit(1)
+            raise CommunicationError("Error: there are unexpected bytes left in the response after interpreting the expected response")
     return parsed_response
 
 def interpret_response(command_id, response, verbose=2):

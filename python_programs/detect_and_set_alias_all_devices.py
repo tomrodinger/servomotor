@@ -95,7 +95,7 @@ servomotor.set_serial_port_from_args(args)
 reassign_aliases = args.reassign
 do_calibration = args.calibration
 
-motor255 = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", 
+motor255 = servomotor.M3(255, time_unit="seconds", position_unit="degrees", 
                         velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
                         current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
                         verbose=args.verbose)
@@ -168,9 +168,7 @@ if do_calibration:
     print("Calibration mode activated")
     for unique_id, device in device_dict.items():
         print(f"Calibrating the device with unique ID {unique_id:016X} and alias {device.alias}")
-        motor_to_calibrate = servomotor.M3(device.alias, motor_type="M3", time_unit="seconds", position_unit="degrees", 
-                                           velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
-                                           current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
+        motor_to_calibrate = servomotor.M3(device.alias)
         response = motor_to_calibrate.start_calibration()
         print("Response from Start Calibration command:", response)
         time.sleep(30)

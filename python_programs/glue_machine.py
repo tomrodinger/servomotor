@@ -13,6 +13,7 @@ import math
 import numpy as np
 import json
 import servomotor
+from getch import getch
 
 X_ALIAS = ord('X')
 Y_ALIAS = ord('Y')
@@ -20,7 +21,7 @@ Z_ALIAS = ord('Z')
 GLUE_DISPENSE_ALIAS = ord('G')
 ALL_MOTORS_ALIAS = 255
 
-TRANSFORMATION_MATRIX_JSON_FILENAME = "glue_machine_calibration/glue_machine_transformation_matrix.json"
+TRANSFORMATION_MATRIX_JSON_FILENAME = "glue_machine_transformation_matrix.json"
 LOG_FILE_DIRECTORY = "glue_machine_logs"
 LOG_FILENAME_PREFIX = "glue_machine"
 PLUNGER_ENABLED = True
@@ -41,7 +42,7 @@ Z_LEAD_SCREW_MM_PER_ROTATION = 4.0 / Z_REDUCTION_RATIO
 Z_SPAN_ROTATIONS = Z_SPAN_MM / Z_LEAD_SCREW_MM_PER_ROTATION
 INTERNAL_TIME_UNIT_HZ = 64000000 / 2048
 HOMING_MAX_TIME_S = 10.0
-GLUE_CIRCLE_DIAMETER = 24.0
+GLUE_CIRCLE_DIAMETER = 25.5
 GLUE_CIRCLE_RADIUS = GLUE_CIRCLE_DIAMETER / 2
 GLUE_CIRCLE_TIME = 20.0
 HOPPING = True
@@ -81,7 +82,7 @@ PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_SHAFT_ROTATIONS = PLUNGER_SHAFT_ROTATIONS_PER
 PLUNGER_PULL_BACK_MM_TO_STOP_DISPENSING = -10.0
 PLUNGER_PULL_BACK_TIME = 0.2 * 10
 MIN_MOVE_TIME_S = 1.0/(64000000/2048)*10 # DEBUG adding a * 10 factor to make the move time longer to help debug a problem
-MAXIMUM_GLUE_PURGE_TIME = 60 * 5  # 5 minutes
+MAXIMUM_GLUE_PURGE_TIME = 60 * 15  # 15 minutes
 
 POSITIONS = [
     [-1.5 * DISTANCE_BETWEEN_UNITS, -1.5 * DISTANCE_BETWEEN_UNITS],
@@ -101,38 +102,8 @@ POSITIONS = [
     [-0.5 * DISTANCE_BETWEEN_UNITS,  1.5 * DISTANCE_BETWEEN_UNITS],
     [-1.5 * DISTANCE_BETWEEN_UNITS,  1.5 * DISTANCE_BETWEEN_UNITS],
 ]
-# For debugging purposes, let's do only the first position
-POSITIONS = [POSITIONS[0]] # DEBUG
-
-
-def getch():
-    print("Entering getch()")
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-    try:
-        tty.setraw(sys.stdin.fileno())
-        # Check if data is available to read
-        if select.select([sys.stdin], [], [], 0)[0] == [sys.stdin]:
-            ch = sys.stdin.read(1)
-        else:
-            ch = None
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    print(f"Exiting getch() with character {ch}")
-    return ch
-
-def get_user_input(prompt):
-    print(prompt)
-    while True:
-        key = getch()
-        if key == None:
-            time.sleep(0.05)
-            continue
-        if key == '\r' or key == '\n':  # Enter key
-            return ''
-        elif key in ['p', 'r', 'q']:
-            return key
-        time.sleep(0.05)
+# For debugging purposes, let's do only the first two positions
+#POSITIONS = POSITIONS[0:2] # DEBUG
 
 
 class TransformationMatrix:
@@ -152,7 +123,6 @@ class TransformationMatrix:
         transformed = self.matrix @ homogeneous_point
         # Convert back to 3D coordinates
         return transformed[:3]
-
 
 def compute_crc32(data_64bit, data_8bit):
     # Convert to bytes in little-endian format
@@ -397,7 +367,7 @@ if PLUNGER_ENABLED:
     # Now let's purge until glue is coming out. Let the user choose when this is done when the user presses any key
     print("Purging the glue dispenser. Please press any key when glue is coming out")
     purge_start_time = time.time()
-    while 1:
+    while True:
         if time.time() - purge_start_time > MAXIMUM_GLUE_PURGE_TIME:
             print("Error: Maximum glue purge time exceeded. Exiting.")
             exit(1)
@@ -405,11 +375,15 @@ if PLUNGER_ENABLED:
         print(f"The minimum and maximum number of queued items are {min_n_queued_items} and {max_n_queued_items}")
         if min_n_queued_items <= 3:
             motorG.move_with_velocity(PLUNGER_VELOCITY_ROTATIONS_PER_SECOND, 0.1)
-        if getch():
+        ch = getch()
+        print(f"Got character {ch}")
+        if ch is not None:
             motorG.move_with_velocity(0, MIN_MOVE_TIME_S)
             wait_queue_empty([motorG])
             enable_or_disable_glue_dispenser(motorG, False)
+            time.sleep(5)
             break
+        time.sleep(0.01)
 
 
 time_sync = TimeSync([motorX, motorY, motorZ, motorG])
@@ -425,6 +399,7 @@ log_fh = open(log_filename, "w")
 start_time = time.time()
 for circle_center_x, circle_center_y in POSITIONS:
     # Let's move the axes to the start position
+    print(f"circle_center_x = {circle_center_x}, circle_center_y = {circle_center_y}, GLUE_CIRCLE_RADIUS = {GLUE_CIRCLE_RADIUS}")
     circle_start_position_x = circle_center_x + GLUE_CIRCLE_RADIUS * math.cos(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
     circle_start_position_y = circle_center_y + GLUE_CIRCLE_RADIUS * math.sin(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
     position_transformed = transformation_matrix.transform_point([circle_start_position_x, circle_start_position_y, Z_DISPENSE_POSITION_MM])

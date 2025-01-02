@@ -49,7 +49,8 @@ static void portA_init(void)
     GPIOA->BSRR = (1 << 15); // take the stepper motor driver out of reset by making the reset pin high
 #endif
 #if SOFTWARE_COMPATIBILITY_CODE >= 3
-    GPIOA->BSRR = (1 << 15); // set the MS1 pin high
+    GPIOA->BSRR = (1 << 15); // set the MS1 pin high        DEBUG commented out
+//    GPIOA->BSRR = ((1 << 15) << 16); // set the MS1 pin low   DEBUG
 #endif
 
 }
@@ -90,7 +91,8 @@ static void portB_init(void)
 static void portC_init(void)
 {
     GPIOC->MODER =
-            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE6_Pos)  | // if the SOFTWARE_COMPATIBILITY_CODE is 3 or higher, then this is MS2 used for setting the microstepping mode in the AT5833 chip, otherwise this pin is not connected and not used
+            (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE6_Pos)  | // if the SOFTWARE_COMPATIBILITY_CODE is 3 or higher, then this is MS2 used for setting the microstepping mode in the AT5833 chip, otherwise this pin is not connected and not used    DEBUG commented out
+//            (MODER_ANALOG_INPUT     << GPIO_MODER_MODE6_Pos)  | // if the SOFTWARE_COMPATIBILITY_CODE is 3 or higher, then this is MS2 used for setting the microstepping mode in the AT5833 chip, otherwise this pin is not connected and not used   DEBUG to allow 256 microsteps interpolation
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE14_Pos) | // Red LED
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // Green LED
 //    GPIOC->OTYPER = (0);  // Make the analog input pins open drain

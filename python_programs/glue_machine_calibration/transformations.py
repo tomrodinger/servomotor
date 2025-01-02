@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import svd
-from data_utils import load_calibration_data, points_to_array
+from .data_utils import load_calibration_data, points_to_array
 
 # Create theoretical square
 EDGE_LENGTH = 61.0 * 3
@@ -112,10 +112,10 @@ def umeyama_alignment(source_points, target_points):
 
     return T, scale, R, t
 
-def get_transformation_matrix():
+def get_transformation_matrix(calibration_file):
     """Calculate the complete transformation matrix using Umeyama method."""
     # Load data
-    data = load_calibration_data('../glue_machine_calibration.json')
+    data = load_calibration_data(calibration_file)
     corner_points = points_to_array(data, ['corner1', 'corner2', 'corner3', 'corner4'])
     zref_points = points_to_array(data, ['zref1', 'zref2', 'zref3', 'zref4'])
         
@@ -147,10 +147,10 @@ def get_transformation_matrix():
     return T_umeyama, THEORETICAL_CORNERS, projected_corners, transformed_corners
 
 
-def get_affine_transformation_matrix_z_scaling_0():
+def get_affine_transformation_matrix_z_scaling_0(calibration_file):
     """Calculate the affine transformation matrix with anisotropic scaling."""
     # Load data
-    data = load_calibration_data('../glue_machine_calibration.json')
+    data = load_calibration_data(calibration_file)
     corner_points = points_to_array(data, ['corner1', 'corner2', 'corner3', 'corner4'])
     zref_points = points_to_array(data, ['zref1', 'zref2', 'zref3', 'zref4'])
         
@@ -195,9 +195,7 @@ def get_affine_transformation_matrix_z_scaling_0():
     differences = transformed_corners - projected_corners
     for i, diff in enumerate(differences):
         print(f"Point {i+1}: {diff}")
-        
     
-
     # Compute distances between transformed theoretical points and projected points
     distances = np.linalg.norm(transformed_corners - projected_corners, axis=1)
     print("\nDistances between transformed theoretical points and projected points (in mm):")
@@ -222,10 +220,10 @@ def get_affine_transformation_matrix_z_scaling_0():
     return M, THEORETICAL_CORNERS, projected_corners, transformed_corners
 
 
-def get_affine_transformation_matrix():
+def get_affine_transformation_matrix(calibration_file):
     """Calculate the affine transformation matrix with scaling along Z fixed to -1.0."""
     # Load data
-    data = load_calibration_data('../glue_machine_calibration.json')
+    data = load_calibration_data(calibration_file)
     corner_points = points_to_array(data, ['corner1', 'corner2', 'corner3', 'corner4'])
     zref_points = points_to_array(data, ['zref1', 'zref2', 'zref3', 'zref4'])
         
@@ -299,4 +297,3 @@ def get_affine_transformation_matrix():
         print(f"Point {i+1}: {dist:.6f} mm")
     
     return M, THEORETICAL_CORNERS, projected_corners, transformed_corners
-

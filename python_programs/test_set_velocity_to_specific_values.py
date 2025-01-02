@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+import time
+import servomotor
+
+# Motor configurations - (unique_id, alias, velocity)
+MOTOR_CONFIGS = [
+    ("1C1299E12A574E11", 9, 251.37),
+    ("0485862C15439E76", 3, 758.70),
+    ("4E6DF10C1A7363D9", 12, 457.92),
+    ("22561F930FC5C2EE", 18, 979.89),
+    ("6AB18E0B0C273C19", 15, 208.15),
+    ("68BEABE716C9EEA1", 10, 468.48),
+    ("1B3AAE4D1E45272D", 8, 508.82),
+    ("2D0754F9716E3BA0", 5, 740.57)
+]
+
+MOTOR_CONFIGS = [
+    ("23C6EBDA224305E1", 15, 1085.34 ),
+    ("1A81BC5365D6FC59", 11, 239.29  ),
+    ("44F625536977949A", 24, 473.91  ),
+    ("5C0F719F0F0880B4", 21, -1301.35),
+    ("142D97F0650801F1", 13, 453.33  ),
+    ("6E086E6B2548D53E", 7 , 662.21  ),
+    ("3E87F47B43F1B807", 17, -1304.77),
+    ("653F822D1A15AB73", 6 , -410.98 ),
+]
+
+def main():
+    # Initialize communication with broadcast address (255)
+    motor255 = servomotor.M3(255, time_unit="seconds", position_unit="degrees", 
+                            velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                            current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
+    servomotor.open_serial_port()
+
+    # Initialize motor instance for individual control
+    motor = servomotor.M3(255, time_unit="seconds", position_unit="degrees", 
+                         velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+                         current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius")
+
+    try:
+        # Reset the system
+        print("Resetting the system...")
+        motor255.system_reset()
+        time.sleep(1.5)
+
+        # Enable and set velocities for each motor
+        for unique_id, alias, velocity in MOTOR_CONFIGS:
+            print(f"Moving device {unique_id} with alias {alias} (0x{alias:02x}) at {velocity:.2f} degrees/sec for 20 seconds...")
+            motor.set_alias(alias)
+            motor.enable_mosfets()
+            motor.set_maximum_motor_current(390, 390)  # Set to same max current as stress test
+            motor.move_with_velocity(velocity, 20.0)
+            motor.move_with_velocity(0, 0.01)  # Stop over 0.01 seconds
+
+        # Wait for movements to complete
+        time.sleep(21)  # 2 seconds + 0.01 seconds + small buffer
+
+    finally:
+        # Disable all MOSFETs using broadcast
+        motor255.disable_mosfets()
+        time.sleep(0.2)
+
+if __name__ == "__main__":
+    main()

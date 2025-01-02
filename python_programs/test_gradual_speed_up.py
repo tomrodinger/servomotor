@@ -8,7 +8,7 @@ from collections import defaultdict
 
 SPEED_STEP = 4.0
 STEP_TIME = 0.1
-MAX_VELOCITY = 360.0 * 5
+MAX_VELOCITY = 360.0 * 10
 REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3  # Number of successful device detections required
 MAX_MOTOR_CURRENT = 390  # Maximum motor current value
 
@@ -105,7 +105,7 @@ else:
     verbose_level = 0
 
 
-motor = servomotor.M3(255, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
+motor = servomotor.M3(255, time_unit="seconds", position_unit="degrees", velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
 servomotor.set_serial_port_from_args(args)
 servomotor.open_serial_port()
 

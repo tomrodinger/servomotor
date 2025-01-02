@@ -28,7 +28,7 @@ alias = ord(alias)
 
 servomotor.set_serial_port_from_args(args)
 
-motorX = servomotor.M3(alias, motor_type="M3", time_unit="seconds", position_unit="degrees", velocity_unit="degrees/s", acceleration_unit="degree/s^2", current_unit="mA", voltage_unit="V", temperature_unit="C", verbose=args.verbose)
+motorX = servomotor.M3(alias, verbose=args.verbose)
 servomotor.open_serial_port()
 
 while 1:
