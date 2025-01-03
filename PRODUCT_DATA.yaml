@@ -89,7 +89,7 @@
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/tomrodinger/servomotor/main/Pictures/servomotor3/servomotor3.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
-    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/V11/schematic/V11-index-schTop.pdf
+    schematic: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/PCB/Servomotor3/V11/schematic/V11-index-schTop.pdf
     user_manual: https://raw.githubusercontent.com/tomrodinger/servomotor/main/Products/R2/V2/user-manual.pdf
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/V11
