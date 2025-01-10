@@ -56,7 +56,7 @@ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION,
 #define PING_PAYLOAD_SIZE 10
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-extern char selectedAxis;
+extern uint8_t selectedAxis;
 extern uint8_t command;
 extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 extern volatile uint8_t commandReceived;
@@ -207,8 +207,6 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 
 //    print_number("Received a command with length: ", commandLen);
     if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
-//        print_number("Axis:", axis);
-//        print_number("command:", command);
         switch(command) {
         case DISABLE_MOSFETS_COMMAND:
             rs485_allow_next_command();
@@ -1073,17 +1071,29 @@ void print_start_message(void)
     print_commutation_position_offset();
 }
 
+#ifdef MOTOR_SIMULATION
+// When building for the actual motor firmware, this is a no-op.
+// When building the simulator, this initializes the motor simulation environment.
+void motor_simulator_init(void);
+#endif
+
 int main(void)
 {
+    #ifdef MOTOR_SIMULATION
+    motor_simulator_init();  // No-op in real firmware, initializes simulator in test environment
+    #else
     clock_init();
     systick_init();
+    #endif
     #if defined(PRODUCT_NAME_M3) && defined(GC6609)
     power_off_GC6609();
     #endif
     GPIO_init();
     debug_uart_init();
     rs485_init();
+    #ifndef MOTOR_SIMULATION
     adc_init();
+    #endif
     pwm_init();
     motor_control_init();
     overvoltage_init();
@@ -1120,14 +1130,20 @@ int main(void)
     disable_or_enable_debug_printing(0); // from now on we will not print anythign to the debug UART unless the user interacts with the debug UART by sending a command
 
     while(1) {
-        if(commandReceived) {
-            if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
-                rs485_allow_next_command();
-            }
-            else {
-                processCommand(selectedAxis, command, valueBuffer);
-            }
-        }
+        #ifdef MOTOR_SIMULATION
+        // When building for the actual motor firmware, this is a no-op.
+        // When building the simulator, this runs the simulator's logic, timing, and visualization code.
+        motor_simulator_logic();
+        #endif
+                
+if(commandReceived) {
+    if(detect_devices_delay >= 0) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+        rs485_allow_next_command();
+    }
+    else {
+        processCommand(selectedAxis, command, valueBuffer);
+    }
+}
 
         if(detect_devices_delay == 0) {
             print_debug_string("Transmitting unique ID\n");

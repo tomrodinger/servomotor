@@ -3,6 +3,8 @@
 import time
 import servomotor
 
+RUN_TIME = 20.0
+
 # Motor configurations - (unique_id, alias, velocity)
 MOTOR_CONFIGS = [
     ("1C1299E12A574E11", 9, 251.37),
@@ -24,6 +26,17 @@ MOTOR_CONFIGS = [
     ("6E086E6B2548D53E", 7 , 662.21  ),
     ("3E87F47B43F1B807", 17, -1304.77),
     ("653F822D1A15AB73", 6 , -410.98 ),
+]
+
+MOTOR_CONFIGS = [
+#    ("3E87F47B43F1B807", 17,  808.68 ),
+#    ("4284A747771802FF", 18,  -1207.02 ),
+#    ("0A29A21244978F1E", 10,  -621.30 ),
+#    ("3A48E4A822981957", 19,  79.76 ),
+#    ("63BDE0A9538877A0", 9 , -149.31 ),
+#    ("0C3908303ABBB36E", 5 , -1526.61 ),
+#    ("44F625536977949A", 24,  -936.56 ),
+    ("034B7B4B59DF0C2C", 4 , -478.25 ),
 ]
 
 def main():
@@ -50,11 +63,11 @@ def main():
             motor.set_alias(alias)
             motor.enable_mosfets()
             motor.set_maximum_motor_current(390, 390)  # Set to same max current as stress test
-            motor.move_with_velocity(velocity, 20.0)
+            motor.move_with_velocity(velocity, RUN_TIME)
             motor.move_with_velocity(0, 0.01)  # Stop over 0.01 seconds
 
         # Wait for movements to complete
-        time.sleep(21)  # 2 seconds + 0.01 seconds + small buffer
+        time.sleep(RUN_TIME + 0.5)
 
     finally:
         # Disable all MOSFETs using broadcast

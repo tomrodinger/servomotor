@@ -278,17 +278,17 @@ uint8_t read_UART_pin(void)
 uint8_t registers_to_read[] = {0x00, 0x01, 0x6a, 0x6b, 0x6c, 0x6c, 0x6f, 0x70, 0x71, 0x72};
 //uint8_t registers_to_read[] = {0x6c};
 uint8_t register_index = 0;
-bool rx_phase = false;
+uint8_t rx_phase = false;
 uint8_t byte_index = 0;
 uint8_t bit_index = 0;
 uint8_t crc = 0;
 uint8_t time_divider = 0; // for writing operations, the baud rate be set by dividing the frequency of the function call by 3. this will give a baud rate of about 10700. for reading operations, we will sample at the full rate.
-bool waiting_for_start = 0;
+uint8_t waiting_for_start = 0;
 uint8_t n_sampled_bits = 0;
 uint8_t rx_byte = 0;
 uint8_t end_of_read_delay = 0;
 
-bool GC6608_UART_bit_bang_read_registers(uint8_t *returned_data, uint16_t *returned_data_size)
+uint8_t GC6608_UART_bit_bang_read_registers(uint8_t *returned_data, uint16_t *returned_data_size)
 {
     uint8_t bit;
     if (end_of_read_delay > 0) {

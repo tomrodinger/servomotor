@@ -12,7 +12,7 @@ static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
 
-volatile char selectedAxis;
+volatile uint8_t selectedAxis;
 volatile uint8_t command;
 volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 volatile uint8_t commandReceived = 0;
@@ -119,6 +119,11 @@ void USART1_IRQHandler(void)
 
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
         USART1->TDR = transmitBuffer[transmitIndex];
+#ifdef MOTOR_SIMULATION
+        // In simulation, we need to clear TXE after writing to TDR
+        // (In real hardware, this is done by the USART hardware)
+        USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
+#endif
         transmitCount--;
         transmitIndex++;
     }
@@ -144,6 +149,11 @@ void rs485_transmit(void *s, uint8_t len)
 
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
         USART1->TDR = transmitBuffer[transmitIndex];
+#ifdef MOTOR_SIMULATION
+        // In simulation, we need to clear TXE after writing to TDR
+        // (In real hardware, this is done by the USART hardware)
+        USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
+#endif
         transmitCount--;
         transmitIndex++;
     }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include "stm32g0xx_hal.h"
-#include "ADC.h"
+#include "../firmware/Src/ADC.h"
 #include "leds.h"
 #include "error_handling.h"
 #include "debug_uart.h"
@@ -12,8 +12,22 @@
 
 #define MAX_UINT16 ((1 << 16) - 1)
 
+// ADC buffer used by hall sensor calculations
+uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE] = {0};
+
 void adc_init(void)
 {
+    // Initialize ADC buffer with simulated values
+    for(int i = 0; i < DMA_ADC_BUFFER_SIZE; i += ADC_CYCLE_INDEXES) {
+        ADC_buffer[i + MOTOR_CURRENT_PHASE_A_CYCLE_INDEX] = 1350;  // Motor current
+        ADC_buffer[i + HALL1_ADC_CYCLE_INDEX] = 32768;            // Hall 1
+        ADC_buffer[i + SUPPLY_VOLTAGE_ADC_CYCLE_INDEX] = 65535;   // Supply voltage
+        ADC_buffer[i + MOTOR_CURRENT_PHASE_B_CYCLE_INDEX] = 1350; // Motor current
+        ADC_buffer[i + HALL2_ADC_CYCLE_INDEX] = 32768;           // Hall 2
+        ADC_buffer[i + TEMPERATURE_ADC_CYCLE_INDEX] = 32768;     // Temperature
+        ADC_buffer[i + 6] = 1350;                                // Motor current
+        ADC_buffer[i + HALL3_ADC_CYCLE_INDEX] = 32768;          // Hall 3
+    }
 }
 
 
@@ -38,8 +52,9 @@ uint16_t get_hall_sensor3_voltage(void)
 
 uint16_t get_temperature_ADC_value(void)
 {
-	uint16_t a = 0 * 4;
-	return a;
+    // Return value above OVERHEAT_TEMPERATURE_THRESHOLD_ADC_VALUE (11900)
+    // to avoid triggering overheat protection
+    return 16000;  // Safe temperature around 35°C
 }
 
 uint16_t get_supply_voltage_ADC_value(void)
@@ -60,7 +75,7 @@ uint16_t get_supply_voltage_ADC_value(void)
 }
 
 
-uint16_t get_supply_voltage_volts_time_10(void)
+uint16_t get_supply_voltage_volts_times_10(void)
 {
 	uint16_t supply_voltage = get_supply_voltage_ADC_value();
 	uint32_t supply_voltage_calibrated = (supply_voltage * SUPPLY_VOLTAGE_CALIBRATION_CONSTANT) >> 20;
@@ -85,4 +100,11 @@ void print_supply_voltage(void)
 
 void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
 {
+}
+
+uint16_t get_motor_current(void)
+{
+    // Return simulated motor current around the expected baseline of 1350
+    // This matches EXPECTED_MOTOR_CURRENT_BASELINE from motor_control.c
+    return 1350;
 }

@@ -3,7 +3,7 @@
 
 #define AT5833 // experimental usage of this driver chip (Oct. 18, 2024)
 
-#define bool uint8_t
+//#define bool uint8_t
 #define true 1
 #define false 0
 
