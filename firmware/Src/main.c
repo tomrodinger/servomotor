@@ -1133,7 +1133,7 @@ int main(void)
         #ifdef MOTOR_SIMULATION
         // When building for the actual motor firmware, this is a no-op.
         // When building the simulator, this runs the simulator's logic, timing, and visualization code.
-        motor_simulator_logic();
+        motor_simulator_visualization();
         #endif
                 
 if(commandReceived) {

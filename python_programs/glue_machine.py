@@ -42,7 +42,7 @@ Z_LEAD_SCREW_MM_PER_ROTATION = 4.0 / Z_REDUCTION_RATIO
 Z_SPAN_ROTATIONS = Z_SPAN_MM / Z_LEAD_SCREW_MM_PER_ROTATION
 INTERNAL_TIME_UNIT_HZ = 64000000 / 2048
 HOMING_MAX_TIME_S = 10.0
-GLUE_CIRCLE_DIAMETER = 25.5
+GLUE_CIRCLE_DIAMETER = 25.1
 GLUE_CIRCLE_RADIUS = GLUE_CIRCLE_DIAMETER / 2
 GLUE_CIRCLE_TIME = 20.0
 HOPPING = True
@@ -53,15 +53,15 @@ N_CIRCLES = 5
 N_CIRCLES_DISPENSING_GLUE = N_CIRCLES - 1
 GLUE_DISPENSE_VOLUME_MM_CUBED_PER_CIRCLE = GLUE_DISPENSE_VOLUME_MM_CUBED_PER_STATOR / N_CIRCLES_DISPENSING_GLUE
 X_START_POSITION_MM = 6.0 + GLUE_CIRCLE_DIAMETER
-X_GO_TO_START_TIME = 2.0
+X_GO_TO_START_TIME = 3.0
 Y_START_POSITION_MM = 6.0 + GLUE_CIRCLE_DIAMETER / 2
 Y_GO_TO_START_TIME = 2.0
 Z_DISPENSE_POSITION_MM = -1.5
 #Z_DISPENSE_POSITION_MM = 4.0
 DISPENSE_CIRCLE_START_ANGLE_RADIANS = 360.0 / 16 * math.pi / 180
-Z_GO_TO_DISPENSE_POSITION_TIME = 1.0
-Z_START_POSITION_MM = Z_DISPENSE_POSITION_MM + 20.0 # we will move the glue nozzle up from the stators when moving the glue dispenser to the next unit
-Z_GO_TO_START_TIME = 4.0
+Z_GO_TO_DISPENSE_POSITION_TIME = 2.0
+Z_START_POSITION_MM = Z_DISPENSE_POSITION_MM + 50.0 # we will move the glue nozzle up from the stators when moving the glue dispenser to the next unit
+Z_GO_TO_START_TIME = 10.0
 QUEUE_SIZE = 32
 DISTANCE_BETWEEN_UNITS = 61.0
 GLUE_DOT_HOP_HEIGHT_MM = 1.5
@@ -82,7 +82,9 @@ PLUNGER_MOVE_DISTANCE_PER_GLUE_DOT_SHAFT_ROTATIONS = PLUNGER_SHAFT_ROTATIONS_PER
 PLUNGER_PULL_BACK_MM_TO_STOP_DISPENSING = -10.0
 PLUNGER_PULL_BACK_TIME = 0.2 * 10
 MIN_MOVE_TIME_S = 1.0/(64000000/2048)*10 # DEBUG adding a * 10 factor to make the move time longer to help debug a problem
-MAXIMUM_GLUE_PURGE_TIME = 60 * 15  # 15 minutes
+MAXIMUM_GLUE_PURGE_TIME = 60 * 20  # 20 minutes
+PAUSE_TIME_BETWEEN_POSITIONS = 2.0
+GO_FROM_MIDDLE_TO_EDGE_TIME = 3.0
 
 POSITIONS = [
     [-1.5 * DISTANCE_BETWEEN_UNITS, -1.5 * DISTANCE_BETWEEN_UNITS],
@@ -102,6 +104,7 @@ POSITIONS = [
     [-0.5 * DISTANCE_BETWEEN_UNITS,  1.5 * DISTANCE_BETWEEN_UNITS],
     [-1.5 * DISTANCE_BETWEEN_UNITS,  1.5 * DISTANCE_BETWEEN_UNITS],
 ]
+
 # For debugging purposes, let's do only the first two positions
 #POSITIONS = POSITIONS[0:2] # DEBUG
 
@@ -353,10 +356,11 @@ response = motorY.zero_position()
 response = motorZ.zero_position()
 
 start_position_transformed = transformation_matrix.transform_point([0, 0, Z_START_POSITION_MM])
-print(f"Start position {start_position_transformed}")
-z_start_position_transformed = start_position_transformed[2]
-response = motorZ.go_to_position(z_start_position_transformed / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_START_TIME)
-wait_queue_empty([motorZ])
+print(f"Going to the middle position {start_position_transformed}")
+response = motorX.go_to_position(start_position_transformed[0] / MM_PER_PULLEY_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+response = motorY.go_to_position(start_position_transformed[1] / MM_PER_PULLEY_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+response = motorZ.go_to_position(start_position_transformed[2] / Z_LEAD_SCREW_MM_PER_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+wait_queue_empty([motorX, motorY, motorZ])
 
 # Last is to move the plunger to the place where the glue starts, which is where there is resistance
 if PLUNGER_ENABLED:
@@ -396,135 +400,160 @@ if not os.path.exists(LOG_FILE_DIRECTORY):
 log_filename = f"{LOG_FILE_DIRECTORY}/{LOG_FILENAME_PREFIX}_{int(time.time())}.log"
 log_fh = open(log_filename, "w")
 
-start_time = time.time()
-for circle_center_x, circle_center_y in POSITIONS:
-    # Let's move the axes to the start position
-    print(f"circle_center_x = {circle_center_x}, circle_center_y = {circle_center_y}, GLUE_CIRCLE_RADIUS = {GLUE_CIRCLE_RADIUS}")
-    circle_start_position_x = circle_center_x + GLUE_CIRCLE_RADIUS * math.cos(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
-    circle_start_position_y = circle_center_y + GLUE_CIRCLE_RADIUS * math.sin(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
-    position_transformed = transformation_matrix.transform_point([circle_start_position_x, circle_start_position_y, Z_DISPENSE_POSITION_MM])
-    print(f"Moving to position {position_transformed}")
-    response = motorX.go_to_position(position_transformed[0] / MM_PER_PULLEY_ROTATION, X_GO_TO_START_TIME)
-    response = motorY.go_to_position(position_transformed[1] / MM_PER_PULLEY_ROTATION, Y_GO_TO_START_TIME)
-    wait_queue_empty([motorX, motorY])
-    # Move Z such that we are ready to dispense glue
-    response = motorZ.go_to_position(position_transformed[2] / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
-    wait_queue_empty([motorZ])
+quit_all = False
+while quit_all == False:
+    start_time = time.time()
+    for circle_center_x, circle_center_y in POSITIONS:
+        # Let's move the axes to the start position
+        print(f"circle_center_x = {circle_center_x}, circle_center_y = {circle_center_y}, GLUE_CIRCLE_RADIUS = {GLUE_CIRCLE_RADIUS}")
+        circle_start_position_x = circle_center_x + GLUE_CIRCLE_RADIUS * math.cos(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
+        circle_start_position_y = circle_center_y + GLUE_CIRCLE_RADIUS * math.sin(DISPENSE_CIRCLE_START_ANGLE_RADIANS)
+        position_transformed = transformation_matrix.transform_point([circle_start_position_x, circle_start_position_y, Z_DISPENSE_POSITION_MM])
+        print(f"Moving to position {position_transformed}")
+        response = motorX.go_to_position(position_transformed[0] / MM_PER_PULLEY_ROTATION, X_GO_TO_START_TIME)
+        response = motorY.go_to_position(position_transformed[1] / MM_PER_PULLEY_ROTATION, Y_GO_TO_START_TIME)
+        wait_queue_empty([motorX, motorY])
+        # Move Z such that we are ready to dispense glue
+        response = motorZ.go_to_position(position_transformed[2] / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
+        wait_queue_empty([motorZ])
 
-    # Now we need to move the dispenser in a circular fashion. We will queue up a bunch of "Move with velocity commnads" to do this
-    n_circle_points = N_HOPS
-    time_per_circle = GLUE_CIRCLE_TIME
-    time_per_circle_step = time_per_circle / n_circle_points
-    angle_step_radians = 2 * math.pi / n_circle_points
-    min_n_queued_items = QUEUE_SIZE # we will start this with an unrealistic high value so that we are forced to get the real number later
-    max_n_queued_items = 0
-    for circle_counter in range(N_CIRCLES):
-        print(f"circle_counter = {circle_counter}")
-        x_velocities_converted = []
-        y_velocities_converted = []
-        z_velocities_converted = []
-        glue_velocities = []
-        move_times = []
-        for i in range(n_circle_points):
-            print(f"i = {i}")
-            angle = DISPENSE_CIRCLE_START_ANGLE_RADIANS + i * angle_step_radians
-            next_angle = angle + angle_step_radians
-            x = GLUE_CIRCLE_RADIUS * math.cos(angle) # cos(0) = 1
-            y = GLUE_CIRCLE_RADIUS * math.sin(angle) # sin(0) = 0
-            z = Z_DISPENSE_POSITION_MM
-            next_x = GLUE_CIRCLE_RADIUS * math.cos(next_angle) # this will be still nearly 1
-            next_y = GLUE_CIRCLE_RADIUS * math.sin(next_angle) # this will be a bit more than 0
-            next_z = Z_DISPENSE_POSITION_MM
-            xy_transformed = transformation_matrix.transform_point([circle_center_x + x, circle_center_y + y, z])
-            next_xy_transformed = transformation_matrix.transform_point([circle_center_x + next_x, circle_center_y + next_y, next_z])
-            x, y = xy_transformed[0], xy_transformed[1]
-            next_x, next_y = next_xy_transformed[0], next_xy_transformed[1]
-            print(f"x = {x}, y = {y}, next_x = {next_x}, next_y = {next_y}")
-            if HOPPING:
-                trajectory_velocities, _move_times, trajectory_points = compute_half_ellipse_trajectory([x, y, z], [next_x, next_y, next_z], GLUE_DOT_HOP_HEIGHT_MM, [0, 0, -1], 8, HOP_TIME_SECONDS)
-                move_times.extend(_move_times)
-                glue_velocity = PLUNGER_VELOCITY_ROTATIONS_PER_SECOND
-                # Let's convert all the velocities into the right unit for the motors
-                for velocity in trajectory_velocities:
-                    x_velocity_mm_per_s = velocity[0]
-                    y_velocity_mm_per_s = velocity[1]
-                    z_velocity_mm_per_s = velocity[2]
+        # Now we need to move the dispenser in a circular fashion. We will queue up a bunch of "Move with velocity commnads" to do this
+        n_circle_points = N_HOPS
+        time_per_circle = GLUE_CIRCLE_TIME
+        time_per_circle_step = time_per_circle / n_circle_points
+        angle_step_radians = 2 * math.pi / n_circle_points
+        min_n_queued_items = QUEUE_SIZE # we will start this with an unrealistic high value so that we are forced to get the real number later
+        max_n_queued_items = 0
+        for circle_counter in range(N_CIRCLES):
+            print(f"circle_counter = {circle_counter}")
+            x_velocities_converted = []
+            y_velocities_converted = []
+            z_velocities_converted = []
+            glue_velocities = []
+            move_times = []
+            for i in range(n_circle_points):
+                print(f"i = {i}")
+                angle = DISPENSE_CIRCLE_START_ANGLE_RADIANS + i * angle_step_radians
+                next_angle = angle + angle_step_radians
+                x = GLUE_CIRCLE_RADIUS * math.cos(angle) # cos(0) = 1
+                y = GLUE_CIRCLE_RADIUS * math.sin(angle) # sin(0) = 0
+                z = Z_DISPENSE_POSITION_MM
+                next_x = GLUE_CIRCLE_RADIUS * math.cos(next_angle) # this will be still nearly 1
+                next_y = GLUE_CIRCLE_RADIUS * math.sin(next_angle) # this will be a bit more than 0
+                next_z = Z_DISPENSE_POSITION_MM
+                xy_transformed = transformation_matrix.transform_point([circle_center_x + x, circle_center_y + y, z])
+                next_xy_transformed = transformation_matrix.transform_point([circle_center_x + next_x, circle_center_y + next_y, next_z])
+                x, y = xy_transformed[0], xy_transformed[1]
+                next_x, next_y = next_xy_transformed[0], next_xy_transformed[1]
+                print(f"x = {x}, y = {y}, next_x = {next_x}, next_y = {next_y}")
+                if HOPPING:
+                    trajectory_velocities, _move_times, trajectory_points = compute_half_ellipse_trajectory([x, y, z], [next_x, next_y, next_z], GLUE_DOT_HOP_HEIGHT_MM, [0, 0, -1], 8, HOP_TIME_SECONDS)
+                    move_times.extend(_move_times)
+                    glue_velocity = PLUNGER_VELOCITY_ROTATIONS_PER_SECOND
+                    # Let's convert all the velocities into the right unit for the motors
+                    for velocity in trajectory_velocities:
+                        x_velocity_mm_per_s = velocity[0]
+                        y_velocity_mm_per_s = velocity[1]
+                        z_velocity_mm_per_s = velocity[2]
+                        # and convert the velocity from mm/s to microsteps per motor time unit
+                        x_velocities_converted.append(x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
+                        y_velocities_converted.append(y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
+                        z_velocities_converted.append(z_velocity_mm_per_s / Z_LEAD_SCREW_MM_PER_ROTATION)
+                        if circle_counter < N_CIRCLES_DISPENSING_GLUE:
+                            glue_velocities.append(glue_velocity)
+                        else:
+                            glue_velocities.append(0.0)
+                else:
+                    delta_x = next_x - x
+                    delta_y = next_y - y
+                    x_velocity_mm_per_s = delta_x / time_per_circle_step
+                    y_velocity_mm_per_s = delta_y / time_per_circle_step
                     # and convert the velocity from mm/s to microsteps per motor time unit
-                    x_velocities_converted.append(x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
-                    y_velocities_converted.append(y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION)
-                    z_velocities_converted.append(z_velocity_mm_per_s / Z_LEAD_SCREW_MM_PER_ROTATION)
+                    x_velocity_converted = x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
+                    y_velocity_converted = y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
+                    glue_velocity = PLUNGER_VELOCITY_ROTATIONS_PER_SECOND
+                    x_velocities_converted.append(x_velocity_converted)
+                    y_velocities_converted.append(y_velocity_converted)
+                    z_velocities_converted.append(0.0)
                     if circle_counter < N_CIRCLES_DISPENSING_GLUE:
                         glue_velocities.append(glue_velocity)
                     else:
                         glue_velocities.append(0.0)
-            else:
-                delta_x = next_x - x
-                delta_y = next_y - y
-                x_velocity_mm_per_s = delta_x / time_per_circle_step
-                y_velocity_mm_per_s = delta_y / time_per_circle_step
-                # and convert the velocity from mm/s to microsteps per motor time unit
-                x_velocity_converted = x_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
-                y_velocity_converted = y_velocity_mm_per_s / MM_PER_PULLEY_ROTATION
-                glue_velocity = PLUNGER_VELOCITY_ROTATIONS_PER_SECOND
-                x_velocities_converted.append(x_velocity_converted)
-                y_velocities_converted.append(y_velocity_converted)
+                    move_times.append(time_per_circle_step)
+            if circle_counter >= N_CIRCLES - 1:  # stop the motion at the end of doing all circle
+                x_velocities_converted.append(0.0)
+                y_velocities_converted.append(0.0)
                 z_velocities_converted.append(0.0)
-                if circle_counter < N_CIRCLES_DISPENSING_GLUE:
-                    glue_velocities.append(glue_velocity)
-                else:
-                    glue_velocities.append(0.0)
-                move_times.append(time_per_circle_step)
-        if circle_counter >= N_CIRCLES - 1:  # stop the motion at the end of doing all circle
-            x_velocities_converted.append(0.0)
-            y_velocities_converted.append(0.0)
-            z_velocities_converted.append(0.0)
-            glue_velocities.append(0.0)
-            move_times.append(MIN_MOVE_TIME_S)
-        # Let's iterate through all the moves and execute them
-        move_with_velocity_time = time.time()
-        for x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity, move_time in zip(x_velocities_converted, y_velocities_converted, z_velocities_converted, glue_velocities, move_times):
-            # Let's check how many queued items there are and if the queue is full then we should wait for it to get space
-            if max_n_queued_items > QUEUE_SIZE - 1:
-                min_n_queued_items, max_n_queued_items = wait_for_queue_space([motorX, motorY, motorZ, motorG])
-            print(f"The minimum and maximum number of queued items are {min_n_queued_items} and {max_n_queued_items}")
-            did_time_sync = False
-            if min_n_queued_items >= 3:
-                print("Going into time_sync.logic()")
-                did_time_sync = time_sync.logic()
-                print("Done with time_sync.logic()")
+                glue_velocities.append(0.0)
+                move_times.append(MIN_MOVE_TIME_S)
+            # Let's iterate through all the moves and execute them
+            move_with_velocity_time = time.time()
+            for x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity, move_time in zip(x_velocities_converted, y_velocities_converted, z_velocities_converted, glue_velocities, move_times):
+                # Let's check how many queued items there are and if the queue is full then we should wait for it to get space
+                if max_n_queued_items > QUEUE_SIZE - 1:
+                    min_n_queued_items, max_n_queued_items = wait_for_queue_space([motorX, motorY, motorZ, motorG])
+                print(f"The minimum and maximum number of queued items are {min_n_queued_items} and {max_n_queued_items}")
+                did_time_sync = False
+                if min_n_queued_items >= 3:
+                    print("Going into time_sync.logic()")
+                    did_time_sync = time_sync.logic()
+                    print("Done with time_sync.logic()")
 
-            print("Move with velocity", x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity, "for", move_time, "seconds")
-            current_time = time.time()
-            print("Time since last move with velocity:", current_time - move_with_velocity_time)
-            move_with_velocity_time = current_time
-            response = motorX.move_with_velocity(x_velocity_converted, move_time)
-            response = motorY.move_with_velocity(y_velocity_converted, move_time)
-            response = motorZ.move_with_velocity(z_velocity_converted, move_time)
-            if PLUNGER_ENABLED:
-                response = motorG.move_with_velocity(glue_velocity, move_time)
-                print("Moving the plunger. The response is", response)
-                if glue_velocity != 0.0:
-                    enable_or_disable_glue_dispenser(motorG, True)
-                else:
-                    enable_or_disable_glue_dispenser(motorG, False)
-                print("Finished enabling or disabling the glue dispenser")
-                # Get the comprehensive positions of the glue dispenser motor, to see if we dispensed the expected amount of glue. Log it to a file
-                if min_n_queued_items >= 3 and not did_time_sync:
-                    response = motorG.get_comprehensive_position()
-                    print(f"Comprehensive position of the glue dispenser motor: {response}")
-                    # Log all the data that is returned in the response to the log file, one item per column
-                    log_fh.write(" ".join([str(item) for item in response]) + "\n")
-            max_n_queued_items += 1
-    wait_queue_empty([motorX, motorY, motorZ, motorG])
+                print("Move with velocity", x_velocity_converted, y_velocity_converted, z_velocity_converted, glue_velocity, "for", move_time, "seconds")
+                current_time = time.time()
+                print("Time since last move with velocity:", current_time - move_with_velocity_time)
+                move_with_velocity_time = current_time
+                response = motorX.move_with_velocity(x_velocity_converted, move_time)
+                response = motorY.move_with_velocity(y_velocity_converted, move_time)
+                response = motorZ.move_with_velocity(z_velocity_converted, move_time)
+                if PLUNGER_ENABLED:
+                    response = motorG.move_with_velocity(glue_velocity, move_time)
+                    print("Moving the plunger. The response is", response)
+                    if glue_velocity != 0.0:
+                        enable_or_disable_glue_dispenser(motorG, True)
+                    else:
+                        enable_or_disable_glue_dispenser(motorG, False)
+                    print("Finished enabling or disabling the glue dispenser")
+                    # Get the comprehensive positions of the glue dispenser motor, to see if we dispensed the expected amount of glue. Log it to a file
+                    if min_n_queued_items >= 3 and not did_time_sync:
+                        response = motorG.get_comprehensive_position()
+                        print(f"Comprehensive position of the glue dispenser motor: {response}")
+                        # Log all the data that is returned in the response to the log file, one item per column
+                        log_fh.write(" ".join([str(item) for item in response]) + "\n")
+                max_n_queued_items += 1
+        wait_queue_empty([motorX, motorY, motorZ, motorG])
+
+        position_transformed = transformation_matrix.transform_point([circle_start_position_x, circle_start_position_y, Z_START_POSITION_MM])
+        print(f"Moving to position {position_transformed}")
+        z_start_position_transformed = start_position_transformed[2]
+        response = motorZ.go_to_position(z_start_position_transformed / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
+        wait_queue_empty([motorZ])
+        time.sleep(PAUSE_TIME_BETWEEN_POSITIONS)
+
+    end_time = time.time()
+    print(f"Total time taken for all or the positions: {end_time - start_time} seconds")
 
     start_position_transformed = transformation_matrix.transform_point([0, 0, Z_START_POSITION_MM])
-    print(f"Transformed coordinates (moving Z coordinate only this time): {start_position_transformed}")
-    z_start_position_transformed = start_position_transformed[2]
-    response = motorZ.go_to_position(z_start_position_transformed / Z_LEAD_SCREW_MM_PER_ROTATION, Z_GO_TO_DISPENSE_POSITION_TIME)
-    wait_queue_empty([motorZ])
+    print(f"Going to the middle position {start_position_transformed}")
+    response = motorX.go_to_position(start_position_transformed[0] / MM_PER_PULLEY_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+    response = motorY.go_to_position(start_position_transformed[1] / MM_PER_PULLEY_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+    response = motorZ.go_to_position(start_position_transformed[2] / Z_LEAD_SCREW_MM_PER_ROTATION, GO_FROM_MIDDLE_TO_EDGE_TIME)
+    wait_queue_empty([motorX, motorY, motorZ])
 
-end_time = time.time()
-print(f"Total time taken: {end_time - start_time} seconds")
+    while 1:
+        print("Press q to quit or any other key to continue to the next set of positions")
+        ch = getch()
+        print(f"Got character {ch}")
+        if ch is not None:
+            if ch == 'q':
+                quit_all = True
+            break
+        time.sleep(0.01)
+
+print("Resetting all devices")
+# Reset all devices
+motor255.system_reset()
+time.sleep(1.5)
 
 log_fh.close()
 

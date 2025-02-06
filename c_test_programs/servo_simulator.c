@@ -137,6 +137,7 @@ static int      gMasterFD = -1;
 static int      gQuit     = 0;
 static pthread_t gReadThread;
 static pthread_t gWriteThread;
+static pthread_t gMotorThread;
 static uint8_t  gMosfetsEnabled = 0;  // Cache MOSFET state
 
 // Simulate transmitting bytes through RS485
@@ -149,7 +150,6 @@ static void *write_thread_func(void *arg)
         // Handle transmit
         if (!(USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) {
             uint8_t txByte = USART1->TDR;
-            printf("Transmitting byte: 0x%02X\n", txByte);
             ssize_t written = write(gMasterFD, &txByte, 1);
             if (written < 0) {
                 printf("Write error: %s (errno: %d)\n", strerror(errno), errno);
@@ -159,18 +159,12 @@ static void *write_thread_func(void *arg)
                 printf("Write failed: no bytes written\n");
                 exit(1);
             }
-            printf("Byte transmitted\n"); // DEBUG - temporarily added to aid in debugging
+            
             // Set TXE to indicate transmit complete
             USART1->ISR |= USART_ISR_TXE_TXFNF_Msk;
 
             if (USART1->CR1 & USART_CR1_TXFEIE) {
-                printf("TXFEIE enabled, triggering interrupt\n"); // DEBUG - temporarily added to aid in debugging
                 USART1_IRQHandler();
-                printf("After the interrupt is triggered: USART1->CR1 & USART_CR1_TXFEIE: %u   USART1->ISR & USART_ISR_TXE_TXFNF_Msk: %u\n", 
-                       (uint32_t)(USART1->CR1 & USART_CR1_TXFEIE), 
-                       (uint32_t)(USART1->ISR & USART_ISR_TXE_TXFNF_Msk));
-            } else {
-                printf("TXFEIE not enabled, no more bytes\n"); // DEBUG - temporarily added to aid in debugging
             }
         }
         usleep(100);  // Small delay to prevent busy-waiting
@@ -236,15 +230,6 @@ static void *read_thread_func(void *arg)
     (void)arg;
     printf("Read thread started with gMasterFD: %d\n", gMasterFD);
     
-    // Print current terminal settings
-    struct termios tios;
-    if (tcgetattr(gMasterFD, &tios) == 0) {
-        printf("Current terminal settings:\n");
-        printf("  Speed: %d baud\n", (int)cfgetospeed(&tios));
-        printf("  c_cflag: 0x%08x\n", (unsigned int)tios.c_cflag);
-        printf("  c_iflag: 0x%08x\n", (unsigned int)tios.c_iflag);
-    }
-    
     while (!gQuit) {
         uint8_t byte;
         int n = read(gMasterFD, &byte, 1);
@@ -259,51 +244,26 @@ static void *read_thread_func(void *arg)
             printf("FD closed\n");
             break;
         }
-        printf("Received byte: %02X\n", byte);
-        
         // Only process if receive interrupt is enabled
         if (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) {
             static int bytesReceived = 0;
             bytesReceived++;
-            
-            printf("Received byte %d: 0x%02X\n", bytesReceived, byte); // DEBUG - temporarily added to aid in debugging
             
             // Store byte and set RXNE flag
             USART1->RDR = byte;
             USART1->ISR |= USART_ISR_RXNE_RXFNE;
             
             // Process through interrupt handler
-            printf("Before IRQHandler:\n"); // DEBUG - temporarily added to aid in debugging
-            printf("  RXNE=%d, RXNEIE=%d\n", // DEBUG - temporarily added to aid in debugging
-                   !!(USART1->ISR & USART_ISR_RXNE_RXFNE),
-                   !!(USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE));
-            printf("  commandReceived=%d\n", commandReceived); // DEBUG - temporarily added to aid in debugging
-            printf("  RDR=0x%02X\n", USART1->RDR); // DEBUG - temporarily added to aid in debugging
-            printf("  selectedAxis=0x%02X, RESPONSE_CHAR=0x%02X\n", selectedAxis, RESPONSE_CHAR); // DEBUG - temporarily added to aid in debugging
-            printf("  Errors: FE=%d, ORE=%d, NE=%d\n", // DEBUG - temporarily added to aid in debugging
-                   !!(USART1->ISR & USART_ISR_FE),
-                   !!(USART1->ISR & USART_ISR_ORE),
-                   !!(USART1->ISR & USART_ISR_NE));
-            
             USART1_IRQHandler();
             
-            printf("After IRQHandler:\n"); // DEBUG - temporarily added to aid in debugging
-            printf("  RXNE=%d, RXNEIE=%d\n", // DEBUG - temporarily added to aid in debugging
-                   !!(USART1->ISR & USART_ISR_RXNE_RXFNE),
-                   !!(USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE));
-            printf("  commandReceived=%d\n", commandReceived); // DEBUG - temporarily added to aid in debugging
-            
             if (commandReceived) {
-                printf("Complete command received:\n"); // DEBUG - temporarily added to aid in debugging
-                printf("  Axis: 0x%02X\n", selectedAxis); // DEBUG - temporarily added to aid in debugging
-                printf("  Command: 0x%02X\n", command); // DEBUG - temporarily added to aid in debugging
+                printf("Command received: Axis=0x%02X, Command=0x%02X\n", 
+                       selectedAxis, command);
                 bytesReceived = 0;  // Reset for next command
             }
             
             // Clear RXNE flag since it was handled
             USART1->ISR &= ~USART_ISR_RXNE_RXFNE;
-        } else {
-            printf("Dropped byte 0x%02X (receive interrupt disabled)\n", byte); // DEBUG - temporarily added to aid in debugging
         }
 
         // Transmit handling moved to write thread
@@ -542,62 +502,119 @@ static void update_visualization(void)
 // They are only implemented for the simulator environment to provide
 // visualization and testing capabilities.
 
-// Called from main's event loop to update visualization and handle motor control
-void motor_simulator_logic(void)
+// Thread-safe shared memory for motor state
+typedef struct {
+    pthread_mutex_t mutex;
+    int64_t motor_position;
+    uint8_t mosfets_enabled;
+    double angle_deg;
+} MotorSharedState;
+
+static MotorSharedState gSharedState = {
+    .mutex = PTHREAD_MUTEX_INITIALIZER
+};
+
+// High-priority motor control thread running at 32kHz
+static void *motor_control_thread_func(void *arg)
+{
+    (void)arg;
+    struct timespec lastTime = {0, 0};
+    struct timespec lastStatsTime = {0, 0};
+    uint32_t callCount = 0;
+    int64_t max_behind_ns = 0;  // Track maximum timing deviation
+    
+    // Set high priority (macOS doesn't support SCHED_FIFO)
+    struct sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_RR);
+    if (pthread_setschedparam(pthread_self(), SCHED_RR, &param) != 0) {
+        printf("Warning: Could not set thread priority\n");
+    }
+    
+    while (!gQuit) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        
+        // Maintain precise 31.25kHz timing (32μs period)
+        if (lastTime.tv_sec == 0) {
+            // First iteration - initialize start time
+            clock_gettime(CLOCK_MONOTONIC, &lastTime);
+        } else {
+            // Calculate next target time (32μs = 32000ns per tick)
+            struct timespec target = lastTime;
+            target.tv_nsec += 32000;
+            if (target.tv_nsec >= 1000000000) {
+                target.tv_sec++;
+                target.tv_nsec -= 1000000000;
+            }
+
+            // Spinlock until we reach target time
+            do {
+                clock_gettime(CLOCK_MONOTONIC, &now);
+            } while ((now.tv_sec < target.tv_sec) || 
+                    (now.tv_sec == target.tv_sec && now.tv_nsec < target.tv_nsec));
+
+            // Update target time for next iteration
+            lastTime = target;
+
+            // Track timing statistics (after the critical timing section)
+            int64_t behind_ns = (now.tv_sec - target.tv_sec) * 1000000000LL + 
+                              (now.tv_nsec - target.tv_nsec);
+            if (behind_ns > max_behind_ns) {
+                max_behind_ns = behind_ns;
+            }
+        }
+        
+        // Run motor control
+        TIM16_IRQHandler();
+        
+        // Update shared state (after motor control)
+        pthread_mutex_lock(&gSharedState.mutex);
+        gSharedState.motor_position = get_motor_position();
+        gSharedState.mosfets_enabled = is_mosfets_enabled();
+        gSharedState.angle_deg = (double)gSharedState.motor_position * (360.0 / COUNTS_PER_ROTATION);
+        pthread_mutex_unlock(&gSharedState.mutex);
+        
+        callCount++;
+        
+        // Print stats every 30 seconds
+        if (lastStatsTime.tv_sec == 0 || 
+            now.tv_sec - lastStatsTime.tv_sec >= 30) {
+            if (lastStatsTime.tv_sec != 0) {
+                double elapsed = (now.tv_sec - lastStatsTime.tv_sec) + 
+                               (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
+                double avgFreq = callCount / elapsed;
+                printf("Motor timing: %.2f Hz (target: 31250 Hz), max deviation: %.2f μs\n", 
+                       avgFreq, max_behind_ns / 1000.0);
+                max_behind_ns = 0; // Reset for next period
+            }
+            callCount = 0;
+            lastStatsTime = now;
+        }
+    }
+    return NULL;
+}
+
+// Main thread visualization update at 60fps
+void motor_simulator_visualization(void)
 {
     static struct timespec lastTime = {0, 0};
-    static struct timespec lastStatsTime = {0, 0};
-    static uint32_t callCount = 0;
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     
-    // Call TIM16_IRQHandler at 31.25kHz (64MHz/2048)
-    // This means every 32μs (1/31250 seconds = 32000 nanoseconds)
-    if (lastTime.tv_sec != 0) {
-        uint64_t elapsed_ns = (now.tv_sec - lastTime.tv_sec) * 1000000000ULL + 
-                             (now.tv_nsec - lastTime.tv_nsec);
-        if (elapsed_ns < 32000) {
-            // Sleep for remaining time
-            struct timespec sleep_time = {
-                .tv_sec = 0,
-                .tv_nsec = 32000 - elapsed_ns
-            };
-            nanosleep(&sleep_time, NULL);
-            clock_gettime(CLOCK_MONOTONIC, &now);
-        }
-    }
-    
-    TIM16_IRQHandler();
-    gMosfetsEnabled = is_mosfets_enabled();  // Update MOSFET state
-    
-    // Update motor visualization from firmware position
-    int64_t motor_position = get_motor_position();
-    double angle_deg = (double)motor_position * (360.0 / COUNTS_PER_ROTATION);
-    MotorHAL_SetPosition(angle_deg);
-    
-    callCount++;
-    lastTime = now;
-    
-    // Print stats every 10 seconds
-    if (lastStatsTime.tv_sec == 0 || 
-        now.tv_sec - lastStatsTime.tv_sec >= 10) {
-        if (lastStatsTime.tv_sec != 0) {  // Skip first iteration
-            double elapsed = (now.tv_sec - lastStatsTime.tv_sec) + 
-                           (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
-            double avgFreq = callCount / elapsed;
-            printf("TIM16_IRQHandler frequency: %.2f Hz (target: 31250 Hz)\n", avgFreq); // DEBUG - temporarily added to aid in debugging
-        }
-        callCount = 0;
-        lastStatsTime = now;
-    }
-    
-    // Update visualization at ~60fps (every 16.67ms)
-    static struct timespec lastVisualTime = {0, 0};
-    if (lastVisualTime.tv_sec == 0 || 
-        (now.tv_sec - lastVisualTime.tv_sec) * 1000000000ULL + 
-        (now.tv_nsec - lastVisualTime.tv_nsec) >= 16670000) {  // 16.67ms in nanoseconds
+    // Update at ~60fps (every 16.67ms)
+    if (lastTime.tv_sec == 0 || 
+        (now.tv_sec - lastTime.tv_sec) * 1000000000ULL + 
+        (now.tv_nsec - lastTime.tv_nsec) >= 16670000) {
+        
+        // Get latest motor state
+        pthread_mutex_lock(&gSharedState.mutex);
+        gMosfetsEnabled = gSharedState.mosfets_enabled;
+        MotorHAL_SetPosition(gSharedState.angle_deg);
+        pthread_mutex_unlock(&gSharedState.mutex);
+        
+        // Update visualization
         update_visualization();
-        lastVisualTime = now;
+        lastTime = now;
     }
 }
 
@@ -680,9 +697,11 @@ void motor_simulator_init(void)
     
     printf("Terminal settings configured (baud: 230400, 8N1, raw mode)\n");
 
-    // Start read and write threads
+    // Start read, write, and motor control threads
     pthread_create(&gReadThread, NULL, read_thread_func, NULL);
     pthread_detach(gReadThread);
     pthread_create(&gWriteThread, NULL, write_thread_func, NULL);
     pthread_detach(gWriteThread);
+    pthread_create(&gMotorThread, NULL, motor_control_thread_func, NULL);
+    pthread_detach(gMotorThread);
 }

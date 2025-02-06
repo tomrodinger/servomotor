@@ -7,7 +7,7 @@
 CC = clang
 CFLAGS = -Wall -g -O2 -std=gnu11 \
          -DPRODUCT_NAME_M3 -DMOTOR_SIMULATION \
-         -DAT5833 -DSOFTWARE_COMPATIBILITY_CODE=3
+         -DSOFTWARE_COMPATIBILITY_CODE=3
 
 # SDL-related flags
 SDL_CFLAGS = $(shell sdl2-config --cflags)

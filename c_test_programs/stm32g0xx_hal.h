@@ -19,7 +19,7 @@ extern void TIM16_IRQHandler(void);
 // - motor_simulator_init(): initializes the simulation
 // - motor_simulator_logic(): runs simulation logic, timing, and visualization
 void motor_simulator_init(void);
-void motor_simulator_logic(void);
+void motor_simulator_visualization(void);
 
 #ifdef __cplusplus
 extern "C" {
