@@ -2,6 +2,20 @@
 #define __HALL_SENSOR_CALCULATIONS__
 
 #include <stdint.h>
+#ifdef PRODUCT_NAME_M1
+#include "commutation_table_M1.h"
+#include "hall_sensor_constants_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "commutation_table_M2.h"
+#include "hall_sensor_constants_M2.h"
+#endif
+#ifdef PRODUCT_NAME_M3
+#include "hall_sensor_constants_M3.h"
+#endif
+#ifdef PRODUCT_NAME_M4
+#include "hall_sensor_constants_M4.h"
+#endif
 
 typedef struct __attribute__((__packed__)) {
     uint16_t max_value[3];

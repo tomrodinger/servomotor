@@ -1,14 +1,9 @@
-// File: motor_simulator.c
-
-// System headers first
 #include <errno.h>
-
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
 #include <util.h>      // openpty() on macOS, FreeBSD, NetBSD
 #else
 #include <pty.h>       // openpty() on Linux and most other UNIX systems
 #endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +18,8 @@
 #include <time.h>
 #include <math.h>
 #include <signal.h>
+
+extern void simulate_ADC_hall_sensor_values(void);
 
 // Undefine system termios.h macros that conflict with our register names
 #undef CR1
@@ -40,6 +37,7 @@ extern volatile uint8_t commandReceived;
 extern volatile char selectedAxis;
 extern volatile uint8_t command;
 extern volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
+extern int main_simulation(void);
 
 // SDL headers
 #include <SDL.h>
@@ -138,7 +136,65 @@ static int      gQuit     = 0;
 static pthread_t gReadThread;
 static pthread_t gWriteThread;
 static pthread_t gMotorThread;
+static pthread_t gSysTickThread;
+
+// External declaration of SysTick_Handler from main.c
+extern void SysTick_Handler(void);
+
+// SysTick simulation thread running at 100Hz
+static void *systick_thread_func(void *arg)
+{
+    (void)arg;
+    struct timespec lastTime = {0, 0};
+    struct timespec lastStatsTime = {0, 0};
+    uint32_t tickCount = 0;
+    
+    while (!gQuit) {
+        struct timespec now;
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        
+        // First iteration - initialize start time
+        if (lastTime.tv_sec == 0) {
+            lastTime = now;
+            lastStatsTime = now;
+            continue;
+        }
+        
+        // Calculate next target time (10ms = 10000000ns per tick)
+        struct timespec target = lastTime;
+        target.tv_nsec += 10000000;
+        if (target.tv_nsec >= 1000000000) {
+            target.tv_sec++;
+            target.tv_nsec -= 1000000000;
+        }
+        
+        // Spinlock until we reach target time
+        do {
+            clock_gettime(CLOCK_MONOTONIC, &now);
+        } while ((now.tv_sec < target.tv_sec) ||
+                (now.tv_sec == target.tv_sec && now.tv_nsec < target.tv_nsec));
+        
+        // Update target time for next iteration
+        lastTime = target;
+        
+        // Call SysTick handler and count ticks
+        SysTick_Handler();
+        tickCount++;
+        
+        // Print stats every 10 seconds
+        double elapsed = (now.tv_sec - lastStatsTime.tv_sec) +
+                        (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
+        if (elapsed >= 10.0) {
+            double frequency = tickCount / elapsed;
+            printf("SysTick frequency: %.2f Hz (target: 100 Hz)\n", frequency);
+            tickCount = 0;
+            lastStatsTime = now;
+        }
+    }
+    return NULL;
+}
 static uint8_t  gMosfetsEnabled = 0;  // Cache MOSFET state
+int gResetRequested = 0;
 
 // Simulate transmitting bytes through RS485
 static void *write_thread_func(void *arg)
@@ -166,8 +222,9 @@ static void *write_thread_func(void *arg)
             if (USART1->CR1 & USART_CR1_TXFEIE) {
                 USART1_IRQHandler();
             }
+//            continue;  // Skip sleep if we transmitted a byte
         }
-        usleep(100);  // Small delay to prevent busy-waiting
+        usleep(100);    // Minimal sleep when no bytes to transmit
     }
     return NULL;
 }
@@ -564,6 +621,18 @@ static void *motor_control_thread_func(void *arg)
             }
         }
         
+        // Update GPIO IDR based on BSRR (simulating hardware behavior)
+        // For each port: clear reset bits, then set set bits
+        GPIOA->IDR = (GPIOA->IDR & ~(GPIOA->BSRR >> 16)) | (GPIOA->BSRR & 0xFFFF);
+        GPIOB->IDR = (GPIOB->IDR & ~(GPIOB->BSRR >> 16)) | (GPIOB->BSRR & 0xFFFF);
+        GPIOC->IDR = (GPIOC->IDR & ~(GPIOC->BSRR >> 16)) | (GPIOC->BSRR & 0xFFFF);
+        
+        // Clear BSRR after processing (like real hardware)
+        GPIOA->BSRR = 0;
+        GPIOB->BSRR = 0;
+        GPIOC->BSRR = 0;
+        
+        simulate_ADC_hall_sensor_values();
         // Run motor control
         TIM16_IRQHandler();
         
@@ -697,11 +766,23 @@ void motor_simulator_init(void)
     
     printf("Terminal settings configured (baud: 230400, 8N1, raw mode)\n");
 
-    // Start read, write, and motor control threads
+    // Start read, write, motor control, and SysTick threads
     pthread_create(&gReadThread, NULL, read_thread_func, NULL);
     pthread_detach(gReadThread);
     pthread_create(&gWriteThread, NULL, write_thread_func, NULL);
     pthread_detach(gWriteThread);
     pthread_create(&gMotorThread, NULL, motor_control_thread_func, NULL);
     pthread_detach(gMotorThread);
+    pthread_create(&gSysTickThread, NULL, systick_thread_func, NULL);
+    pthread_detach(gSysTickThread);
+}
+
+int main() {
+    motor_simulator_init();
+    while(1) {
+        gResetRequested = 0;
+        printf("The system was reset\n");
+        main_simulation();
+    }
+    return 0;
 }

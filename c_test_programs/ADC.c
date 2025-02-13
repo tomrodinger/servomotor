@@ -7,8 +7,14 @@
 #include "leds.h"
 #include "error_handling.h"
 #include "debug_uart.h"
+#include <math.h>
+#include "motor_hal.h"
+#include "hall_sensor_calculations.h"
 
+#define ENCODER_ROTATIONS_PER_SHAFT_ROTATION (TOTAL_NUMBER_OF_SEGMENTS / N_HALL_SENSORS / 2)
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
+#define HALL_SENSOR_SINE_AMPLITUDE 3000
+#define HALL_SENSOR_SINE_OFFSET 32768
 
 #define MAX_UINT16 ((1 << 16) - 1)
 
@@ -33,20 +39,32 @@ void adc_init(void)
 
 uint16_t get_hall_sensor1_voltage(void)
 {
-	uint16_t a = 0 * 4;
-	return a;
+    double angleDeg = MotorHAL_GetPosition();
+    double angleRad = angleDeg * M_PI / 180.0;
+    double sensor = HALL_SENSOR_SINE_OFFSET + HALL_SENSOR_SINE_AMPLITUDE * sin(angleRad * ENCODER_ROTATIONS_PER_SHAFT_ROTATION);
+    if(sensor < 0) sensor = 0;
+    if(sensor > 65535) sensor = 65535;
+    return (uint16_t)sensor;
 }
 
 uint16_t get_hall_sensor2_voltage(void)
 {
-	uint16_t a = 0 * 4;
-	return a;
+    double angleDeg = MotorHAL_GetPosition();
+    double angleRad = angleDeg * M_PI / 180.0;
+    double sensor = HALL_SENSOR_SINE_OFFSET + HALL_SENSOR_SINE_AMPLITUDE * sin(angleRad * ENCODER_ROTATIONS_PER_SHAFT_ROTATION - (2.0 * M_PI / 3.0));
+    if(sensor < 0) sensor = 0;
+    if(sensor > 65535) sensor = 65535;
+    return (uint16_t)sensor;
 }
 
 uint16_t get_hall_sensor3_voltage(void)
 {
-	uint16_t a = 0 * 4;
-	return a;
+    double angleDeg = MotorHAL_GetPosition();
+    double angleRad = angleDeg * M_PI / 180.0;
+    double sensor = HALL_SENSOR_SINE_OFFSET + HALL_SENSOR_SINE_AMPLITUDE * sin(angleRad * ENCODER_ROTATIONS_PER_SHAFT_ROTATION - (4.0 * M_PI / 3.0));
+    if(sensor < 0) sensor = 0;
+    if(sensor > 65535) sensor = 65535;
+    return (uint16_t)sensor;
 }
 
 
@@ -107,4 +125,21 @@ uint16_t get_motor_current(void)
     // Return simulated motor current around the expected baseline of 1350
     // This matches EXPECTED_MOTOR_CURRENT_BASELINE from motor_control.c
     return 1350;
+}
+ 
+// -----------------------------------------------------------------------------
+// Simulate ADC conversion for hall sensor channels.
+// This function recalculates the sinusoidal analog values for the three hall sensors,
+// based on the current motor angle (in degrees) and writes those values into each ADC DMA buffer cycle.
+// Each hall sensor value is written to its corresponding ADC buffer index.
+void simulate_ADC_hall_sensor_values(void)
+{
+    uint16_t hall1 = get_hall_sensor1_voltage();
+    uint16_t hall2 = get_hall_sensor2_voltage();
+    uint16_t hall3 = get_hall_sensor3_voltage();
+    for (int i = 0; i < DMA_ADC_BUFFER_SIZE; i += ADC_CYCLE_INDEXES) {
+         ADC_buffer[i + HALL1_ADC_CYCLE_INDEX] = hall1;
+         ADC_buffer[i + HALL2_ADC_CYCLE_INDEX] = hall2;
+         ADC_buffer[i + HALL3_ADC_CYCLE_INDEX] = hall3;
+    }
 }

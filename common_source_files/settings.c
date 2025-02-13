@@ -5,7 +5,7 @@
 #include "error_handling.h"
 
 
-__attribute__((weak)) void load_global_settings(void)
+void load_global_settings(void)
 {
     memcpy(&global_settings, (void *)GLOBAL_SETTINGS_FLASH_ADDRESS, GLOBAL_SETTINGS_STRUCT_SIZE);
 }
@@ -144,7 +144,7 @@ void save_global_settings_ram_function(void)
     lock_flash();
 }
 
-__attribute__((weak)) void save_global_settings(void)
+void save_global_settings(void)
 {
     __disable_irq();
     save_global_settings_ram_function(); // this function manipulated flash and needs to be in RAM

@@ -1,12 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void fatal_error(uint16_t error_code)
-{
-    printf("FATAL ERROR: %hu\n", error_code);
-    exit(1);
-}
-
   void GC6608_UART_bit_bang_read_registers(void) {}
   void adjust_hall_sensor_readings(void) {}
   void bound_the_sensor_position(void) {}

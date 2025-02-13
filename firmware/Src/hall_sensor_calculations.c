@@ -7,20 +7,6 @@
 #include "error_handling.h"
 #include "ADC.h"
 #include "debug_uart.h"
-#ifdef PRODUCT_NAME_M1
-#include "commutation_table_M1.h"
-#include "hall_sensor_constants_M1.h"
-#endif
-#ifdef PRODUCT_NAME_M2
-#include "commutation_table_M2.h"
-#include "hall_sensor_constants_M2.h"
-#endif
-#ifdef PRODUCT_NAME_M3
-#include "hall_sensor_constants_M3.h"
-#endif
-#ifdef PRODUCT_NAME_M4
-#include "hall_sensor_constants_M4.h"
-#endif
 #include "global_variables.h"
 
 #define UINT32_MIDPOINT 2147483648

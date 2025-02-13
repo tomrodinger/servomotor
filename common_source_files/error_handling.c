@@ -121,9 +121,10 @@ void fatal_error(uint16_t error_code)
     const char *debug_message; // DEBUG - temporarily added to aid in debugging
     debug_message = get_error_text(error_code); // DEBUG - temporarily added to aid in debugging
     printf("\n\n*** FATAL ERROR %d: %s ***\n\n", error_code, debug_message); // DEBUG - temporarily added to aid in debugging
+    exit(1);
 #endif
 
-    // Avoid the fatal error recusrice loop. We will enter the fatal error routine only one, and can get
+    // Avoid the fatal error recursive loop. We will enter the fatal error routine only once, and can get
     // out of it only by full system reset, which can be triggered by the reset command.
     if(fatal_error_occurred) { 
         return;

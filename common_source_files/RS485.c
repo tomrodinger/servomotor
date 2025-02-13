@@ -19,6 +19,7 @@ volatile uint8_t commandReceived = 0;
 
 void rs485_init(void)
 {
+    commandReceived = 0;
     RCC->APBENR2 |= RCC_APBENR2_USART1EN_Msk; // enable the clock to the UART1 peripheral
     RCC->CCIPR |= 1 << RCC_CCIPR_USART1SEL_Pos; // select SYSCLK as the clock source
     

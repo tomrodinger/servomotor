@@ -99,17 +99,6 @@ void systick_init(void)
     SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
                      SysTick_CTRL_TICKINT_Msk   |
                      SysTick_CTRL_ENABLE_Msk;                         /* Enable SysTick IRQ and SysTick Timer */
-
-
-
-/*
-    SysTick->CTRL = 0; // disable first in case it is already enabled
-    SysTick->LOAD  = (uint32_t)(16000000 - 1);              // set reload register to generate interrupt at 4 Hz
-    SysTick->VAL   = 1600000 - 1;                                             // Load the SysTick Counter Value
-    SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
-                     SysTick_CTRL_TICKINT_Msk   |
-                     SysTick_CTRL_ENABLE_Msk;                         // Enable SysTick IRQ and SysTick Timer
-*/
 }
 
 
@@ -433,12 +422,31 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             unique_id = ((int64_t*)parameters)[0];
             new_alias = parameters[8];
             rs485_allow_next_command();
+            print_debug_string("Set device alias command received\n"); // DEBUG - temporarily added to aid in debugging
+            char buff[100]; // DEBUG - temporarily added to aid in debugging
+            snprintf(buff, sizeof(buff), "Command unique_id=0x%llx, my_unique_id=0x%llx\n", // DEBUG - temporarily added to aid in debugging
+                    (unsigned long long)unique_id, (unsigned long long)my_unique_id); // DEBUG - temporarily added to aid in debugging
+            print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
+                        
+            snprintf(buff, sizeof(buff), "selectedAxis=0x%02x (as int=0x%x)\n", (uint8_t)selectedAxis, (int)selectedAxis); // DEBUG - temporarily added to aid in debugging
+            print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
             if(unique_id == my_unique_id) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3); 
+                print_debug_string("Entering if(match) block\n"); // DEBUG - temporarily added to aid in debugging
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+                print_debug_string("About to print_number\n"); // DEBUG - temporarily added to aid in debugging
+                snprintf(buff, sizeof(buff), "new_alias=0x%02x\n", new_alias); // DEBUG - temporarily added to aid in debugging
+                print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
                 print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
-                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message, which is about 100 bytes, at baud rate of 230400
+                print_debug_string("After print_number\n"); // DEBUG - temporarily added to aid in debugging
+                print_debug_string("Starting microsecond_delay\n"); // DEBUG - temporarily added to aid in debugging
+                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+                print_debug_string("After microsecond_delay\n"); // DEBUG - temporarily added to aid in debugging
+                print_debug_string("Setting new alias\n"); // DEBUG - temporarily added to aid in debugging
                 global_settings.my_alias = new_alias;
+                print_debug_string("About to save settings\n"); // DEBUG - temporarily added to aid in debugging
                 save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
+            } else {
+                print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
             }
             break;
         case GET_PRODUCT_INFO_COMMAND:
@@ -1077,11 +1085,13 @@ void print_start_message(void)
 void motor_simulator_init(void);
 #endif
 
+#ifdef MOTOR_SIMULATION
+int main_simulation(void)
+#else
 int main(void)
+#endif
 {
-    #ifdef MOTOR_SIMULATION
-    motor_simulator_init();  // No-op in real firmware, initializes simulator in test environment
-    #else
+    #ifndef MOTOR_SIMULATION
     clock_init();
     systick_init();
     #endif
@@ -1136,14 +1146,19 @@ int main(void)
         motor_simulator_visualization();
         #endif
                 
-if(commandReceived) {
-    if(detect_devices_delay >= 0) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
-        rs485_allow_next_command();
-    }
-    else {
-        processCommand(selectedAxis, command, valueBuffer);
-    }
-}
+        if(commandReceived) {
+            if(detect_devices_delay >= 0) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+                rs485_allow_next_command();
+            }
+            else {
+                processCommand(selectedAxis, command, valueBuffer);
+                #ifdef MOTOR_SIMULATION
+                if (gResetRequested) {
+                    break;
+                }
+                #endif
+            }
+        }
 
         if(detect_devices_delay == 0) {
             print_debug_string("Transmitting unique ID\n");
@@ -1157,6 +1172,9 @@ if(commandReceived) {
             print_debug_string("\nResetting\n\n");
             microsecond_delay(10000);
             NVIC_SystemReset();
+            #ifdef MOTOR_SIMULATION
+            break;
+            #endif
         }
 
         if(is_fast_capture_data_result_ready()) {
@@ -1169,6 +1187,11 @@ if(commandReceived) {
 #endif
 
         process_debug_uart_commands();
+        #ifdef MOTOR_SIMULATION
+        if (gResetRequested) {
+            break;
+        }
+        #endif
         button_logic();
 
 #ifdef PRODUCT_NAME_M1
@@ -1181,7 +1204,7 @@ if(commandReceived) {
 #endif
 
 //      check_if_break_condition();
-#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) 
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
         check_if_ADC_watchdog2_exceeded();
 #endif
 #if defined(PRODUCT_NAME_M1)

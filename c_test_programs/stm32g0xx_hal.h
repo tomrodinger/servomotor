@@ -163,9 +163,9 @@ static inline void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority) {
     }
 }
 
+extern int gResetRequested;
 static inline void NVIC_SystemReset(void) {
-    // Implementation for simulator
-    // In real hardware, this would trigger a system reset
+    gResetRequested = 1;
 }
 
 // GPIO defines

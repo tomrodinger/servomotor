@@ -1,5 +1,6 @@
 #include "stm32g0xx_hal.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
@@ -19,5 +20,7 @@ uint32_t get_random_number(uint32_t limit)
         srand(time(NULL));
         initialized = 1;
     }
-    return (uint32_t)(rand() % (limit + 1));
+    uint32_t r = (uint32_t)(rand() % (limit + 1));
+    printf("random number: %u\n", r);
+    return r;
 }

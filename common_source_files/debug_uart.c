@@ -1,6 +1,9 @@
 #include "stm32g0xx_hal.h"
 #include <stdint.h>
 #include <string.h>
+#ifdef MOTOR_SIMULATION
+#include <stdio.h>
+#endif
 
 #define TRANSMIT_BUFFER_SIZE 150
 static char transmitBuffer[TRANSMIT_BUFFER_SIZE];
@@ -52,6 +55,14 @@ void USART2_IRQHandler(void)
 
 void transmit(void *s, uint8_t len)
 {
+    #ifdef MOTOR_SIMULATION
+    char buf[len + 1];
+    memcpy(buf, s, len);
+    buf[len] = 0;
+    printf("%s", buf);
+    return;
+
+    #endif
     if (debug_printing_enabled == 0) {
         return;
     }
@@ -85,6 +96,11 @@ void transmit(void *s, uint8_t len)
 // print a null terminated string to the debug port
 void print_debug_string(void *s)
 {
+    #ifdef MOTOR_SIMULATION
+    printf("%s", (char*)s);
+    return;
+    #endif
+
     if (debug_printing_enabled == 0) {
         return;
     }
