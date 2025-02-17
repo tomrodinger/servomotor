@@ -18,6 +18,5 @@
   void red_LED_on(void) {}
   void reset_microsecond_time(void) {}
   void reset_profilers(void) {}
-  void rs485_transmit(void) {}
   void zero_hall_position(void) {}
   void reset_AT5833(void) {}

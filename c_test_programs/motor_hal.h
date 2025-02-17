@@ -2,6 +2,33 @@
 #define MOTOR_HAL_H
 
 #include <stdint.h>
+#include "motor_control.h"
+
+#ifdef PRODUCT_NAME_M1
+#include "commutation_table_M1.h"
+#endif
+#ifdef PRODUCT_NAME_M2
+#include "commutation_table_M2.h"
+#endif
+#ifdef PRODUCT_NAME_M3
+#include "commutation_table_M3.h"
+#endif
+#ifdef PRODUCT_NAME_M4
+#include "commutation_table_M4.h"
+#endif
+
+// Constants
+#define COUNTS_PER_ROTATION (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_REVOLUTION_ELECTRICAL_CYCLES)
+
+// Types
+typedef struct {
+    uint32_t low;
+    uint32_t mid;
+    int32_t high;
+} int96_t;
+
+// External declarations
+extern int96_t current_position_i96;
 
 // Status type for HAL operations
 typedef enum {

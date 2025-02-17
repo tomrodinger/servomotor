@@ -431,10 +431,10 @@ void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int
 }
 
 
-uint32_t hall1_sum;
-uint32_t hall2_sum;
-uint32_t hall3_sum;
-uint8_t avg_counter;
+uint32_t hall1_sum = 0;
+uint32_t hall2_sum = 0;
+uint32_t hall3_sum = 0;
+uint8_t avg_counter = 0;
 uint16_t hall_data_buffer[3];
 
 #ifdef PRODUCT_NAME_M1

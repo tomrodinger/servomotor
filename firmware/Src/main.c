@@ -1101,9 +1101,7 @@ int main(void)
     GPIO_init();
     debug_uart_init();
     rs485_init();
-    #ifndef MOTOR_SIMULATION
     adc_init();
-    #endif
     pwm_init();
     motor_control_init();
     overvoltage_init();

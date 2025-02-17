@@ -61,6 +61,10 @@ void load_global_settings(void)
             global_settings.my_alias = 1;
         } else {
             printf("DEBUG - Loaded settings, alias=%d\n", global_settings.my_alias); // DEBUG - temporarily added to aid in debugging
+            printf("Hall sensor midlines: %u, %u, %u\n",
+                   global_settings.hall1_midline,
+                   global_settings.hall2_midline,
+                   global_settings.hall3_midline);
         }
     } else {
         // No settings file, initialize with defaults

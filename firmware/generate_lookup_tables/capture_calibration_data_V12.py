@@ -62,9 +62,21 @@ print("Sending the command to start the calibration motor movements")
 command = bytearray([ord(MY_AXIS), CAPTURE_HALL_SENSOR_DATA_COMMAND, 1, CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING])
 ser.write(command)
 
+no_end_text_found = False
 data = bytearray()
 while 1:
-    some_data = ser.read(1000000)
+    try:
+        some_data = ser.read(1000000)
+    except:
+        print("Did not receive any more bytes and did not receive the end text")
+        print("We have this many bytes:", len(data))
+        no_end_text_found = True
+        break
+    if len(some_data) > 0:
+        print(f"Received {len(some_data)} bytes")
+        # Print first few bytes in hex for debugging
+        if len(some_data) > 0:
+            print("First 10 bytes:", ' '.join(f'{b:02x}' for b in some_data[:10]))
     data = data + some_data
     end_index = data.find(CALIBRATION_DONE_TEXT, 0)
     if end_index >= 0:
@@ -75,12 +87,16 @@ if start_index < 0:
     print("Did not find the calibration start text:", CALIBRATION_START_TEXT)
     exit(1)
 
-print("Found the calibration done text at index:", end_index)
-data = data[start_index + len(CALIBRATION_START_TEXT) : end_index]
-
-print("Sending the command to disable the motor")
-command = bytearray([ord(MY_AXIS), 0, 0])
-ser.write(command)
+if no_end_text_found:
+    data_len_divisible_by_6 = int(len(data) / 6) * 6
+    data = data[0:data_len_divisible_by_6]
+    print("The number length of the usable data is:", data_len_divisible_by_6)
+else:
+    print("Found the calibration done text at index:", end_index)
+    data = data[start_index + len(CALIBRATION_START_TEXT) : end_index]
+    print("Sending the command to disable the motor")
+    command = bytearray([ord(MY_AXIS), 0, 0])
+    ser.write(command)
 
 if len(data) % 6 != 0:
     print("Error: The length of the data is not a multiple of 6")

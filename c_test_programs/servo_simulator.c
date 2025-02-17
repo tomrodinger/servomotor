@@ -105,32 +105,13 @@ static const char *font_path = "/System/Library/Fonts/Supplemental/Arial.ttf";
 #define AXIS_ALL             255
 
 #define ERROR_PARAMETER_OUT_OF_RANGE    34
-#define COUNTS_PER_ROTATION            3276800
 
 // Colors
 static const SDL_Color COLOR_DARK_GREY = {80, 80, 80, 255};
 static const SDL_Color COLOR_SILVER    = {192, 192, 192, 255};
 static const SDL_Color COLOR_RED       = {200, 30, 30, 255};
 
-// -----------------------------------------------------------------------------
-// MotorSim: we add a few more fields to track velocity, acceleration, etc.
-// -----------------------------------------------------------------------------
-typedef struct {
-    double currentAngleDeg;
-    double targetAngleDeg;
-    double moveDuration;
-    double startAngleDeg;
-    double moveStartTime;
-    int moveInProgress;
-    uint16_t motorCurrent;
-    uint16_t errorCode;
-    // Extra fields to handle velocity, accel, etc.
-    double currentVelocity; 
-    double currentAcceleration;
-} MotorSim;
-
 // Globals
-static MotorSim gMotor    = {0};
 static int      gMasterFD = -1;
 static int      gQuit     = 0;
 static pthread_t gReadThread;
@@ -167,8 +148,32 @@ static void *systick_thread_func(void *arg)
             target.tv_sec++;
             target.tv_nsec -= 1000000000;
         }
+
+        // Sleep until just before target time
+        struct timespec sleep_target = target;
+        if (sleep_target.tv_nsec >= 100000) {  // Leave 100μs for fine-tuning
+            sleep_target.tv_nsec -= 100000;
+        } else if (sleep_target.tv_sec > 0) {
+            sleep_target.tv_sec--;
+            sleep_target.tv_nsec = 999900000;  // 100μs before next second
+        }
         
-        // Spinlock until we reach target time
+        // Calculate time to sleep
+        clock_gettime(CLOCK_MONOTONIC, &now);
+        struct timespec sleep_time;
+        sleep_time.tv_sec = sleep_target.tv_sec - now.tv_sec;
+        sleep_time.tv_nsec = sleep_target.tv_nsec - now.tv_nsec;
+        if (sleep_time.tv_nsec < 0) {
+            sleep_time.tv_sec--;
+            sleep_time.tv_nsec += 1000000000;
+        }
+        
+        // Only sleep if we have time
+        if (sleep_time.tv_sec > 0 || sleep_time.tv_nsec > 0) {
+            nanosleep(&sleep_time, NULL);
+        }
+
+        // Brief spinlock for final precision
         do {
             clock_gettime(CLOCK_MONOTONIC, &now);
         } while ((now.tv_sec < target.tv_sec) ||
@@ -224,7 +229,7 @@ static void *write_thread_func(void *arg)
             }
 //            continue;  // Skip sleep if we transmitted a byte
         }
-        usleep(100);    // Minimal sleep when no bytes to transmit
+        usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
     }
     return NULL;
 }
@@ -257,26 +262,6 @@ static double lerp(double a, double b, double t)
 }
 
 // -----------------------------------------------------------------------------
-// Motor Update Logic (simple trapezoid emulation + motion blending)
-// -----------------------------------------------------------------------------
-static void motor_update(MotorSim *m, double dt)
-{
-    if (MotorHAL_GetError() != 0) return;
-
-    if (m->moveInProgress && is_mosfets_enabled()) {
-        double elapsed = nowSeconds() - m->moveStartTime;
-        if (elapsed < m->moveDuration) {
-            double fraction = elapsed / m->moveDuration;
-            double newPos = lerp(m->startAngleDeg, m->targetAngleDeg, fraction);
-            MotorHAL_SetPosition(newPos);
-        } else {
-            MotorHAL_SetPosition(m->targetAngleDeg);
-            m->moveInProgress = 0;
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
 // Read Thread
 // -----------------------------------------------------------------------------
 #include "RS485.h"
@@ -294,7 +279,7 @@ static void *read_thread_func(void *arg)
             if (errno != EAGAIN) {
                 printf("Read error: %s (errno: %d)\n", strerror(errno), errno);
             }
-            usleep(1000);
+            usleep(100);  // Reduced sleep time to be more responsive
             continue;
         }
         if (n == 0) {
@@ -540,13 +525,6 @@ static void update_visualization(void)
         }
     }
 
-    if (lastTime.tv_sec != 0) {
-        double dt = (now.tv_sec - lastTime.tv_sec) + 
-                   (now.tv_nsec - lastTime.tv_nsec) / 1e9;
-        motor_update(&gMotor, dt);
-    }
-    lastTime = now;
-
     if (gRenderer) {
         SDL_SetRenderDrawColor(gRenderer, 30, 30, 30, 255);
         SDL_RenderClear(gRenderer);
@@ -604,10 +582,34 @@ static void *motor_control_thread_func(void *arg)
                 target.tv_nsec -= 1000000000;
             }
 
-            // Spinlock until we reach target time
+            // Sleep until just before target time
+            struct timespec sleep_target = target;
+            if (sleep_target.tv_nsec >= 2000) {  // Leave 2μs for fine-tuning
+                sleep_target.tv_nsec -= 2000;
+            } else if (sleep_target.tv_sec > 0) {
+                sleep_target.tv_sec--;
+                sleep_target.tv_nsec = 999998000;  // 2μs before next second
+            }
+            
+            // Calculate time to sleep
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            struct timespec sleep_time;
+            sleep_time.tv_sec = sleep_target.tv_sec - now.tv_sec;
+            sleep_time.tv_nsec = sleep_target.tv_nsec - now.tv_nsec;
+            if (sleep_time.tv_nsec < 0) {
+                sleep_time.tv_sec--;
+                sleep_time.tv_nsec += 1000000000;
+            }
+            
+            // Only sleep if we have time
+            if (sleep_time.tv_sec > 0 || sleep_time.tv_nsec > 0) {
+                nanosleep(&sleep_time, NULL);
+            }
+
+            // Brief spinlock for final precision
             do {
                 clock_gettime(CLOCK_MONOTONIC, &now);
-            } while ((now.tv_sec < target.tv_sec) || 
+            } while ((now.tv_sec < target.tv_sec) ||
                     (now.tv_sec == target.tv_sec && now.tv_nsec < target.tv_nsec));
 
             // Update target time for next iteration
