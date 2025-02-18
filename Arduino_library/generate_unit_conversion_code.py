@@ -42,7 +42,6 @@ def main(json_filename):
         hf.write(f"#ifndef {HEADER_GUARD}\n")
         hf.write(f"#define {HEADER_GUARD}\n\n")
         hf.write("// This file is auto-generated. Do not edit manually.\n\n")
-        hf.write("#include <Arduino.h>\n\n")
 
         for category, unit_list in units_dict.items():
             enum_name = category.capitalize() + "Unit"  # e.g. "TimeUnit"
