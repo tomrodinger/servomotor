@@ -13,7 +13,7 @@ const DataType dataTypes[] = {
     {8, "i48", 6, -140737488355328LL, 140737488355327LL, true, "48-bit signed integer"},
     {9, "u48", 6, 0, 281474976710655ULL, true, "48-bit unsigned integer"},
     {10, "i64", 8, INT64_MIN, INT64_MAX, true, "64-bit signed integer"},
-    {11, "u64", 8, 0, UINT64_MAX, true, "64-bit unsigned integer"},
+    {11, "u64", 8, 0, static_cast<int64_t>(UINT64_MAX), true, "64-bit unsigned integer"},
     {12, "string8", 8, 0, 0, false, "8-byte string with null termination if shorter"},
     {13, "u24_version_number", 3, 0, 0, false, "3-byte version number (patch, minor, major)"},
     {14, "u32_version_number", 4, 0, 0, false, "4-byte version number (dev, patch, minor, major)"},

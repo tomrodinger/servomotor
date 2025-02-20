@@ -5,6 +5,7 @@
 #include "ServoMotorCommands.h"
 #include "Commands.h"
 #include "Utils.h"
+#include "Communication.h"
 
 ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)
     : _alias(alias), _comm(serialPort), _errno(0) {}
@@ -530,7 +531,7 @@ void ServoMotor::multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t* moveL
     payload.moveTypes = htole32(moveTypes);
     // Handle pointer type
     // Assuming payload.moveList is an array of known size
-    memcpy(payload.moveList, moveList, sizeof(payload.moveList));
+    memcpy(payload.moveList, moveList, sizeof(payload.moveList[0]) * moveCount);
     _comm.sendCommand(_alias, commandID, (uint8_t*)&payload, sizeof(payload));
 
     // Attempt to receive a response

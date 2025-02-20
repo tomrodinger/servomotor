@@ -2,19 +2,19 @@
 #include "Communication.h"
 
 //#define VERBOSE
-#define TIMEOUT_MS 1000
+#define TIMEOUT_MS 1000  // Define timeout duration (1 second)
 
 Communication::Communication(HardwareSerial& serialPort) : _serial(serialPort) {}
 
+// The constructor definition is moved to the header file
 void Communication::openSerialPort() {
-    // Initialize the serial port if necessary
-    // For example: Serial.begin(230400);
-//    _serial.begin(230400); // Initialize serial communication at the required baud rate
+    _serial.begin(230400);  // Initialize the serial communication
 }
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
     _serial.write(alias);
     _serial.write(commandID);
+
     if (payloadSize < 255) {
         _serial.write((uint8_t)payloadSize);
     } else {
@@ -22,6 +22,7 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
         _serial.write((uint8_t)(payloadSize & 0xFF));
         _serial.write((uint8_t)((payloadSize >> 8) & 0xFF));
     }
+    
     if (payload != nullptr && payloadSize > 0) {
         _serial.write(payload, payloadSize);
     }

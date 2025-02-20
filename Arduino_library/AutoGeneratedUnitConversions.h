@@ -6,7 +6,8 @@
 enum class TimeUnit {
     SECONDS,
     MILLISECONDS,
-    MINUTES
+    MINUTES,
+    TIMESTEPS
 };
 
 float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit);

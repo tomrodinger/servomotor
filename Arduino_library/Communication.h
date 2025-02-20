@@ -1,33 +1,25 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
-/*
-  Communication.h
-  A minimal class that a ServoMotor can use to "send commands."
-  On a real Arduino, you'd do something with Serial/RS-485. 
-  Here we'll just store data or print messages. 
-*/
-
 #include "ArduinoEmulator.h"
+
+#define COMMUNICATION_ERROR_TIMEOUT  -1
+#define COMMUNICATION_ERROR_DATA_WRONG_SIZE  -2
+#define COMMUNICATION_ERROR_BAD_RESPONSE_CHAR  -3
+#define COMMUNICATION_ERROR_BAD_STATUS_CHAR  -4
+#define COMMUNICATION_ERROR_BUFFER_TOO_SMALL  -5
+#define COMMUNICATION_SUCCESS 0
 
 class Communication {
 public:
-    Communication(HardwareSerial& /*port*/) {}
-    virtual ~Communication() {}
+    Communication(HardwareSerial& serialPort);
 
-    // Minimal function signature
-    virtual void sendCommand(uint8_t alias, uint8_t commandID,
-                             const uint8_t* payload, uint16_t payloadSize);
-
-    // Some function to get a response (dummy)
-    virtual int8_t getResponse(uint8_t* /*buffer*/, uint16_t /*bufferSize*/,
-                               uint16_t& /*receivedSize*/) {
-        // no real response
-        return 0;
-    }
+    void openSerialPort();
+    void sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
+    int8_t getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize);
+    void flush(); // Add the flush declaration
 
 protected:
-    // You can store data if needed
+    HardwareSerial& _serial; // Store the reference to the actual serial port
 };
-
 #endif // COMMUNICATION_H

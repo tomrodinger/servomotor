@@ -17,6 +17,9 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
       case TimeUnit::MINUTES:
         inRef = value * 1875000.000000000;
         break;
+      case TimeUnit::TIMESTEPS:
+        inRef = value;
+        break;
     }
 
     // Convert from reference unit to 'toUnit'
@@ -47,6 +50,17 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
       case TimeUnit::MINUTES:
         {
             float factor = 1875000.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef / factor;
+            }
+        }
+        break;
+      case TimeUnit::TIMESTEPS:
+        {
+            float factor = 1.0;
             // Avoid divide-by-zero
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
