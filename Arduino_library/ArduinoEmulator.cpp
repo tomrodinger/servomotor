@@ -1,16 +1,30 @@
 // ArduinoEmulator.cpp
+
 #include "ArduinoEmulator.h"
 
-// Declare the setup and loop functions that should be defined elsewhere
-extern void setup();  // Defined in user code
-extern void loop();   // Defined in user code
+// forward declarations from test_one_move.cpp
+extern void setup();
+extern void loop();
 
-// Ensure that this is only compiled in the emulation environment
+// Define the global 'Serial' object so that 'Motor.cpp' etc. can use it
+HardwareSerial Serial;
+
 #if !defined(ARDUINO)
-int main() {
-    setup();  // Call setup function
+int main(int argc, char* argv[]) {
+    // Default port
+    std::string port = "/dev/ttyS0";
+    if (argc > 1) {
+        port = argv[1];
+    }
+
+    // Reassign 'Serial' to the chosen port
+    Serial = HardwareSerial(port);
+
+    setup(); 
     while (true) {
-        loop();  // Call loop function repeatedly
+        loop();
+        // small delay so we don't spin too fast
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     return 0;
 }
