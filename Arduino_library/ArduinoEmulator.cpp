@@ -6,19 +6,22 @@
 extern void setup();
 extern void loop();
 
-// Define the global 'Serial' object so that 'Motor.cpp' etc. can use it
-HardwareSerial Serial;
+// Define the global 'Serial' and 'Serial1' objects
+ConsoleSerial Serial;  // Debug output to console
+HardwareSerial Serial1;  // Hardware communication
 
 #if !defined(ARDUINO)
 int main(int argc, char* argv[]) {
-    // Default port
-    std::string port = "/dev/ttyS0";
-    if (argc > 1) {
-        port = argv[1];
+    // Check if port is provided
+    if (argc < 2) {
+        std::cerr << "Error: Serial port must be specified.\n";
+        std::cerr << "Usage: " << argv[0] << " <serial_port>\n";
+        std::cerr << "Example: " << argv[0] << " /dev/ttys003\n";
+        return 1;
     }
 
-    // Reassign 'Serial' to the chosen port
-    Serial = HardwareSerial(port);
+    // Initialize Serial1 with the specified port
+    Serial1 = HardwareSerial(argv[1]);
 
     setup(); 
     while (true) {

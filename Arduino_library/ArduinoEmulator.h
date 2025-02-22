@@ -10,38 +10,115 @@
 #include <unistd.h>     // read(), write(), close()
 #include <termios.h>    // termios
 #include <sys/ioctl.h>  // ioctl()
+#include <errno.h>      // errno
+
+// Base class for common print/println methods
+class SerialBase {
+public:
+    virtual void print(const char* s) = 0;
+    virtual void println(const char* s) = 0;
+    virtual void print(float val) = 0;
+    virtual void println(float val) = 0;
+    virtual void print(int val) = 0;
+    virtual void println(int val) = 0;
+    virtual void println() = 0;
+    virtual ~SerialBase() {}
+};
+
+/*
+  ConsoleSerial
+  - Used for debug output to console (std::cout)
+  - Does not attempt to open any actual serial ports
+*/
+class ConsoleSerial : public SerialBase {
+public:
+    ConsoleSerial() {}
+    
+    void begin(long baud) {
+        std::cout << "[ConsoleSerial] Debug output initialized\n";
+    }
+
+    void print(const char* s) override { std::cout << s; }
+    void println(const char* s) override { std::cout << s << std::endl; }
+    void print(float val) override { std::cout << val; }
+    void println(float val) override { std::cout << val << std::endl; }
+    void print(int val) override { std::cout << val; }
+    void println(int val) override { std::cout << val << std::endl; }
+    void println() override { std::cout << std::endl; }
+};
 
 /*
   HardwareSerial
-  - If a valid port name is provided, attempts real serial I/O at 'begin()'
-  - Also implements print/println methods for debugging
+  - Used for actual serial communication with hardware or terminal-based simulators
+  - Attempts real serial I/O at 'begin()'
 */
-class HardwareSerial {
+class HardwareSerial : public SerialBase {
 public:
     HardwareSerial() : _fd(-1), _portName("(none)") {}
     HardwareSerial(const std::string& portName)
         : _fd(-1), _portName(portName) {}
 
-    // Attempt to open real serial device at 'baud'
+    // Attempt to open real serial device or terminal at 'baud'
     void begin(long baud) {
         if (_portName == "(none)") {
-            std::cerr << "No valid serial port name set.\n";
-            return;
-        }
-        // Try opening the device
-        _fd = ::open(_portName.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
-        if (_fd < 0) {
-            std::cerr << "Failed to open port " << _portName << std::endl;
+            std::cerr << "No valid port name set.\n";
             return;
         }
 
-        // Setup port
+        // Try opening the device
+        _fd = ::open(_portName.c_str(), O_RDWR | O_NOCTTY);
+        if (_fd < 0) {
+            std::cerr << "Failed to open port " << _portName << ": " << strerror(errno) << std::endl;
+            return;
+        }
+
+        // Get current terminal settings
         struct termios tty;
         if (tcgetattr(_fd, &tty) != 0) {
-            std::cerr << "Error from tcgetattr.\n";
+            std::cerr << "Error from tcgetattr: " << strerror(errno) << std::endl;
+            ::close(_fd);
+            _fd = -1;
             return;
         }
 
+        // Save original settings for restoration
+        tcgetattr(_fd, &_old_tty);
+
+        // Clear parity bit, disabling parity (most common)
+        tty.c_cflag &= ~PARENB;
+        // Clear stop field, only one stop bit used in communication (most common)
+        tty.c_cflag &= ~CSTOPB;
+        // Clear all bits that set the data size 
+        tty.c_cflag &= ~CSIZE;
+        // 8 bits per byte (most common)
+        tty.c_cflag |= CS8;
+        // Disable RTS/CTS hardware flow control (most common)
+        tty.c_cflag &= ~CRTSCTS;
+        // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+        tty.c_cflag |= CREAD | CLOCAL;
+
+        // Disable canonical mode
+        tty.c_lflag &= ~ICANON;
+        // Disable echo
+        tty.c_lflag &= ~ECHO;
+        // Disable erasure
+        tty.c_lflag &= ~ECHOE;
+        // Disable new-line echo
+        tty.c_lflag &= ~ECHONL;
+        // Disable interpretation of INTR, QUIT and SUSP
+        tty.c_lflag &= ~ISIG;
+
+        // Turn off s/w flow ctrl
+        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+        // Disable any special handling of received bytes
+        tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
+
+        // Prevent special interpretation of output bytes (e.g. newline chars)
+        tty.c_oflag &= ~OPOST;
+        // Prevent conversion of newline to carriage return/line feed
+        tty.c_oflag &= ~ONLCR;
+
+        // Set baud rate
         speed_t speedVal = B115200; // default
         switch (baud) {
             case 9600:   speedVal = B9600;   break;
@@ -49,31 +126,26 @@ public:
             case 38400:  speedVal = B38400;  break;
             case 57600:  speedVal = B57600;  break;
             case 115200: speedVal = B115200; break;
-            // Add more as you wish
+            case 230400: speedVal = B230400; break;
+            default:
+                std::cerr << "Warning: Unsupported baud rate " << baud << ", using 115200\n";
+                break;
         }
 
-        cfsetospeed(&tty, speedVal);
         cfsetispeed(&tty, speedVal);
+        cfsetospeed(&tty, speedVal);
 
-        // 8N1
-        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
-        tty.c_cflag &= ~(PARENB | PARODD | CSTOPB | CRTSCTS);
-        tty.c_cflag |= CLOCAL | CREAD;
+        // Set read timeout
+        tty.c_cc[VTIME] = 10;    // Wait for up to 1 second (10 deciseconds)
+        tty.c_cc[VMIN] = 0;     // No minimum number of characters
 
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-        tty.c_iflag &= ~(ICRNL | INLCR);
-        tty.c_oflag &= ~(OPOST);
-        tty.c_cc[VMIN]  = 0;
-        tty.c_cc[VTIME] = 0;
-
+        // Save settings
         if (tcsetattr(_fd, TCSANOW, &tty) != 0) {
-            std::cerr << "Error from tcsetattr.\n";
+            std::cerr << "Error from tcsetattr: " << strerror(errno) << std::endl;
+            ::close(_fd);
+            _fd = -1;
+            return;
         }
-
-        // Make blocking
-        int flags = fcntl(_fd, F_GETFL);
-        flags &= ~O_NONBLOCK;
-        fcntl(_fd, F_SETFL, flags);
 
         std::cout << "[HardwareSerial] Opened " << _portName 
                   << " at baud " << baud << "\n";
@@ -83,6 +155,7 @@ public:
     void write(uint8_t b) {
         if (_fd >= 0) {
             ::write(_fd, &b, 1);
+            tcdrain(_fd);  // Wait for output to be transmitted
         }
     }
 
@@ -90,6 +163,7 @@ public:
     void write(const uint8_t* buffer, size_t size) {
         if (_fd >= 0 && buffer && size > 0) {
             ::write(_fd, buffer, size);
+            tcdrain(_fd);  // Wait for output to be transmitted
         }
     }
 
@@ -117,35 +191,63 @@ public:
         }
     }
 
-    // Print/println methods for debugging
-    void print(const char* s) {
-        std::cout << s;
+    // Print/println methods
+    void print(const char* s) override {
+        if (_fd >= 0) {
+            ::write(_fd, s, strlen(s));
+            tcdrain(_fd);
+        }
     }
-    void println(const char* s) {
-        std::cout << s << std::endl;
-    }
-
-    void print(float val) {
-        std::cout << val;
-    }
-    void println(float val) {
-        std::cout << val << std::endl;
-    }
-
-    void print(int val) {
-        std::cout << val;
-    }
-    void println(int val) {
-        std::cout << val << std::endl;
+    void println(const char* s) override {
+        if (_fd >= 0) {
+            ::write(_fd, s, strlen(s));
+            ::write(_fd, "\n", 1);
+            tcdrain(_fd);
+        }
     }
 
-    void println() {
-        std::cout << std::endl;
+    void print(float val) override {
+        if (_fd >= 0) {
+            std::string s = std::to_string(val);
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+    void println(float val) override {
+        if (_fd >= 0) {
+            std::string s = std::to_string(val) + "\n";
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+
+    void print(int val) override {
+        if (_fd >= 0) {
+            std::string s = std::to_string(val);
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+    void println(int val) override {
+        if (_fd >= 0) {
+            std::string s = std::to_string(val) + "\n";
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+
+    void println() override {
+        if (_fd >= 0) {
+            ::write(_fd, "\n", 1);
+            tcdrain(_fd);
+        }
     }
 
     // Close if open
     ~HardwareSerial() {
         if (_fd >= 0) {
+            // Restore original terminal settings
+            tcsetattr(_fd, TCSANOW, &_old_tty);
             ::close(_fd);
         }
     }
@@ -153,10 +255,12 @@ public:
 private:
     int         _fd;
     std::string _portName;
+    struct termios _old_tty;  // Store original terminal settings
 };
 
-// We define a global 'Serial' object. 
-extern HardwareSerial Serial;
+// We define global 'Serial' (for debug) and 'Serial1' (for hardware) objects
+extern ConsoleSerial Serial;
+extern HardwareSerial Serial1;
 
 // Replacement for Arduino delay(ms)
 inline void delay(unsigned long ms) {
@@ -171,7 +275,5 @@ inline unsigned long millis() {
     auto ms  = duration_cast<milliseconds>(now - startTime).count();
     return static_cast<unsigned long>(ms);
 }
-
-// If not on Arduino, we define main in ArduinoEmulator.cpp
 
 #endif // ARDUINO_EMULATOR_H

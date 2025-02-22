@@ -7,8 +7,18 @@
 #include "Utils.h"
 #include "Communication.h"
 
+static bool Serial1_initialized = false;
+
 ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)
-    : _alias(alias), _comm(serialPort), _errno(0) {}
+    : _alias(alias), _comm(serialPort), _errno(0),
+      m_positionUnit(PositionUnit::SHAFT_ROTATIONS),
+      m_timeUnit(TimeUnit::SECONDS) {
+    if (!Serial1_initialized) {
+        serialPort.begin(230400);
+        Serial.println("[Motor] Serial1 initialized at 230400 baud.");
+        Serial1_initialized = true;
+    }
+}
 
 void ServoMotor::setAlias(uint8_t new_alias) {
     _alias = new_alias;
@@ -24,6 +34,28 @@ void ServoMotor::openSerialPort() {
 
 int ServoMotor::getError() const {
     return _errno;
+}
+
+void ServoMotor::setPositionUnit(PositionUnit unit) {
+    m_positionUnit = unit;
+    Serial.print("[Motor] setPositionUnit to ");
+    switch(unit) {
+        case PositionUnit::SHAFT_ROTATIONS: Serial.println("SHAFT_ROTATIONS"); break;
+        case PositionUnit::DEGREES:         Serial.println("DEGREES"); break;
+        case PositionUnit::RADIANS:         Serial.println("RADIANS"); break;
+        case PositionUnit::ENCODER_COUNTS:  Serial.println("ENCODER_COUNTS"); break;
+    }
+}
+
+void ServoMotor::setTimeUnit(TimeUnit unit) {
+    m_timeUnit = unit;
+    Serial.print("[Motor] setTimeUnit to ");
+    switch(unit) {
+        case TimeUnit::SECONDS:      Serial.println("SECONDS"); break;
+        case TimeUnit::MILLISECONDS: Serial.println("MILLISECONDS"); break;
+        case TimeUnit::MINUTES:      Serial.println("MINUTES"); break;
+        case TimeUnit::TIMESTEPS:    Serial.println("TIMESTEPS"); break;
+    }
 }
 
 void ServoMotor::disableMosfets() {
@@ -48,12 +80,27 @@ void ServoMotor::enableMosfets() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::trapezoidMove(int32_t displacement, uint32_t duration) {
-    // Move immediately to the given position using the currently set speed (the speed is set by a separate command)
+void ServoMotor::trapezoidMove(float distance, float duration) {
+    Serial.println("[Motor] trapezoidMove called.");
+    Serial.print("  distance in chosen unit: ");
+    Serial.println(distance);
+    Serial.print("  time in chosen unit: ");
+    Serial.println(duration);
+
+    // Convert from user units to internal units
+    float distance_internal = convertPosition(distance, m_positionUnit, PositionUnit::ENCODER_COUNTS);
+    float duration_internal = convertTime(duration, m_timeUnit, TimeUnit::TIMESTEPS);
+
+    Serial.print("  -> distance in encoder_counts: ");
+    Serial.println(distance_internal);
+    Serial.print("  -> duration in timesteps: ");
+    Serial.println(duration_internal);
+
+    // Move immediately to the given position using the currently set speed
     const uint8_t commandID = 2;
     trapezoidMovePayload payload;
-    payload.displacement = htole32(displacement);
-    payload.duration = htole32(duration);
+    payload.displacement = htole32((int32_t)distance_internal);
+    payload.duration = htole32((uint32_t)duration_internal);
     _comm.sendCommand(_alias, commandID, (uint8_t*)&payload, sizeof(payload));
 
     // Attempt to receive a response
