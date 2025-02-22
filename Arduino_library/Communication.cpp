@@ -8,7 +8,7 @@ Communication::Communication(HardwareSerial& serialPort) : _serial(serialPort) {
 
 // The constructor definition is moved to the header file
 void Communication::openSerialPort() {
-    _serial.begin(230400);  // Initialize the serial communication
+    // Serial port is already initialized by ArduinoEmulator
 }
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {

@@ -59,17 +59,17 @@ public:
         : _fd(-1), _portName(portName) {}
 
     // Attempt to open real serial device or terminal at 'baud'
-    void begin(long baud) {
+    bool begin(long baud) {
         if (_portName == "(none)") {
             std::cerr << "No valid port name set.\n";
-            return;
+            return false;
         }
 
         // Try opening the device
         _fd = ::open(_portName.c_str(), O_RDWR | O_NOCTTY);
         if (_fd < 0) {
             std::cerr << "Failed to open port " << _portName << ": " << strerror(errno) << std::endl;
-            return;
+            return false;
         }
 
         // Get current terminal settings
@@ -78,7 +78,7 @@ public:
             std::cerr << "Error from tcgetattr: " << strerror(errno) << std::endl;
             ::close(_fd);
             _fd = -1;
-            return;
+            return false;
         }
 
         // Save original settings for restoration
@@ -88,7 +88,7 @@ public:
         tty.c_cflag &= ~PARENB;
         // Clear stop field, only one stop bit used in communication (most common)
         tty.c_cflag &= ~CSTOPB;
-        // Clear all bits that set the data size 
+        // Clear all bits that set the data size
         tty.c_cflag &= ~CSIZE;
         // 8 bits per byte (most common)
         tty.c_cflag |= CS8;
@@ -144,11 +144,12 @@ public:
             std::cerr << "Error from tcsetattr: " << strerror(errno) << std::endl;
             ::close(_fd);
             _fd = -1;
-            return;
+            return false;
         }
 
-        std::cout << "[HardwareSerial] Opened " << _portName 
+        std::cout << "[HardwareSerial] Opened " << _portName
                   << " at baud " << baud << "\n";
+        return true;
     }
 
     // Write single byte
@@ -241,6 +242,11 @@ public:
             ::write(_fd, "\n", 1);
             tcdrain(_fd);
         }
+    }
+
+    // Check if port is open
+    bool isOpen() const {
+        return _fd >= 0;
     }
 
     // Close if open

@@ -22,8 +22,12 @@ int main(int argc, char* argv[]) {
 
     // Initialize Serial1 with the specified port
     Serial1 = HardwareSerial(argv[1]);
+    if (!Serial1.begin(230400)) {
+        std::cerr << "Failed to initialize serial port. Exiting.\n";
+        return 1;  // Exit with error
+    }
 
-    setup(); 
+    setup();
     while (true) {
         loop();
         // small delay so we don't spin too fast

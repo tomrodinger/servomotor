@@ -13,11 +13,7 @@ ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)
     : _alias(alias), _comm(serialPort), _errno(0),
       m_positionUnit(PositionUnit::SHAFT_ROTATIONS),
       m_timeUnit(TimeUnit::SECONDS) {
-    if (!Serial1_initialized) {
-        serialPort.begin(230400);
-        Serial.println("[Motor] Serial1 initialized at 230400 baud.");
-        Serial1_initialized = true;
-    }
+    openSerialPort();
 }
 
 void ServoMotor::setAlias(uint8_t new_alias) {

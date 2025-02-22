@@ -344,6 +344,10 @@ private:
     // Unit settings
     PositionUnit m_positionUnit;
     TimeUnit m_timeUnit;
+    
+    // Initialization
+    bool _initialized;
+    void ensureInitialized();
 };
 
 #endif // SERVOMOTOR_H
