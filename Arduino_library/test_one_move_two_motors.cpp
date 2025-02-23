@@ -1,4 +1,4 @@
-#include "ServoMotorCommands.h"
+#include "ServomotorCommands.h"
 
 // Create two motors that share the same serial bus
 ServoMotor motorX('X', Serial1);
