@@ -11,7 +11,8 @@
     "time": [
       "seconds",
       "milliseconds",
-      "minutes"
+      "minutes",
+      "timesteps"
     ],
     "position": [
       "shaft_rotations",
@@ -60,6 +61,7 @@
     "seconds": 31250.0,
     "milliseconds": 31.25,
     "minutes": 1875000.0,
+    "timesteps": 1,
     "rotations_per_second_squared": 56294.9953421312,
     "rpm_per_second": 938.2499223688534,
     "degrees_per_second_squared": 156.37498706147557,
@@ -91,7 +93,8 @@
       "values": {
         "1_second": 31250.0,
         "1000_milliseconds": 31250.0,
-        "1_60th_minute": 31250.0
+        "1_60th_minute": 31250.0,
+        "32750_timesteps": 31250.0
       }
     },
     "acceleration": {

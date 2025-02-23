@@ -18,7 +18,7 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
         inRef = value * 1875000.000000000;
         break;
       case TimeUnit::TIMESTEPS:
-        inRef = value;
+        inRef = value * 1.000000000;
         break;
     }
 
@@ -60,7 +60,7 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
         break;
       case TimeUnit::TIMESTEPS:
         {
-            float factor = 1.0;
+            float factor = 1.000000000;
             // Avoid divide-by-zero
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
