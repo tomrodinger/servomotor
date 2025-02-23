@@ -14,6 +14,10 @@ void setup() {
     motorY.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
     motorY.setTimeUnit(TimeUnit::SECONDS);
 
+    // Enable mosfets for both motors before moving
+    motorX.enableMosfets();
+    motorY.enableMosfets();
+
     // Move both motors
     // X: 2 rotations over 3 seconds
     // Y: 1 rotation over 2 seconds

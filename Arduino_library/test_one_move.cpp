@@ -13,6 +13,9 @@ void setup() {
     motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
     motor.setTimeUnit(TimeUnit::SECONDS);
 
+    // Enable mosfets before moving
+    motor.enableMosfets();
+
     // 2) Perform trapezoid move
     //    2 shaft rotations over 3 seconds
     motor.trapezoidMove(2.0f, 3.0f);

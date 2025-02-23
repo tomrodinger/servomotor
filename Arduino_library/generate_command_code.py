@@ -592,6 +592,7 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 sf.write('}\n\n')
             else:
                 sf.write(f'{raw_ret} ServoMotor::{func_name}({", ".join(params)}) {{\n')
+                sf.write('    Serial.println("[Motor] ' + func_name + ' called.");\n')
                 sf.write(f'    // {command["Description"]}\n')
                 sf.write(f'    const uint8_t commandID = {command["CommandEnum"]};\n')
                 if input_params:
