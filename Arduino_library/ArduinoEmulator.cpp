@@ -12,6 +12,7 @@ HardwareSerial Serial1;  // Hardware communication
 
 #if !defined(ARDUINO)
 int main(int argc, char* argv[]) {
+#if defined(REQUIRE_SERIAL_PORT)
     // Check if port is provided
     if (argc < 2) {
         std::cerr << "Error: Serial port must be specified.\n";
@@ -26,6 +27,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "Failed to initialize serial port. Exiting.\n";
         return 1;  // Exit with error
     }
+#endif
 
     setup();
     while (true) {

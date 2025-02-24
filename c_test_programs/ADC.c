@@ -87,7 +87,7 @@ uint16_t get_temperature_ADC_value(void)
 {
     // Return value above OVERHEAT_TEMPERATURE_THRESHOLD_ADC_VALUE (11900)
     // to avoid triggering overheat protection
-    return 16000;  // Safe temperature around 35°C
+    return 12800;  // temperature around 71°C
 }
 
 uint16_t get_supply_voltage_ADC_value(void)

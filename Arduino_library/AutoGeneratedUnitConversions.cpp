@@ -8,6 +8,9 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
     // Convert from 'fromUnit' to reference unit
     float inRef = 0.0f;
     switch (fromUnit) {
+      case TimeUnit::TIMESTEPS:
+        inRef = value * 1.000000000;
+        break;
       case TimeUnit::SECONDS:
         inRef = value * 31250.000000000;
         break;
@@ -17,47 +20,11 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
       case TimeUnit::MINUTES:
         inRef = value * 1875000.000000000;
         break;
-      case TimeUnit::TIMESTEPS:
-        inRef = value * 1.000000000;
-        break;
     }
 
     // Convert from reference unit to 'toUnit'
     float outVal = 0.0f;
     switch (toUnit) {
-      case TimeUnit::SECONDS:
-        {
-            float factor = 31250.000000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case TimeUnit::MILLISECONDS:
-        {
-            float factor = 31.250000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case TimeUnit::MINUTES:
-        {
-            float factor = 1875000.000000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
       case TimeUnit::TIMESTEPS:
         {
             float factor = 1.000000000;
@@ -65,7 +32,40 @@ float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit)
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case TimeUnit::SECONDS:
+        {
+            float factor = 0.000032000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case TimeUnit::MILLISECONDS:
+        {
+            float factor = 0.032000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case TimeUnit::MINUTES:
+        {
+            float factor = 0.000000533;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
             }
         }
         break;
@@ -80,16 +80,16 @@ float convertPosition(float value, PositionUnit fromUnit, PositionUnit toUnit)
     float inRef = 0.0f;
     switch (fromUnit) {
       case PositionUnit::SHAFT_ROTATIONS:
-        inRef = value * 3276800.000000000;
+        inRef = value * 1.000000000;
         break;
       case PositionUnit::DEGREES:
-        inRef = value * 9102.222222222;
+        inRef = value * 0.002777778;
         break;
       case PositionUnit::RADIANS:
-        inRef = value * 521518.917523523;
+        inRef = value * 0.159154943;
         break;
       case PositionUnit::ENCODER_COUNTS:
-        inRef = value * 1.000000000;
+        inRef = value * 0.000000305;
         break;
     }
 
@@ -98,45 +98,45 @@ float convertPosition(float value, PositionUnit fromUnit, PositionUnit toUnit)
     switch (toUnit) {
       case PositionUnit::SHAFT_ROTATIONS:
         {
-            float factor = 3276800.000000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case PositionUnit::DEGREES:
-        {
-            float factor = 9102.222222222;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case PositionUnit::RADIANS:
-        {
-            float factor = 521518.917523523;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case PositionUnit::ENCODER_COUNTS:
-        {
             float factor = 1.000000000;
             // Avoid divide-by-zero
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case PositionUnit::DEGREES:
+        {
+            float factor = 360.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case PositionUnit::RADIANS:
+        {
+            float factor = 6.283185307;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case PositionUnit::ENCODER_COUNTS:
+        {
+            float factor = 3276800.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
             }
         }
         break;
@@ -151,19 +151,22 @@ float convertVelocity(float value, VelocityUnit fromUnit, VelocityUnit toUnit)
     float inRef = 0.0f;
     switch (fromUnit) {
       case VelocityUnit::ROTATIONS_PER_SECOND:
-        inRef = value * 3276800.000000000;
+        inRef = value * 1.000000000;
         break;
       case VelocityUnit::RPM:
-        inRef = value * 54613.333333333;
+        inRef = value * 0.016666667;
         break;
       case VelocityUnit::DEGREES_PER_SECOND:
-        inRef = value * 9102.222222222;
+        inRef = value * 0.002777778;
         break;
       case VelocityUnit::RADIANS_PER_SECOND:
-        inRef = value * 521518.917523523;
+        inRef = value * 0.159154943;
         break;
       case VelocityUnit::COUNTS_PER_SECOND:
-        inRef = value * 1.000000000;
+        inRef = value * 0.029802322;
+        break;
+      case VelocityUnit::COUNTS_PER_TIMESTEP:
+        inRef = value * 0.000000305;
         break;
     }
 
@@ -172,56 +175,67 @@ float convertVelocity(float value, VelocityUnit fromUnit, VelocityUnit toUnit)
     switch (toUnit) {
       case VelocityUnit::ROTATIONS_PER_SECOND:
         {
-            float factor = 3276800.000000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case VelocityUnit::RPM:
-        {
-            float factor = 54613.333333333;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case VelocityUnit::DEGREES_PER_SECOND:
-        {
-            float factor = 9102.222222222;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case VelocityUnit::RADIANS_PER_SECOND:
-        {
-            float factor = 521518.917523523;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case VelocityUnit::COUNTS_PER_SECOND:
-        {
             float factor = 1.000000000;
             // Avoid divide-by-zero
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case VelocityUnit::RPM:
+        {
+            float factor = 60.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case VelocityUnit::DEGREES_PER_SECOND:
+        {
+            float factor = 360.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case VelocityUnit::RADIANS_PER_SECOND:
+        {
+            float factor = 6.283185307;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case VelocityUnit::COUNTS_PER_SECOND:
+        {
+            float factor = 33.554432000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case VelocityUnit::COUNTS_PER_TIMESTEP:
+        {
+            float factor = 3276800.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
             }
         }
         break;
@@ -236,19 +250,22 @@ float convertAcceleration(float value, AccelerationUnit fromUnit, AccelerationUn
     float inRef = 0.0f;
     switch (fromUnit) {
       case AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED:
-        inRef = value * 3276800.000000000;
+        inRef = value * 1.000000000;
         break;
       case AccelerationUnit::RPM_PER_SECOND:
-        inRef = value * 54613.333333333;
+        inRef = value * 0.016666667;
         break;
       case AccelerationUnit::DEGREES_PER_SECOND_SQUARED:
-        inRef = value * 9102.222222222;
+        inRef = value * 0.002777778;
         break;
       case AccelerationUnit::RADIANS_PER_SECOND_SQUARED:
-        inRef = value * 521518.917523523;
+        inRef = value * 0.159154943;
         break;
       case AccelerationUnit::COUNTS_PER_SECOND_SQUARED:
-        inRef = value * 1.000000000;
+        inRef = value * 58.207660913;
+        break;
+      case AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED:
+        inRef = value * 0.000000305;
         break;
     }
 
@@ -257,56 +274,67 @@ float convertAcceleration(float value, AccelerationUnit fromUnit, AccelerationUn
     switch (toUnit) {
       case AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED:
         {
-            float factor = 3276800.000000000;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case AccelerationUnit::RPM_PER_SECOND:
-        {
-            float factor = 54613.333333333;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case AccelerationUnit::DEGREES_PER_SECOND_SQUARED:
-        {
-            float factor = 9102.222222222;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case AccelerationUnit::RADIANS_PER_SECOND_SQUARED:
-        {
-            float factor = 521518.917523523;
-            // Avoid divide-by-zero
-            if (fabs(factor) < 1e-15) {
-                outVal = 0.0f;
-            } else {
-                outVal = inRef / factor;
-            }
-        }
-        break;
-      case AccelerationUnit::COUNTS_PER_SECOND_SQUARED:
-        {
             float factor = 1.000000000;
             // Avoid divide-by-zero
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case AccelerationUnit::RPM_PER_SECOND:
+        {
+            float factor = 60.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case AccelerationUnit::DEGREES_PER_SECOND_SQUARED:
+        {
+            float factor = 360.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case AccelerationUnit::RADIANS_PER_SECOND_SQUARED:
+        {
+            float factor = 6.283185307;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case AccelerationUnit::COUNTS_PER_SECOND_SQUARED:
+        {
+            float factor = 0.017179869;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
+      case AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED:
+        {
+            float factor = 3276800.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
             }
         }
         break;
@@ -320,6 +348,9 @@ float convertCurrent(float value, CurrentUnit fromUnit, CurrentUnit toUnit)
     // Convert from 'fromUnit' to reference unit
     float inRef = 0.0f;
     switch (fromUnit) {
+      case CurrentUnit::ARBITRARY_UNITS:
+        inRef = value * 1.000000000;
+        break;
       case CurrentUnit::MILLIAMPS:
         inRef = value * 1.000000000;
         break;
@@ -331,6 +362,17 @@ float convertCurrent(float value, CurrentUnit fromUnit, CurrentUnit toUnit)
     // Convert from reference unit to 'toUnit'
     float outVal = 0.0f;
     switch (toUnit) {
+      case CurrentUnit::ARBITRARY_UNITS:
+        {
+            float factor = 1.000000000;
+            // Avoid divide-by-zero
+            if (fabs(factor) < 1e-15) {
+                outVal = 0.0f;
+            } else {
+                outVal = inRef * factor;
+            }
+        }
+        break;
       case CurrentUnit::MILLIAMPS:
         {
             float factor = 1.000000000;
@@ -338,7 +380,7 @@ float convertCurrent(float value, CurrentUnit fromUnit, CurrentUnit toUnit)
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
             }
         }
         break;
@@ -349,7 +391,7 @@ float convertCurrent(float value, CurrentUnit fromUnit, CurrentUnit toUnit)
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
             }
         }
         break;
@@ -381,7 +423,7 @@ float convertVoltage(float value, VoltageUnit fromUnit, VoltageUnit toUnit)
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
             }
         }
         break;
@@ -392,7 +434,7 @@ float convertVoltage(float value, VoltageUnit fromUnit, VoltageUnit toUnit)
             if (fabs(factor) < 1e-15) {
                 outVal = 0.0f;
             } else {
-                outVal = inRef / factor;
+                outVal = inRef * factor;
             }
         }
         break;

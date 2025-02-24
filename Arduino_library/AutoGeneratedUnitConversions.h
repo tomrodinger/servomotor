@@ -4,10 +4,10 @@
 // This file is auto-generated. Do not edit manually.
 
 enum class TimeUnit {
+    TIMESTEPS,
     SECONDS,
     MILLISECONDS,
-    MINUTES,
-    TIMESTEPS
+    MINUTES
 };
 
 float convertTime(float value, TimeUnit fromUnit, TimeUnit toUnit);
@@ -26,7 +26,8 @@ enum class VelocityUnit {
     RPM,
     DEGREES_PER_SECOND,
     RADIANS_PER_SECOND,
-    COUNTS_PER_SECOND
+    COUNTS_PER_SECOND,
+    COUNTS_PER_TIMESTEP
 };
 
 float convertVelocity(float value, VelocityUnit fromUnit, VelocityUnit toUnit);
@@ -36,12 +37,14 @@ enum class AccelerationUnit {
     RPM_PER_SECOND,
     DEGREES_PER_SECOND_SQUARED,
     RADIANS_PER_SECOND_SQUARED,
-    COUNTS_PER_SECOND_SQUARED
+    COUNTS_PER_SECOND_SQUARED,
+    COUNTS_PER_TIMESTEP_SQUARED
 };
 
 float convertAcceleration(float value, AccelerationUnit fromUnit, AccelerationUnit toUnit);
 
 enum class CurrentUnit {
+    ARBITRARY_UNITS,
     MILLIAMPS,
     AMPS
 };

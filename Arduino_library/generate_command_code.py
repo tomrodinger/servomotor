@@ -12,27 +12,24 @@ COMMANDS_H_FILE = "Commands.h"
 SERVOMOTOR_CPP_FILE = "ServomotorCommands.cpp"
 SERVOMOTOR_H_FILE = "ServomotorCommands.h"
 
-# Mapping for conversion types.
-conversion_mapping = {
-    "position": ("convertPosition", "convertPosition", "m_positionUnit", "PositionUnit"),
-    "time": ("convertTime", "convertTime", "m_timeUnit", "TimeUnit"),
-    "velocity": ("convertVelocity", "convertVelocityBack", None, None),
-    "acceleration": ("convertAcceleration", "convertAccelerationBack", None, None),
-    "current": ("convertCurrent", "convertCurrentBack", None, None),
-    "voltage": ("convertVoltage", "convertVoltage", None, None),
-    "temperature": ("convertTemperature", "convertTemperature", None, None)
-}
-
-# Default unit names if no unit member exists.
-default_unit = {
-    "position": "PositionUnit",
-    "time": "TimeUnit",
-    "velocity": "VelocityUnit",
-    "acceleration": "AccelerationUnit",
-    "current": "CurrentUnit",
-    "voltage": "VoltageUnit",
-    "temperature": "TemperatureUnit"
-}
+def get_unit_info(unit_conversions_data):
+    """Generate unit information from unit_conversions_M3.json"""
+    units_dict = unit_conversions_data["units"]
+    conversion_mapping = {}
+    default_unit = {}
+    
+    for unit_type, units in units_dict.items():
+        # Create enum name (e.g., "time" -> "TimeUnit")
+        enum_name = unit_type.capitalize() + "Unit"
+        # Create member variable name (e.g., "time" -> "m_timeUnit")
+        member_name = "m_" + unit_type + "Unit"
+        # Create conversion function name (e.g., "time" -> "convertTime")
+        conv_func = "convert" + unit_type.capitalize()
+        
+        conversion_mapping[unit_type] = (conv_func, conv_func, member_name, enum_name)
+        default_unit[unit_type] = enum_name
+    
+    return conversion_mapping, default_unit
 
 # Mapping of normalized command strings to response type names.
 response_struct_mappings = {
@@ -272,7 +269,8 @@ def get_wrapper_return(output_params, cmdStr, func_name):
     else:
         return f'{func_name}Response'
 
-def convert_internal_unit_str(unit_str, conv_type):
+def convert_internal_unit_str(unit_str, conv_type, conversion_mapping, default_unit):
+    """Convert internal unit string to enum value"""
     if conversion_mapping[conv_type][3]:
         return f"{conversion_mapping[conv_type][3]}::{unit_str.upper()}"
     else:
@@ -397,9 +395,12 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
         hf.write('    uint8_t getAlias();\n')
         hf.write('    void openSerialPort();\n')
         hf.write('    int getError() const;\n\n')
+        # Generate unit setting methods
         hf.write('    // Unit settings\n')
-        hf.write('    void setPositionUnit(PositionUnit unit);\n')
-        hf.write('    void setTimeUnit(TimeUnit unit);\n\n')
+        conversion_mapping, default_unit = get_unit_info(unit_conversions_data)
+        for unit_type, (_, _, member_name, enum_name) in conversion_mapping.items():
+            hf.write(f'    void set{unit_type.capitalize()}Unit({enum_name} unit);\n')
+        hf.write('\n')
         for command in commands:
             func_name = format_command_name(command['CommandString'], function_name_mappings)
             input_params = extract_parameters(command.get('Input'), command['CommandString'], data_type_map, reserved_words)
@@ -430,9 +431,12 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
         hf.write('    uint8_t _alias;\n')
         hf.write('    Communication _comm;\n')
         hf.write('    int _errno;\n\n')
+        # Generate unit member variables
         hf.write('    // Unit settings\n')
-        hf.write('    PositionUnit m_positionUnit;\n')
-        hf.write('    TimeUnit m_timeUnit;\n\n')
+        for unit_type, (_, _, member_name, enum_name) in conversion_mapping.items():
+            first_unit = unit_conversions_data["units"][unit_type][0].upper()
+            hf.write(f'    {enum_name} {member_name} = {enum_name}::{first_unit};\n')
+        hf.write('\n')
         hf.write('    // Initialization\n')
         hf.write('    bool _initialized;\n')
         hf.write('    void ensureInitialized();\n')
@@ -451,8 +455,17 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
         sf.write('#include "Utils.h"\n\n')
         sf.write('ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)\n')
         sf.write('    : _alias(alias), _comm(serialPort), _errno(0),\n')
-        sf.write('      m_positionUnit(PositionUnit::SHAFT_ROTATIONS),\n')
-        sf.write('      m_timeUnit(TimeUnit::SECONDS) {\n')
+        # Initialize unit members
+        sf.write('      // Initialize unit settings\n')
+        first = True
+        for unit_type, (_, _, member_name, enum_name) in conversion_mapping.items():
+            first_unit = unit_conversions_data["units"][unit_type][0].upper()
+            if first:
+                sf.write(f'      {member_name}({enum_name}::{first_unit})')
+                first = False
+            else:
+                sf.write(f',\n      {member_name}({enum_name}::{first_unit})')
+        sf.write(' {\n')
         sf.write('    openSerialPort();\n')
         sf.write('}\n\n')
         sf.write('void ServoMotor::setAlias(uint8_t new_alias) {\n')
@@ -467,27 +480,18 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
         sf.write('int ServoMotor::getError() const {\n')
         sf.write('    return _errno;\n')
         sf.write('}\n\n')
+        # Generate unit setting function implementations
         sf.write('// Unit setting functions\n')
-        sf.write('void ServoMotor::setPositionUnit(PositionUnit unit) {\n')
-        sf.write('    m_positionUnit = unit;\n')
-        sf.write('    Serial.print("[Motor] setPositionUnit to ");\n')
-        sf.write('    switch(unit) {\n')
-        sf.write('        case PositionUnit::SHAFT_ROTATIONS: Serial.println("SHAFT_ROTATIONS"); break;\n')
-        sf.write('        case PositionUnit::DEGREES:         Serial.println("DEGREES"); break;\n')
-        sf.write('        case PositionUnit::RADIANS:         Serial.println("RADIANS"); break;\n')
-        sf.write('        case PositionUnit::ENCODER_COUNTS:  Serial.println("ENCODER_COUNTS"); break;\n')
-        sf.write('    }\n')
-        sf.write('}\n\n')
-        sf.write('void ServoMotor::setTimeUnit(TimeUnit unit) {\n')
-        sf.write('    m_timeUnit = unit;\n')
-        sf.write('    Serial.print("[Motor] setTimeUnit to ");\n')
-        sf.write('    switch(unit) {\n')
-        sf.write('        case TimeUnit::SECONDS:      Serial.println("SECONDS"); break;\n')
-        sf.write('        case TimeUnit::MILLISECONDS: Serial.println("MILLISECONDS"); break;\n')
-        sf.write('        case TimeUnit::MINUTES:      Serial.println("MINUTES"); break;\n')
-        sf.write('        case TimeUnit::TIMESTEPS:    Serial.println("TIMESTEPS"); break;\n')
-        sf.write('    }\n')
-        sf.write('}\n\n')
+        for unit_type, (_, _, member_name, enum_name) in conversion_mapping.items():
+            sf.write(f'void ServoMotor::set{unit_type.capitalize()}Unit({enum_name} unit) {{\n')
+            sf.write(f'    {member_name} = unit;\n')
+            sf.write(f'    Serial.print("[Motor] set{unit_type.capitalize()}Unit to ");\n')
+            sf.write('    switch(unit) {\n')
+            for unit_name in unit_conversions_data["units"][unit_type]:
+                unit_enum = unit_name.upper()
+                sf.write(f'        case {enum_name}::{unit_enum}: Serial.println("{unit_enum}"); break;\n')
+            sf.write('    }\n')
+            sf.write('}\n\n')
         # Command implementations
         for command in commands:
             func_name = format_command_name(command['CommandString'], function_name_mappings)
@@ -569,7 +573,7 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                         conv_func = conversion_mapping[conv_type][0]
                         unit_member = conversion_mapping[conv_type][2]
                         from_unit = unit_member if unit_member is not None else f'(({default_unit[conv_type]})0)'
-                        to_unit = convert_internal_unit_str(internal_unit, conv_type)
+                        to_unit = convert_internal_unit_str(internal_unit, conv_type, conversion_mapping, default_unit)
                         sf.write(f'    float {param["name"]}_internal = {conv_func}({param["name"]}, {from_unit}, {to_unit});\n')
                         arg_list.append(f'({param["type"]})({param["name"]}_internal)')
                     else:
@@ -583,7 +587,7 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                     elif norm_cmd == "get supply voltage":
                         sf.write('    float convertedResult = convertVoltage((float)rawResult.supplyVoltage, ((VoltageUnit)0), ((VoltageUnit)0));\n')
                     elif norm_cmd == "get temperature":
-                        sf.write('    float convertedResult = convertTemperature((float)rawResult.temperature, ((TemperatureUnit)0), ((TemperatureUnit)0));\n')
+                        sf.write('    float convertedResult = convertTemperature((float)rawResult.temperature, TemperatureUnit::CELSIUS, m_temperatureUnit);\n')
                     else:
                         sf.write('    float convertedResult = 0; // Unknown conversion\n')
                     sf.write('    return convertedResult;\n')

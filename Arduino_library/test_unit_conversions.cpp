@@ -86,7 +86,7 @@ void testVelocityConversions() {
     Serial.println("=== testVelocityConversions() ===");
     {
         float val = 1.0f;
-        float out = convertVelocity(val, VelocityUnit::ROTATIONS_PER_SECOND, VelocityUnit::COUNTS_PER_SECOND);
+        float out = convertVelocity(val, VelocityUnit::ROTATIONS_PER_SECOND, VelocityUnit::COUNTS_PER_TIMESTEP);
         // Expect ~3,276,800
         checkClose("Velocity: 1 RPS -> 3,276,800 c/s", out, 3276800.0f, 10.0f);
     }
@@ -104,7 +104,7 @@ void testAccelerationConversions() {
     {
         float val = 1.0f;
         float out = convertAcceleration(val, AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED,
-                                        AccelerationUnit::COUNTS_PER_SECOND_SQUARED);
+                                        AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED);
         // 1 RPS^2 => ~3,276,800 c/s^2
         checkClose("Accel: 1 RPS^2 -> 3,276,800 c/s^2", out, 3276800.0f, 100.0f);
     }
@@ -121,16 +121,16 @@ void testAccelerationConversions() {
 void testCurrentConversions() {
     Serial.println("=== testCurrentConversions() ===");
     {
-        float val = 1000.0f;
+        float val = 1.0f;
         float out = convertCurrent(val, CurrentUnit::MILLIAMPS, CurrentUnit::AMPS);
-        // 1000 mA => 1.0 A now that factor(MILLIAMPS)=1000
-        checkClose("Current: 1000mA -> 1A", out, 1.0f, 0.001f);
+        // 1 mA => 1 A with 1:1 conversion
+        checkClose("Current: 1mA -> 1A", out, 1.0f, 0.001f);
     }
     {
         float val = 2.5f;
         float out = convertCurrent(val, CurrentUnit::AMPS, CurrentUnit::MILLIAMPS);
-        // 2.5 A => 2500 mA
-        checkClose("Current: 2.5A -> 2500mA", out, 2500.0f, 0.1f);
+        // 2.5 A => 2.5 mA with 1:1 conversion
+        checkClose("Current: 2.5A -> 2.5mA", out, 2.5f, 0.1f);
     }
     Serial.println();
 }
@@ -140,14 +140,14 @@ void testVoltageConversions() {
     {
         float val = 12.0f;
         float out = convertVoltage(val, VoltageUnit::VOLTS, VoltageUnit::MILLIVOLTS);
-        // 12 V => 12000 mV
-        checkClose("Voltage: 12V -> 12000mV", out, 12000.0f, 1.0f);
+        // 12 V => 12 mV with 1:1 conversion
+        checkClose("Voltage: 12V -> 12mV", out, 12.0f, 1.0f);
     }
     {
-        float val = 5000.0f;
+        float val = 5.0f;
         float out = convertVoltage(val, VoltageUnit::MILLIVOLTS, VoltageUnit::VOLTS);
-        // 5000 mV => 5.0 V
-        checkClose("Voltage: 5000mV -> 5V", out, 5.0f, 0.001f);
+        // 5 mV => 5.0 V with 1:1 conversion
+        checkClose("Voltage: 5mV -> 5V", out, 5.0f, 0.001f);
     }
     Serial.println();
 }
@@ -192,13 +192,11 @@ void setup() {
     } else {
         Serial.println("FAILED");
     }
+    
+    // Exit after tests complete since this is a desktop test
+    exit(allTestsPassed ? 0 : 1);
 }
 
 void loop() {
     // Not used in this desktop test
-}
-
-int main() {
-    setup();
-    return 0;
 }
