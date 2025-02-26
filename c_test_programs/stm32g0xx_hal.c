@@ -360,7 +360,6 @@ void __disable_irq(void) {
 }
 
 // External declarations for reset flags
-extern volatile int gExitFatalError;
 extern volatile int gResetProgress;
 
 // Implementation of NVIC_SystemReset
@@ -368,7 +367,5 @@ void NVIC_SystemReset(void) {
     printf("NVIC_SystemReset called\n");
     g_interrupts_enabled = 0;
     gResetProgress = 1; // Step 1: Waiting for fatal_error and TIM16_IRQHandler to exit
-    gExitFatalError = 1;  // Set flag to exit fatal error state
-    printf("gResetProgress = %d, gExitFatalError = %d\n",
-           gResetProgress, gExitFatalError);
+    printf("gResetProgress = %d\n", gResetProgress);
 }

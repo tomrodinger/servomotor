@@ -202,7 +202,6 @@ static void *systick_thread_func(void *arg)
     return NULL;
 }
 static uint8_t  gMosfetsEnabled = 0;  // Cache MOSFET state
-volatile int gExitFatalError = 0; // Flag to exit fatal error state
 volatile int gResetProgress = 0; // Reset state machine: 0=normal, 1=waiting for exits, 2=ready for reset
 volatile int motor_control_thread_state = 0; // Track what the motor control thread is doing
 
@@ -830,34 +829,20 @@ void motor_simulator_init(void)
 
 int main() {
     motor_simulator_init();
-    while(1) {
+    while(1) {        
+        main_simulation();
         // If a reset was requested, wait for gResetProgress to reach 2
         // This ensures that both fatal_error and TIM16_IRQHandler have exited
-        if (gResetProgress > 0) {
-            printf("Reset requested, waiting for gResetProgress to reach 2 (current: %d)\n", gResetProgress);
-            
-            
-            // Wait for gResetProgress to reach 2
-            while (gResetProgress < 2) {
-                usleep(1000); // Sleep for 1ms to avoid busy waiting
-            }
-            
-            printf("gResetProgress reached %d, proceeding with reset\n", gResetProgress);
-            
-            // Reset the progress counter for next time
-            gResetProgress = 0;
+        printf("Reset requested, waiting for gResetProgress to reach 2 (current: %d)\n", gResetProgress);        
+        while (gResetProgress < 2) { // Wait for gResetProgress to reach 2
+            usleep(1000); // Sleep for 1ms to avoid busy waiting
         }
-        
-        g_interrupts_enabled = 0; // Disable interrupts at each system reset
-        printf("The system was reset\n");
-        
+        printf("gResetProgress reached %d, proceeding with reset\n", gResetProgress);
+        g_interrupts_enabled = 0; // Disable interrupts at each system reset        
         // Reset all modules that need to be reinitialized on system reset
         reset_all_modules();
-        
-        
-        printf("About to call main_simulation()\n");
-        main_simulation();
-        printf("main_simulation() returned\n"); // This should only print if main_simulation() returns
+        gResetProgress = 0; // Since we are done the reset now, we can start getting back to a non-recent state
+        printf("The system was reset. About to call main_simulation() again\n");
     }
     return 0;
 }
