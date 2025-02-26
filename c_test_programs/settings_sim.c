@@ -75,7 +75,7 @@ void load_global_settings(void)
     }
 }
 
-extern int gResetRequested;
+extern volatile int gResetProgress;
 
 void save_global_settings(void)
 {
@@ -98,5 +98,5 @@ void save_global_settings(void)
     }
     // Only reset if settings were saved successfully
     printf("Requesting reset\n");
-    gResetRequested = 1;
+    gResetProgress = 1;
 }

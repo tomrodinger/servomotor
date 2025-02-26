@@ -163,10 +163,7 @@ static inline void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority) {
     }
 }
 
-extern int gResetRequested;
-static inline void NVIC_SystemReset(void) {
-    gResetRequested = 1;
-}
+void NVIC_SystemReset(void);
 
 // GPIO defines
 #define GPIO_MODER_MODE0_Pos           0U
@@ -634,9 +631,12 @@ uint32_t HAL_GetUIDw0(void);
 uint32_t HAL_GetUIDw1(void);
 uint32_t HAL_GetUIDw2(void);
 
+// External declaration for the interrupts enabled flag
+extern volatile uint8_t g_interrupts_enabled;
+
 // Core functions
-static inline void __enable_irq(void) { }
-static inline void __disable_irq(void) { }
+void __enable_irq(void);
+void __disable_irq(void);
 static inline void __DMB(void) { }
 static inline void __ISB(void) { }
 static inline void __DSB(void) { }

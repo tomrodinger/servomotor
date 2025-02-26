@@ -35,7 +35,8 @@ LOCAL_SRCS = \
     unique_id.c \
     settings_sim.c \
     ADC.c \
-    microsecond_clock_sim.c
+    microsecond_clock_sim.c \
+    simulator_reset.c
 
 # All sources and objects
 ALL_SRCS = $(FIRMWARE_SRCS) $(COMMON_SRCS) $(LOCAL_SRCS)

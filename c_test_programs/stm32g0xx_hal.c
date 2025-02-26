@@ -3,6 +3,7 @@
 // Peripheral instance definitions
 
 #include <stdlib.h>
+#include <stdio.h>
 
 // Static peripheral instances and variables
 uint32_t SystemCoreClock = 64000000U;  // After PLL configuration in clock_init()
@@ -275,6 +276,9 @@ volatile uint32_t uwTick = 0;
 uint32_t uwTickPrio = 0;
 HAL_TickFreqTypeDef uwTickFreq = HAL_TICK_FREQ_DEFAULT;
 
+// Flag to track if interrupts are enabled
+volatile uint8_t g_interrupts_enabled = 0;  // Interrupts disabled by default
+
 HAL_StatusTypeDef HAL_RCC_OscConfig(void* RCC_OscInitStruct) {
     return HAL_OK;
 }
@@ -344,4 +348,27 @@ HAL_TickFreqTypeDef HAL_GetTickFreq(void) {
 HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
     uwTickPrio = TickPriority;
     return HAL_OK;
+}
+
+// Implementation of core functions
+void __enable_irq(void) {
+    g_interrupts_enabled = 1;
+}
+
+void __disable_irq(void) {
+    g_interrupts_enabled = 0;
+}
+
+// External declarations for reset flags
+extern volatile int gExitFatalError;
+extern volatile int gResetProgress;
+
+// Implementation of NVIC_SystemReset
+void NVIC_SystemReset(void) {
+    printf("NVIC_SystemReset called\n");
+    g_interrupts_enabled = 0;
+    gResetProgress = 1; // Step 1: Waiting for fatal_error and TIM16_IRQHandler to exit
+    gExitFatalError = 1;  // Set flag to exit fatal error state
+    printf("gResetProgress = %d, gExitFatalError = %d\n",
+           gResetProgress, gExitFatalError);
 }

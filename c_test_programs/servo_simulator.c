@@ -31,6 +31,7 @@ extern void simulate_ADC_hall_sensor_values(void);
 #include "RS485.h"
 #include "mosfets.h"
 #include "motor_control.h"
+#include "simulator_reset.h"
 
 // External declarations from RS485.c
 extern volatile uint8_t commandReceived;
@@ -126,6 +127,7 @@ extern void SysTick_Handler(void);
 static void *systick_thread_func(void *arg)
 {
     (void)arg;
+    extern volatile int motor_control_thread_state; // Add extern declaration
     struct timespec lastTime = {0, 0};
     struct timespec lastStatsTime = {0, 0};
     uint32_t tickCount = 0;
@@ -186,12 +188,13 @@ static void *systick_thread_func(void *arg)
         SysTick_Handler();
         tickCount++;
         
-        // Print stats every 10 seconds
+        // Print stats every 60 seconds (1 minute)
         double elapsed = (now.tv_sec - lastStatsTime.tv_sec) +
                         (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
-        if (elapsed >= 10.0) {
+        if (elapsed >= 60.0) {
             double frequency = tickCount / elapsed;
             printf("SysTick frequency: %.2f Hz (target: 100 Hz)\n", frequency);
+            printf("Motor control thread state: %d\n", motor_control_thread_state);
             tickCount = 0;
             lastStatsTime = now;
         }
@@ -199,7 +202,9 @@ static void *systick_thread_func(void *arg)
     return NULL;
 }
 static uint8_t  gMosfetsEnabled = 0;  // Cache MOSFET state
-int gResetRequested = 0;
+volatile int gExitFatalError = 0; // Flag to exit fatal error state
+volatile int gResetProgress = 0; // Reset state machine: 0=normal, 1=waiting for exits, 2=ready for reset
+volatile int motor_control_thread_state = 0; // Track what the motor control thread is doing
 
 // Simulate transmitting bytes through RS485
 static void *write_thread_func(void *arg)
@@ -224,7 +229,7 @@ static void *write_thread_func(void *arg)
             // Set TXE to indicate transmit complete
             USART1->ISR |= USART_ISR_TXE_TXFNF_Msk;
 
-            if (USART1->CR1 & USART_CR1_TXFEIE) {
+            if ((USART1->CR1 & USART_CR1_TXFEIE) && g_interrupts_enabled) {
                 USART1_IRQHandler();
             }
 //            continue;  // Skip sleep if we transmitted a byte
@@ -295,8 +300,10 @@ static void *read_thread_func(void *arg)
             USART1->RDR = byte;
             USART1->ISR |= USART_ISR_RXNE_RXFNE;
             
-            // Process through interrupt handler
-            USART1_IRQHandler();
+            // Process through interrupt handler if interrupts are enabled
+            if (g_interrupts_enabled) {
+                USART1_IRQHandler();
+            }
             
             if (commandReceived) {
                 printf("Command received: Axis=0x%02X, Command=0x%02X\n", 
@@ -553,6 +560,7 @@ static MotorSharedState gSharedState = {
 static void *motor_control_thread_func(void *arg)
 {
     (void)arg;
+    motor_control_thread_state = 1; // Thread started
     struct timespec lastTime = {0, 0};
     struct timespec lastStatsTime = {0, 0};
     uint32_t callCount = 0;
@@ -566,14 +574,17 @@ static void *motor_control_thread_func(void *arg)
     }
     
     while (!gQuit) {
+        motor_control_thread_state = 2; // Getting current time
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
         
         // Maintain precise 31.25kHz timing (32μs period)
         if (lastTime.tv_sec == 0) {
+            motor_control_thread_state = 3; // Initializing start time
             // First iteration - initialize start time
             clock_gettime(CLOCK_MONOTONIC, &lastTime);
         } else {
+            motor_control_thread_state = 4; // Calculating next target time
             // Calculate next target time (32μs = 32000ns per tick)
             struct timespec target = lastTime;
             target.tv_nsec += 32000;
@@ -582,6 +593,7 @@ static void *motor_control_thread_func(void *arg)
                 target.tv_nsec -= 1000000000;
             }
 
+            motor_control_thread_state = 5; // Calculating sleep target
             // Sleep until just before target time
             struct timespec sleep_target = target;
             if (sleep_target.tv_nsec >= 2000) {  // Leave 2μs for fine-tuning
@@ -591,6 +603,7 @@ static void *motor_control_thread_func(void *arg)
                 sleep_target.tv_nsec = 999998000;  // 2μs before next second
             }
             
+            motor_control_thread_state = 6; // Calculating sleep time
             // Calculate time to sleep
             clock_gettime(CLOCK_MONOTONIC, &now);
             struct timespec sleep_time;
@@ -601,43 +614,72 @@ static void *motor_control_thread_func(void *arg)
                 sleep_time.tv_nsec += 1000000000;
             }
             
+            motor_control_thread_state = 7; // Sleeping
             // Only sleep if we have time
             if (sleep_time.tv_sec > 0 || sleep_time.tv_nsec > 0) {
                 nanosleep(&sleep_time, NULL);
             }
 
+            motor_control_thread_state = 8; // Spinlock for precision
             // Brief spinlock for final precision
             do {
                 clock_gettime(CLOCK_MONOTONIC, &now);
             } while ((now.tv_sec < target.tv_sec) ||
                     (now.tv_sec == target.tv_sec && now.tv_nsec < target.tv_nsec));
 
+            motor_control_thread_state = 9; // Updating target time
             // Update target time for next iteration
             lastTime = target;
 
+            motor_control_thread_state = 10; // Tracking timing statistics
             // Track timing statistics (after the critical timing section)
-            int64_t behind_ns = (now.tv_sec - target.tv_sec) * 1000000000LL + 
+            int64_t behind_ns = (now.tv_sec - target.tv_sec) * 1000000000LL +
                               (now.tv_nsec - target.tv_nsec);
             if (behind_ns > max_behind_ns) {
                 max_behind_ns = behind_ns;
             }
         }
         
+        motor_control_thread_state = 11; // Updating GPIO IDR
         // Update GPIO IDR based on BSRR (simulating hardware behavior)
         // For each port: clear reset bits, then set set bits
         GPIOA->IDR = (GPIOA->IDR & ~(GPIOA->BSRR >> 16)) | (GPIOA->BSRR & 0xFFFF);
         GPIOB->IDR = (GPIOB->IDR & ~(GPIOB->BSRR >> 16)) | (GPIOB->BSRR & 0xFFFF);
         GPIOC->IDR = (GPIOC->IDR & ~(GPIOC->BSRR >> 16)) | (GPIOC->BSRR & 0xFFFF);
         
+        motor_control_thread_state = 12; // Clearing BSRR
         // Clear BSRR after processing (like real hardware)
         GPIOA->BSRR = 0;
         GPIOB->BSRR = 0;
         GPIOC->BSRR = 0;
         
+        motor_control_thread_state = 13; // Simulating ADC hall sensor values
         simulate_ADC_hall_sensor_values();
-        // Run motor control
-        TIM16_IRQHandler();
         
+        motor_control_thread_state = 14; // Checking interrupts enabled
+        // Run motor control if interrupts are enabled and no reset in progress
+        static int debug_counter = 0;
+        if (debug_counter++ % 100000 == 0) {
+            printf("DEBUG: g_interrupts_enabled = %d, gResetProgress = %d\n",
+                   g_interrupts_enabled, gResetProgress); // DEBUG - temporarily added to aid in debugging
+        }
+        
+        motor_control_thread_state = 15; // Running motor control
+        if (g_interrupts_enabled && gResetProgress == 0) {
+            motor_control_thread_state = 151; // Before TIM16_IRQHandler
+            TIM16_IRQHandler();
+            motor_control_thread_state = 152; // After TIM16_IRQHandler
+        }
+        else if (gResetProgress == 1) {
+            // If we're waiting for TIM16_IRQHandler to exit, signal that we've exited
+            // by incrementing gResetProgress to 2
+            
+            gResetProgress = 2;
+            
+            printf("Motor control thread: TIM16_IRQHandler exited, gResetProgress = %d\n", gResetProgress);
+        }
+        
+        motor_control_thread_state = 16; // Updating shared state
         // Update shared state (after motor control)
         pthread_mutex_lock(&gSharedState.mutex);
         gSharedState.motor_position = get_motor_position();
@@ -645,23 +687,30 @@ static void *motor_control_thread_func(void *arg)
         gSharedState.angle_deg = (double)gSharedState.motor_position * (360.0 / COUNTS_PER_ROTATION);
         pthread_mutex_unlock(&gSharedState.mutex);
         
+        motor_control_thread_state = 17; // Incrementing call count
         callCount++;
         
-        // Print stats every 30 seconds
-        if (lastStatsTime.tv_sec == 0 || 
-            now.tv_sec - lastStatsTime.tv_sec >= 30) {
+        motor_control_thread_state = 18; // Checking if time to print stats
+        // Print stats every 60 seconds (1 minute)
+        if (lastStatsTime.tv_sec == 0 ||
+            now.tv_sec - lastStatsTime.tv_sec >= 60) {
+            motor_control_thread_state = 19; // Printing stats
             if (lastStatsTime.tv_sec != 0) {
-                double elapsed = (now.tv_sec - lastStatsTime.tv_sec) + 
+                double elapsed = (now.tv_sec - lastStatsTime.tv_sec) +
                                (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
                 double avgFreq = callCount / elapsed;
-                printf("Motor timing: %.2f Hz (target: 31250 Hz), max deviation: %.2f μs\n", 
+                printf("Motor timing: %.2f Hz (target: 31250 Hz), max deviation: %.2f μs\n",
                        avgFreq, max_behind_ns / 1000.0);
                 max_behind_ns = 0; // Reset for next period
             }
             callCount = 0;
             lastStatsTime = now;
         }
+        
+        motor_control_thread_state = 20; // End of loop
     }
+    
+    motor_control_thread_state = 21; // Thread exiting
     return NULL;
 }
 
@@ -782,9 +831,33 @@ void motor_simulator_init(void)
 int main() {
     motor_simulator_init();
     while(1) {
-        gResetRequested = 0;
+        // If a reset was requested, wait for gResetProgress to reach 2
+        // This ensures that both fatal_error and TIM16_IRQHandler have exited
+        if (gResetProgress > 0) {
+            printf("Reset requested, waiting for gResetProgress to reach 2 (current: %d)\n", gResetProgress);
+            
+            
+            // Wait for gResetProgress to reach 2
+            while (gResetProgress < 2) {
+                usleep(1000); // Sleep for 1ms to avoid busy waiting
+            }
+            
+            printf("gResetProgress reached %d, proceeding with reset\n", gResetProgress);
+            
+            // Reset the progress counter for next time
+            gResetProgress = 0;
+        }
+        
+        g_interrupts_enabled = 0; // Disable interrupts at each system reset
         printf("The system was reset\n");
+        
+        // Reset all modules that need to be reinitialized on system reset
+        reset_all_modules();
+        
+        
+        printf("About to call main_simulation()\n");
         main_simulation();
+        printf("main_simulation() returned\n"); // This should only print if main_simulation() returns
     }
     return 0;
 }
