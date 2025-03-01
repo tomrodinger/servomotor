@@ -12,6 +12,12 @@
 #include "error_text.h"
 #include "device_status.h"
 
+// External declarations from servo_simulator.c
+#ifdef MOTOR_SIMULATION
+//extern volatile int gExitFatalError;
+extern volatile int gResetProgress;
+#endif
+
 // Error text array initialization using macro from error_text.h
 static const char error_text[] = ERROR_TEXT_INITIALIZER;
 
@@ -44,6 +50,9 @@ static void receive(void)
         }
 
         uint8_t receivedByte = USART1->RDR;
+        #ifdef MOTOR_SIMULATION
+        USART1->ISR &= ~USART_ISR_RXNE_RXFNE; // clear this bit to indicate that we have read the received byte (done automatically in the real hardware but not in the simulated hardware)
+        #endif
         if(nReceivedBytes < 65535) {
             nReceivedBytes++;
         }
@@ -76,8 +85,13 @@ static void rs485_transmit_status(uint8_t error_code)
     set_device_error_code(error_code);
 
     for(i = 0; i < sizeof(struct device_status_struct); i++) {
-        while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0);
+        while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0); // wait the transmitter to be free so we can transmit a byte
         USART1->TDR = device_status_uint8_t[i];
+        #ifdef MOTOR_SIMULATION
+        // In simulation, we need to clear TXE after writing to TDR
+        // (In real hardware, this is done by the USART hardware)
+        USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
+        #endif
     }
 }
 
@@ -105,6 +119,14 @@ static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
 {
     do {
         handle_commands(error_code);
+        
+        #ifdef MOTOR_SIMULATION
+        // Check if we should exit the fatal error state
+        if (gResetProgress > 0) {
+            return;
+        }
+        #endif
+        
         systick_previous_value = systick_new_value;
         systick_new_value = SysTick->VAL;
     } while ((systick_new_value < (SYSTICK_LOAD_VALUE >> 1)) == (systick_previous_value < (SYSTICK_LOAD_VALUE >> 1)));
@@ -118,17 +140,34 @@ void fatal_error(uint16_t error_code)
     const char *message;
 
 #ifdef MOTOR_SIMULATION
+    // Clear the exit fatal error flag at the beginning
+//    gExitFatalError = 0;
+    
     const char *debug_message; // DEBUG - temporarily added to aid in debugging
     debug_message = get_error_text(error_code); // DEBUG - temporarily added to aid in debugging
     printf("\n\n*** FATAL ERROR %d: %s ***\n\n", error_code, debug_message); // DEBUG - temporarily added to aid in debugging
-    exit(1);
+    // Print the call stack or other debug info that might help identify the cause
+    printf("fatal_error_occurred = %d\n", fatal_error_occurred);
+    
+    // Try to identify what's calling fatal_error during reset
+    if (gResetProgress > 0) {
+        printf("IMPORTANT: fatal_error called during reset process (gResetProgress = %d)!\n", gResetProgress);
+    }
+    // exit(1); - Removed to allow the program to continue running and respond to SYSTEM_RESET_COMMAND
 #endif
 
     // Avoid the fatal error recursive loop. We will enter the fatal error routine only once, and can get
     // out of it only by full system reset, which can be triggered by the reset command.
-    if(fatal_error_occurred) { 
+    if(fatal_error_occurred) {
+        #ifdef MOTOR_SIMULATION
+        printf("Fatal error already occurred, returning early\n");
+        #endif
         return;
     }
+    
+    #ifdef MOTOR_SIMULATION
+    printf("Entering fatal error state with error code %d\n", error_code);
+    #endif
 
     __disable_irq();
     heater_off();
@@ -152,6 +191,15 @@ void fatal_error(uint16_t error_code)
             systick_half_cycle_delay_plus_handle_commands(error_code);
             transmit_without_interrupts(buf, strlen(buf));
             systick_half_cycle_delay_plus_handle_commands(error_code);
+            
+            #ifdef MOTOR_SIMULATION
+            // Check if we should exit the fatal error state
+            if (gResetProgress > 0) {
+//                fatal_error_occurred = 0;  // Clear the fatal error state
+//                gExitFatalError = 0;
+                return;
+            }
+            #endif
         }
     }
 }
@@ -172,3 +220,32 @@ const char *get_error_text(uint16_t error_code)
     }
     return ptr;
 }
+
+#ifdef MOTOR_SIMULATION
+/**
+ * Initialize all static variables in error_handling.c for simulator use
+ * This function should be called when the simulator starts to ensure
+ * all static variables are properly initialized
+ */
+void error_handling_simulator_init(void)
+{
+    printf("error_handling_simulator_init() called\n");
+    printf("Before reset: fatal_error_occurred = %d\n", fatal_error_occurred);
+    
+    // Initialize systick values
+    systick_new_value = SYSTICK_LOAD_VALUE;
+    systick_previous_value = 0;
+    
+    // Initialize error state
+    fatal_error_occurred = 0;
+    
+    // Initialize command handling variables
+    commandReceived = 0;
+    valueLength = 0;
+    nReceivedBytes = 0;
+    selectedAxis = 0;
+    command = 0;
+    
+    printf("After reset: fatal_error_occurred = %d\n", fatal_error_occurred);
+}
+#endif

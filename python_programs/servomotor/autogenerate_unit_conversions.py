@@ -166,14 +166,28 @@ def calculate_acceleration_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UN
     counts_factor = counts_to_rotation * rot_factor
     print(f"2. Final value = {counts_factor:,}")
 
+    # Calculate counts_per_timestep_squared conversion factor
+    print("\nCounts/Timestep² Conversion Calculation:")
+    # Convert counts/timestep² to counts/sec²
+    timestep_to_sec = INTERNAL_TIME_UNIT_HZ * INTERNAL_TIME_UNIT_HZ
+    print(f"1. 1 count/timestep² = {timestep_to_sec} counts/second²")
+    
+    # Convert counts/sec² to rotations/sec²
+    counts_timestep_to_rotation = timestep_to_sec / ONE_ROTATION_MICROSTEPS
+    print(f"2. {timestep_to_sec} counts/second² = {counts_timestep_to_rotation} rotations/second²")
+    
+    # Use rotations/sec² conversion factor
+    counts_timestep_factor = counts_timestep_to_rotation * rot_factor
+    print(f"3. Final value = {counts_timestep_factor:,}")
+
     # Store acceleration conversion factors
     acceleration_factors = {
         "rotations_per_second_squared": rot_factor,
         "rpm_per_second": rpm_factor,
         "degrees_per_second_squared": deg_factor,
         "radians_per_second_squared": rad_factor,
-        "counts_per_second_squared": ONE_ROTATION_MICROSTEPS,  # Direct conversion
-        "counts_per_timestep_squared": counts_factor  # Scaled for timesteps
+        "counts_per_second_squared": counts_factor,  # Correct conversion
+        "counts_per_timestep_squared": counts_timestep_factor  # Correctly scaled for timesteps
     }
 
     # Calculate acceleration verification values
@@ -261,8 +275,8 @@ def calculate_velocity_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_H
         "rpm": rpm_factor,
         "degrees_per_second": deg_factor,
         "radians_per_second": rad_factor,
-        "counts_per_second": ONE_ROTATION_MICROSTEPS,  # Direct conversion
-        "counts_per_timestep": counts_factor  # Scaled for timesteps
+        "counts_per_second": rps_factor / ONE_ROTATION_MICROSTEPS,  # Correct conversion
+        "counts_per_timestep": rps_factor  # Correct conversion
     }
 
     # Calculate velocity verification values

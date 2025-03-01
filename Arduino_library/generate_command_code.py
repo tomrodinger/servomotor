@@ -569,25 +569,22 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                     if param.get('UnitConversion'):
                         conv = param['UnitConversion']
                         conv_type = conv["Type"]
-                        internal_unit = conv["InternalUnit"]
                         conv_func = conversion_mapping[conv_type][0]
                         unit_member = conversion_mapping[conv_type][2]
-                        from_unit = unit_member if unit_member is not None else f'(({default_unit[conv_type]})0)'
-                        to_unit = convert_internal_unit_str(internal_unit, conv_type, conversion_mapping, default_unit)
-                        sf.write(f'    float {param["name"]}_internal = {conv_func}({param["name"]}, {from_unit}, {to_unit});\n')
+                        sf.write(f'    float {param["name"]}_internal = {conv_func}({param["name"]}, {unit_member}, ConversionDirection::TO_INTERNAL);\n')
                         arg_list.append(f'({param["type"]})({param["name"]}_internal)')
                     else:
                         arg_list.append(param["name"])
                 if wf_ret != "void":
                     sf.write(f'    auto rawResult = {func_name}Raw({", ".join(arg_list)});\n')
                     if norm_cmd == "get current time":
-                        sf.write('    float convertedResult = convertTime((float)rawResult.currentTime, m_timeUnit, TimeUnit::TIMESTEPS);\n')
-                    elif norm_cmd == "get hall sensor position":
-                        sf.write('    float convertedResult = convertPosition((float)rawResult.hallSensorPosition, m_positionUnit, PositionUnit::ENCODER_COUNTS);\n')
+                        sf.write('    float convertedResult = convertTime((float)rawResult.currentTime, m_timeUnit, ConversionDirection::FROM_INTERNAL);\n')
+                    elif norm_cmd == "get hall sensor position" or norm_cmd == "get position":
+                        sf.write('    float convertedResult = convertPosition((float)rawResult.hallSensorPosition, m_positionUnit, ConversionDirection::FROM_INTERNAL);\n')
                     elif norm_cmd == "get supply voltage":
-                        sf.write('    float convertedResult = convertVoltage((float)rawResult.supplyVoltage, ((VoltageUnit)0), ((VoltageUnit)0));\n')
+                        sf.write('    float convertedResult = convertVoltage((float)rawResult.supplyVoltage, m_voltageUnit, ConversionDirection::FROM_INTERNAL);\n')
                     elif norm_cmd == "get temperature":
-                        sf.write('    float convertedResult = convertTemperature((float)rawResult.temperature, TemperatureUnit::CELSIUS, m_temperatureUnit);\n')
+                        sf.write('    float convertedResult = convertTemperature((float)rawResult.temperature, m_temperatureUnit, ConversionDirection::FROM_INTERNAL);\n')
                     else:
                         sf.write('    float convertedResult = 0; // Unknown conversion\n')
                     sf.write('    return convertedResult;\n')

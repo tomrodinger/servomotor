@@ -1091,6 +1091,10 @@ int main_simulation(void)
 int main(void)
 #endif
 {
+    #ifdef MOTOR_SIMULATION
+    printf("main_simulation() started\n");
+    #endif
+    
     #ifndef MOTOR_SIMULATION
     clock_init();
     systick_init();
@@ -1151,7 +1155,8 @@ int main(void)
             else {
                 processCommand(selectedAxis, command, valueBuffer);
                 #ifdef MOTOR_SIMULATION
-                if (gResetRequested) {
+                extern volatile int gResetProgress;
+                if (gResetProgress > 0) {
                     break;
                 }
                 #endif
@@ -1186,7 +1191,8 @@ int main(void)
 
         process_debug_uart_commands();
         #ifdef MOTOR_SIMULATION
-        if (gResetRequested) {
+        extern volatile int gResetProgress;
+        if (gResetProgress > 0) {
             break;
         }
         #endif

@@ -228,4 +228,13 @@ void set_motor_test_mode(uint8_t new_test_mode);
 void test_M3_motor_spin(void);
 void get_motor_control_debug_values(int64_t *_max_acceleration, int64_t *_max_velocity, int64_t *_current_velocity, int32_t *_measured_velocity, uint32_t *_n_time_steps, int64_t *_debug_value1, int64_t *_debug_value2, int64_t *_debug_value3, int64_t *_debug_value4);
 
+#ifdef MOTOR_SIMULATION
+/**
+ * Initialize all static variables for simulator use
+ * This function should be called when the simulator starts to ensure
+ * all static variables are properly initialized
+ */
+void motor_control_simulator_init(void);
+#endif
+
 #endif /* SRC_MOTOR_CONTROL_H_ */

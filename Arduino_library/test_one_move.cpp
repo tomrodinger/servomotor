@@ -16,9 +16,20 @@ void setup() {
     // Enable mosfets before moving
     motor.enableMosfets();
 
+    // Get initial position
+    float start_pos = motor.getPosition();
+    printf("Position before move: %.2f rotations\n", start_pos);
+
     // 2) Perform trapezoid move
     //    2 shaft rotations over 3 seconds
     motor.trapezoidMove(2.0f, 3.0f);
+
+    // Wait for move to complete
+    delay(4000);  // Wait 4 seconds (longer than the move)
+
+    // Get final position
+    float end_pos = motor.getPosition();
+    printf("Position after move: %.2f rotations\n", end_pos);
 
     // Exit after move is complete
     exit(0);

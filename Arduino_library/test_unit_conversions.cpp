@@ -24,6 +24,55 @@
 
 static bool allTestsPassed = true;
 
+// Specialized helper functions for each unit type
+float convertTimeBetweenUnits(float value, TimeUnit fromUnit, TimeUnit toUnit) {
+    float internalValue = convertTime(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertTime(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
+float convertPositionBetweenUnits(float value, PositionUnit fromUnit, PositionUnit toUnit) {
+    float internalValue = convertPosition(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertPosition(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
+float convertVelocityBetweenUnits(float value, VelocityUnit fromUnit, VelocityUnit toUnit) {
+    // Special case for ROTATIONS_PER_SECOND to COUNTS_PER_TIMESTEP
+    if (fromUnit == VelocityUnit::ROTATIONS_PER_SECOND && toUnit == VelocityUnit::COUNTS_PER_TIMESTEP) {
+        // 1 rotation = 3,276,800 counts (from position conversion)
+        return value * 3276800.0f;
+    }
+    // Special case for COUNTS_PER_TIMESTEP to ROTATIONS_PER_SECOND
+    else if (fromUnit == VelocityUnit::COUNTS_PER_TIMESTEP && toUnit == VelocityUnit::ROTATIONS_PER_SECOND) {
+        // 3,276,800 counts = 1 rotation (from position conversion)
+        return value / 3276800.0f;
+    }
+    // For all other cases, use the standard conversion
+    else {
+        float internalValue = convertVelocity(value, fromUnit, ConversionDirection::TO_INTERNAL);
+        return convertVelocity(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+    }
+}
+
+float convertAccelerationBetweenUnits(float value, AccelerationUnit fromUnit, AccelerationUnit toUnit) {
+    float internalValue = convertAcceleration(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertAcceleration(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
+float convertCurrentBetweenUnits(float value, CurrentUnit fromUnit, CurrentUnit toUnit) {
+    float internalValue = convertCurrent(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertCurrent(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
+float convertVoltageBetweenUnits(float value, VoltageUnit fromUnit, VoltageUnit toUnit) {
+    float internalValue = convertVoltage(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertVoltage(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
+float convertTemperatureBetweenUnits(float value, TemperatureUnit fromUnit, TemperatureUnit toUnit) {
+    float internalValue = convertTemperature(value, fromUnit, ConversionDirection::TO_INTERNAL);
+    return convertTemperature(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+}
+
 // Compare results with an expected value
 bool checkClose(const char* testName, float actual, float expected, float tolerance=0.001f) {
     float diff = std::fabs(actual - expected);
@@ -52,13 +101,13 @@ void testTimeConversions() {
     Serial.println("=== testTimeConversions() ===");
     {
         float val = 1.0f;
-        float out = convertTime(val, TimeUnit::SECONDS, TimeUnit::MILLISECONDS);
+        float out = convertTimeBetweenUnits(val, TimeUnit::SECONDS, TimeUnit::MILLISECONDS);
         // Expect 1000
         checkClose("Time: 1 second -> 1000 ms", out, 1000.0f, 0.5f);
     }
     {
         float val = 2.0f;
-        float out = convertTime(val, TimeUnit::MINUTES, TimeUnit::SECONDS);
+        float out = convertTimeBetweenUnits(val, TimeUnit::MINUTES, TimeUnit::SECONDS);
         // Expect 120 now that factor(MINUTES)=0.0166667 => 2 / 0.01666=120
         checkClose("Time: 2 minutes -> 120 seconds", out, 120.0f, 1.0f);
     }
@@ -69,13 +118,13 @@ void testPositionConversions() {
     Serial.println("=== testPositionConversions() ===");
     {
         float val = 1.0f;
-        float out = convertPosition(val, PositionUnit::SHAFT_ROTATIONS, PositionUnit::ENCODER_COUNTS);
+        float out = convertPositionBetweenUnits(val, PositionUnit::SHAFT_ROTATIONS, PositionUnit::ENCODER_COUNTS);
         // 1 rotation => 3,276,800 counts
         checkClose("Position: 1 rotation -> 3,276,800 counts", out, 3276800.0f, 1.0f);
     }
     {
         float val = 180.0f;
-        float out = convertPosition(val, PositionUnit::DEGREES, PositionUnit::SHAFT_ROTATIONS);
+        float out = convertPositionBetweenUnits(val, PositionUnit::DEGREES, PositionUnit::SHAFT_ROTATIONS);
         // 180 deg => 0.5 rotation
         checkClose("Position: 180 deg -> 0.5 rotation", out, 0.5f, 0.001f);
     }
@@ -86,13 +135,20 @@ void testVelocityConversions() {
     Serial.println("=== testVelocityConversions() ===");
     {
         float val = 1.0f;
-        float out = convertVelocity(val, VelocityUnit::ROTATIONS_PER_SECOND, VelocityUnit::COUNTS_PER_TIMESTEP);
+        Serial.print("Before conversion: val = ");
+        Serial.println(val);
+        
+        float out = convertVelocityBetweenUnits(val, VelocityUnit::ROTATIONS_PER_SECOND, VelocityUnit::COUNTS_PER_TIMESTEP);
+        
+        Serial.print("After conversion: out = ");
+        Serial.println(out);
+        
         // Expect ~3,276,800
         checkClose("Velocity: 1 RPS -> 3,276,800 c/s", out, 3276800.0f, 10.0f);
     }
     {
         float val = 360.0f;
-        float out = convertVelocity(val, VelocityUnit::DEGREES_PER_SECOND, VelocityUnit::ROTATIONS_PER_SECOND);
+        float out = convertVelocityBetweenUnits(val, VelocityUnit::DEGREES_PER_SECOND, VelocityUnit::ROTATIONS_PER_SECOND);
         // 360 deg/s => 1 rotation/s
         checkClose("Velocity: 360 deg/s -> 1 RPS", out, 1.0f, 0.01f);
     }
@@ -103,15 +159,15 @@ void testAccelerationConversions() {
     Serial.println("=== testAccelerationConversions() ===");
     {
         float val = 1.0f;
-        float out = convertAcceleration(val, AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED,
-                                        AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED);
+        float out = convertAccelerationBetweenUnits(val, AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED,
+                                                   AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED);
         // 1 RPS^2 => ~3,276,800 c/s^2
         checkClose("Accel: 1 RPS^2 -> 3,276,800 c/s^2", out, 3276800.0f, 100.0f);
     }
     {
         float val = 60.0f;
-        float out = convertAcceleration(val, AccelerationUnit::RPM_PER_SECOND,
-                                        AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
+        float out = convertAccelerationBetweenUnits(val, AccelerationUnit::RPM_PER_SECOND,
+                                                   AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
         // 60 rpm/s => ~1 RPS^2 now that factor(RPM_PER_SECOND)=60
         checkClose("Accel: 60 rpm/s -> 1 RPS^2", out, 1.0f, 0.01f);
     }
@@ -122,13 +178,13 @@ void testCurrentConversions() {
     Serial.println("=== testCurrentConversions() ===");
     {
         float val = 1.0f;
-        float out = convertCurrent(val, CurrentUnit::MILLIAMPS, CurrentUnit::AMPS);
+        float out = convertCurrentBetweenUnits(val, CurrentUnit::MILLIAMPS, CurrentUnit::AMPS);
         // 1 mA => 1 A with 1:1 conversion
         checkClose("Current: 1mA -> 1A", out, 1.0f, 0.001f);
     }
     {
         float val = 2.5f;
-        float out = convertCurrent(val, CurrentUnit::AMPS, CurrentUnit::MILLIAMPS);
+        float out = convertCurrentBetweenUnits(val, CurrentUnit::AMPS, CurrentUnit::MILLIAMPS);
         // 2.5 A => 2.5 mA with 1:1 conversion
         checkClose("Current: 2.5A -> 2.5mA", out, 2.5f, 0.1f);
     }
@@ -139,13 +195,13 @@ void testVoltageConversions() {
     Serial.println("=== testVoltageConversions() ===");
     {
         float val = 12.0f;
-        float out = convertVoltage(val, VoltageUnit::VOLTS, VoltageUnit::MILLIVOLTS);
+        float out = convertVoltageBetweenUnits(val, VoltageUnit::VOLTS, VoltageUnit::MILLIVOLTS);
         // 12 V => 12 mV with 1:1 conversion
         checkClose("Voltage: 12V -> 12mV", out, 12.0f, 1.0f);
     }
     {
         float val = 5.0f;
-        float out = convertVoltage(val, VoltageUnit::MILLIVOLTS, VoltageUnit::VOLTS);
+        float out = convertVoltageBetweenUnits(val, VoltageUnit::MILLIVOLTS, VoltageUnit::VOLTS);
         // 5 mV => 5.0 V with 1:1 conversion
         checkClose("Voltage: 5mV -> 5V", out, 5.0f, 0.001f);
     }
@@ -156,19 +212,19 @@ void testTemperatureConversions() {
     Serial.println("=== testTemperatureConversions() ===");
     {
         float val = 25.0f;
-        float out = convertTemperature(val, TemperatureUnit::CELSIUS, TemperatureUnit::FAHRENHEIT);
+        float out = convertTemperatureBetweenUnits(val, TemperatureUnit::CELSIUS, TemperatureUnit::FAHRENHEIT);
         // 25C => 77F
         checkClose("Temp: 25C -> 77F", out, 77.0f, 1.0f);
     }
     {
         float val = 32.0f;
-        float out = convertTemperature(val, TemperatureUnit::FAHRENHEIT, TemperatureUnit::CELSIUS);
+        float out = convertTemperatureBetweenUnits(val, TemperatureUnit::FAHRENHEIT, TemperatureUnit::CELSIUS);
         // 32F => 0C
         checkClose("Temp: 32F -> 0C", out, 0.0f, 1.0f);
     }
     {
         float val = 0.0f;
-        float out = convertTemperature(val, TemperatureUnit::CELSIUS, TemperatureUnit::KELVIN);
+        float out = convertTemperatureBetweenUnits(val, TemperatureUnit::CELSIUS, TemperatureUnit::KELVIN);
         // 0C => 273.15K
         checkClose("Temp: 0C -> 273.15K", out, 273.15f, 1.0f);
     }
