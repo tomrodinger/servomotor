@@ -1,2 +1,6 @@
 build/
 *.o
+code_review_summary.md
+generate_lookup_tables/MY_AXIS
+generate_lookup_tables/hall_calibration_one_rotation.txt
+generate_lookup_tables/hall_calibration_raw_data.bin

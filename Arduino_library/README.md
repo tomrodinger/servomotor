@@ -107,16 +107,25 @@ The debug output will show:
 
 ### Important Usage Notes
 
-**Using moveWithVelocity:**
-When using moveWithVelocity, you must queue a second move with velocity 0 to stop the motor properly. If the final velocity is not zero when the queue becomes empty, the motor will trigger a fatal error.
+**Using moveWithVelocity and moveWithAcceleration:**
+When using moveWithVelocity or moveWithAcceleration, you must queue a second move to stop the motor properly. If the final velocity is not zero when the queue becomes empty, the motor will trigger a fatal error.
 
-Example:
+Example with moveWithVelocity:
 ```cpp
 // First move at desired velocity
 motor.moveWithVelocity(2.0f, 1.0f);  // 2 rotations/sec for 1 second
 
 // Then queue a stop command
 motor.moveWithVelocity(0.0f, 0.1f);  // 0 rotations/sec for 0.1 seconds
+```
+
+Example with moveWithAcceleration:
+```cpp
+// First move with positive acceleration
+motor.moveWithAcceleration(2.0f, 1.0f);  // 2 rotations/sec² for 1 second
+
+// Then queue a move with negative acceleration to stop
+motor.moveWithAcceleration(-2.0f, 1.0f);  // -2 rotations/sec² for 1 second
 ```
 
 ### Testing
@@ -127,6 +136,7 @@ The library includes an Arduino emulator (`ArduinoEmulator.h` and `ArduinoEmulat
 - `test_get_temperature.cpp`: Demonstrates reading temperature from the motor
 - `test_emergency_stop.cpp`: Tests emergency stop functionality
 - `test_move_with_velocity.cpp`: Tests moveWithVelocity functionality with different units (rotations, degrees, encoder counts) and includes comprehensive error checking
+- `test_move_with_acceleration.cpp`: Tests moveWithAcceleration functionality with different units (rotations, degrees, radians, counts) and ensures proper stopping
 
 The test framework (`test_framework.h` and `test_framework.cpp`) provides utilities for test reporting and error checking:
 - `TEST_RESULT` macro: Reports test results with pass/fail status
@@ -160,13 +170,13 @@ Each test program requires:
 ## TODO / Upcoming Changes
 
 1. **Unit Conversion Tests to Implement (in order of priority)**
-   - test_move_with_acceleration.cpp - Test moveWithAcceleration functionality with different units (CURRENTLY WORKING ON THIS)
    - test_position_conversions.cpp - Test position unit conversions in:
      - trapezoidMove / trapezoidMoveRaw
      - goToPosition / goToPositionRaw
      - getPosition / getPositionRaw
      - getHallSensorPosition / getHallSensorPositionRaw
      - getComprehensivePosition / getComprehensivePositionRaw
+     - Multimove
    
    - test_time_conversions.cpp - Test time unit conversions in:
      - getCurrentTime / getCurrentTimeRaw
@@ -196,6 +206,18 @@ Each test program requires:
    - Improve the autogeneration program that creates ServomotorCommands.cpp and ServomotorCommands.h
    - Make the code generation process more maintainable and flexible
    - Fix the conversion factors for current and voltage in the unit_conversions_M3.json file. Currently, these factors are missing or incorrect, resulting in a factor of 1.0 being used.
+
+3. **Fix Some Problems With ServomotorCommands.cpp, or Rather the Program that Generates this File, Which is generate_command_code.py**
+   - getComprehensivePosition obviously will return zeros, which is wrong. Seems the autogeneration program does not know how to convert this
+   - getMaxPidError has the same problem
+
+4. **Fix the Multimove Function**
+   - The moveList parameter currently is of type uint8_t, which looks wrong. We need to be able to give it a list of move velocities or accelerations (based on the bits in moveTypes) and the move times
+
+5. **Rename ServomotorCommands.cpp to Servomotor.cpp**
+   - We also need to rename ServomotorCommands.h to Servomotor.h
+   - We also need to update all tests and programs that use ServomotorCommands.h to use Servomotor.h instad
+   - We also need to update the program that autogenerates ServomotorCommands.cpp and ServomotorCommands.h (which is generate_command_code.py) to autogenerate the updated filenames instead
 
 ## License
 
