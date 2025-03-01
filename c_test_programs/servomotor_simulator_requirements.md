@@ -101,6 +101,21 @@ The goal is to create a comprehensive simulator for a servomotor that:
     * Improved thread synchronization
   - Result: Simulator now runs efficiently with minimal CPU usage while maintaining accurate timing
 
+- Static Variable Initialization:
+  - Issue: Static variables in multiple modules were not properly reset between simulation runs
+  - Impact:
+    * Stale variable values could affect subsequent simulation runs
+    * Inconsistent behavior between runs
+    * Reset functionality not working correctly
+  - Fix:
+    * Implemented initialization functions for three key modules:
+      - error_handling_simulator_init() for error handling module
+      - motor_control_simulator_init() for motor control module
+      - RS485_simulator_init() for RS485 communication module
+    * Moved static variables from function scope to module scope where needed
+    * Centralized reset logic in reset_all_modules() function
+  - Result: All modules are now properly reset between simulation runs, ensuring consistent behavior
+
 - MOSFET State After Reset:
   - Issue: MOSFETs remained enabled after "System reset" command
   - Investigation: Found GPIO IDR state not tracking BSRR changes in simulation

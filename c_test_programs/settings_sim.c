@@ -47,7 +47,6 @@ uint32_t calculate_crc32_u8(uint8_t value)
 
 void load_global_settings(void)
 {
-    printf("DEBUG - Loading settings\n"); // DEBUG - temporarily added to aid in debugging
     FILE *fp = fopen(SETTINGS_FILE, "rb");
     if (fp) {
         // File exists, read settings
@@ -55,16 +54,13 @@ void load_global_settings(void)
         fclose(fp);
         if (read != GLOBAL_SETTINGS_STRUCT_SIZE) {
             // If we couldn't read the full structure, initialize with defaults
-            printf("DEBUG - Failed to read settings, using defaults\n"); // DEBUG - temporarily added to aid in debugging
+            printf("WARNING: Failed to read settings, using defaults\n"); // DEBUG - temporarily added to aid in debugging
             memset(&global_settings, 0, GLOBAL_SETTINGS_STRUCT_SIZE);
             global_settings.commutation_position_offset = DEFAULT_COMMUTATION_POSITION_OFFSET;
             global_settings.my_alias = 1;
         } else {
-            printf("DEBUG - Loaded settings, alias=%d\n", global_settings.my_alias); // DEBUG - temporarily added to aid in debugging
-            printf("Hall sensor midlines: %u, %u, %u\n",
-                   global_settings.hall1_midline,
-                   global_settings.hall2_midline,
-                   global_settings.hall3_midline);
+            printf("Loaded settings, alias=%d, Hall sensor midlines: %u, %u, %u\n", global_settings.my_alias,
+                   global_settings.hall1_midline, global_settings.hall2_midline, global_settings.hall3_midline);
         }
     } else {
         // No settings file, initialize with defaults

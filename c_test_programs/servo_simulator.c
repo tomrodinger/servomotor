@@ -119,6 +119,7 @@ static pthread_t gReadThread;
 static pthread_t gWriteThread;
 static pthread_t gMotorThread;
 static pthread_t gSysTickThread;
+static bool call_USART1_IRQHandler = false;
 
 // External declaration of SysTick_Handler from main.c
 extern void SysTick_Handler(void);
@@ -213,7 +214,7 @@ static void *write_thread_func(void *arg)
     
     while (!gQuit) {
         // Handle transmit
-        if (!(USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) {
+        if ((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0) {
             uint8_t txByte = USART1->TDR;
             ssize_t written = write(gMasterFD, &txByte, 1);
             if (written < 0) {
@@ -223,15 +224,14 @@ static void *write_thread_func(void *arg)
             else if (written == 0) {
                 printf("Write failed: no bytes written\n");
                 exit(1);
-            }
-            
+            }            
             // Set TXE to indicate transmit complete
             USART1->ISR |= USART_ISR_TXE_TXFNF_Msk;
-
-            if ((USART1->CR1 & USART_CR1_TXFEIE) && g_interrupts_enabled) {
-                USART1_IRQHandler();
-            }
-//            continue;  // Skip sleep if we transmitted a byte
+        }
+        if (   g_interrupts_enabled                                                                   &&
+               (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
+                 (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   ))    ) {
+            USART1_IRQHandler();
         }
         usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
     }
@@ -277,44 +277,34 @@ static void *read_thread_func(void *arg)
     printf("Read thread started with gMasterFD: %d\n", gMasterFD);
     
     while (!gQuit) {
-        uint8_t byte;
-        int n = read(gMasterFD, &byte, 1);
-        if (n < 0) {
-            if (errno != EAGAIN) {
-                printf("Read error: %s (errno: %d)\n", strerror(errno), errno);
+        usleep(100);  // Prevent busy waiting
+        if ((USART1->ISR & USART_ISR_RXNE_RXFNE) == 0) {
+            uint8_t byte;
+            int n = read(gMasterFD, &byte, 1);
+            if (n < 0) {
+                if (errno != EAGAIN) {
+                    printf("Read error: %s (errno: %d)\n", strerror(errno), errno);
+                }
+                continue;
             }
-            usleep(100);  // Reduced sleep time to be more responsive
-            continue;
-        }
-        if (n == 0) {
-            printf("FD closed\n");
-            break;
-        }
-        // Only process if receive interrupt is enabled
-        if (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) {
-            static int bytesReceived = 0;
-            bytesReceived++;
-            
+            if (n == 0) {
+                printf("FD closed\n");
+                break;
+            }
+            printf("Received: %hhu\n", byte);
             // Store byte and set RXNE flag
             USART1->RDR = byte;
             USART1->ISR |= USART_ISR_RXNE_RXFNE;
             
             // Process through interrupt handler if interrupts are enabled
             if (g_interrupts_enabled) {
-                USART1_IRQHandler();
+                call_USART1_IRQHandler = true;
             }
-            
-            if (commandReceived) {
-                printf("Command received: Axis=0x%02X, Command=0x%02X\n", 
-                       selectedAxis, command);
-                bytesReceived = 0;  // Reset for next command
-            }
-            
-            // Clear RXNE flag since it was handled
-            USART1->ISR &= ~USART_ISR_RXNE_RXFNE;
-        }
 
-        // Transmit handling moved to write thread
+            if (commandReceived) {
+                printf("Command received: Axis=0x%02X, Command=0x%02X\n", selectedAxis, command);
+            }            
+        }
     }
     return NULL;
 }
@@ -659,8 +649,10 @@ static void *motor_control_thread_func(void *arg)
         // Run motor control if interrupts are enabled and no reset in progress
         static int debug_counter = 0;
         if (debug_counter++ % 100000 == 0) {
-            printf("DEBUG: g_interrupts_enabled = %d, gResetProgress = %d\n",
-                   g_interrupts_enabled, gResetProgress); // DEBUG - temporarily added to aid in debugging
+            printf("DEBUG: g_interrupts_enabled = %d, gResetProgress = %d, (USART1->ISR & USART_ISR_RXNE_RXFNE) = %u\n",
+                   g_interrupts_enabled, gResetProgress, USART1->ISR & USART_ISR_RXNE_RXFNE); // DEBUG - temporarily added to aid in debugging
+            void print_nReceivedBytes(void);
+            print_nReceivedBytes();
         }
         
         motor_control_thread_state = 15; // Running motor control
@@ -672,9 +664,7 @@ static void *motor_control_thread_func(void *arg)
         else if (gResetProgress == 1) {
             // If we're waiting for TIM16_IRQHandler to exit, signal that we've exited
             // by incrementing gResetProgress to 2
-            
             gResetProgress = 2;
-            
             printf("Motor control thread: TIM16_IRQHandler exited, gResetProgress = %d\n", gResetProgress);
         }
         
@@ -688,7 +678,6 @@ static void *motor_control_thread_func(void *arg)
         
         motor_control_thread_state = 17; // Incrementing call count
         callCount++;
-        
         motor_control_thread_state = 18; // Checking if time to print stats
         // Print stats every 60 seconds (1 minute)
         if (lastStatsTime.tv_sec == 0 ||
