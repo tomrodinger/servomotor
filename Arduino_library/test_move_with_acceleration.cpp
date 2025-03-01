@@ -1,4 +1,4 @@
-#include "ServomotorCommands.h"
+#include "Servomotor.h"
 #include "test_framework.h"
 
 void setup() {

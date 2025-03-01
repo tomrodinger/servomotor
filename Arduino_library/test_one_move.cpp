@@ -1,4 +1,4 @@
-#include "ServomotorCommands.h"
+#include "Servomotor.h"
 
 // Create ServoMotor instance on the stack
 // This is safe because ArduinoEmulator.cpp ensures Serial1 is initialized

@@ -9,8 +9,8 @@ MOTOR_COMMANDS_JSON_FILE = "/Users/tom/Documents/Move_the_Needle/Servomotor/pyth
 DATA_TYPES_JSON_FILE = "/Users/tom/Documents/Move_the_Needle/Servomotor/python_programs/servomotor/data_types.json"
 UNIT_CONVERSIONS_JSON_FILE = "/Users/tom/Documents/Move_the_Needle/Servomotor/python_programs/servomotor/unit_conversions_M3.json"
 COMMANDS_H_FILE = "Commands.h"
-SERVOMOTOR_CPP_FILE = "ServomotorCommands.cpp"
-SERVOMOTOR_H_FILE = "ServomotorCommands.h"
+SERVOMOTOR_CPP_FILE = "Servomotor.cpp"
+SERVOMOTOR_H_FILE = "Servomotor.h"
 
 def get_unit_info(unit_conversions_data):
     """Generate unit information from unit_conversions_M3.json"""

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
-#include "ServomotorCommands.h"
+#include "Servomotor.h"
 
 // Helper function to check if two floats are approximately equal
 inline bool approxEqual(float a, float b, float tolerance = 0.01f) {
