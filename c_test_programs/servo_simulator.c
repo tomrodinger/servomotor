@@ -380,8 +380,14 @@ static void draw_color_wheel(SDL_Renderer *rend, int cx, int cy, int radius, dou
 // -----------------------------------------------------------------------------
 static void render_motor(void)
 {
-    int motorW = 200, motorH = 200;
-    int centerX = 150, centerY = 150;
+    // Get window size
+    int windowW, windowH;
+    SDL_GetWindowSize(gWindow, &windowW, &windowH);
+    
+    // Calculate motor size to fit window
+    int motorW = 180, motorH = 180;
+    int centerX = windowW / 2;
+    int centerY = windowH / 2;
     int bodyX   = centerX - (motorW / 2);
     int bodyY   = centerY - (motorH / 2);
 
@@ -402,7 +408,7 @@ static void render_motor(void)
 
     // bolt holes
     sdl_set_color(gRenderer, (SDL_Color){60, 60, 60, 255});
-    int holeR = 8;
+    int holeR = 7;
     draw_filled_circle(gRenderer, bodyX + holeR,         bodyY + holeR,         holeR, (SDL_Color){60,60,60,255});
     draw_filled_circle(gRenderer, bodyX + motorW-holeR,  bodyY + holeR,         holeR, (SDL_Color){60,60,60,255});
     draw_filled_circle(gRenderer, bodyX + holeR,         bodyY + motorH-holeR,  holeR, (SDL_Color){60,60,60,255});
@@ -422,7 +428,7 @@ static void render_motor(void)
     int textWidth, textHeight;
     TTF_SizeText(gFont, textBuf, &textWidth, &textHeight);
     int textX = centerX - (textWidth / 2);
-    draw_text(gRenderer, gFont, textBuf, textX, bodyY - 30, (SDL_Color){255,255,255,255});
+    draw_text(gRenderer, gFont, textBuf, textX, bodyY - 25, (SDL_Color){255,255,255,255});
 
     // Motor current - centered below motor with smaller font
     if (gMosfetsEnabled) {
@@ -437,13 +443,13 @@ static void render_motor(void)
             TTF_SizeText(smallFont, currentBuf, &currentWidth, &currentHeight);
             int currentX = centerX - (currentWidth / 2);
             
-            draw_text(gRenderer, smallFont, currentBuf, currentX, bodyY + motorH + 10, (SDL_Color){255,255,255,255});
+            draw_text(gRenderer, smallFont, currentBuf, currentX, bodyY + motorH + 5, (SDL_Color){255,255,255,255});
             TTF_CloseFont(smallFont);
         }
     }
 
     // color wheel (motor shaft)
-    int shaftRadius = 40;
+    int shaftRadius = 35;
     draw_color_wheel(gRenderer, centerX, centerY, shaftRadius, MotorHAL_GetPosition());
 }
 
@@ -497,30 +503,22 @@ static void init_sdl(void)
     printf("Creating window...\n");
     fflush(stdout);
     
-    // Create window in top right corner with size just enough for the motor
-    int windowWidth = 300;
-    int windowHeight = 320; // Extra space for text above and below
+    // Create a more compact window for the motor
+    int windowWidth = 220;  // Smaller width to fit the motor
+    int windowHeight = 260; // Smaller height to fit the motor
     
-    // Get display count
-    int displayCount = SDL_GetNumVideoDisplays();
-    printf("Number of displays: %d\n", displayCount);
-    
-    // Use the primary display (display 0) where the terminal is likely running
-    int targetDisplay = 0;
-    
-    // Print info for all displays
-    for (int i = 0; i < displayCount; i++) {
-        SDL_Rect bounds;
-        if (SDL_GetDisplayBounds(i, &bounds) == 0) {
-            printf("Display %d bounds: x=%d, y=%d, w=%d, h=%d\n",
-                   i, bounds.x, bounds.y, bounds.w, bounds.h);
-        }
+    // Get the current desktop resolution
+    SDL_DisplayMode dm;
+    if (SDL_GetCurrentDisplayMode(0, &dm) != 0) {
+        fprintf(stderr, "SDL_GetCurrentDisplayMode failed: %s\n", SDL_GetError());
+        dm.w = 1920; // Default if we can't get actual value
+        dm.h = 1080;
     }
     
-    // Create the window first
+    // Position in the top right corner of the current (active) display
     gWindow = SDL_CreateWindow(
         "Motor Firmware Simulator",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_CENTERED_DISPLAY(0), 0, // Centered horizontally, at top vertically on primary display
         windowWidth, windowHeight,
         SDL_WINDOW_SHOWN
     );
@@ -532,16 +530,10 @@ static void init_sdl(void)
         exit(1);
     }
     
-    // After creation, explicitly position the window in the top right corner of the target display
-    SDL_Rect targetBounds;
-    if (SDL_GetDisplayBounds(targetDisplay, &targetBounds) == 0) {
-        int windowX = targetBounds.x + targetBounds.w - windowWidth;
-        int windowY = targetBounds.y;
-        SDL_SetWindowPosition(gWindow, windowX, windowY);
-        printf("Positioning window at: x=%d, y=%d on display %d\n", windowX, windowY, targetDisplay);
-    } else {
-        fprintf(stderr, "Failed to get target display bounds: %s\n", SDL_GetError());
-    }
+    // Ensure window appears in the top right
+    int x = dm.w - windowWidth;
+    int y = 0;
+    SDL_SetWindowPosition(gWindow, x, y);
     if (!gWindow) {
         fprintf(stderr, "CreateWindow failed: %s\n", SDL_GetError());
         TTF_Quit();
