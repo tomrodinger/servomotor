@@ -1,7 +1,12 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
 
+#ifdef ARDUINO
+#include <Arduino.h>
+#else
+// For desktop builds, ArduinoEmulator.h will be included by the main file
 #include "ArduinoEmulator.h"
+#endif
 
 #define COMMUNICATION_ERROR_TIMEOUT  -1
 #define COMMUNICATION_ERROR_DATA_WRONG_SIZE  -2

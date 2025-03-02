@@ -7,8 +7,8 @@ COMMON_SOURCES="ArduinoEmulator.cpp Servomotor.cpp Communication.cpp Utils.cpp D
 COMMON_FLAGS="-std=c++17"
 
 # Build tests that require serial port
-g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_one_move.cpp $COMMON_SOURCES -o test_one_move
-g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_one_move_two_motors.cpp $COMMON_SOURCES -o test_one_move_two_motors
+g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT example_one_move.cpp $COMMON_SOURCES -o example_one_move
+g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT example_one_move_two_motors.cpp $COMMON_SOURCES -o example_one_move_two_motors
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_get_temperature.cpp $COMMON_SOURCES -o test_get_temperature
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_enable_disable_mosfets.cpp $COMMON_SOURCES -o test_enable_disable_mosfets
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_emergency_stop.cpp $COMMON_SOURCES -o test_emergency_stop

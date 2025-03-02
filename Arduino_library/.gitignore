@@ -29,6 +29,6 @@ test_enable_disable_mosfets
 test_get_temperature
 test_move_with_acceleration
 test_move_with_velocity
-test_one_move
-test_one_move_two_motors
+example_one_move
+example_one_move_two_motors
 test_unit_conversions
