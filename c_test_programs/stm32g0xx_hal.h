@@ -219,13 +219,6 @@ void NVIC_SystemReset(void);
 #define GPIO_PUPDR_PUPD14_Pos          28U
 #define GPIO_PUPDR_PUPD15_Pos          30U
 
-#define GPIO_MODE_INPUT                0x0U   // Input mode
-#define GPIO_MODE_OUTPUT               0x1U   // General purpose output mode
-#define GPIO_MODE_AF                   0x2U   // Alternate function mode
-#define GPIO_MODE_ANALOG               0x3U   // Analog mode
-
-//#define MODER_DIGITAL_OUTPUT           GPIO_MODE_OUTPUT
-
 // GPIO AFR (Alternate Function Register) defines
 #define GPIO_AFRH_AFSEL8_Pos          0U
 #define GPIO_AFRH_AFSEL11_Pos         12U
