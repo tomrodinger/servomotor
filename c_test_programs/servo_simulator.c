@@ -381,7 +381,7 @@ static void draw_color_wheel(SDL_Renderer *rend, int cx, int cy, int radius, dou
 static void render_motor(void)
 {
     int motorW = 200, motorH = 200;
-    int centerX = 300, centerY = 250;
+    int centerX = 150, centerY = 150;
     int bodyX   = centerX - (motorW / 2);
     int bodyY   = centerY - (motorH / 2);
 
@@ -408,16 +408,39 @@ static void render_motor(void)
     draw_filled_circle(gRenderer, bodyX + holeR,         bodyY + motorH-holeR,  holeR, (SDL_Color){60,60,60,255});
     draw_filled_circle(gRenderer, bodyX + motorW-holeR,  bodyY + motorH-holeR,  holeR, (SDL_Color){60,60,60,255});
 
-    // status text
+    // status text - centered above motor
     char textBuf[128];
     if (error != 0) {
         snprintf(textBuf, sizeof(textBuf), "ERROR = %u", error);
     } else if (gMosfetsEnabled) {
-        snprintf(textBuf, sizeof(textBuf), "ENABLED, CUR = %u", MotorHAL_GetCurrent());
+        snprintf(textBuf, sizeof(textBuf), "ENABLED");
     } else {
         snprintf(textBuf, sizeof(textBuf), "DISABLED");
     }
-    draw_text(gRenderer, gFont, textBuf, bodyX, bodyY - 30, (SDL_Color){255,255,255,255});
+    
+    // Get text dimensions to center it
+    int textWidth, textHeight;
+    TTF_SizeText(gFont, textBuf, &textWidth, &textHeight);
+    int textX = centerX - (textWidth / 2);
+    draw_text(gRenderer, gFont, textBuf, textX, bodyY - 30, (SDL_Color){255,255,255,255});
+
+    // Motor current - centered below motor with smaller font
+    if (gMosfetsEnabled) {
+        // Create a smaller version of the font for current display
+        TTF_Font *smallFont = TTF_OpenFont(font_path, 12); // 50% of size 24
+        if (smallFont) {
+            char currentBuf[128];
+            snprintf(currentBuf, sizeof(currentBuf), "CURRENT = %u", MotorHAL_GetCurrent());
+            
+            // Get text dimensions to center it
+            int currentWidth, currentHeight;
+            TTF_SizeText(smallFont, currentBuf, &currentWidth, &currentHeight);
+            int currentX = centerX - (currentWidth / 2);
+            
+            draw_text(gRenderer, smallFont, currentBuf, currentX, bodyY + motorH + 10, (SDL_Color){255,255,255,255});
+            TTF_CloseFont(smallFont);
+        }
+    }
 
     // color wheel (motor shaft)
     int shaftRadius = 40;
@@ -473,12 +496,52 @@ static void init_sdl(void)
 
     printf("Creating window...\n");
     fflush(stdout);
+    
+    // Create window in top right corner with size just enough for the motor
+    int windowWidth = 300;
+    int windowHeight = 320; // Extra space for text above and below
+    
+    // Get display count
+    int displayCount = SDL_GetNumVideoDisplays();
+    printf("Number of displays: %d\n", displayCount);
+    
+    // Use the primary display (display 0) where the terminal is likely running
+    int targetDisplay = 0;
+    
+    // Print info for all displays
+    for (int i = 0; i < displayCount; i++) {
+        SDL_Rect bounds;
+        if (SDL_GetDisplayBounds(i, &bounds) == 0) {
+            printf("Display %d bounds: x=%d, y=%d, w=%d, h=%d\n",
+                   i, bounds.x, bounds.y, bounds.w, bounds.h);
+        }
+    }
+    
+    // Create the window first
     gWindow = SDL_CreateWindow(
         "Motor Firmware Simulator",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        600, 500,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+        windowWidth, windowHeight,
+        SDL_WINDOW_SHOWN
     );
+    
+    if (!gWindow) {
+        fprintf(stderr, "CreateWindow failed: %s\n", SDL_GetError());
+        TTF_Quit();
+        SDL_Quit();
+        exit(1);
+    }
+    
+    // After creation, explicitly position the window in the top right corner of the target display
+    SDL_Rect targetBounds;
+    if (SDL_GetDisplayBounds(targetDisplay, &targetBounds) == 0) {
+        int windowX = targetBounds.x + targetBounds.w - windowWidth;
+        int windowY = targetBounds.y;
+        SDL_SetWindowPosition(gWindow, windowX, windowY);
+        printf("Positioning window at: x=%d, y=%d on display %d\n", windowX, windowY, targetDisplay);
+    } else {
+        fprintf(stderr, "Failed to get target display bounds: %s\n", SDL_GetError());
+    }
     if (!gWindow) {
         fprintf(stderr, "CreateWindow failed: %s\n", SDL_GetError());
         TTF_Quit();
