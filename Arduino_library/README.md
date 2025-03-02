@@ -222,6 +222,23 @@ Each test program requires:
 6. **test_unit_conversions test fails, need to fix**
    - one test related to testAccelerationConversions() fails
 
+7. ✅ **Make sure that the copy_stuff_to_Arduino.sh script copies all relevant file for the Arduino library to work**
+    - ✅ Updated the script to only copy core library files
+    - ✅ Added proper handling of example files (example_one_move.cpp and example_one_move_two_motors.cpp)
+    - ✅ Created proper Arduino library directory structure with src/ and examples/ folders
+
+8. **Test the Arduino library on an actual Arduino board such as ESP32-C3**
+   - see if it compiles
+   - see if it can control an actual motor
+
+9. **Create more Arduino examples**
+    - Create additional simple examples for common use cases
+    - Ensure examples demonstrate best practices for using the library
+    - Consider examples for different motor control scenarios
+
+10. **Launch this Arduino library into the Arduino marketplace**
+    - Anyone should be able to get it and easily use it
+
 ## License
 
 This library is released under the MIT License. See the LICENSE file for details.
