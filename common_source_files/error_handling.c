@@ -30,7 +30,7 @@ static uint8_t fatal_error_occurred = 0;
 static uint8_t commandReceived = 0;
 static uint16_t valueLength;
 static uint16_t nReceivedBytes = 0;
-static char volatile selectedAxis;
+static uint8_t volatile selectedAxis;
 static uint8_t command;
 
 static void fatal_error_systick_init(void)
@@ -177,7 +177,7 @@ void fatal_error(uint16_t error_code)
     fatal_error_occurred = 1;
 
     message = get_error_text(error_code);
-    sprintf(buf, ": %hu\n", error_code);
+    sprintf(buf, ": %u\n", error_code);
     while(1) { // print out the error message continuously forever
         for(e = 0; e < error_code + 3; e++) {
             if((error_code == 0) || (e < error_code)) {

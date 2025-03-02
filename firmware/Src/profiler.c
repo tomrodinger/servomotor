@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "debug_uart.h"
 #include "profiler.h"
+#include "portable_stdint.h"
 
 static volatile uint16_t profiler_clock_start_time[N_PROFILERS];
 static volatile uint16_t profiler_clock_end_time[N_PROFILERS];
@@ -72,7 +73,7 @@ void print_debug_counter(void)
     char buf[50];
     uint32_t d = debug_counter;
     debug_counter = 0;
-    snprintf(buf, sizeof(buf), "debug_counter: %lu\n", d);
+    snprintf(buf, sizeof(buf), "debug_counter: " _PRIu32 "\n", d);
     print_debug_string(buf);
 }
 

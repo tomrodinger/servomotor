@@ -157,15 +157,15 @@ void simulate_ADC_hall_sensor_values(void)
     double hall3 = HALL_SENSOR_SINE_OFFSET + HALL_SENSOR_SINE_AMPLITUDE * sin(angleRad * ENCODER_ROTATIONS_PER_SHAFT_ROTATION - (4.0 * M_PI / 3.0));
 
     if ((hall1 < HALL_SENSOR_SINE_OFFSET - HALL_SENSOR_SINE_AMPLITUDE) || (hall1 > 65535.0)) {
-        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %hu\n", hall1);
+        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %.2f\n", hall1);
         exit(1);
     }
     if ((hall2 < HALL_SENSOR_SINE_OFFSET - HALL_SENSOR_SINE_AMPLITUDE) || (hall2 > 65535.0)) {
-        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %hu\n", hall2);
+        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %.2f\n", hall2);
         exit(1);
     }
     if ((hall3 < HALL_SENSOR_SINE_OFFSET - HALL_SENSOR_SINE_AMPLITUDE) || (hall3 > 65535.0)) {
-        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %hu\n", hall3);
+        printf("Error: unexpected hall sensor value. It overflowed the uint16_t: %.2f\n", hall3);
         exit(1);
     }
 

@@ -8,6 +8,7 @@
 #include "ADC.h"
 #include "debug_uart.h"
 #include "global_variables.h"
+#include "portable_stdint.h"
 
 #define UINT32_MIDPOINT 2147483648
 #define HALL_POSITION_HYSTERESIS 100
@@ -27,7 +28,6 @@ static uint16_t time_difference_div = 0;
 #endif
 static uint8_t hall_sensor_statitics_active = 0;
 static hall_sensor_statistics_t hall_sensor_statistics;
-static volatile int32_t latest_hall_position = 0;
 
 static const int32_t segment_change_values_table[3][3] = SEGMENT_CHANGE_VALUES_TABLE_INITIALIZER;
 
@@ -213,9 +213,9 @@ void print_sensor_position(void)
 {
     char buf[100];
 #ifdef DO_DETAILED_PROFILING
-    sprintf(buf, "sensor_position: %ld   time_difference_div: %hu\n", latest_sensor_position, time_difference_div);
+    sprintf(buf, "sensor_position: " _PRId32 "   time_difference_div: %hu\n", latest_sensor_position, time_difference_div);
 #else
-    sprintf(buf, "sensor_position: %ld\n", latest_sensor_position);
+    sprintf(buf, "sensor_position: " _PRId32 "\n", latest_sensor_position);
 #endif
     print_debug_string(buf);
 }

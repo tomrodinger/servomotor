@@ -229,8 +229,8 @@ static void *write_thread_func(void *arg)
             USART1->ISR |= USART_ISR_TXE_TXFNF_Msk;
         }
         if (   g_interrupts_enabled                                                                   &&
-               (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
-                 (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   ))    ) {
+                (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
+                 ((USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   )))    ) {
             USART1_IRQHandler();
         }
         usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
@@ -249,21 +249,9 @@ void mosfets_state_changed(uint8_t enabled) {
 static SDL_Window   *gWindow   = NULL;
 static SDL_Renderer *gRenderer = NULL;
 static TTF_Font     *gFont     = NULL;
-
 // -----------------------------------------------------------------------------
-// Time Helpers
+// SDL Helpers
 // -----------------------------------------------------------------------------
-static double nowSeconds(void)
-{
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    return (double)now.tv_sec + (double)now.tv_nsec / 1e9;
-}
-
-static double lerp(double a, double b, double t)
-{
-    return a + (b - a) * t;
-}
 
 // -----------------------------------------------------------------------------
 // Read Thread
@@ -561,7 +549,6 @@ static void init_sdl(void)
 // Update visualization on main thread
 static void update_visualization(void)
 {
-    static struct timespec lastTime = {0, 0};
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 

@@ -22,6 +22,7 @@
 #include "product_info.h"
 #include "global_variables.h"
 #include "device_status.h"
+#include "portable_stdint.h"
 #ifdef PRODUCT_NAME_M1
 #include "commutation_table_M1.h"
 #endif
@@ -323,7 +324,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             max_homing_time = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
             char buf[100];
-            sprintf(buf, "homing: max_homing_travel_displacement: %ld   max_homing_time: %lu\n", max_homing_travel_displacement, max_homing_time);
+            sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
             print_debug_string(buf);
             start_homing(max_homing_travel_displacement, max_homing_time);
             if(axis != ALL_ALIAS) {
@@ -750,7 +751,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                 uint32_t i = ((uint32_t*)parameters)[1];
                 uint32_t d = ((uint32_t*)parameters)[2];
                 rs485_allow_next_command();
-                sprintf(buf, "PID constants: %lu, %lu, %lu\n", p, i, d);
+                sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", p, i, d);
                 print_debug_string(buf);
                 set_pid_constants(p, i, d);
                 if(axis != ALL_ALIAS) {
@@ -1217,4 +1218,5 @@ int main(void)
 #endif
         check_if_overtemperature();
     }
+    return 0;
 }

@@ -2,6 +2,7 @@
 #include "stm32g0xx_hal.h"
 #include "error_handling.h"
 #include "debug_uart.h"
+#include "portable_stdint.h"
 
 static int32_t step_count = 0;
 
@@ -67,6 +68,6 @@ int32_t get_external_encoder_position(void)
 void print_external_encoder_position(void)
 {
     char buf[100];
-    sprintf(buf, "external encoder position:: %ld\n", step_count);
+    sprintf(buf, "external encoder position:: " _PRId32 "\n", step_count);
     print_debug_string(buf);
 }

@@ -2,7 +2,7 @@
 #include <string.h>
 #include "error_handling.h"
 #include "debug_uart.h"
-#include "adc.h"
+#include "ADC.h"
 #include "mosfets.h"
 #include "temperature.h"
 #include "temperature_lookup_table.h"

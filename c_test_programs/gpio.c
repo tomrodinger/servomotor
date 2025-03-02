@@ -1,4 +1,5 @@
-#include "gpio.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "../common_source_files/gpio.h"
 
 // Undefine the macros so we can provide the actual function definitions

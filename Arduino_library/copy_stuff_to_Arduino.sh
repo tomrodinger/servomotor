@@ -3,7 +3,7 @@
 # Improved script to copy only relevant files for the Arduino library
 # Fixes TODO item #7: "Make sure that the copy_stuff_to_Arduino.sh script copies all relevant file for the Arduino library to work"
 
-DEST_DIR="/Users/tom/Documents/Arduino/libraries/ServoMotor"
+DEST_DIR="/Users/tom/Documents/Arduino/libraries/Servomotor"
 
 # Ensure destination directory exists
 if [ ! -d "$DEST_DIR" ]; then
@@ -51,8 +51,8 @@ mkdir -p "$DEST_DIR/examples"
 
 # Define examples to be included
 EXAMPLES=(
-    "example_one_move.cpp:Basic_Move"
-    "example_one_move_two_motors.cpp:Two_Motors_Control"
+    "example_one_move.cpp:One_Move"
+    "example_one_move_two_motors.cpp:One_Move_Two_Motors"
 )
 
 echo "Creating examples:"
