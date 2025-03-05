@@ -6,7 +6,7 @@
 #include "Commands.h"
 #include "Utils.h"
 
-ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)
+Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
     : _alias(alias), _comm(serialPort), _errno(0),
       // Initialize unit settings
       m_timeUnit(TimeUnit::TIMESTEPS),
@@ -19,24 +19,24 @@ ServoMotor::ServoMotor(uint8_t alias, HardwareSerial& serialPort)
     openSerialPort();
 }
 
-void ServoMotor::setAlias(uint8_t new_alias) {
+void Servomotor::setAlias(uint8_t new_alias) {
     _alias = new_alias;
 }
 
-uint8_t ServoMotor::getAlias() {
+uint8_t Servomotor::getAlias() {
     return _alias;
 }
 
-void ServoMotor::openSerialPort() {
+void Servomotor::openSerialPort() {
     _comm.openSerialPort();
 }
 
-int ServoMotor::getError() const {
+int Servomotor::getError() const {
     return _errno;
 }
 
 // Unit setting functions
-void ServoMotor::setTimeUnit(TimeUnit unit) {
+void Servomotor::setTimeUnit(TimeUnit unit) {
     m_timeUnit = unit;
     Serial.print("[Motor] setTimeUnit to ");
     switch(unit) {
@@ -47,7 +47,7 @@ void ServoMotor::setTimeUnit(TimeUnit unit) {
     }
 }
 
-void ServoMotor::setPositionUnit(PositionUnit unit) {
+void Servomotor::setPositionUnit(PositionUnit unit) {
     m_positionUnit = unit;
     Serial.print("[Motor] setPositionUnit to ");
     switch(unit) {
@@ -58,7 +58,7 @@ void ServoMotor::setPositionUnit(PositionUnit unit) {
     }
 }
 
-void ServoMotor::setVelocityUnit(VelocityUnit unit) {
+void Servomotor::setVelocityUnit(VelocityUnit unit) {
     m_velocityUnit = unit;
     Serial.print("[Motor] setVelocityUnit to ");
     switch(unit) {
@@ -71,7 +71,7 @@ void ServoMotor::setVelocityUnit(VelocityUnit unit) {
     }
 }
 
-void ServoMotor::setAccelerationUnit(AccelerationUnit unit) {
+void Servomotor::setAccelerationUnit(AccelerationUnit unit) {
     m_accelerationUnit = unit;
     Serial.print("[Motor] setAccelerationUnit to ");
     switch(unit) {
@@ -84,7 +84,7 @@ void ServoMotor::setAccelerationUnit(AccelerationUnit unit) {
     }
 }
 
-void ServoMotor::setCurrentUnit(CurrentUnit unit) {
+void Servomotor::setCurrentUnit(CurrentUnit unit) {
     m_currentUnit = unit;
     Serial.print("[Motor] setCurrentUnit to ");
     switch(unit) {
@@ -94,7 +94,7 @@ void ServoMotor::setCurrentUnit(CurrentUnit unit) {
     }
 }
 
-void ServoMotor::setVoltageUnit(VoltageUnit unit) {
+void Servomotor::setVoltageUnit(VoltageUnit unit) {
     m_voltageUnit = unit;
     Serial.print("[Motor] setVoltageUnit to ");
     switch(unit) {
@@ -103,7 +103,7 @@ void ServoMotor::setVoltageUnit(VoltageUnit unit) {
     }
 }
 
-void ServoMotor::setTemperatureUnit(TemperatureUnit unit) {
+void Servomotor::setTemperatureUnit(TemperatureUnit unit) {
     m_temperatureUnit = unit;
     Serial.print("[Motor] setTemperatureUnit to ");
     switch(unit) {
@@ -113,7 +113,7 @@ void ServoMotor::setTemperatureUnit(TemperatureUnit unit) {
     }
 }
 
-void ServoMotor::disableMosfets() {
+void Servomotor::disableMosfets() {
     Serial.println("[Motor] disableMosfets called.");
     // Disables the MOSFETS (note that MOSFETs are disabled after initial power on).
     const uint8_t commandID = 0;
@@ -123,7 +123,7 @@ void ServoMotor::disableMosfets() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::enableMosfets() {
+void Servomotor::enableMosfets() {
     Serial.println("[Motor] enableMosfets called.");
     // Enables the MOSFETS.
     const uint8_t commandID = 1;
@@ -133,7 +133,7 @@ void ServoMotor::enableMosfets() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::trapezoidMoveRaw(int32_t displacement, uint32_t duration) {
+void Servomotor::trapezoidMoveRaw(int32_t displacement, uint32_t duration) {
     // Move immediately to the given position using the currently set speed (the speed is set by a separate command) (Raw version)
     const uint8_t commandID = 2;
     trapezoidMovePayload payload;
@@ -145,7 +145,7 @@ void ServoMotor::trapezoidMoveRaw(int32_t displacement, uint32_t duration) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::trapezoidMove(float displacement, float duration) {
+void Servomotor::trapezoidMove(float displacement, float duration) {
     Serial.println("[Motor] trapezoidMove called.");
     Serial.print("  displacement in chosen unit: "); Serial.println(displacement);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
@@ -155,7 +155,7 @@ void ServoMotor::trapezoidMove(float displacement, float duration) {
     trapezoidMoveRaw((int32_t)(displacement_internal), (uint32_t)(duration_internal));
 }
 
-void ServoMotor::setMaximumVelocityRaw(uint32_t maximumVelocity) {
+void Servomotor::setMaximumVelocityRaw(uint32_t maximumVelocity) {
     // Sets maximum velocity (this is not used at this time) (Raw version)
     const uint8_t commandID = 3;
     setMaximumVelocityPayload payload;
@@ -166,7 +166,7 @@ void ServoMotor::setMaximumVelocityRaw(uint32_t maximumVelocity) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaximumVelocity(float maximumVelocity) {
+void Servomotor::setMaximumVelocity(float maximumVelocity) {
     Serial.println("[Motor] setMaximumVelocity called.");
     Serial.print("  maximumVelocity in chosen unit: "); Serial.println(maximumVelocity);
 
@@ -174,7 +174,7 @@ void ServoMotor::setMaximumVelocity(float maximumVelocity) {
     setMaximumVelocityRaw((uint32_t)(maximumVelocity_internal));
 }
 
-void ServoMotor::goToPositionRaw(int32_t position, uint32_t duration) {
+void Servomotor::goToPositionRaw(int32_t position, uint32_t duration) {
     // Move to this new given position in the amount of time specified. Acceleration and deceleration will be applied to make the move smooth. (Raw version)
     const uint8_t commandID = 4;
     goToPositionPayload payload;
@@ -186,7 +186,7 @@ void ServoMotor::goToPositionRaw(int32_t position, uint32_t duration) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::goToPosition(float position, float duration) {
+void Servomotor::goToPosition(float position, float duration) {
     Serial.println("[Motor] goToPosition called.");
     Serial.print("  position in chosen unit: "); Serial.println(position);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
@@ -196,7 +196,7 @@ void ServoMotor::goToPosition(float position, float duration) {
     goToPositionRaw((int32_t)(position_internal), (uint32_t)(duration_internal));
 }
 
-void ServoMotor::setMaximumAccelerationRaw(uint32_t maximumAcceleration) {
+void Servomotor::setMaximumAccelerationRaw(uint32_t maximumAcceleration) {
     // Sets max acceleration (Raw version)
     const uint8_t commandID = 5;
     setMaximumAccelerationPayload payload;
@@ -207,7 +207,7 @@ void ServoMotor::setMaximumAccelerationRaw(uint32_t maximumAcceleration) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaximumAcceleration(float maximumAcceleration) {
+void Servomotor::setMaximumAcceleration(float maximumAcceleration) {
     Serial.println("[Motor] setMaximumAcceleration called.");
     Serial.print("  maximumAcceleration in chosen unit: "); Serial.println(maximumAcceleration);
 
@@ -215,7 +215,7 @@ void ServoMotor::setMaximumAcceleration(float maximumAcceleration) {
     setMaximumAccelerationRaw((uint32_t)(maximumAcceleration_internal));
 }
 
-void ServoMotor::startCalibration() {
+void Servomotor::startCalibration() {
     Serial.println("[Motor] startCalibration called.");
     // Starts a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly
     const uint8_t commandID = 6;
@@ -225,7 +225,7 @@ void ServoMotor::startCalibration() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-uint8_t ServoMotor::captureHallSensorData(uint8_t dataType) {
+uint8_t Servomotor::captureHallSensorData(uint8_t dataType) {
     Serial.println("[Motor] captureHallSensorData called.");
     // Start sending hall sensor data (work in progress; don't send this command)
     const uint8_t commandID = 7;
@@ -247,7 +247,7 @@ uint8_t ServoMotor::captureHallSensorData(uint8_t dataType) {
     return defaultResponse;
 }
 
-void ServoMotor::resetTime() {
+void Servomotor::resetTime() {
     Serial.println("[Motor] resetTime called.");
     // Resets the absolute time to zero (call this first before issuing any movement commands)
     const uint8_t commandID = 8;
@@ -257,7 +257,7 @@ void ServoMotor::resetTime() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getCurrentTimeResponse ServoMotor::getCurrentTimeRaw() {
+getCurrentTimeResponse Servomotor::getCurrentTimeRaw() {
     // Gets the current absolute time (Raw version)
     const uint8_t commandID = 9;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -276,7 +276,7 @@ getCurrentTimeResponse ServoMotor::getCurrentTimeRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getCurrentTime() {
+float Servomotor::getCurrentTime() {
     Serial.println("[Motor] getCurrentTime called.");
 
     auto rawResult = getCurrentTimeRaw();
@@ -284,7 +284,7 @@ float ServoMotor::getCurrentTime() {
     return convertedResult;
 }
 
-timeSyncResponse ServoMotor::timeSync(uint64_t masterTime) {
+timeSyncResponse Servomotor::timeSync(uint64_t masterTime) {
     Serial.println("[Motor] timeSync called.");
     // Sends the master time to the motor so that it can sync its own clock (do this 10 times per second).
     const uint8_t commandID = 10;
@@ -306,7 +306,7 @@ timeSyncResponse ServoMotor::timeSync(uint64_t masterTime) {
     return defaultResponse;
 }
 
-uint8_t ServoMotor::getNumberOfQueuedItems() {
+uint8_t Servomotor::getNumberOfQueuedItems() {
     Serial.println("[Motor] getNumberOfQueuedItems called.");
     // Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)
     const uint8_t commandID = 11;
@@ -326,7 +326,7 @@ uint8_t ServoMotor::getNumberOfQueuedItems() {
     return defaultResponse;
 }
 
-void ServoMotor::emergencyStop() {
+void Servomotor::emergencyStop() {
     Serial.println("[Motor] emergencyStop called.");
     // Emergency stop (stop all movement, disable MOSFETS, clear the queue)
     const uint8_t commandID = 12;
@@ -336,7 +336,7 @@ void ServoMotor::emergencyStop() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::zeroPosition() {
+void Servomotor::zeroPosition() {
     Serial.println("[Motor] zeroPosition called.");
     // Make the current position the position zero (origin)
     const uint8_t commandID = 13;
@@ -346,7 +346,7 @@ void ServoMotor::zeroPosition() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::homingRaw(int32_t maxDistance, uint32_t maxDuration) {
+void Servomotor::homingRaw(int32_t maxDistance, uint32_t maxDuration) {
     // Homing (or in other words, move until a crash and then stop immediately) (Raw version)
     const uint8_t commandID = 14;
     homingPayload payload;
@@ -358,7 +358,7 @@ void ServoMotor::homingRaw(int32_t maxDistance, uint32_t maxDuration) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::homing(float maxDistance, float maxDuration) {
+void Servomotor::homing(float maxDistance, float maxDuration) {
     Serial.println("[Motor] homing called.");
     Serial.print("  maxDistance in chosen unit: "); Serial.println(maxDistance);
     Serial.print("  maxDuration in chosen unit: "); Serial.println(maxDuration);
@@ -368,7 +368,7 @@ void ServoMotor::homing(float maxDistance, float maxDuration) {
     homingRaw((int32_t)(maxDistance_internal), (uint32_t)(maxDuration_internal));
 }
 
-getHallSensorPositionResponse ServoMotor::getHallSensorPositionRaw() {
+getHallSensorPositionResponse Servomotor::getHallSensorPositionRaw() {
     // Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position) (Raw version)
     const uint8_t commandID = 15;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -387,7 +387,7 @@ getHallSensorPositionResponse ServoMotor::getHallSensorPositionRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getHallSensorPosition() {
+float Servomotor::getHallSensorPosition() {
     Serial.println("[Motor] getHallSensorPosition called.");
 
     auto rawResult = getHallSensorPositionRaw();
@@ -395,7 +395,7 @@ float ServoMotor::getHallSensorPosition() {
     return convertedResult;
 }
 
-StatusResponse ServoMotor::getStatus() {
+StatusResponse Servomotor::getStatus() {
     Serial.println("[Motor] getStatus called.");
     // Gets the status of the motor
     const uint8_t commandID = 16;
@@ -415,7 +415,7 @@ StatusResponse ServoMotor::getStatus() {
     return defaultResponse;
 }
 
-void ServoMotor::goToClosedLoop() {
+void Servomotor::goToClosedLoop() {
     Serial.println("[Motor] goToClosedLoop called.");
     // Go to closed loop position control mode
     const uint8_t commandID = 17;
@@ -425,7 +425,7 @@ void ServoMotor::goToClosedLoop() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-uint32_t ServoMotor::getUpdateFrequency() {
+uint32_t Servomotor::getUpdateFrequency() {
     Serial.println("[Motor] getUpdateFrequency called.");
     // Get the update frequency (reciprocal of the time step)
     const uint8_t commandID = 18;
@@ -445,7 +445,7 @@ uint32_t ServoMotor::getUpdateFrequency() {
     return defaultResponse;
 }
 
-void ServoMotor::moveWithAccelerationRaw(int32_t acceleration, uint32_t timeSteps) {
+void Servomotor::moveWithAccelerationRaw(int32_t acceleration, uint32_t timeSteps) {
     // Rotates the motor with the specified acceleration (Raw version)
     const uint8_t commandID = 19;
     moveWithAccelerationPayload payload;
@@ -457,7 +457,7 @@ void ServoMotor::moveWithAccelerationRaw(int32_t acceleration, uint32_t timeStep
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::moveWithAcceleration(float acceleration, float timeSteps) {
+void Servomotor::moveWithAcceleration(float acceleration, float timeSteps) {
     Serial.println("[Motor] moveWithAcceleration called.");
     Serial.print("  acceleration in chosen unit: "); Serial.println(acceleration);
     Serial.print("  timeSteps in chosen unit: "); Serial.println(timeSteps);
@@ -467,7 +467,7 @@ void ServoMotor::moveWithAcceleration(float acceleration, float timeSteps) {
     moveWithAccelerationRaw((int32_t)(acceleration_internal), (uint32_t)(timeSteps_internal));
 }
 
-detectDevicesResponse ServoMotor::detectDevices() {
+detectDevicesResponse Servomotor::detectDevices() {
     Serial.println("[Motor] detectDevices called.");
     // Detect all of the devices that are connected on the RS485 interface. Devices will identify themselves at a random time within one seconde. Chance of collision is possible but unlikely. You can repeat this if you suspect a collision (like if you have devices connected but they were not discovered within one to two seconds).
     const uint8_t commandID = 20;
@@ -487,7 +487,7 @@ detectDevicesResponse ServoMotor::detectDevices() {
     return defaultResponse;
 }
 
-detectDevicesResponse ServoMotor::detectDevicesGetAnotherResponse() {
+detectDevicesResponse Servomotor::detectDevicesGetAnotherResponse() {
     // Attempt to receive another response from previously sent Detect devices command
     uint8_t buffer[sizeof(detectDevicesResponse)];
     uint16_t receivedSize;
@@ -503,7 +503,7 @@ detectDevicesResponse ServoMotor::detectDevicesGetAnotherResponse() {
     return detectDevicesResponse();
 }
 
-void ServoMotor::setDeviceAlias(uint64_t uniqueId, uint8_t alias) {
+void Servomotor::setDeviceAlias(uint64_t uniqueId, uint8_t alias) {
     Serial.println("[Motor] setDeviceAlias called.");
     // Sets device alias
     const uint8_t commandID = 21;
@@ -516,7 +516,7 @@ void ServoMotor::setDeviceAlias(uint64_t uniqueId, uint8_t alias) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getProductInfoResponse ServoMotor::getProductInfo() {
+getProductInfoResponse Servomotor::getProductInfo() {
     Serial.println("[Motor] getProductInfo called.");
     // Get product information
     const uint8_t commandID = 22;
@@ -536,7 +536,7 @@ getProductInfoResponse ServoMotor::getProductInfo() {
     return defaultResponse;
 }
 
-void ServoMotor::firmwareUpgrade(uint8_t firmwarePage[2058]) {
+void Servomotor::firmwareUpgrade(uint8_t firmwarePage[2058]) {
     Serial.println("[Motor] firmwareUpgrade called.");
     // This command will upgrade the flash memory of the servo motor. Before issuing a firmware upgrade command, you must do some calculations as shown in the examples.
     const uint8_t commandID = 23;
@@ -548,7 +548,7 @@ void ServoMotor::firmwareUpgrade(uint8_t firmwarePage[2058]) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getProductDescriptionResponse ServoMotor::getProductDescription() {
+getProductDescriptionResponse Servomotor::getProductDescription() {
     Serial.println("[Motor] getProductDescription called.");
     // Get the product description. Documentation to be done later.
     const uint8_t commandID = 24;
@@ -568,7 +568,7 @@ getProductDescriptionResponse ServoMotor::getProductDescription() {
     return defaultResponse;
 }
 
-uint32_t ServoMotor::getFirmwareVersion() {
+uint32_t Servomotor::getFirmwareVersion() {
     Serial.println("[Motor] getFirmwareVersion called.");
     // Get the firmware version. Documentation to be done later.
     const uint8_t commandID = 25;
@@ -588,7 +588,7 @@ uint32_t ServoMotor::getFirmwareVersion() {
     return defaultResponse;
 }
 
-void ServoMotor::moveWithVelocityRaw(int32_t velocity, uint32_t duration) {
+void Servomotor::moveWithVelocityRaw(int32_t velocity, uint32_t duration) {
     // Rotates the motor with the specified velocity. (Raw version)
     const uint8_t commandID = 26;
     moveWithVelocityPayload payload;
@@ -600,7 +600,7 @@ void ServoMotor::moveWithVelocityRaw(int32_t velocity, uint32_t duration) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::moveWithVelocity(float velocity, float duration) {
+void Servomotor::moveWithVelocity(float velocity, float duration) {
     Serial.println("[Motor] moveWithVelocity called.");
     Serial.print("  velocity in chosen unit: "); Serial.println(velocity);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
@@ -610,7 +610,7 @@ void ServoMotor::moveWithVelocity(float velocity, float duration) {
     moveWithVelocityRaw((int32_t)(velocity_internal), (uint32_t)(duration_internal));
 }
 
-void ServoMotor::systemReset() {
+void Servomotor::systemReset() {
     Serial.println("[Motor] systemReset called.");
     // System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning.
     const uint8_t commandID = 27;
@@ -620,7 +620,7 @@ void ServoMotor::systemReset() {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaximumMotorCurrentRaw(uint16_t motorCurrent, uint16_t regenerationCurrent) {
+void Servomotor::setMaximumMotorCurrentRaw(uint16_t motorCurrent, uint16_t regenerationCurrent) {
     // Set the maximum motor current and maximum regeneration current. The values are stored in non-volatile memory and survive a reset. (Raw version)
     const uint8_t commandID = 28;
     setMaximumMotorCurrentPayload payload;
@@ -632,7 +632,7 @@ void ServoMotor::setMaximumMotorCurrentRaw(uint16_t motorCurrent, uint16_t regen
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaximumMotorCurrent(float motorCurrent, float regenerationCurrent) {
+void Servomotor::setMaximumMotorCurrent(float motorCurrent, float regenerationCurrent) {
     Serial.println("[Motor] setMaximumMotorCurrent called.");
     Serial.print("  motorCurrent in chosen unit: "); Serial.println(motorCurrent);
     Serial.print("  regenerationCurrent in chosen unit: "); Serial.println(regenerationCurrent);
@@ -642,7 +642,7 @@ void ServoMotor::setMaximumMotorCurrent(float motorCurrent, float regenerationCu
     setMaximumMotorCurrentRaw((uint16_t)(motorCurrent_internal), (uint16_t)(regenerationCurrent_internal));
 }
 
-void ServoMotor::multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t moveList) {
+void Servomotor::multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t moveList) {
     Serial.println("[Motor] multiMove called.");
     // Multi-move command allows you to compose multiple moves one after eachother. The last move must set the motor's velocity to 0 for a period of time(e.g. 0.1s) to allow the motor to stop, otherwise the motor will enter in an error state.
     const uint8_t commandID = 29;
@@ -656,7 +656,7 @@ void ServoMotor::multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t moveLi
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setSafetyLimitsRaw(int64_t lowerLimit, int64_t upperLimit) {
+void Servomotor::setSafetyLimitsRaw(int64_t lowerLimit, int64_t upperLimit) {
     // Set safety limits (to prevent motion from exceeding set bounds) (Raw version)
     const uint8_t commandID = 30;
     setSafetyLimitsPayload payload;
@@ -668,7 +668,7 @@ void ServoMotor::setSafetyLimitsRaw(int64_t lowerLimit, int64_t upperLimit) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setSafetyLimits(float lowerLimit, float upperLimit) {
+void Servomotor::setSafetyLimits(float lowerLimit, float upperLimit) {
     Serial.println("[Motor] setSafetyLimits called.");
     Serial.print("  lowerLimit in chosen unit: "); Serial.println(lowerLimit);
     Serial.print("  upperLimit in chosen unit: "); Serial.println(upperLimit);
@@ -678,7 +678,7 @@ void ServoMotor::setSafetyLimits(float lowerLimit, float upperLimit) {
     setSafetyLimitsRaw((int64_t)(lowerLimit_internal), (int64_t)(upperLimit_internal));
 }
 
-pingResponse ServoMotor::ping(uint8_t pingData[10]) {
+pingResponse Servomotor::ping(uint8_t pingData[10]) {
     Serial.println("[Motor] ping called.");
     // Send a payload containing any data and the device will respond with the same data back
     const uint8_t commandID = 31;
@@ -700,7 +700,7 @@ pingResponse ServoMotor::ping(uint8_t pingData[10]) {
     return defaultResponse;
 }
 
-void ServoMotor::controlHallSensorStatistics(uint8_t control) {
+void Servomotor::controlHallSensorStatistics(uint8_t control) {
     Serial.println("[Motor] controlHallSensorStatistics called.");
     // Turn on or off the gathering of statistics for the hall sensors and reset the statistics
     const uint8_t commandID = 32;
@@ -712,7 +712,7 @@ void ServoMotor::controlHallSensorStatistics(uint8_t control) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getHallSensorStatisticsResponse ServoMotor::getHallSensorStatistics() {
+getHallSensorStatisticsResponse Servomotor::getHallSensorStatistics() {
     Serial.println("[Motor] getHallSensorStatistics called.");
     // Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system.
     const uint8_t commandID = 33;
@@ -732,7 +732,7 @@ getHallSensorStatisticsResponse ServoMotor::getHallSensorStatistics() {
     return defaultResponse;
 }
 
-getHallSensorPositionResponse ServoMotor::getPositionRaw() {
+getHallSensorPositionResponse Servomotor::getPositionRaw() {
     // Get the current desired position (which may differ a bit from the actual position as measured by the hall sensors) (Raw version)
     const uint8_t commandID = 34;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -751,7 +751,7 @@ getHallSensorPositionResponse ServoMotor::getPositionRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getPosition() {
+float Servomotor::getPosition() {
     Serial.println("[Motor] getPosition called.");
 
     auto rawResult = getPositionRaw();
@@ -759,7 +759,7 @@ float ServoMotor::getPosition() {
     return convertedResult;
 }
 
-uint8_t ServoMotor::readMultipurposeBuffer() {
+uint8_t Servomotor::readMultipurposeBuffer() {
     Serial.println("[Motor] readMultipurposeBuffer called.");
     // Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)
     const uint8_t commandID = 35;
@@ -779,7 +779,7 @@ uint8_t ServoMotor::readMultipurposeBuffer() {
     return defaultResponse;
 }
 
-void ServoMotor::testMode(uint8_t testMode) {
+void Servomotor::testMode(uint8_t testMode) {
     Serial.println("[Motor] testMode called.");
     // Set a test mode. Set this to 0 for the default operation.
     const uint8_t commandID = 36;
@@ -791,7 +791,7 @@ void ServoMotor::testMode(uint8_t testMode) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getComprehensivePositionResponse ServoMotor::getComprehensivePositionRaw() {
+getComprehensivePositionResponse Servomotor::getComprehensivePositionRaw() {
     // Get the desired motor position, hall sensor position, and external encoder position all in one shot (Raw version)
     const uint8_t commandID = 37;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -810,7 +810,7 @@ getComprehensivePositionResponse ServoMotor::getComprehensivePositionRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getComprehensivePosition() {
+float Servomotor::getComprehensivePosition() {
     Serial.println("[Motor] getComprehensivePosition called.");
 
     auto rawResult = getComprehensivePositionRaw();
@@ -818,7 +818,7 @@ float ServoMotor::getComprehensivePosition() {
     return convertedResult;
 }
 
-getSupplyVoltageResponse ServoMotor::getSupplyVoltageRaw() {
+getSupplyVoltageResponse Servomotor::getSupplyVoltageRaw() {
     // Get the measured voltage of the power supply. (Raw version)
     const uint8_t commandID = 38;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -837,7 +837,7 @@ getSupplyVoltageResponse ServoMotor::getSupplyVoltageRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getSupplyVoltage() {
+float Servomotor::getSupplyVoltage() {
     Serial.println("[Motor] getSupplyVoltage called.");
 
     auto rawResult = getSupplyVoltageRaw();
@@ -845,7 +845,7 @@ float ServoMotor::getSupplyVoltage() {
     return convertedResult;
 }
 
-getMaxPidErrorResponse ServoMotor::getMaxPidErrorRaw() {
+getMaxPidErrorResponse Servomotor::getMaxPidErrorRaw() {
     // Get the minimum and maximum error value ovserved in the PID control loop since the last read. (Raw version)
     const uint8_t commandID = 39;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -864,7 +864,7 @@ getMaxPidErrorResponse ServoMotor::getMaxPidErrorRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getMaxPidError() {
+float Servomotor::getMaxPidError() {
     Serial.println("[Motor] getMaxPidError called.");
 
     auto rawResult = getMaxPidErrorRaw();
@@ -872,7 +872,7 @@ float ServoMotor::getMaxPidError() {
     return convertedResult;
 }
 
-void ServoMotor::vibrate(uint8_t vibrationLevel) {
+void Servomotor::vibrate(uint8_t vibrationLevel) {
     Serial.println("[Motor] vibrate called.");
     // Cause the motor to start to vary the voltage quickly and therefore to vibrate (or stop).
     const uint8_t commandID = 40;
@@ -884,7 +884,7 @@ void ServoMotor::vibrate(uint8_t vibrationLevel) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::identify(uint64_t uniqueId) {
+void Servomotor::identify(uint64_t uniqueId) {
     Serial.println("[Motor] identify called.");
     // Identify your motor by sending this command. The motor's green LED will flash rapidly for 3 seconds.
     const uint8_t commandID = 41;
@@ -896,7 +896,7 @@ void ServoMotor::identify(uint64_t uniqueId) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-getTemperatureResponse ServoMotor::getTemperatureRaw() {
+getTemperatureResponse Servomotor::getTemperatureRaw() {
     // Get the measured temperature of the motor. (Raw version)
     const uint8_t commandID = 42;
     _comm.sendCommand(_alias, commandID, nullptr, 0);
@@ -915,7 +915,7 @@ getTemperatureResponse ServoMotor::getTemperatureRaw() {
     return defaultResponse;
 }
 
-float ServoMotor::getTemperature() {
+float Servomotor::getTemperature() {
     Serial.println("[Motor] getTemperature called.");
 
     auto rawResult = getTemperatureRaw();
@@ -923,7 +923,7 @@ float ServoMotor::getTemperature() {
     return convertedResult;
 }
 
-void ServoMotor::setPIDConstants(uint32_t kP, uint32_t kI, uint32_t kD) {
+void Servomotor::setPIDConstants(uint32_t kP, uint32_t kI, uint32_t kD) {
     Serial.println("[Motor] setPIDConstants called.");
     // Set PID constants for the control loop that will try to maintain the motion trajectory.
     const uint8_t commandID = 43;
@@ -937,7 +937,7 @@ void ServoMotor::setPIDConstants(uint32_t kP, uint32_t kI, uint32_t kD) {
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaxAllowablePositionDeviationRaw(int64_t maxAllowablePositionDeviation) {
+void Servomotor::setMaxAllowablePositionDeviationRaw(int64_t maxAllowablePositionDeviation) {
     // Set the amount of microsteps that the actual motor position (as measured by the hall sensors) is allowed to deviate from the desired position. Throw a fatal error if this is exceeded. (Raw version)
     const uint8_t commandID = 44;
     setMaxAllowablePositionDeviationPayload payload;
@@ -948,7 +948,7 @@ void ServoMotor::setMaxAllowablePositionDeviationRaw(int64_t maxAllowablePositio
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
 }
 
-void ServoMotor::setMaxAllowablePositionDeviation(float maxAllowablePositionDeviation) {
+void Servomotor::setMaxAllowablePositionDeviation(float maxAllowablePositionDeviation) {
     Serial.println("[Motor] setMaxAllowablePositionDeviation called.");
     Serial.print("  maxAllowablePositionDeviation in chosen unit: "); Serial.println(maxAllowablePositionDeviation);
 
@@ -956,7 +956,7 @@ void ServoMotor::setMaxAllowablePositionDeviation(float maxAllowablePositionDevi
     setMaxAllowablePositionDeviationRaw((int64_t)(maxAllowablePositionDeviation_internal));
 }
 
-getDebugValuesResponse ServoMotor::getDebugValues() {
+getDebugValuesResponse Servomotor::getDebugValues() {
     Serial.println("[Motor] getDebugValues called.");
     // Get debug values including motor control parameters, profiler times, hall sensor data, and other diagnostic information.
     const uint8_t commandID = 45;

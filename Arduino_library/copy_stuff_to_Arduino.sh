@@ -35,16 +35,27 @@ CORE_FILES=(
 # Create standard Arduino library directories
 mkdir -p "$DEST_DIR/src"
 
-# Copy each file and report
-echo "Copying library files to $DEST_DIR/src:"
+# Copy implementation files (.cpp) to src directory only
+# Copy header files (.h) to both root and src directory
+echo "Copying library files..."
 for FILE in "${CORE_FILES[@]}"; do
     if [ -f "$FILE" ]; then
-        cp "$FILE" "$DEST_DIR/src"
-        # Also copy header files to root dir for compatibility
-        if [[ "$FILE" == *.h ]]; then
+        if [[ "$FILE" == *.cpp ]]; then
+            # Copy .cpp files to src/ only
+            cp "$FILE" "$DEST_DIR/src"
+            echo "  ✅ $FILE (copied to src/)"
+        elif [[ "$FILE" == *.h ]]; then
+            # Copy .h files to both root and src/
+            cp "$FILE" "$DEST_DIR/src"
             cp "$FILE" "$DEST_DIR"
-            echo "  ✅ $FILE (copied to both src/ and root)"
+            echo "  ✅ $FILE (copied to both root and src/)"
+        elif [[ "$FILE" == "library.properties" || "$FILE" == "README.md" ]]; then
+            # These files go to root only
+            cp "$FILE" "$DEST_DIR"
+            echo "  ✅ $FILE (copied to root)"
         else
+            # Other files go to src/
+            cp "$FILE" "$DEST_DIR/src"
             echo "  ✅ $FILE (copied to src/)"
         fi
     else

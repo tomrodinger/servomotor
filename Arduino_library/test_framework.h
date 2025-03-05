@@ -34,7 +34,7 @@ private:
 };
 
 // Function to check for motor errors and exit if an error is found
-void checkMotorError(ServoMotor& motor, const std::string& commandName);
+void checkMotorError(Servomotor& motor, const std::string& commandName);
 
 // Macro to help with test reporting
 #define TEST_RESULT(name, condition) \

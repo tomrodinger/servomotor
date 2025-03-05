@@ -253,9 +253,9 @@ typedef struct __attribute__((__packed__)) {
     uint8_t motorPwmVoltage;
 } getDebugValuesResponse;
 
-class ServoMotor {
+class Servomotor {
 public:
-    ServoMotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
+    Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
     void setAlias(uint8_t new_alias);
     uint8_t getAlias();
     void openSerialPort();

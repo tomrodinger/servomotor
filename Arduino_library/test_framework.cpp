@@ -24,7 +24,7 @@ const char* getErrorMessage(int errorCode) {
     }
 }
 
-void checkMotorError(ServoMotor& motor, const std::string& commandName) {
+void checkMotorError(Servomotor& motor, const std::string& commandName) {
     int error = motor.getError();
     if (error != 0) {
         std::cerr << "\nERROR: Motor failed to respond to " << commandName << " command.\n";

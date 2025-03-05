@@ -5,8 +5,8 @@ void setup() {
     Serial.begin(115200);  // For debug output
     Serial.println("test_get_temperature: BEGIN\n");
 
-    // Create a ServoMotor instance
-    ServoMotor motor('X', Serial1);  // Initialize with alias 'X' and Serial1 port
+    // Create a Servomotor instance
+    Servomotor motor('X', Serial1);  // Initialize with alias 'X' and Serial1 port
 
     // Test 1: Direct temperature reading in Celsius
     float celsius = motor.getTemperature();  // Default is Celsius

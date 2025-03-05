@@ -1,9 +1,9 @@
 #include "Servomotor.h"
 
-// Create ServoMotor instance on the stack
+// Create Servomotor instance on the stack
 // This is safe because ArduinoEmulator.cpp ensures Serial1 is initialized
 // before setup() is called, and exits if initialization fails
-ServoMotor motor('X', Serial1);
+Servomotor motor('X', Serial1);
 
 void setup() {
     Serial.begin(115200);  // Debugging port at 115200 baud

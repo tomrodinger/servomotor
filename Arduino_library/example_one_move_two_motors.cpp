@@ -1,8 +1,8 @@
 #include "Servomotor.h"
 
 // Create two motors that share the same serial bus
-ServoMotor motorX('X', Serial1);
-ServoMotor motorY('Y', Serial1);
+Servomotor motorX('X', Serial1);
+Servomotor motorY('Y', Serial1);
 
 void setup() {
     Serial.begin(115200);  // Debugging port at 115200 baud

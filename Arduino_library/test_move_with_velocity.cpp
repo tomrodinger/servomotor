@@ -5,8 +5,8 @@ void setup() {
     Serial.begin(115200);  // For debug output
     Serial.println("test_move_with_velocity: BEGIN\n");
 
-    // Create a ServoMotor instance
-    ServoMotor motor('X', Serial1);  // Initialize with alias 'X' and Serial1 port
+    // Create a Servomotor instance
+    Servomotor motor('X', Serial1);  // Initialize with alias 'X' and Serial1 port
 
     // Reset system to get to a known state
     motor.systemReset();
