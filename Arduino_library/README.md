@@ -228,8 +228,8 @@ Each test program requires:
     - ✅ Created proper Arduino library directory structure with src/ and examples/ folders
 
 8. **Test the Arduino library on an actual Arduino board such as ESP32-C3**
-   - see if it compiles
-   - see if it can control an actual motor
+   - ✅ see if it compiles
+   - ✅ see if it can control an actual motor
 
 9. **Create more Arduino examples**
     - Create additional simple examples for common use cases

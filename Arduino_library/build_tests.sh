@@ -14,6 +14,7 @@ g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_enable_disable_mosfets.cpp $COMMON_
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_emergency_stop.cpp $COMMON_SOURCES -o test_emergency_stop
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_move_with_velocity.cpp $COMMON_SOURCES -o test_move_with_velocity
 g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_move_with_acceleration.cpp $COMMON_SOURCES -o test_move_with_acceleration
+g++ $COMMON_FLAGS -DREQUIRE_SERIAL_PORT test_get_comprehensive_position.cpp $COMMON_SOURCES -o test_get_comprehensive_position
 
 # Build tests that don't require serial port
 g++ $COMMON_FLAGS test_unit_conversions.cpp $COMMON_SOURCES -o test_unit_conversions

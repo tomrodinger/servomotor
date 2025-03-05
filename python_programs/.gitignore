@@ -14,3 +14,5 @@
 *.bak13
 *.bak14
 *.bak15
+servomotor_simulator.py
+.saved_vscode_terminal_sessions

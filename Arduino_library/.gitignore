@@ -32,3 +32,4 @@ test_move_with_velocity
 example_one_move
 example_one_move_two_motors
 test_unit_conversions
+test_get_comprehensive_position
