@@ -170,14 +170,14 @@ void testCurrentConversions() {
     {
         float val = 1.0f;
         float out = convertCurrentBetweenUnits(val, CurrentUnit::MILLIAMPS, CurrentUnit::AMPS);
-        // 1 mA => 1 A with 1:1 conversion
-        testConversion("Current: 1mA -> 1A", out, 1.0f, 0.001f);
+        // 1 mA => 0.001 A (1000 mA = 1 A)
+        testConversion("Current: 1mA -> 0.001A", out, 0.001f, 0.0001f);
     }
     {
         float val = 2.5f;
         float out = convertCurrentBetweenUnits(val, CurrentUnit::AMPS, CurrentUnit::MILLIAMPS);
-        // 2.5 A => 2.5 mA with 1:1 conversion
-        testConversion("Current: 2.5A -> 2.5mA", out, 2.5f, 0.1f);
+        // 2.5 A => 2500 mA (1 A = 1000 mA)
+        testConversion("Current: 2.5A -> 2500mA", out, 2500.0f, 1.0f);
     }
     Serial.println();
 }
@@ -187,14 +187,14 @@ void testVoltageConversions() {
     {
         float val = 12.0f;
         float out = convertVoltageBetweenUnits(val, VoltageUnit::VOLTS, VoltageUnit::MILLIVOLTS);
-        // 12 V => 12 mV with 1:1 conversion
-        testConversion("Voltage: 12V -> 12mV", out, 12.0f, 1.0f);
+        // 12 V => 12000 mV (1 V = 1000 mV)
+        testConversion("Voltage: 12V -> 12000mV", out, 12000.0f, 1.0f);
     }
     {
         float val = 5.0f;
         float out = convertVoltageBetweenUnits(val, VoltageUnit::MILLIVOLTS, VoltageUnit::VOLTS);
-        // 5 mV => 5.0 V with 1:1 conversion
-        testConversion("Voltage: 5mV -> 5V", out, 5.0f, 0.001f);
+        // 5 mV => 0.005 V (1000 mV = 1 V)
+        testConversion("Voltage: 5mV -> 0.005V", out, 0.005f, 0.0001f);
     }
     Serial.println();
 }

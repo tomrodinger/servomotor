@@ -26,6 +26,9 @@ def main(json_filename):
 
     units_dict = data["units"]              # e.g. {"time": [...], "position": [...], ...}
     factors = data["conversion_factors"]    # e.g. { "seconds": 31250.0, "milliseconds": 31.25, ... }
+    
+    # Check if there are conversion_offsets in the data
+    conversion_offsets = data.get("conversion_offsets", {})
 
     # Write .h file
     with open(H_FILENAME, 'w') as hf:
@@ -39,6 +42,33 @@ def main(json_filename):
         counts_per_revolution = int(factors.get("shaft_rotations", 3276800))
         hf.write(f"// Define the number of encoder counts per revolution\n")
         hf.write(f"#define COUNTS_PER_REVOLUTION {counts_per_revolution}\n\n")
+
+        # Add conversion factor definitions
+        hf.write("// Conversion factors for all units\n")
+        
+        # Group factors by category for better organization
+        category_factors = {}
+        for category, unit_list in units_dict.items():
+            category_factors[category] = {}
+            for unit in unit_list:
+                if unit in factors:
+                    category_factors[category][unit] = factors[unit]
+        
+        # Write the #defines for each category
+        for category, unit_factors in category_factors.items():
+            hf.write(f"// {category.capitalize()} conversion factors\n")
+            for unit, factor in unit_factors.items():
+                define_name = f"CONVERSION_FACTOR_{unit.upper().replace(' ', '_')}"
+                hf.write(f"#define {define_name} {factor:.9f}f\n")
+            hf.write("\n")
+        
+        # Add conversion offset definitions if they exist
+        if conversion_offsets:
+            hf.write("// Conversion offsets for complex conversions\n")
+            for offset_name, offset_value in conversion_offsets.items():
+                define_name = f"CONVERSION_OFFSET_{offset_name.upper().replace(' ', '_')}"
+                hf.write(f"#define {define_name} {offset_value:.9f}f\n")
+            hf.write("\n")
 
         # Add ConversionDirection enum
         hf.write("// Enum to specify the direction of unit conversion\n")
@@ -81,59 +111,107 @@ def main(json_filename):
             cf.write(f"float {func_name}(float value, {enum_name} unit, ConversionDirection direction)\n")
             cf.write("{\n")
 
-            # Handle temperature specially with offset-based conversions
-            if category == "temperature":
-                cf.write("    // Temperature conversions: celsius <-> fahrenheit <-> kelvin\n")
-                cf.write("    // Internal unit is CELSIUS\n\n")
-                cf.write("    if (direction == ConversionDirection::TO_INTERNAL) {\n")
-                cf.write("        // Convert from user unit to internal unit (CELSIUS)\n")
-                cf.write("        switch (unit) {\n")
-                cf.write("            case TemperatureUnit::CELSIUS:\n")
-                cf.write("                return value; // Already in internal unit\n")
-                cf.write("            case TemperatureUnit::FAHRENHEIT:\n")
-                cf.write("                return (value - 32.0f) * (5.0f/9.0f);\n")
-                cf.write("            case TemperatureUnit::KELVIN:\n")
-                cf.write("                return value - 273.15f;\n")
-                cf.write("            default:\n")
-                cf.write("                return 0.0f; // Invalid unit\n")
-                cf.write("        }\n")
-                cf.write("    } else {\n")
-                cf.write("        // Convert from internal unit (CELSIUS) to user unit\n")
-                cf.write("        switch (unit) {\n")
-                cf.write("            case TemperatureUnit::CELSIUS:\n")
-                cf.write("                return value; // Already in user unit\n")
-                cf.write("            case TemperatureUnit::FAHRENHEIT:\n")
-                cf.write("                return (value * 9.0f/5.0f) + 32.0f;\n")
-                cf.write("            case TemperatureUnit::KELVIN:\n")
-                cf.write("                return value + 273.15f;\n")
-                cf.write("            default:\n")
-                cf.write("                return 0.0f; // Invalid unit\n")
-                cf.write("        }\n")
-                cf.write("    }\n")
-                cf.write("}\n\n")
-                continue
-
-            # For other categories, handle direct conversion based on direction
-            cf.write("    switch (unit) {\n")
+            # Generate a unified conversion function that handles both simple and complex conversions
+            cf.write("    // Handle both simple conversions (multiplication/division) and complex conversions (with offsets)\n")
+            cf.write("    float result = 0.0f;\n\n")
             
+            cf.write("    // Step 1: Convert from user unit to internal unit if needed\n")
+            cf.write("    if (direction == ConversionDirection::TO_INTERNAL) {\n")
+            cf.write("        switch (unit) {\n")
+            
+            # Generate cases for TO_INTERNAL direction
             for u in unit_list:
                 enumerator = u.upper().replace(" ", "_")
-                factor = factors.get(u, 1.0)
+                define_name = f"CONVERSION_FACTOR_{enumerator}"
                 
-                # Use the conversion factor directly from the JSON file
+                cf.write(f"            case {enum_name}::{enumerator}:\n")
                 
-                cf.write(f"        case {enum_name}::{enumerator}:\n")
+                # Check if there's a corresponding offset for this unit to internal
+                offset_name = f"{u.lower()}_to_{internal_unit.lower()}"
+                offset_define = f"CONVERSION_OFFSET_{offset_name.upper().replace(' ', '_')}"
                 
-                # Always convert based on direction
-                cf.write("            if (direction == ConversionDirection::TO_INTERNAL) {\n")
-                cf.write(f"                return value * {factor:.9f}; // Convert to internal unit\n")
-                cf.write("            } else {\n")
-                cf.write(f"                return value / {factor:.9f}; // Convert from internal unit\n")
-                cf.write("            }\n")
+                # Get the factor value to check if it's 1.0
+                factor_value = factors.get(u, 1.0)
                 
-            cf.write("        default:\n")
-            cf.write("            return 0.0f; // Invalid unit\n")
+                if offset_name in conversion_offsets:
+                    # Get the offset value to check if it's 0.0
+                    offset_value = conversion_offsets.get(offset_name, 0.0)
+                    
+                    if abs(factor_value - 1.0) < 1e-6 and abs(offset_value) < 1e-6:
+                        # Both factor is 1.0 and offset is 0.0, no operation needed
+                        cf.write(f"                result = value; // No conversion needed\n")
+                    elif abs(factor_value - 1.0) < 1e-6:
+                        # Factor is 1.0, only apply offset
+                        cf.write(f"                result = value + {offset_define};\n")
+                    elif abs(offset_value) < 1e-6:
+                        # Offset is 0.0, only apply factor
+                        cf.write(f"                result = value * {define_name};\n")
+                    else:
+                        # Apply both offset and factor
+                        cf.write(f"                result = (value + {offset_define}) * {define_name};\n")
+                    cf.write(f"                break;\n")
+                else:
+                    # No offset, check if factor is 1.0
+                    if abs(factor_value - 1.0) < 1e-6:
+                        cf.write(f"                result = value; // Factor is 1.0, no conversion needed\n")
+                    else:
+                        cf.write(f"                result = value * {define_name};\n")
+                    cf.write(f"                break;\n")
+            
+            cf.write("            default:\n")
+            cf.write("                return 0.0f; // Invalid unit\n")
+            cf.write("        }\n")
             cf.write("    }\n")
+            
+            cf.write("    // Step 2: Convert from internal unit to user unit if needed\n")
+            cf.write("    else { // direction == ConversionDirection::FROM_INTERNAL\n")
+            cf.write("        switch (unit) {\n")
+            
+            # Generate cases for FROM_INTERNAL direction
+            for u in unit_list:
+                enumerator = u.upper().replace(" ", "_")
+                define_name = f"CONVERSION_FACTOR_{enumerator}"
+                
+                cf.write(f"            case {enum_name}::{enumerator}:\n")
+                
+                # Check if there's a corresponding offset for internal to this unit
+                offset_name = f"{internal_unit.lower()}_to_{u.lower()}"
+                offset_define = f"CONVERSION_OFFSET_{offset_name.upper().replace(' ', '_')}"
+                
+                # Get the factor value to check if it's 1.0
+                factor_value = factors.get(u, 1.0)
+                
+                if offset_name in conversion_offsets:
+                    # Get the offset value to check if it's 0.0
+                    offset_value = conversion_offsets.get(offset_name, 0.0)
+                    
+                    if abs(factor_value - 1.0) < 1e-6 and abs(offset_value) < 1e-6:
+                        # Both factor is 1.0 and offset is 0.0, no operation needed
+                        cf.write(f"                result = value; // No conversion needed\n")
+                    elif abs(factor_value - 1.0) < 1e-6:
+                        # Factor is 1.0, only apply offset
+                        cf.write(f"                result = value + {offset_define};\n")
+                    elif abs(offset_value) < 1e-6:
+                        # Offset is 0.0, only apply factor
+                        cf.write(f"                result = value / {define_name};\n")
+                    else:
+                        # Apply both offset and factor
+                        cf.write(f"                result = (value / {define_name}) + {offset_define};\n")
+                    cf.write(f"                break;\n")
+                else:
+                    # No offset, check if factor is 1.0
+                    if abs(factor_value - 1.0) < 1e-6:
+                        cf.write(f"                result = value; // Factor is 1.0, no conversion needed\n")
+                    else:
+                        cf.write(f"                result = value / {define_name};\n")
+                    cf.write(f"                break;\n")
+            
+            cf.write("            default:\n")
+            cf.write("                return 0.0f; // Invalid unit\n")
+            cf.write("        }\n")
+            cf.write("    }\n")
+            
+            cf.write("    return result;\n")
             cf.write("}\n\n")
 
     print(f"Generated {H_FILENAME} and {CPP_FILENAME} successfully.")

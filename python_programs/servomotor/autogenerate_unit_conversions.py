@@ -350,10 +350,126 @@ def calculate_position_conversions(ONE_ROTATION_MICROSTEPS):
 
     return position_factors, position_verification
 
-def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verification, 
-                                 position_factors, position_verification,
-                                 time_factors, time_verification,
-                                 acceleration_factors, acceleration_verification):
+def calculate_current_conversions():
+    """Calculate current unit conversion factors"""
+    print("\nCalculating current unit conversions...")
+    
+    # Internal current units to milliamps and amps
+    print("\nCurrent Conversion Calculation:")
+    
+    # Define the conversion factors
+    # The internal unit is a non-standard unit where 390 internal units = 2A
+    internal_current_factor = 1.0
+    milliamps_factor = 0.195  # 1mA = 0.195 internal units
+    amps_factor = 195.0       # 1A = 195 internal units
+    
+    print(f"1. Internal current unit = {internal_current_factor}")
+    print(f"2. Milliamps factor = {milliamps_factor} (1mA = 0.195 internal units)")
+    print(f"3. Amps factor = {amps_factor} (1A = 195 internal units)")
+    
+    # Store current conversion factors
+    current_factors = {
+        "internal_current_units": internal_current_factor,
+        "milliamps": milliamps_factor,
+        "amps": amps_factor
+    }
+    
+    # Calculate current verification values
+    current_verification = {
+        "2_amps": 2 * amps_factor,
+        "1_amp": 1 * amps_factor,
+        "1000_milliamps": 1000 * milliamps_factor
+    }
+    
+    return current_factors, current_verification
+
+def calculate_voltage_conversions():
+    """Calculate voltage unit conversion factors"""
+    print("\nCalculating voltage unit conversions...")
+    
+    # Millivolts and volts to internal units
+    print("\nVoltage Conversion Calculation:")
+    
+    # Define the conversion factors
+    # The internal unit is tenths of a volt (245 internal units = 24.5V)
+    millivolts_factor = 0.01  # 1mV = 0.01 internal units
+    volts_factor = 10.0       # 1V = 10 internal units
+    
+    print(f"1. Millivolts factor = {millivolts_factor} (1mV = 0.01 internal units)")
+    print(f"2. Volts factor = {volts_factor} (1V = 10 internal units)")
+    
+    # Store voltage conversion factors
+    voltage_factors = {
+        "millivolts": millivolts_factor,
+        "volts": volts_factor
+    }
+    
+    # Calculate voltage verification values
+    voltage_verification = {
+        "24.5_volts": 24.5 * volts_factor,
+        "1_volt": 1 * volts_factor,
+        "1000_millivolts": 1000 * millivolts_factor
+    }
+    
+    return voltage_factors, voltage_verification
+
+def calculate_temperature_conversions():
+    """Calculate temperature unit conversion factors and offsets"""
+    print("\nCalculating temperature unit conversions...")
+    
+    # Temperature conversions
+    print("\nTemperature Conversion Calculation:")
+    
+    # Define the conversion factors
+    celsius_factor = 1.0
+    fahrenheit_factor = 5.0/9.0  # Multiply by this to convert F to C
+    kelvin_factor = 1.0  # Kelvin has the same scale as Celsius, just with an offset
+    
+    # Define the conversion offsets
+    fahrenheit_to_celsius_offset = -32.0
+    celsius_to_fahrenheit_offset = 32.0
+    kelvin_to_celsius_offset = -273.15
+    celsius_to_kelvin_offset = 273.15
+    
+    print(f"1. Celsius factor = {celsius_factor}")
+    print(f"2. Fahrenheit factor = {fahrenheit_factor}")
+    print(f"3. Kelvin factor = {kelvin_factor}")
+    print(f"4. Fahrenheit to Celsius offset = {fahrenheit_to_celsius_offset}")
+    print(f"5. Celsius to Fahrenheit offset = {celsius_to_fahrenheit_offset}")
+    print(f"6. Kelvin to Celsius offset = {kelvin_to_celsius_offset}")
+    print(f"7. Celsius to Kelvin offset = {celsius_to_kelvin_offset}")
+    
+    # Store temperature conversion factors
+    temperature_factors = {
+        "celsius": celsius_factor,
+        "fahrenheit": fahrenheit_factor,
+        "kelvin": kelvin_factor
+    }
+    
+    # Store temperature conversion offsets
+    temperature_offsets = {
+        "fahrenheit_to_celsius": fahrenheit_to_celsius_offset,
+        "celsius_to_fahrenheit": celsius_to_fahrenheit_offset,
+        "kelvin_to_celsius": kelvin_to_celsius_offset,
+        "celsius_to_kelvin": celsius_to_kelvin_offset
+    }
+    
+    # Calculate temperature verification values
+    temperature_verification = {
+        "25C_to_77F": (25 * 9.0/5.0) + 32.0,
+        "32F_to_0C": (32 - 32) * 5.0/9.0,
+        "0C_to_273.15K": 0 + 273.15
+    }
+    
+    return temperature_factors, temperature_offsets, temperature_verification
+
+def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verification,
+                                  position_factors, position_verification,
+                                  time_factors, time_verification,
+                                  acceleration_factors, acceleration_verification,
+                                  current_factors, current_verification,
+                                  voltage_factors, voltage_verification,
+                                  temperature_factors, temperature_offsets, temperature_verification):
     """Generate the combined unit conversions JSON file"""
     
     data = OrderedDict([
@@ -370,7 +486,7 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
             ("position", ["shaft_rotations", "degrees", "radians", "encoder_counts"]),
             ("velocity", ["rotations_per_second", "rpm", "degrees_per_second", "radians_per_second", "counts_per_second", "counts_per_timestep"]),
             ("acceleration", ["rotations_per_second_squared", "rpm_per_second", "degrees_per_second_squared", "radians_per_second_squared", "counts_per_second_squared", "counts_per_timestep_squared"]),
-            ("current", ["arbitrary_units", "milliamps", "amps"]),
+            ("current", ["internal_current_units", "milliamps", "amps"]),  # Renamed from arbitrary_units to internal_current_units
             ("voltage", ["millivolts", "volts"]),
             ("temperature", ["celsius", "fahrenheit", "kelvin"])
         ])),
@@ -398,7 +514,25 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
             ("degrees_per_second_squared", acceleration_factors["degrees_per_second_squared"]),
             ("radians_per_second_squared", acceleration_factors["radians_per_second_squared"]),
             ("counts_per_second_squared", acceleration_factors["counts_per_second_squared"]),
-            ("counts_per_timestep_squared", acceleration_factors["counts_per_timestep_squared"])
+            ("counts_per_timestep_squared", acceleration_factors["counts_per_timestep_squared"]),
+            # Current factors
+            ("internal_current_units", current_factors["internal_current_units"]),
+            ("milliamps", current_factors["milliamps"]),
+            ("amps", current_factors["amps"]),
+            # Voltage factors
+            ("millivolts", voltage_factors["millivolts"]),
+            ("volts", voltage_factors["volts"]),
+            # Temperature factors
+            ("celsius", temperature_factors["celsius"]),
+            ("fahrenheit", temperature_factors["fahrenheit"]),
+            ("kelvin", temperature_factors["kelvin"])
+        ])),
+        ("conversion_offsets", OrderedDict([
+            # Temperature offsets
+            ("fahrenheit_to_celsius", temperature_offsets["fahrenheit_to_celsius"]),
+            ("celsius_to_fahrenheit", temperature_offsets["celsius_to_fahrenheit"]),
+            ("kelvin_to_celsius", temperature_offsets["kelvin_to_celsius"]),
+            ("celsius_to_kelvin", temperature_offsets["celsius_to_kelvin"])
         ])),
         ("verification", OrderedDict([
             ("velocity", OrderedDict([
@@ -426,6 +560,30 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
             ("acceleration", OrderedDict([
                 ("note", "All these values should be approximately equal as they represent 1 rotation per second squared"),
                 ("values", acceleration_verification)
+            ])),
+            ("current", OrderedDict([
+                ("note", "These values represent the conversion between different current units"),
+                ("values", OrderedDict([
+                    ("2_amps", current_verification["2_amps"]),
+                    ("1_amp", current_verification["1_amp"]),
+                    ("1000_milliamps", current_verification["1000_milliamps"])
+                ]))
+            ])),
+            ("voltage", OrderedDict([
+                ("note", "These values represent the conversion between different voltage units"),
+                ("values", OrderedDict([
+                    ("24.5_volts", voltage_verification["24.5_volts"]),
+                    ("1_volt", voltage_verification["1_volt"]),
+                    ("1000_millivolts", voltage_verification["1000_millivolts"])
+                ]))
+            ])),
+            ("temperature", OrderedDict([
+                ("note", "These values represent the conversion between different temperature units"),
+                ("values", OrderedDict([
+                    ("25C_to_77F", temperature_verification["25C_to_77F"]),
+                    ("32F_to_0C", temperature_verification["32F_to_0C"]),
+                    ("0C_to_273.15K", temperature_verification["0C_to_273.15K"])
+                ]))
             ]))
         ]))
     ])
@@ -478,6 +636,15 @@ def main():
     # Calculate acceleration conversion factors
     acceleration_factors, acceleration_verification = calculate_acceleration_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_HZ)
     
+    # Calculate current conversion factors
+    current_factors, current_verification = calculate_current_conversions()
+    
+    # Calculate voltage conversion factors
+    voltage_factors, voltage_verification = calculate_voltage_conversions()
+    
+    # Calculate temperature conversion factors and offsets
+    temperature_factors, temperature_offsets, temperature_verification = calculate_temperature_conversions()
+    
     # Generate combined JSON file
     output_file = generate_unit_conversions_json(
         args.motor_type,
@@ -488,7 +655,14 @@ def main():
         time_factors,
         time_verification,
         acceleration_factors,
-        acceleration_verification
+        acceleration_verification,
+        current_factors,
+        current_verification,
+        voltage_factors,
+        voltage_verification,
+        temperature_factors,
+        temperature_offsets,
+        temperature_verification
     )
     
     # Print final results
@@ -547,6 +721,47 @@ def main():
     print(f"360 degrees/second²:     {acceleration_verification['360_degrees_per_second_squared']:,.6f}")
     print(f"2π radians/second²:      {acceleration_verification['2pi_radians_per_second_squared']:,.6f}")
     print(f"3276800 counts/second²:  {acceleration_verification['one_rotation_counts_per_second_squared']:,.6f}")
+    
+    print("\nCurrent Conversion Factors:")
+    print("-------------------------")
+    print(f"Internal current units:              {current_factors['internal_current_units']:,.6f}")
+    print(f"Milliamps to internal units:         {current_factors['milliamps']:,.6f}")
+    print(f"Amps to internal units:              {current_factors['amps']:,.6f}")
+    
+    print("\nVoltage Conversion Factors:")
+    print("-------------------------")
+    print(f"Millivolts to internal units:        {voltage_factors['millivolts']:,.6f}")
+    print(f"Volts to internal units:             {voltage_factors['volts']:,.6f}")
+    
+    print("\nTemperature Conversion Factors:")
+    print("-------------------------")
+    print(f"Celsius factor:                      {temperature_factors['celsius']:,.6f}")
+    print(f"Fahrenheit factor:                   {temperature_factors['fahrenheit']:,.6f}")
+    
+    print("\nTemperature Conversion Offsets:")
+    print("-------------------------")
+    print(f"Fahrenheit to Celsius offset:        {temperature_offsets['fahrenheit_to_celsius']:,.6f}")
+    print(f"Celsius to Fahrenheit offset:        {temperature_offsets['celsius_to_fahrenheit']:,.6f}")
+    print(f"Kelvin to Celsius offset:            {temperature_offsets['kelvin_to_celsius']:,.6f}")
+    print(f"Celsius to Kelvin offset:            {temperature_offsets['celsius_to_kelvin']:,.6f}")
+    
+    print("\nCurrent Verification:")
+    print("------------------------------------------------")
+    print(f"2 amps:                  {current_verification['2_amps']:,.6f}")
+    print(f"1 amp:                   {current_verification['1_amp']:,.6f}")
+    print(f"1000 milliamps:          {current_verification['1000_milliamps']:,.6f}")
+    
+    print("\nVoltage Verification:")
+    print("------------------------------------------------")
+    print(f"24.5 volts:              {voltage_verification['24.5_volts']:,.6f}")
+    print(f"1 volt:                  {voltage_verification['1_volt']:,.6f}")
+    print(f"1000 millivolts:         {voltage_verification['1000_millivolts']:,.6f}")
+    
+    print("\nTemperature Verification:")
+    print("------------------------------------------------")
+    print(f"25°C to Fahrenheit:      {temperature_verification['25C_to_77F']:,.6f}°F")
+    print(f"32°F to Celsius:         {temperature_verification['32F_to_0C']:,.6f}°C")
+    print(f"0°C to Kelvin:           {temperature_verification['0C_to_273.15K']:,.6f}K")
 
 if __name__ == "__main__":
     main()
