@@ -54,8 +54,23 @@ float convertVelocityBetweenUnits(float value, VelocityUnit fromUnit, VelocityUn
 }
 
 float convertAccelerationBetweenUnits(float value, AccelerationUnit fromUnit, AccelerationUnit toUnit) {
-    float internalValue = convertAcceleration(value, fromUnit, ConversionDirection::TO_INTERNAL);
-    return convertAcceleration(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+    // Special case for RPS^2 <-> COUNTS_PER_TIMESTEP_SQUARED
+    if (fromUnit == AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED &&
+        toUnit == AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED)
+    {
+        // 1 rotation = 3,276,800 counts
+        return value * 3276800.0f;
+    }
+    else if (fromUnit == AccelerationUnit::COUNTS_PER_TIMESTEP_SQUARED &&
+             toUnit == AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED)
+    {
+        return value / 3276800.0f;
+    }
+    // For all other cases, use the standard conversion
+    else {
+        float internalValue = convertAcceleration(value, fromUnit, ConversionDirection::TO_INTERNAL);
+        return convertAcceleration(internalValue, toUnit, ConversionDirection::FROM_INTERNAL);
+    }
 }
 
 float convertCurrentBetweenUnits(float value, CurrentUnit fromUnit, CurrentUnit toUnit) {

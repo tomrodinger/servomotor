@@ -208,11 +208,12 @@ Each test program requires:
    - Fix the conversion factors for current and voltage in the unit_conversions_M3.json file. Currently, these factors are missing or incorrect, resulting in a factor of 1.0 being used.
 
 3. **Fix Some Problems With Servomotor.cpp, or Rather the Program that Generates this File, Which is generate_command_code.py**
-   - getComprehensivePosition obviously will return zeros, which is wrong. Seems the autogeneration program does not know how to convert this
-   - getMaxPidError has the same problem
+   - ✅ getComprehensivePosition obviously will return zeros, which is wrong. Seems the autogeneration program does not know how to convert this
+   - ✅ getMaxPidError has the same problem
 
 4. **Fix the Multimove Function**
    - The moveList parameter currently is of type uint8_t, which looks wrong. We need to be able to give it a list of move velocities or accelerations (based on the bits in moveTypes) and the move times
+   - write a new test called test_multi_move.cpp to test that the command works correctly
 
 5. ✅ **Rename ServomotorCommands.cpp to Servomotor.cpp** (Completed)
    - ✅ Renamed ServomotorCommands.h to Servomotor.h
@@ -238,6 +239,14 @@ Each test program requires:
 
 10. **Launch this Arduino library into the Arduino marketplace**
     - Anyone should be able to get it and easily use it
+
+11. **Revamp the test_unit_conversion.cpp test**
+    - this test should do unit conversions in one direction (given unit to internal unit) and in the other direction (internal to given unit)
+    - it should check the converted value against the validation numbers in the ../python_programs/servomotor/unit_conversions_M3.json file
+    - the test should read in the above json file on the fly to get all units to be tested as well as the validation values
+
+12. **Clean up magic numbers in the tests**
+   - many values look like magic numbers but are just a multiple of the MICROSTEPS_PER_ROTATION, so we should place a #define in the test for the MICROSTEPS_PER_ROTATION and then derive validation number based on this
 
 ## License
 

@@ -5,6 +5,10 @@
 #include <cmath>
 #include "Servomotor.h"
 
+// Define the number of encoder counts per revolution
+// This value is used in multiple tests for position, velocity, and acceleration calculations
+#define COUNTS_PER_REVOLUTION 3276800
+
 // Helper function to check if two floats are approximately equal
 inline bool approxEqual(float a, float b, float tolerance = 0.01f) {
     return std::fabs(a - b) <= tolerance;
