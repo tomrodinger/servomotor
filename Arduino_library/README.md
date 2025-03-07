@@ -128,6 +128,105 @@ motor.moveWithAcceleration(2.0f, 1.0f);  // 2 rotations/sec² for 1 second
 motor.moveWithAcceleration(-2.0f, 1.0f);  // -2 rotations/sec² for 1 second
 ```
 
+**Using multiMove for Complex Motion Sequences:**
+The multiMove function allows you to queue multiple velocity and acceleration moves in a single command. This is useful for creating complex motion sequences without having to send multiple commands.
+
+There are two versions of the multiMove function:
+- `multiMove`: Handles unit conversions based on your configured units
+- `multiMoveRaw`: Uses raw internal units without conversion
+
+The library provides two structures for defining move sequences:
+1. `multiMoveListConverted_t`: For user-friendly units with floating-point values
+   ```cpp
+   typedef struct {
+       float value;       // velocity or acceleration in user units
+       float duration;    // duration in user units (seconds, milliseconds, etc.)
+   } multiMoveListConverted_t;
+   ```
+
+2. `multiMoveList_t`: For raw internal units
+   ```cpp
+   typedef struct {
+       int32_t value;     // acceleration or velocity value (internal units)
+       uint32_t timeSteps; // duration in time steps (internal units)
+   } multiMoveList_t;
+   ```
+
+Example with multiMove (using user units):
+```cpp
+// Create a sequence of moves
+const uint8_t multiMoveCount = 4;
+uint32_t multiMoveTypes = 0b1001;  // 1st and 4th are velocity moves, 2nd and 3rd are acceleration moves
+
+// Create move list with user units
+multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    {2.0f, 1.0f},    // Velocity move: 2 rot/sec for 1 sec
+    {2.0f, 1.0f},    // Acceleration move: 2 rot/sec² for 1 sec
+    {-2.0f, 1.0f},   // Acceleration move: -2 rot/sec² for 1 sec
+    {0.0f, 0.1f}     // Velocity move: 0 rot/sec for 0.1 sec (stop)
+};
+
+// Execute the multi-move sequence with automatic unit conversion
+motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+```
+
+Example with multiMoveRaw (using internal units):
+```cpp
+// Create a sequence of moves
+const uint8_t multiMoveCount = 2;
+uint32_t multiMoveTypes = 0b11;  // Both are velocity moves
+
+// Create move list with internal units
+// For velocity: CONVERSION_FACTOR_ROTATIONS_PER_SECOND = 109951162.777600005f
+// For time: CONVERSION_FACTOR_SECONDS = 31250.000000000f
+multiMoveList_t multiMoveList[multiMoveCount] = {
+    {219902325, 31250},  // Velocity move: 2 rot/sec for 1 sec in internal units
+    {0, 3125}            // Velocity move: 0 rot/sec for 0.1 sec in internal units
+};
+
+// Execute the multi-move sequence with raw units
+motor.multiMoveRaw(multiMoveCount, multiMoveTypes, multiMoveList);
+```
+
+The moveTypes parameter is a 32-bit number where each bit specifies the type of move:
+- 0: MOVE_WITH_ACCELERATION
+- 1: MOVE_WITH_VELOCITY
+
+For example, 0b1001 means the 1st and 4th moves are velocity moves, while the 2nd and 3rd are acceleration moves.
+
+The last move in a sequence should always set the motor's velocity to 0 for a period of time (e.g., 0.1 seconds) to allow the motor to stop properly. Otherwise, the motor will enter a fatal error state when the queue becomes empty with a non-zero velocity on the motor.
+
+**Expected Position Calculation for Complex Sequences:**
+When using a combination of velocity and acceleration moves, the final position can be calculated as follows:
+
+1. Velocity move: distance = velocity × duration
+2. Acceleration move:
+   - Starting from a non-zero velocity: distance = (initial_velocity × duration) + (0.5 × acceleration × duration²)
+   - Final velocity = initial_velocity + (acceleration × duration)
+
+For example, in a sequence like:
+```cpp
+multiMoveListConverted_t moves[4] = {
+    {2.0f, 1.0f},    // Velocity move: 2 rot/sec for 1 sec
+    {2.0f, 1.0f},    // Acceleration move: 2 rot/sec² for 1 sec
+    {-2.0f, 1.0f},   // Acceleration move: -2 rot/sec² for 1 sec
+    {0.0f, 0.1f}     // Velocity move: 0 rot/sec for 0.1 sec (stop)
+};
+```
+
+The expected position calculation would be:
+1. Velocity move: 2 rot/sec × 1 sec = 2 rotations
+2. Acceleration move: Starting velocity 2 rot/sec, accelerating at 2 rot/sec²
+   - Displacement = (2 rot/sec × 1 sec) + (0.5 × 2 rot/sec² × 1 sec²) = 2 + 1 = 3 rotations
+   - Final velocity = 2 + (2 × 1) = 4 rot/sec
+3. Acceleration move: Starting velocity 4 rot/sec, decelerating at 2 rot/sec²
+   - Displacement = (4 rot/sec × 1 sec) - (0.5 × 2 rot/sec² × 1 sec²) = 4 - 1 = 3 rotations
+   - Final velocity = 4 - (2 × 1) = 2 rot/sec
+4. Velocity move: 0 rot/sec for 0.1 sec (stop)
+   - Displacement = 0 rotations
+
+Total displacement: 2 + 3 + 3 + 0 = 8 rotations
+
 ### Testing
 
 The library includes an Arduino emulator (`ArduinoEmulator.h` and `ArduinoEmulator.cpp`) that allows testing on desktop machines without actual hardware. Test files include:
@@ -156,11 +255,16 @@ The build_tests.sh script:
 - Adds the REQUIRE_SERIAL_PORT flag for tests that need hardware communication
 - Creates executable files with the same name as the test file (without the .cpp extension)
 
-After running the script, you can execute any of the compiled test programs directly:
+After running the script, you can execute any of the compiled test programs directly. Most test programs require a serial port parameter because they interact with the physical motor or the motor simulator:
+
 ```bash
-# Example: Run the emergency stop test
-./test_emergency_stop
+# Example: Run the emergency stop test with a serial port
+./test_emergency_stop /dev/ttys004  # On macOS
+./test_emergency_stop /dev/ttyUSB0  # On Linux (not tested yet but should work)
+./test_emergency_stop COM3          # On Windows (not tested yet)
 ```
+
+The serial port parameter is required for any test that communicates with the motor. This includes all movement tests, status queries, and configuration commands. The only tests that might not require a serial port are those that exclusively test unit conversions without motor communication.
 
 Each test program requires:
 - C++17 standard (-std=c++17)
@@ -203,17 +307,40 @@ Each test program requires:
      - setMaxAllowablePositionDeviation / setMaxAllowablePositionDeviationRaw
 
 3. **Code Generation Enhancements**
-   - Improve the autogeneration program that creates Servomotor.cpp and Servomotor.h
-   - Make the code generation process more maintainable and flexible
-   - Fix the conversion factors for current and voltage in the unit_conversions_M3.json file. Currently, these factors are missing or incorrect, resulting in a factor of 1.0 being used.
+   - ✅ Improve the autogeneration program that creates Servomotor.cpp and Servomotor.h
+   - ✅ Make the code generation process more maintainable and flexible
+   - ✅ Fix the conversion factors for current and voltage in the unit_conversions_M3.json file. Currently, these factors are missing or incorrect, resulting in a factor of 1.0 being used.
 
 3. **Fix Some Problems With Servomotor.cpp, or Rather the Program that Generates this File, Which is generate_command_code.py**
    - ✅ getComprehensivePosition obviously will return zeros, which is wrong. Seems the autogeneration program does not know how to convert this
    - ✅ getMaxPidError has the same problem
 
 4. **Fix the Multimove Function**
-   - The moveList parameter currently is of type uint8_t, which looks wrong. We need to be able to give it a list of move velocities or accelerations (based on the bits in moveTypes) and the move times
-   - write a new test called test_multi_move.cpp to test that the command works correctly
+   - ✅ Fixed the moveList parameter type by defining a struct for move commands:
+     ```cpp
+     typedef struct {
+         int32_t value;  // acceleration or velocity value (internal units)
+         uint32_t timeSteps;  // duration in time steps (internal units)
+     } multiMoveList_t;
+     ```
+   - ✅ Added a new struct for user-friendly units with floating-point values:
+     ```cpp
+     typedef struct {
+         float value;  // velocity or acceleration in user units
+         float duration;  // duration in user units (seconds, milliseconds, etc.)
+     } multiMoveListConverted_t;
+     ```
+   - ✅ Implemented two versions of the multiMove function:
+     - `multiMoveRaw`: Uses raw internal units without conversion
+     - `multiMove`: Handles unit conversions based on configured units
+   - ✅ Created example_multi_move.cpp to demonstrate how to use the multiMove function with a sequence of moves
+   - ✅ Fixed the expected behavior calculation in example_multi_move.cpp to correctly account for velocity continuity between moves
+   - ✅ Verified that the implementation works correctly with unit conversions
+   - ✅ Created test_multi_move.cpp test program that extensively tests the multiMove and multiMoveRaw functions with all units for velocity, acceleration, and time
+   - ✅ Added helper functions for calculating appropriate delay times for both user units and internal units
+   - ✅ Updated documentation with detailed information about the multiMove functions, structures, and expected position calculations
+   - Update the autogeneration program to ../autogeneration/generate_command_code.py program to correctly generate the Servomotor.h and Servomotor.ccp files. The manually edited ones become the reference that we need to functionally reproduce.
+   - Make sure that the test compiles and passes after the autogeneration program changes are implemented.
 
 5. ✅ **Rename ServomotorCommands.cpp to Servomotor.cpp** (Completed)
    - ✅ Renamed ServomotorCommands.h to Servomotor.h

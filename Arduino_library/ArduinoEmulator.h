@@ -21,6 +21,7 @@ public:
     virtual void println(float val) = 0;
     virtual void print(int val) = 0;
     virtual void println(int val) = 0;
+    virtual void println(int val, int base) = 0;
     virtual void println() = 0;
     virtual ~SerialBase() {}
 };
@@ -44,6 +45,24 @@ public:
     void println(float val) override { std::cout << val << std::endl; }
     void print(int val) override { std::cout << val; }
     void println(int val) override { std::cout << val << std::endl; }
+    void println(int val, int base) override {
+        if (base == 16) {
+            std::cout << std::hex << val << std::dec << std::endl;
+        } else if (base == 2) {
+            // Convert to binary representation
+            std::string binary;
+            int temp = val;
+            while (temp > 0) {
+                binary = (temp % 2 ? "1" : "0") + binary;
+                temp /= 2;
+            }
+            std::cout << binary << std::endl;
+        } else if (base == 8) {
+            std::cout << std::oct << val << std::dec << std::endl;
+        } else {
+            std::cout << val << std::endl;
+        }
+    }
     void println() override { std::cout << std::endl; }
 };
 
@@ -232,6 +251,34 @@ public:
     void println(int val) override {
         if (_fd >= 0) {
             std::string s = std::to_string(val) + "\n";
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+
+    void println(int val, int base) override {
+        if (_fd >= 0) {
+            std::string s;
+            if (base == 16) {
+                char hexStr[11]; // 0x + 8 hex digits + null terminator
+                sprintf(hexStr, "%X", val);
+                s = std::string(hexStr) + "\n";
+            } else if (base == 2) {
+                // Convert to binary representation
+                std::string binary;
+                int temp = val;
+                while (temp > 0) {
+                    binary = (temp % 2 ? "1" : "0") + binary;
+                    temp /= 2;
+                }
+                s = binary + "\n";
+            } else if (base == 8) {
+                char octStr[12]; // Enough for 32-bit int in octal
+                sprintf(octStr, "%o", val);
+                s = std::string(octStr) + "\n";
+            } else {
+                s = std::to_string(val) + "\n";
+            }
             ::write(_fd, s.c_str(), s.length());
             tcdrain(_fd);
         }

@@ -127,11 +127,23 @@ typedef struct __attribute__((__packed__)) {
     uint16_t regenerationCurrent;
 } setMaximumMotorCurrentPayload;
 
+// Structure for multi-move list item with raw internal units
+typedef struct {
+    int32_t value;  // acceleration or velocity value (internal units)
+    uint32_t timeSteps;  // duration in time steps (internal units)
+} multiMoveList_t;
+
+// Structure for multi-move list item with user-friendly units
+typedef struct {
+    float value;  // velocity or acceleration in user units
+    float duration;  // duration in user units (seconds, milliseconds, etc.)
+} multiMoveListConverted_t;
+
 // Structure for Multi-move command payload
 typedef struct __attribute__((__packed__)) {
-    uint8_t moveCount;
-    uint32_t moveTypes;
-    uint8_t moveList;
+    uint8_t multiMoveCount;
+    uint32_t multiMoveTypes;
+    multiMoveList_t multiMoveList[32];
 } multiMovePayload;
 
 // Structure for Set safety limits command payload
@@ -323,7 +335,8 @@ public:
     void systemReset();
     void setMaximumMotorCurrentRaw(uint16_t motorCurrent, uint16_t regenerationCurrent);
     void setMaximumMotorCurrent(float motorCurrent, float regenerationCurrent);
-    void multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t moveList);
+    void multiMoveRaw(uint8_t multiMoveCount, uint32_t multiMoveTypes, multiMoveList_t* multiMoveList);
+    void multiMove(uint8_t multiMoveCount, uint32_t multiMoveTypes, multiMoveListConverted_t* multiMoveList);
     void setSafetyLimitsRaw(int64_t lowerLimit, int64_t upperLimit);
     void setSafetyLimits(float lowerLimit, float upperLimit);
     pingResponse ping(uint8_t pingData[10]);

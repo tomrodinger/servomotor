@@ -641,18 +641,77 @@ void Servomotor::setMaximumMotorCurrent(float motorCurrent, float regenerationCu
     setMaximumMotorCurrentRaw((uint16_t)(motorCurrent_internal), (uint16_t)(regenerationCurrent_internal));
 }
 
-void Servomotor::multiMove(uint8_t moveCount, uint32_t moveTypes, uint8_t moveList) {
-    Serial.println("[Motor] multiMove called.");
+void Servomotor::multiMoveRaw(uint8_t multiMoveCount, uint32_t multiMoveTypes, multiMoveList_t* multiMoveList) {
+    Serial.println("[Motor] multiMoveRaw called.");
+    Serial.print("  multiMoveCount: "); Serial.println(multiMoveCount);
+    Serial.print("  multiMoveTypes: 0b"); Serial.println(multiMoveTypes, 2); // Use base 16 instead of HEX
+    
     // Multi-move command allows you to compose multiple moves one after eachother. The last move must set the motor's velocity to 0 for a period of time(e.g. 0.1s) to allow the motor to stop, otherwise the motor will enter in an error state.
     const uint8_t commandID = 29;
-    multiMovePayload payload;
-    payload.moveCount = moveCount;
-    payload.moveTypes = htole32(moveTypes);
-    payload.moveList = moveList;
-    _comm.sendCommand(_alias, commandID, (uint8_t*)&payload, sizeof(payload));
+    
+    // Calculate the total size of the payload
+    uint16_t moveListSize = multiMoveCount * sizeof(multiMoveList_t);
+    uint16_t totalPayloadSize = sizeof(uint8_t) + sizeof(uint32_t) + moveListSize;
+    
+    // Define a maximum buffer size based on the maximum number of moves (32)
+    // 1 byte for multiMoveCount + 4 bytes for multiMoveTypes + 32 * sizeof(multiMoveList_t)
+    const uint16_t MAX_PAYLOAD_SIZE = 1 + 4 + 32 * sizeof(multiMoveList_t);
+    
+    // Allocate buffer on the stack
+    uint8_t payloadBuffer[MAX_PAYLOAD_SIZE];
+    
+    // Fill in the payload
+    payloadBuffer[0] = multiMoveCount;
+    *((uint32_t*)(payloadBuffer + 1)) = htole32(multiMoveTypes);
+    
+    // Copy the move list
+    memcpy(payloadBuffer + sizeof(uint8_t) + sizeof(uint32_t), multiMoveList, moveListSize);
+    
+    // Send the command
+    _comm.sendCommand(_alias, commandID, payloadBuffer, totalPayloadSize);
+    
     uint8_t buffer[1];
     uint16_t receivedSize;
     _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);
+}
+
+void Servomotor::multiMove(uint8_t multiMoveCount, uint32_t multiMoveTypes, multiMoveListConverted_t* multiMoveList) {
+    Serial.println("[Motor] multiMove called with unit conversion.");
+    Serial.print("  multiMoveCount: "); Serial.println(multiMoveCount);
+    Serial.print("  multiMoveTypes: 0b"); Serial.println(multiMoveTypes, 2); // print this out as binary bits
+    
+    // Create a temporary array for the converted move list
+    multiMoveList_t convertedMoveList[multiMoveCount];
+    
+    // Convert each move from user units to internal units
+    for (uint8_t i = 0; i < multiMoveCount; i++) {
+        bool isVelocityMove = (multiMoveTypes >> i) & 1;
+        Serial.print("  Move "); Serial.print(i + 1);
+        Serial.print(": "); Serial.print(isVelocityMove ? "Velocity" : "Acceleration");
+        Serial.print(" = "); Serial.print(multiMoveList[i].value);
+        Serial.print(", Duration = "); Serial.println(multiMoveList[i].duration);
+        
+        // Convert the value based on the move type
+        if (isVelocityMove) {
+            // Velocity move
+            float velocity_internal = convertVelocity(multiMoveList[i].value, m_velocityUnit, ConversionDirection::TO_INTERNAL);
+            convertedMoveList[i].value = (int32_t)velocity_internal;
+            Serial.print("    -> velocity in internal units: "); Serial.println(convertedMoveList[i].value);
+        } else {
+            // Acceleration move
+            float acceleration_internal = convertAcceleration(multiMoveList[i].value, m_accelerationUnit, ConversionDirection::TO_INTERNAL);
+            convertedMoveList[i].value = (int32_t)acceleration_internal;
+            Serial.print("    -> acceleration in internal units: "); Serial.println(convertedMoveList[i].value);
+        }
+        
+        // Convert the duration
+        float duration_internal = convertTime(multiMoveList[i].duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+        convertedMoveList[i].timeSteps = (uint32_t)duration_internal;
+        Serial.print("    -> duration in timesteps: "); Serial.println((int)convertedMoveList[i].timeSteps);
+    }
+    
+    // Call the raw function with the converted values
+    multiMoveRaw(multiMoveCount, multiMoveTypes, convertedMoveList);
 }
 
 void Servomotor::setSafetyLimitsRaw(int64_t lowerLimit, int64_t upperLimit) {
