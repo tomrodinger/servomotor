@@ -123,7 +123,7 @@ def make_unique_name(name, used_names):
         count += 1
     return name
 
-def map_type(type_str, data_type_map):
+def map_type(type_str, data_type_map, is_wrapper=False):
     standard_map = {
         'i8':'int8_t','u8':'uint8_t','i16':'int16_t','u16':'uint16_t',
         'i32':'int32_t','u32':'uint32_t','i64':'int64_t','u64':'uint64_t',
@@ -135,6 +135,7 @@ def map_type(type_str, data_type_map):
         'u64_unique_id':'uint64_t',
         'crc32':'uint32_t',
         'u48':'uint64_t',
+        'list_2d': 'multiMoveListConverted_t*' if is_wrapper else 'multiMoveList_t*',  # Special handling for 2D list type
     }
     if type_str in standard_map:
         return standard_map[type_str]
@@ -152,8 +153,7 @@ def map_type(type_str, data_type_map):
             return 'uint8_t'
     else:
         return 'uint8_t'
-
-def extract_parameters(param_list, command_string, data_type_map, reserved_words):
+def extract_parameters(param_list, command_string, data_type_map, reserved_words, is_wrapper=False):
     """Extract (type, name) info from a list of param definitions."""
     if not param_list or param_list == 'success_response':
         return []
@@ -163,6 +163,29 @@ def extract_parameters(param_list, command_string, data_type_map, reserved_words
     for item in param_list:
         desc = item.get('Description','')
         param_name_given = item.get('ParameterName')
+        
+        # Check if this is a list_2d type (special handling)
+        if desc.startswith('list_2d:'):
+            if param_name_given:
+                param_name = param_name_given
+            else:
+                param_name = extract_param_name(desc[8:], idx)
+            param_name = make_unique_name(param_name, used_names)
+            used_names.add(param_name)
+            
+            # For list_2d, we'll use multiMoveList_t* as the type
+            params.append({
+                'type': 'multiMoveList_t*',
+                'name': param_name,
+                'array_size': None,
+                'description': desc[8:],
+                'original_type': 'list_2d',
+                'UnitConversion': {'Type': 'list_2d'},
+                'is_list_2d': True
+            })
+            idx += 1
+            continue
+            
         match = re.match(r'(\w+):\s*(.*)', desc)
         if match:
             type_str = match.group(1)
@@ -173,7 +196,7 @@ def extract_parameters(param_list, command_string, data_type_map, reserved_words
                 param_name = extract_param_name(remainder, idx)
             param_name = make_unique_name(param_name, used_names)
             used_names.add(param_name)
-            mapped_type = map_type(type_str, data_type_map)
+            mapped_type = map_type(type_str, data_type_map, is_wrapper)
             if isinstance(mapped_type, tuple):
                 base_t, arr_size = mapped_type
                 tname = base_t
@@ -187,7 +210,8 @@ def extract_parameters(param_list, command_string, data_type_map, reserved_words
                 'array_size': arr_size,
                 'description': remainder,
                 'original_type': type_str,
-                'UnitConversion': unit_conv
+                'UnitConversion': unit_conv,
+                'is_list_2d': False
             })
             idx += 1
     return params
@@ -208,6 +232,9 @@ def command_needs_conversion(command):
         for item in command['Input']:
             if item.get('UnitConversion'):
                 return True
+            # Special case for list_2d
+            if item.get('Description', '').startswith('list_2d:'):
+                return True
     if isinstance(command.get('Output'), list):
         for item in command['Output']:
             if item.get('UnitConversion'):
@@ -217,7 +244,10 @@ def command_needs_conversion(command):
 def get_wrapper_param(param):
     """Wrapper uses float for any parameter with a UnitConversion, else same type."""
     if param.get('UnitConversion'):
-        return f'float {param["name"]}'
+        if param.get('is_list_2d', False):
+            return f'multiMoveListConverted_t* {param["name"]}'
+        else:
+            return f'float {param["name"]}'
     else:
         return format_function_param_type(param)
 
@@ -328,6 +358,19 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
         # We track which response structs we've already typedef'd
         defined_responses = set()
 
+        # Define the multiMoveList_t and multiMoveListConverted_t structs first
+        hf.write('// Structure for multi-move list item with raw internal units\n')
+        hf.write('typedef struct {\n')
+        hf.write('    int32_t value;  // acceleration or velocity value (internal units)\n')
+        hf.write('    uint32_t timeSteps;  // duration in time steps (internal units)\n')
+        hf.write('} multiMoveList_t;\n\n')
+
+        hf.write('// Structure for multi-move list item with user-friendly units\n')
+        hf.write('typedef struct {\n')
+        hf.write('    float value;  // velocity or acceleration in user units\n')
+        hf.write('    float duration;  // duration in user units (seconds, milliseconds, etc.)\n')
+        hf.write('} multiMoveListConverted_t;\n\n')
+
         # Generate command-specific payload/response structs
         for cmd in commands_data:
             func_name = format_command_name(cmd['CommandString'], function_name_mappings)
@@ -341,6 +384,10 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 for p in input_params:
                     if p.get('array_size'):
                         hf.write(f'    {p["type"]} {p["name"]}[{p["array_size"]}];\n')
+                    elif p.get('is_list_2d', False):
+                        # For list_2d type, we'll use an array of multiMoveList_t with size 32
+                        # This matches the description in the JSON: "There is a limit of 32 move commands"
+                        hf.write(f'    multiMoveList_t {p["name"]}[32];\n')
                     else:
                         hf.write(f'    {p["type"]} {p["name"]};\n')
                 hf.write(f'}} {struct_name};\n\n')
@@ -375,6 +422,7 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                             hf.write(f'    {op["type"]} {op["name"]};\n')
                     hf.write(f'}} {out_type_name};\n\n')
                     defined_responses.add(out_type_name)
+
 
         # Also manually define the "converted" structs used for getComprehensivePosition and getMaxPidError
         hf.write('// Structure for converted comprehensive position values\n')
@@ -434,10 +482,19 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 # We'll produce a raw version + wrapper
                 hf.write(f'    {raw_ret} {func_name}Raw({raw_params_str});\n')
                 # Wrapper return
-                w_out_params = extract_parameters(cmd.get('Output'), cmd['CommandString'], data_type_map, set())
+                w_out_params = extract_parameters(cmd.get('Output'), cmd['CommandString'], data_type_map, set(), True)
                 w_ret = get_wrapper_return(w_out_params, cmd['CommandString'], func_name)
                 # Wrapper param
-                w_params_str = ", ".join(get_wrapper_param(p) for p in input_params)
+                w_params = []
+                for p in input_params:
+                    if p.get('UnitConversion'):
+                        if p.get('is_list_2d', False):
+                            w_params.append(f'multiMoveListConverted_t* {p["name"]}')
+                        else:
+                            w_params.append(f'float {p["name"]}')
+                    else:
+                        w_params.append(format_function_param_type(p))
+                w_params_str = ", ".join(w_params)
                 hf.write(f'    {w_ret} {func_name}({w_params_str});\n')
             else:
                 # Single function
@@ -549,6 +606,9 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 for p in input_params:
                     if p.get('array_size'):
                         sf.write(f'    memcpy(payload.{p["name"]}, {p["name"]}, sizeof(payload.{p["name"]}));\n')
+                    elif p.get('is_list_2d', False):
+                        # For list_2d type, copy the move list data
+                        sf.write(f'    memcpy(payload.{p["name"]}, {p["name"]}, moveCount * sizeof(multiMoveList_t));\n')
                     else:
                         size_bytes = get_size_of_type(p["type"], data_type_map, p.get("array_size"))
                         if size_bytes>1 and ('int' in p["type"] or 'uint' in p["type"]):
@@ -594,11 +654,43 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 raw_call_args = []
                 for p in input_params:
                     if p.get('UnitConversion'):
-                        conv_type = p['UnitConversion']['Type']
-                        conv_func = conv_map[conv_type][0]
-                        mem_var = conv_map[conv_type][2]
-                        sf.write(f'    float {p["name"]}_internal = {conv_func}({p["name"]}, {mem_var}, ConversionDirection::TO_INTERNAL);\n')
-                        raw_call_args.append(f'({p["type"]})({p["name"]}_internal)')
+                        if p.get('is_list_2d', False):
+                            # Special handling for list_2d type
+                            sf.write(f'    // Create a temporary array for the converted move list\n')
+                            sf.write(f'    multiMoveList_t convertedMoveList[moveCount];\n\n')
+                            sf.write(f'    // Convert each move from user units to internal units\n')
+                            sf.write(f'    for (uint8_t i = 0; i < moveCount; i++) {{\n')
+                            sf.write(f'        bool isVelocityMove = (moveTypes >> i) & 1;\n')
+                            sf.write(f'        Serial.print("  Move "); Serial.print(i + 1);\n')
+                            sf.write(f'        Serial.print(": "); Serial.print(isVelocityMove ? "Velocity" : "Acceleration");\n')
+                            sf.write(f'        Serial.print(" = "); Serial.print({p["name"]}[i].value);\n')
+                            sf.write(f'        Serial.print(", Duration = "); Serial.println({p["name"]}[i].duration);\n\n')
+                            sf.write(f'        // Convert the value based on the move type\n')
+                            sf.write(f'        if (isVelocityMove) {{\n')
+                            sf.write(f'            // Velocity move\n')
+                            sf.write(f'            float velocity_internal = convertVelocity({p["name"]}[i].value, m_velocityUnit, ConversionDirection::TO_INTERNAL);\n')
+                            sf.write(f'            convertedMoveList[i].value = (int32_t)velocity_internal;\n')
+                            sf.write(f'            Serial.print("    -> velocity in internal units: "); Serial.println(convertedMoveList[i].value);\n')
+                            sf.write(f'        }} else {{\n')
+                            sf.write(f'            // Acceleration move\n')
+                            sf.write(f'            float acceleration_internal = convertAcceleration({p["name"]}[i].value, m_accelerationUnit, ConversionDirection::TO_INTERNAL);\n')
+                            sf.write(f'            convertedMoveList[i].value = (int32_t)acceleration_internal;\n')
+                            sf.write(f'            Serial.print("    -> acceleration in internal units: "); Serial.println(convertedMoveList[i].value);\n')
+                            sf.write(f'        }}\n\n')
+                            sf.write(f'        // Convert the duration\n')
+                            sf.write(f'        float duration_internal = convertTime({p["name"]}[i].duration, m_timeUnit, ConversionDirection::TO_INTERNAL);\n')
+                            sf.write(f'        convertedMoveList[i].timeSteps = (uint32_t)duration_internal;\n')
+                            sf.write(f'        Serial.print("    -> duration in timesteps: "); Serial.println((int)convertedMoveList[i].timeSteps);\n')
+                            sf.write(f'    }}\n\n')
+                            raw_call_args.append('moveCount')
+                            raw_call_args.append('moveTypes')
+                            raw_call_args.append('convertedMoveList')
+                        else:
+                            conv_type = p['UnitConversion']['Type']
+                            conv_func = conv_map[conv_type][0]
+                            mem_var = conv_map[conv_type][2]
+                            sf.write(f'    float {p["name"]}_internal = {conv_func}({p["name"]}, {mem_var}, ConversionDirection::TO_INTERNAL);\n')
+                            raw_call_args.append(f'({p["type"]})({p["name"]}_internal)')
                     else:
                         raw_call_args.append(p["name"])
 

@@ -339,8 +339,8 @@ Each test program requires:
    - ✅ Created test_multi_move.cpp test program that extensively tests the multiMove and multiMoveRaw functions with all units for velocity, acceleration, and time
    - ✅ Added helper functions for calculating appropriate delay times for both user units and internal units
    - ✅ Updated documentation with detailed information about the multiMove functions, structures, and expected position calculations
-   - Update the autogeneration program to ../autogeneration/generate_command_code.py program to correctly generate the Servomotor.h and Servomotor.ccp files. The manually edited ones become the reference that we need to functionally reproduce.
-   - Make sure that the test compiles and passes after the autogeneration program changes are implemented.
+   - ✅ Updated the autogeneration program (../autogeneration/generate_command_code.py) to correctly generate the Servomotor.h and Servomotor.cpp files with proper handling of list_2d type parameters in wrapper functions.
+   - ✅ Verified that test_multi_move.cpp compiles and passes after the autogeneration program changes. All tests pass in fact.
 
 5. ✅ **Rename ServomotorCommands.cpp to Servomotor.cpp** (Completed)
    - ✅ Renamed ServomotorCommands.h to Servomotor.h
@@ -391,6 +391,12 @@ Each test program requires:
    - ✅ These should be moved to a separate directory in the root called autogeneration. All autogeneration programs should be moved into there.
    - ✅ a single executable called autogenerate.py should be created that essentially runs all of the other programs.
    - Optionally, the other programs should become Python modules that are called by importing them into the autogenerate.py program
+
+15. **The Aurduino Library should have a optional verbose mode**
+   - Currently by deafault it is too verbose
+   - Need a flag that is configurable by the user at compile time
+   - The flag shoild affect hot Servomotor.cpp is compiled into the Arduino project
+   - We can modify Servomotor.cpp manually at first to try out method but later we must modify the autogeneration program, which is ../autogeneration/generate_command_code.py
 
 ## License
 
