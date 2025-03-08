@@ -398,6 +398,15 @@ Each test program requires:
    - The flag shoild affect hot Servomotor.cpp is compiled into the Arduino project
    - We can modify Servomotor.cpp manually at first to try out method but later we must modify the autogeneration program, which is ../autogeneration/generate_command_code.py
 
+16. **Remove the commandID magic numbers from Servomotor.cpp**
+   - ✅ For example, this line:
+       const uint8_t commandID = 14;
+     should become:
+       const uint8_t commandID = CMD_HOMING;
+     after the change.
+   - ✅ Make sure to change the autogeneration program called ../autogeneration/generate_command_code.py and not Servomotor.cpp directly
+   - ✅ Make sure that all tests pass after the change
+
 ## License
 
 This library is released under the MIT License. See the LICENSE file for details.

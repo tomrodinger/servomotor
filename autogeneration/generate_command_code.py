@@ -598,7 +598,9 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 sf.write(f'    Serial.println("[Motor] {func_name} called.");\n')
                 sf.write(f'    // {cmd["Description"]}\n')
 
-            sf.write(f'    const uint8_t commandID = {cmd["CommandEnum"]};\n')
+            cmd_name = cmd['CommandString'].upper()
+            cmd_name = re.sub(r'[^a-zA-Z0-9]+','_',cmd_name)
+            sf.write(f'    const uint8_t commandID = CMD_{cmd_name};\n')
 
             if input_params:
                 struct_name = f'{func_name}Payload'
@@ -649,7 +651,10 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                 sf.write(f'    Serial.println("[Motor] {func_name} called.");\n')
                 for p in input_params:
                     if p.get('UnitConversion'):
-                        sf.write(f'    Serial.print("  {p["name"]} in chosen unit: "); Serial.println({p["name"]});\n')
+                        if p.get('is_list_2d', False):
+                            sf.write(f'    Serial.println("  Converting moveList to internal units...");\n')
+                        else:
+                            sf.write(f'    Serial.print("  {p["name"]} in chosen unit: "); Serial.println({p["name"]});\n')
                 sf.write('\n')
                 raw_call_args = []
                 for p in input_params:
@@ -682,8 +687,8 @@ def generate_servo_motor_files(json_file, data_types_file, header_file, source_f
                             sf.write(f'        convertedMoveList[i].timeSteps = (uint32_t)duration_internal;\n')
                             sf.write(f'        Serial.print("    -> duration in timesteps: "); Serial.println((int)convertedMoveList[i].timeSteps);\n')
                             sf.write(f'    }}\n\n')
-                            raw_call_args.append('moveCount')
-                            raw_call_args.append('moveTypes')
+                            # For list_2d type, we only need to add the converted list to raw_call_args
+                            # moveCount and moveTypes are already parameters in the function signature
                             raw_call_args.append('convertedMoveList')
                         else:
                             conv_type = p['UnitConversion']['Type']
