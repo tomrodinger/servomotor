@@ -365,7 +365,7 @@ Each test program requires:
     - Consider examples for different motor control scenarios
 
 10. **Launch this Arduino library into the Arduino marketplace**
-    - Anyone should be able to get it and easily use it
+    - Anyone on the internet familiar with the Arduino IDE should be able to get it and easily use it
 
 11. **Revamp the test_unit_conversion.cpp test**
     - this test should do unit conversions in one direction (given unit to internal unit) and in the other direction (internal to given unit)
