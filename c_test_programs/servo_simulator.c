@@ -19,6 +19,8 @@
 #include <math.h>
 #include <signal.h>
 
+//#define DEBUG_PRINTING
+
 extern void simulate_ADC_hall_sensor_values(void);
 
 // Undefine system termios.h macros that conflict with our register names
@@ -44,68 +46,11 @@ extern int main_simulation(void);
 #include <SDL.h>
 #include <SDL_ttf.h>
 
-// -----------------------------------------------------------------------------
-// Additional commands from the firmware (main.c). For brevity, not all commands
-// are shown, but you can add or remove as needed.
-// -----------------------------------------------------------------------------
-#define DISABLE_MOSFETS_COMMAND                    0
-#define ENABLE_MOSFETS_COMMAND                     1
-#define TRAPEZOID_MOVE_COMMAND                     2
-#define SET_MAX_VELOCITY_COMMAND                   3
-#define GO_TO_POSITION_COMMAND                     4
-#define SET_MAX_ACCELERATION_COMMAND               5
-#define START_CALIBRATION_COMMAND                  6
-#define CAPTURE_HALL_SENSOR_DATA_COMMAND           7
-#define RESET_TIME_COMMAND                         8
-#define GET_CURRENT_TIME_COMMAND                   9
-#define TIME_SYNC_COMMAND                          10
-#define GET_N_ITEMS_IN_QUEUE_COMMAND               11
-#define EMERGENCY_STOP_COMMAND                     12
-#define ZERO_POSITION_COMMAND                      13
-#define HOMING_COMMAND                             14
-#define GET_POSITION_COMMAND                       15
-#define GET_HALL_SENSOR_POSITION_COMMAND           16
-#define GET_COMPREHENSIVE_POSITION_COMMAND         17
-#define GET_STATUS_COMMAND                         18
-#define GO_TO_CLOSED_LOOP_COMMAND                  19
-#define GET_UPDATE_FREQUENCY_COMMAND               20
-#define MOVE_WITH_ACCELERATION_COMMAND             21
-#define DETECT_DEVICES_COMMAND                     22
-#define SET_DEVICE_ALIAS_COMMAND                   23
-#define GET_PRODUCT_INFO_COMMAND                   24
-#define GET_PRODUCT_DESCRIPTION_COMMAND            25
-#define GET_FIRMWARE_VERSION_COMMAND               26
-#define MOVE_WITH_VELOCITY_COMMAND                 27
-#define SYSTEM_RESET_COMMAND                       28
-#define SET_MAXIMUM_MOTOR_CURRENT                  29
-#define MULTI_MOVE_COMMAND                         30
-#define SET_SAFETY_LIMITS_COMMAND                  31
-#define ADD_TO_QUEUE_TEST_COMMAND                  32
-#define PING_COMMAND                               33
-#define CONTROL_HALL_SENSOR_STATISTICS_COMMAND     34
-#define GET_HALL_SENSOR_STATISTICS_COMMAND         35
-#define READ_MULTIPURPOSE_BUFFER_COMMAND           36
-#define GET_SUPPLY_VOLTAGE_COMMAND                 37
-#define GET_MAX_PID_ERROR_COMMAND                  38
-#define TEST_MODE_COMMAND                          39
-#define VIBRATE_COMMAND                            40
-#define IDENTIFY_COMMAND                           41
-#define GET_TEMPERATURE_COMMAND                    42
-#define SET_PID_CONSTANTS_COMMAND                  43
-#define SET_MAX_ALLOWABLE_POSITION_DEVIATION       44
-#define GET_DEBUG_VALUES_COMMAND                   45
 
 // -----------------------------------------------------------------------------
 // Original Protocol & Visualization defines
 // -----------------------------------------------------------------------------
 static const char *font_path = "/System/Library/Fonts/Supplemental/Arial.ttf";
-#define RESPONSE_CHAR        0xFE
-#define RESPONSE_NO_PAYLOAD  0
-#define RESPONSE_HAS_PAYLOAD 1
-#define AXIS_MOTOR           0
-#define AXIS_ALL             255
-
-#define ERROR_PARAMETER_OUT_OF_RANGE    34
 
 // Colors
 static const SDL_Color COLOR_DARK_GREY = {80, 80, 80, 255};
@@ -119,7 +64,7 @@ static pthread_t gReadThread;
 static pthread_t gWriteThread;
 static pthread_t gMotorThread;
 static pthread_t gSysTickThread;
-static bool call_USART1_IRQHandler = false;
+//static bool call_USART1_IRQHandler = false;
 
 // External declaration of SysTick_Handler from main.c
 extern void SysTick_Handler(void);
@@ -128,7 +73,6 @@ extern void SysTick_Handler(void);
 static void *systick_thread_func(void *arg)
 {
     (void)arg;
-    extern volatile int motor_control_thread_state; // Add extern declaration
     struct timespec lastTime = {0, 0};
     struct timespec lastStatsTime = {0, 0};
     uint32_t tickCount = 0;
@@ -195,7 +139,6 @@ static void *systick_thread_func(void *arg)
         if (elapsed >= 60.0) {
             double frequency = tickCount / elapsed;
             printf("SysTick frequency: %.2f Hz (target: 100 Hz)\n", frequency);
-            printf("Motor control thread state: %d\n", motor_control_thread_state);
             tickCount = 0;
             lastStatsTime = now;
         }
@@ -204,7 +147,6 @@ static void *systick_thread_func(void *arg)
 }
 static uint8_t  gMosfetsEnabled = 0;  // Cache MOSFET state
 volatile int gResetProgress = 0; // Reset state machine: 0=normal, 1=waiting for exits, 2=ready for reset
-volatile int motor_control_thread_state = 0; // Track what the motor control thread is doing
 
 // Simulate transmitting bytes through RS485
 static void *write_thread_func(void *arg)
@@ -232,6 +174,9 @@ static void *write_thread_func(void *arg)
                 (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
                  ((USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   )))    ) {
             USART1_IRQHandler();
+            if (commandReceived) {
+                printf("Command received: Alias=%02u, Command=%02u\n", selectedAxis, command);
+            }            
         }
         usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
     }
@@ -279,19 +224,17 @@ static void *read_thread_func(void *arg)
                 printf("FD closed\n");
                 break;
             }
+            #ifdef DEBUG_PRINTING
             printf("Received: %hhu\n", byte);
+            #endif
             // Store byte and set RXNE flag
             USART1->RDR = byte;
             USART1->ISR |= USART_ISR_RXNE_RXFNE;
             
             // Process through interrupt handler if interrupts are enabled
-            if (g_interrupts_enabled) {
-                call_USART1_IRQHandler = true;
-            }
-
-            if (commandReceived) {
-                printf("Command received: Axis=0x%02X, Command=0x%02X\n", selectedAxis, command);
-            }            
+//            if (g_interrupts_enabled) {
+//                call_USART1_IRQHandler = true;
+//            }
         }
     }
     return NULL;
@@ -591,7 +534,6 @@ static MotorSharedState gSharedState = {
 static void *motor_control_thread_func(void *arg)
 {
     (void)arg;
-    motor_control_thread_state = 1; // Thread started
     struct timespec lastTime = {0, 0};
     struct timespec lastStatsTime = {0, 0};
     uint32_t callCount = 0;
@@ -605,17 +547,14 @@ static void *motor_control_thread_func(void *arg)
     }
     
     while (!gQuit) {
-        motor_control_thread_state = 2; // Getting current time
         struct timespec now;
         clock_gettime(CLOCK_MONOTONIC, &now);
         
         // Maintain precise 31.25kHz timing (32μs period)
         if (lastTime.tv_sec == 0) {
-            motor_control_thread_state = 3; // Initializing start time
             // First iteration - initialize start time
             clock_gettime(CLOCK_MONOTONIC, &lastTime);
         } else {
-            motor_control_thread_state = 4; // Calculating next target time
             // Calculate next target time (32μs = 32000ns per tick)
             struct timespec target = lastTime;
             target.tv_nsec += 32000;
@@ -624,7 +563,6 @@ static void *motor_control_thread_func(void *arg)
                 target.tv_nsec -= 1000000000;
             }
 
-            motor_control_thread_state = 5; // Calculating sleep target
             // Sleep until just before target time
             struct timespec sleep_target = target;
             if (sleep_target.tv_nsec >= 2000) {  // Leave 2μs for fine-tuning
@@ -634,7 +572,6 @@ static void *motor_control_thread_func(void *arg)
                 sleep_target.tv_nsec = 999998000;  // 2μs before next second
             }
             
-            motor_control_thread_state = 6; // Calculating sleep time
             // Calculate time to sleep
             clock_gettime(CLOCK_MONOTONIC, &now);
             struct timespec sleep_time;
@@ -645,24 +582,20 @@ static void *motor_control_thread_func(void *arg)
                 sleep_time.tv_nsec += 1000000000;
             }
             
-            motor_control_thread_state = 7; // Sleeping
             // Only sleep if we have time
             if (sleep_time.tv_sec > 0 || sleep_time.tv_nsec > 0) {
                 nanosleep(&sleep_time, NULL);
             }
 
-            motor_control_thread_state = 8; // Spinlock for precision
             // Brief spinlock for final precision
             do {
                 clock_gettime(CLOCK_MONOTONIC, &now);
             } while ((now.tv_sec < target.tv_sec) ||
                     (now.tv_sec == target.tv_sec && now.tv_nsec < target.tv_nsec));
 
-            motor_control_thread_state = 9; // Updating target time
             // Update target time for next iteration
             lastTime = target;
 
-            motor_control_thread_state = 10; // Tracking timing statistics
             // Track timing statistics (after the critical timing section)
             int64_t behind_ns = (now.tv_sec - target.tv_sec) * 1000000000LL +
                               (now.tv_nsec - target.tv_nsec);
@@ -671,24 +604,20 @@ static void *motor_control_thread_func(void *arg)
             }
         }
         
-        motor_control_thread_state = 11; // Updating GPIO IDR
         // Update GPIO IDR based on BSRR (simulating hardware behavior)
         // For each port: clear reset bits, then set set bits
         GPIOA->IDR = (GPIOA->IDR & ~(GPIOA->BSRR >> 16)) | (GPIOA->BSRR & 0xFFFF);
         GPIOB->IDR = (GPIOB->IDR & ~(GPIOB->BSRR >> 16)) | (GPIOB->BSRR & 0xFFFF);
         GPIOC->IDR = (GPIOC->IDR & ~(GPIOC->BSRR >> 16)) | (GPIOC->BSRR & 0xFFFF);
         
-        motor_control_thread_state = 12; // Clearing BSRR
         // Clear BSRR after processing (like real hardware)
         GPIOA->BSRR = 0;
         GPIOB->BSRR = 0;
         GPIOC->BSRR = 0;
         
-        motor_control_thread_state = 13; // Simulating ADC hall sensor values
         simulate_ADC_hall_sensor_values();
-        
-        motor_control_thread_state = 14; // Checking interrupts enabled
-        // Run motor control if interrupts are enabled and no reset in progress
+
+        #ifdef DEBUG_PRINTING
         static int debug_counter = 0;
         if (debug_counter++ % 100000 == 0) {
             printf("DEBUG: g_interrupts_enabled = %d, gResetProgress = %d, (USART1->ISR & USART_ISR_RXNE_RXFNE) = %u\n",
@@ -696,12 +625,11 @@ static void *motor_control_thread_func(void *arg)
             void print_nReceivedBytes(void);
             print_nReceivedBytes();
         }
+        #endif
         
-        motor_control_thread_state = 15; // Running motor control
+        // Run motor control if interrupts are enabled and no reset in progress
         if (g_interrupts_enabled && gResetProgress == 0) {
-            motor_control_thread_state = 151; // Before TIM16_IRQHandler
             TIM16_IRQHandler();
-            motor_control_thread_state = 152; // After TIM16_IRQHandler
         }
         else if (gResetProgress == 1) {
             // If we're waiting for TIM16_IRQHandler to exit, signal that we've exited
@@ -710,7 +638,6 @@ static void *motor_control_thread_func(void *arg)
             printf("Motor control thread: TIM16_IRQHandler exited, gResetProgress = %d\n", gResetProgress);
         }
         
-        motor_control_thread_state = 16; // Updating shared state
         // Update shared state (after motor control)
         pthread_mutex_lock(&gSharedState.mutex);
         gSharedState.motor_position = get_motor_position();
@@ -718,13 +645,10 @@ static void *motor_control_thread_func(void *arg)
         gSharedState.angle_deg = (double)gSharedState.motor_position * (360.0 / COUNTS_PER_ROTATION);
         pthread_mutex_unlock(&gSharedState.mutex);
         
-        motor_control_thread_state = 17; // Incrementing call count
         callCount++;
-        motor_control_thread_state = 18; // Checking if time to print stats
         // Print stats every 60 seconds (1 minute)
         if (lastStatsTime.tv_sec == 0 ||
             now.tv_sec - lastStatsTime.tv_sec >= 60) {
-            motor_control_thread_state = 19; // Printing stats
             if (lastStatsTime.tv_sec != 0) {
                 double elapsed = (now.tv_sec - lastStatsTime.tv_sec) +
                                (now.tv_nsec - lastStatsTime.tv_nsec) / 1e9;
@@ -736,11 +660,8 @@ static void *motor_control_thread_func(void *arg)
             callCount = 0;
             lastStatsTime = now;
         }
-        
-        motor_control_thread_state = 20; // End of loop
     }
     
-    motor_control_thread_state = 21; // Thread exiting
     return NULL;
 }
 

@@ -34,14 +34,14 @@ communication.open_serial_port()
 
 # Let's reset all devices to start from a clean state
 print("Resetting all devices")
-communication.execute_command(communication.ALL_ALIASES, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
+communication.execute_command(communication.ALL_ALIAS, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
 
 # Give time for the devices to reset and boot up
 print("Waiting for devices to reset")
 time.sleep(1.5)
 
 print("Detecting devices")
-parsed_response = communication.execute_command(communication.ALL_ALIASES, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
+parsed_response = communication.execute_command(communication.ALL_ALIAS, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
 alias_list = common_functions.get_alias_list(parsed_response)
 common_functions.print_alias_list(alias_list)
 if len(alias_list) == 0:

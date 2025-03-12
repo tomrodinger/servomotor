@@ -12,8 +12,6 @@ from matplotlib.animation import FuncAnimation
 
 VERBOSE = 2
 
-ALL_ALIASES = 255
-
 def write_data(filename, int32_list):
     with open(filename, "w") as fh:
         for i in range(len(int32_list)):
@@ -42,15 +40,15 @@ communication.open_serial_port()
 
 while 1:
     # let's reset all devices to start from a clean state
-    execute_command(ALL_ALIASES, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
+    execute_command(communication.ALL_ALIAS, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
 
     # give time for the devices to reset and boot up
     time.sleep(1.5)
 
     # now lets turn on all the LEDs using an LED test mode
-    parsed_response = execute_command(ALL_ALIASES, "TEST_MODE_COMMAND", [12], verbose=VERBOSE)
+    parsed_response = execute_command(communication.ALL_ALIAS, "TEST_MODE_COMMAND", [12], verbose=VERBOSE)
     if len(parsed_response) != 0:
-        print("ERROR: The device with alias", ALL_ALIASES, "did not respond correctly to the GO_TO_CLOSED_LOOP_COMMAND")
+        print("ERROR: The device with alias", communication.ALL_ALIAS, "did not respond correctly to the GO_TO_CLOSED_LOOP_COMMAND")
         exit(1)
 
 time.sleep(0.3)

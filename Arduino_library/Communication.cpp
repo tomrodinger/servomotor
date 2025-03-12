@@ -12,7 +12,9 @@ void Communication::openSerialPort() {
 }
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
-    _serial.write(alias);
+    // Encode the device ID before sending
+    uint8_t encodedAlias = encodeDeviceId(alias);
+    _serial.write(encodedAlias);
     _serial.write(commandID);
 
     if (payloadSize < 255) {
@@ -31,7 +33,7 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
 int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize) {
     uint32_t startTime = millis();
 
-    // Wait for response start character (254)
+    // Wait for response start character (encoded RESPONSE_CHARACTER)
     while (!_serial.available()) {
         if (millis() - startTime > TIMEOUT_MS) { // Timeout after 1 second
             #ifdef VERBOSE
@@ -45,9 +47,13 @@ int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t
     Serial.print("responseChar: "); // DEBUG
     Serial.println(responseChar); // DEBUG
     #endif
-    if (responseChar != 254) {
+    // The response character should be encoded (shifted and LSB set to 1)
+    uint8_t encodedResponseChar = encodeDeviceId(RESPONSE_CHARACTER);
+    if (responseChar != encodedResponseChar) {
         #ifdef VERBOSE
-        Serial.println("Invalid response character (not 254)"); // DEBUG
+        Serial.print("Invalid response character (not "); // DEBUG
+        Serial.print(encodedResponseChar); // DEBUG
+        Serial.println(")"); // DEBUG
         #endif
         return COMMUNICATION_ERROR_BAD_RESPONSE_CHAR;
     }

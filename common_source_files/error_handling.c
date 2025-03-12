@@ -59,14 +59,14 @@ static void receive(void)
 
         if(!commandReceived) {
             if(nReceivedBytes == 1) {
-                selectedAxis = receivedByte;
+                selectedAxis = decode_device_id(receivedByte);
             }
             else if(nReceivedBytes == 2) {
                 command = receivedByte;
             }
             else if(nReceivedBytes == 3) {
                 valueLength = receivedByte;
-                if((selectedAxis != RESPONSE_CHARACTER) && (selectedAxis == global_settings.my_alias || selectedAxis == 255) && (valueLength == 0)) {
+                if((selectedAxis != RESPONSE_CHARACTER) && (selectedAxis == global_settings.my_alias || selectedAxis == ALL_ALIAS) && (valueLength == 0)) {
                     commandReceived = 1;
                 }
                 nReceivedBytes = 0;

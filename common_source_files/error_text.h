@@ -51,7 +51,8 @@ typedef enum {
     ERROR_PWM_TOO_HIGH = 44,
     ERROR_POSITION_DEVIATION_TOO_LARGE = 45,
     ERROR_MOVE_TOO_FAR = 46,
-    ERROR_HALL_POSITION_DELTA_TOO_LARGE = 47
+    ERROR_HALL_POSITION_DELTA_TOO_LARGE = 47,
+    ERROR_INVALID_DEVICE_ID = 48
 } error_code_t;
 
 #define ERROR_TEXT_INITIALIZER \
@@ -103,6 +104,7 @@ typedef enum {
     "position deviation too large\0"          /* ERROR_POSITION_DEVIATION_TOO_LARGE */ \
     "move too far\0"                          /* ERROR_MOVE_TOO_FAR */ \
     "hall position delta too large\0"         /* ERROR_HALL_POSITION_DELTA_TOO_LARGE */ \
+    "invalid device ID format\0"              /* ERROR_INVALID_DEVICE_ID */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

@@ -1,0 +1,141 @@
+# Syntax Highlighting for Servomotor Library
+
+# Classes (KEYWORD1)
+Servomotor	KEYWORD1
+Communication	KEYWORD1
+
+# Data Structures (KEYWORD1)
+multiMoveList_t	KEYWORD1
+multiMoveListConverted_t	KEYWORD1
+getComprehensivePositionResponseConverted	KEYWORD1
+getMaxPidErrorResponseConverted	KEYWORD1
+
+# Methods (KEYWORD2)
+setAlias	KEYWORD2
+getAlias	KEYWORD2
+openSerialPort	KEYWORD2
+getError	KEYWORD2
+setTimeUnit	KEYWORD2
+setPositionUnit	KEYWORD2
+setVelocityUnit	KEYWORD2
+setAccelerationUnit	KEYWORD2
+setCurrentUnit	KEYWORD2
+setVoltageUnit	KEYWORD2
+setTemperatureUnit	KEYWORD2
+disableMosfets	KEYWORD2
+enableMosfets	KEYWORD2
+trapezoidMove	KEYWORD2
+trapezoidMoveRaw	KEYWORD2
+setMaximumVelocity	KEYWORD2
+setMaximumVelocityRaw	KEYWORD2
+goToPosition	KEYWORD2
+goToPositionRaw	KEYWORD2
+setMaximumAcceleration	KEYWORD2
+setMaximumAccelerationRaw	KEYWORD2
+startCalibration	KEYWORD2
+captureHallSensorData	KEYWORD2
+resetTime	KEYWORD2
+getCurrentTime	KEYWORD2
+getCurrentTimeRaw	KEYWORD2
+timeSync	KEYWORD2
+getNumberOfQueuedItems	KEYWORD2
+emergencyStop	KEYWORD2
+zeroPosition	KEYWORD2
+homing	KEYWORD2
+homingRaw	KEYWORD2
+getHallSensorPosition	KEYWORD2
+getHallSensorPositionRaw	KEYWORD2
+getStatus	KEYWORD2
+goToClosedLoop	KEYWORD2
+getUpdateFrequency	KEYWORD2
+moveWithAcceleration	KEYWORD2
+moveWithAccelerationRaw	KEYWORD2
+detectDevices	KEYWORD2
+detectDevicesGetAnotherResponse	KEYWORD2
+setDeviceAlias	KEYWORD2
+getProductInfo	KEYWORD2
+firmwareUpgrade	KEYWORD2
+getProductDescription	KEYWORD2
+getFirmwareVersion	KEYWORD2
+moveWithVelocity	KEYWORD2
+moveWithVelocityRaw	KEYWORD2
+systemReset	KEYWORD2
+setMaximumMotorCurrent	KEYWORD2
+setMaximumMotorCurrentRaw	KEYWORD2
+multiMove	KEYWORD2
+multiMoveRaw	KEYWORD2
+setSafetyLimits	KEYWORD2
+setSafetyLimitsRaw	KEYWORD2
+ping	KEYWORD2
+controlHallSensorStatistics	KEYWORD2
+getHallSensorStatistics	KEYWORD2
+getPosition	KEYWORD2
+getPositionRaw	KEYWORD2
+readMultipurposeBuffer	KEYWORD2
+testMode	KEYWORD2
+getComprehensivePosition	KEYWORD2
+getComprehensivePositionRaw	KEYWORD2
+getSupplyVoltage	KEYWORD2
+getSupplyVoltageRaw	KEYWORD2
+getMaxPidError	KEYWORD2
+getMaxPidErrorRaw	KEYWORD2
+vibrate	KEYWORD2
+identify	KEYWORD2
+getTemperature	KEYWORD2
+getTemperatureRaw	KEYWORD2
+setPIDConstants	KEYWORD2
+setMaxAllowablePositionDeviation	KEYWORD2
+setMaxAllowablePositionDeviationRaw	KEYWORD2
+getDebugValues	KEYWORD2
+convertTime	KEYWORD2
+convertPosition	KEYWORD2
+convertVelocity	KEYWORD2
+convertAcceleration	KEYWORD2
+convertCurrent	KEYWORD2
+convertVoltage	KEYWORD2
+convertTemperature	KEYWORD2
+
+# Enums (LITERAL1)
+TimeUnit	LITERAL1
+PositionUnit	LITERAL1
+VelocityUnit	LITERAL1
+AccelerationUnit	LITERAL1
+CurrentUnit	LITERAL1
+VoltageUnit	LITERAL1
+TemperatureUnit	LITERAL1
+ConversionDirection	LITERAL1
+
+# Enum Values (LITERAL1)
+TIMESTEPS	LITERAL1
+SECONDS	LITERAL1
+MILLISECONDS	LITERAL1
+MINUTES	LITERAL1
+SHAFT_ROTATIONS	LITERAL1
+DEGREES	LITERAL1
+RADIANS	LITERAL1
+ENCODER_COUNTS	LITERAL1
+ROTATIONS_PER_SECOND	LITERAL1
+RPM	LITERAL1
+DEGREES_PER_SECOND	LITERAL1
+RADIANS_PER_SECOND	LITERAL1
+COUNTS_PER_SECOND	LITERAL1
+COUNTS_PER_TIMESTEP	LITERAL1
+ROTATIONS_PER_SECOND_SQUARED	LITERAL1
+RPM_PER_SECOND	LITERAL1
+DEGREES_PER_SECOND_SQUARED	LITERAL1
+RADIANS_PER_SECOND_SQUARED	LITERAL1
+COUNTS_PER_SECOND_SQUARED	LITERAL1
+COUNTS_PER_TIMESTEP_SQUARED	LITERAL1
+INTERNAL_CURRENT_UNITS	LITERAL1
+MILLIAMPS	LITERAL1
+AMPS	LITERAL1
+MILLIVOLTS	LITERAL1
+VOLTS	LITERAL1
+CELSIUS	LITERAL1
+FAHRENHEIT	LITERAL1
+KELVIN	LITERAL1
+TO_INTERNAL	LITERAL1
+FROM_INTERNAL	LITERAL1
+
+# Constants (LITERAL1)
+COUNTS_PER_REVOLUTION	LITERAL1

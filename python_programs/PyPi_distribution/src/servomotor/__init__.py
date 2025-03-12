@@ -18,8 +18,10 @@ from .communication import (
     interpret_response,
     flush_receive_buffer,
     RESPONSE_CHARACTER,
+    ENCODED_RESPONSE_CHARACTER,
     open_serial_port,
     close_serial_port,
+    read_raw_byte,
     execute_command,
 )
 

@@ -27,7 +27,7 @@ ALIAS1 = ord("X")
 ALIAS2 = ord("Y")
 ALIAS3 = ord("Z")
 ALIAS_LIST = [ord("0")]
-ALL_ALIASES = 255
+
 
 N_PINGS_TO_TEST_COMMUNICATION = 100
 

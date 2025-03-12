@@ -16,3 +16,5 @@
 *.bak15
 servomotor_simulator.py
 .saved_vscode_terminal_sessions
+PyPi_distribution/dist/
+PyPi_distribution/src/

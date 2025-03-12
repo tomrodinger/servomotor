@@ -31,7 +31,7 @@ communication.open_serial_port()
 
 # Let's reset all devices to start from a clean state
 print("Resetting all devices")
-communication.execute_command(communication.ALL_ALIASES, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
+communication.execute_command(communication.ALL_ALIAS, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
 
 # Give time for the devices to reset and boot up
 print("Waiting for devices to reset")
@@ -39,7 +39,7 @@ time.sleep(1.5)
 
 # Detect all devices
 print("Detecting devices")
-parsed_response = communication.execute_command(communication.ALL_ALIASES, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
+parsed_response = communication.execute_command(communication.ALL_ALIAS, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
 alias_list = common_functions.get_alias_list(parsed_response)
 unique_id_list = common_functions.get_unique_id_list(parsed_response)
 if len(alias_list) == 0:
@@ -65,7 +65,7 @@ for i, alias in enumerate(alias_list):
     human_readable_new_alias = common_functions.get_human_readable_alias(new_alias)
     human_readable_unique_id = common_functions.get_human_readable_unique_id(unique_id)
     print(f"Setting alias of device with unique ID {human_readable_unique_id} to {human_readable_new_alias}")
-    parsed_response = communication.execute_command(communication.ALL_ALIASES, "SET_DEVICE_ALIAS_COMMAND", [unique_id, new_alias], verbose=VERBOSE)
+    parsed_response = communication.execute_command(communication.ALL_ALIAS, "SET_DEVICE_ALIAS_COMMAND", [unique_id, new_alias], verbose=VERBOSE)
 
 # Give time for the devices to reset and boot up
 print("Waiting for devices to all set the new alias and reset")
@@ -73,7 +73,7 @@ time.sleep(1.5)
 
 # Detect all devices
 print("Detecting devices")
-parsed_response = communication.execute_command(communication.ALL_ALIASES, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
+parsed_response = communication.execute_command(communication.ALL_ALIAS, "DETECT_DEVICES_COMMAND", [], verbose=VERBOSE)
 second_alias_list = common_functions.get_alias_list(parsed_response)
 second_unique_id_list = common_functions.get_unique_id_list(parsed_response)
 if len(second_alias_list) != len(alias_list):

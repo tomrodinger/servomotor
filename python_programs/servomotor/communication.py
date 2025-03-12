@@ -11,16 +11,25 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from terminal_formatting import format_error, format_info, format_warning, format_success, format_debug, STYLE
 
-ALL_ALIASES = 255
+# Device ID bit manipulation constants
+DEVICE_ID_LSB_MASK = 0x01  # Mask for checking if LSB is set
+DEVICE_ID_SHIFT = 1        # Number of bits to shift for device ID interpretation
+
+# Reserved aliases with special meaning (these are the actual values, not encoded)
+ALL_ALIAS = 127           # to address all devices on the bus at the same time
+RESPONSE_CHARACTER = 126   # indicates that the response is coming from the device being addressed
+EXTENDED_ADDRESSING = 125  # indicates that we will use extended addressing
+ENCODED_RESPONSE_CHARACTER = (RESPONSE_CHARACTER << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK # this will be the first byte sent on the line as a response to a command
+
+# Protocol constants
 serial_port = None
 PROTOCOL_VERSION = 20
 registered_data_types = None
 registered_commands = None
 ser = None
-alias = 255
+alias = ALL_ALIAS  # Default to addressing all devices
 detect_devices_command_id = None
 set_device_alias_command_id = None
-RESPONSE_CHARACTER = 254
 
 # When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
 # Timeout on the communication
@@ -32,6 +41,18 @@ class CommunicationError(Exception):
 # The payload appears to be wrong or invalid
 class PayloadError(Exception):
     pass
+
+# Encode a device ID by shifting left and setting LSB to 1
+def encode_device_id(device_id):
+    return (device_id << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK
+
+# Decode a device ID by shifting right by one bit
+def decode_device_id(encoded_id):
+    return encoded_id >> DEVICE_ID_SHIFT
+
+# Check if a device ID has the correct format (LSB set to 1)
+def is_valid_device_id_format(device_id):
+    return (device_id & DEVICE_ID_LSB_MASK) == DEVICE_ID_LSB_MASK
 
 def print_data(prefix_message, data, print_size=True, verbose=2):
     if verbose == 2:
@@ -58,8 +79,9 @@ def get_response(verbose=2):
         raise CommunicationError("Error: the response is not 3 bytes long")
     if verbose == 2:
         print_data("Received a response: ", response, print_size=True, verbose=verbose)
-    if response[0] != RESPONSE_CHARACTER:
-        error_text = f"Error: the first byte (which should indicate a response) is not the expected {RESPONSE_CHARACTER}"
+    # The response character should be encoded (shifted and LSB set to 1)
+    if response[0] != ENCODED_RESPONSE_CHARACTER:
+        error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {ENCODED_RESPONSE_CHARACTER} (encoded from {RESPONSE_CHARACTER})"
         raise CommunicationError(error_text)
     payload_size = response[2]
     if payload_size == 0xff:
@@ -141,11 +163,14 @@ def flush_receive_buffer():
 
 def send_command(command_id, gathered_inputs, verbose=2):
     command_payload_len = len(gathered_inputs)
-    command = bytearray([alias, command_id, command_payload_len]) + gathered_inputs
+    encoded_alias = encode_device_id(alias)
+    # Debug print removed to prevent polluting the serial stream
+    # print("******************************* Encoded alias: %d" % (encoded_alias))
+    command = bytearray([encoded_alias, command_id, command_payload_len]) + gathered_inputs
     if verbose == 2:
         print_data("Sending command: ", command, print_size=True, verbose=verbose)
     ser.write(command)
-    if (alias == 255) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
+    if (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
         if verbose == 2:
             print(format_info(f"Sending a command to all devices (alias {alias}) and we expect there will be no response from any of them"))
         return []
@@ -173,8 +198,8 @@ def send_command(command_id, gathered_inputs, verbose=2):
     return all_response_payloads
 
 def string_to_u8_alias(input):
-    if input == "255":
-        converted_input = 255
+    if input == str(ALL_ALIAS):
+        converted_input = ALL_ALIAS
     elif len(input) == 1:
         converted_input = ord(input)
     else:
@@ -183,11 +208,15 @@ def string_to_u8_alias(input):
         except ValueError:
             print(format_error("Error: it is not a single character nor is it an integer"))
             exit(1)
-        if converted_input < 0 or converted_input > 255:
-            print(format_error("Error: it is not within the allowed range. The allowed range is 0 to 255"))
+        if converted_input < 0 or converted_input > ALL_ALIAS:
+            print(format_error(f"Error: it is not within the allowed range. The allowed range is 0 to {ALL_ALIAS}"))
             exit(1)
+    # Check for reserved values
     if converted_input == RESPONSE_CHARACTER:
         print(format_error(f"Error: the alias {RESPONSE_CHARACTER} is not allowed because it is reserved to indicate a response"))
+        exit(1)
+    if converted_input == EXTENDED_ADDRESSING:
+        print(format_error(f"Error: the alias {EXTENDED_ADDRESSING} is not allowed because it is reserved for extended addressing"))
         exit(1)
     return converted_input
 

@@ -15,6 +15,28 @@
 #define COMMUNICATION_ERROR_BUFFER_TOO_SMALL  -5
 #define COMMUNICATION_SUCCESS 0
 
+// Device ID bit manipulation constants
+#define DEVICE_ID_LSB_MASK 0x01  // Mask for checking if LSB is set
+#define DEVICE_ID_SHIFT 1         // Number of bits to shift for device ID interpretation
+
+// Reserved aliases with special meaning (these are the actual values, not encoded)
+#define ALL_ALIAS 127            // to address all devices on the bus at the same time
+#define RESPONSE_CHARACTER 126    // indicates that the response is coming from the device being addressed
+#define EXTENDED_ADDRESSING 125   // indicates that we will use extended addressing
+
+// Helper functions for device ID encoding/decoding
+inline uint8_t encodeDeviceId(uint8_t deviceId) {
+    return (deviceId << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK;
+}
+
+inline uint8_t decodeDeviceId(uint8_t encodedId) {
+    return encodedId >> DEVICE_ID_SHIFT;
+}
+
+inline bool isValidDeviceIdFormat(uint8_t deviceId) {
+    return (deviceId & DEVICE_ID_LSB_MASK) == DEVICE_ID_LSB_MASK;
+}
+
 class Communication {
 public:
     Communication(HardwareSerial& serialPort);
