@@ -19,6 +19,7 @@ from .communication import (
     flush_receive_buffer,
     RESPONSE_CHARACTER,
     ENCODED_RESPONSE_CHARACTER,
+    ALL_ALIAS,
     open_serial_port,
     close_serial_port,
     read_raw_byte,

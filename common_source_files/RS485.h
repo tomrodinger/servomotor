@@ -16,6 +16,9 @@
 #define ENCODED_RESPONSE_CHARACTER_TEXT "\xFD" // this needs to be set according to the text version of the ENCODED_RESPONSE_CHARACTER
 #define NO_ERROR_RESPONSE (ENCODED_RESPONSE_CHARACTER_TEXT "\x00\x00")
 
+// Include unique_id.h for UNIQUE_ID_SIZE definition
+#include "unique_id.h"
+
 #define USART1_TIMEOUT 5 // one count is 10ms, so this is a timeout of about 50 ms
 
 #define TRANSMIT_BUFFER_SIZE 150 // this is the maximum number of bytes that can be transmitted with one call to rs485_transmit()
@@ -40,6 +43,10 @@ void rs485_init(void);
 void rs485_allow_next_command(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
+
+
+
+
 
 
 #endif /* SRC_RS485_H_ */

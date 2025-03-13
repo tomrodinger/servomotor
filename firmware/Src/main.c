@@ -198,583 +198,610 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     #ifdef MOTOR_SIMULATION
     print_number("Received a command, alias is: ", axis);
     #endif
-    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
-        switch(command) {
-        case DISABLE_MOSFETS_COMMAND:
+
+    switch(command) {
+    case DISABLE_MOSFETS_COMMAND:
+        rs485_allow_next_command();
+        disable_mosfets();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case ENABLE_MOSFETS_COMMAND:
+        rs485_allow_next_command();
+        check_current_sensor_and_enable_mosfets();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case TRAPEZOID_MOVE_COMMAND:
+        {
+            int32_t trapezoid_move_displacement = ((int32_t*)parameters)[0];
+            uint32_t trapezoid_move_time = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
-            disable_mosfets();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case ENABLE_MOSFETS_COMMAND:
+            add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
+        }
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_MAX_VELOCITY_COMMAND:
+        {
+            uint32_t max_velocity = *(uint32_t*)parameters;
             rs485_allow_next_command();
-            check_current_sensor_and_enable_mosfets();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case TRAPEZOID_MOVE_COMMAND:
-            {
-                int32_t trapezoid_move_displacement = ((int32_t*)parameters)[0];
-                uint32_t trapezoid_move_time = ((uint32_t*)parameters)[1];
-                rs485_allow_next_command();
-                add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
-            }
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_MAX_VELOCITY_COMMAND:
-            {
-                uint32_t max_velocity = *(uint32_t*)parameters;
-                rs485_allow_next_command();
-                set_max_velocity(max_velocity);
-            }
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GO_TO_POSITION_COMMAND:
-            {
-                int32_t end_position = ((int32_t*)parameters)[0];
-                uint32_t move_time = ((uint32_t*)parameters)[1];
-                rs485_allow_next_command();
-                add_go_to_position_to_queue(end_position, move_time);
-            }
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_MAX_ACCELERATION_COMMAND:
-            {
-                uint32_t max_acceleration = *(uint32_t*)parameters;
-                rs485_allow_next_command();
-                set_max_acceleration(max_acceleration);
-            }
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case START_CALIBRATION_COMMAND:
+            set_max_velocity(max_velocity);
+        }
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GO_TO_POSITION_COMMAND:
+        {
+            int32_t end_position = ((int32_t*)parameters)[0];
+            uint32_t move_time = ((uint32_t*)parameters)[1];
             rs485_allow_next_command();
-            start_calibration(0);
-            break;
-        case CAPTURE_HALL_SENSOR_DATA_COMMAND:
-            capture_type = parameters[0];
+            add_go_to_position_to_queue(end_position, move_time);
+        }
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_MAX_ACCELERATION_COMMAND:
+        {
+            uint32_t max_acceleration = *(uint32_t*)parameters;
             rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
-                start_calibration(1);
-            }
-            else {
-                start_capture(capture_type);
-            }
-            break;
-        case RESET_TIME_COMMAND:
-            rs485_allow_next_command();
-            reset_time();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_CURRENT_TIME_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                local_time = get_microsecond_time();
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&local_time, 6);
-            }
-            break;
-        case TIME_SYNC_COMMAND:
-            memcpy(&time_from_master, parameters, 6);
-            rs485_allow_next_command();
-            int32_t time_error = time_sync(time_from_master);
-            uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&time_error, 4);
-                rs485_transmit(&clock_calibration_value, 2);
-            }
-            break;
-        case GET_N_ITEMS_IN_QUEUE_COMMAND:
-            rs485_allow_next_command();
-            n_items_in_queue = get_n_items_in_queue();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
-                rs485_transmit(&n_items_in_queue, 1);
-            }
-            break;
-        case EMERGENCY_STOP_COMMAND:
-            rs485_allow_next_command();
-            emergency_stop();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case ZERO_POSITION_COMMAND:
-            rs485_allow_next_command();
-            zero_position();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case HOMING_COMMAND:
-            max_homing_travel_displacement = ((int32_t*)parameters)[0];
-            max_homing_time = ((uint32_t*)parameters)[1];
-            rs485_allow_next_command();
-            char buf[100];
-            sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
-            print_debug_string(buf);
-            start_homing(max_homing_travel_displacement, max_homing_time);
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_POSITION_COMMAND:
-            rs485_allow_next_command();
-            {
+            set_max_acceleration(max_acceleration);
+        }
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case START_CALIBRATION_COMMAND:
+        rs485_allow_next_command();
+        start_calibration(0);
+        break;
+    case CAPTURE_HALL_SENSOR_DATA_COMMAND:
+        capture_type = parameters[0];
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
+            start_calibration(1);
+        }
+        else {
+            start_capture(capture_type);
+        }
+        break;
+    case RESET_TIME_COMMAND:
+        rs485_allow_next_command();
+        reset_time();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_CURRENT_TIME_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            local_time = get_microsecond_time();
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&local_time, 6);
+        }
+        break;
+    case TIME_SYNC_COMMAND:
+        memcpy(&time_from_master, parameters, 6);
+        rs485_allow_next_command();
+        int32_t time_error = time_sync(time_from_master);
+        uint16_t clock_calibration_value = get_clock_calibration_value();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&time_error, 4);
+            rs485_transmit(&clock_calibration_value, 2);
+        }
+        break;
+    case GET_N_ITEMS_IN_QUEUE_COMMAND:
+        rs485_allow_next_command();
+        n_items_in_queue = get_n_items_in_queue();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
+            rs485_transmit(&n_items_in_queue, 1);
+        }
+        break;
+    case EMERGENCY_STOP_COMMAND:
+        rs485_allow_next_command();
+        emergency_stop();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case ZERO_POSITION_COMMAND:
+        rs485_allow_next_command();
+        zero_position();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case HOMING_COMMAND:
+        max_homing_travel_displacement = ((int32_t*)parameters)[0];
+        max_homing_time = ((uint32_t*)parameters)[1];
+        rs485_allow_next_command();
+        char buf[100];
+        sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
+        print_debug_string(buf);
+        start_homing(max_homing_travel_displacement, max_homing_time);
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_POSITION_COMMAND:
+        rs485_allow_next_command();
+        {
 //                int32_t motor_position;
-                int64_t motor_position;
-                if(axis != ALL_ALIAS) {
-                    motor_position = get_motor_position();
+            int64_t motor_position;
+            if(axis != ALL_ALIAS) {
+                motor_position = get_motor_position();
 //                    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
-                    rs485_transmit(&motor_position, sizeof(motor_position));
-                }
+                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
+                rs485_transmit(&motor_position, sizeof(motor_position));
             }
-            break;
-        case GET_HALL_SENSOR_POSITION_COMMAND:
-            rs485_allow_next_command();
-            {
+        }
+        break;
+    case GET_HALL_SENSOR_POSITION_COMMAND:
+        rs485_allow_next_command();
+        {
 //                int32_t hall_sensor_position;
-                int64_t hall_sensor_position;
-                if(axis != ALL_ALIAS) {
-                    hall_sensor_position = get_hall_position();
+            int64_t hall_sensor_position;
+            if(axis != ALL_ALIAS) {
+                hall_sensor_position = get_hall_position();
 //                    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
-                    rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
-                }
+                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
+                rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
             }
-            break;
-        case GET_COMPREHENSIVE_POSITION_COMMAND:
-            rs485_allow_next_command();
-            {
-                struct __attribute__((__packed__)) {
-                    uint8_t header[3];
+        }
+        break;
+    case GET_COMPREHENSIVE_POSITION_COMMAND:
+        rs485_allow_next_command();
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3];
 //                    int32_t motor_position;
-                    int64_t motor_position;
+                int64_t motor_position;
 //                    int32_t hall_sensor_position;
-                    int64_t hall_sensor_position;
-                    int32_t external_encoder_position;
-                } comprehensive_position;
-                if(axis != ALL_ALIAS) {
-                    comprehensive_position.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    comprehensive_position.header[1] = 1;
-                    comprehensive_position.header[2] = sizeof(comprehensive_position) - 3;
-                    comprehensive_position.motor_position = get_motor_position();
-                    comprehensive_position.hall_sensor_position = get_hall_position();
-                    comprehensive_position.external_encoder_position = get_external_encoder_position();
-                    rs485_transmit(&comprehensive_position, sizeof(comprehensive_position));
-                }
-            }
-            break;
-        case GET_STATUS_COMMAND:
-            rs485_allow_next_command();
+                int64_t hall_sensor_position;
+                int32_t external_encoder_position;
+            } comprehensive_position;
             if(axis != ALL_ALIAS) {
-                uint8_t motor_status_flags = get_motor_status_flags();
-                set_device_status_flags(motor_status_flags);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-                sprintf(buf, "Get status: %hu\n", motor_status_flags);
-                print_debug_string(buf);
+                comprehensive_position.header[0] = ENCODED_RESPONSE_CHARACTER;
+                comprehensive_position.header[1] = 1;
+                comprehensive_position.header[2] = sizeof(comprehensive_position) - 3;
+                comprehensive_position.motor_position = get_motor_position();
+                comprehensive_position.hall_sensor_position = get_hall_position();
+                comprehensive_position.external_encoder_position = get_external_encoder_position();
+                rs485_transmit(&comprehensive_position, sizeof(comprehensive_position));
             }
-            break;
-        case GO_TO_CLOSED_LOOP_COMMAND:
-            rs485_allow_next_command();
-            start_go_to_closed_loop_mode();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_UPDATE_FREQUENCY_COMMAND:
-            rs485_allow_next_command();
-            frequency = get_update_frequency();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                rs485_transmit(&frequency, 4);
-            }
-            break;
-        case MOVE_WITH_ACCELERATION_COMMAND:
-            acceleration = ((int32_t*)parameters)[0];
-            time_steps = ((uint32_t*)parameters)[1];
-            rs485_allow_next_command();
+        }
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            uint8_t motor_status_flags = get_motor_status_flags();
+            set_device_status_flags(motor_status_flags);
+            rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+            sprintf(buf, "Get status: %hu\n", motor_status_flags);
+            print_debug_string(buf);
+        }
+        break;
+    case GO_TO_CLOSED_LOOP_COMMAND:
+        rs485_allow_next_command();
+        start_go_to_closed_loop_mode();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_UPDATE_FREQUENCY_COMMAND:
+        rs485_allow_next_command();
+        frequency = get_update_frequency();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+            rs485_transmit(&frequency, 4);
+        }
+        break;
+    case MOVE_WITH_ACCELERATION_COMMAND:
+        acceleration = ((int32_t*)parameters)[0];
+        time_steps = ((uint32_t*)parameters)[1];
+        rs485_allow_next_command();
 //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
 //            print_debug_string(buf);
-            add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case DETECT_DEVICES_COMMAND:
-            rs485_allow_next_command();
-            detect_devices_delay = get_random_number(99);
-            break;
-        case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)parameters)[0];
-            new_alias = parameters[8];
-            rs485_allow_next_command();
-            print_debug_string("Set device alias command received\n"); // DEBUG - temporarily added to aid in debugging
-            char buff[100]; // DEBUG - temporarily added to aid in debugging
-            snprintf(buff, sizeof(buff), "Command unique_id=0x%llx, my_unique_id=0x%llx\n", // DEBUG - temporarily added to aid in debugging
-                    (unsigned long long)unique_id, (unsigned long long)my_unique_id); // DEBUG - temporarily added to aid in debugging
-            print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
-                        
-            snprintf(buff, sizeof(buff), "selectedAxis=0x%02x (as int=0x%x)\n", (uint8_t)selectedAxis, (int)selectedAxis); // DEBUG - temporarily added to aid in debugging
-            print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
-            if(unique_id == my_unique_id) {
-                print_debug_string("Entering if(match) block\n"); // DEBUG - temporarily added to aid in debugging
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-                print_debug_string("About to print_number\n"); // DEBUG - temporarily added to aid in debugging
-                snprintf(buff, sizeof(buff), "new_alias=0x%02x\n", new_alias); // DEBUG - temporarily added to aid in debugging
-                print_debug_string(buff); // DEBUG - temporarily added to aid in debugging
-                print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
-                print_debug_string("After print_number\n"); // DEBUG - temporarily added to aid in debugging
-                print_debug_string("Starting microsecond_delay\n"); // DEBUG - temporarily added to aid in debugging
-                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
-                print_debug_string("After microsecond_delay\n"); // DEBUG - temporarily added to aid in debugging
-                print_debug_string("Setting new alias\n"); // DEBUG - temporarily added to aid in debugging
-                global_settings.my_alias = new_alias;
-                print_debug_string("About to save settings\n"); // DEBUG - temporarily added to aid in debugging
-                save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
-            } else {
-                print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
-            }
-            break;
-        case GET_PRODUCT_INFO_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_info_length = sizeof(struct product_info_struct);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-                rs485_transmit(&product_info_length, 1);
-                rs485_transmit(product_info, sizeof(struct product_info_struct));
-            }
-            break;
-        case GET_PRODUCT_DESCRIPTION_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-                rs485_transmit(&product_description_length, 1);
-                rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
-            }
-            break;
-        case GET_FIRMWARE_VERSION_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t firmware_version_length = sizeof(firmware_version);
-                rs485_transmit(&firmware_version_length, 1);
-                rs485_transmit(&firmware_version, sizeof(firmware_version));
-            }
-            break;
-        case MOVE_WITH_VELOCITY_COMMAND:
-            velocity = ((int32_t*)parameters)[0];
-            time_steps = ((uint32_t*)parameters)[1];
-            rs485_allow_next_command();
+        add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case DETECT_DEVICES_COMMAND:
+        rs485_allow_next_command();
+        detect_devices_delay = get_random_number(99);
+        break;
+    case SET_DEVICE_ALIAS_COMMAND:
+        unique_id = ((int64_t*)parameters)[0];
+        new_alias = parameters[8];
+        rs485_allow_next_command();
+        if(unique_id == my_unique_id) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+            print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
+            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+            global_settings.my_alias = new_alias;
+            save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
+        } else {
+            print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
+        }
+        break;
+    case GET_PRODUCT_INFO_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_info_length = sizeof(struct product_info_struct);
+            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            rs485_transmit(&product_info_length, 1);
+            rs485_transmit(product_info, sizeof(struct product_info_struct));
+        }
+        break;
+    case GET_PRODUCT_DESCRIPTION_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+            rs485_transmit(&product_description_length, 1);
+            rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+        }
+        break;
+    case GET_FIRMWARE_VERSION_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t firmware_version_length = sizeof(firmware_version);
+            rs485_transmit(&firmware_version_length, 1);
+            rs485_transmit(&firmware_version, sizeof(firmware_version));
+        }
+        break;
+    case MOVE_WITH_VELOCITY_COMMAND:
+        velocity = ((int32_t*)parameters)[0];
+        time_steps = ((uint32_t*)parameters)[1];
+        rs485_allow_next_command();
 //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
 //            print_debug_string(buf);
-            add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        case SET_MAXIMUM_MOTOR_CURRENT:
-            new_maximum_motor_current = ((uint16_t*)parameters)[0];
-            new_maximum_motor_regen_current = ((uint16_t*)parameters)[1];
-            rs485_allow_next_command();
-            set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case MULTI_MOVE_COMMAND:
-            n_moves_in_this_command = ((int8_t*)parameters)[0];
-            struct multi_move_command_buffer_struct multi_move_command_buffer;
-            memcpy(&multi_move_command_buffer, parameters + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
-            rs485_allow_next_command();
+        add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    case SET_MAXIMUM_MOTOR_CURRENT:
+        new_maximum_motor_current = ((uint16_t*)parameters)[0];
+        new_maximum_motor_regen_current = ((uint16_t*)parameters)[1];
+        rs485_allow_next_command();
+        set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case MULTI_MOVE_COMMAND:
+        n_moves_in_this_command = ((int8_t*)parameters)[0];
+        struct multi_move_command_buffer_struct multi_move_command_buffer;
+        memcpy(&multi_move_command_buffer, parameters + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+        rs485_allow_next_command();
 //            char buf[100];
 //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
 //            print_debug_string(buf);
-            if(n_moves_in_this_command > MAX_MULTI_MOVES) {
-                fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-            }
-            for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
-                if((multi_move_command_buffer.move_type_bits & 1) == 0) {
-                    add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
+        if(n_moves_in_this_command > MAX_MULTI_MOVES) {
+            fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
+            if((multi_move_command_buffer.move_type_bits & 1) == 0) {
+                add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
 //                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
 //                    print_debug_string(buf);
-                } else {
-                    add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
+            } else {
+                add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
 //                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
 //                    print_debug_string(buf);
-                }
-                multi_move_command_buffer.move_type_bits >>= 1;
             }
+            multi_move_command_buffer.move_type_bits >>= 1;
+        }
+        if(axis != ALL_ALIAS) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_SAFETY_LIMITS_COMMAND:
+        {
+    //            lower_limit = ((int32_t*)parameters)[0];
+    //            upper_limit = ((int32_t*)parameters)[1];
+            int64_t lower_limit = ((int64_t*)parameters)[0];
+            int64_t upper_limit = ((int64_t*)parameters)[1];
+            rs485_allow_next_command();
+    //            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
+    //            print_debug_string(buf);
+            set_movement_limits(lower_limit, upper_limit);
+            print_int64("lower_limit:", lower_limit);
+            print_int64("upper_limit:", upper_limit);
             if(axis != ALL_ALIAS) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
-            break;
-        case SET_SAFETY_LIMITS_COMMAND:
-            {
-        //            lower_limit = ((int32_t*)parameters)[0];
-        //            upper_limit = ((int32_t*)parameters)[1];
-                int64_t lower_limit = ((int64_t*)parameters)[0];
-                int64_t upper_limit = ((int64_t*)parameters)[1];
-                rs485_allow_next_command();
-        //            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
-        //            print_debug_string(buf);
-                set_movement_limits(lower_limit, upper_limit);
-                print_int64("lower_limit:", lower_limit);
-                print_int64("upper_limit:", upper_limit);
-                if(axis != ALL_ALIAS) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-            }
-            break;
-        case ADD_TO_QUEUE_TEST_COMMAND:
-            {
-                struct __attribute__((__packed__)) {
-                    uint8_t header[3];
-                    add_to_queue_test_results_t add_to_queue_test_results;
-                } add_to_queue_test_reply;
-                add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_reply.add_to_queue_test_results);
-                rs485_allow_next_command();
-                if(axis != ALL_ALIAS) {
-                    add_to_queue_test_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    add_to_queue_test_reply.header[1] = 1;
-                    add_to_queue_test_reply.header[2] = sizeof(add_to_queue_test_reply) - sizeof(add_to_queue_test_reply.header);
-                    rs485_transmit(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply));
-                }
-            }
-            break;
-        case PING_COMMAND:
-            memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+        }
+        break;
+    case ADD_TO_QUEUE_TEST_COMMAND:
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3];
+                add_to_queue_test_results_t add_to_queue_test_results;
+            } add_to_queue_test_reply;
+            add_to_queue_test(((int32_t*)parameters)[0], ((uint32_t*)parameters)[1], ((uint8_t*)parameters)[8], &add_to_queue_test_reply.add_to_queue_test_results);
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
-                ping_response_buffer[0] = ENCODED_RESPONSE_CHARACTER;
-                ping_response_buffer[1] = '\x01';
-                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
-                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+                add_to_queue_test_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                add_to_queue_test_reply.header[1] = 1;
+                add_to_queue_test_reply.header[2] = sizeof(add_to_queue_test_reply) - sizeof(add_to_queue_test_reply.header);
+                rs485_transmit(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply));
             }
-            break;
-        case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
-            control_hall_sensor_statistics_subcommand = ((int8_t*)parameters)[0];
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                if(control_hall_sensor_statistics_subcommand == 0) {
-                    hall_sensor_turn_off_statistics();
-                }
-                if(control_hall_sensor_statistics_subcommand == 1) {
-                    hall_sensor_turn_on_and_reset_statistics();
-                }
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case PING_COMMAND:
+        memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            ping_response_buffer[0] = ENCODED_RESPONSE_CHARACTER;
+            ping_response_buffer[1] = '\x01';
+            ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+            rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+        }
+        break;
+    case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
+        control_hall_sensor_statistics_subcommand = ((int8_t*)parameters)[0];
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            if(control_hall_sensor_statistics_subcommand == 0) {
+                hall_sensor_turn_off_statistics();
             }
-            break;
-        case GET_HALL_SENSOR_STATISTICS_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
+            if(control_hall_sensor_statistics_subcommand == 1) {
+                hall_sensor_turn_on_and_reset_statistics();
+            }
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_HALL_SENSOR_STATISTICS_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            struct __attribute__((__packed__)) {
+                uint8_t axis;
+                uint8_t command;
+                uint8_t size;
+                hall_sensor_statistics_t hall_sensor_statistics;
+            } hall_sensor_statistics_full_response;
+            get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
+            hall_sensor_statistics_full_response.axis = ENCODED_RESPONSE_CHARACTER;
+            hall_sensor_statistics_full_response.command = '\x01';
+            hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
+            rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+        }
+        break;
+    case READ_MULTIPURPOSE_BUFFER_COMMAND:
+        rs485_allow_next_command();
+        if(axis != ALL_ALIAS) {
+            uint8_t data_type;
+            uint16_t data_size;
+            uint16_t data_size_left_to_send;
+            uint8_t *multipurpose_data_ptr;
+            get_multipurpose_data(&data_type, &data_size, &multipurpose_data_ptr);
+            if (data_type != 0) {
                 struct __attribute__((__packed__)) {
                     uint8_t axis;
                     uint8_t command;
                     uint8_t size;
-                    hall_sensor_statistics_t hall_sensor_statistics;
-                } hall_sensor_statistics_full_response;
-                get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
-                hall_sensor_statistics_full_response.axis = ENCODED_RESPONSE_CHARACTER;
-                hall_sensor_statistics_full_response.command = '\x01';
-                hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
-                rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+                    uint16_t extended_size;
+                    uint8_t data_type;
+                } multipurpose_data_response_header;
+                multipurpose_data_response_header.axis = ENCODED_RESPONSE_CHARACTER;
+                multipurpose_data_response_header.command = '\x01';
+                multipurpose_data_response_header.size = 255; // when size is 255 then we get the actual size from the next 16 bit number (thus allowing sizes up to 65535)
+                multipurpose_data_response_header.extended_size = sizeof(data_type) + data_size;
+                multipurpose_data_response_header.data_type = data_type;
+                rs485_transmit(&multipurpose_data_response_header, sizeof(multipurpose_data_response_header));
+                data_size_left_to_send = data_size;
+                while(data_size_left_to_send > 0) {
+                    uint16_t data_size_this_packet = data_size_left_to_send;
+                    if(data_size_this_packet > TRANSMIT_BUFFER_SIZE) {
+                        data_size_this_packet = TRANSMIT_BUFFER_SIZE;
+                    }
+                    rs485_transmit(multipurpose_data_ptr, data_size_this_packet);
+                    multipurpose_data_ptr += data_size_this_packet;
+                    data_size_left_to_send -= data_size_this_packet;
+                }
+                rs485_wait_for_transmit_done();
+                clear_multipurpose_data();
             }
-            break;
-        case READ_MULTIPURPOSE_BUFFER_COMMAND:
+            print_debug_string("Read multipurpose data\n");
+            sprintf(buf, "Type is %hu, Size is %hu\n", data_type, data_size);
+            print_debug_string(buf);
+        }
+        break;
+    case GET_SUPPLY_VOLTAGE_COMMAND:
+        rs485_allow_next_command();
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3];
+                uint16_t supply_voltage;
+            } supply_voltage_reply;
+            if(axis != ALL_ALIAS) {
+                supply_voltage_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                supply_voltage_reply.header[1] = 1;
+                supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
+                supply_voltage_reply.supply_voltage = get_supply_voltage_volts_times_10();
+                rs485_transmit(&supply_voltage_reply, sizeof(supply_voltage_reply));
+            }
+        }
+        break;
+    case GET_MAX_PID_ERROR_COMMAND:
+        rs485_allow_next_command();
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3];
+                int32_t min_PID_error;
+                int32_t max_PID_error;
+            } get_max_pid_error_reply;
+            if(axis != ALL_ALIAS) {
+                get_max_pid_error_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                get_max_pid_error_reply.header[1] = 1;
+                get_max_pid_error_reply.header[2] = sizeof(get_max_pid_error_reply) - 3;
+                int32_t min_PID_error;
+                int32_t max_PID_error;
+                get_max_PID_error(&min_PID_error, &max_PID_error);
+                get_max_pid_error_reply.min_PID_error = min_PID_error;
+                get_max_pid_error_reply.max_PID_error = max_PID_error;
+                rs485_transmit(&get_max_pid_error_reply, sizeof(get_max_pid_error_reply));
+            }
+        }
+        break;
+    case TEST_MODE_COMMAND:
+        {
+            uint8_t test_mode = parameters[0];
+            rs485_allow_next_command();
+            if (test_mode == 0) {
+                set_motor_test_mode(0);
+                set_led_test_mode(0);
+            }
+            else if (test_mode < 10) {
+                set_motor_test_mode(test_mode);
+            }
+            else {
+                set_led_test_mode(test_mode - 10);
+            }
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+            sprintf(buf, "Setting the test mode to %hu\n", test_mode);
+            print_debug_string(buf);
+        }
+        break;
+    case VIBRATE_COMMAND:
+        {
+            uint8_t vibration_level = parameters[0];
+            rs485_allow_next_command();
+            vibrate(vibration_level);
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+            if(vibration_level == 0) {
+                print_debug_string("Turning off vibration\n");
+            }
+            else {
+                sprintf(buf, "Turning on vibration with level %hu\n", vibration_level);
+                print_debug_string(buf);
+            }
+        }
+        break;
+    case IDENTIFY_COMMAND:
+        {
+            unique_id = ((int64_t*)parameters)[0];
+            rs485_allow_next_command();
+            if(unique_id == my_unique_id) {
+                SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
+                green_led_action_counter = 0;
+                n_identify_flashes = 30;
+                SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
+                print_debug_string("Identifying\n");
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+        }
+        break;
+    case GET_TEMPERATURE_COMMAND:
+        rs485_allow_next_command();
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3];
+                int16_t temperature;
+            } get_temperature_reply;
+            if(axis != ALL_ALIAS) {
+                get_temperature_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                get_temperature_reply.header[1] = 1;
+                get_temperature_reply.header[2] = sizeof(get_temperature_reply) - sizeof(get_temperature_reply.header);
+                get_temperature_reply.temperature = get_temperature_degrees_C();
+                rs485_transmit(&get_temperature_reply, sizeof(get_temperature_reply));
+            }
+        }
+        break;
+    case SET_PID_CONSTANTS_COMMAND:
+        {
+            uint32_t p = ((uint32_t*)parameters)[0];
+            uint32_t i = ((uint32_t*)parameters)[1];
+            uint32_t d = ((uint32_t*)parameters)[2];
+            rs485_allow_next_command();
+            sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", p, i, d);
+            print_debug_string(buf);
+            set_pid_constants(p, i, d);
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+        }
+        break;
+    case SET_MAX_ALLOWABLE_POSITION_DEVIATION:
+        {
+            int64_t new_max_allowable_position_deviation = llabs(((int64_t*)parameters)[0]);
+            rs485_allow_next_command();
+            set_max_allowable_position_deviation(new_max_allowable_position_deviation);
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+        }
+        break;
+    case GET_DEBUG_VALUES_COMMAND:
+        {
             rs485_allow_next_command();
             if(axis != ALL_ALIAS) {
-                uint8_t data_type;
-                uint16_t data_size;
-                uint16_t data_size_left_to_send;
-                uint8_t *multipurpose_data_ptr;
-                get_multipurpose_data(&data_type, &data_size, &multipurpose_data_ptr);
-                if (data_type != 0) {
-                    struct __attribute__((__packed__)) {
-                        uint8_t axis;
-                        uint8_t command;
-                        uint8_t size;
-                        uint16_t extended_size;
-                        uint8_t data_type;
-                    } multipurpose_data_response_header;
-                    multipurpose_data_response_header.axis = ENCODED_RESPONSE_CHARACTER;
-                    multipurpose_data_response_header.command = '\x01';
-                    multipurpose_data_response_header.size = 255; // when size is 255 then we get the actual size from the next 16 bit number (thus allowing sizes up to 65535)
-                    multipurpose_data_response_header.extended_size = sizeof(data_type) + data_size;
-                    multipurpose_data_response_header.data_type = data_type;
-                    rs485_transmit(&multipurpose_data_response_header, sizeof(multipurpose_data_response_header));
-                    data_size_left_to_send = data_size;
-                    while(data_size_left_to_send > 0) {
-                        uint16_t data_size_this_packet = data_size_left_to_send;
-                        if(data_size_this_packet > TRANSMIT_BUFFER_SIZE) {
-                            data_size_this_packet = TRANSMIT_BUFFER_SIZE;
-                        }
-                        rs485_transmit(multipurpose_data_ptr, data_size_this_packet);
-                        multipurpose_data_ptr += data_size_this_packet;
-                        data_size_left_to_send -= data_size_this_packet;
-                    }
-                    rs485_wait_for_transmit_done();
-                    clear_multipurpose_data();
-                }
-                print_debug_string("Read multipurpose data\n");
-                sprintf(buf, "Type is %hu, Size is %hu\n", data_type, data_size);
-                print_debug_string(buf);
-            }
-            break;
-        case GET_SUPPLY_VOLTAGE_COMMAND:
-            rs485_allow_next_command();
-            {
+                int64_t max_acceleration;
+                int64_t max_velocity;
+                int64_t currenbt_velocity;
+                int32_t measured_velocity;
+                uint32_t n_time_steps;
+                int64_t debug_value1;
+                int64_t debug_value2;
+                int64_t debug_value3;
+                int64_t debug_value4;
+                uint16_t all_motor_control_calulations_profiler_time;
+                uint16_t all_motor_control_calulations_profiler_max_time;
+                uint16_t get_sensor_position_profiler_time;
+                uint16_t get_sensor_position_profiler_max_time;
+                uint16_t compute_velocity_profiler_time;
+                uint16_t compute_velocity_profiler_max_time;
+                uint16_t motor_movement_calculations_profiler_time;
+                uint16_t motor_movement_calculations_profiler_max_time;
+                uint16_t motor_phase_calculations_profiler_time;
+                uint16_t motor_phase_calculations_profiler_max_time;
+                uint16_t motor_control_loop_period_profiler_time;
+                uint16_t motor_control_loop_period_profiler_max_time;
+                uint16_t hall_sensor1_voltage;
+                uint16_t hall_sensor2_voltage;
+                uint16_t hall_sensor3_voltage;
+                uint32_t commutation_position_offset;
+                uint8_t motor_phases_reversed;
+                int32_t max_hall_position_delta;
+                int32_t min_hall_position_delta;
+                int32_t average_hall_position_delta;
+                uint8_t motor_pwm_voltage;
+
+                get_motor_control_debug_values(&max_acceleration, &max_velocity, &currenbt_velocity, &measured_velocity, &n_time_steps, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
+                get_profiled_times(&all_motor_control_calulations_profiler_time, &all_motor_control_calulations_profiler_max_time,
+                                    &get_sensor_position_profiler_time, &get_sensor_position_profiler_max_time,
+                                    &compute_velocity_profiler_time, &compute_velocity_profiler_max_time,
+                                    &motor_movement_calculations_profiler_time, &motor_movement_calculations_profiler_max_time,
+                                    &motor_phase_calculations_profiler_time, &motor_phase_calculations_profiler_max_time, 
+                                    &motor_control_loop_period_profiler_time, &motor_control_loop_period_profiler_max_time);
+                get_hall_sensor_data(&hall_sensor1_voltage, &hall_sensor2_voltage, &hall_sensor3_voltage, &commutation_position_offset, &motor_phases_reversed);
+                get_hall_position_delta_stats(&max_hall_position_delta, &min_hall_position_delta, &average_hall_position_delta);
+                get_motor_pwm_voltage(&motor_pwm_voltage);
+
                 struct __attribute__((__packed__)) {
                     uint8_t header[3];
-                    uint16_t supply_voltage;
-                } supply_voltage_reply;
-                if(axis != ALL_ALIAS) {
-                    supply_voltage_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    supply_voltage_reply.header[1] = 1;
-                    supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
-                    supply_voltage_reply.supply_voltage = get_supply_voltage_volts_times_10();
-                    rs485_transmit(&supply_voltage_reply, sizeof(supply_voltage_reply));
-                }
-            }
-            break;
-        case GET_MAX_PID_ERROR_COMMAND:
-            rs485_allow_next_command();
-            {
-                struct __attribute__((__packed__)) {
-                    uint8_t header[3];
-                    int32_t min_PID_error;
-                    int32_t max_PID_error;
-                } get_max_pid_error_reply;
-                if(axis != ALL_ALIAS) {
-                    get_max_pid_error_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    get_max_pid_error_reply.header[1] = 1;
-                    get_max_pid_error_reply.header[2] = sizeof(get_max_pid_error_reply) - 3;
-                    int32_t min_PID_error;
-                    int32_t max_PID_error;
-                    get_max_PID_error(&min_PID_error, &max_PID_error);
-                    get_max_pid_error_reply.min_PID_error = min_PID_error;
-                    get_max_pid_error_reply.max_PID_error = max_PID_error;
-                    rs485_transmit(&get_max_pid_error_reply, sizeof(get_max_pid_error_reply));
-                }
-            }
-            break;
-        case TEST_MODE_COMMAND:
-            {
-                uint8_t test_mode = parameters[0];
-                rs485_allow_next_command();
-                if (test_mode == 0) {
-                    set_motor_test_mode(0);
-                    set_led_test_mode(0);
-                }
-                else if (test_mode < 10) {
-                    set_motor_test_mode(test_mode);
-                }
-                else {
-                    set_led_test_mode(test_mode - 10);
-                }
-                if(axis != ALL_ALIAS) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-                sprintf(buf, "Setting the test mode to %hu\n", test_mode);
-                print_debug_string(buf);
-            }
-            break;
-        case VIBRATE_COMMAND:
-            {
-                uint8_t vibration_level = parameters[0];
-                rs485_allow_next_command();
-                vibrate(vibration_level);
-                if(axis != ALL_ALIAS) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-                if(vibration_level == 0) {
-                    print_debug_string("Turning off vibration\n");
-                }
-                else {
-                    sprintf(buf, "Turning on vibration with level %hu\n", vibration_level);
-                    print_debug_string(buf);
-                }
-            }
-            break;
-        case IDENTIFY_COMMAND:
-            {
-                unique_id = ((int64_t*)parameters)[0];
-                rs485_allow_next_command();
-                if(unique_id == my_unique_id) {
-                    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
-                    green_led_action_counter = 0;
-                    n_identify_flashes = 30;
-                    SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
-                    print_debug_string("Identifying\n");
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-            }
-            break;
-        case GET_TEMPERATURE_COMMAND:
-            rs485_allow_next_command();
-            {
-                struct __attribute__((__packed__)) {
-                    uint8_t header[3];
-                    int16_t temperature;
-                } get_temperature_reply;
-                if(axis != ALL_ALIAS) {
-                    get_temperature_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    get_temperature_reply.header[1] = 1;
-                    get_temperature_reply.header[2] = sizeof(get_temperature_reply) - sizeof(get_temperature_reply.header);
-                    get_temperature_reply.temperature = get_temperature_degrees_C();
-                    rs485_transmit(&get_temperature_reply, sizeof(get_temperature_reply));
-                }
-            }
-            break;
-        case SET_PID_CONSTANTS_COMMAND:
-            {
-                uint32_t p = ((uint32_t*)parameters)[0];
-                uint32_t i = ((uint32_t*)parameters)[1];
-                uint32_t d = ((uint32_t*)parameters)[2];
-                rs485_allow_next_command();
-                sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", p, i, d);
-                print_debug_string(buf);
-                set_pid_constants(p, i, d);
-                if(axis != ALL_ALIAS) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-            }
-            break;
-        case SET_MAX_ALLOWABLE_POSITION_DEVIATION:
-            {
-                int64_t new_max_allowable_position_deviation = llabs(((int64_t*)parameters)[0]);
-                rs485_allow_next_command();
-                set_max_allowable_position_deviation(new_max_allowable_position_deviation);
-                if(axis != ALL_ALIAS) {
-                    rs485_transmit(NO_ERROR_RESPONSE, 3);
-                }
-            }
-            break;
-        case GET_DEBUG_VALUES_COMMAND:
-            {
-                rs485_allow_next_command();
-                if(axis != ALL_ALIAS) {
                     int64_t max_acceleration;
                     int64_t max_velocity;
                     int64_t currenbt_velocity;
@@ -805,92 +832,47 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
                     int32_t min_hall_position_delta;
                     int32_t average_hall_position_delta;
                     uint8_t motor_pwm_voltage;
-
-                    get_motor_control_debug_values(&max_acceleration, &max_velocity, &currenbt_velocity, &measured_velocity, &n_time_steps, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
-                    get_profiled_times(&all_motor_control_calulations_profiler_time, &all_motor_control_calulations_profiler_max_time,
-                                        &get_sensor_position_profiler_time, &get_sensor_position_profiler_max_time,
-                                        &compute_velocity_profiler_time, &compute_velocity_profiler_max_time,
-                                        &motor_movement_calculations_profiler_time, &motor_movement_calculations_profiler_max_time,
-                                        &motor_phase_calculations_profiler_time, &motor_phase_calculations_profiler_max_time, 
-                                        &motor_control_loop_period_profiler_time, &motor_control_loop_period_profiler_max_time);
-                    get_hall_sensor_data(&hall_sensor1_voltage, &hall_sensor2_voltage, &hall_sensor3_voltage, &commutation_position_offset, &motor_phases_reversed);
-                    get_hall_position_delta_stats(&max_hall_position_delta, &min_hall_position_delta, &average_hall_position_delta);
-                    get_motor_pwm_voltage(&motor_pwm_voltage);
-
-                    struct __attribute__((__packed__)) {
-                        uint8_t header[3];
-                        int64_t max_acceleration;
-                        int64_t max_velocity;
-                        int64_t currenbt_velocity;
-                        int32_t measured_velocity;
-                        uint32_t n_time_steps;
-                        int64_t debug_value1;
-                        int64_t debug_value2;
-                        int64_t debug_value3;
-                        int64_t debug_value4;
-                        uint16_t all_motor_control_calulations_profiler_time;
-                        uint16_t all_motor_control_calulations_profiler_max_time;
-                        uint16_t get_sensor_position_profiler_time;
-                        uint16_t get_sensor_position_profiler_max_time;
-                        uint16_t compute_velocity_profiler_time;
-                        uint16_t compute_velocity_profiler_max_time;
-                        uint16_t motor_movement_calculations_profiler_time;
-                        uint16_t motor_movement_calculations_profiler_max_time;
-                        uint16_t motor_phase_calculations_profiler_time;
-                        uint16_t motor_phase_calculations_profiler_max_time;
-                        uint16_t motor_control_loop_period_profiler_time;
-                        uint16_t motor_control_loop_period_profiler_max_time;
-                        uint16_t hall_sensor1_voltage;
-                        uint16_t hall_sensor2_voltage;
-                        uint16_t hall_sensor3_voltage;
-                        uint32_t commutation_position_offset;
-                        uint8_t motor_phases_reversed;
-                        int32_t max_hall_position_delta;
-                        int32_t min_hall_position_delta;
-                        int32_t average_hall_position_delta;
-                        uint8_t motor_pwm_voltage;
-                    } get_debug_values_reply;
-                    get_debug_values_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
-                    get_debug_values_reply.header[1] = 1;
-                    get_debug_values_reply.header[2] = sizeof(get_debug_values_reply) - sizeof(get_debug_values_reply.header);
-                    get_debug_values_reply.max_acceleration = max_acceleration;
-                    get_debug_values_reply.max_velocity = max_velocity;
-                    get_debug_values_reply.currenbt_velocity = currenbt_velocity;
-                    get_debug_values_reply.measured_velocity = measured_velocity;
-                    get_debug_values_reply.n_time_steps = n_time_steps;
-                    get_debug_values_reply.debug_value1 = debug_value1;
-                    get_debug_values_reply.debug_value2 = debug_value2;
-                    get_debug_values_reply.debug_value3 = debug_value3;
-                    get_debug_values_reply.debug_value4 = debug_value4;
-                    get_debug_values_reply.all_motor_control_calulations_profiler_time = all_motor_control_calulations_profiler_time;
-                    get_debug_values_reply.all_motor_control_calulations_profiler_max_time = all_motor_control_calulations_profiler_max_time;
-                    get_debug_values_reply.get_sensor_position_profiler_time = get_sensor_position_profiler_time;
-                    get_debug_values_reply.get_sensor_position_profiler_max_time = get_sensor_position_profiler_max_time;
-                    get_debug_values_reply.compute_velocity_profiler_time = compute_velocity_profiler_time;
-                    get_debug_values_reply.compute_velocity_profiler_max_time = compute_velocity_profiler_max_time;
-                    get_debug_values_reply.motor_movement_calculations_profiler_time = motor_movement_calculations_profiler_time;
-                    get_debug_values_reply.motor_movement_calculations_profiler_max_time = motor_movement_calculations_profiler_max_time;
-                    get_debug_values_reply.motor_phase_calculations_profiler_time = motor_phase_calculations_profiler_time;
-                    get_debug_values_reply.motor_phase_calculations_profiler_max_time = motor_phase_calculations_profiler_max_time;
-                    get_debug_values_reply.motor_control_loop_period_profiler_time = motor_control_loop_period_profiler_time;
-                    get_debug_values_reply.motor_control_loop_period_profiler_max_time = motor_control_loop_period_profiler_max_time;
-                    get_debug_values_reply.hall_sensor1_voltage = hall_sensor1_voltage;
-                    get_debug_values_reply.hall_sensor2_voltage = hall_sensor2_voltage;
-                    get_debug_values_reply.hall_sensor3_voltage = hall_sensor3_voltage;
-                    get_debug_values_reply.commutation_position_offset = commutation_position_offset;
-                    get_debug_values_reply.motor_phases_reversed = motor_phases_reversed;
-                    get_debug_values_reply.max_hall_position_delta = max_hall_position_delta;
-                    get_debug_values_reply.min_hall_position_delta = min_hall_position_delta;
-                    get_debug_values_reply.average_hall_position_delta = average_hall_position_delta;
-                    get_debug_values_reply.motor_pwm_voltage = motor_pwm_voltage;
-                    rs485_transmit(&get_debug_values_reply, sizeof(get_debug_values_reply));
-                }
+                } get_debug_values_reply;
+                get_debug_values_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                get_debug_values_reply.header[1] = 1;
+                get_debug_values_reply.header[2] = sizeof(get_debug_values_reply) - sizeof(get_debug_values_reply.header);
+                get_debug_values_reply.max_acceleration = max_acceleration;
+                get_debug_values_reply.max_velocity = max_velocity;
+                get_debug_values_reply.currenbt_velocity = currenbt_velocity;
+                get_debug_values_reply.measured_velocity = measured_velocity;
+                get_debug_values_reply.n_time_steps = n_time_steps;
+                get_debug_values_reply.debug_value1 = debug_value1;
+                get_debug_values_reply.debug_value2 = debug_value2;
+                get_debug_values_reply.debug_value3 = debug_value3;
+                get_debug_values_reply.debug_value4 = debug_value4;
+                get_debug_values_reply.all_motor_control_calulations_profiler_time = all_motor_control_calulations_profiler_time;
+                get_debug_values_reply.all_motor_control_calulations_profiler_max_time = all_motor_control_calulations_profiler_max_time;
+                get_debug_values_reply.get_sensor_position_profiler_time = get_sensor_position_profiler_time;
+                get_debug_values_reply.get_sensor_position_profiler_max_time = get_sensor_position_profiler_max_time;
+                get_debug_values_reply.compute_velocity_profiler_time = compute_velocity_profiler_time;
+                get_debug_values_reply.compute_velocity_profiler_max_time = compute_velocity_profiler_max_time;
+                get_debug_values_reply.motor_movement_calculations_profiler_time = motor_movement_calculations_profiler_time;
+                get_debug_values_reply.motor_movement_calculations_profiler_max_time = motor_movement_calculations_profiler_max_time;
+                get_debug_values_reply.motor_phase_calculations_profiler_time = motor_phase_calculations_profiler_time;
+                get_debug_values_reply.motor_phase_calculations_profiler_max_time = motor_phase_calculations_profiler_max_time;
+                get_debug_values_reply.motor_control_loop_period_profiler_time = motor_control_loop_period_profiler_time;
+                get_debug_values_reply.motor_control_loop_period_profiler_max_time = motor_control_loop_period_profiler_max_time;
+                get_debug_values_reply.hall_sensor1_voltage = hall_sensor1_voltage;
+                get_debug_values_reply.hall_sensor2_voltage = hall_sensor2_voltage;
+                get_debug_values_reply.hall_sensor3_voltage = hall_sensor3_voltage;
+                get_debug_values_reply.commutation_position_offset = commutation_position_offset;
+                get_debug_values_reply.motor_phases_reversed = motor_phases_reversed;
+                get_debug_values_reply.max_hall_position_delta = max_hall_position_delta;
+                get_debug_values_reply.min_hall_position_delta = min_hall_position_delta;
+                get_debug_values_reply.average_hall_position_delta = average_hall_position_delta;
+                get_debug_values_reply.motor_pwm_voltage = motor_pwm_voltage;
+                rs485_transmit(&get_debug_values_reply, sizeof(get_debug_values_reply));
             }
-            break;
         }
-    }
-    else {
+        break;
+    default:
         rs485_allow_next_command();
+        break;
     }
 }
 

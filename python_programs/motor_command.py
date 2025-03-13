@@ -9,7 +9,7 @@ from terminal_formatting import format_error, format_info, format_warning, forma
 parser = argparse.ArgumentParser(description='This program will let you send any supported command to the motor')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-parser.add_argument('-a', '--alias', help='alias of the device to control', default=None)
+parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (extended addressing)', default=None)
 parser.add_argument('-c', '--commands', help='list all supported commands with detailed descriptions', action="store_true")
 parser.add_argument('-v', '--verbose', help='equivalent to --verbose-level 2', action="store_true")
 parser.add_argument('--verbose-level', type=int, choices=[0, 1, 2], help='Set verbosity level (0: no output, 1: minimal output, 2: detailed output)', default=None)
@@ -55,7 +55,7 @@ if verbose_level >= 1:
 
 gathered_inputs = servomotor.gather_inputs(command_id, args.inputs, verbose=verbose_level)
 
-servomotor.set_standard_options_from_args(args) # This will find out the port to use and the alias of the device and store those in the communication module
+servomotor.set_standard_options_from_args(args) # This will find out the port to use and the alias/unique_id of the device and store those in the communication module
 servomotor.open_serial_port()
 try:
     response = servomotor.send_command(command_id, gathered_inputs, verbose=verbose_level)
@@ -64,7 +64,7 @@ except servomotor.communication.TimeoutError:
     print(format_warning(
         "This may be that your device is not connected and powered on, "
         "or that the serial port is not correct, "
-        "or that the alias is not correct for your target device."
+        "or that the alias/unique ID is not correct for your target device."
     ))
     servomotor.close_serial_port()
     exit(1)

@@ -132,15 +132,41 @@ The communication protocol implements the following bit structure for device add
    - The system validates that all received device ID bytes have LSB=1
    - Any device ID byte with LSB=0 is rejected as invalid
 
-## TODO: Extended Addressing Implementation
+## Extended Addressing Implementation
 
-The following enhancements are planned for the communication protocol:
+The protocol now supports extended addressing mode, which allows addressing devices by their 64-bit Unique ID:
 
 1. **Extended Addressing Mode**:
-   - Implement addressing of devices by their Unique ID (64-bit number)
-   - Use the `EXTENDED_ADDRESSING (125)` value to indicate extended addressing mode
-   - When first byte is encoded EXTENDED_ADDRESSING, subsequent bytes will contain the 64-bit Unique ID
+   - Devices can now be addressed by their Unique ID (64-bit number)
+   - Uses the `EXTENDED_ADDRESSING (125)` value to indicate extended addressing mode
+   - When first byte is encoded EXTENDED_ADDRESSING, the next 8 bytes contain the 64-bit Unique ID in little-endian format
+   - Command ID and payload follow the Unique ID bytes
 
-2. **Implementation Requirements**:
-   - Update command processing to recognize extended addressing mode
-   - Implement extended addressing in both firmware and host libraries (Python library and Arduino library)
+2. **Implementation Details**:
+   - Firmware has been updated to recognize and process extended addressing commands
+   - Python library supports both standard addressing (by alias) and extended addressing (by Unique ID)
+   - The `-a` option in the command-line interface accepts both aliases and Unique IDs (16-character hex strings)
+   - The system automatically detects whether to use standard or extended addressing based on the input format
+
+3. **Usage Example**:
+   - Standard addressing: `python motor_command.py -a 1 ENABLE_MOSFETS_COMMAND`
+   - Extended addressing: `python motor_command.py -a 0123456789ABCDEF ENABLE_MOSFETS_COMMAND`
+
+## Future Enhancements
+
+Planned enhancements for the communication protocol:
+
+1. **Support extended addressing in the Arduino module**
+   - At the moment we specify the alias when we create a motor object, but we should also be able to specify the unique ID
+   - There is also a function to change the alias. We should also be able to change the unique ID with some other new functon
+
+2. **Change the way that we set the alias**
+   - The "Set device alias" command currently takes the Unique ID as one of the input parameters (along with the new alias), but we do not need to do it this way anymore and instead we can use extended addressing mode to address it specifically
+   - Therefore, we need just one input parameter, which is the new alias
+
+3. **Add CRC32 checking to every command**
+   - By default the CRC32 will be enabled and checked (and always after reset or power cycle)
+   - Add a command that will disable the CRC32 checking to save bytes and complexity for certain use cases
+   - Add a statistics counter that will count the number of CRC32 errors
+   - Add a command to be able to retrieve and optionally reset the CRC32 error counter
+   

@@ -105,7 +105,7 @@ else:
     verbose_level = 0
 
 
-motor = servomotor.M3(255, time_unit="seconds", position_unit="degrees", velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
+motor = servomotor.M3(servomotor.ALL_ALIAS, time_unit="seconds", position_unit="degrees", velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
 servomotor.set_serial_port_from_args(args)
 servomotor.open_serial_port()
 

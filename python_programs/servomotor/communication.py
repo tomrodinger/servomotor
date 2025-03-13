@@ -6,6 +6,7 @@ from . import serial_functions
 import textwrap
 import sys
 import os
+import struct
 
 # Import our terminal formatting module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,6 +29,7 @@ registered_data_types = None
 registered_commands = None
 ser = None
 alias = ALL_ALIAS  # Default to addressing all devices
+unique_id = None   # Default to not using extended addressing
 detect_devices_command_id = None
 set_device_alias_command_id = None
 
@@ -64,7 +66,9 @@ def print_data(prefix_message, data, print_size=True, verbose=2):
         print(format_debug(message))
 
 def get_human_readable_alias(alias):
-    if alias >= 33 and alias <= 126:
+    if alias is None:
+        return "The alias is not specified"
+    elif alias >= 33 and alias <= 126:
         alias_str = f"{chr(alias)} ({alias})"
     else:
         alias_str = f"{alias} (0x{alias:02x})"
@@ -79,7 +83,7 @@ def get_response(verbose=2):
         raise CommunicationError("Error: the response is not 3 bytes long")
     if verbose == 2:
         print_data("Received a response: ", response, print_size=True, verbose=verbose)
-    # The response character should be encoded (shifted and LSB set to 1)
+    # The response character should be encoded (shifted one space to the left and LSB set to 1)
     if response[0] != ENCODED_RESPONSE_CHARACTER:
         error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {ENCODED_RESPONSE_CHARACTER} (encoded from {RESPONSE_CHARACTER})"
         raise CommunicationError(error_text)
@@ -163,14 +167,27 @@ def flush_receive_buffer():
 
 def send_command(command_id, gathered_inputs, verbose=2):
     command_payload_len = len(gathered_inputs)
-    encoded_alias = encode_device_id(alias)
-    # Debug print removed to prevent polluting the serial stream
-    # print("******************************* Encoded alias: %d" % (encoded_alias))
-    command = bytearray([encoded_alias, command_id, command_payload_len]) + gathered_inputs
+    
+    # Check if we're using extended addressing
+    if unique_id is not None:
+        # Extended addressing mode
+        encoded_extended = encode_device_id(EXTENDED_ADDRESSING)
+        # Pack the command header with struct: encoded_extended (B), unique_id (Q), command_id (B), command_payload_len (B)
+        command_header = struct.pack('<BQBB', encoded_extended, unique_id, command_id, command_payload_len)
+        command = bytearray(command_header) + gathered_inputs
+    else:
+        # Standard addressing mode
+        encoded_alias = encode_device_id(alias)
+        # Pack the command header with struct: encoded_alias (B), command_id (B), command_payload_len (B)
+        command_header = struct.pack('<BBB', encoded_alias, command_id, command_payload_len)
+        command = bytearray(command_header) + gathered_inputs
+    
     if verbose == 2:
         print_data("Sending command: ", command, print_size=True, verbose=verbose)
     ser.write(command)
-    if (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
+    
+    # Check if we should expect a response
+    if (unique_id is None) and (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
         if verbose == 2:
             print(format_info(f"Sending a command to all devices (alias {alias}) and we expect there will be no response from any of them"))
         return []
@@ -181,17 +198,18 @@ def send_command(command_id, gathered_inputs, verbose=2):
         if verbose == 2:
             print(format_info("This command is expected to not return any response"))
         return []
+    
     all_response_payloads = []
     while(1):
         try:
             response_payload = get_response(verbose=verbose)
             all_response_payloads.append(response_payload)
         except TimeoutError:
-            if alias == 255: # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
+            if unique_id is None and alias == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
-            if registered_commands[command_index]["MultipleResponses"] == True: # check if this commmand may have any number of responses (including none)
+            if registered_commands[command_index]["MultipleResponses"] == True:  # check if this command may have any number of responses (including none)
                 break
-            # There is no legitamate reason that we should get a timeout here, so we need to raise this Timeout error again
+            # There is no legitimate reason that we should get a timeout here, so we need to raise this Timeout error again
             raise TimeoutError("Error: timeout")
         if registered_commands[command_index]["MultipleResponses"] == False:
             break
@@ -209,7 +227,7 @@ def string_to_u8_alias(input):
             print(format_error("Error: it is not a single character nor is it an integer"))
             exit(1)
         if converted_input < 0 or converted_input > ALL_ALIAS:
-            print(format_error(f"Error: it is not within the allowed range. The allowed range is 0 to {ALL_ALIAS}"))
+            print(format_error(f"Error: The alias (if not using extended addressing) is not within the allowed range. The allowed range is 0 to {ALL_ALIAS}"))
             exit(1)
     # Check for reserved values
     if converted_input == RESPONSE_CHARACTER:
@@ -231,6 +249,15 @@ def string_to_u64_unique_id(input):
         exit(1)
     return converted_input
 
+def string_to_alias_or_unique_id(input_str):
+    """Convert the input string to either an alias or a unique ID based on its format"""
+    if len(input_str) >= 4:
+        # The user probably has intended this to be a a unique ID (16-character hex string) given the length of the input string
+        return None, string_to_u64_unique_id(input_str)
+    else:
+        # It's a probably a regular alias since the length of the string is short
+        return string_to_u8_alias(input_str), None
+
 def set_serial_port_from_args(args):
     global serial_port
 
@@ -240,17 +267,36 @@ def set_serial_port_from_args(args):
         serial_port = args.port
 
 def set_standard_options_from_args(args):
-    global alias
-
+    global alias, unique_id
+    
     set_serial_port_from_args(args)
-
-    alias = args.alias
-    if alias == None:
+    
+    # Determine verbosity level
+    verbose = 1  # Default verbosity level
+    if hasattr(args, 'verbose_level') and args.verbose_level is not None:
+        verbose = args.verbose_level
+    elif hasattr(args, 'verbose') and args.verbose:
+        verbose = 2
+    
+    if args.alias is None:
         print(format_error("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help."))
         exit(1)
-
-    alias = string_to_u8_alias(alias)
-    print(format_info(f"The alias of the device we want to communicate with is {get_human_readable_alias(alias)}"))
+    else:
+        # Determine if the alias is actually a unique ID
+        alias_val, unique_id_val = string_to_alias_or_unique_id(args.alias)
+        
+        if unique_id_val is not None:
+            # It's a unique ID
+            unique_id = unique_id_val
+            alias = None
+            if verbose >= 1:
+                print(format_info(f"Using extended addressing with unique ID: 0x{unique_id:016X}"))
+        else:
+            # It's a regular alias
+            alias = alias_val
+            unique_id = None
+            if verbose >= 1:
+                print(format_info(f"Using standard addressing with alias: {get_human_readable_alias(alias)}"))
 
 def set_data_types_and_command_data(new_data_types, new_registered_commands):
     global registered_data_types
