@@ -19,6 +19,7 @@
 #include "commands.h"
 #include "product_info.h"
 #include "global_variables.h"
+#include "crc32.h"
 #include "device_status.h"
 #ifdef PRODUCT_NAME_M1
 #include "commutation_table_M1.h"

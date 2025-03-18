@@ -4,6 +4,7 @@
 
 #include "stm32g0xx_hal.h"
 #include "device_specific_settings.h"
+#include "crc32.h"  // Include the new CRC32 module
 
 #define FLASH_BASE_ADDRESS 0x8000000
 //#define FLASH_PAGE_SIZE 2048  // commented this out because this definition is included in "stm32g0xx_hal.h"
@@ -19,11 +20,7 @@
 void load_global_settings(void);
 void save_global_settings(void);
 int8_t burn_firmware_page(uint8_t page_number, uint8_t data[FLASH_PAGE_SIZE]);
-void crc32_init(void);
-uint32_t calculate_crc32(uint32_t new_value);
-uint32_t calculate_crc32_u8(uint8_t new_value);
 uint8_t firmware_crc_check(void);
-uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t len);
 uint32_t get_firmware_size(void);
 
 

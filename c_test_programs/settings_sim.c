@@ -6,6 +6,7 @@
 #include "global_variables.h"
 #include "error_handling.h"
 #include "motor_control.h"
+#include "crc32.h"
 
 #define SETTINGS_FILE "servo_settings.bin"
 #define CRC32_POLYNOMIAL 0xEDB88320

@@ -24,7 +24,7 @@ COMMON_SRCS = $(wildcard ../common_source_files/*.c)
 
 # Filter out assembly files, system_stm32g0xx.c, ADC.c, and unique_id.c from common sources
 FIRMWARE_SRCS := $(filter-out %.s %ADC.c, $(FIRMWARE_SRCS))
-COMMON_SRCS := $(filter-out %.s %system_stm32g0xx.c %unique_id.c %settings.c %microsecond_clock.c, $(COMMON_SRCS))
+COMMON_SRCS := $(filter-out %.s %system_stm32g0xx.c %unique_id.c %settings.c %microsecond_clock.c %crc32.c, $(COMMON_SRCS))
 
 # Local source files
 LOCAL_SRCS = \

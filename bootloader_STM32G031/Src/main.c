@@ -13,6 +13,7 @@
 #include "commands.h"
 #include "product_info.h"
 #include "device_status.h"
+#include "crc32.h"
 
 extern uint32_t USART1_timout_timer;
 extern char selectedAxis;

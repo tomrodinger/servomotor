@@ -19,6 +19,7 @@
 #include "unique_id.h"
 #include "settings.h"
 #include "commands.h"
+#include "crc32.h"
 #include "product_info.h"
 #include "global_variables.h"
 #include "device_status.h"
