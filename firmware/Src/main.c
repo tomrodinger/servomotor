@@ -38,6 +38,13 @@
 #include "commutation_table_M4.h"
 #endif
 
+// CRC32 control definitions
+#define CRC32_ENABLE 1
+#define CRC32_DISABLE 0
+
+// CRC32 error counter operation modes
+#define CRC32_ERROR_READ_ONLY 0
+#define CRC32_ERROR_RESET 1
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
 
@@ -57,16 +64,23 @@ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION,
 
 #define PING_PAYLOAD_SIZE 10
 
-extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-extern uint8_t selectedAxis;
-extern uint8_t command;
-extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
+extern volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
+extern volatile uint8_t selectedAxis;
+extern volatile uint8_t command;
+extern volatile uint16_t valueLength;
+extern volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
+extern volatile uint8_t in_extended_addressing_mode;
 extern volatile uint8_t commandReceived;
+
+// CRC32 control variables
+static volatile uint8_t crc32_enabled = 1; // Enabled by default
+static volatile uint32_t crc32_error_count = 0;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
 static uint16_t green_led_action_counter = 0;
 static uint8_t n_identify_flashes = 0;
+
 
 void clock_init(void)
 {
@@ -163,7 +177,77 @@ void set_led_test_mode(uint8_t colours)
     while(1);
 }
 
-void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
+/**
+ * @brief Get the CRC32 error count and optionally reset it
+ * @param reset_or_increment CRC32_ERROR_READ_ONLY to just read, CRC32_ERROR_RESET to reset the counter after reading
+ * @return The current CRC32 error count (before any reset)
+ */
+uint32_t get_crc32_error_count_and_optionally_reset(uint8_t reset)
+{
+    uint32_t count = crc32_error_count;
+    
+    if (reset == CRC32_ERROR_RESET) {
+        // Reset counter
+        crc32_error_count = 0;
+    }
+    
+    return count;
+}
+
+// Function to validate CRC32 of a received command
+// Returns 1 if CRC32 is valid or disabled, 0 if invalid
+uint8_t validate_command_crc32(uint8_t axis, uint8_t command, volatile uint8_t *parameters)
+{
+    // If CRC32 is disabled, return valid
+    if(!crc32_enabled) {
+        return 1;
+    }
+    
+    // make sure that there are enough bytes passed in to contain a CRC32
+    if(valueLength < sizeof(uint32_t)) {
+        return 0;
+    }
+
+    valueLength -= sizeof(uint32_t);
+
+    // Extract the received CRC32 from the last 4 bytes
+    uint32_t received_crc32 = ( (parameters[valueLength]          ) | (parameters[valueLength + 1] << 8) | 
+                                (parameters[valueLength + 2] << 16) | (parameters[valueLength + 3] << 24) );
+
+    // The last 4 bytes of the command should be the CRC32
+    // Calculate the CRC32 of the command without the last 4 bytes
+    uint32_t calculated_crc32 = 0;
+    uint8_t encoded_id = encode_device_id(axis);
+
+    crc32_init(); // reset the CRC32 calculation unit
+    calculate_crc32_u8(encoded_id);
+    // Determine the actual command length and calculate CRC32 based on addressing mode
+    if(in_extended_addressing_mode) {
+        // Add unique ID bytes
+        uint64_t unique_id = get_unique_id();
+        for(int i = 0; i < UNIQUE_ID_SIZE; i++) {
+            calculate_crc32_u8((unique_id >> (i * 8)) & 0xFF);
+        }
+    }
+    calculate_crc32_u8(command);
+    calculate_crc32_u8(valueLength);                
+    // Add value bytes (excluding CRC32)
+    for(int i = 0; i < valueLength; i++) {
+        calculated_crc32 = calculate_crc32_u8(parameters[i]);
+    }
+    
+    // Compare calculated CRC32 with received CRC32
+    if(calculated_crc32 == received_crc32) {
+        // CRC32 is valid
+        return 1;
+    } else {
+        // CRC32 is invalid, increment error counter
+        crc32_error_count++;
+        return 0;
+    }
+}
+
+void processCommand(uint8_t axis, uint8_t command, volatile uint8_t *parameters)
 {
     uint64_t local_time;
     uint64_t time_from_master = 0;
@@ -196,8 +280,14 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
     };
 
+    if(!validate_command_crc32(axis, command, parameters)) {
+        // CRC32 validation failed, allow next command and return
+        rs485_allow_next_command();
+        return;
+    }
+
     #ifdef MOTOR_SIMULATION
-    print_number("Received a command, alias is: ", axis);
+    print_number("Received a command, CRC32 passed, alias is: ", axis);
     #endif
 
     switch(command) {
@@ -290,7 +380,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         }
         break;
     case TIME_SYNC_COMMAND:
-        memcpy(&time_from_master, parameters, 6);
+        memcpy(&time_from_master, (void*)parameters, 6); // Typecast to discard the volatile qualifier. I am not sure how to do this a better way.
         rs485_allow_next_command();
         int32_t time_error = time_sync(time_from_master);
         uint16_t clock_calibration_value = get_clock_calibration_value();
@@ -490,7 +580,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     case MULTI_MOVE_COMMAND:
         n_moves_in_this_command = ((int8_t*)parameters)[0];
         struct multi_move_command_buffer_struct multi_move_command_buffer;
-        memcpy(&multi_move_command_buffer, parameters + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+        memcpy(&multi_move_command_buffer, (void*)(parameters + 1), sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
         rs485_allow_next_command();
 //            char buf[100];
 //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
@@ -548,7 +638,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         }
         break;
     case PING_COMMAND:
-        memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
+        memcpy(ping_response_buffer + 3, (void*)parameters, PING_PAYLOAD_SIZE);
         rs485_allow_next_command();
         if(axis != ALL_ALIAS) {
             ping_response_buffer[0] = ENCODED_RESPONSE_CHARACTER;
@@ -871,6 +961,35 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
         }
         break;
+    case CRC32_CONTROL_COMMAND:
+        {
+            uint8_t crc32_enable_state = parameters[0];
+            rs485_allow_next_command();
+            crc32_enabled = (crc32_enable_state == CRC32_ENABLE) ? 1 : 0;
+            if(axis != ALL_ALIAS) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+        }
+        break;        
+    case GET_CRC32_ERROR_COUNT_COMMAND:
+        {
+            uint8_t reset_crc32_counter = parameters[0];
+            rs485_allow_next_command();
+            {            
+                if(axis != ALL_ALIAS) {
+                    struct __attribute__((__packed__)) {
+                        uint8_t header[3];
+                        uint32_t crc32_error_count;
+                    } crc32_error_count_reply;
+                    crc32_error_count_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                    crc32_error_count_reply.header[1] = 1;
+                    crc32_error_count_reply.header[2] = sizeof(crc32_error_count_reply) - sizeof(crc32_error_count_reply.header);
+                    crc32_error_count_reply.crc32_error_count = get_crc32_error_count_and_optionally_reset(reset_crc32_counter);
+                    rs485_transmit(&crc32_error_count_reply, sizeof(crc32_error_count_reply));
+                }
+            }
+        }
+        break;        
     default:
         rs485_allow_next_command();
         break;
@@ -1139,7 +1258,7 @@ int main(void)
                 rs485_allow_next_command();
             }
             else {
-                processCommand(selectedAxis, command, valueBuffer);
+                processCommand(selectedAxis, command, (void *)valueBuffer);
                 #ifdef MOTOR_SIMULATION
                 extern volatile int gResetProgress;
                 if (gResetProgress > 0) {

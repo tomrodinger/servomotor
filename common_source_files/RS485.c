@@ -8,25 +8,25 @@
 #include "global_variables.h"
 #include "device_status.h"
 #include "unique_id.h"
+#include "crc32.h"
 
 static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex = 0;
 static volatile uint8_t transmitCount = 0;
 
 #define UNKNOWN_VALUE_LENGTH 65535
-static uint16_t valueLength;
 static uint16_t nReceivedBytes = 0;
 static uint16_t receiveIndex;
 
 volatile uint8_t selectedAxis;
 volatile uint8_t command;
 volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
+volatile uint16_t valueLength;
 volatile uint8_t commandReceived = 0;
+volatile uint8_t in_extended_addressing_mode = 0;
 
-// Extended addressing state variables (private to this file)
 static volatile uint8_t unique_id_mismatch = 0; // Flag to track if unique ID doesn't match (0 = match so far)
 static volatile uint8_t unique_id_bytes_received = 0;
-static volatile uint8_t in_extended_addressing_mode = 0;
 
 void rs485_init(void)
 {
@@ -297,3 +297,4 @@ void print_nReceivedBytes(void)
 }
 
 #endif
+

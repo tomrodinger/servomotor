@@ -1067,5 +1067,39 @@
             }
         ],
         "CommandGroup": "Status & Monitoring"
+    },
+    {
+        "CommandString": "CRC32 control",
+        "CommandEnum": 46,
+        "Description": "Enable or disable CRC32 checking for commands",
+        "Input": [
+            {
+                "Description": "u8: Control value (1 to enable, 0 to disable CRC32 checking)",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "enableCrc32"
+            }
+        ],
+        "Output": "success_response",
+        "CommandGroup": "Configuration"
+    },
+    {
+        "CommandString": "CRC32 error count",
+        "CommandEnum": 47,
+        "Description": "Get and optionally reset the CRC32 error counter",
+        "Input": [
+            {
+                "Description": "u8: Reset flag (1 to reset the counter after reading, 0 to just read)",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "resetCounter"
+            }
+        ],
+        "Output": [
+            {
+                "Description": "u32: Number of CRC32 errors detected",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "crc32ErrorCount"
+            }
+        ],
+        "CommandGroup": "Status & Monitoring"
     }
 ]
