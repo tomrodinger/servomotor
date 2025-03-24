@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "config.h"
 #include "gpio.h"
 #include "leds.h"
 #include "debug_uart.h"
@@ -267,7 +268,6 @@ void processCommand(uint8_t axis, uint8_t command, volatile uint8_t *parameters)
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
     uint8_t control_hall_sensor_statistics_subcommand;
 
-    #define MAX_MULTI_MOVES (sizeof(uint32_t) * 8) // maximum number of moves in a multi move command. this number should be the number of bits in an uint32_t
     struct move_parameters_struct {
         union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
             int32_t acceleration;
