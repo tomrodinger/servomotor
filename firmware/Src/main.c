@@ -74,7 +74,7 @@ extern volatile uint8_t in_extended_addressing_mode;
 extern volatile uint8_t commandReceived;
 
 // CRC32 control variables
-static volatile uint8_t crc32_enabled = 1; // Enabled by default
+static volatile uint8_t crc32_enabled = 0; // Enabled by default, DEBUG temporarily disabling it by default
 static volatile uint32_t crc32_error_count = 0;
 
 static uint64_t my_unique_id;
