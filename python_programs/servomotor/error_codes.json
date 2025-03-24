@@ -784,20 +784,22 @@
         },
         {
             "code": 48,
-            "enum": "ERROR_INVALID_DEVICE_ID",
-            "short_desc": "invalid device ID format",
-            "long_desc": "The received device ID does not have the least significant bit set to 1",
+            "enum": "ERROR_INVALID_FIRST_BYTE",
+            "short_desc": "invalid first byte format",
+            "long_desc": "The received first byte does not have the least significant bit set to 1",
             "causes": [
-                "Incorrect device ID encoding",
+                "Incorrect first byte encoding of the communication packet",
+                "The baud rate mismatches",
                 "Communication protocol mismatch",
                 "Data corruption during transmission",
                 "Sender not compliant with protocol requirements"
             ],
             "solutions": [
-                "Ensure all device IDs have LSB set to 1",
+                "Ensure all first bytes have LSB set to 1",
+                "Verify baud rates are the same on both ends",
                 "Update sender software to comply with protocol",
                 "Check for transmission errors",
-                "Verify device ID encoding logic"
+                "Verify first byte encoding logic"
             ]
         }
     ]

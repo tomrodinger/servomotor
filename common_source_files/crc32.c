@@ -34,3 +34,13 @@ uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t len)
     }
     return CRC->DR;
 }
+
+uint32_t calculate_crc32_buffer_without_reinit(uint8_t *buffer, uint32_t len)
+{
+    uint32_t i;
+
+    for(i = 0; i < len; i++) {
+        ((uint8_t *)(&CRC->DR))[0] = *(buffer++);
+    }
+    return CRC->DR;
+}

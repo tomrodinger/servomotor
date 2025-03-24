@@ -16,10 +16,6 @@
 #include "crc32.h"
 
 extern uint32_t USART1_timout_timer;
-extern char selectedAxis;
-extern uint8_t command;
-extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
-extern volatile uint8_t commandReceived;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
@@ -82,23 +78,42 @@ void SysTick_Handler(void)
     }
 }
 
-void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
+void process_packet(void)
 {
+    uint8_t command;
+    uint16_t payload_size;
+    void *payload;
+    uint8_t is_broadcast;
+
     uint64_t unique_id;
     uint8_t new_alias;
     uint8_t error_code;
     char message[100];
+
+    // There is a distinct possibility that the new packet is not for us. We will know after we see the return value of rs485_get_next_packet.
+    if (!rs485_get_next_packet(&command, &payload_size, &payload, &is_broadcast)) {
+        // The new packet, whatever it is, is not of interest to us and we need to clear it and return out of here
+        rs485_done_with_this_packet();
+        return;
+    }
+
+    if(!validate_command_crc32()) {
+        // CRC32 validation failed, allow next command and return
+        rs485_done_with_this_packet();
+        return;
+    }
+
     if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
         launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
         switch(command) {
         case DETECT_DEVICES_COMMAND:
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
             detect_devices_delay = get_random_number(99);
             break;
         case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)parameters)[0];
-            new_alias = parameters[8];
-            rs485_allow_next_command();
+            unique_id = ((int64_t*)payload)[0];
+            new_alias = payload[8];
+            rs485_done_with_this_packet();
 
             if(unique_id == my_unique_id) {
                 transmit("Match\n", 6);
@@ -110,30 +125,30 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         case FIRMWARE_UPGRADE_COMMAND:
         {
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-            if(memcmp(parameters, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
+            if(memcmp(payload, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
                 transmit("This firmware is not for this model\n", 36);
             }
             else {
-                if(*(parameters + MODEL_CODE_LENGTH) != product_info->firmware_compatibility_code) {
+                if(*(payload + MODEL_CODE_LENGTH) != product_info->firmware_compatibility_code) {
                     transmit("Firmware compatibility code mismatch\n", 37);
                 }
                 else {
-                    uint8_t firmware_page = *(parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
+                    uint8_t firmware_page = *(payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
                     sprintf(message, "Valid firmware page %hu\n", firmware_page);
                     transmit(message, strlen(message));
-                    error_code = burn_firmware_page(firmware_page, parameters + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
+                    error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
                     if((axis != ALL_ALIAS) && (error_code == 0)) {
                         rs485_transmit(NO_ERROR_RESPONSE, 3);
                     }
                 }
             }
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
             break;
         }
         case GET_PRODUCT_INFO_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
                 uint8_t product_info_length = sizeof(struct product_info_struct);
                 rs485_transmit(&product_info_length, 1);
@@ -141,8 +156,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             }
             break;
         case GET_STATUS_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
                 set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
                 rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
             }
@@ -153,7 +168,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         }
     }
     else {
-        rs485_allow_next_command();
+        rs485_done_with_this_packet();
     }
 }
 
@@ -162,7 +177,7 @@ void transmit_unique_id(void)
     crc32_init();
     calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
     uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
-    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
+    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
     rs485_transmit(&crc32, 4);
@@ -249,12 +264,12 @@ int main(void)
     }
 
     while(1) {
-        if(commandReceived) {
+        if(rs485_has_a_packet()) {
             if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
-                rs485_allow_next_command();
+                rs485_done_with_this_packet();
             }
             else {
-                processCommand(selectedAxis, command, valueBuffer);
+                process_packet();
             }
         }
 

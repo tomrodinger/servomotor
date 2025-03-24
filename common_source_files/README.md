@@ -45,15 +45,17 @@ Responses from devices follow a similar format but always begin with the encoded
 
 3. **Command Validation**:
    - The system validates that the received byte has LSB=1 (part of the encoding scheme)
-   - Decodes the device ID by shifting right by 1 bit
-   - Checks if the command is addressed to this device (matching alias or broadcast)
+   - Decodes the first byte of the packet (which contains the packet size) by shifting right by 1 bit
+   - Checks if this is a extended size, and if yes, then it gets the size from the next two bytes
+   - Checks if the command is addressed to this device (matching alias or broadcast or if extended addressing mode then do further decoding)
+   - Checks if this is extended addressing mode, and if yes, gets the unique ID from the next 8 bytes
    - Validates that the command length doesn't exceed buffer capacity
-   - Sets `commandReceived` flag when a valid command is fully received
-   - Disables further reception until the current command is processed and the `rs485_allow_next_command()` function is called
+   - Buffers the packet information for subsequent further decoding and interpretation and execution (if valid and address to the device)
+   - Disables further reception until the current packet is processed and the `rs485_done_with_this_packet()` function is called
 
 4. **Command Processing**:
-   - Main program loop processes commands when `commandReceived` is set
-   - After processing, `rs485_allow_next_command()` must be called to enable receiving the next command
+   - Main program loop processes commands when `rs485_has_a_packet()` returns true
+   - After processing, `rs485_done_with_this_packet()` must be called to clear the receive buffer so that it can be used again, otherwise there will be a command overflow fatal error
 
 5. **Response Transmission**:
    - `rs485_transmit()` sends data back to the host
@@ -85,11 +87,11 @@ The protocol includes robust error handling mechanisms:
 ## Key Functions
 
 - `rs485_init()`: Initializes the RS485 communication interface
-- `rs485_allow_next_command()`: Enables reception of the next command
+- `rs485_done_with_this_packet()`: Enables reception of the next packet
 - `rs485_transmit()`: Sends data over the RS485 bus
 - `rs485_wait_for_transmit_done()`: Waits for transmission completion
-- `encode_device_id()`: Encodes a device ID by shifting left and setting LSB to 1
-- `decode_device_id()`: Decodes a device ID by shifting right
+- `encode_first_byte()`: Encodes the first byte of a packet by shifting left and setting LSB to 1
+- `decode_first_byte()`: Decodes the first byte of a packet by shifting right
 
 ## Constants
 

@@ -13,7 +13,7 @@ void Communication::openSerialPort() {
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
     // Encode the device ID before sending
-    uint8_t encodedAlias = encodeDeviceId(alias);
+    uint8_t encodedAlias = encodeFirstByte(alias);
     _serial.write(encodedAlias);
     _serial.write(commandID);
 
@@ -48,7 +48,7 @@ int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t
     Serial.println(responseChar); // DEBUG
     #endif
     // The response character should be encoded (shifted and LSB set to 1)
-    uint8_t encodedResponseChar = encodeDeviceId(RESPONSE_CHARACTER);
+    uint8_t encodedResponseChar = encodeFirstByte(RESPONSE_CHARACTER);
     if (responseChar != encodedResponseChar) {
         #ifdef VERBOSE
         Serial.print("Invalid response character (not "); // DEBUG

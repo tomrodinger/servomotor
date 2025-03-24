@@ -35,11 +35,6 @@ extern void simulate_ADC_hall_sensor_values(void);
 #include "motor_control.h"
 #include "simulator_reset.h"
 
-// External declarations from RS485.c
-extern volatile uint8_t commandReceived;
-extern volatile char selectedAxis;
-extern volatile uint8_t command;
-extern volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 extern int main_simulation(void);
 
 // SDL headers
@@ -174,9 +169,6 @@ static void *write_thread_func(void *arg)
                 (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
                  ((USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   )))    ) {
             USART1_IRQHandler();
-            if (commandReceived) {
-                printf("Command received: Alias=%02u, Command=%02u\n", selectedAxis, command);
-            }            
         }
         usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
     }

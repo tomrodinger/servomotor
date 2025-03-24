@@ -70,7 +70,7 @@ The goal is to create a comprehensive simulator for a servomotor that:
 ### Fixed Issues
 - Receive interrupt not re-enabled after command processing:
   - Issue: Commands were received and validated correctly, but subsequent commands were dropped
-  - Fix: Verified rs485_allow_next_command() is called at the start of each command case in processCommand()
+  - Fix: Verified rs485_done_with_this_packet() is called at the start of each command case in process_packet()
   - Result: Multiple commands can now be processed in sequence
 - MOSFET Control:
   - Issue: "Enable MOSFETs" command triggered overheat error immediately after enabling
@@ -168,7 +168,7 @@ The goal is to create a comprehensive simulator for a servomotor that:
   - Important lesson: Keep it simple - nanosleep() is sufficient for timing
 - Wasted time editing obsolete function:
   - Tried to modify handle_firmware_command() in servo_simulator.c
-  - This function is obsolete as commands are now handled in main.c's processCommand()
+  - This function is obsolete as commands are now handled in main.c's process_packet()
   - Important lesson: Always check if code is still in use before modifying it
   - When fixing issues, first verify the code path is actually being used
 - Failed to mark debug prints with "// DEBUG" comment:

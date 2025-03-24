@@ -52,7 +52,7 @@ typedef enum {
     ERROR_POSITION_DEVIATION_TOO_LARGE = 45,
     ERROR_MOVE_TOO_FAR = 46,
     ERROR_HALL_POSITION_DELTA_TOO_LARGE = 47,
-    ERROR_INVALID_DEVICE_ID = 48
+    ERROR_INVALID_FIRST_BYTE = 48
 } error_code_t;
 
 #define ERROR_TEXT_INITIALIZER \
@@ -60,7 +60,7 @@ typedef enum {
     "time went backwards\0"                   /* ERROR_TIME_WENT_BACKWARDS */ \
     "flash unlock fail\0"                     /* ERROR_FLASH_UNLOCK_FAIL */ \
     "flash write fail\0"                      /* ERROR_FLASH_WRITE_FAIL */ \
-    "too many bytes\0"                        /* ERROR_TOO_MANY_BYTES */ \
+    "unused\0"                                /* ERROR_THIS_IS_UNUSED_AND_CAN_BE_REPLACED */                    /* THIS IS NOW OBSOLETE AND CAN BE REPLACED */ \
     "command overflow\0"                      /* ERROR_COMMAND_OVERFLOW */ \
     "command too long\0"                      /* ERROR_COMMAND_TOO_LONG */ \
     "not in open loop\0"                      /* ERROR_NOT_IN_OPEN_LOOP */ \
@@ -104,7 +104,7 @@ typedef enum {
     "position deviation too large\0"          /* ERROR_POSITION_DEVIATION_TOO_LARGE */ \
     "move too far\0"                          /* ERROR_MOVE_TOO_FAR */ \
     "hall position delta too large\0"         /* ERROR_HALL_POSITION_DELTA_TOO_LARGE */ \
-    "invalid device ID format\0"              /* ERROR_INVALID_DEVICE_ID */ \
+    "invalid first byte\0"                    /* ERROR_INVALID_FIRST_BYTE */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

@@ -45,7 +45,6 @@ typedef struct __attribute__((__packed__)) {
 } PID_value_t;
 
 void reset_time_profiler(void);
-void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters);
 void start_calibration(uint8_t print_output);
 void start_go_to_closed_loop_mode(void);
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time);

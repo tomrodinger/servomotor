@@ -49,8 +49,8 @@ def get_response(ser):
         print("Error: didn't receive enough bytes in the response. Got %d bytes" % (len(response)))
         exit(1)
     print("Received a response: ", response)
-    if response[0] != servomotor.ENCODED_RESPONSE_CHARACTER:
-        print(f"Error: the first is not the expected {servomotor.ENCODED_RESPONSE_CHARACTER}")
+    if response[0] != servomotor.RESPONSE_CHARACTER:
+        print(f"Error: the first is not the expected {servomotor.RESPONSE_CHARACTER}")
         exit(1)
     payload_size = response[2]
     if payload_size == 0:

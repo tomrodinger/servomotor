@@ -13,14 +13,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from terminal_formatting import format_error, format_info, format_warning, format_success, format_debug, STYLE
 
 # Device ID bit manipulation constants
-DEVICE_ID_LSB_MASK = 0x01  # Mask for checking if LSB is set
-DEVICE_ID_SHIFT = 1        # Number of bits to shift for device ID interpretation
+FIRST_BYTE_LSB_MASK = 0x01  # Mask for checking if LSB is set
+FIRST_BYTE_SHIFT = 1        # Number of bits to shift for device ID interpretation
 
-# Reserved aliases with special meaning (these are the actual values, not encoded)
-ALL_ALIAS = 127           # to address all devices on the bus at the same time
-RESPONSE_CHARACTER = 126   # indicates that the response is coming from the device being addressed
-EXTENDED_ADDRESSING = 125  # indicates that we will use extended addressing
-ENCODED_RESPONSE_CHARACTER = (RESPONSE_CHARACTER << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK # this will be the first byte sent on the line as a response to a command
+# Reserved aliases with special meaning. All other values are normal device aliases that can be assigned freely to devices so that thet can be individually addressed with just one byte
+ALL_ALIAS = 255            # to address all devices on the bus at the same time
+EXTENDED_ADDRESSING = 254  # indicates that we will use extended addressing
+RESPONSE_CHARACTER = 253   # indicates that the response is coming from the device being addressed
 
 # Protocol constants
 serial_port = None
@@ -45,16 +44,16 @@ class PayloadError(Exception):
     pass
 
 # Encode a device ID by shifting left and setting LSB to 1
-def encode_device_id(device_id):
-    return (device_id << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK
+def encode_first_byte(device_id):
+    return (device_id << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK
 
 # Decode a device ID by shifting right by one bit
-def decode_device_id(encoded_id):
-    return encoded_id >> DEVICE_ID_SHIFT
+def decode_first_byte(encoded_id):
+    return encoded_id >> FIRST_BYTE_SHIFT
 
 # Check if a device ID has the correct format (LSB set to 1)
-def is_valid_device_id_format(device_id):
-    return (device_id & DEVICE_ID_LSB_MASK) == DEVICE_ID_LSB_MASK
+def is_valid_first_byte_format(device_id):
+    return (device_id & FIRST_BYTE_LSB_MASK) == FIRST_BYTE_LSB_MASK
 
 def print_data(prefix_message, data, print_size=True, verbose=2):
     if verbose == 2:
@@ -83,9 +82,8 @@ def get_response(verbose=2):
         raise CommunicationError("Error: the response is not 3 bytes long")
     if verbose == 2:
         print_data("Received a response: ", response, print_size=True, verbose=verbose)
-    # The response character should be encoded (shifted one space to the left and LSB set to 1)
-    if response[0] != ENCODED_RESPONSE_CHARACTER:
-        error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {ENCODED_RESPONSE_CHARACTER} (encoded from {RESPONSE_CHARACTER})"
+    if response[0] != RESPONSE_CHARACTER:
+        error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {RESPONSE_CHARACTER}"
         raise CommunicationError(error_text)
     payload_size = response[2]
     if payload_size == 0xff:
@@ -171,13 +169,13 @@ def send_command(command_id, gathered_inputs, verbose=2):
     # Check if we're using extended addressing
     if unique_id is not None:
         # Extended addressing mode
-        encoded_extended = encode_device_id(EXTENDED_ADDRESSING)
+        encoded_extended = encode_first_byte(EXTENDED_ADDRESSING)
         # Pack the command header with struct: encoded_extended (B), unique_id (Q), command_id (B), command_payload_len (B)
         command_header = struct.pack('<BQBB', encoded_extended, unique_id, command_id, command_payload_len)
         command = bytearray(command_header) + gathered_inputs
     else:
         # Standard addressing mode
-        encoded_alias = encode_device_id(alias)
+        encoded_alias = encode_first_byte(alias)
         # Pack the command header with struct: encoded_alias (B), command_id (B), command_payload_len (B)
         command_header = struct.pack('<BBB', encoded_alias, command_id, command_payload_len)
         command = bytearray(command_header) + gathered_inputs

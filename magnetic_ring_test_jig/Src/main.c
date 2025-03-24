@@ -50,10 +50,6 @@ struct firmware_version_struct firmware_version = {MAJOR_FIRMWARE_VERSION, MINOR
 #define PING_PAYLOAD_SIZE 10
 
 extern uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
-extern char selectedAxis;
-extern uint8_t command;
-extern uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
-extern volatile uint8_t commandReceived;
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
@@ -395,8 +391,13 @@ void SysTick_Handler(void)
 }
 
 
-void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
+void process_packet(void)
 {
+    uint8_t command;
+    uint16_t payload_size;
+    void *payload;
+    uint8_t is_broadcast;
+
     uint64_t local_time;
     uint64_t time_from_master = 0;
     uint8_t capture_length;
@@ -405,61 +406,74 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
     uint8_t new_alias;
     uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
 
+    // There is a distinct possibility that the new packet is not for us. We will know after we see the return value of rs485_get_next_packet.
+    if (!rs485_get_next_packet(&command, &payload_size, &payload, &is_broadcast)) {
+        // The new packet, whatever it is, is not of interest to us and we need to clear it and return out of here
+        rs485_done_with_this_packet();
+        return;
+    }
+
+    if(!validate_command_crc32()) {
+        // CRC32 validation failed, allow next command and return
+        rs485_done_with_this_packet();
+        return;
+    }
+
 //    print_number("Received a command with length: ", commandLen);
     if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
         switch(command) {
         case CAPTURE_HALL_SENSOR_DATA_COMMAND:
-        	capture_length = parameters[0];
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
+        	capture_length = payload[0];
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             start_calibration(capture_length);
             break;
         case RESET_TIME_COMMAND:
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
         	reset_time();
-            if(axis != ALL_ALIAS) {
+            if(!is_broadcast) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
             break;
         case GET_CURRENT_TIME_COMMAND:
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
                 local_time = get_microsecond_time();
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&local_time, 6);
             }
             break;
         case TIME_SYNC_COMMAND:
-        	memcpy(&time_from_master, parameters, 6);
-            rs485_allow_next_command();
+        	memcpy(&time_from_master, payload, 6);
+            rs485_done_with_this_packet();
         	int32_t time_error = time_sync(time_from_master);
         	uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(axis != ALL_ALIAS) {
-                rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            if(!is_broadcast) {
+                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
                 rs485_transmit(&time_error, 4);
                 rs485_transmit(&clock_calibration_value, 2);
             }
             break;
         case GET_UPDATE_FREQUENCY_COMMAND:
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
 			frequency = get_update_frequency();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+			if(!is_broadcast) {
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
 				rs485_transmit(&frequency, 4);
 			}
 			break;
         case DETECT_DEVICES_COMMAND:
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
         	detect_devices_delay = get_random_number(99);
 			break;
         case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)parameters)[0];
-            new_alias = parameters[8];
-            rs485_allow_next_command();
+            unique_id = ((int64_t*)payload)[0];
+            new_alias = payload[8];
+            rs485_done_with_this_packet();
         	if(unique_id == my_unique_id) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3); 
                	print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
@@ -469,9 +483,9 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         	}
         	break;
         case GET_PRODUCT_INFO_COMMAND:
-            rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            rs485_done_with_this_packet();
+			if(!is_broadcast) {
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_info_length = sizeof(struct product_info_struct);
                 struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
 				rs485_transmit(&product_info_length, 1);
@@ -479,18 +493,18 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
 			}
 			break;
         case GET_PRODUCT_DESCRIPTION_COMMAND:
-            rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            rs485_done_with_this_packet();
+			if(!is_broadcast) {
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
 				rs485_transmit(&product_description_length, 1);
 				rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
 			}
 			break;
         case GET_FIRMWARE_VERSION_COMMAND:
-            rs485_allow_next_command();
-			if(axis != ALL_ALIAS) {
-				rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01", 2);
+            rs485_done_with_this_packet();
+			if(!is_broadcast) {
+				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
 				uint8_t firmware_version_length = sizeof(firmware_version);
 				rs485_transmit(&firmware_version_length, 1);
 				rs485_transmit(&firmware_version, sizeof(firmware_version));
@@ -500,24 +514,24 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             NVIC_SystemReset();
             break;
         case PING_COMMAND:
-        	memcpy(ping_response_buffer + 3, parameters, PING_PAYLOAD_SIZE);
-            rs485_allow_next_command();
-            if(axis != ALL_ALIAS) {
-                ping_response_buffer[0] = ENCODED_RESPONSE_CHARACTER;
+        	memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                ping_response_buffer[0] = RESPONSE_CHARACTER;
                 ping_response_buffer[1] = '\x01';
                 ping_response_buffer[2] = PING_PAYLOAD_SIZE;
                 rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
             }
             break;
         case GET_SUPPLY_VOLTAGE_COMMAND:
-            rs485_allow_next_command();
+            rs485_done_with_this_packet();
             {
                 struct __attribute__((__packed__)) {
                     uint8_t header[3];
                     uint16_t supply_voltage;
                 } supply_voltage_reply;
-                if(axis != ALL_ALIAS) {
-                    supply_voltage_reply.header[0] = ENCODED_RESPONSE_CHARACTER;
+                if(!is_broadcast) {
+                    supply_voltage_reply.header[0] = RESPONSE_CHARACTER;
                     supply_voltage_reply.header[1] = 1;
                     supply_voltage_reply.header[2] = sizeof(supply_voltage_reply) - 3;
                     supply_voltage_reply.supply_voltage = get_supply_voltage_volts_time_10();
@@ -527,8 +541,8 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
             break;
         case IDENTIFY_COMMAND:
             {
-                unique_id = ((int64_t*)parameters)[0];
-                rs485_allow_next_command();
+                unique_id = ((int64_t*)payload)[0];
+                rs485_done_with_this_packet();
                 if(unique_id == my_unique_id) {
                     SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
                     green_led_action_counter = 0;
@@ -542,7 +556,7 @@ void processCommand(uint8_t axis, uint8_t command, uint8_t *parameters)
         }
     }
     else {
-        rs485_allow_next_command();
+        rs485_done_with_this_packet();
     }
 }
 
@@ -551,7 +565,7 @@ void transmit_unique_id(void)
     crc32_init();
     calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
     uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
-    rs485_transmit(ENCODED_RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
+    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
     rs485_transmit(&my_unique_id, 8);
     rs485_transmit(&global_settings.my_alias, 1);
     rs485_transmit(&crc32, 4);
@@ -670,12 +684,12 @@ int main(void)
 //    rs485_transmit("Start\n", 6);
 
     while(1) {
-    	if(commandReceived) {
+        if(rs485_has_a_packet()) {
             if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
-                rs485_allow_next_command();
+                rs485_done_with_this_packet();
             }
             else {
-                processCommand(selectedAxis, command, valueBuffer);
+                process_packet();
             }
         }
 
