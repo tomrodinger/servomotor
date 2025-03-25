@@ -1,3 +1,8 @@
+NOTE TO SELF:
+
+Instruction for how to update this main.c file are located in a file called update_main_c.md
+You can give that file to the AI to make the necessary updates to this file if you ever do need to update this, which is unlikely
+
 #include "stm32g0xx_hal.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -250,7 +255,7 @@ void process_packet(void)
 {
     uint8_t command;
     uint16_t payload_size;
-    void *payload;
+    uint8_t *payload;
     uint8_t is_broadcast;
 
     uint64_t local_time;
@@ -266,9 +271,10 @@ void process_packet(void)
         return;
     }
 
-    if(!validate_command_crc32()) {
+    if(crc32_enabled && !rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
+        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
@@ -432,13 +438,18 @@ void process_packet(void)
     }
 }
 
+
 void transmit_unique_id(void)
 {
-    uint32_t crc32 = 0x04030201;
-    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
-    rs485_transmit(&my_unique_id, 8);
-    rs485_transmit(&global_settings.my_alias, 1);
-    rs485_transmit(&crc32, 4);
+    struct __attribute__((__packed__)) {
+        uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+        uint32_t unique_id;
+        uint8_t alias;
+        uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+    } detect_devices_reply;
+    detect_devices_reply.unique_id = my_unique_id;
+    detect_devices_reply.alias = global_settings.my_alias;
+    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply), crc32_enabled);
 }
 
 

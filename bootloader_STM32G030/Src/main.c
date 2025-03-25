@@ -19,6 +19,10 @@ extern uint32_t USART1_timout_timer;
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
 
+// CRC32 control variables
+static volatile uint8_t crc32_enabled = 0; // Enabled by default, DEBUG temporarily disabling it by default
+static volatile uint32_t crc32_error_count = 0;
+
 #define LAUNCH_APPLICATION_DELAY 50
 static int32_t launch_applicaiton = -1;
 
@@ -206,18 +210,12 @@ void SysTick_Handler(void)
     }
 }
 
-
 void process_packet(void)
 {
     uint8_t command;
     uint16_t payload_size;
-    void *payload;
+    uint8_t *payload;
     uint8_t is_broadcast;
-
-	uint64_t unique_id;
-	uint8_t new_alias;
-    uint8_t error_code;
-    char message[100];
 
     // There is a distinct possibility that the new packet is not for us. We will know after we see the return value of rs485_get_next_packet.
     if (!rs485_get_next_packet(&command, &payload_size, &payload, &is_broadcast)) {
@@ -226,44 +224,46 @@ void process_packet(void)
         return;
     }
 
-    if(!validate_command_crc32()) {
+    if(crc32_enabled && !rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
+        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
-        launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
+    launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
-        switch(command) {
-        case DETECT_DEVICES_COMMAND:
-            rs485_done_with_this_packet();
+    switch(command) {
+    case DETECT_DEVICES_COMMAND:
+        rs485_done_with_this_packet();
 //            sprintf(message, "DETECT_DEVICES_COMMAND\n");
 //            transmit(message, strlen(message));
-        	detect_devices_delay = get_random_number(99);
-			break;
-        case SET_DEVICE_ALIAS_COMMAND:
-//            sprintf(message, "SET_DEVICE_ALIAS_COMMAND\n");
-//            transmit(message, strlen(message));
-            unique_id = ((int64_t*)payload)[0];
-            new_alias = payload[8];
+        detect_devices_delay = get_random_number(99);
+        break;
+    case SET_DEVICE_ALIAS_COMMAND:
+        {
+        //            sprintf(message, "SET_DEVICE_ALIAS_COMMAND\n");
+        //            transmit(message, strlen(message));
+            uint64_t unique_id = ((int64_t*)payload)[0];
+            uint8_t new_alias = payload[8];
             rs485_done_with_this_packet();
 
-//            uint32_t my_unique_id_u32_array[2];
-//            memcpy(my_unique_id_u32_array, &unique_id, sizeof(unique_id));
-//            sprintf(message, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
-//            transmit(message, strlen(message));
+        //            uint32_t my_unique_id_u32_array[2];
+        //            memcpy(my_unique_id_u32_array, &unique_id, sizeof(unique_id));
+        //            sprintf(message, "Unique ID: 0x%08lX%08lX\n", my_unique_id_u32_array[1], my_unique_id_u32_array[0]);
+        //            transmit(message, strlen(message));
 
-        	if(unique_id == my_unique_id) {
+            if(unique_id == my_unique_id) {
                 transmit("Match\n", 6);
-        		global_settings.my_alias = new_alias;
-           		save_global_settings();
+                global_settings.my_alias = new_alias;
+                save_global_settings();
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
-        	}
-        	break;
-        case FIRMWARE_UPGRADE_COMMAND:
+            }
+        }
+        break;
+    case FIRMWARE_UPGRADE_COMMAND:
         {
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
             if(memcmp(payload, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
@@ -275,57 +275,74 @@ void process_packet(void)
                 }
                 else {
                     uint8_t firmware_page = *(payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
+                    char message[100];
                     sprintf(message, "Valid firmware page %hu\n", firmware_page);
                     transmit(message, strlen(message));
-                    error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
-                    if((axis != ALL_ALIAS) && (error_code == 0)) {
+                    uint8_t error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
+                    if((!is_broadcast) && (error_code == 0)) {
                         rs485_transmit(NO_ERROR_RESPONSE, 3);
                     }
                 }
             }
             rs485_done_with_this_packet();
-			break;
         }
-        case GET_PRODUCT_INFO_COMMAND:
-            rs485_done_with_this_packet();
-			if(!is_broadcast) {
-				rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-				uint8_t product_info_length = sizeof(struct product_info_struct);
-				rs485_transmit(&product_info_length, 1);
-				rs485_transmit(product_info, sizeof(struct product_info_struct));
-			}
-			break;
-        case GET_STATUS_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-            }
-            break;
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        }
-    }
-    else {
+        break;
+    case GET_PRODUCT_INFO_COMMAND:
         rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint8_t product_info_length;
+                struct product_info_struct product_info;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } product_info_reply;
+            
+            product_info_reply.product_info_length = sizeof(struct product_info_struct);
+            memcpy(&product_info_reply.product_info, (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION), sizeof(struct product_info_struct));
+            rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply), crc32_enabled);
+        }
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct device_status_struct status;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } status_reply;
+            
+            set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
+            memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply), crc32_enabled);
+        }
+        break;
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    default:
+        rs485_done_with_this_packet();
+        break;
     }
 }
 
+
 void transmit_unique_id(void)
 {
-    uint32_t crc32 = 0x04030201;
-	rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
-	rs485_transmit(&my_unique_id, 8);
-	rs485_transmit(&global_settings.my_alias, 1);
-	rs485_transmit(&crc32, 4);
+    struct __attribute__((__packed__)) {
+        uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+        uint32_t unique_id;
+        uint8_t alias;
+        uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+    } detect_devices_reply;
+    detect_devices_reply.unique_id = my_unique_id;
+    detect_devices_reply.alias = global_settings.my_alias;
+    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply), crc32_enabled);
 }
 
 
 void process_debug_uart_commands(void)
 {
-    uint8_t command_debug_uart = get_command_debug_uart();
+    uint8_t command_debug_uart = get_command_from_debug_uart();
 
     if(command_debug_uart != 0) {
     	switch(command_debug_uart) {

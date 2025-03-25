@@ -12,6 +12,8 @@
 #include "error_text.h"
 #include "device_status.h"
 
+extern void USART1_IRQHandler(void);
+
 // External declarations from servo_simulator.c
 #ifdef MOTOR_SIMULATION
 //extern volatile int gExitFatalError;
@@ -27,11 +29,7 @@ static const char error_text[] = ERROR_TEXT_INITIALIZER;
 static volatile uint32_t systick_new_value = SYSTICK_LOAD_VALUE;
 static volatile uint32_t systick_previous_value;
 static uint8_t fatal_error_occurred = 0;
-static uint8_t commandReceived = 0;
-static uint16_t valueLength;
-static uint16_t nReceivedBytes = 0;
-static uint8_t volatile selectedAxis;
-static uint8_t command;
+static uint8_t crc32_enabled = 0;
 
 static void fatal_error_systick_init(void)
 {
@@ -41,76 +39,41 @@ static void fatal_error_systick_init(void)
 }
 
 
-static void receive(void)
+static void handle_packet(void)
 {
-    if(USART1->ISR & USART_ISR_RXNE_RXFNE) {
-        if(USART1->ISR & USART_ISR_RTOF) {
-            nReceivedBytes = 0;
-            USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
-        }
+    uint8_t command;
+    uint16_t payload_size;
+    uint8_t *payload;
+    uint8_t is_broadcast;
 
-        uint8_t receivedByte = USART1->RDR;
-        #ifdef MOTOR_SIMULATION
-        USART1->ISR &= ~USART_ISR_RXNE_RXFNE; // clear this bit to indicate that we have read the received byte (done automatically in the real hardware but not in the simulated hardware)
-        #endif
-        if(nReceivedBytes < 65535) {
-            nReceivedBytes++;
-        }
-
-        if(!commandReceived) {
-            if(nReceivedBytes == 1) {
-                selectedAxis = decode_device_id(receivedByte);
-            }
-            else if(nReceivedBytes == 2) {
-                command = receivedByte;
-            }
-            else if(nReceivedBytes == 3) {
-                valueLength = receivedByte;
-                if((selectedAxis != RESPONSE_CHARACTER) && (selectedAxis == global_settings.my_alias || selectedAxis == ALL_ALIAS) && (valueLength == 0)) {
-                    commandReceived = 1;
-                }
-                nReceivedBytes = 0;
-            }
-        }
+    // There is a distinct possibility that the new packet is not for us. We will know after we see the return value of rs485_get_next_packet.
+    if (!rs485_get_next_packet(&command, &payload_size, &payload, &is_broadcast)) {
+        // The new packet, whatever it is, is not of interest to us and we need to clear it and return out of here
+        rs485_done_with_this_packet();
+        return;
     }
-}
 
-
-static void rs485_transmit_status(uint8_t error_code)
-{
-    struct device_status_struct *device_status = get_device_status(); 
-    uint8_t *device_status_uint8_t = (uint8_t *)device_status;
-    uint8_t i;
-
-    set_device_error_code(error_code);
-
-    for(i = 0; i < sizeof(struct device_status_struct); i++) {
-        while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0); // wait the transmitter to be free so we can transmit a byte
-        USART1->TDR = device_status_uint8_t[i];
-        #ifdef MOTOR_SIMULATION
-        // In simulation, we need to clear TXE after writing to TDR
-        // (In real hardware, this is done by the USART hardware)
-        USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
-        #endif
+    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+        // CRC32 validation failed, allow next command and return
+        rs485_done_with_this_packet();
+        return;
     }
-}
 
-
-static void handle_commands(uint8_t error_code)
-{
-    receive(); // this will receive any commands through the RS485 interface
-
-    // we are specifically interested in the reset command
-    if(commandReceived) {
-        switch(command) {
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        case GET_STATUS_COMMAND:
-            rs485_transmit_status(error_code); // this indicates that there was a fatal error and the particular error code is made available for query 
-            break;
+    switch(command) {
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast && rs485_is_transmit_done()) { // we won't transmit if already transmitting (to prevent a deadlock inside the while(transmitCount > 0); statement inside the rs485_transmit function)
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct device_status_struct device_status;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } status_reply;
+            memcpy(&status_reply.device_status, get_device_status(), sizeof(struct device_status_struct));
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply), crc32_enabled);
         }
-        commandReceived = 0;
     }
 }
 
@@ -118,8 +81,14 @@ static void handle_commands(uint8_t error_code)
 static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
 {
     do {
-        handle_commands(error_code);
-        
+        // Since interrupts are now disabled to minimize the chance of any abnormal behaviour during a fata error state,
+        // we need to call the interrupt routine that handle receive and transmit over the TS485 interface manually
+        USART1_IRQHandler();
+
+        if (rs485_has_a_packet()) {
+            handle_packet();
+        }
+
         #ifdef MOTOR_SIMULATION
         // Check if we should exit the fatal error state
         if (gResetProgress > 0) {
@@ -143,11 +112,9 @@ void fatal_error(uint16_t error_code)
     // Clear the exit fatal error flag at the beginning
 //    gExitFatalError = 0;
     
-    const char *debug_message; // DEBUG - temporarily added to aid in debugging
-    debug_message = get_error_text(error_code); // DEBUG - temporarily added to aid in debugging
-    printf("\n\n*** FATAL ERROR %d: %s ***\n\n", error_code, debug_message); // DEBUG - temporarily added to aid in debugging
-    // Print the call stack or other debug info that might help identify the cause
-    printf("fatal_error_occurred = %d\n", fatal_error_occurred);
+    const char *debug_message;
+    debug_message = get_error_text(error_code);
+    printf("\n\n*** FATAL ERROR %d: %s ***\n\n", error_code, debug_message);
     
     // Try to identify what's calling fatal_error during reset
     if (gResetProgress > 0) {
@@ -165,16 +132,14 @@ void fatal_error(uint16_t error_code)
         return;
     }
     
-    #ifdef MOTOR_SIMULATION
-    printf("Entering fatal error state with error code %d\n", error_code);
-    #endif
-
     __disable_irq();
     heater_off();
     disable_mosfets();
     green_LED_off();
     fatal_error_systick_init();
+    rs485_init();
     fatal_error_occurred = 1;
+    set_device_error_code(error_code);
 
     message = get_error_text(error_code);
     sprintf(buf, ": %u\n", error_code);
@@ -231,20 +196,10 @@ void error_handling_simulator_init(void)
 {
     printf("error_handling_simulator_init() called\n");
     printf("Before reset: fatal_error_occurred = %d\n", fatal_error_occurred);
-    
-    // Initialize systick values
+
     systick_new_value = SYSTICK_LOAD_VALUE;
-    systick_previous_value = 0;
-    
-    // Initialize error state
     fatal_error_occurred = 0;
-    
-    // Initialize command handling variables
-    commandReceived = 0;
-    valueLength = 0;
-    nReceivedBytes = 0;
-    selectedAxis = 0;
-    command = 0;
+    crc32_enabled = 0;
     
     printf("After reset: fatal_error_occurred = %d\n", fatal_error_occurred);
 }

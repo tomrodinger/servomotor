@@ -14,10 +14,10 @@ LINKER_FLAGS="-mcpu=cortex-m0plus -TSTM32G030C8TX_FLASH.ld --specs=nosys.specs -
 
 OBJECT_FILES="${DEVICE_SOURCE_FILES_DIR}/startup_stm32g030c8tx.s \
     ${DEVICE_SOURCE_FILES_DIR}/global_variables.c \
+    ${COMMON_SOURCE_FILES_DIR}/crc32.c \
     ${COMMON_SOURCE_FILES_DIR}/RS485.c \
     ${COMMON_SOURCE_FILES_DIR}/debug_uart.c \
     ${COMMON_SOURCE_FILES_DIR}/error_handling.c \
-    ${COMMON_SOURCE_FILES_DIR}/error_text.c \
     ${DEVICE_SOURCE_FILES_DIR}/mosfets.c \
     ${DEVICE_SOURCE_FILES_DIR}/heater.c \
     ${COMMON_SOURCE_FILES_DIR}/leds.c \

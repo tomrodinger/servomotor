@@ -33,7 +33,7 @@ uint32_t calculate_crc32_u8(uint8_t new_value);
  * @param len Length of the data buffer in bytes
  * @return The calculated CRC32 value
  */
-uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t len);
+uint32_t calculate_crc32_buffer(void *buffer, uint32_t len);
 
 /**
  * @brief Calculate CRC32 for a buffer of data without initializing the CRC32 hardware unit
@@ -42,6 +42,6 @@ uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t len);
  * @param len Length of the data buffer in bytes
  * @return The calculated CRC32 value
  */
-uint32_t calculate_crc32_buffer_without_reinit(uint8_t *buffer, uint32_t len)
+uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t len);
 
 #endif /* CRC32_H_ */

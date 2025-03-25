@@ -12,8 +12,8 @@
 #include "crc32.h"
 
 static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
-static volatile uint8_t transmitIndex = 0;
-static volatile uint8_t transmitCount = 0;
+static volatile uint8_t transmitIndex;
+static volatile uint8_t transmitCount;
 
 // The receive buffer will hold the following:
 // 1. encoded size of the entire packet (maximum 3 bytes but usually 1 byte)
@@ -24,34 +24,48 @@ static volatile uint8_t transmitCount = 0;
 // The maximum size for all of this therefore is as follows:
 #define MAX_RECEIVE_BUFFER_SIZE (3 + 9 + 1 + MAX_VALUE_BUFFER_LENGTH + 4)
 static volatile uint8_t receiveBuffers[N_RECEIVE_BUFFERS][MAX_RECEIVE_BUFFER_SIZE];
-static volatile uint8_t receiveBufferReadPosition = 0;
-static volatile uint8_t receiveBufferWritePosition = 0;
-static volatile uint8_t receiveBuffersUsed = 0;
-static volatile uint16_t receiveIndex = 0;
-static volatile uint16_t receivePacketSize = 0;
-static volatile uint8_t receiveBufferOverflow = 0;
+static volatile uint8_t receiveBufferReadPosition;
+static volatile uint8_t receiveBufferWritePosition;
+static volatile uint8_t receiveBuffersUsed;
+static volatile uint16_t receiveIndex;
+static volatile uint8_t firstByteInvalid;
+static volatile uint16_t receivePacketSize;
+static volatile uint8_t receiveBufferOverflow;
 
 #define UNKNOWN_VALUE_LENGTH 65535
-static uint16_t nReceivedBytes = 0;
 
 #if 0
+static uint16_t nReceivedBytes = 0;
 volatile uint8_t selectedAxis;
 volatile uint8_t command;
 volatile uint8_t valueBuffer[MAX_VALUE_BUFFER_LENGTH];
 volatile uint16_t valueLength;
 volatile uint8_t commandReceived = 0;
 volatile uint8_t in_extended_addressing_mode = 0;
-#endif
-
 static volatile uint8_t unique_id_mismatch = 0; // Flag to track if unique ID doesn't match (0 = match so far)
 static volatile uint8_t unique_id_bytes_received = 0;
+#endif
 
+
+// This function will be called when the device first starts and it will also be called
+// if a fatal error occurs so as to make sure tha the UART is reinitialized and working
+// even if something abnormal happed that caused the fatal error
 void rs485_init(void)
 {
+    // reinitialize all these variables related to 
+    transmitIndex = 0;
+    transmitCount = 0;
+    receiveBufferReadPosition = 0;
+    receiveBufferWritePosition = 0;
+    receiveBuffersUsed = 0;
+    receiveIndex = 0;
+    firstByteInvalid = 0;
+    receivePacketSize = 0;
+    receiveBufferOverflow = 0;
+
     //commandReceived = 0;
-    unique_id_mismatch = 0; // Initialize to no mismatch (will be set to 1 if any byte doesn't match)
-    unique_id_bytes_received = 0;
-    in_extended_addressing_mode = 0;
+    //unique_id_mismatch = 0; // Initialize to no mismatch (will be set to 1 if any byte doesn't match)
+    //unique_id_bytes_received = 0;
     
     RCC->APBENR2 |= RCC_APBENR2_USART1EN_Msk; // enable the clock to the UART1 peripheral
     RCC->CCIPR |= 1 << RCC_CCIPR_USART1SEL_Pos; // select SYSCLK as the clock source
@@ -75,7 +89,7 @@ uint8_t rs485_has_a_packet(void)
     return receiveBuffersUsed > 0;
 }
 
-uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, void **payload, uint8_t *is_broadcast)
+uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t **payload, uint8_t *is_broadcast)
 {
     if (receiveBuffersUsed == 0) {
         return 0; // nothing in the buffer
@@ -105,7 +119,7 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, void **p
             parsing_index += UNIQUE_ID_SIZE;
         }
         else {
-            if (deviceID != my_alias) {
+            if (deviceID != global_settings.my_alias) {
                 return 0; // normal address was used but the alias did not match ours and so this packet is not for us
             }
         }
@@ -117,7 +131,7 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, void **p
     *command = receiveBuffers[receiveBufferReadPosition][parsing_index];
     parsing_index++;
     *payload_size = packet_size - parsing_index;
-    *payload = &receiveBuffers[receiveBufferReadPosition][parsing_index];
+    *payload = (void*)(&receiveBuffers[receiveBufferReadPosition][parsing_index]);
     return 1;
 }
 
@@ -126,17 +140,17 @@ uint8_t rs485_validate_packet_crc32(void)
     uint16_t size_size = 1;
     uint16_t packet_size = decode_first_byte(receiveBuffers[receiveBufferReadPosition][0]);
     if (packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE) {
-        packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][parsing_index + 1] << 8) | receiveBuffers[receiveBufferReadPosition][parsing_index];
+        packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][2] << 8) | receiveBuffers[receiveBufferReadPosition][1];
         size_size += 2;
     }
     uint32_t received_crc32 = *(uint32_t*)&receiveBuffers[receiveBufferReadPosition][packet_size - sizeof(uint32_t)];
     if (packet_size < sizeof(uint32_t)) {
         return 0; // there are less than 4 bytes in this packet and so it cannot contain a CRC32 and is therefore invalid or lacking a CRC32
     }
-    uint16_t crc32_calculation_n_bytes = size_size + packet_size - sizeof(uint32_t); // we will include the size bytes in the CRC32 calculation
+    uint16_t crc32_calculation_n_bytes = size_size + packet_size - sizeof(uint32_t); // we will include the size bytes but not the crc32 bytes in the CRC32 calculation
 
     crc32_init(); // reset the CRC32 calculation unit
-    uint32_t calculated_crc32 = calculate_crc32_buffer(&receiveBuffers[receiveBufferReadPosition][0], crc32_calculation_n_bytes);
+    uint32_t calculated_crc32 = calculate_crc32_buffer((void*)&receiveBuffers[receiveBufferReadPosition][0], crc32_calculation_n_bytes);
 
     if (calculated_crc32 != received_crc32) {
         return 0; // the CRC32 does not match and so the packet is invalid
@@ -172,6 +186,7 @@ void USART1_IRQHandler(void)
     if((USART1->ISR & USART_ISR_RXNE_RXFNE) && (USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE)) {
         if(USART1->ISR & USART_ISR_RTOF) {
             receiveIndex = 0;
+            firstByteInvalid = 0;
             USART1->ICR |= USART_ICR_RTOCF; // clear the timeout flag
         }
 
@@ -179,6 +194,7 @@ void USART1_IRQHandler(void)
         receivedByte = USART1->RDR;
         #ifdef MOTOR_SIMULATION
         USART1->ISR &= ~USART_ISR_RXNE_RXFNE; // clear this bit to indicate that we have read the received byte (done automatically in the real hardware but not in the simulated hardware)
+        printf("* * * Received a byte: %hhu\n", receivedByte);
         #endif
 
         if(receiveBuffersUsed >= N_RECEIVE_BUFFERS) {
@@ -186,7 +202,7 @@ void USART1_IRQHandler(void)
         }
         if (receiveIndex == 0) {
             if(!is_valid_first_byte_format(receivedByte)) {
-                fatal_error(ERROR_INVALID_FIRST_BYTE);
+                firstByteInvalid = 1;
             }
             receivePacketSize = decode_first_byte(receivedByte);
             receiveBufferOverflow = 0;
@@ -203,7 +219,7 @@ void USART1_IRQHandler(void)
         }
         if(receiveIndex == receivePacketSize) {
             receiveIndex = 0;
-            if (!receiveBufferOverflow) {
+            if (!receiveBufferOverflow && !firstByteInvalid) {
                 receiveBufferWritePosition = (receiveBufferWritePosition + 1) % N_RECEIVE_BUFFERS;
                 receiveBuffersUsed++;
             }
@@ -217,6 +233,7 @@ void USART1_IRQHandler(void)
         // In simulation, we need to clear TXE after writing to TDR
         // (In real hardware, this is done by the USART hardware)
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
+        printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
 #endif
         transmitCount--;
         transmitIndex++;
@@ -233,6 +250,42 @@ void USART1_IRQHandler(void)
     else {
         red_LED_off();
     }
+
+    #ifdef MOTOR_SIMULATION
+    // For debugging purposes, lets print out the contents of all of these internal state variables (in this order):
+    // static volatile uint8_t receiveBufferReadPosition;
+    // static volatile uint8_t receiveBufferWritePosition;
+    // static volatile uint8_t receiveBuffersUsed;
+    // static volatile uint16_t receiveIndex;
+    // static volatile uint16_t receivePacketSize;
+    // static volatile uint8_t receiveBufferOverflow;
+    // static volatile uint8_t receiveBuffers[N_RECEIVE_BUFFERS][MAX_RECEIVE_BUFFER_SIZE];
+    // static volatile uint8_t transmitIndex;
+    // static volatile uint8_t transmitCount;
+    // static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
+    printf("* * * Finished USART1_IRQHandler. This is the current complete internal state:\n");
+    printf("         receiveBufferReadPosition:  %hhu\n", receiveBufferReadPosition);
+    printf("         receiveBufferWritePosition: %hhu\n", receiveBufferWritePosition);
+    printf("         receiveBuffersUsed:         %hhu\n", receiveBuffersUsed);
+    printf("         receiveIndex:               %hu\n",  receiveIndex);
+    printf("         receivePacketSize:          %hu\n",  receivePacketSize);
+    printf("         receiveBufferOverflow:      %hhu\n", receiveBufferOverflow);
+    for (uint32_t j = 0; j < N_RECEIVE_BUFFERS; j++) {
+        printf("         receiveBuffers[%d]:", j);
+        for (uint32_t i = 0; i < receiveIndex; i++) {
+            printf(" %hhu", receiveBuffers[j][i]);
+        }
+        printf("\n");
+    }
+    printf("         transmitIndex:         %hhu\n", transmitIndex);
+    printf("         transmitCount:         %hhu\n", transmitCount);
+    printf("         transmitBuffer:");
+    for (uint32_t i = transmitIndex; i < transmitIndex + transmitCount; i++) {
+        printf(" %hhu", transmitBuffer[i]);
+    }
+    printf("\n");
+    #endif
+
 }
 
 #if 0
@@ -431,11 +484,17 @@ void rs485_wait_for_transmit_done(void)
     while(transmitCount > 0); // wait for previous transmission to finish
 }
 
+uint8_t rs485_is_transmit_done(void)
+{
+    return (transmitCount == 0);
+}
+
+
 // We need to do two things before finally transmitting the packet:
 // 1. If CRC32 is enabled then we need to calculate the CRC32 of the structure and place it at the end of the structure
 // 2. Fill in the packet size in the header (the first byte) so that it includes the CRC32 if the CRC32 is enabled or excludes it otherwise
 // Please note that the structure that you pass in must contain the space for the crc32 if crc32_enabled is true
-void rs485_finalize_crc32_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled)
+void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled)
 {
     if(!crc32_enabled) {
         structure_size -= sizeof(uint32_t); // remove the size of the crc32 value, because we will not be sending it
@@ -467,35 +526,12 @@ void RS485_simulator_init(void)
     // Hardware does this in the real hardware, but we need to do it in the simulator
     USART1->ISR = USART_ISR_TXE_TXFNF_Msk;
 
-    // Initialize transmit buffer variables
-    transmitIndex = 0;
-    transmitCount = 0;
-    
-    // Initialize static variables that were moved from USART1_IRQHandler
-    nReceivedBytes = 0;
-    receiveIndex = 0;
-    
-    // Initialize command handling variables
-    commandReceived = 0;
-    
-    // Initialize extended addressing variables
-    unique_id_mismatch = 0; // Initialize to no mismatch
-    unique_id_bytes_received = 0;
-    in_extended_addressing_mode = 0;
-    selectedAxis = 0;
-    command = 0;
-    
-    // Clear value buffer
-    for (int i = 0; i < MAX_VALUE_BUFFER_LENGTH; i++) {
-        valueBuffer[i] = 0;
-    }
-    
     printf("RS485 module reset complete\n");
 }
 
-void print_nReceivedBytes(void)
+void print_receiveIndex(void)
 {
-    printf("nReceivedBytes = %hu\n", nReceivedBytes);
+    printf("receiveIndex = %hu\n", receiveIndex);
 }
 
 #endif

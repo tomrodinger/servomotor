@@ -189,47 +189,12 @@ uint32_t get_crc32_error_count_and_optionally_reset(uint8_t reset)
     return count;
 }
 
-// Function to validate CRC32 of a received packet
-// Returns 1 if CRC32 is valid or disabled, 0 if invalid
-uint8_t validate_command_crc32()
-{
-    if(!crc32_enabled) {
-        return 1; // CRC32 is disabled, so return valid
-    }
-    uint8_t crc32_is_valid = rs485_validate_packet_crc32();
-    if(crc32_is_valid) {
-        return 1;
-    }
-    else {
-        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
-        return 0;
-    }
-}
-
 void process_packet(void)
 {
     uint8_t command;
     uint16_t payload_size;
-    void *payload;
+    uint8_t *payload;
     uint8_t is_broadcast;
-
-    uint64_t local_time;
-    uint64_t time_from_master = 0;
-    uint8_t capture_type;
-    uint8_t n_items_in_queue;
-    int32_t acceleration;
-    int32_t velocity;
-    uint32_t time_steps;
-    uint32_t frequency;
-    uint64_t unique_id;
-    uint8_t new_alias;
-    uint16_t new_maximum_motor_current;
-    uint16_t new_maximum_motor_regen_current;
-    uint8_t n_moves_in_this_command;
-    int32_t max_homing_travel_displacement;
-    uint32_t max_homing_time;
-    uint8_t ping_response_buffer[PING_PAYLOAD_SIZE + 3];
-    uint8_t control_hall_sensor_statistics_subcommand;
 
     struct move_parameters_struct {
         union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
@@ -250,9 +215,10 @@ void process_packet(void)
         return;
     }
 
-    if(!validate_command_crc32()) {
+    if(crc32_enabled && !rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
+        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
@@ -322,16 +288,18 @@ void process_packet(void)
         start_calibration(0);
         break;
     case CAPTURE_HALL_SENSOR_DATA_COMMAND:
-        capture_type = payload[0];
-        rs485_done_with_this_packet();
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
-        }
-        if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
-            start_calibration(1);
-        }
-        else {
-            start_capture(capture_type);
+        {
+            uint8_t capture_type = payload[0];
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+            if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
+                start_calibration(1);
+            }
+            else {
+                start_capture(capture_type);
+            }
         }
         break;
     case RESET_TIME_COMMAND:
@@ -344,28 +312,43 @@ void process_packet(void)
     case GET_CURRENT_TIME_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
-            local_time = get_microsecond_time();
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-            rs485_transmit(&local_time, 6);
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint64_t current_time;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } current_time_reply;
+            current_time_reply.current_time = get_microsecond_time();
+            rs485_finalize_and_transmit_packet(&current_time_reply, sizeof(current_time_reply), crc32_enabled);
         }
         break;
     case TIME_SYNC_COMMAND:
-        memcpy(&time_from_master, (void*)payload, 6); // Typecast to discard the volatile qualifier. I am not sure how to do this a better way.
-        rs485_done_with_this_packet();
-        int32_t time_error = time_sync(time_from_master);
-        uint16_t clock_calibration_value = get_clock_calibration_value();
-        if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-            rs485_transmit(&time_error, 4);
-            rs485_transmit(&clock_calibration_value, 2);
+        {
+            uint64_t time_from_master;
+            memcpy(&time_from_master, (void*)payload, 6); // Typecast to discard the volatile qualifier. I am not sure how to do this a better way.
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                    int32_t time_error;
+                    uint16_t clock_calibration_value;
+                    uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                } time_sync_reply;
+                time_sync_reply.time_error = time_sync(time_from_master);
+                time_sync_reply.clock_calibration_value = get_clock_calibration_value();
+                rs485_finalize_and_transmit_packet(&time_sync_reply, sizeof(time_sync_reply), crc32_enabled);
+            }
         }
         break;
     case GET_N_ITEMS_IN_QUEUE_COMMAND:
         rs485_done_with_this_packet();
-        n_items_in_queue = get_n_items_in_queue();
         if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
-            rs485_transmit(&n_items_in_queue, 1);
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint8_t n_items_in_queue;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } queue_items_reply;
+            queue_items_reply.n_items_in_queue = get_n_items_in_queue();
+            rs485_finalize_and_transmit_packet(&queue_items_reply, sizeof(queue_items_reply), crc32_enabled);
         }
         break;
     case EMERGENCY_STOP_COMMAND:
@@ -383,67 +366,74 @@ void process_packet(void)
         }
         break;
     case HOMING_COMMAND:
-        max_homing_travel_displacement = ((int32_t*)payload)[0];
-        max_homing_time = ((uint32_t*)payload)[1];
-        rs485_done_with_this_packet();
-        char buf[100];
-        sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
-        print_debug_string(buf);
-        start_homing(max_homing_travel_displacement, max_homing_time);
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        {
+            int32_t max_homing_travel_displacement = ((int32_t*)payload)[0];
+            uint32_t max_homing_time = ((uint32_t*)payload)[1];
+            rs485_done_with_this_packet();
+            char buf[100];
+            sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
+            print_debug_string(buf);
+            start_homing(max_homing_travel_displacement, max_homing_time);
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
         }
         break;
     case GET_POSITION_COMMAND:
         rs485_done_with_this_packet();
-        {
-//                int32_t motor_position;
-            int64_t motor_position;
-            if(!is_broadcast) {
-                motor_position = get_motor_position();
-//                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
-                rs485_transmit(&motor_position, sizeof(motor_position));
-            }
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                int64_t motor_position;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } position_reply;
+            position_reply.motor_position = get_motor_position();
+            rs485_finalize_and_transmit_packet(&position_reply, sizeof(position_reply), crc32_enabled);
         }
         break;
     case GET_HALL_SENSOR_POSITION_COMMAND:
         rs485_done_with_this_packet();
-        {
-//                int32_t hall_sensor_position;
-            int64_t hall_sensor_position;
-            if(!is_broadcast) {
-                hall_sensor_position = get_hall_position();
-//                    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x08", 3);
-                rs485_transmit(&hall_sensor_position, sizeof(hall_sensor_position));
-            }
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                int64_t hall_sensor_position;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } hall_position_reply;
+            hall_position_reply.hall_sensor_position = get_hall_position();
+            rs485_finalize_and_transmit_packet(&hall_position_reply, sizeof(hall_position_reply), crc32_enabled);
         }
         break;
     case GET_COMPREHENSIVE_POSITION_COMMAND:
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 int64_t motor_position;
                 int64_t hall_sensor_position;
                 int32_t external_encoder_position;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } comprehensive_position;
             if(!is_broadcast) {
                 comprehensive_position.motor_position = get_motor_position();
                 comprehensive_position.hall_sensor_position = get_hall_position();
                 comprehensive_position.external_encoder_position = get_external_encoder_position();
-                finalize_and_transmit_packet(&comprehensive_position, sizeof(comprehensive_position));
+                rs485_finalize_and_transmit_packet(&comprehensive_position, sizeof(comprehensive_position), crc32_enabled);
             }
         }
         break;
     case GET_STATUS_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct device_status_struct device_status;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } status_reply;
             uint8_t motor_status_flags = get_motor_status_flags();
             set_device_status_flags(motor_status_flags);
-            rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+            memcpy(&status_reply.device_status, get_device_status(), sizeof(struct device_status_struct));
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply), crc32_enabled);
+            char buf[100];
             sprintf(buf, "Get status: %hu\n", motor_status_flags);
             print_debug_string(buf);
         }
@@ -457,21 +447,28 @@ void process_packet(void)
         break;
     case GET_UPDATE_FREQUENCY_COMMAND:
         rs485_done_with_this_packet();
-        frequency = get_update_frequency();
         if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-            rs485_transmit(&frequency, 4);
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint32_t frequency;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } frequency_reply;
+            frequency_reply.frequency = get_update_frequency();
+            rs485_finalize_and_transmit_packet(&frequency_reply, sizeof(frequency_reply), crc32_enabled);
         }
         break;
     case MOVE_WITH_ACCELERATION_COMMAND:
-        acceleration = ((int32_t*)payload)[0];
-        time_steps = ((uint32_t*)payload)[1];
-        rs485_done_with_this_packet();
-//            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
-//            print_debug_string(buf);
-        add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        {
+            int32_t acceleration = ((int32_t*)payload)[0];
+            uint32_t time_steps = ((uint32_t*)payload)[1];
+            rs485_done_with_this_packet();
+        //            char buf[100];
+        //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
+        //            print_debug_string(buf);
+            add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
         }
         break;
     case DETECT_DEVICES_COMMAND:
@@ -479,104 +476,125 @@ void process_packet(void)
         detect_devices_delay = get_random_number(99);
         break;
     case SET_DEVICE_ALIAS_COMMAND:
-        unique_id = ((int64_t*)payload)[0];
-        new_alias = payload[8];
-        rs485_done_with_this_packet();
-        if(unique_id == my_unique_id) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
-            print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
-            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
-            global_settings.my_alias = new_alias;
-            save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
-        } else {
-            print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
+        {
+            uint64_t unique_id = ((int64_t*)payload)[0];
+            uint8_t new_alias = payload[8];
+            rs485_done_with_this_packet();
+            if(unique_id == my_unique_id) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+                print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
+                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+                global_settings.my_alias = new_alias;
+                save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
+            }
+            else {
+                print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
+            }
         }
         break;
     case GET_PRODUCT_INFO_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-            uint8_t product_info_length = sizeof(struct product_info_struct);
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct product_info_struct product_info;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } product_info_reply;
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-            rs485_transmit(&product_info_length, 1);
-            rs485_transmit(product_info, sizeof(struct product_info_struct));
+            memcpy(&product_info_reply.product_info, product_info, sizeof(struct product_info_struct));
+            rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply), crc32_enabled);
         }
         break;
     case GET_PRODUCT_DESCRIPTION_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-            uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-            rs485_transmit(&product_description_length, 1);
-            rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                char product_description[sizeof(PRODUCT_DESCRIPTION)];
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } product_description_reply;
+            memcpy(product_description_reply.product_description, PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+            rs485_finalize_and_transmit_packet(&product_description_reply, sizeof(product_description_reply), crc32_enabled);
         }
         break;
     case GET_FIRMWARE_VERSION_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
-            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-            uint8_t firmware_version_length = sizeof(firmware_version);
-            rs485_transmit(&firmware_version_length, 1);
-            rs485_transmit(&firmware_version, sizeof(firmware_version));
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct firmware_version_struct firmware_version_data;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } firmware_version_reply;
+            memcpy(&firmware_version_reply.firmware_version_data, &firmware_version, sizeof(firmware_version));
+            rs485_finalize_and_transmit_packet(&firmware_version_reply, sizeof(firmware_version_reply), crc32_enabled);
         }
         break;
     case MOVE_WITH_VELOCITY_COMMAND:
-        velocity = ((int32_t*)payload)[0];
-        time_steps = ((uint32_t*)payload)[1];
-        rs485_done_with_this_packet();
-//            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
-//            print_debug_string(buf);
-        add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        {
+            int32_t velocity = ((int32_t*)payload)[0];
+            uint32_t time_steps;
+            time_steps = ((uint32_t*)payload)[1];
+            rs485_done_with_this_packet();
+    //            char buf[100];
+    //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
+    //            print_debug_string(buf);
+            add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
         }
         break;
     case SYSTEM_RESET_COMMAND:
         NVIC_SystemReset();
         break;
     case SET_MAXIMUM_MOTOR_CURRENT:
-        new_maximum_motor_current = ((uint16_t*)payload)[0];
-        new_maximum_motor_regen_current = ((uint16_t*)payload)[1];
-        rs485_done_with_this_packet();
-        set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        {
+            uint16_t new_maximum_motor_current = ((uint16_t*)payload)[0];
+            uint16_t new_maximum_motor_regen_current = ((uint16_t*)payload)[1];
+            rs485_done_with_this_packet();
+            set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
         }
         break;
     case MULTI_MOVE_COMMAND:
-        n_moves_in_this_command = ((int8_t*)payload)[0];
-        struct multi_move_command_buffer_struct multi_move_command_buffer;
-        memcpy(&multi_move_command_buffer, (void*)(payload + 1), sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
-        rs485_done_with_this_packet();
-//            char buf[100];
-//            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
-//            print_debug_string(buf);
-        if(n_moves_in_this_command > MAX_MULTI_MOVES) {
-            fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-        }
-        for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
-            if((multi_move_command_buffer.move_type_bits & 1) == 0) {
-                add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
-//                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
-//                    print_debug_string(buf);
-            } else {
-                add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
-//                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
-//                    print_debug_string(buf);
+        {
+            uint8_t n_moves_in_this_command = ((int8_t*)payload)[0];
+            struct multi_move_command_buffer_struct multi_move_command_buffer;
+            memcpy(&multi_move_command_buffer, (void*)(payload + 1), sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+            rs485_done_with_this_packet();
+    //            char buf[100];
+    //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
+    //            print_debug_string(buf);
+            if(n_moves_in_this_command > MAX_MULTI_MOVES) {
+                fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
             }
-            multi_move_command_buffer.move_type_bits >>= 1;
-        }
-        if(!is_broadcast) {
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
+            for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
+                if((multi_move_command_buffer.move_type_bits & 1) == 0) {
+                    add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
+    //                    char buf[100];
+    //                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
+    //                    print_debug_string(buf);
+                } else {
+                    add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
+    //                    char buf[100];
+    //                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
+    //                    print_debug_string(buf);
+                }
+                multi_move_command_buffer.move_type_bits >>= 1;
+            }
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
         }
         break;
     case SET_SAFETY_LIMITS_COMMAND:
         {
-    //            lower_limit = ((int32_t*)payload)[0];
-    //            upper_limit = ((int32_t*)payload)[1];
             int64_t lower_limit = ((int64_t*)payload)[0];
             int64_t upper_limit = ((int64_t*)payload)[1];
             rs485_done_with_this_packet();
+    //            char buf[100];
     //            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
     //            print_debug_string(buf);
             set_movement_limits(lower_limit, upper_limit);
@@ -590,50 +608,56 @@ void process_packet(void)
     case ADD_TO_QUEUE_TEST_COMMAND:
         {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 add_to_queue_test_results_t add_to_queue_test_results;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } add_to_queue_test_reply;
             add_to_queue_test(((int32_t*)payload)[0], ((uint32_t*)payload)[1], ((uint8_t*)payload)[8], &add_to_queue_test_reply.add_to_queue_test_results);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
-                rs485_finalize_crc32_and_transmit_packet(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply));
+                rs485_finalize_and_transmit_packet(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply), crc32_enabled);
             }
         }
         break;
     case PING_COMMAND:
-        memcpy(ping_response_buffer + 3, (void*)payload, PING_PAYLOAD_SIZE);
-        rs485_done_with_this_packet();
-        if(!is_broadcast) {
-            ping_response_buffer[0] = RESPONSE_CHARACTER;
-            ping_response_buffer[1] = '\x01';
-            ping_response_buffer[2] = PING_PAYLOAD_SIZE;
-            rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+        {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint8_t ping_payload[PING_PAYLOAD_SIZE];
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } ping_reply;
+            memcpy(ping_reply.ping_payload, payload, PING_PAYLOAD_SIZE);
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                rs485_finalize_and_transmit_packet(&ping_reply, sizeof(ping_reply), crc32_enabled);
+            }
         }
         break;
     case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
-        control_hall_sensor_statistics_subcommand = ((int8_t*)payload)[0];
-        rs485_done_with_this_packet();
-        if(!is_broadcast) {
-            if(control_hall_sensor_statistics_subcommand == 0) {
-                hall_sensor_turn_off_statistics();
+        {
+            uint8_t control_hall_sensor_statistics_subcommand = ((int8_t*)payload)[0];
+            rs485_done_with_this_packet();
+            if(!is_broadcast) {
+                if(control_hall_sensor_statistics_subcommand == 0) {
+                    hall_sensor_turn_off_statistics();
+                }
+                if(control_hall_sensor_statistics_subcommand == 1) {
+                    hall_sensor_turn_on_and_reset_statistics();
+                }
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
-            if(control_hall_sensor_statistics_subcommand == 1) {
-                hall_sensor_turn_on_and_reset_statistics();
-            }
-            rs485_transmit(NO_ERROR_RESPONSE, 3);
         }
         break;
     case GET_HALL_SENSOR_STATISTICS_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 hall_sensor_statistics_t hall_sensor_statistics;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } hall_sensor_statistics_full_response;
             get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
-            rs485_finalize_crc32_and_transmit_packet(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+            rs485_finalize_and_transmit_packet(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response), crc32_enabled);
         }
         break;
     case READ_MULTIPURPOSE_BUFFER_COMMAND:
@@ -679,6 +703,7 @@ void process_packet(void)
                 clear_multipurpose_data();
             }
             print_debug_string("Read multipurpose data\n");
+            char buf[100];
             sprintf(buf, "Type is %hu, Size is %hu\n", data_type, data_size);
             print_debug_string(buf);
         }
@@ -687,13 +712,13 @@ void process_packet(void)
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 uint16_t supply_voltage;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } supply_voltage_reply;
             if(!is_broadcast) {
                 supply_voltage_reply.supply_voltage = get_supply_voltage_volts_times_10();
-                rs485_finalize_crc32_and_transmit_packet(&supply_voltage_reply, sizeof(supply_voltage_reply));
+                rs485_finalize_and_transmit_packet(&supply_voltage_reply, sizeof(supply_voltage_reply), crc32_enabled);
             }
         }
         break;
@@ -701,10 +726,10 @@ void process_packet(void)
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 int32_t min_PID_error;
                 int32_t max_PID_error;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } get_max_pid_error_reply;
             if(!is_broadcast) {
                 int32_t min_PID_error;
@@ -712,7 +737,7 @@ void process_packet(void)
                 get_max_PID_error(&min_PID_error, &max_PID_error);
                 get_max_pid_error_reply.min_PID_error = min_PID_error;
                 get_max_pid_error_reply.max_PID_error = max_PID_error;
-                rs485_finalize_crc32_and_transmit_packet(&get_max_pid_error_reply, sizeof(get_max_pid_error_reply));
+                rs485_finalize_and_transmit_packet(&get_max_pid_error_reply, sizeof(get_max_pid_error_reply), crc32_enabled);
             }
         }
         break;
@@ -733,6 +758,7 @@ void process_packet(void)
             if(!is_broadcast) {
                 rs485_transmit(NO_ERROR_RESPONSE, 3);
             }
+            char buf[100];
             sprintf(buf, "Setting the test mode to %hu\n", test_mode);
             print_debug_string(buf);
         }
@@ -749,6 +775,7 @@ void process_packet(void)
                 print_debug_string("Turning off vibration\n");
             }
             else {
+                char buf[100];
                 sprintf(buf, "Turning on vibration with level %hu\n", vibration_level);
                 print_debug_string(buf);
             }
@@ -756,7 +783,7 @@ void process_packet(void)
         break;
     case IDENTIFY_COMMAND:
         {
-            unique_id = ((int64_t*)payload)[0];
+            uint64_t unique_id = ((int64_t*)payload)[0];
             rs485_done_with_this_packet();
             if(unique_id == my_unique_id) {
                 SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
@@ -772,13 +799,13 @@ void process_packet(void)
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 int16_t temperature;
-                uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } get_temperature_reply;
             if(!is_broadcast) {
                 get_temperature_reply.temperature = get_temperature_degrees_C();
-                rs485_finalize_crc32_and_transmit_packet(&get_temperature_reply, sizeof(get_temperature_reply));
+                rs485_finalize_and_transmit_packet(&get_temperature_reply, sizeof(get_temperature_reply), crc32_enabled);
             }
         }
         break;
@@ -788,6 +815,7 @@ void process_packet(void)
             uint32_t i = ((uint32_t*)payload)[1];
             uint32_t d = ((uint32_t*)payload)[2];
             rs485_done_with_this_packet();
+            char buf[100];
             sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", p, i, d);
             print_debug_string(buf);
             set_pid_constants(p, i, d);
@@ -853,7 +881,7 @@ void process_packet(void)
                 get_motor_pwm_voltage(&motor_pwm_voltage);
 
                 struct __attribute__((__packed__)) {
-                    uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                    uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                     int64_t max_acceleration;
                     int64_t max_velocity;
                     int64_t currenbt_velocity;
@@ -884,7 +912,7 @@ void process_packet(void)
                     int32_t min_hall_position_delta;
                     int32_t average_hall_position_delta;
                     uint8_t motor_pwm_voltage;
-                    uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                    uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 } get_debug_values_reply;
                 get_debug_values_reply.max_acceleration = max_acceleration;
                 get_debug_values_reply.max_velocity = max_velocity;
@@ -916,7 +944,7 @@ void process_packet(void)
                 get_debug_values_reply.min_hall_position_delta = min_hall_position_delta;
                 get_debug_values_reply.average_hall_position_delta = average_hall_position_delta;
                 get_debug_values_reply.motor_pwm_voltage = motor_pwm_voltage;
-                finalize_and_transmit_packet(&get_debug_values_reply, sizeof(get_debug_values_reply), crc32_enabled);
+                rs485_finalize_and_transmit_packet(&get_debug_values_reply, sizeof(get_debug_values_reply), crc32_enabled);
             }
         }
         break;
@@ -937,12 +965,12 @@ void process_packet(void)
             {            
                 if(!is_broadcast) {
                     struct __attribute__((__packed__)) {
-                        uint8_t header[3]; // this part will be filled in by finalize_and_transmit_packet()
+                        uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                         uint32_t crc32_error_count;
-                        uint32_t crc32; // this part will be filled in by finalize_and_transmit_packet()
+                        uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
                     } crc32_error_count_reply;
                     crc32_error_count_reply.crc32_error_count = get_crc32_error_count_and_optionally_reset(reset_crc32_counter);
-                    finalize_and_transmit_packet(&crc32_error_count_reply, sizeof(crc32_error_count_reply), crc32_enabled);
+                    rs485_finalize_and_transmit_packet(&crc32_error_count_reply, sizeof(crc32_error_count_reply), crc32_enabled);
                 }
             }
         }
@@ -953,15 +981,18 @@ void process_packet(void)
     }
 }
 
+
 void transmit_unique_id(void)
 {
-    crc32_init();
-    calculate_crc32_buffer((uint8_t*)&my_unique_id, 8);
-    uint32_t crc32 = calculate_crc32_u8(global_settings.my_alias); // and also the alias (1 byte)
-    rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0d", 3);
-    rs485_transmit(&my_unique_id, 8);
-    rs485_transmit(&global_settings.my_alias, 1);
-    rs485_transmit(&crc32, 4);
+    struct __attribute__((__packed__)) {
+        uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+        uint32_t unique_id;
+        uint8_t alias;
+        uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+    } detect_devices_reply;
+    detect_devices_reply.unique_id = my_unique_id;
+    detect_devices_reply.alias = global_settings.my_alias;
+    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply), crc32_enabled);
 }
 
 

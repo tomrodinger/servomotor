@@ -18,11 +18,11 @@ void crc32_init(void)
     crc32_value = 0xFFFFFFFF;
 }
 
-uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t length)
+uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t length)
 {
     uint32_t i, j;
     for (i = 0; i < length; i++) {
-        crc32_value ^= buffer[i];
+        crc32_value ^= ((uint8_t *)buffer)[i];
         for (j = 0; j < 8; j++) {
             if (crc32_value & 1)
                 crc32_value = (crc32_value >> 1) ^ CRC32_POLYNOMIAL;
@@ -31,6 +31,12 @@ uint32_t calculate_crc32_buffer(uint8_t *buffer, uint32_t length)
         }
     }
     return crc32_value;
+}
+
+uint32_t calculate_crc32_buffer(void *buffer, uint32_t length)
+{
+    crc32_init();
+    return calculate_crc32_buffer_without_reinit(buffer, length);
 }
 
 uint32_t calculate_crc32_u8(uint8_t value)

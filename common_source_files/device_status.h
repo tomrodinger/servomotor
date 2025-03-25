@@ -23,9 +23,6 @@
 
 
 struct __attribute__((__packed__)) device_status_struct {
-    uint8_t alias;
-    uint8_t command;
-    uint8_t parameter_length;
     uint8_t flags;
     uint8_t error_code;
 };

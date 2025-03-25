@@ -41,11 +41,12 @@ static inline uint8_t is_valid_first_byte_format(uint8_t encoded_first_byte) {
 
 void rs485_init(void);
 uint8_t rs485_has_a_packet(void);
-uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, void **payload, uint8_t *is_broadcast);
+uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t **payload, uint8_t *is_broadcast);
 uint8_t rs485_validate_packet_crc32(void);
 void rs485_done_with_this_packet(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
-void rs485_finalize_crc32_and_transmit_packet(void *data, size_t structure_size, uint8_t crc32_enabled);
+uint8_t rs485_is_transmit_done(void);
+void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled);
 
 #endif /* SRC_RS485_H_ */

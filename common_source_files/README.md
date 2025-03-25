@@ -10,26 +10,30 @@ This document describes the RS485-based communication protocol used in the servo
 
 Each command packet follows this structure:
 
-1. **Byte 1**: Encoded Axis/Device ID (8-bit)
-   - `127` (encoded ALL_ALIAS): Broadcasts to all devices on the bus
-   - `126` (encoded RESPONSE_CHARACTER): Indicates a response from a device
-   - `125` (encoded EXTENDED_ADDRESSING): Used for extended addressing mode
-   - Other values: Encoded specific device address/alias (always with LSB=1)
+1. **Size Bytes**:
+   - **Byte 1**: Encoded first byte containing the packet size
+     - The LSB (bit 0) is always set to 1 for validation purposes
+     - The actual size value is stored in bits 1-7 (size = encoded_byte >> 1)
+     - If the decoded size value is 127 (DECODED_FIRST_BYTE_EXTENDED_SIZE), then the next two bytes form a 16-bit size value
+     - Otherwise, this is the direct size of the entire packet including all fields
+   
+2. **Address Bytes**:
+   - **Standard Addressing**: Single byte containing device alias
+     - `255` (ALL_ALIAS): Broadcasts to all devices on the bus
+     - `254` (EXTENDED_ADDRESSING): Indicates extended addressing mode
+     - `253` (RESPONSE_CHARACTER): Indicates a response from a device
+     - `0-252`: Normal device aliases
+   - **Extended Addressing**: When the address byte is `254` (EXTENDED_ADDRESSING), the next 8 bytes contain the 64-bit Unique ID of the target device
 
-2. **Byte 2**: Command ID (8-bit)
-   - Specifies the operation to be performed
+3. **Command Byte**: 8-bit value specifying the operation to be performed
 
-3. **Byte 3**: Value Length (8-bit)
-   - If value is `255`, then the next two bytes form a 16-bit length value
-   - Otherwise, this is the direct length of the payload
+4. **Payload Data**: Variable length data according to the command requirements
 
-4. **Bytes 4+**: Payload/Value Data
-   - Variable length data according to the specified value length
-   - Maximum size is defined by `MAX_VALUE_BUFFER_LENGTH`
+5. **CRC32 (4 bytes)**: When CRC32 is enabled, the last 4 bytes of the packet contain a CRC32 checksum of all preceding bytes (including size and address bytes)
 
 ### Response Format
 
-Responses from devices follow a similar format but always begin with the encoded `RESPONSE_CHARACTER` (126) to indicate a reply from a device.
+Responses from devices follow a similar format but always begin with the address byte set to `RESPONSE_CHARACTER` (253) to indicate a reply from a device.
 
 ## Command Processing Flow
 
@@ -39,28 +43,48 @@ Responses from devices follow a similar format but always begin with the encoded
 
 2. **Reception Process**:
    - When data arrives, the USART1 interrupt handler processes it byte by byte
-   - Bytes are collected until a complete command is formed
+   - Bytes are collected until a complete packet is formed based on the size information
    - Timeout detection resets the reception process if there's a gap in transmission
    - Error detection for framing, overrun, and noise errors
 
-3. **Command Validation**:
-   - The system validates that the received byte has LSB=1 (part of the encoding scheme)
-   - Decodes the first byte of the packet (which contains the packet size) by shifting right by 1 bit
-   - Checks if this is a extended size, and if yes, then it gets the size from the next two bytes
-   - Checks if the command is addressed to this device (matching alias or broadcast or if extended addressing mode then do further decoding)
-   - Checks if this is extended addressing mode, and if yes, gets the unique ID from the next 8 bytes
-   - Validates that the command length doesn't exceed buffer capacity
-   - Buffers the packet information for subsequent further decoding and interpretation and execution (if valid and address to the device)
-   - Disables further reception until the current packet is processed and the `rs485_done_with_this_packet()` function is called
+3. **Packet Validation**:
+   - Validates that the first byte has LSB=1 (part of the encoding scheme)
+   - Decodes the first byte to determine packet size
+   - If extended size is indicated, reads the next two bytes for the full packet size
+   - Checks if the packet is addressed to this device (matching alias, broadcast, or matching Unique ID)
+   - If CRC32 is enabled, validates the CRC32 checksum
+   - Buffers the packet for processing if valid
 
 4. **Command Processing**:
    - Main program loop processes commands when `rs485_has_a_packet()` returns true
-   - After processing, `rs485_done_with_this_packet()` must be called to clear the receive buffer so that it can be used again, otherwise there will be a command overflow fatal error
+   - `rs485_get_next_packet()` extracts command, payload size, payload pointer, and broadcast flag
+   - This function handles all addressing modes and returns only packets addressed to this device
+   - After processing, `rs485_done_with_this_packet()` must be called to clear the receive buffer
 
 5. **Response Transmission**:
-   - `rs485_transmit()` sends data back to the host
-   - Uses a buffer and interrupt-driven transmission
-   - Responses start with the encoded `RESPONSE_CHARACTER` (126) to indicate a reply
+   - `rs485_transmit()` sends basic data back to the host
+   - `rs485_finalize_and_transmit_packet()` handles CRC32 calculation and packet finalization before transmission
+   - Responses include the CRC32 checksum if CRC32 is enabled
+
+## CRC32 Implementation
+
+The protocol includes CRC32 error detection:
+
+1. **Calculation**:
+   - Uses hardware CRC32 unit for efficient processing
+   - Calculated over the entire packet (including size and address bytes)
+   - 4-byte CRC32 value appended to the end of the packet
+
+2. **Control**:
+   - Enabled by default after reset or power cycle
+   - Can be disabled/enabled using `CRC32_CONTROL_COMMAND`
+   - Error statistics tracked and retrievable via `GET_CRC32_ERROR_COUNT_COMMAND`
+
+3. **Key Functions**:
+   - `crc32_init()`: Initializes the CRC32 hardware unit
+   - `calculate_crc32_buffer()`: Calculates CRC32 for a data buffer
+   - `rs485_validate_packet_crc32()`: Validates received packet CRC32
+   - `rs485_finalize_and_transmit_packet()`: Adds CRC32 to outgoing packets if enabled
 
 ## Error Handling
 
@@ -71,7 +95,7 @@ The protocol includes robust error handling mechanisms:
 - **Noise errors**: Electrical interference
 - **Command overflow**: New command received before previous one processed
 - **Command too long**: Exceeding buffer capacity
-- **Too many bytes**: Received without forming a valid command
+- **CRC32 errors**: Data corruption during transmission
 
 ## Visual Indicators
 
@@ -87,88 +111,65 @@ The protocol includes robust error handling mechanisms:
 ## Key Functions
 
 - `rs485_init()`: Initializes the RS485 communication interface
-- `rs485_done_with_this_packet()`: Enables reception of the next packet
-- `rs485_transmit()`: Sends data over the RS485 bus
-- `rs485_wait_for_transmit_done()`: Waits for transmission completion
-- `encode_first_byte()`: Encodes the first byte of a packet by shifting left and setting LSB to 1
-- `decode_first_byte()`: Decodes the first byte of a packet by shifting right
-
-## Constants
-
-- `ALL_ALIAS (127)`: Address for broadcasting to all devices
-- `RESPONSE_CHARACTER (126)`: Indicates a response from a device
-- `EXTENDED_ADDRESSING (125)`: Used for extended addressing mode
-
-## Implementation Notes
-
-The protocol is implemented in the RS485.c and RS485.h files, which handle the low-level communication details. The implementation uses interrupt-driven I/O for efficient operation and minimal CPU overhead during data transfer.
+- `rs485_has_a_packet()`: Checks if a valid packet is available for processing
+- `rs485_get_next_packet()`: Retrieves the next packet for processing
+- `rs485_validate_packet_crc32()`: Validates the CRC32 checksum of a packet
+- `rs485_done_with_this_packet()`: Clears processed packet and enables reception of the next packet
+- `rs485_transmit()`: Sends raw data over the RS485 bus without modification
+- `rs485_finalize_and_transmit_packet()`: Sets packet size, adds CRC32 if enabled, and transmits the packet
+- `encode_first_byte()`: Encodes a byte by shifting left and setting LSB to 1
+- `decode_first_byte()`: Decodes a byte by shifting right
 
 ## Protocol Bit Structure
 
-The communication protocol implements the following bit structure for device addressing:
+1. **First Byte Encoding**:
+   - The least significant bit (LSB) of the first byte is always set to 1
+   - This enables future automatic baud rate detection by ensuring a predicatble first low pulse
 
-1. **Device ID Bit Structure**:
-   - All Device ID bytes have the least significant bit (LSB) set to 1
-   - This constraint enables automatic baud rate detection (which is not yet implemented)
-   - The actual Device ID is determined by shifting the received byte right by one bit
-   - This provides a 7-bit address space (0-127) for device identification
+2. **Validation**:
+   - The system validates that the first byte of a packet has LSB=1
+   - Any packet with LSB=0 in the first byte is rejected
+   - Reception resets after a timeout (10ms without UART traffic)
 
-2. **Special Address Values**:
-   - `ALL_ALIAS (127)`: Broadcast address to communicate with all devices
-   - `RESPONSE_CHARACTER (126)`: Indicates a response from a device
-   - `EXTENDED_ADDRESSING (125)`: Reserved for extended addressing mode
-   - Normal device IDs range from 0-124
+## Extended Addressing
 
-3. **Encoding/Decoding Implementation**:
-   - Device IDs are encoded before transmission: `encoded_id = (device_id << 1) | 1`
-   - Device IDs are decoded upon reception: `device_id = encoded_id >> 1`
-   - The encoded values are used in transmission:
-     - Encoded ALL_ALIAS: 255 (binary 11111111)
-     - Encoded RESPONSE_CHARACTER: 253 (binary 11111101)
-     - Encoded EXTENDED_ADDRESSING: 251 (binary 11111011)
-   - All normal device IDs (0-124) are encoded with LSB=1 in transmission
-     - Example: Device ID 10 → Encoded as 21 (binary 00010101)
-     - Example: Device ID 64 → Encoded as 129 (binary 10000001)
+The protocol supports addressing devices by their 64-bit Unique ID:
 
-4. **Validation**:
-   - The system validates that all received device ID bytes have LSB=1
-   - Any device ID byte with LSB=0 is rejected as invalid
-
-## Extended Addressing Implementation
-
-The protocol now supports extended addressing mode, which allows addressing devices by their 64-bit Unique ID:
-
-1. **Extended Addressing Mode**:
-   - Devices can now be addressed by their Unique ID (64-bit number)
-   - Uses the `EXTENDED_ADDRESSING (125)` value to indicate extended addressing mode
-   - When first byte is encoded EXTENDED_ADDRESSING, the next 8 bytes contain the 64-bit Unique ID in little-endian format
-   - Command ID and payload follow the Unique ID bytes
+1. **Addressing Mode**:
+   - When address byte is `EXTENDED_ADDRESSING (254)`, the next 8 bytes contain the device's 64-bit Unique ID
 
 2. **Implementation Details**:
-   - Firmware has been updated to recognize and process extended addressing commands
+   - Firmware recognizes and processes extended addressing commands
    - Python library supports both standard addressing (by alias) and extended addressing (by Unique ID)
    - The `-a` option in the command-line interface accepts both aliases and Unique IDs (16-character hex strings)
    - The system automatically detects whether to use standard or extended addressing based on the input format
 
 3. **Usage Example**:
-   - Standard addressing: `python motor_command.py -a 1 ENABLE_MOSFETS_COMMAND`
-   - Extended addressing: `python motor_command.py -a 0123456789ABCDEF ENABLE_MOSFETS_COMMAND`
+   - Standard addressing: `python3 motor_command.py -a 1 ENABLE_MOSFETS`
+   - Extended addressing: `python3 motor_command.py -a 0123456789ABCDEF ENABLE_MOSFETS`
+
+## CRC32-Related Commands
+
+1. **CRC32_CONTROL_COMMAND**:
+   - Enables or disables CRC32 checking
+   - Payload: Single byte (CRC32_ENABLE or CRC32_DISABLE)
+   - Default: Enabled after reset or power cycle
+
+2. **GET_CRC32_ERROR_COUNT_COMMAND**:
+   - Retrieves the current CRC32 error count
+   - Payload: Single byte (CRC32_ERROR_READ_ONLY or CRC32_ERROR_RESET)
+   - Response: 32-bit error count
+   - Can optionally reset the error counter
 
 ## Future Enhancements
 
 Planned enhancements for the communication protocol:
 
 1. **Support extended addressing in the Arduino module**
-   - At the moment we specify the alias when we create a motor object, but we should also be able to specify the unique ID
-   - There is also a function to change the alias. We should also be able to change the unique ID with some other new functon
+   - Enable specifying the unique ID when creating a motor object
+   - Add function to change the unique ID of the class that is commanding the device
 
 2. **Change the way that we set the alias**
-   - The "Set device alias" command currently takes the Unique ID as one of the input parameters (along with the new alias), but we do not need to do it this way anymore and instead we can use extended addressing mode to address it specifically
-   - Therefore, we need just one input parameter, which is the new alias
-
-3. **Add CRC32 checking to every command**
-   - By default the CRC32 will be enabled and checked (and always after reset or power cycle)
-   - Add a command that will disable the CRC32 checking to save bytes and complexity for certain use cases
-   - Add a statistics counter that will count the number of CRC32 errors
-   - Add a command to be able to retrieve and optionally reset the CRC32 error counter
+   - Use extended addressing mode to address devices specifically
+   - Simplify the "Set device alias" command to require only the new alias parameter
    
