@@ -1,0 +1,24 @@
+# Test data for CRC32 comparison
+# Each line is a test case in hex format (space-separated bytes)
+# Empty buffer (0 bytes)
+
+# Empty line
+00
+# Single byte
+01
+# Four bytes (one uint32_t)
+05 06 07 08
+# Multiple bytes
+01 02 03 04 05
+# Longer sequence
+48 65 6C 6C 6F 20 57 6F 72 6C 64 21  # "Hello World!"
+# Zero bytes
+00 00 00 00 00
+# All 0xFF
+FF FF FF FF FF
+# Random bytes
+A1 B2 C3 D4 E5 F6
+# Typical packet data
+01 FF 05 06 07 08
+# Larger dataset
+00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F

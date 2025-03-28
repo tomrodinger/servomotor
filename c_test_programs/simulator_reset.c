@@ -16,6 +16,7 @@
 extern void motor_control_simulator_init(void);
 extern void error_handling_simulator_init(void);
 extern void RS485_simulator_init(void);
+extern void main_simulation_init(void);
 
 /**
  * Reset all modules
@@ -29,7 +30,8 @@ void reset_all_modules(void)
     RS485_simulator_init();
     // Now reset motor control
     motor_control_simulator_init();
-    // Add more module resets here as needed
+    // Reset static variables in main.c
+    main_simulation_init();
 }
 
 #endif // MOTOR_SIMULATION

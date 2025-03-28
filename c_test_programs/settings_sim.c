@@ -30,7 +30,7 @@ uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t length)
                 crc32_value = crc32_value >> 1;
         }
     }
-    return crc32_value;
+    return ~crc32_value;
 }
 
 uint32_t calculate_crc32_buffer(void *buffer, uint32_t length)

@@ -120,7 +120,7 @@ void process_packet(void)
                 transmit("Match\n", 6);
                 global_settings.my_alias = new_alias;
                 save_global_settings();
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
+                transmit_no_error_response(is_broadcast, crc32_enabled); // nothing will be transmitted if is_broadcast is true
             }
         }
         break;
@@ -145,9 +145,8 @@ void process_packet(void)
                     
                     // Burn the firmware directly from the payload buffer
                     uint8_t error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
-                    
-                    if ((!is_broadcast) && (error_code == 0)) {
-                        rs485_transmit(NO_ERROR_RESPONSE, 3);
+                    if (error_code == 0) {
+                        transmit_no_error_response(is_broadcast, crc32_enabled); // nothing will be transmitted if is_broadcast is true
                     }
                 }
             }

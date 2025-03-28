@@ -12,11 +12,12 @@ import struct
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from terminal_formatting import format_error, format_info, format_warning, format_success, format_debug, STYLE
 
-# Device ID bit manipulation constants
+# Protocol constants for packet format
 FIRST_BYTE_LSB_MASK = 0x01  # Mask for checking if LSB is set
-FIRST_BYTE_SHIFT = 1        # Number of bits to shift for device ID interpretation
+FIRST_BYTE_SHIFT = 1        # Number of bits to shift for first byte interpretation
+DECODED_FIRST_BYTE_EXTENDED_SIZE = 127  # Value indicating extended size format
 
-# Reserved aliases with special meaning. All other values are normal device aliases that can be assigned freely to devices so that thet can be individually addressed with just one byte
+# Reserved aliases with special meaning. All other values are normal device aliases that can be assigned freely to devices so that they can be individually addressed with just one byte
 ALL_ALIAS = 255            # to address all devices on the bus at the same time
 EXTENDED_ADDRESSING = 254  # indicates that we will use extended addressing
 RESPONSE_CHARACTER = 253   # indicates that the response is coming from the device being addressed
@@ -73,116 +74,222 @@ def get_human_readable_alias(alias):
         alias_str = f"{alias} (0x{alias:02x})"
     return alias_str
 
-def get_response(verbose=2):
-    response = ser.read(3)
-    if len(response) == 0:
-        raise TimeoutError("Error: timeout")
-    if len(response) != 3:
-        print(format_error(f"Received: {response}"))
-        raise CommunicationError("Error: the response is not 3 bytes long")
+def get_response(verbose=2, crc32_enabled=True):
+    # Read the first byte (size byte)
+    first_byte = ser.read(1)
+    if len(first_byte) != 1:
+        raise TimeoutError("Error: timeout while reading first byte")
+    
+    # Validate first byte format (LSB should be 1)
+    if not is_valid_first_byte_format(first_byte[0]):
+        raise CommunicationError(f"Error: first byte {first_byte[0]} does not have LSB set to 1")
+
+    # Decode the size from the first byte
+    packet_size = decode_first_byte(first_byte[0])
+    size_bytes = first_byte
+    
+    # Check if we have extended size format
+    if packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE:
+        # Read the next two bytes for extended size
+        ext_size_bytes = ser.read(2)
+        if len(ext_size_bytes) != 2:
+            raise CommunicationError("Error: couldn't read extended size bytes")
+        
+        size_bytes += ext_size_bytes
+        packet_size = ext_size_bytes[0] | (ext_size_bytes[1] << 8)
+        if verbose == 2:
+            print(format_debug(f"Received packet with extended size: {packet_size}"))
+
+    # Read the rest of the packet (minus the size byte(s) we already read)
+    remaining_bytes = packet_size - len(size_bytes)
+    if remaining_bytes <= 0:
+        raise CommunicationError(f"Error: there are less bytes than expected in the response")
+    packet_data = ser.read(remaining_bytes)
+
+    if len(packet_data) != remaining_bytes:
+        raise CommunicationError(f"Error: received {len(packet_data)} bytes, expected {remaining_bytes}")
+    
+    # Full packet for CRC calculation
+    full_packet = size_bytes + packet_data
+
     if verbose == 2:
-        print_data("Received a response: ", response, print_size=True, verbose=verbose)
-    if response[0] != RESPONSE_CHARACTER:
-        error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {RESPONSE_CHARACTER}"
+        print_data("Received packet: ", full_packet, print_size=True, verbose=verbose)
+    
+    # Check if first address byte is RESPONSE_CHARACTER
+    if packet_data[0] != RESPONSE_CHARACTER:
+        error_text = f"Error: the address byte (which should indicate a response, {packet_data[0]}) is not the expected {RESPONSE_CHARACTER}"
         raise CommunicationError(error_text)
-    payload_size = response[2]
-    if payload_size == 0xff:
-        response2 = ser.read(2)
-        if len(response2) == 0:
-            raise TimeoutError("Error: timeout")
-        if len(response2) != 2:
-            raise CommunicationError("Error: the response indicated a size of 255 and then the second response is not 2 bytes long")
-        payload_size = response2[0] + (response2[1] << 8)
-        if verbose == 2:
-            print(format_debug(f"Received an extended size: {payload_size}"))
-    if payload_size == 0:
-        if response[1] != 0:
-            raise CommunicationError(f"Error: the second byte should be 0 if there is no payload, instead it is: {response[1]}")
+    
+    # Extract payload (everything after address and command bytes)
+    # If CRC32 is enabled, the last 4 bytes are the CRC32
+    if crc32_enabled:
+        # Verify CRC32
+        if len(packet_data) < 4:
+            raise CommunicationError("Error: packet too small to contain CRC32")
+        
+        # Extract CRC32 from the end of the packet
+        received_crc32 = struct.unpack('<I', packet_data[-4:])[0]
+        
+        # Calculate CRC32 on all bytes except the CRC32 itself
+        calculated_crc32 = calculate_crc32(size_bytes + packet_data[:-4])
+        
+        if calculated_crc32 != received_crc32:
+            raise CommunicationError(f"CRC32 validation failed: calculated {calculated_crc32:08X}, received {received_crc32:08X}")
+        
+        # Payload is everything after address and command bytes, but before CRC32
+        payload = packet_data[2:-4]
     else:
-        if response[1] != 1:
-            raise CommunicationError(f"Error: the second byte should be 1 if there is a payload, instead it is: {response[1]}")
-
-    if payload_size == 0:
-        if verbose == 2:
-            print(format_success("This response indicates SUCCESS and has no payload"))
-        return b''
-
-    payload = ser.read(payload_size)
-    if len(payload) != payload_size:
-        raise PayloadError(f"Error: didn't receive the right length ({payload_size} bytes) payload. Received ({len(payload)} bytes): {payload}")
-
+        # Payload is everything after address and command bytes
+        payload = packet_data[2:]
+    
     if verbose == 2:
-        print(format_debug("Got a valid payload:"))
-        print_data("Got a valid payload:", payload, verbose=verbose)
-
+        if len(payload) == 0:
+            print(format_success("This response indicates SUCCESS and has no payload"))
+        else:
+            print(format_debug("Got a valid payload:"))
+            print_data("Payload:", payload, verbose=verbose)
+    
     return payload
 
-def sniffer():
-    n_bytes_received = 0
-    while True:
-        new_byte = ser.read(1)
-        if len(new_byte) != 1:
-            if n_bytes_received > 0:
-                print(format_warning("---------------------------------------------------------------"))
-                print(format_warning("Timed out after incomplete communication. Here is what we know:"))
-                print(format_info(f"   Received {n_bytes_received} bytes"))
-                if n_bytes_received >= 1:
-                    if alias >= 33 and alias <= 126:
-                        alias = chr(alias)
-                    else:
-                        alias = str(alias)
-                    print(format_info(f"   Alias: {alias}"))
-                if n_bytes_received >= 2:
-                    print(format_info(f"   Command ID: {command_id}"))
-                if n_bytes_received >= 3:
-                    print(format_info(f"   Payload length: {payload_len}"))
-                if n_bytes_received >= 4:
-                    print(format_info(f"   Payload: {payload}"))
-                print(format_warning("---------------------------------------------------------------"))
-                return None, None, None
-            continue
-        new_byte = new_byte[0]
-        n_bytes_received += 1
-        if n_bytes_received == 1:
-            alias = new_byte
-            payload = bytearray()
-        elif n_bytes_received == 2:
-            command_id = new_byte
-        else:
-            if n_bytes_received == 3:
-                payload_len = new_byte
-                if payload_len == 0:
-                    break
+def sniffer(crc32_enabled=True):
+    """Sniff RS485 traffic and decode packets according to the protocol"""
+    packet_data = bytearray()
+    address_byte = None
+    command_byte = None
+    payload = None
+    packet_size = None
+    extended_size = False
+    
+    # Read first byte (size byte)
+    first_byte = ser.read(1)
+    if len(first_byte) != 1:
+        print(format_warning("No data received (timeout)"))
+        return None, None, None
+    
+    # Check if first byte has LSB set to 1
+    if not is_valid_first_byte_format(first_byte[0]):
+        print(format_error(f"Invalid first byte format: 0x{first_byte[0]:02X} (LSB not set to 1)"))
+        return None, None, None
+    
+    # Decode size from first byte
+    packet_size = decode_first_byte(first_byte[0])
+    packet_data.append(first_byte[0])
+    
+    # Check for extended size format
+    if packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE:
+        extended_size = True
+        # Read two more bytes for extended size
+        ext_size_bytes = ser.read(2)
+        if len(ext_size_bytes) != 2:
+            print(format_error("Timeout while reading extended size bytes"))
+            return None, None, None
+        
+        packet_data.extend(ext_size_bytes)
+        packet_size = ext_size_bytes[0] | (ext_size_bytes[1] << 8)
+        print(format_info(f"Extended size packet: {packet_size} bytes"))
+    else:
+        print(format_info(f"Standard size packet: {packet_size} bytes"))
+    
+    # Calculate remaining bytes to read
+    remaining_bytes = packet_size - len(packet_data)
+    
+    # Read the rest of the packet
+    remaining_data = ser.read(remaining_bytes)
+    if len(remaining_data) != remaining_bytes:
+        print(format_error(f"Incomplete packet: expected {remaining_bytes} more bytes, got {len(remaining_data)}"))
+        return None, None, None
+    
+    packet_data.extend(remaining_data)
+    
+    # Extract address byte
+    address_byte = remaining_data[0]
+    
+    # Extract command byte
+    command_byte = remaining_data[1]
+    
+    # Extract payload
+    if crc32_enabled:
+        # Last 4 bytes are CRC32
+        if len(remaining_data) >= 6:  # address + command + at least 1 payload byte + 4 CRC bytes
+            payload = remaining_data[2:-4]
+            crc32_bytes = remaining_data[-4:]
+            received_crc32 = struct.unpack('<I', crc32_bytes)[0]
+            
+            # Calculate CRC32 on all bytes except the CRC32 itself
+            calculated_crc32 = calculate_crc32(packet_data[:-4])
+            
+            if calculated_crc32 != received_crc32:
+                print(format_error(f"CRC32 validation failed: calculated 0x{calculated_crc32:08X}, received 0x{received_crc32:08X}"))
             else:
-                payload.append(new_byte)
-                if len(payload) >= payload_len:
-                    break
-
-    return alias, command_id, payload
+                print(format_success(f"CRC32 validation passed: 0x{received_crc32:08X}"))
+        else:
+            payload = bytearray()
+            print(format_warning("Packet too small to contain CRC32"))
+    else:
+        # No CRC32, payload is everything after address and command
+        payload = remaining_data[2:]
+    
+    # Print packet information
+    print(format_info(f"Address: {address_byte} (0x{address_byte:02X})"))
+    print(format_info(f"Command: {command_byte} (0x{command_byte:02X})"))
+    print(format_info(f"Payload: {len(payload)} bytes"))
+    if len(payload) > 0:
+        print_data("Payload data: ", payload, print_size=True, verbose=2)
+    
+    return address_byte, command_byte, payload
 
 def flush_receive_buffer():
     ser.reset_input_buffer()
 
-def send_command(command_id, gathered_inputs, verbose=2):
-    command_payload_len = len(gathered_inputs)
-    
+def calculate_crc32(data):
+    """Calculate CRC32 checksum for a byte array"""
+    import zlib
+    return zlib.crc32(data) & 0xffffffff
+
+def send_command(command_id, gathered_inputs, verbose=2, crc32_enabled=True):
     # Check if we're using extended addressing
     if unique_id is not None:
         # Extended addressing mode
-        encoded_extended = encode_first_byte(EXTENDED_ADDRESSING)
-        # Pack the command header with struct: encoded_extended (B), unique_id (Q), command_id (B), command_payload_len (B)
-        command_header = struct.pack('<BQBB', encoded_extended, unique_id, command_id, command_payload_len)
-        command = bytearray(command_header) + gathered_inputs
+        # Format: address byte (EXTENDED_ADDRESSING) + 8 bytes unique ID + command byte + payload
+        address_part = struct.pack('<BQ', EXTENDED_ADDRESSING, unique_id)
     else:
         # Standard addressing mode
-        encoded_alias = encode_first_byte(alias)
-        # Pack the command header with struct: encoded_alias (B), command_id (B), command_payload_len (B)
-        command_header = struct.pack('<BBB', encoded_alias, command_id, command_payload_len)
-        command = bytearray(command_header) + gathered_inputs
+        # Format: address byte (alias) + command byte + payload
+        address_part = struct.pack('<B', alias)
     
+    # Add command byte and payload
+    command_part = struct.pack('<B', command_id) + gathered_inputs
+    
+    # Combine address and command parts
+    packet_content = address_part + command_part
+
+    # Calculate total packet size
+    packet_size = 1 + len(packet_content)  # +1 for the size byte itself
+    if crc32_enabled:
+        packet_size += 4 # the CRC32 is 4 extra bytes
+
+    # Check if we need extended size format (size > 127)
+    if packet_size > 127:
+        packet_size += 2 # since we cannot encode the size in just 1 byte, we will use extended size format, which is a total of 3 bytes (so add two more bytes)
+        # Extended size format: first byte = 127 (encoded), followed by 2-byte size
+        size_bytes = struct.pack('<BH', encode_first_byte(127), packet_size)
+        packet = size_bytes + packet_content
+    else:
+        # Standard size format: first byte = encoded size
+        packet = bytearray([encode_first_byte(packet_size)]) + packet_content
+    print(f"**************** packet_size = {packet_size}")
+
+    # Add CRC32 if enabled
+    if crc32_enabled:
+        print("Calculating the CRC32 of this packet:")
+        for p in packet:
+            print(str(p))
+        crc32_value = calculate_crc32(packet)
+        packet += struct.pack('<I', crc32_value)    
+        
     if verbose == 2:
-        print_data("Sending command: ", command, print_size=True, verbose=verbose)
-    ser.write(command)
+        print_data("Sending packet: ", packet, print_size=True, verbose=verbose)
+    ser.write(packet)
     
     # Check if we should expect a response
     if (unique_id is None) and (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):

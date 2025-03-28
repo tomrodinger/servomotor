@@ -27,3 +27,6 @@
 *.bin
 unneeded*
 servo_simulator
+c_crc32_results.txt
+python_crc32_results.txt
+test_crc32_c

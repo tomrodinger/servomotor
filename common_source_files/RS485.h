@@ -13,9 +13,12 @@
 // Reserved aliases with special meaning
 #define ALL_ALIAS 255 // to address all devices on the bus at the same time
 #define EXTENDED_ADDRESSING 254 // this is the character that is used to indicate that we will use extended addressing
-#define RESPONSE_CHARACTER 253 // this is the character that is used to indicate that the response is coming from the device that is being addressed
-#define RESPONSE_CHARACTER_TEXT "\xFD" // this needs to be set according to the text version of the RESPONSE_CHARACTER
-#define NO_ERROR_RESPONSE ("\x03" RESPONSE_CHARACTER_TEXT "\x00")
+#define RESPONSE_CHARACTER_CRC32_ENABLED 253 // this is the character that is used to indicate that the response is coming from the device that is being addressed (and a 4-byte CRC32 is appended)
+#define RESPONSE_CHARACTER_CRC32_DISABLED 252 // this is the character that is used to indicate that the response is coming from the device that is being addressed (and there is no CRC32 is appended)
+#define RESPONSE_CHARACTER_CRC32_ENABLED_TEXT "\xFD" // this needs to be set according to the text version of the RESPONSE_CHARACTER_CRC32_ENABLED
+#define RESPONSE_CHARACTER_CRC32_DISABLED_TEXT "\xFC" // this needs to be set according to the text version of the RESPONSE_CHARACTER_CRC32_DISABLED
+#define NO_ERROR_RESPONSE_CRC32_ENABLED ("\x0F\xFD\x00\xDF\x01\x0F\x55") // the first \x0F is what is sent on the line and it will be decoded to mean 7 bytes by the other end
+#define NO_ERROR_RESPONSE_CRC32_DISABLED ("\x07" RESPONSE_CHARACTER_CRC32_DISABLED_TEXT "\x00") // the \x07 is what is sent on the line and it will be decoded to mean 3 bytes by the other end
 
 // Include unique_id.h for UNIQUE_ID_SIZE definition
 #include "unique_id.h"
@@ -47,6 +50,7 @@ void rs485_done_with_this_packet(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
 uint8_t rs485_is_transmit_done(void);
+void transmit_no_error_response(uint8_t is_broadcast, uint8_t crc32_enabled);
 void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled);
 
 #endif /* SRC_RS485_H_ */

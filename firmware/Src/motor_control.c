@@ -3194,7 +3194,8 @@ void check_current_sensor_and_enable_mosfets(void)
 //  for(delay = 0; delay < 1000000; delay++);
 
     motor_current_baseline = get_motor_current();
-    sprintf(buf, "motor_current_baseline: %hu\n", motor_current_baseline);
+//    sprintf(buf, "motor_current_baseline: %hu\n", motor_current_baseline);
+//    print_debug_string(buf);
 
 //  print_debug_string("Delay 2\n");
 //  for(delay = 0; delay < 1000000; delay++);
@@ -3207,7 +3208,7 @@ void check_current_sensor_and_enable_mosfets(void)
 //  print_debug_string("Delay 3\n");
 //  for(delay = 0; delay < 1000000; delay++);
 
-    print_debug_string("Enabling MOSFETs\n");
+//    print_debug_string("Enabling MOSFETs\n");
 
 //  print_debug_string("Delay 4\n");
 //  for(delay = 0; delay < 100000; delay++);
