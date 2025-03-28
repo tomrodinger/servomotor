@@ -272,112 +272,109 @@ void process_packet(void)
         return;
     }
 
-    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
-        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
-        switch(command) {
-        case RESET_TIME_COMMAND:
-            rs485_done_with_this_packet();
-            reset_microsecond_time();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_CURRENT_TIME_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                local_time = get_microsecond_time();
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&local_time, 6);
-            }
-            break;
-        case TIME_SYNC_COMMAND:
-            memcpy(&time_from_master, payload, 6);
-            rs485_done_with_this_packet();
-            int32_t time_error = time_sync(time_from_master);
-            uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&time_error, 4);
-                rs485_transmit(&clock_calibration_value, 2);
-            }
-            break;
-        case GET_STATUS_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                uint8_t device_status_flags = get_device_status_flags();
-                set_device_status_flags(device_status_flags);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-            }
-            break;
-        case DETECT_DEVICES_COMMAND:
-            rs485_done_with_this_packet();
-            detect_devices_delay = get_random_number(99);
-            break;
-        case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)payload)[0];
-            new_alias = payload[8];
-            rs485_done_with_this_packet();
-            if(unique_id == my_unique_id) {
-                transmit("Unique ID matches\n", 18);
-                global_settings.my_alias = new_alias;
-                save_global_settings();
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_PRODUCT_INFO_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_info_length = sizeof(struct product_info_struct);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-                rs485_transmit(&product_info_length, 1);
-                rs485_transmit(product_info, sizeof(struct product_info_struct));
-            }
-            break;
-        case GET_PRODUCT_DESCRIPTION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-                rs485_transmit(&product_description_length, 1);
-                rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
-            }
-            break;
-        case GET_FIRMWARE_VERSION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t firmware_version_length = sizeof(firmware_version);
-                rs485_transmit(&firmware_version_length, 1);
-                rs485_transmit(&firmware_version, sizeof(firmware_version));
-            }
-            break;
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        case PING_COMMAND:
-            memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                ping_response_buffer[0] = RESPONSE_CHARACTER;
-                ping_response_buffer[1] = '\x01';
-                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
-                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
-            }
-            break;
-        }
-    }
-    else {
+    switch(command) {
+    case RESET_TIME_COMMAND:
         rs485_done_with_this_packet();
+        reset_microsecond_time();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_CURRENT_TIME_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            local_time = get_microsecond_time();
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&local_time, 6);
+        }
+        break;
+    case TIME_SYNC_COMMAND:
+        memcpy(&time_from_master, payload, 6);
+        rs485_done_with_this_packet();
+        int32_t time_error = time_sync(time_from_master);
+        uint16_t clock_calibration_value = get_clock_calibration_value();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&time_error, 4);
+            rs485_transmit(&clock_calibration_value, 2);
+        }
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            uint8_t device_status_flags = get_device_status_flags();
+            set_device_status_flags(device_status_flags);
+            rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+        }
+        break;
+    case DETECT_DEVICES_COMMAND:
+        rs485_done_with_this_packet();
+        detect_devices_delay = get_random_number(99);
+        break;
+    case SET_DEVICE_ALIAS_COMMAND:
+        unique_id = ((int64_t*)payload)[0];
+        new_alias = payload[8];
+        rs485_done_with_this_packet();
+        if(unique_id == my_unique_id) {
+            transmit("Unique ID matches\n", 18);
+            global_settings.my_alias = new_alias;
+            save_global_settings();
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_PRODUCT_INFO_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_info_length = sizeof(struct product_info_struct);
+            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            rs485_transmit(&product_info_length, 1);
+            rs485_transmit(product_info, sizeof(struct product_info_struct));
+        }
+        break;
+    case GET_PRODUCT_DESCRIPTION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+            rs485_transmit(&product_description_length, 1);
+            rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+        }
+        break;
+    case GET_FIRMWARE_VERSION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t firmware_version_length = sizeof(firmware_version);
+            rs485_transmit(&firmware_version_length, 1);
+            rs485_transmit(&firmware_version, sizeof(firmware_version));
+        }
+        break;
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    case PING_COMMAND:
+        memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            ping_response_buffer[0] = RESPONSE_CHARACTER;
+            ping_response_buffer[1] = '\x01';
+            ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+            rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+        }
+        break;
+    default:
+        rs485_done_with_this_packet();
+        break;
     }
 }
 

@@ -1,6 +1,7 @@
 # Guide to Updating main.c Files with Structured Data Formats
 
-This document provides detailed instructions for updating the `process_packet()` function in various firmware `main.c` files to use structured formats for returning data and to properly invoke the `rs485_finalize_and_transmit_packet` function for transmission.
+This document provides detailed instructions for updating the `process_packet()` function in various firmware `main.c` files to use structured formats for returning data and to properly invoke the `rs485_finalize_and_transmit_packet` function for transmission or for returning a no error response
+with the `transmit_no_error_response` function.
 
 ## Overview of Changes
 
@@ -8,8 +9,9 @@ The primary goal is to modify command handling in the `process_packet()` functio
 
 1. Replace direct `rs485_transmit()` calls with structured data formats
 2. Use the `rs485_finalize_and_transmit_packet()` function for packet transmission
-3. Ensure consistent structure across all command responses
-4. Include proper CRC32 handling in the packet structure
+3. Use the `transmit_no_error_response` function to transmit a packet that has no returned data
+4. Ensure consistent structure across all command responses
+5. Include proper CRC32 handling in the packet structure
 
 ## Commands That Need Updating
 
@@ -23,6 +25,7 @@ The following commands should be updated to use structured data formats:
 - `GET_FIRMWARE_VERSION_COMMAND`
 - `PING_COMMAND`
 - `GET_SUPPLY_VOLTAGE_COMMAND`
+- likely several others
 
 ## Step-by-Step Update Process
 
@@ -347,13 +350,32 @@ case GET_SUPPLY_VOLTAGE_COMMAND:
 
 2. **Header and CRC32 Fields**: Always include these fields in the structure, but do not set their values. They will be filled in by the `rs485_finalize_and_transmit_packet()` function.
 
-3. **Broadcast Check**: Maintain the existing `if(!is_broadcast)` checks to ensure responses are only sent for non-broadcast commands.
+3. **Broadcast Check**: Maintain the existing `if(!is_broadcast)` checks to ensure responses are only sent for non-broadcast commands in the case that you are using `rs485_finalize_and_transmit_packet()` to send out the data. 
 
 4. **Memory Handling**: For commands that involve copying data (like product info, descriptions, etc.), use `memcpy()` to copy the data into the structure.
 
 5. **CRC32 Enabling**: Always pass the `crc32_enabled` flag to the `rs485_finalize_and_transmit_packet()` function to ensure consistent CRC32 handling.
 
 6. **CRITICAL: Payload Access Order**: Always extract all needed data from the payload buffer BEFORE calling `rs485_done_with_this_packet()`. The `rs485_done_with_this_packet()` function may invalidate the payload buffer, so you must copy any needed data before calling it.
+
+## Correct sending of the "No error" response
+
+1. **Broadcast Check**: If the command has no data
+to return and instead `rs485_transmit_no_error_packet` is used to send a "No error" response packet,then  you should not enclose it in a `if(!is_broadcast)` condition because that function does the check internally. Here is an example:
+
+**Before:**
+```c
+            if(!is_broadcast) {
+                rs485_transmit(NO_ERROR_RESPONSE, 3);
+            }
+```
+
+**After:**
+```c
+            transmit_no_error_response(is_broadcast, crc32_enabled); // nothing will be transmitted if is_broadcast is true
+```
+
+
 
 ## Variable Scope in process_packet
 

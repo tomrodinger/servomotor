@@ -31,6 +31,7 @@
 #include "device_status.h"
 #include "global_variables.h"
 #include "profiler.h"
+
 #define MAX_HOMING_ERROR 50000
 
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)

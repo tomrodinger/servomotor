@@ -144,19 +144,6 @@ The goal is to create a comprehensive simulator for a servomotor that:
   - Impact: Simulator behavior differs from real hardware
   - Status: To be fixed in future update
 
-- Fatal Error Handling:
-  - Issue: Program terminates when fatal error occurs
-  - Current behavior:
-    * Error code is printed to log
-    * Program exits immediately
-  - Expected behavior:
-    * Error code should be printed to log (working)
-    * Motor should become inactive but program should continue running
-    * Normal operation should resume after receiving "System reset" command
-  - Impact: Unable to recover from fatal errors without manual restart
-  - Status: To be investigated
-
-
 ### Implementation Mistakes
 - Attempted to implement TIM16_IRQHandler() when it already exists in motor_control.c:
   - Mistakenly thought the function was missing because we couldn't see its implementation

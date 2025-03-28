@@ -271,10 +271,9 @@ void process_packet(void)
         return;
     }
 
-    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
-        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 

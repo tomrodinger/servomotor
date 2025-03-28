@@ -322,400 +322,397 @@ void process_packet(void)
         return;
     }
 
-    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
-        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
-        switch(command) {
-        case DISABLE_MOSFETS_COMMAND:
-            rs485_done_with_this_packet();
-            disable_mosfets();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case ENABLE_MOSFETS_COMMAND:
-            rs485_done_with_this_packet();
-            enable_mosfets();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case TRAPEZOID_MOVE_COMMAND:
-            trapezoid_move_displacement = ((int32_t*)payload)[0];
-            trapezoid_move_time = ((uint32_t*)payload)[1];
-            rs485_done_with_this_packet();
-            add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_MAX_VELOCITY_COMMAND:
-            max_velocity = *(uint32_t*)payload;
-            rs485_done_with_this_packet();
-            set_max_velocity(max_velocity);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_POSITION_AND_FINISH_TIME_COMMAND:
+    switch(command) {
+    case DISABLE_MOSFETS_COMMAND:
+        rs485_done_with_this_packet();
+        disable_mosfets();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case ENABLE_MOSFETS_COMMAND:
+        rs485_done_with_this_packet();
+        enable_mosfets();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case TRAPEZOID_MOVE_COMMAND:
+        trapezoid_move_displacement = ((int32_t*)payload)[0];
+        trapezoid_move_time = ((uint32_t*)payload)[1];
+        rs485_done_with_this_packet();
+        add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_MAX_VELOCITY_COMMAND:
+        max_velocity = *(uint32_t*)payload;
+        rs485_done_with_this_packet();
+        set_max_velocity(max_velocity);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_POSITION_AND_FINISH_TIME_COMMAND:
 //            end_position = ((int32_t*)payload)[0];
 //            end_time = ((int32_t*)payload)[1];
-            rs485_done_with_this_packet();
+        rs485_done_with_this_packet();
 //            add_to_queue(end_position, end_time);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_MAX_ACCELERATION_COMMAND:
-            max_acceleration = *(uint32_t*)payload;
-            rs485_done_with_this_packet();
-            set_max_acceleration(max_acceleration);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case START_CALIBRATION_COMMAND:
-            rs485_done_with_this_packet();
-            enable_mosfets();
-            start_calibration(0);
-            break;
-        case CAPTURE_HALL_SENSOR_DATA_COMMAND:
-            capture_type = payload[0];
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
-                start_calibration(1);
-            }
-            else {
-                start_capture(capture_type);
-            }
-            break;
-        case RESET_TIME_COMMAND:
-            rs485_done_with_this_packet();
-            reset_time();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_CURRENT_TIME_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                local_time = get_microsecond_time();
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&local_time, 6);
-            }
-            break;
-        case TIME_SYNC_COMMAND:
-            memcpy(&time_from_master, payload, 6);
-            rs485_done_with_this_packet();
-            int32_t time_error = time_sync(time_from_master);
-            uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&time_error, 4);
-                rs485_transmit(&clock_calibration_value, 2);
-            }
-            break;
-        case GET_N_ITEMS_IN_QUEUE_COMMAND:
-            rs485_done_with_this_packet();
-            n_items_in_queue = get_n_items_in_queue();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
-                rs485_transmit(&n_items_in_queue, 1);
-            }
-            break;
-        case EMERGENCY_STOP_COMMAND:
-            rs485_done_with_this_packet();
-            emergency_stop();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case ZERO_POSITION_COMMAND:
-            rs485_done_with_this_packet();
-            zero_position_and_hall_sensor();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case HOMING_COMMAND:
-            max_homing_travel_displacement = ((int32_t*)payload)[0];
-            max_homing_time = ((uint32_t*)payload)[1];
-            rs485_done_with_this_packet();
-            char buf[100];
-            sprintf(buf, "homing: max_homing_travel_displacement: %ld   max_homing_time: %lu\n", max_homing_travel_displacement, max_homing_time);
-            transmit(buf, strlen(buf));
-            start_homing(max_homing_travel_displacement, max_homing_time);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_POSITION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                motor_position = get_actual_motor_position();
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                rs485_transmit(&motor_position, sizeof(motor_position));
-            }
-            break;
-        case GET_STATUS_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                uint8_t motor_status_flags = get_motor_status_flags();
-                set_device_status_flags(motor_status_flags);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-            }
-            break;
-        case GO_TO_CLOSED_LOOP_COMMAND:
-            rs485_done_with_this_packet();
-            start_go_to_closed_loop_mode();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_UPDATE_FREQUENCY_COMMAND:
-            rs485_done_with_this_packet();
-            frequency = get_update_frequency();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
-                rs485_transmit(&frequency, 4);
-            }
-            break;
-        case MOVE_WITH_ACCELERATION_COMMAND:
-            acceleration = ((int32_t*)payload)[0];
-            time_steps = ((uint32_t*)payload)[1];
-            rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_MAX_ACCELERATION_COMMAND:
+        max_acceleration = *(uint32_t*)payload;
+        rs485_done_with_this_packet();
+        set_max_acceleration(max_acceleration);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case START_CALIBRATION_COMMAND:
+        rs485_done_with_this_packet();
+        enable_mosfets();
+        start_calibration(0);
+        break;
+    case CAPTURE_HALL_SENSOR_DATA_COMMAND:
+        capture_type = payload[0];
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
+            start_calibration(1);
+        }
+        else {
+            start_capture(capture_type);
+        }
+        break;
+    case RESET_TIME_COMMAND:
+        rs485_done_with_this_packet();
+        reset_time();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_CURRENT_TIME_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            local_time = get_microsecond_time();
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&local_time, 6);
+        }
+        break;
+    case TIME_SYNC_COMMAND:
+        memcpy(&time_from_master, payload, 6);
+        rs485_done_with_this_packet();
+        int32_t time_error = time_sync(time_from_master);
+        uint16_t clock_calibration_value = get_clock_calibration_value();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&time_error, 4);
+            rs485_transmit(&clock_calibration_value, 2);
+        }
+        break;
+    case GET_N_ITEMS_IN_QUEUE_COMMAND:
+        rs485_done_with_this_packet();
+        n_items_in_queue = get_n_items_in_queue();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x01", 3);
+            rs485_transmit(&n_items_in_queue, 1);
+        }
+        break;
+    case EMERGENCY_STOP_COMMAND:
+        rs485_done_with_this_packet();
+        emergency_stop();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case ZERO_POSITION_COMMAND:
+        rs485_done_with_this_packet();
+        zero_position_and_hall_sensor();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case HOMING_COMMAND:
+        max_homing_travel_displacement = ((int32_t*)payload)[0];
+        max_homing_time = ((uint32_t*)payload)[1];
+        rs485_done_with_this_packet();
+        char buf[100];
+        sprintf(buf, "homing: max_homing_travel_displacement: %ld   max_homing_time: %lu\n", max_homing_travel_displacement, max_homing_time);
+        transmit(buf, strlen(buf));
+        start_homing(max_homing_travel_displacement, max_homing_time);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_POSITION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            motor_position = get_actual_motor_position();
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+            rs485_transmit(&motor_position, sizeof(motor_position));
+        }
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            uint8_t motor_status_flags = get_motor_status_flags();
+            set_device_status_flags(motor_status_flags);
+            rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+        }
+        break;
+    case GO_TO_CLOSED_LOOP_COMMAND:
+        rs485_done_with_this_packet();
+        start_go_to_closed_loop_mode();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_UPDATE_FREQUENCY_COMMAND:
+        rs485_done_with_this_packet();
+        frequency = get_update_frequency();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x04", 3);
+            rs485_transmit(&frequency, 4);
+        }
+        break;
+    case MOVE_WITH_ACCELERATION_COMMAND:
+        acceleration = ((int32_t*)payload)[0];
+        time_steps = ((uint32_t*)payload)[1];
+        rs485_done_with_this_packet();
 //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
 //            transmit(buf, strlen(buf));
-            add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case DETECT_DEVICES_COMMAND:
-            rs485_done_with_this_packet();
-            detect_devices_delay = get_random_number(99);
-            break;
-        case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)payload)[0];
-            new_alias = payload[8];
-            rs485_done_with_this_packet();
-            if(unique_id == my_unique_id) {
-                transmit("Unique ID matches\n", 18);
-                global_settings.my_alias = new_alias;
-                save_global_settings();
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_PRODUCT_INFO_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_info_length = sizeof(struct product_info_struct);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-                rs485_transmit(&product_info_length, 1);
-                rs485_transmit(product_info, sizeof(struct product_info_struct));
-            }
-            break;
-        case GET_PRODUCT_DESCRIPTION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-                rs485_transmit(&product_description_length, 1);
-                rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
-            }
-            break;
-        case GET_FIRMWARE_VERSION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t firmware_version_length = sizeof(firmware_version);
-                rs485_transmit(&firmware_version_length, 1);
-                rs485_transmit(&firmware_version, sizeof(firmware_version));
-            }
-            break;
-        case MOVE_WITH_VELOCITY_COMMAND:
-            velocity = ((int32_t*)payload)[0];
-            time_steps = ((uint32_t*)payload)[1];
-            rs485_done_with_this_packet();
+        add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case DETECT_DEVICES_COMMAND:
+        rs485_done_with_this_packet();
+        detect_devices_delay = get_random_number(99);
+        break;
+    case SET_DEVICE_ALIAS_COMMAND:
+        unique_id = ((int64_t*)payload)[0];
+        new_alias = payload[8];
+        rs485_done_with_this_packet();
+        if(unique_id == my_unique_id) {
+            transmit("Unique ID matches\n", 18);
+            global_settings.my_alias = new_alias;
+            save_global_settings();
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_PRODUCT_INFO_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_info_length = sizeof(struct product_info_struct);
+            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            rs485_transmit(&product_info_length, 1);
+            rs485_transmit(product_info, sizeof(struct product_info_struct));
+        }
+        break;
+    case GET_PRODUCT_DESCRIPTION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+            rs485_transmit(&product_description_length, 1);
+            rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+        }
+        break;
+    case GET_FIRMWARE_VERSION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t firmware_version_length = sizeof(firmware_version);
+            rs485_transmit(&firmware_version_length, 1);
+            rs485_transmit(&firmware_version, sizeof(firmware_version));
+        }
+        break;
+    case MOVE_WITH_VELOCITY_COMMAND:
+        velocity = ((int32_t*)payload)[0];
+        time_steps = ((uint32_t*)payload)[1];
+        rs485_done_with_this_packet();
 //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
 //            transmit(buf, strlen(buf));
-            add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        case SET_MAXIMUM_MOTOR_CURRENT:
-            new_maximum_motor_current = ((uint16_t*)payload)[0];
-            new_maximum_motor_regen_current = ((uint16_t*)payload)[1];
-            rs485_done_with_this_packet();
-            set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
-            save_global_settings();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case MULTI_MOVE_COMMAND:
-            n_moves_in_this_command = ((int8_t*)payload)[0];
-            struct multi_move_command_buffer_struct multi_move_command_buffer;
-            memcpy(&multi_move_command_buffer, payload + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
-            rs485_done_with_this_packet();
+        add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    case SET_MAXIMUM_MOTOR_CURRENT:
+        new_maximum_motor_current = ((uint16_t*)payload)[0];
+        new_maximum_motor_regen_current = ((uint16_t*)payload)[1];
+        rs485_done_with_this_packet();
+        set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
+        save_global_settings();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case MULTI_MOVE_COMMAND:
+        n_moves_in_this_command = ((int8_t*)payload)[0];
+        struct multi_move_command_buffer_struct multi_move_command_buffer;
+        memcpy(&multi_move_command_buffer, payload + 1, sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+        rs485_done_with_this_packet();
 //            char buf[100];
 //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
 //            transmit(buf, strlen(buf));
-            if(n_moves_in_this_command > MAX_MULTI_MOVES) {
-                fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-            }
-            for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
-                if((multi_move_command_buffer.move_type_bits & 1) == 0) {
-                    add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
+        if(n_moves_in_this_command > MAX_MULTI_MOVES) {
+            fatal_error(ERROR_MULTI_MOVE_MORE_THAN_32_MOVES); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        for(uint8_t i = 0; i < n_moves_in_this_command; i++) {
+            if((multi_move_command_buffer.move_type_bits & 1) == 0) {
+                add_to_queue(multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_ACCELERATION);
 //                    sprintf(buf, "added_to_queue: acceleration: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].acceleration, multi_move_command_buffer.move_parameters[i].time_steps);
 //                    transmit(buf, strlen(buf));
-                } else {
-                    add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
+            } else {
+                add_to_queue(multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps, MOVE_WITH_VELOCITY);
 //                    sprintf(buf, "added_to_queue: velocity: %ld  time_steps: %lu\n", multi_move_command_buffer.move_parameters[i].velocity, multi_move_command_buffer.move_parameters[i].time_steps);
 //                    transmit(buf, strlen(buf));
-                }
-                multi_move_command_buffer.move_type_bits >>= 1;
             }
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_SAFETY_LIMITS_COMMAND:
-            lower_limit = ((int32_t*)payload)[0];
-            upper_limit = ((uint32_t*)payload)[1];
-            rs485_done_with_this_packet();
-            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
-            transmit(buf, strlen(buf));
-            set_movement_limits(lower_limit, upper_limit);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case ADD_TO_QUEUE_TEST_COMMAND:
-            add_to_queue_test(((int32_t*)payload)[0], ((uint32_t*)payload)[1], ((uint8_t*)payload)[8], &add_to_queue_test_results);
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x10", 3);
-                rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
-            }
-            break;
-        case PING_COMMAND:
-            memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                ping_response_buffer[0] = RESPONSE_CHARACTER;
-                ping_response_buffer[1] = '\x01';
-                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
-                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
-            }
-            break;
-        case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
-            control_hall_sensor_statistics_subcommand = ((int8_t*)payload)[0];
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                if(control_hall_sensor_statistics_subcommand == 0) {
-                    hall_sensor_turn_off_statistics();
-                }
-                if(control_hall_sensor_statistics_subcommand == 1) {
-                    hall_sensor_turn_on_and_reset_statistics();
-                }
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_HALL_SENSOR_STATISTICS_COMMAND:
-            rs485_done_with_this_packet();
-            get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
-            if(!is_broadcast) {
-                hall_sensor_statistics_full_response.axis = RESPONSE_CHARACTER;
-                hall_sensor_statistics_full_response.command = '\x01';
-                hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
-                rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
-            }
-            break;
-        case SET_MOTOR_INDEX_COMMAND:
-            new_M_index = *(int8_t*)payload;
-            if(get_mosfets_enabled()) {
-                fatal_error(ERROR_DISABLE_MOSFETS_FIRST); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-            }
-            set_current_motor_index(new_M_index);
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_EXTRUDER_TEMPERATURE_COMMAND:
-        {
-            uint16_t new_target_temp_extruder = *(uint16_t*)payload;
-            rs485_done_with_this_packet();
-            set_heater_temperature(new_target_temp_extruder);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
+            multi_move_command_buffer.move_type_bits >>= 1;
         }
-        case GET_EXTRUDER_TEMPERATURE_COMMAND:
-        {
-            uint16_t sensor_val_extruder;
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                sensor_val_extruder = get_heater_temperature();
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x02", 3);
-                rs485_transmit(&sensor_val_extruder, 2);
-            }
-            break;
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
         }
-        case SET_PID_P_VALUE_COMMAND:
-            PID_values.P = *(int32_t*)payload;
-            rs485_done_with_this_packet();
-            set_P_value(PID_values.P);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_PID_I_VALUE_COMMAND:
-            PID_values.I = *(int32_t*)payload;
-            rs485_done_with_this_packet();
-            set_I_value(PID_values.I);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case SET_PID_D_VALUE_COMMAND:
-            PID_values.D = *(int32_t*)payload;
-            rs485_done_with_this_packet();
-            set_D_value(PID_values.D);
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_PID_VALUES_COMMAND:
-            rs485_done_with_this_packet();
-            PID_values = get_PID_values();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0c", 3);
-                rs485_transmit(&PID_values, sizeof(PID_values));
-            }
-            break;
-        }
-    }
-    else {
+        break;
+    case SET_SAFETY_LIMITS_COMMAND:
+        lower_limit = ((int32_t*)payload)[0];
+        upper_limit = ((uint32_t*)payload)[1];
         rs485_done_with_this_packet();
+        sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
+        transmit(buf, strlen(buf));
+        set_movement_limits(lower_limit, upper_limit);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case ADD_TO_QUEUE_TEST_COMMAND:
+        add_to_queue_test(((int32_t*)payload)[0], ((uint32_t*)payload)[1], ((uint8_t*)payload)[8], &add_to_queue_test_results);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x10", 3);
+            rs485_transmit(&add_to_queue_test_results, sizeof(add_to_queue_test_results));
+        }
+        break;
+    case PING_COMMAND:
+        memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            ping_response_buffer[0] = RESPONSE_CHARACTER;
+            ping_response_buffer[1] = '\x01';
+            ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+            rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+        }
+        break;
+    case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
+        control_hall_sensor_statistics_subcommand = ((int8_t*)payload)[0];
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            if(control_hall_sensor_statistics_subcommand == 0) {
+                hall_sensor_turn_off_statistics();
+            }
+            if(control_hall_sensor_statistics_subcommand == 1) {
+                hall_sensor_turn_on_and_reset_statistics();
+            }
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_HALL_SENSOR_STATISTICS_COMMAND:
+        rs485_done_with_this_packet();
+        get_hall_sensor_statistics(&hall_sensor_statistics_full_response.hall_sensor_statistics);
+        if(!is_broadcast) {
+            hall_sensor_statistics_full_response.axis = RESPONSE_CHARACTER;
+            hall_sensor_statistics_full_response.command = '\x01';
+            hall_sensor_statistics_full_response.size = sizeof(hall_sensor_statistics_t);
+            rs485_transmit(&hall_sensor_statistics_full_response, sizeof(hall_sensor_statistics_full_response));
+        }
+        break;
+    case SET_MOTOR_INDEX_COMMAND:
+        new_M_index = *(int8_t*)payload;
+        if(get_mosfets_enabled()) {
+            fatal_error(ERROR_DISABLE_MOSFETS_FIRST); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
+        }
+        set_current_motor_index(new_M_index);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_EXTRUDER_TEMPERATURE_COMMAND:
+    {
+        uint16_t new_target_temp_extruder = *(uint16_t*)payload;
+        rs485_done_with_this_packet();
+        set_heater_temperature(new_target_temp_extruder);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    }
+    case GET_EXTRUDER_TEMPERATURE_COMMAND:
+    {
+        uint16_t sensor_val_extruder;
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            sensor_val_extruder = get_heater_temperature();
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x02", 3);
+            rs485_transmit(&sensor_val_extruder, 2);
+        }
+        break;
+    }
+    case SET_PID_P_VALUE_COMMAND:
+        PID_values.P = *(int32_t*)payload;
+        rs485_done_with_this_packet();
+        set_P_value(PID_values.P);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_PID_I_VALUE_COMMAND:
+        PID_values.I = *(int32_t*)payload;
+        rs485_done_with_this_packet();
+        set_I_value(PID_values.I);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case SET_PID_D_VALUE_COMMAND:
+        PID_values.D = *(int32_t*)payload;
+        rs485_done_with_this_packet();
+        set_D_value(PID_values.D);
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_PID_VALUES_COMMAND:
+        rs485_done_with_this_packet();
+        PID_values = get_PID_values();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x0c", 3);
+            rs485_transmit(&PID_values, sizeof(PID_values));
+        }
+        break;
+    default:
+        rs485_done_with_this_packet();
+        break;
     }
 }
 

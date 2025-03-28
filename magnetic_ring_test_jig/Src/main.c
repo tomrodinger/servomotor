@@ -405,7 +405,7 @@ void process_packet(void)
         return;
     }
 
-    if(!validate_command_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
         return;

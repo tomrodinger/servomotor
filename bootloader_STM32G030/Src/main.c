@@ -19,10 +19,6 @@ extern uint32_t USART1_timout_timer;
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
 
-// CRC32 control variables
-static volatile uint8_t crc32_enabled = 0; // Enabled by default, DEBUG temporarily disabling it by default
-static volatile uint32_t crc32_error_count = 0;
-
 #define LAUNCH_APPLICATION_DELAY 50
 static int32_t launch_applicaiton = -1;
 
@@ -224,10 +220,9 @@ void process_packet(void)
         return;
     }
 
-    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
-        crc32_error_count++; // keep track of the number of times that the CRC32 check failed
         return;
     }
 
@@ -259,7 +254,7 @@ void process_packet(void)
                 transmit("Match\n", 6);
                 global_settings.my_alias = new_alias;
                 save_global_settings();
-                transmit_no_error_response(is_broadcast, crc32_enabled); // nothing will be transmitted if is_broadcast is true
+                rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             }
         }
         break;
@@ -280,7 +275,7 @@ void process_packet(void)
                     transmit(message, strlen(message));
                     uint8_t error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
                     if (error_code == 0) {
-                        transmit_no_error_response(is_broadcast, crc32_enabled); // nothing will be transmitted if is_broadcast is true
+                        rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
                     }
                 }
             }
@@ -299,7 +294,7 @@ void process_packet(void)
             
             product_info_reply.product_info_length = sizeof(struct product_info_struct);
             memcpy(&product_info_reply.product_info, (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION), sizeof(struct product_info_struct));
-            rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply), crc32_enabled);
+            rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply));
         }
         break;
     case GET_STATUS_COMMAND:
@@ -313,7 +308,7 @@ void process_packet(void)
             
             set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
             memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
-            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply), crc32_enabled);
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
         }
         break;
     case SYSTEM_RESET_COMMAND:
@@ -336,7 +331,7 @@ void transmit_unique_id(void)
     } detect_devices_reply;
     detect_devices_reply.unique_id = my_unique_id;
     detect_devices_reply.alias = global_settings.my_alias;
-    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply), crc32_enabled);
+    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply));
 }
 
 

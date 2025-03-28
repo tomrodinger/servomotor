@@ -4,6 +4,15 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
+#ifdef MOTOR_SIMULATION
+#include <setjmp.h>
+#include <pthread.h>
+extern jmp_buf fatal_error_jmp_buf;
+extern pthread_t main_thread_id;
+#endif
+
+
 
 // Static peripheral instances and variables
 uint32_t SystemCoreClock = 64000000U;  // After PLL configuration in clock_init()
@@ -368,4 +377,12 @@ void NVIC_SystemReset(void) {
     g_interrupts_enabled = 0;
     gResetProgress = 1; // Step 1: Waiting for fatal_error and TIM16_IRQHandler to exit
     printf("gResetProgress = %d\n", gResetProgress);
+    sleep(1); // simulate the resetting process where the device is in the bootloader for about a second
+    if (!pthread_equal(pthread_self(), main_thread_id)) {
+        printf("*** The simulator does not correctly implement the case where we are trying to reset the system after a fatal error occured from an interrupt service routine\n");
+        printf("The limitation is that longjmp does not work when called from a thread that is not the main thread because setjmp was called from the main thread\n");
+        exit(1);
+    }
+    longjmp(fatal_error_jmp_buf, 1); // This long call will wisk us back to where setjmp(fatal_error_jmp_buf) was called, which is in the main.c file (basically take us back to the start of the main function to simulate a reset)
+    printf("*************** THIS SHOULD NEVER RUN! If you see this in the log then you should investigate why longjmp did not jump\n");
 }

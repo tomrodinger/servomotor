@@ -1078,7 +1078,7 @@
         "CommandGroup": "Configuration"
     },
     {
-        "CommandString": "CRC32 error count",
+        "CommandString": "Get communication statistics",
         "CommandEnum": 47,
         "Description": "Get and optionally reset the CRC32 error counter",
         "Input": [
@@ -1093,6 +1093,11 @@
                 "Description": "u32: Number of CRC32 errors detected",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "crc32ErrorCount"
+            },
+            {
+                "Description": "u32: Number of packet decode errors detected",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "packetDecodeErrorCount"
             }
         ],
         "CommandGroup": "Status & Monitoring"

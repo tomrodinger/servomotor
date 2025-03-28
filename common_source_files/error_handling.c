@@ -29,7 +29,6 @@ static const char error_text[] = ERROR_TEXT_INITIALIZER;
 static volatile uint32_t systick_new_value = SYSTICK_LOAD_VALUE;
 static volatile uint32_t systick_previous_value;
 static uint8_t fatal_error_occurred = 0;
-static uint8_t crc32_enabled = 0;
 
 static void fatal_error_systick_init(void)
 {
@@ -53,7 +52,7 @@ static void handle_packet(void)
         return;
     }
 
-    if(crc32_enabled && !rs485_validate_packet_crc32()) {
+    if(!rs485_validate_packet_crc32()) {
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
         return;
@@ -72,7 +71,7 @@ static void handle_packet(void)
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } status_reply;
             memcpy(&status_reply.device_status, get_device_status(), sizeof(struct device_status_struct));
-            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply), crc32_enabled);
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
         }
     }
 }
@@ -81,6 +80,13 @@ static void handle_packet(void)
 static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
 {
     do {
+        #ifdef MOTOR_SIMULATION
+        // Check if we should exit the fatal error state
+        if (gResetProgress > 0) {
+            return;
+        }
+        #endif
+
         // Since interrupts are now disabled to minimize the chance of any abnormal behaviour during a fata error state,
         // we need to call the interrupt routine that handle receive and transmit over the TS485 interface manually
         USART1_IRQHandler();
@@ -88,13 +94,6 @@ static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
         if (rs485_has_a_packet()) {
             handle_packet();
         }
-
-        #ifdef MOTOR_SIMULATION
-        // Check if we should exit the fatal error state
-        if (gResetProgress > 0) {
-            return;
-        }
-        #endif
         
         systick_previous_value = systick_new_value;
         systick_new_value = SysTick->VAL;
@@ -199,7 +198,6 @@ void error_handling_simulator_init(void)
 
     systick_new_value = SYSTICK_LOAD_VALUE;
     fatal_error_occurred = 0;
-    crc32_enabled = 0;
     
     printf("After reset: fatal_error_occurred = %d\n", fatal_error_occurred);
 }

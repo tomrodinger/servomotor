@@ -32,6 +32,10 @@ static volatile uint8_t firstByteInvalid;
 static volatile uint16_t receivePacketSize;
 static volatile uint8_t receiveBufferOverflow;
 
+static uint8_t crc32_enabled = 1;
+static uint32_t crc32_error_count = 0;
+static uint32_t packet_decode_error_count = 0;
+
 #define UNKNOWN_VALUE_LENGTH 65535
 
 #if 0
@@ -124,7 +128,7 @@ void print_internal_state(void)
 // even if something abnormal happed that caused the fatal error
 void rs485_init(void)
 {
-    // reinitialize all these variables related to 
+    // reinitialize all these variables related to transmit and receive
     transmitIndex = 0;
     transmitCount = 0;
     receiveBufferReadPosition = 0;
@@ -156,6 +160,30 @@ void rs485_init(void)
     NVIC_EnableIRQ(USART1_IRQn);
 }
 
+void rs485_set_crc32_enable(uint8_t crc32_enable_new_state)
+{
+    crc32_enabled = crc32_enable_new_state;
+}
+
+uint8_t rs485_is_crc32_enabled(void)
+{
+    return crc32_enabled;
+}
+
+rs485_error_statistics_t rs485_get_error_statistics_and_optionally_reset(uint8_t reset)
+{
+    rs485_error_statistics_t stats = {
+        .crc32_error_count = crc32_error_count,
+        .packet_decode_error_count = packet_decode_error_count
+    };
+
+    if (reset) {
+        crc32_error_count = 0;
+        packet_decode_error_count = 0;
+    }
+    return stats;
+}
+
 uint8_t rs485_has_a_packet(void)
 {
     return receiveBuffersUsed > 0;
@@ -170,21 +198,21 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
         #ifdef MOTOR_SIMULATION
         printf("         nothing in the buffer. returning.\n");
         #endif
-        return 0; // nothing in the buffer
+        return 0;
     }
     uint16_t packet_size = decode_first_byte(receiveBuffers[receiveBufferReadPosition][0]);
-    uint16_t parsing_index = 1;
+    uint16_t bytes_parsed = 1;
     #ifdef MOTOR_SIMULATION
-    printf("         packet_size = %hu   parsing_index = %hu\n", packet_size, parsing_index);
+    printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
     #endif
     if (packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE) {
-        packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][parsing_index + 1] << 8) | receiveBuffers[receiveBufferReadPosition][parsing_index];
-        parsing_index += 2;
+        packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][bytes_parsed + 1] << 8) | receiveBuffers[receiveBufferReadPosition][bytes_parsed];
+        bytes_parsed += 2;
         #ifdef MOTOR_SIMULATION
-        printf("         packet_size = %hu   parsing_index = %hu\n", packet_size, parsing_index);
+        printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
         #endif
     }
-    uint8_t deviceID = receiveBuffers[receiveBufferReadPosition][parsing_index];
+    uint8_t deviceID = receiveBuffers[receiveBufferReadPosition][bytes_parsed];
     #ifdef MOTOR_SIMULATION
     printf("         deviceID = %hhu\n", deviceID);
     #endif
@@ -194,9 +222,9 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
         #endif
         return 0; // discard a packet that is from some other device that is responding to a command
     }
-    parsing_index++;
+    bytes_parsed++;
     #ifdef MOTOR_SIMULATION
-    printf("         parsing_index = %hu\n", parsing_index);
+    printf("         bytes_parsed = %hu\n", bytes_parsed);
     #endif
     if (deviceID == ALL_ALIAS) { // this is a broadcast packet and so it it valid for us
         *is_broadcast = 1;
@@ -211,7 +239,7 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
         #endif
         if (deviceID == EXTENDED_ADDRESSING) {
             uint64_t our_device_id = get_unique_id();
-            uint64_t *received_unique_id = (uint64_t *)&receiveBuffers[receiveBufferReadPosition][parsing_index];
+            uint64_t *received_unique_id = (uint64_t *)&receiveBuffers[receiveBufferReadPosition][bytes_parsed];
             #ifdef MOTOR_SIMULATION
             printf("         deviceID indicates extended addressing with the character (%u)   our_device_id = %llX   *received_unique_id = %llX.\n", EXTENDED_ADDRESSING, our_device_id, *received_unique_id);
             #endif
@@ -221,9 +249,9 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
                 #endif
                 return 0; // extended addressing was used but the unique ID did not match and so this packet is not for us
             }
-            parsing_index += UNIQUE_ID_SIZE;
+            bytes_parsed += UNIQUE_ID_SIZE;
             #ifdef MOTOR_SIMULATION
-            printf("         parsing_index = %hu\n", parsing_index);
+            printf("         bytes_parsed = %hu\n", bytes_parsed);
             #endif
         }
         else {
@@ -235,27 +263,20 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
             }
         }
     }
-    if (packet_size < parsing_index + 1) { // add an extra required byte for the command
+    uint16_t crc32_size = (crc32_enabled) ? sizeof(uint32_t) : 0;
+    if (packet_size < bytes_parsed + sizeof(*command) + crc32_size) { // we need to make sure that we have more bytes available in the packet for the command and (if enabled) the CRC32
         #ifdef MOTOR_SIMULATION
-        printf("         packet_size < parsing_index + 1   packet_size = %hu   parsing_index = %hu  returning.\n", packet_size, parsing_index);
+        printf("         packet_size < bytes_parsed + sizeof(*command) + crc32_size   packet_size = %hu   bytes_parsed = %hu   sizeof(*command) = %lu   crc32_size = %hu   returning.\n", packet_size, bytes_parsed, sizeof(*command), crc32_size);
         #endif
+        packet_decode_error_count++;
         return 0; // this packet is invalid because the indicated size of the packet is too small to hold all the information needed to properly decode it
     }
-    *command = receiveBuffers[receiveBufferReadPosition][parsing_index];
+    *command = receiveBuffers[receiveBufferReadPosition][bytes_parsed];
+    bytes_parsed++;
+    *payload_size = packet_size - bytes_parsed - crc32_size;
+    *payload = (uint8_t *)(&receiveBuffers[receiveBufferReadPosition][bytes_parsed]);
     #ifdef MOTOR_SIMULATION
-    printf("         *command = %hhu\n", *command);
-    #endif
-    parsing_index++;
-    #ifdef MOTOR_SIMULATION
-    printf("         parsing_index = %hu\n", parsing_index);
-    #endif
-    *payload_size = packet_size - parsing_index;
-    #ifdef MOTOR_SIMULATION
-    printf("         *payload_size = %hu\n", *payload_size);
-    #endif
-    *payload = (uint8_t *)(&receiveBuffers[receiveBufferReadPosition][parsing_index]);
-    #ifdef MOTOR_SIMULATION
-    printf("         payload:");
+    printf("         *command = %hhu   bytes_parsed = %hu   *payload_size = %hu   payload:", *command, bytes_parsed, *payload_size);
     for (uint32_t i = 0; i < *payload_size; i++) {
         printf(" %hhu", (*payload)[i]);
     }
@@ -269,8 +290,12 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
     return 1;
 }
 
+
 uint8_t rs485_validate_packet_crc32(void)
 {
+    if (!crc32_enabled) {
+        return 1;
+    }
     #ifdef MOTOR_SIMULATION
     printf("* * * rs485_validate_packet_crc32() called\n");
     #endif
@@ -292,8 +317,10 @@ uint8_t rs485_validate_packet_crc32(void)
     #endif
     if (packet_size < sizeof(uint32_t)) {
         #ifdef MOTOR_SIMULATION
-        printf("         packet_size < sizeof(uint32_t)   packet_size = %hu\n", packet_size);
+        printf("         ******** I EXPECT THIS ERROR TO NECER HAPPEN because packets too small to contain a CRC32 are discarded in the rs485_get_next_packet() function   packet_size < sizeof(uint32_t)   packet_size = %hu\n", packet_size);
+        exit(1);
         #endif
+        packet_decode_error_count++;
         return 0; // there are less than 4 bytes in this packet and so it cannot contain a CRC32 and is therefore invalid or lacking a CRC32
     }
     uint16_t crc32_calculation_n_bytes = packet_size - sizeof(uint32_t); // we will include the size bytes but not the crc32 bytes in the CRC32 calculation
@@ -315,6 +342,7 @@ uint8_t rs485_validate_packet_crc32(void)
         #ifdef MOTOR_SIMULATION
         printf("         calculated_crc32 != received_crc32   calculated_crc32 = %X   received_crc32 = %X   returning\n", calculated_crc32, received_crc32);
         #endif
+        crc32_error_count++;
         return 0; // the CRC32 does not match and so the packet is invalid
     }
     #ifdef MOTOR_SIMULATION
@@ -341,6 +369,10 @@ void rs485_done_with_this_packet(void)
 
 void USART1_IRQHandler(void)
 {
+    #ifdef MOTOR_SIMULATION
+    uint8_t want_print_internal_state = 0;
+    #endif
+
     // In this interrupt handler we first handle receive related logic
     // check for errors like framing error, overrun error, and noise error
     if(USART1->ISR & USART_ISR_FE) {
@@ -368,6 +400,7 @@ void USART1_IRQHandler(void)
         #ifdef MOTOR_SIMULATION
         USART1->ISR &= ~USART_ISR_RXNE_RXFNE; // clear this bit to indicate that we have read the received byte (done automatically in the real hardware but not in the simulated hardware)
         printf("* * * Received a byte: %hhu\n", receivedByte);
+        want_print_internal_state = 1;
         #endif
 
         if(receiveBuffersUsed >= N_RECEIVE_BUFFERS) {
@@ -407,6 +440,7 @@ void USART1_IRQHandler(void)
         // (In real hardware, this is done by the USART hardware)
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
         printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
+        want_print_internal_state = 1;
 #endif
         transmitCount--;
         transmitIndex++;
@@ -423,9 +457,14 @@ void USART1_IRQHandler(void)
     else {
         red_LED_off();
     }
+
     #ifdef MOTOR_SIMULATION
-    printf("* * * Finished USART1_IRQHandler. This is the current complete internal state:\n");
-    print_internal_state();
+    if (want_print_internal_state) {
+        #include <pthread.h>
+        printf("* * * Finished USART1_IRQHandler. The thread ID is %ld This is the current complete internal state:\n", (unsigned long)(pthread_self()));
+//        printf("* * * Finished USART1_IRQHandler. This is the current complete internal state:\n");
+        print_internal_state();
+    }
     #endif
 }
 
@@ -634,7 +673,7 @@ uint8_t rs485_is_transmit_done(void)
     return (transmitCount == 0);
 }
 
-void transmit_no_error_response(uint8_t is_broadcast, uint8_t crc32_enabled)
+void rs485_transmit_no_error_packet(uint8_t is_broadcast)
 {
     if (is_broadcast) {
         return; // if the received message was a broadcasted message then we will not respond (to prevent a collision on the bus if there are multiple devices)
@@ -665,13 +704,13 @@ void transmit_no_error_response(uint8_t is_broadcast, uint8_t crc32_enabled)
 // 1. If CRC32 is enabled then we need to calculate the CRC32 of the structure and place it at the end of the structure
 // 2. Fill in the packet size in the header (the first byte) so that it includes the CRC32 if the CRC32 is enabled or excludes it otherwise
 // Please note that the structure that you pass in must contain the space for the crc32 if crc32_enabled is true
-void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled)
+void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
 {
-    if(!crc32_enabled) {
-        structure_size -= sizeof(uint32_t); // remove the size of the crc32 value, because we will not be sending it
+    if(crc32_enabled) {
         ((uint8_t*)data)[1] = RESPONSE_CHARACTER_CRC32_ENABLED;
     }
     else {
+        structure_size -= sizeof(uint32_t); // remove the size of the crc32 value, because we will not be sending it
         ((uint8_t*)data)[1] = RESPONSE_CHARACTER_CRC32_DISABLED;
     }
     ((uint8_t*)data)[0] = encode_first_byte(structure_size);
@@ -710,13 +749,14 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uin
 void RS485_simulator_init(void)
 {
     printf("RS485_simulator_init() called\n");
-    
-    // Set up the USART1 interrupt status register such that no interrupt flags are set
+        // Set up the USART1 interrupt status register such that no interrupt flags are set
     // except for the USART_ISR_TXE_TXFNF_Msk flag, which indicates that the transmit buffer is empty and the UART
     // is ready to accept a new byte for sending out
     // Hardware does this in the real hardware, but we need to do it in the simulator
     USART1->ISR = USART_ISR_TXE_TXFNF_Msk;
-
+    crc32_enabled = 1;
+    crc32_error_count = 0;
+    packet_decode_error_count = 0;
     printf("RS485 module reset complete\n");
 }
 

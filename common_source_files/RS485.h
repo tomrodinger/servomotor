@@ -42,7 +42,15 @@ static inline uint8_t is_valid_first_byte_format(uint8_t encoded_first_byte) {
     return (encoded_first_byte & FIRST_BYTE_LSB_MASK) == FIRST_BYTE_LSB_MASK;
 }
 
+typedef struct {
+    uint32_t crc32_error_count;
+    uint32_t packet_decode_error_count;
+} rs485_error_statistics_t;
+
 void rs485_init(void);
+void rs485_set_crc32_enable(uint8_t crc32_enable_new_state);
+uint8_t rs485_is_crc32_enabled(void);
+rs485_error_statistics_t rs485_get_error_statistics_and_optionally_reset(uint8_t reset);
 uint8_t rs485_has_a_packet(void);
 uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t **payload, uint8_t *is_broadcast);
 uint8_t rs485_validate_packet_crc32(void);
@@ -50,7 +58,7 @@ void rs485_done_with_this_packet(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
 uint8_t rs485_is_transmit_done(void);
-void transmit_no_error_response(uint8_t is_broadcast, uint8_t crc32_enabled);
-void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size, uint8_t crc32_enabled);
+void rs485_transmit_no_error_packet(uint8_t is_broadcast);
+void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size);
 
 #endif /* SRC_RS485_H_ */

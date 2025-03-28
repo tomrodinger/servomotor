@@ -18,6 +18,12 @@
 #include <time.h>
 #include <math.h>
 #include <signal.h>
+#include <setjmp.h>
+#include <pthread.h>
+
+// These variables are used to save the context of the running program so that when we simulate NVIC_SystemReset we can jump to the beginning of the firmware code
+jmp_buf fatal_error_jmp_buf;
+pthread_t main_thread_id;
 
 //#define DEBUG_PRINTING
 
@@ -773,8 +779,10 @@ void motor_simulator_init(void)
 
 int main() {
     motor_simulator_init();
-    while(1) {        
-        main_simulation();
+
+    main_thread_id = pthread_self();
+    int setjmp_ret = setjmp(fatal_error_jmp_buf);
+    if (setjmp_ret != 0) {
         // If a reset was requested, wait for gResetProgress to reach 2
         // This ensures that both fatal_error and TIM16_IRQHandler have exited
         printf("Reset requested, waiting for gResetProgress to reach 2 (current: %d)\n", gResetProgress);        
@@ -788,5 +796,9 @@ int main() {
         gResetProgress = 0; // Since we are done the reset now, we can start getting back to a non-recent state
         printf("The system was reset. About to call main_simulation() again\n");
     }
+
+    printf("calling the main function of the firmware now...\n");
+    main_simulation();
+
     return 0;
 }
