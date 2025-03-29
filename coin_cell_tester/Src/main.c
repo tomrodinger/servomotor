@@ -278,11 +278,10 @@ void process_packet(void)
     }
 
 //    print_number("Received a command with length: ", commandLen);
-    if((axis == global_settings.my_alias) || (axis == ALL_ALIAS)) {
 //        print_number("Axis:", axis);
 //        print_number("command:", command);
-        switch(command) {
-        case ADD_NEW_INTERVAL_COMMAND:
+    switch(command) {
+    case ADD_NEW_INTERVAL_COMMAND:
         {
             uint16_t interval_add_index = ((int16_t*)payload)[0];
             uint8_t load_state = payload[2];
@@ -295,7 +294,7 @@ void process_packet(void)
             }
             break;
         }
-        case SET_INTERVAL_RUN_MODE_COMMAND:
+    case SET_INTERVAL_RUN_MODE_COMMAND:
         {
             interval_run_mode_t run_mode = (interval_run_mode_t)payload[0];
             rs485_done_with_this_packet();
@@ -308,99 +307,100 @@ void process_packet(void)
             }
             break;
         }
-        case RESET_TIME_COMMAND:
+    case RESET_TIME_COMMAND:
+        rs485_done_with_this_packet();
+        reset_microsecond_time();
+        if(!is_broadcast) {
+            rs485_transmit(NO_ERROR_RESPONSE, 3);
+        }
+        break;
+    case GET_CURRENT_TIME_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            local_time = get_microsecond_time();
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&local_time, 6);
+        }
+        break;
+    case TIME_SYNC_COMMAND:
+        memcpy(&time_from_master, payload, 6);
+        rs485_done_with_this_packet();
+        transmit("Time sync\n", 10);
+        int32_t time_error = time_sync(time_from_master);
+        uint16_t clock_calibration_value = get_clock_calibration_value();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
+            rs485_transmit(&time_error, 4);
+            rs485_transmit(&clock_calibration_value, 2);
+        }
+        break;
+    case GET_STATUS_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            uint8_t device_status_flags = get_device_status_flags();
+            set_device_status_flags(device_status_flags);
+            rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
+        }
+        break;
+    case DETECT_DEVICES_COMMAND:
+        rs485_done_with_this_packet();
+        detect_devices_delay = get_random_number(99);
+        break;
+    case SET_DEVICE_ALIAS_COMMAND:
+        {
+            uint8_t new_alias = payload[0];
             rs485_done_with_this_packet();
-            reset_microsecond_time();
-            if(!is_broadcast) {
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_CURRENT_TIME_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                local_time = get_microsecond_time();
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&local_time, 6);
-            }
-            break;
-        case TIME_SYNC_COMMAND:
-            memcpy(&time_from_master, payload, 6);
-            rs485_done_with_this_packet();
-            transmit("Time sync\n", 10);
-            int32_t time_error = time_sync(time_from_master);
-            uint16_t clock_calibration_value = get_clock_calibration_value();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01\x06", 3);
-                rs485_transmit(&time_error, 4);
-                rs485_transmit(&clock_calibration_value, 2);
-            }
-            break;
-        case GET_STATUS_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                uint8_t device_status_flags = get_device_status_flags();
-                set_device_status_flags(device_status_flags);
-                rs485_transmit(get_device_status(), sizeof(struct device_status_struct));
-            }
-            break;
-        case DETECT_DEVICES_COMMAND:
-            rs485_done_with_this_packet();
-            detect_devices_delay = get_random_number(99);
-            break;
-        case SET_DEVICE_ALIAS_COMMAND:
-            unique_id = ((int64_t*)payload)[0];
-            new_alias = payload[8];
-            rs485_done_with_this_packet();
-            if(unique_id == my_unique_id) {
-                transmit("Unique ID matches\n", 18);
-                global_settings.my_alias = new_alias;
-                save_global_settings();
-                rs485_transmit(NO_ERROR_RESPONSE, 3);
-            }
-            break;
-        case GET_PRODUCT_INFO_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_info_length = sizeof(struct product_info_struct);
-                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-                rs485_transmit(&product_info_length, 1);
-                rs485_transmit(product_info, sizeof(struct product_info_struct));
-            }
-            break;
-        case GET_PRODUCT_DESCRIPTION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
-                rs485_transmit(&product_description_length, 1);
-                rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
-            }
-            break;
-        case GET_FIRMWARE_VERSION_COMMAND:
-            rs485_done_with_this_packet();
-            if(!is_broadcast) {
-                rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
-                uint8_t firmware_version_length = sizeof(firmware_version);
-                rs485_transmit(&firmware_version_length, 1);
-                rs485_transmit(&firmware_version, sizeof(firmware_version));
-            }
-            break;
-        case SYSTEM_RESET_COMMAND:
-            NVIC_SystemReset();
-            break;
-        case PING_COMMAND:
-            memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
-            rs485_done_with_this_packet();
-            transmit("Ping\n", 5);
-            if(!is_broadcast) {
-                ping_response_buffer[0] = RESPONSE_CHARACTER;
-                ping_response_buffer[1] = '\x01';
-                ping_response_buffer[2] = PING_PAYLOAD_SIZE;
-                rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
-            }
-            break;
-        case GET_DATA_RECORD_COMMAND:
+            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+            print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
+            rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
+            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+            global_settings.my_alias = new_alias;
+            save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
+        }
+        break;
+    case GET_PRODUCT_INFO_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_info_length = sizeof(struct product_info_struct);
+            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            rs485_transmit(&product_info_length, 1);
+            rs485_transmit(product_info, sizeof(struct product_info_struct));
+        }
+        break;
+    case GET_PRODUCT_DESCRIPTION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t product_description_length = sizeof(PRODUCT_DESCRIPTION);
+            rs485_transmit(&product_description_length, 1);
+            rs485_transmit(&PRODUCT_DESCRIPTION, sizeof(PRODUCT_DESCRIPTION));
+        }
+        break;
+    case GET_FIRMWARE_VERSION_COMMAND:
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            rs485_transmit(RESPONSE_CHARACTER_TEXT "\x01", 2);
+            uint8_t firmware_version_length = sizeof(firmware_version);
+            rs485_transmit(&firmware_version_length, 1);
+            rs485_transmit(&firmware_version, sizeof(firmware_version));
+        }
+        break;
+    case SYSTEM_RESET_COMMAND:
+        NVIC_SystemReset();
+        break;
+    case PING_COMMAND:
+        memcpy(ping_response_buffer + 3, payload, PING_PAYLOAD_SIZE);
+        rs485_done_with_this_packet();
+        transmit("Ping\n", 5);
+        if(!is_broadcast) {
+            ping_response_buffer[0] = RESPONSE_CHARACTER;
+            ping_response_buffer[1] = '\x01';
+            ping_response_buffer[2] = PING_PAYLOAD_SIZE;
+            rs485_transmit(ping_response_buffer, PING_PAYLOAD_SIZE + 3);
+        }
+        break;
+    case GET_DATA_RECORD_COMMAND:
         {
             uint8_t get_data_record_response_buffer[3 + sizeof(data_record_t)];
             rs485_done_with_this_packet();
@@ -414,7 +414,7 @@ void process_packet(void)
             }
             break;
         }
-        case GET_PICOAMP_SECONDS_COMMAND:
+    case GET_PICOAMP_SECONDS_COMMAND:
         {
             uint64_t picoamp_seconds_count;
             uint8_t get_data_record_response_buffer[3 + sizeof(uint64_t)];
@@ -430,15 +430,14 @@ void process_packet(void)
             }
             break;
         }
-        }
-    }
-    else {
+    default:
         rs485_done_with_this_packet();
+        break;
     }
 }
 
 
-void transmit_unique_id(void)
+void transmit_detect_devices_response(void)
 {
     struct __attribute__((__packed__)) {
         uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
@@ -606,7 +605,7 @@ int main(void)
 
         if(detect_devices_delay == 0) {
             transmit("Transmitting unique ID\n", 23);
-            transmit_unique_id();
+            transmit_detect_devices_response();
             detect_devices_delay--;
         }
 

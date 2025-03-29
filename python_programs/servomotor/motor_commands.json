@@ -307,7 +307,7 @@
         "CommandGroup": "Motion Control"
     },
     {
-        "CommandString": "Get update frequency",
+        "CommandString": "Get product specs",
         "CommandEnum": 18,
         "Description": "Get the update frequency (reciprocal of the time step)",
         "Input": null,
@@ -316,9 +316,14 @@
                 "Description": "u32: Update frequency in Hz. This is how often the motor executes all calculations for hall sensor position, movement, PID loop, safety, etc.",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "updateFrequency"
+            },
+            {
+                "Description": "u32: Counts per rotation. When commanding the motor or when reading back position, this is the number of counts per one shaft rotation.",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "countsPerRotation"
             }
         ],
-        "CommandGroup": "Status & Monitoring"
+        "CommandGroup": "Device Management"
     },
     {
         "CommandString": "Move with acceleration",
@@ -374,11 +379,6 @@
         "CommandEnum": 21,
         "Description": "Sets device alias",
         "Input": [
-            {
-                "Description": "u64_unique_id: Unique ID of the target device.",
-                "TooltipDisplayFormat": "%x",
-                "ParameterName": "uniqueId"
-            },
             {
                 "Description": "u8_alias: The alias (short one byte ID) ranging from 0 to 253. Cannot be 254 or 255 because those are reserved.",
                 "TooltipDisplayFormat": "%d,%c",
@@ -832,13 +832,7 @@
         "CommandString": "Identify",
         "CommandEnum": 41,
         "Description": "Identify your motor by sending this command. The motor's green LED will flash rapidly for 3 seconds.",
-        "Input": [
-            {
-                "Description": "u64_unique_id: Unique ID of the target device.",
-                "TooltipDisplayFormat": "%x",
-                "ParameterName": "uniqueId"
-            }
-        ],
+        "Input": null,
         "Output": "success_response",
         "CommandGroup": "Device Management"
     },

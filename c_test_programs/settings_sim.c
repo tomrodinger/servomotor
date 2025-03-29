@@ -99,7 +99,5 @@ void save_global_settings(void)
         printf("Error: Failed to open settings file for writing\n");
         return;
     }
-    // Only reset if settings were saved successfully
-    printf("Requesting reset\n");
-    gResetProgress = 1;
+    NVIC_SystemReset();
 }

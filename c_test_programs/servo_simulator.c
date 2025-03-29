@@ -706,6 +706,12 @@ void motor_simulator_init(void)
     USART1->CR2 = USART_CR2_RTOEN;
     USART1->RTOR = ((230400 / 10) << USART_RTOR_RTO_Pos); // 0.1s timeout
     USART1->CR3 = USART_CR3_DEM | USART_CR3_EIE;
+    // Set up the USART1 interrupt status register such that no interrupt flags are set
+    // except for the USART_ISR_TXE_TXFNF_Msk flag, which indicates that the transmit buffer is empty and the UART
+    // is ready to accept a new byte for sending out and the USART_ISR_TC_Msk flag, which indicates that the
+    // transmission is complete and we can start more transmissions
+    // Hardware does this in the real hardware, but we need to do it in the simulator
+    USART1->ISR = USART_ISR_TXE_TXFNF_Msk | USART_ISR_TC_Msk;
 
     // Call rs485_init() to set up any additional state
     rs485_init();

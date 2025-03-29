@@ -665,7 +665,7 @@ void rs485_transmit(void *s, uint8_t len)
 
 void rs485_wait_for_transmit_done(void)
 {
-    while(transmitCount > 0); // wait for previous transmission to finish
+    while((transmitCount > 0) || ((USART1->ISR & USART_ISR_TC_Msk) == 0)); // wait for previous transmission to finish (buffer becomes empty and last data item writen to USART->TDR has been transmitted out of the shift register)
 }
 
 uint8_t rs485_is_transmit_done(void)
@@ -692,7 +692,7 @@ void rs485_transmit_no_error_packet(uint8_t is_broadcast)
         response_with_crc32.crc32 = calculate_crc32_buffer((uint8_t*)&response_with_crc32, sizeof(response_with_crc32) - sizeof(uint32_t));
         rs485_transmit(&response_with_crc32, sizeof(response_with_crc32));
         #endif
-        rs485_transmit(NO_ERROR_RESPONSE_CRC32_ENABLED, 7); // because this response will be use frequently, I am hard coding the extra precomputed CRC32 byte. the above commented out code calculates the CRC32 on the fly.
+        rs485_transmit(NO_ERROR_RESPONSE_CRC32_ENABLED, 7); // because this response will be use frequently, I am hard coding the extra precomputed CRC32 bytes. the above commented out code calculates the CRC32 on the fly.
     }
     else {
         rs485_transmit(NO_ERROR_RESPONSE_CRC32_DISABLED, 3);
@@ -749,11 +749,12 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
 void RS485_simulator_init(void)
 {
     printf("RS485_simulator_init() called\n");
-        // Set up the USART1 interrupt status register such that no interrupt flags are set
+    // Set up the USART1 interrupt status register such that no interrupt flags are set
     // except for the USART_ISR_TXE_TXFNF_Msk flag, which indicates that the transmit buffer is empty and the UART
-    // is ready to accept a new byte for sending out
+    // is ready to accept a new byte for sending out and the USART_ISR_TC_Msk flag, which indicates that the
+    // transmission is complete and we can start more transmissions
     // Hardware does this in the real hardware, but we need to do it in the simulator
-    USART1->ISR = USART_ISR_TXE_TXFNF_Msk;
+    USART1->ISR = USART_ISR_TXE_TXFNF_Msk | USART_ISR_TC_Msk;
     crc32_enabled = 1;
     crc32_error_count = 0;
     packet_decode_error_count = 0;

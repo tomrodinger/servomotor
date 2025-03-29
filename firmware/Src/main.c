@@ -401,16 +401,18 @@ void process_packet(void)
         start_go_to_closed_loop_mode();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
-    case GET_UPDATE_FREQUENCY_COMMAND:
+    case GET_PRODUCT_SPECS_COMMAND:
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
                 uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 uint32_t frequency;
+                uint32_t counts_per_rotation;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
-            } frequency_reply;
-            frequency_reply.frequency = get_update_frequency();
-            rs485_finalize_and_transmit_packet(&frequency_reply, sizeof(frequency_reply));
+            } get_product_specs_reply;
+            get_product_specs_reply.frequency = get_update_frequency();
+            get_product_specs_reply.counts_per_rotation = ONE_REVOLUTION_MICROSTEPS;
+            rs485_finalize_and_transmit_packet(&get_product_specs_reply, sizeof(get_product_specs_reply));
         }
         break;
     case MOVE_WITH_ACCELERATION_COMMAND:
@@ -431,20 +433,14 @@ void process_packet(void)
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
-            uint64_t unique_id = ((int64_t*)payload)[0];
-            uint8_t new_alias = payload[8];
+            uint8_t new_alias = payload[0];
             rs485_done_with_this_packet();
-
-            if(unique_id == my_unique_id) {
-                rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
-                print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
-                microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
-                global_settings.my_alias = new_alias;
-                save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
-            }
-            else {
-                print_debug_string("Unique ID does not match, ignoring command\n"); // DEBUG - temporarily added to aid in debugging
-            }
+            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+            print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
+            rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
+            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+            global_settings.my_alias = new_alias;
+            save_global_settings(); // this will never return because the device will reset after writing the new settings to flash
         }
         break;
     case GET_PRODUCT_INFO_COMMAND:
@@ -731,16 +727,13 @@ void process_packet(void)
         break;
     case IDENTIFY_COMMAND:
         {
-            uint64_t unique_id = ((int64_t*)payload)[0];
             rs485_done_with_this_packet();
-            if(unique_id == my_unique_id) {
-                SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
-                green_led_action_counter = 0;
-                n_identify_flashes = 30;
-                SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
-                print_debug_string("Identifying\n");
-                rs485_transmit_no_error_packet(0);
-            }
+            SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
+            green_led_action_counter = 0;
+            n_identify_flashes = 30;
+            SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
+            print_debug_string("Identifying\n");
+            rs485_transmit_no_error_packet(is_broadcast);
         }
         break;
     case GET_TEMPERATURE_COMMAND:
@@ -924,7 +917,7 @@ void process_packet(void)
 }
 
 
-void transmit_unique_id(void)
+void transmit_detect_devices_response(void)
 {
     struct __attribute__((__packed__)) {
         uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
@@ -1196,7 +1189,7 @@ int main(void)
 
         if(detect_devices_delay == 0) {
             print_debug_string("Transmitting unique ID\n");
-            transmit_unique_id();
+            transmit_detect_devices_response();
             detect_devices_delay--;
         }
 

@@ -347,6 +347,8 @@ void NVIC_SystemReset(void);
 #define USART_ISR_RTOF               (1 << 11)  // Receiver timeout flag
 #define USART_ISR_RXNE_RXFNE         (1 << 5)   // Read data register not empty
 #define USART_ISR_TXE_TXFNF_Msk      (1 << 7)   // Transmit data register empty
+#define USART_ISR_TC_Pos             (6U)
+#define USART_ISR_TC_Msk             (0x1UL << USART_ISR_TC_Pos)
 
 #define USART_ICR_RTOCF              (1 << 11)  // Receiver timeout clear flag
 

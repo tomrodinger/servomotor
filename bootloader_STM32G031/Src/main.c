@@ -106,16 +106,14 @@ void process_packet(void)
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
-            uint64_t unique_id = ((int64_t*)payload)[0];
             uint8_t new_alias = payload[8];
             rs485_done_with_this_packet();
-
-            if(unique_id == my_unique_id) {
-                transmit("Match\n", 6);
-                global_settings.my_alias = new_alias;
-                save_global_settings();
-                rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
-            }
+            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+            transmit("Match\n", 6);
+            rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
+            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
+            global_settings.my_alias = new_alias;
+            save_global_settings();
         }
         break;
     case FIRMWARE_UPGRADE_COMMAND:
@@ -186,7 +184,7 @@ void process_packet(void)
     }
 }
 
-void transmit_unique_id(void)
+void transmit_detect_devices_response(void)
 {
     struct __attribute__((__packed__)) {
         uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
@@ -290,7 +288,7 @@ int main(void)
         }
 
         if(detect_devices_delay == 0) {
-            transmit_unique_id();
+            transmit_detect_devices_response();
             detect_devices_delay--;
         }
 
