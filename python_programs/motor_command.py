@@ -11,6 +11,7 @@ parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (extended addressing)', default=None)
 parser.add_argument('-c', '--commands', help='list all supported commands with detailed descriptions', action="store_true")
+parser.add_argument('--crc32-disabled', help='disable CRC32 checksum transmission', action="store_true")
 parser.add_argument('-v', '--verbose', help='equivalent to --verbose-level 2', action="store_true")
 parser.add_argument('--verbose-level', type=int, choices=[0, 1, 2], help='Set verbosity level (0: no output, 1: minimal output, 2: detailed output)', default=None)
 parser.add_argument('command',
@@ -57,8 +58,13 @@ gathered_inputs = servomotor.gather_inputs(command_id, args.inputs, verbose=verb
 
 servomotor.set_standard_options_from_args(args) # This will find out the port to use and the alias/unique_id of the device and store those in the communication module
 servomotor.open_serial_port()
+# Determine if CRC32 should be enabled (default is enabled unless --crc32-disabled flag is used)
+crc32_enabled = not args.crc32_disabled
+if verbose_level >= 1 and args.crc32_disabled:
+    print(format_info("CRC32 checksum transmission disabled"))
+
 try:
-    response = servomotor.send_command(command_id, gathered_inputs, verbose=verbose_level)
+    response = servomotor.send_command(command_id, gathered_inputs, crc32_enabled=crc32_enabled, verbose=verbose_level)
 except servomotor.communication.TimeoutError:
     print(format_error("Timeout Error: The device did not respond in time"))
     print(format_warning(

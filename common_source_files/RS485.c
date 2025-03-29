@@ -11,6 +11,21 @@
 #include "unique_id.h"
 #include "crc32.h"
 
+// Simulation-only printf function that compiles to nothing in firmware builds and optionally
+// compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
+//#define SIMULATOR_DEBUG_PRINTING
+
+#ifdef MOTOR_SIMULATION
+#ifdef SIMULATOR_DEBUG_PRINTING
+#include <stdio.h>
+#define simulation_printf(...) printf(__VA_ARGS__)
+#else
+#define simulation_printf(...) ((void)0)
+#endif
+#else
+#define simulation_printf(...) ((void)0)
+#endif
+
 static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
 static volatile uint8_t transmitIndex;
 static volatile uint8_t transmitCount;
@@ -74,7 +89,7 @@ void check_for_UART_timeout_sim(void)
     if (current_time - last_byte_received_time > 10000) {
         // Set the timeout flag
         USART1->ISR |= USART_ISR_RTOF;
-        printf("A timeout on the UART was detected in this simulation. Setting the timeout flag of the UART.\n");
+        simulation_printf("A timeout on the UART was detected in this simulation. Setting the timeout flag of the UART.\n");
     }
     
     // Update the last byte time whenever a new byte is received
@@ -99,27 +114,27 @@ void print_internal_state(void)
     // static volatile uint8_t transmitIndex;
     // static volatile uint8_t transmitCount;
     // static volatile char transmitBuffer[TRANSMIT_BUFFER_SIZE];
-    printf("         receiveBufferReadPosition:  %hhu\n", receiveBufferReadPosition);
-    printf("         receiveBufferWritePosition: %hhu\n", receiveBufferWritePosition);
-    printf("         receiveBuffersUsed:         %hhu\n", receiveBuffersUsed);
-    printf("         receiveIndex:               %hu\n",  receiveIndex);
-    printf("         firstByteInvalid:           %hhu\n",  firstByteInvalid);    
-    printf("         receivePacketSize:          %hu\n",  receivePacketSize);
-    printf("         receiveBufferOverflow:      %hhu\n", receiveBufferOverflow);
+    simulation_printf("         receiveBufferReadPosition:  %hhu\n", receiveBufferReadPosition);
+    simulation_printf("         receiveBufferWritePosition: %hhu\n", receiveBufferWritePosition);
+    simulation_printf("         receiveBuffersUsed:         %hhu\n", receiveBuffersUsed);
+    simulation_printf("         receiveIndex:               %hu\n",  receiveIndex);
+    simulation_printf("         firstByteInvalid:           %hhu\n",  firstByteInvalid);    
+    simulation_printf("         receivePacketSize:          %hu\n",  receivePacketSize);
+    simulation_printf("         receiveBufferOverflow:      %hhu\n", receiveBufferOverflow);
     for (uint32_t j = 0; j < N_RECEIVE_BUFFERS; j++) {
-        printf("         receiveBuffers[%d]:", j);
+        simulation_printf("         receiveBuffers[%d]:", j);
         for (uint32_t i = 0; i < receiveIndex; i++) {
-            printf(" %hhu", receiveBuffers[j][i]);
+            simulation_printf(" %hhu", receiveBuffers[j][i]);
         }
-        printf("\n");
+        simulation_printf("\n");
     }
-    printf("         transmitIndex:         %hhu\n", transmitIndex);
-    printf("         transmitCount:         %hhu\n", transmitCount);
-    printf("         transmitBuffer:");
+    simulation_printf("         transmitIndex:         %hhu\n", transmitIndex);
+    simulation_printf("         transmitCount:         %hhu\n", transmitCount);
+    simulation_printf("         transmitBuffer:");
     for (uint32_t i = transmitIndex; i < transmitIndex + transmitCount; i++) {
-        printf(" %hhu", transmitBuffer[i]);
+        simulation_printf(" %hhu", transmitBuffer[i]);
     }
-    printf("\n");
+    simulation_printf("\n");
 }
 #endif
 
@@ -191,83 +206,55 @@ uint8_t rs485_has_a_packet(void)
 
 uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t **payload, uint8_t *is_broadcast)
 {
-    #ifdef MOTOR_SIMULATION
-    printf("* * * rs485_get_next_packet() called\n");
-    #endif
+    simulation_printf("* * * rs485_get_next_packet() called\n");
     if (receiveBuffersUsed == 0) {
-        #ifdef MOTOR_SIMULATION
-        printf("         nothing in the buffer. returning.\n");
-        #endif
+        simulation_printf("         nothing in the buffer. returning.\n");
         return 0;
     }
     uint16_t packet_size = decode_first_byte(receiveBuffers[receiveBufferReadPosition][0]);
     uint16_t bytes_parsed = 1;
-    #ifdef MOTOR_SIMULATION
-    printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
-    #endif
+    simulation_printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
     if (packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE) {
         packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][bytes_parsed + 1] << 8) | receiveBuffers[receiveBufferReadPosition][bytes_parsed];
         bytes_parsed += 2;
-        #ifdef MOTOR_SIMULATION
-        printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
-        #endif
+        simulation_printf("         packet_size = %hu   bytes_parsed = %hu\n", packet_size, bytes_parsed);
     }
     uint8_t deviceID = receiveBuffers[receiveBufferReadPosition][bytes_parsed];
-    #ifdef MOTOR_SIMULATION
-    printf("         deviceID = %hhu\n", deviceID);
-    #endif
+    simulation_printf("         deviceID = %hhu\n", deviceID);
     if ((deviceID == RESPONSE_CHARACTER_CRC32_ENABLED) || (deviceID == RESPONSE_CHARACTER_CRC32_DISABLED)) { 
-        #ifdef MOTOR_SIMULATION
-        printf("         deviceID is one of the response characters (%hhu). returning.\n", deviceID);
-        #endif
+        simulation_printf("         deviceID is one of the response characters (%hhu). returning.\n", deviceID);
         return 0; // discard a packet that is from some other device that is responding to a command
     }
     bytes_parsed++;
-    #ifdef MOTOR_SIMULATION
-    printf("         bytes_parsed = %hu\n", bytes_parsed);
-    #endif
+    simulation_printf("         bytes_parsed = %hu\n", bytes_parsed);
     if (deviceID == ALL_ALIAS) { // this is a broadcast packet and so it it valid for us
         *is_broadcast = 1;
-        #ifdef MOTOR_SIMULATION
-        printf("         deviceID is the broadcast character (%u). setting is_broadcast to %hhu.\n", ALL_ALIAS, *is_broadcast);
-        #endif
+        simulation_printf("         deviceID is the broadcast character (%u). setting is_broadcast to %hhu.\n", ALL_ALIAS, *is_broadcast);
     }
     else {
         *is_broadcast = 0;
-        #ifdef MOTOR_SIMULATION
-        printf("         deviceID is not the broadcast character (%u). setting is_broadcast to %hhu.\n", ALL_ALIAS, *is_broadcast);
-        #endif
+        simulation_printf("         deviceID is not the broadcast character (%u). setting is_broadcast to %hhu.\n", ALL_ALIAS, *is_broadcast);
         if (deviceID == EXTENDED_ADDRESSING) {
             uint64_t our_device_id = get_unique_id();
             uint64_t *received_unique_id = (uint64_t *)&receiveBuffers[receiveBufferReadPosition][bytes_parsed];
-            #ifdef MOTOR_SIMULATION
-            printf("         deviceID indicates extended addressing with the character (%u)   our_device_id = %llX   *received_unique_id = %llX.\n", EXTENDED_ADDRESSING, our_device_id, *received_unique_id);
-            #endif
+            simulation_printf("         deviceID indicates extended addressing with the character (%u)   our_device_id = %llX   *received_unique_id = %llX.\n", EXTENDED_ADDRESSING, our_device_id, *received_unique_id);
             if (*received_unique_id != our_device_id) {
-                #ifdef MOTOR_SIMULATION
-                printf("         *received_unique_id != our_device_id. returning.\n");
-                #endif
+                simulation_printf("         *received_unique_id != our_device_id. returning.\n");
                 return 0; // extended addressing was used but the unique ID did not match and so this packet is not for us
             }
             bytes_parsed += UNIQUE_ID_SIZE;
-            #ifdef MOTOR_SIMULATION
-            printf("         bytes_parsed = %hu\n", bytes_parsed);
-            #endif
+            simulation_printf("         bytes_parsed = %hu\n", bytes_parsed);
         }
         else {
             if (deviceID != global_settings.my_alias) {
-                #ifdef MOTOR_SIMULATION
-                printf("         deviceID is not the alias of this device (%hhu). returning.\n", global_settings.my_alias);
-                #endif
+                simulation_printf("         deviceID is not the alias of this device (%hhu). returning.\n", global_settings.my_alias);
                 return 0; // normal address was used but the alias did not match ours and so this packet is not for us
             }
         }
     }
     uint16_t crc32_size = (crc32_enabled) ? sizeof(uint32_t) : 0;
     if (packet_size < bytes_parsed + sizeof(*command) + crc32_size) { // we need to make sure that we have more bytes available in the packet for the command and (if enabled) the CRC32
-        #ifdef MOTOR_SIMULATION
-        printf("         packet_size < bytes_parsed + sizeof(*command) + crc32_size   packet_size = %hu   bytes_parsed = %hu   sizeof(*command) = %lu   crc32_size = %hu   returning.\n", packet_size, bytes_parsed, sizeof(*command), crc32_size);
-        #endif
+        simulation_printf("         packet_size < bytes_parsed + sizeof(*command) + crc32_size   packet_size = %hu   bytes_parsed = %hu   sizeof(*command) = %lu   crc32_size = %hu   returning.\n", packet_size, bytes_parsed, sizeof(*command), crc32_size);
         packet_decode_error_count++;
         return 0; // this packet is invalid because the indicated size of the packet is too small to hold all the information needed to properly decode it
     }
@@ -276,16 +263,16 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
     *payload_size = packet_size - bytes_parsed - crc32_size;
     *payload = (uint8_t *)(&receiveBuffers[receiveBufferReadPosition][bytes_parsed]);
     #ifdef MOTOR_SIMULATION
-    printf("         *command = %hhu   bytes_parsed = %hu   *payload_size = %hu   payload:", *command, bytes_parsed, *payload_size);
+    simulation_printf("         *command = %hhu   bytes_parsed = %hu   *payload_size = %hu   payload:", *command, bytes_parsed, *payload_size);
     for (uint32_t i = 0; i < *payload_size; i++) {
-        printf(" %hhu", (*payload)[i]);
+        simulation_printf(" %hhu", (*payload)[i]);
     }
-    printf("\n");
-    printf("         payload (hex):");
+    simulation_printf("\n");
+    simulation_printf("         payload (hex):");
     for (uint32_t i = 0; i < *payload_size; i++) {
-        printf(" %hhX", (*payload)[i]);
+        simulation_printf(" %hhX", (*payload)[i]);
     }
-    printf("\n");
+    simulation_printf("\n");
     #endif
     return 1;
 }
@@ -296,28 +283,24 @@ uint8_t rs485_validate_packet_crc32(void)
     if (!crc32_enabled) {
         return 1;
     }
-    #ifdef MOTOR_SIMULATION
-    printf("* * * rs485_validate_packet_crc32() called\n");
-    #endif
+    #if defined(MOTOR_SIMULATION) && defined(SIMULATOR_DEBUG_PRINTING)
+    simulation_printf("* * * rs485_validate_packet_crc32() called\n");
     uint16_t size_size = 1;
-    uint16_t packet_size = decode_first_byte(receiveBuffers[receiveBufferReadPosition][0]);
-    #ifdef MOTOR_SIMULATION
-    printf("         packet_size = %hu   size_size = %hu\n", packet_size, size_size);
     #endif
+    uint16_t packet_size = decode_first_byte(receiveBuffers[receiveBufferReadPosition][0]);
+    simulation_printf("         packet_size = %hu   size_size = %hu\n", packet_size, size_size);
     if (packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE) {
         packet_size = ((uint16_t)receiveBuffers[receiveBufferReadPosition][2] << 8) | receiveBuffers[receiveBufferReadPosition][1];
+        #if defined(MOTOR_SIMULATION) && defined(SIMULATOR_DEBUG_PRINTING)
         size_size += 2;
-        #ifdef MOTOR_SIMULATION
-        printf("         packet_size = %hu   size_size = %hu\n", packet_size, size_size);
+        simulation_printf("         packet_size = %hu   size_size = %hu\n", packet_size, size_size);
         #endif
     }
     uint32_t received_crc32 = *(uint32_t*)&receiveBuffers[receiveBufferReadPosition][packet_size - sizeof(uint32_t)];
-    #ifdef MOTOR_SIMULATION
-    printf("         received_crc32 = %X\n", received_crc32);
-    #endif
+    simulation_printf("         received_crc32 = %X\n", received_crc32);
     if (packet_size < sizeof(uint32_t)) {
         #ifdef MOTOR_SIMULATION
-        printf("         ******** I EXPECT THIS ERROR TO NECER HAPPEN because packets too small to contain a CRC32 are discarded in the rs485_get_next_packet() function   packet_size < sizeof(uint32_t)   packet_size = %hu\n", packet_size);
+        simulation_printf("         ******** I EXPECT THIS ERROR TO NECER HAPPEN because packets too small to contain a CRC32 are discarded in the rs485_get_next_packet() function   packet_size < sizeof(uint32_t)   packet_size = %hu\n", packet_size);
         exit(1);
         #endif
         packet_decode_error_count++;
@@ -326,28 +309,22 @@ uint8_t rs485_validate_packet_crc32(void)
     uint16_t crc32_calculation_n_bytes = packet_size - sizeof(uint32_t); // we will include the size bytes but not the crc32 bytes in the CRC32 calculation
 
     #ifdef MOTOR_SIMULATION
-    printf("         calculating the CRC32 of the following buffer (size is %hu):", crc32_calculation_n_bytes);
+    simulation_printf("         calculating the CRC32 of the following buffer (size is %hu):", crc32_calculation_n_bytes);
     for (uint32_t i = 0; i < crc32_calculation_n_bytes; i++) {
-        printf(" %hhX", receiveBuffers[receiveBufferReadPosition][i]);
+        simulation_printf(" %hhX", receiveBuffers[receiveBufferReadPosition][i]);
     }
-    printf("\n");
+    simulation_printf("\n");
     #endif
     uint32_t calculated_crc32 = calculate_crc32_buffer((void*)&receiveBuffers[receiveBufferReadPosition][0], crc32_calculation_n_bytes);
 
-    #ifdef MOTOR_SIMULATION
-    printf("         crc32_calculation_n_bytes = %hu   calculated_crc32 = %X\n", crc32_calculation_n_bytes, calculated_crc32);
-    #endif
+    simulation_printf("         crc32_calculation_n_bytes = %hu   calculated_crc32 = %X\n", crc32_calculation_n_bytes, calculated_crc32);
 
     if (calculated_crc32 != received_crc32) {
-        #ifdef MOTOR_SIMULATION
-        printf("         calculated_crc32 != received_crc32   calculated_crc32 = %X   received_crc32 = %X   returning\n", calculated_crc32, received_crc32);
-        #endif
+        simulation_printf("         calculated_crc32 != received_crc32   calculated_crc32 = %X   received_crc32 = %X   returning\n", calculated_crc32, received_crc32);
         crc32_error_count++;
         return 0; // the CRC32 does not match and so the packet is invalid
     }
-    #ifdef MOTOR_SIMULATION
-    printf("         returning 1 (because the CRC32 check passed)\n");
-    #endif
+    simulation_printf("         returning 1 (because the CRC32 check passed)\n");
     return 1; // the CRC32 matches and so the packet is valid
 }
 
@@ -361,7 +338,7 @@ void rs485_done_with_this_packet(void)
     USART1->CR1 |= USART_CR1_RXNEIE_RXFNEIE; // enable receive interrupt
     __enable_irq();
     #ifdef MOTOR_SIMULATION
-    printf("* * * rs485_done_with_this_packet function finished its work. This is the current complete internal state:\n");
+    simulation_printf("* * * rs485_done_with_this_packet function finished its work. This is the current complete internal state:\n");
     print_internal_state();
     #endif
 
@@ -399,7 +376,7 @@ void USART1_IRQHandler(void)
         receivedByte = USART1->RDR;
         #ifdef MOTOR_SIMULATION
         USART1->ISR &= ~USART_ISR_RXNE_RXFNE; // clear this bit to indicate that we have read the received byte (done automatically in the real hardware but not in the simulated hardware)
-        printf("* * * Received a byte: %hhu\n", receivedByte);
+        simulation_printf("* * * Received a byte: %hhu\n", receivedByte);
         want_print_internal_state = 1;
         #endif
 
@@ -439,7 +416,7 @@ void USART1_IRQHandler(void)
         // In simulation, we need to clear TXE after writing to TDR
         // (In real hardware, this is done by the USART hardware)
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
-        printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
+        simulation_printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
         want_print_internal_state = 1;
 #endif
         transmitCount--;
@@ -461,8 +438,8 @@ void USART1_IRQHandler(void)
     #ifdef MOTOR_SIMULATION
     if (want_print_internal_state) {
         #include <pthread.h>
-        printf("* * * Finished USART1_IRQHandler. The thread ID is %ld This is the current complete internal state:\n", (unsigned long)(pthread_self()));
-//        printf("* * * Finished USART1_IRQHandler. This is the current complete internal state:\n");
+        simulation_printf("* * * Finished USART1_IRQHandler. The thread ID is %ld This is the current complete internal state:\n", (unsigned long)(pthread_self()));
+//        simulation_printf("* * * Finished USART1_IRQHandler. This is the current complete internal state:\n");
         print_internal_state();
     }
     #endif
@@ -648,7 +625,7 @@ void rs485_transmit(void *s, uint8_t len)
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
         USART1->TDR = transmitBuffer[transmitIndex];
 #ifdef MOTOR_SIMULATION
-        printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
+        simulation_printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
         // In simulation, we need to clear TXE after writing to TDR
         // (In real hardware, this is done by the USART hardware)
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
@@ -721,22 +698,23 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
         *(uint32_t *)(((uint8_t*)data) + (structure_size - sizeof(uint32_t))) = crc32; // place the crc32 as the last 4 bytes of the packet
         #ifdef MOTOR_SIMULATION
         uint16_t crc32_calculation_n_bytes = structure_size - sizeof(uint32_t);
-        printf("         calculating the CRC32 of the following buffer (size is %hu):", crc32_calculation_n_bytes);
+        simulation_printf("         calculating the CRC32 of the following buffer (size is %hu):", crc32_calculation_n_bytes);
         for (uint32_t i = 0; i < crc32_calculation_n_bytes; i++) {
-            printf(" %hhX", ((uint8_t*)data)[i]);
+            simulation_printf(" %hhX", ((uint8_t*)data)[i]);
         }
-        printf("\n");
-        printf("         calculated_crc32 = %X\n", crc32);
+        simulation_printf("\n");
+        simulation_printf("         calculated_crc32 = %X\n", crc32);
         #endif
     }
-    #ifdef MOTOR_SIMULATION
-    printf("* * * Transmitting the following packet after it has been finalized:");
-    for (uint32_t i = 0; i < structure_size; i++) {
-        printf(" %hhu", ((uint8_t *)data)[i]);
-    }
-    printf("\n");
 
+    #ifdef MOTOR_SIMULATION
+    simulation_printf("* * * Transmitting the following packet after it has been finalized:");
+    for (uint32_t i = 0; i < structure_size; i++) {
+        simulation_printf(" %hhu", ((uint8_t *)data)[i]);
+    }
+    simulation_printf("\n");
     #endif
+
     rs485_transmit(data, structure_size);
 }
 
@@ -748,7 +726,7 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
  */
 void RS485_simulator_init(void)
 {
-    printf("RS485_simulator_init() called\n");
+    simulation_printf("RS485_simulator_init() called\n");
     // Set up the USART1 interrupt status register such that no interrupt flags are set
     // except for the USART_ISR_TXE_TXFNF_Msk flag, which indicates that the transmit buffer is empty and the UART
     // is ready to accept a new byte for sending out and the USART_ISR_TC_Msk flag, which indicates that the
@@ -758,12 +736,12 @@ void RS485_simulator_init(void)
     crc32_enabled = 1;
     crc32_error_count = 0;
     packet_decode_error_count = 0;
-    printf("RS485 module reset complete\n");
+    simulation_printf("RS485 module reset complete\n");
 }
 
 void print_receiveIndex(void)
 {
-    printf("receiveIndex = %hu\n", receiveIndex);
+    simulation_printf("receiveIndex = %hu\n", receiveIndex);
 }
 
 #endif

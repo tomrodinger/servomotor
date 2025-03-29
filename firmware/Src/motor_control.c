@@ -32,6 +32,14 @@
 #include "global_variables.h"
 #include "profiler.h"
 
+// Simulation-only printf function that compiles to nothing in firmware builds
+#ifdef MOTOR_SIMULATION
+#include <stdio.h>
+#define simulation_printf(...) printf(__VA_ARGS__)
+#else
+#define simulation_printf(...) ((void)0)
+#endif
+
 #define MAX_HOMING_ERROR 50000
 
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
@@ -524,6 +532,7 @@ void start_calibration(uint8_t print_output)
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
 #endif
 
+    simulation_printf("Your message here %hhu\n", print_output);
     if(print_output) {
         rs485_transmit("Calibration start\n", 18);
     }
@@ -589,17 +598,11 @@ void handle_calibration_logic(void)
                 hall1_sum += get_hall_sensor1_voltage();
                 hall2_sum += get_hall_sensor2_voltage();
                 hall3_sum += get_hall_sensor3_voltage();
-    //          hall1_sum = get_hall_sensor1_voltage();
-    //          hall2_sum = get_hall_sensor2_voltage();
-    //          hall3_sum = get_hall_sensor3_voltage();
                 avg_counter++;
                 if(avg_counter == 16) {
                     hall_data_buffer[0] = (hall1_sum >> 1) - HALL_SENSOR_SHIFT;
                     hall_data_buffer[1] = (hall2_sum >> 1) - HALL_SENSOR_SHIFT;
                     hall_data_buffer[2] = (hall3_sum >> 1) - HALL_SENSOR_SHIFT;
-    //              hall_data_buffer[0] = (hall1_sum << 3) - HALL_SENSOR_SHIFT;
-    //              hall_data_buffer[1] = (hall2_sum << 3) - HALL_SENSOR_SHIFT;
-    //              hall_data_buffer[2] = (hall3_sum << 3) - HALL_SENSOR_SHIFT;
                     rs485_transmit((void*)hall_data_buffer, 6);
                     avg_counter = 0;
                     hall1_sum = 0;

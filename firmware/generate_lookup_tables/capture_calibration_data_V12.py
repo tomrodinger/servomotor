@@ -7,9 +7,10 @@ import serial
 import sys
 import argparse
 import matplotlib.pyplot as plt
+import struct
 
 #SERIAL_PORT_DEVICE = "/dev/tty.usbserial-1110"
-SERIAL_PORT_DEVICE = "/dev/ttys000"
+SERIAL_PORT_DEVICE = "/dev/ttys020"
 OUT_BIN_FILENAME = "hall_calibration_raw_data.bin"
 OUT_TEXT_FILENAME = "hall_calibration_one_rotation.txt"
 CALIBRATION_START_TEXT = bytearray(b'Calibration start\n')
@@ -17,6 +18,7 @@ CALIBRATION_DONE_TEXT = bytearray(b'Calibration capture done\n')
 CAPTURE_HALL_SENSOR_DATA_COMMAND = 7
 CAPTURE_HALL_SENSOR_READINGS = 1
 CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING = 4
+CRC32_CONTROL_COMMAND = 46
 
 
 def plot_data(data):
@@ -48,6 +50,12 @@ def plot_data(data):
     plt.tight_layout()
     plt.show()
 
+def calculate_crc32(data):
+    """Calculate CRC32 checksum for a byte array"""
+    import zlib
+    return zlib.crc32(data) & 0xffffffff
+
+
 # Adding the argparse logic
 arg_parser = argparse.ArgumentParser(description="Hall Calibration Data Plotter")
 arg_parser.add_argument('--no-graph', action='store_true', help="Disable the plotting of the graph")
@@ -58,8 +66,24 @@ MY_AXIS = args.axis
 
 ser = serial.Serial(SERIAL_PORT_DEVICE, 230400, timeout = 0.1)
 
+print("Sending the command to disable CRC32 checking")
+encoded_size_byte = (8 << 1) | 1
+command = bytearray([encoded_size_byte, ord(MY_AXIS), CRC32_CONTROL_COMMAND, 0])
+crc32_bytes = struct.pack('<I', calculate_crc32(command))    
+print("Transmittng:", command + crc32_bytes)
+ser.write(command + crc32_bytes)
+response = ser.read(1000)
+print("Response:", response)
+if response != bytearray([7, 252, 0]):
+    printf("The response was not what we extexted")
+    ser.close()
+    exit(1)
+
 print("Sending the command to start the calibration motor movements")
-command = bytearray([ord(MY_AXIS), CAPTURE_HALL_SENSOR_DATA_COMMAND, 1, CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING])
+#command = bytearray([ord(MY_AXIS), CAPTURE_HALL_SENSOR_DATA_COMMAND, 1, CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING])
+encoded_size_byte = (4 << 1) | 1
+command = bytearray([encoded_size_byte, ord(MY_AXIS), CAPTURE_HALL_SENSOR_DATA_COMMAND, CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING])
+print("Transmitting:", command)
 ser.write(command)
 
 no_end_text_found = False
