@@ -3,7 +3,8 @@
 import sys
 import argparse
 import time
-import binascii
+import binascii # in the future, if you eliminate using binascii.crc32 then remove this import
+import zlib
 import struct
 import servomotor
 
@@ -145,6 +146,12 @@ for item in data_uint32:
 
 firmware_size = (len(data) >> 2) - 1
 firmware_crc = binascii.crc32(data[4:])
+second_firmware_crc = zlib.crc32(data[4:])
+if (firmware_crc != second_firmware_crc):
+    print("Error: binascii.crc32() and binascii.crc32() produced different results, which is unexpected")
+    exit(1)
+else:
+    print("The upgrade_firmware progran has tested that binascii.crc32() and zlib.crc32() produced the same result. In the future we can eliminate usage of ascii.crc32 because it is slightly slower.")
 print("Firmware size is %u 32-bit values. Firmware CRC32 is 0x%08X." % (firmware_size, firmware_crc))
 
 # replacing the first 32-bit number with the firmware size. this first number contained the stack location, but we have moved this stack location to the 9th position in the startup script

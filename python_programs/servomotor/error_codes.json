@@ -324,34 +324,26 @@
         },
         {
             "code": 20,
-            "enum": "ERROR_POSITION_OUT_OF_RANGE",
-            "short_desc": "position out of range",
-            "long_desc": "Motor position value has exceeded valid range (deprecated)",
+            "enum": "ERROR_CAPTURE_PAYLOAD_TOO_BIG",
+            "short_desc": "too much capture data",
+            "long_desc": "The protocol used to communication over RS485 supports a total packet size that cannot be larger than 65535 bytes. The maximum payload size is just a bit less than this (about 65530 bytes). We have requested to capture hall sensor data that is larger than this maximum payload size.",
             "causes": [
-                "Position overflow",
-                "Position calculation error",
-                "Movement beyond limits"
+                "We called the Capture hall sensor data command and gave it innapropriate parameters. The two relevant parameters are: (1) Number of points to read back from the device and (2) Channels to capture bitmask. The number of bits set in this second parameter multipled by two bytes per value multiplied by this first parameter determines the payload size."
             ],
             "solutions": [
-                "Check position calculations",
-                "Verify movement limits",
-                "Update to new position tracking"
+                "Decrease the number of points to read back or disable reading back some of the channels. For instance, setting a bistmask to 1 will read back just one channel and that will cost two bytes per point."
             ]
         },
         {
             "code": 21,
-            "enum": "ERROR_HALL_POSITION_OUT_OF_RANGE",
-            "short_desc": "hall position out of range",
-            "long_desc": "Hall sensor position value has exceeded valid range (deprecated)",
+            "enum": "ERROR_CAPTURE_OVERFLOW",
+            "short_desc": "capture overflow",
+            "long_desc": "The data could not be transmitted back over RS485 fast enough to keep up with the rate of capturing the data",
             "causes": [
-                "Hall position overflow",
-                "Position calculation error",
-                "Sensor reading issues"
+                "We called the Capture hall sensor data command and gave it innapropriate parameters"
             ],
             "solutions": [
-                "Check hall position calculations",
-                "Verify sensor readings",
-                "Update to new position tracking"
+                "You can do one of the following: (1) Disable some of the channels that you wish to capture by setting bits in the bitmask parameter to 0, or (2) You can capture less often by increasing the time steps per capture parameter, or (3) average more sameples together by increasing the number of samples to sum parameter"
             ]
         },
         {

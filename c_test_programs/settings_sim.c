@@ -52,6 +52,11 @@ uint32_t calculate_crc32_u8(uint8_t value)
     return ~crc32_value;  // Return inverted final value
 }
 
+uint32_t get_crc32(void)
+{
+    return ~crc32_value;
+}
+
 void load_global_settings(void)
 {
     FILE *fp = fopen(SETTINGS_FILE, "rb");

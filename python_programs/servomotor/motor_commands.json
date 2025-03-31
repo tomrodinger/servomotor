@@ -125,14 +125,39 @@
         "Description": "Start sending hall sensor data (work in progress; don't send this command)",
         "Input": [
             {
-                "Description": "u8: Indicates the type of data to read. Currently 1 to 4 are valid. 0 indicates turning off the reading.",
+                "Description": "u8: Indicates the type of data to capture. Currently 1 to 3 are valid.",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "dataType"
+                "ParameterName": "captureType"
+            },
+            {
+                "Description": "u32: Number of points to read back from the device",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "nPointsToRead"
+            },
+            {
+                "Description": "u8: Channels to capture bitmask. The first three bits are valid, which will turn on (0) or turn off (0) that hall sensor channel",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "channelsToCaptureBitmask"
+            },
+            {
+                "Description": "u16: Aquire a sample every this number of time steps. Time steps happen at the update frequency, which can be read with the Get product specs command",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "timeStepsPerSample"
+            },
+            {
+                "Description": "u16: Number of samples to sum together to make one point to transmit back",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "nSamplesToSum"
+            },
+            {
+                "Description": "u16: Division factor to apply to the sum of the samples to scale it down before transmitting it so that it fits into the returned data type, which is a 16-bit number per each hall sensor",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "divisionFactor"
             }
         ],
         "Output": [
             {
-                "Description": "unknown_data: Various data. This is work in progress.",
+                "Description": "general_data: The data of the hall sensors after suming and averaging",
                 "TooltipDisplayFormat": "",
                 "ParameterName": "data"
             }

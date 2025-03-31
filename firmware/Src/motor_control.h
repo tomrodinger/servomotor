@@ -138,7 +138,15 @@ void start_calibration(uint8_t print_output);
 void start_go_to_closed_loop_mode(void);
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time);
 void print_queue_stats(void);
-void start_capture(uint8_t capture_type);
+void start_or_stop_capture(uint8_t capture_type, uint8_t channels_to_capture_bitmask, uint16_t time_steps_per_sample, uint16_t n_samples_to_sum);
+
+typedef struct __attribute__((__packed__)) {
+    uint16_t hall1;
+    uint16_t hall2;
+    uint16_t hall3;
+} captured_point_t;
+uint8_t get_hall_sensor_captured_point(captured_point_t *captured_point, uint16_t division_factor);
+
 void vibrate(uint8_t vibration_level);
 void reset_time(void);
 

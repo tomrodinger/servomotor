@@ -39,9 +39,19 @@
 #include "commutation_table_M4.h"
 #endif
 
-// CRC32 error counter operation modes
-#define CRC32_ERROR_READ_ONLY 0
-#define CRC32_ERROR_RESET 1
+// Simulation-only printf function that compiles to nothing in firmware builds and optionally
+// compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
+#define SIMULATOR_DEBUG_PRINTING
+#ifdef MOTOR_SIMULATION
+#ifdef SIMULATOR_DEBUG_PRINTING
+#include <stdio.h>
+#define simulation_printf(...) printf(__VA_ARGS__)
+#else
+#define simulation_printf(...) ((void)0)
+#endif
+#else
+#define simulation_printf(...) ((void)0)
+#endif
 
 char PRODUCT_DESCRIPTION[] = "Servomotor";
 
@@ -65,6 +75,9 @@ extern volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
+static uint32_t hall_sensor_n_points_to_capture = 0;
+static uint8_t hall_sensor_point_size = 0;
+static uint16_t captured_point_division_factor = 1;
 static uint16_t green_led_action_counter = 0;
 static uint8_t n_identify_flashes = 0;
 
@@ -257,15 +270,46 @@ void process_packet(void)
         break;
     case CAPTURE_HALL_SENSOR_DATA_COMMAND:
         {
-            uint8_t capture_type = payload[0];
+            typedef struct __attribute__((__packed__)) {
+                uint8_t capture_type;
+                uint32_t n_points_to_capture;
+                uint8_t channels_to_capture_bitmask;
+                uint16_t time_steps_per_sample;
+                uint16_t n_samples_to_sum;
+                uint16_t division_factor;
+            } capture_hall_sensor_data_input_t;
+            capture_hall_sensor_data_input_t capture_hall_sensor_data_input;
+            memcpy(&capture_hall_sensor_data_input, payload, sizeof(capture_hall_sensor_data_input));
             rs485_done_with_this_packet();
-            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
-            if(capture_type == CAPTURE_HALL_SENSOR_READINGS_WHILE_TURNING) {
-                start_calibration(1);
+            uint16_t n_channels = 0;
+            for (uint16_t i = 0; i < 3; i++) {
+                if (capture_hall_sensor_data_input.channels_to_capture_bitmask & (1 << i)) {
+                    n_channels++;
+                }
             }
-            else {
-                start_capture(capture_type);
+            hall_sensor_point_size = n_channels * sizeof(uint16_t);
+            uint32_t payload_size = capture_hall_sensor_data_input.n_points_to_capture * hall_sensor_point_size;
+            if (payload_size > 65535 - 5 - sizeof(uint32_t)) {
+                fatal_error(ERROR_CAPTURE_PAYLOAD_TOO_BIG);
             }
+            simulation_printf("Starting the RS485 packet. payload_size = %u\n", payload_size);
+            rs485_start_the_packet((uint16_t)payload_size);
+            hall_sensor_n_points_to_capture = capture_hall_sensor_data_input.n_points_to_capture;
+            captured_point_division_factor = capture_hall_sensor_data_input.division_factor;
+            simulation_printf("Starting the capture:");
+            simulation_printf("   capture_type = %hhu\n",                capture_hall_sensor_data_input.capture_type);
+            simulation_printf("   n_points_to_capture = %u\n",           capture_hall_sensor_data_input.n_points_to_capture);
+            simulation_printf("   channels_to_capture_bitmask = %hhu\n", capture_hall_sensor_data_input.channels_to_capture_bitmask);
+            simulation_printf("   time_steps_per_sample = %hu\n",        capture_hall_sensor_data_input.time_steps_per_sample);
+            simulation_printf("   n_samples_to_sum = %hu\n",             capture_hall_sensor_data_input.n_samples_to_sum);
+            simulation_printf("   n_channels = %hu\n",                     n_channels);
+            simulation_printf("   hall_sensor_n_points_to_capture = %u\n", hall_sensor_n_points_to_capture);
+            simulation_printf("   captured_point_division_factor = %hu\n", captured_point_division_factor);
+            simulation_printf("   hall_sensor_point_size = %hhu\n",        hall_sensor_point_size);
+            start_or_stop_capture(capture_hall_sensor_data_input.capture_type,
+                                  capture_hall_sensor_data_input.channels_to_capture_bitmask,
+                                  capture_hall_sensor_data_input.time_steps_per_sample,
+                                  capture_hall_sensor_data_input.n_samples_to_sum);
         }
         break;
     case RESET_TIME_COMMAND:
@@ -1173,7 +1217,7 @@ int main(void)
         #endif
                 
         if(rs485_has_a_packet()) {
-            if(detect_devices_delay >= 0) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+            if((detect_devices_delay >= 0) || (hall_sensor_n_points_to_capture > 0)) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID. Also, if we are capturing the hall sensor data then also we will ignore commands because if there are commands then that is wrong use of the protocol.
                 rs485_done_with_this_packet();
             }
             else {
@@ -1191,6 +1235,20 @@ int main(void)
             print_debug_string("Transmitting unique ID\n");
             transmit_detect_devices_response();
             detect_devices_delay--;
+        }
+
+        if(hall_sensor_n_points_to_capture > 0) {
+            captured_point_t captured_point;
+            if(get_hall_sensor_captured_point(&captured_point, captured_point_division_factor)) {
+                simulation_printf("hall_sensor_n_points_to_capture = %u   hall_sensor_point_size = %hhu   transmitting it\n", hall_sensor_n_points_to_capture, hall_sensor_point_size);
+                rs485_continue_the_packet(&captured_point, hall_sensor_point_size);
+                hall_sensor_n_points_to_capture--;
+                if (hall_sensor_n_points_to_capture == 0) {
+                    simulation_printf("Stopping the capture now\n");
+                    start_or_stop_capture(0, 0, 0, 0);
+                    rs485_end_the_packet();
+                }
+            }
         }
 
         if(process_calibration_data()) {

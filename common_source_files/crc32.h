@@ -44,4 +44,10 @@ uint32_t calculate_crc32_buffer(void *buffer, uint32_t len);
  */
 uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t len);
 
+/**
+ * @brief Get the current CRC32 value
+ * @return The current CRC32 value
+ */
+uint32_t get_crc32(void);
+
 #endif /* CRC32_H_ */

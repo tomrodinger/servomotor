@@ -14,7 +14,6 @@
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
 // compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
 //#define SIMULATOR_DEBUG_PRINTING
-
 #ifdef MOTOR_SIMULATION
 #ifdef SIMULATOR_DEBUG_PRINTING
 #include <stdio.h>
@@ -716,6 +715,44 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
     #endif
 
     rs485_transmit(data, structure_size);
+}
+
+void rs485_start_the_packet(uint16_t payload_size)
+{
+    struct __attribute__((__packed__)) {
+        uint8_t packet_size;
+        uint16_t extended_size;
+        uint8_t response_character;
+        uint8_t has_data_flag;
+    } header;
+    header.packet_size = FIRST_BYTE_EXTENDED_SIZE;
+    header.extended_size = sizeof(header) + payload_size;
+    header.has_data_flag = 1;
+    if(crc32_enabled) {
+        header.response_character = RESPONSE_CHARACTER_CRC32_ENABLED;
+        header.extended_size += sizeof(uint32_t); // add the bytes for the CRC32 to the packet size info
+        calculate_crc32_buffer(&header, sizeof(header));
+    }
+    else {
+        header.response_character = RESPONSE_CHARACTER_CRC32_DISABLED;
+    }
+    rs485_transmit(&header, sizeof(header));
+}
+
+void rs485_continue_the_packet(void *s, uint8_t len)
+{
+    if(crc32_enabled) {
+        calculate_crc32_buffer_without_reinit(s, len);
+    }
+    rs485_transmit(s, len);
+}
+
+void rs485_end_the_packet(void)
+{
+    if(crc32_enabled) {
+        uint32_t crc32 = get_crc32();
+        rs485_transmit(&crc32, sizeof(crc32));
+    }
 }
 
 #ifdef MOTOR_SIMULATION

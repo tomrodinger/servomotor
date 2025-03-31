@@ -24,8 +24,8 @@ typedef enum {
     ERROR_QUEUE_IS_FULL = 17,
     ERROR_RUN_OUT_OF_QUEUE_ITEMS = 18,
     ERROR_MOTOR_BUSY = 19,
-    ERROR_POSITION_OUT_OF_RANGE = 20,        // TO BE DEPRECATED
-    ERROR_HALL_POSITION_OUT_OF_RANGE = 21,        // TO BE DEPRECATED
+    ERROR_CAPTURE_PAYLOAD_TOO_BIG = 20,
+    ERROR_CAPTURE_OVERFLOW = 21,
     ERROR_CURRENT_SENSOR_FAILED = 22,
     ERROR_MAX_PWM_VOLTAGE_TOO_HIGH = 23,
     ERROR_MULTI_MOVE_MORE_THAN_32_MOVES = 24,
@@ -60,7 +60,7 @@ typedef enum {
     "time went backwards\0"                   /* ERROR_TIME_WENT_BACKWARDS */ \
     "flash unlock fail\0"                     /* ERROR_FLASH_UNLOCK_FAIL */ \
     "flash write fail\0"                      /* ERROR_FLASH_WRITE_FAIL */ \
-    "unused\0"                                /* ERROR_THIS_IS_UNUSED_AND_CAN_BE_REPLACED */                    /* THIS IS NOW OBSOLETE AND CAN BE REPLACED */ \
+    "too many bytes\0"                        /* ERROR_TOO_MANY_BYTES */ \
     "command overflow\0"                      /* ERROR_COMMAND_OVERFLOW */ \
     "command too long\0"                      /* ERROR_COMMAND_TOO_LONG */ \
     "not in open loop\0"                      /* ERROR_NOT_IN_OPEN_LOOP */ \
@@ -76,8 +76,8 @@ typedef enum {
     "queue is full\0"                         /* ERROR_QUEUE_IS_FULL */ \
     "run out of queue items\0"                /* ERROR_RUN_OUT_OF_QUEUE_ITEMS */ \
     "motor busy\0"                            /* ERROR_MOTOR_BUSY */ \
-    "position out of range\0"                 /* ERROR_POSITION_OUT_OF_RANGE (TO BE DEPRECATED) */ \
-    "hall position out of range\0"            /* ERROR_HALL_POSITION_OUT_OF_RANGE (TO BE DEPRECATED) */ \
+    "too much capture data\0"                 /* ERROR_CAPTURE_PAYLOAD_TOO_BIG */ \
+    "capture overflow\0"                      /* ERROR_CAPTURE_OVERFLOW */ \
     "current sensor failed\0"                 /* ERROR_CURRENT_SENSOR_FAILED */ \
     "max pwm voltage too high\0"              /* ERROR_MAX_PWM_VOLTAGE_TOO_HIGH */ \
     "multi-move more than 32 moves\0"         /* ERROR_MULTI_MOVE_MORE_THAN_32_MOVES */ \
@@ -104,7 +104,7 @@ typedef enum {
     "position deviation too large\0"          /* ERROR_POSITION_DEVIATION_TOO_LARGE */ \
     "move too far\0"                          /* ERROR_MOVE_TOO_FAR */ \
     "hall position delta too large\0"         /* ERROR_HALL_POSITION_DELTA_TOO_LARGE */ \
-    "invalid first byte\0"                    /* ERROR_INVALID_FIRST_BYTE */ \
+    "invalid first byte format\0"             /* ERROR_INVALID_FIRST_BYTE */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

@@ -46,3 +46,9 @@ uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t len)
     }
     return CRC->DR;
 }
+
+uint32_t get_crc32(void)
+{
+    return CRC->DR;
+}
+

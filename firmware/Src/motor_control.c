@@ -32,10 +32,16 @@
 #include "global_variables.h"
 #include "profiler.h"
 
-// Simulation-only printf function that compiles to nothing in firmware builds
+// Simulation-only printf function that compiles to nothing in firmware builds and optionally
+// compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
+//#define SIMULATOR_DEBUG_PRINTING
 #ifdef MOTOR_SIMULATION
+#ifdef SIMULATOR_DEBUG_PRINTING
 #include <stdio.h>
 #define simulation_printf(...) printf(__VA_ARGS__)
+#else
+#define simulation_printf(...) ((void)0)
+#endif
 #else
 #define simulation_printf(...) ((void)0)
 #endif
@@ -303,12 +309,20 @@ static uint32_t calibration_index[3];
 
 struct capture_struct {
     uint8_t capture_type;
-    uint8_t avg_counter;
+    uint8_t channels_to_capture_bitmask;
+    uint16_t time_steps_per_sample;
+    uint16_t time_steps_elapsed;
+    uint16_t n_samples_to_sum;
+    uint8_t n_samples_summed;
     uint16_t hall1_sum;
     uint16_t hall2_sum;
     uint16_t hall3_sum;
+    uint16_t hall1_sum_snapshot;
+    uint16_t hall2_sum_snapshot;
+    uint16_t hall3_sum_snapshot;
+    uint8_t captured_point_valid;
 };
-struct capture_struct capture = {0};
+volatile struct capture_struct capture = {0};
 
 
 struct homing_struct {
@@ -532,7 +546,7 @@ void start_calibration(uint8_t print_output)
     GPIOA->BSRR = ((1 << 15) << 16); // reset the stepper motor driver
 #endif
 
-    simulation_printf("Your message here %hhu\n", print_output);
+    simulation_printf("Calibration start, print_output = %hhu\n", print_output);
     if(print_output) {
         rs485_transmit("Calibration start\n", 18);
     }
@@ -1229,51 +1243,124 @@ void handle_vibrate_logic_old(void)
 }
 #endif
 
-void start_capture(uint8_t capture_type)
+uint8_t get_hall_sensor_captured_point(captured_point_t *captured_point, uint16_t division_factor)
 {
+    if (!capture.captured_point_valid) {
+        return 0;
+    }
+
+    uint32_t h1ss;
+    uint32_t h2ss;
+    uint32_t h3ss;
+    __disable_irq();
+    h1ss = capture.hall1_sum_snapshot;
+    h2ss = capture.hall2_sum_snapshot;
+    h3ss = capture.hall3_sum_snapshot;
+    capture.captured_point_valid = 0;
+    __enable_irq();
+    captured_point->hall1 = h1ss / division_factor;
+    captured_point->hall2 = h2ss / division_factor;
+    captured_point->hall3 = h3ss / division_factor;
+    
+    return 1;
+}
+
+void start_or_stop_capture(uint8_t capture_type, uint8_t channels_to_capture_bitmask, uint16_t time_steps_per_sample, uint16_t n_samples_to_sum)
+{
+    if (capture_type == 0) {
+        capture.capture_type = 0;
+        return;
+    }
     print_debug_string("Capture start\n");
 
     __disable_irq();
 
-    memset(&capture, 0, sizeof(capture));
+    memset((void *)&capture, 0, sizeof(capture));
     capture.capture_type = capture_type;
+    capture.channels_to_capture_bitmask = channels_to_capture_bitmask;
+    capture.time_steps_per_sample = time_steps_per_sample;
+    capture.n_samples_to_sum = n_samples_to_sum;
 
     __enable_irq();
 }
 
 void capture_logic(void)
 {
-    int32_t adjusted_hall_sensor_readings[3];
-    static uint16_t counter = 0;
+    capture.time_steps_elapsed++;
+    if (capture.time_steps_elapsed < capture.time_steps_per_sample) {
+        return;
+    }
+    capture.time_steps_elapsed = 0;
 
     if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
-        if(counter == 0) {
-            counter = 256;
+        capture.hall1_sum += (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
+        capture.hall2_sum += (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
+        capture.hall3_sum += (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
+    }
+    else if(capture.capture_type == CAPTURE_HALL_POSITION) {
+        get_sensor_position_return_t get_sensor_position_return = get_sensor_position();
+        capture.hall1_sum += get_sensor_position_return.position;
+    }
+    else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
+        uint16_t hall_data_buffer[3];
+        hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
+        hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
+        hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
+        int32_t adjusted_hall_sensor_readings[3];
+        adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
+        capture.hall1_sum += (adjusted_hall_sensor_readings[0] >> 16) + 32768;
+        capture.hall2_sum += (adjusted_hall_sensor_readings[1] >> 16) + 32768;
+        capture.hall3_sum += (adjusted_hall_sensor_readings[2] >> 16) + 32768;
+    }
+    capture.n_samples_summed++;
+    
+    if(capture.n_samples_summed >= capture.n_samples_to_sum) {
+        if (capture.captured_point_valid) {
+            fatal_error(ERROR_CAPTURE_OVERFLOW);
+        }
+        capture.hall1_sum_snapshot = capture.hall1_sum;
+        capture.hall2_sum_snapshot = capture.hall2_sum;
+        capture.hall3_sum_snapshot = capture.hall3_sum;
+        capture.hall1_sum = 0;
+        capture.hall2_sum = 0;
+        capture.hall3_sum = 0;
+        capture.n_samples_summed = 0;
+        capture.captured_point_valid = 1;
+    }
+
+#if 0
+    uint16_t hall_data_buffer[3];
+    if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
+        if(capture.n_samples_summed >= capture.n_samples_to_sum) {
+            capture.n_samples_summed = 0;
             uint16_t hall_data_buffer[4];
             hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[3] = 65535;
+            if (capture.captured_point_valid) {
+                fatal_error();
+            }
+            capture.captured_point_valid = 1;
             rs485_transmit((char*)hall_data_buffer, sizeof(hall_data_buffer));
         }
-        counter--;
     }
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
-        if(counter == 0) {
-            counter = 256;
+        if(capture.n_samples_summed >= capture.n_samples_to_sum) {
+            capture.n_samples_summed = 0;
             get_sensor_position_return_t get_sensor_position_return = get_sensor_position();
             memcpy(hall_data_buffer, &get_sensor_position_return.position, sizeof(get_sensor_position_return.position));
             rs485_transmit((char*)&get_sensor_position_return.position, sizeof(get_sensor_position_return.position));
         }
-        counter--;
     }
     else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
-        if(counter == 0) {
-            counter = 256;
+        if(capture.n_samples_summed >= capture.n_samples_to_sum) {
+            capture.n_samples_summed = 0;
             uint16_t hall_data_buffer[4];
             hall_data_buffer[0] = (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[1] = (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
             hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
+            int32_t adjusted_hall_sensor_readings[3];
             adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
             hall_data_buffer[0] = (adjusted_hall_sensor_readings[0] >> 16) + 32768;
             hall_data_buffer[1] = (adjusted_hall_sensor_readings[1] >> 16) + 32768;
@@ -1281,8 +1368,9 @@ void capture_logic(void)
             hall_data_buffer[3] = 65535; // magic number to indicate the end of the data
             rs485_transmit((char*)hall_data_buffer, sizeof(hall_data_buffer));
         }
-        counter--;
     }
+    capture.n_samples_summed++;
+#endif
 }
 
 void start_homing(int32_t max_homing_displacement, uint32_t max_homing_time)
@@ -2295,6 +2383,9 @@ void motor_movement_calculations(void)
     }
     else if(calibration_step != 0) {
         handle_calibration_logic();
+    }
+    else if(capture.capture_type != 0) {
+        capture_logic();
     }
 #ifdef PRODUCT_NAME_M1
     else if(vibration_active) {

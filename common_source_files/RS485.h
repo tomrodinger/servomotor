@@ -9,7 +9,8 @@
 // Device ID bit manipulation constants
 #define FIRST_BYTE_LSB_MASK 0x01 // Mask for checking if LSB is set
 #define FIRST_BYTE_SHIFT 1 // Number of bits to shift for device ID interpretation
-#define DECODED_FIRST_BYTE_EXTENDED_SIZE (255 >> FIRST_BYTE_SHIFT) // If the first byte is this after decoding then we need to use extended sizing, which is that we take the packet size from the next two bytes (size can be 0 to 65535)
+#define FIRST_BYTE_EXTENDED_SIZE 255
+#define DECODED_FIRST_BYTE_EXTENDED_SIZE (FIRST_BYTE_EXTENDED_SIZE >> FIRST_BYTE_SHIFT) // If the first byte is this after decoding then we need to use extended sizing, which is that we take the packet size from the next two bytes (size can be 0 to 65535)
 // Reserved aliases with special meaning
 #define ALL_ALIAS 255 // to address all devices on the bus at the same time
 #define EXTENDED_ADDRESSING 254 // this is the character that is used to indicate that we will use extended addressing
@@ -60,5 +61,9 @@ void rs485_wait_for_transmit_done(void);
 uint8_t rs485_is_transmit_done(void);
 void rs485_transmit_no_error_packet(uint8_t is_broadcast);
 void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size);
+void rs485_start_the_packet(uint16_t payload_size);
+void rs485_continue_the_packet(void *s, uint8_t len);
+void rs485_end_the_packet(void);
+
 
 #endif /* SRC_RS485_H_ */

@@ -244,7 +244,6 @@ void process_packet(void)
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             transmit("Match\n", 6);
             rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
-            microsecond_delay(5000); // 5ms should be enough time to transmit the above debug message
             global_settings.my_alias = new_alias;
             save_global_settings();
         }
