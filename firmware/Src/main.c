@@ -41,7 +41,7 @@
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
 // compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
-#define SIMULATOR_DEBUG_PRINTING
+//#define SIMULATOR_DEBUG_PRINTING
 #ifdef MOTOR_SIMULATION
 #ifdef SIMULATOR_DEBUG_PRINTING
 #include <stdio.h>
@@ -306,6 +306,7 @@ void process_packet(void)
             simulation_printf("   hall_sensor_n_points_to_capture = %u\n", hall_sensor_n_points_to_capture);
             simulation_printf("   captured_point_division_factor = %hu\n", captured_point_division_factor);
             simulation_printf("   hall_sensor_point_size = %hhu\n",        hall_sensor_point_size);
+            print_debug_string("Capture start\n");
             start_or_stop_capture(capture_hall_sensor_data_input.capture_type,
                                   capture_hall_sensor_data_input.channels_to_capture_bitmask,
                                   capture_hall_sensor_data_input.time_steps_per_sample,
@@ -1247,6 +1248,7 @@ int main(void)
                     simulation_printf("Stopping the capture now\n");
                     start_or_stop_capture(0, 0, 0, 0);
                     rs485_end_the_packet();
+                    print_debug_string("Capture finished\n");
                 }
             }
         }

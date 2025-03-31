@@ -314,12 +314,12 @@ struct capture_struct {
     uint16_t time_steps_elapsed;
     uint16_t n_samples_to_sum;
     uint8_t n_samples_summed;
-    uint16_t hall1_sum;
-    uint16_t hall2_sum;
-    uint16_t hall3_sum;
-    uint16_t hall1_sum_snapshot;
-    uint16_t hall2_sum_snapshot;
-    uint16_t hall3_sum_snapshot;
+    uint32_t hall1_sum;
+    uint32_t hall2_sum;
+    uint32_t hall3_sum;
+    uint32_t hall1_sum_snapshot;
+    uint32_t hall2_sum_snapshot;
+    uint32_t hall3_sum_snapshot;
     uint8_t captured_point_valid;
 };
 volatile struct capture_struct capture = {0};
@@ -1271,8 +1271,7 @@ void start_or_stop_capture(uint8_t capture_type, uint8_t channels_to_capture_bit
         capture.capture_type = 0;
         return;
     }
-    print_debug_string("Capture start\n");
-
+    
     __disable_irq();
 
     memset((void *)&capture, 0, sizeof(capture));
@@ -1293,9 +1292,9 @@ void capture_logic(void)
     capture.time_steps_elapsed = 0;
 
     if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
-        capture.hall1_sum += (get_hall_sensor1_voltage() << 3) - HALL_SENSOR_SHIFT;
-        capture.hall2_sum += (get_hall_sensor2_voltage() << 3) - HALL_SENSOR_SHIFT;
-        capture.hall3_sum += (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
+        capture.hall1_sum += get_hall_sensor1_voltage();
+        capture.hall2_sum += get_hall_sensor2_voltage();
+        capture.hall3_sum += get_hall_sensor3_voltage();
     }
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
         get_sensor_position_return_t get_sensor_position_return = get_sensor_position();
@@ -1313,7 +1312,7 @@ void capture_logic(void)
         capture.hall3_sum += (adjusted_hall_sensor_readings[2] >> 16) + 32768;
     }
     capture.n_samples_summed++;
-    
+
     if(capture.n_samples_summed >= capture.n_samples_to_sum) {
         if (capture.captured_point_valid) {
             fatal_error(ERROR_CAPTURE_OVERFLOW);

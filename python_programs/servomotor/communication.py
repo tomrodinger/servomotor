@@ -106,6 +106,10 @@ def get_response(crc32_enabled=True, verbose=2):
     if remaining_bytes <= 0:
         raise CommunicationError(f"Error: there are less bytes than expected in the response")
     packet_data = ser.read(remaining_bytes)
+    if len(packet_data) != remaining_bytes:
+        while len(packet_data) < remaining_bytes:
+            more_packet_data = ser.read(remaining_bytes - len(packet_data))
+            packet_data += more_packet_data
 
     if len(packet_data) != remaining_bytes:
         raise CommunicationError(f"Error: received {len(packet_data)} bytes, expected {remaining_bytes}")
