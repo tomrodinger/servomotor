@@ -314,12 +314,8 @@ struct capture_struct {
     uint16_t time_steps_elapsed;
     uint16_t n_samples_to_sum;
     uint8_t n_samples_summed;
-    uint32_t hall1_sum;
-    uint32_t hall2_sum;
-    uint32_t hall3_sum;
-    uint32_t hall1_sum_snapshot;
-    uint32_t hall2_sum_snapshot;
-    uint32_t hall3_sum_snapshot;
+    uint32_t hall_sum[3];
+    uint32_t hall_sum_snapshot[3];
     uint8_t captured_point_valid;
 };
 volatile struct capture_struct capture = {0};
@@ -1249,19 +1245,19 @@ uint8_t get_hall_sensor_captured_point(captured_point_t *captured_point, uint16_
         return 0;
     }
 
-    uint32_t h1ss;
-    uint32_t h2ss;
-    uint32_t h3ss;
+    uint32_t hss[3];
     __disable_irq();
-    h1ss = capture.hall1_sum_snapshot;
-    h2ss = capture.hall2_sum_snapshot;
-    h3ss = capture.hall3_sum_snapshot;
+    hss[0] = capture.hall_sum_snapshot[0];
+    hss[1] = capture.hall_sum_snapshot[1];
+    hss[2] = capture.hall_sum_snapshot[2];
     capture.captured_point_valid = 0;
     __enable_irq();
-    captured_point->hall1 = h1ss / division_factor;
-    captured_point->hall2 = h2ss / division_factor;
-    captured_point->hall3 = h3ss / division_factor;
-    
+    uint8_t hall_number = 0;
+    for (uint8_t bit = 0; bit < 3; bit++) {
+        if ((capture.channels_to_capture_bitmask >> bit) & 1) {
+            captured_point->hall[hall_number++] = hss[bit] / division_factor;
+        }
+    }
     return 1;
 }
 
@@ -1292,13 +1288,13 @@ void capture_logic(void)
     capture.time_steps_elapsed = 0;
 
     if(capture.capture_type == CAPTURE_HALL_SENSOR_READINGS) {
-        capture.hall1_sum += get_hall_sensor1_voltage();
-        capture.hall2_sum += get_hall_sensor2_voltage();
-        capture.hall3_sum += get_hall_sensor3_voltage();
+        capture.hall_sum[0] += get_hall_sensor1_voltage();
+        capture.hall_sum[1] += get_hall_sensor2_voltage();
+        capture.hall_sum[2] += get_hall_sensor3_voltage();
     }
     else if(capture.capture_type == CAPTURE_HALL_POSITION) {
         get_sensor_position_return_t get_sensor_position_return = get_sensor_position();
-        capture.hall1_sum += get_sensor_position_return.position;
+        capture.hall_sum[0] += get_sensor_position_return.position;
     }
     else if(capture.capture_type == CAPTURE_ADJUSTED_HALL_SENSOR_READINGS) {
         uint16_t hall_data_buffer[3];
@@ -1307,9 +1303,9 @@ void capture_logic(void)
         hall_data_buffer[2] = (get_hall_sensor3_voltage() << 3) - HALL_SENSOR_SHIFT;
         int32_t adjusted_hall_sensor_readings[3];
         adjust_hall_sensor_readings(hall_data_buffer, adjusted_hall_sensor_readings);
-        capture.hall1_sum += (adjusted_hall_sensor_readings[0] >> 16) + 32768;
-        capture.hall2_sum += (adjusted_hall_sensor_readings[1] >> 16) + 32768;
-        capture.hall3_sum += (adjusted_hall_sensor_readings[2] >> 16) + 32768;
+        capture.hall_sum[0] += (adjusted_hall_sensor_readings[0] >> 16) + 32768;
+        capture.hall_sum[1] += (adjusted_hall_sensor_readings[1] >> 16) + 32768;
+        capture.hall_sum[2] += (adjusted_hall_sensor_readings[2] >> 16) + 32768;
     }
     capture.n_samples_summed++;
 
@@ -1317,12 +1313,10 @@ void capture_logic(void)
         if (capture.captured_point_valid) {
             fatal_error(ERROR_CAPTURE_OVERFLOW);
         }
-        capture.hall1_sum_snapshot = capture.hall1_sum;
-        capture.hall2_sum_snapshot = capture.hall2_sum;
-        capture.hall3_sum_snapshot = capture.hall3_sum;
-        capture.hall1_sum = 0;
-        capture.hall2_sum = 0;
-        capture.hall3_sum = 0;
+        for (uint8_t bit = 0; bit < 3; bit++) {
+            capture.hall_sum_snapshot[bit] = capture.hall_sum[bit];
+            capture.hall_sum[bit] = 0;
+        }
         capture.n_samples_summed = 0;
         capture.captured_point_valid = 1;
     }

@@ -140,9 +140,7 @@ void print_queue_stats(void);
 void start_or_stop_capture(uint8_t capture_type, uint8_t channels_to_capture_bitmask, uint16_t time_steps_per_sample, uint16_t n_samples_to_sum);
 
 typedef struct __attribute__((__packed__)) {
-    uint16_t hall1;
-    uint16_t hall2;
-    uint16_t hall3;
+    uint16_t hall[3];
 } captured_point_t;
 uint8_t get_hall_sensor_captured_point(captured_point_t *captured_point, uint16_t division_factor);
 

@@ -52,7 +52,8 @@ typedef enum {
     ERROR_POSITION_DEVIATION_TOO_LARGE = 45,
     ERROR_MOVE_TOO_FAR = 46,
     ERROR_HALL_POSITION_DELTA_TOO_LARGE = 47,
-    ERROR_INVALID_FIRST_BYTE = 48
+    ERROR_INVALID_FIRST_BYTE = 48,
+    ERROR_CAPTURE_BAD_PARAMETERS = 49
 } error_code_t;
 
 #define ERROR_TEXT_INITIALIZER \
@@ -105,6 +106,7 @@ typedef enum {
     "move too far\0"                          /* ERROR_MOVE_TOO_FAR */ \
     "hall position delta too large\0"         /* ERROR_HALL_POSITION_DELTA_TOO_LARGE */ \
     "invalid first byte format\0"             /* ERROR_INVALID_FIRST_BYTE */ \
+    "capture bad parameters\0"                /* ERROR_CAPTURE_BAD_PARAMETERS */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

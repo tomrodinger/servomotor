@@ -281,6 +281,21 @@ void process_packet(void)
             capture_hall_sensor_data_input_t capture_hall_sensor_data_input;
             memcpy(&capture_hall_sensor_data_input, payload, sizeof(capture_hall_sensor_data_input));
             rs485_done_with_this_packet();
+            if ( !((capture_hall_sensor_data_input.capture_type == 1) ||
+                   (capture_hall_sensor_data_input.capture_type == 2) ||
+                   (capture_hall_sensor_data_input.capture_type == 3))  ) {
+                fatal_error(ERROR_CAPTURE_BAD_PARAMETERS);
+            }
+            if ( (capture_hall_sensor_data_input.n_points_to_capture == 0) ||
+                 (capture_hall_sensor_data_input.time_steps_per_sample == 0) ||
+                 (capture_hall_sensor_data_input.n_samples_to_sum == 0) ||
+                 (capture_hall_sensor_data_input.division_factor == 0)         ) {
+                fatal_error(ERROR_CAPTURE_BAD_PARAMETERS);
+            }
+            if (((capture_hall_sensor_data_input.channels_to_capture_bitmask & 7) == 0) ||
+                ((capture_hall_sensor_data_input.channels_to_capture_bitmask & (~7)) != 0)) {
+                fatal_error(ERROR_CAPTURE_BAD_PARAMETERS);
+            }
             uint16_t n_channels = 0;
             for (uint16_t i = 0; i < 3; i++) {
                 if (capture_hall_sensor_data_input.channels_to_capture_bitmask & (1 << i)) {
@@ -1310,5 +1325,9 @@ void main_simulation_init(void)
     detect_devices_delay = -1;
     green_led_action_counter = 0;
     n_identify_flashes = 0;
+
+    hall_sensor_n_points_to_capture = 0;
+    hall_sensor_point_size = 0;
+    captured_point_division_factor = 1;
 }
 #endif
