@@ -32,7 +32,7 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);	/* end of "RAM" Ram type memory */
 
 _Min_Heap_Size = 0x000;	/* required amount of heap  */
 //_Min_Stack_Size = 0x3e0;	/* required amount of stack */
-_Min_Stack_Size = 0x400;	/* required amount of stack */
+_Min_Stack_Size = 0x500;	/* required amount of stack */ /* DEBUG increasing the stack size from 0x400 to 0x500 bytes */
 
 /* Memories definition */
 MEMORY

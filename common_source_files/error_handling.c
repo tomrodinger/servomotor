@@ -108,8 +108,7 @@ void fatal_error(uint16_t error_code)
     const char *message;
 
 #ifdef MOTOR_SIMULATION
-    // Clear the exit fatal error flag at the beginning
-//    gExitFatalError = 0;
+//    gExitFatalError = 0; // Clear the exit fatal error flag at the beginning
     
     const char *debug_message;
     debug_message = get_error_text(error_code);

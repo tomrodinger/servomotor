@@ -815,6 +815,22 @@
                 "Give a value that is 1 or higher",
                 "Normally, 7 specifies that all three channels should be captured. If you want to capture just one channel, choose either 1 (first channel only), 2 (second channel only), or 4 (third channel only)."
             ]
+        },
+        {
+            "code": 50,
+            "enum": "ERROR_COMMAND_SIZE_WRONG",
+            "short_desc": "command size wrong",
+            "long_desc": "The payload sent with the command does not match the expected size of the input parameters",
+            "causes": [
+                "You have sent a command that does not have the expected parameters or sizes of parameters",
+                "Data was corrupted somehow during transmission over RS485 and you do not have CRC32 enabled to ensure integrity",
+                "You have not used the communication protocol correctly. For instance, you did not encode the size of the packet correctly."
+            ],
+            "solutions": [
+                "Make sure to send the correct parameters with all the correct size, Look at motor_commands.json for the details about every command and its parameters",
+                "Ensure good connections and grounding on the communication line and use CRC32 to ensure packet integrity",
+                "Check the documentation about the protocol and make sure that the packet you are sending is correctly formatted and that the packet size is right"
+            ]
         }
     ]
 }

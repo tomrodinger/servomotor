@@ -62,8 +62,8 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t not_used;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 9
-#define BUGFIX_FIRMWARE_VERSION 1
+#define MINOR_FIRMWARE_VERSION 10
+#define BUGFIX_FIRMWARE_VERSION 0
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -178,24 +178,21 @@ void set_led_test_mode(uint8_t colours)
 }
 
 
+void copy_input_parameters_and_check_size(void *destination, const void *source, uint32_t destination_size, uint32_t source_size)
+{
+    if (destination_size != source_size) {
+        fatal_error(ERROR_COMMAND_SIZE_WRONG);
+    }
+    memcpy(destination, source, destination_size);
+}
+
+
 void process_packet(void)
 {
     uint8_t command;
     uint16_t payload_size;
     uint8_t *payload;
     uint8_t is_broadcast;
-
-    struct move_parameters_struct {
-        union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
-            int32_t acceleration;
-            int32_t velocity;
-        };
-        int32_t time_steps;
-    };
-    struct multi_move_command_buffer_struct {
-        uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
-        struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
-    };
 
     // There is a distinct possibility that the new packet is not for us. We will know after we see the return value of rs485_get_next_packet.
     if (!rs485_get_next_packet(&command, &payload_size, &payload, &is_broadcast)) {
@@ -231,10 +228,13 @@ void process_packet(void)
         break;
     case TRAPEZOID_MOVE_COMMAND:
         {
-            int32_t trapezoid_move_displacement = ((int32_t*)payload)[0];
-            uint32_t trapezoid_move_time = ((uint32_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int32_t displacement;
+                uint32_t time;
+            } trapezoid_move_inputs;
+            copy_input_parameters_and_check_size(&trapezoid_move_inputs, payload, sizeof(trapezoid_move_inputs), TRAPEZOID_MOVE_COMMAND_SIZE);
             rs485_done_with_this_packet();
-            add_trapezoid_move_to_queue(trapezoid_move_displacement, trapezoid_move_time);
+            add_trapezoid_move_to_queue(trapezoid_move_inputs.displacement, trapezoid_move_inputs.time);
         }
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
@@ -567,9 +567,22 @@ void process_packet(void)
         break;
     case MULTI_MOVE_COMMAND:
         {
+            struct move_parameters_struct {
+                union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
+                    int32_t acceleration;
+                    int32_t velocity;
+                };
+                int32_t time_steps;
+            };
+            struct multi_move_command_buffer_struct {
+                uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
+                struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
+            };
             uint8_t n_moves_in_this_command = ((int8_t*)payload)[0];
             struct multi_move_command_buffer_struct multi_move_command_buffer;
+
             memcpy(&multi_move_command_buffer, (void*)(payload + 1), sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
+
             rs485_done_with_this_packet();
     //            char buf[100];
     //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
@@ -1231,7 +1244,7 @@ int main(void)
         // When building the simulator, this runs the simulator's logic, timing, and visualization code.
         motor_simulator_visualization();
         #endif
-                
+
         if(rs485_has_a_packet()) {
             if((detect_devices_delay >= 0) || (hall_sensor_n_points_to_capture > 0)) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID. Also, if we are capturing the hall sensor data then also we will ignore commands because if there are commands then that is wrong use of the protocol.
                 rs485_done_with_this_packet();

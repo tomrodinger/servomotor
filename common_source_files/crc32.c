@@ -33,7 +33,7 @@ uint32_t calculate_crc32_buffer(void *buffer, uint32_t len)
     for(i = 0; i < len; i++) {
         ((uint8_t *)(&CRC->DR))[0] = *(b++);
     }
-    return CRC->DR;
+    return ~CRC->DR;
 }
 
 uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t len)
@@ -44,11 +44,11 @@ uint32_t calculate_crc32_buffer_without_reinit(void *buffer, uint32_t len)
     for(i = 0; i < len; i++) {
         ((uint8_t *)(&CRC->DR))[0] = *(b++);
     }
-    return CRC->DR;
+    return ~CRC->DR;
 }
 
 uint32_t get_crc32(void)
 {
-    return CRC->DR;
+    return ~CRC->DR;
 }
 
