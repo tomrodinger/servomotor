@@ -818,6 +818,18 @@
         },
         {
             "code": 50,
+            "enum": "ERROR_BAD_ALIAS",
+            "short_desc": "bad alias",
+            "long_desc": "You tried to set the device to one of the reserved aliases such as 254, 253, or 252",
+            "causes": [
+                "You tried to set the device to one of the reserved aliases such as 254, 253, or 252, which is not allowed. These aliases have special purposes."
+            ],
+            "solutions": [
+                "When using the Set device alias command, make sure to use an allowed alias, which is 0 to 251. You can also set the alias to 255, which is the broadcast alias, which is similar like having no alias set."
+            ]
+        },
+        {
+            "code": 51,
             "enum": "ERROR_COMMAND_SIZE_WRONG",
             "short_desc": "command size wrong",
             "long_desc": "The payload sent with the command does not match the expected size of the input parameters",
@@ -830,6 +842,20 @@
                 "Make sure to send the correct parameters with all the correct size, Look at motor_commands.json for the details about every command and its parameters",
                 "Ensure good connections and grounding on the communication line and use CRC32 to ensure packet integrity",
                 "Check the documentation about the protocol and make sure that the packet you are sending is correctly formatted and that the packet size is right"
+            ]
+        },
+        {
+            "code": 52,
+            "enum": "ERROR_INVALID_FLASH_PAGE",
+            "short_desc": "invalid flash page",
+            "long_desc": "You are sending a firmware packet and the specified firmware page to be written is not valid and out of range",
+            "causes": [
+                "You have sent a firmware upgrade packet and the specified firmware page is not one that can be written. Maybe the firmware size that you are trying to write is too big?",
+                "The packet is encoded wrong"
+            ],
+            "solutions": [
+                "Make sure to send the correct firmware page numbers and ensure the firmware is not too big. You can look at the FIRST_FIRMWARE_PAGE_NUMBER and LAST_FIRMWARE_PAGE_NUMBER settings in settings.h",
+                "Study the protocol and make sure that everything is encoded right"
             ]
         }
     ]

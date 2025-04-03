@@ -186,6 +186,13 @@ void copy_input_parameters_and_check_size(void *destination, const void *source,
     memcpy(destination, source, destination_size);
 }
 
+void check_payload_size_is_zero(uint16_t payload_size)
+{
+    if (payload_size != 0) {
+        fatal_error(ERROR_COMMAND_SIZE_WRONG);
+    }
+}
+
 
 void process_packet(void)
 {
@@ -217,11 +224,13 @@ void process_packet(void)
 
     switch(command) {
     case DISABLE_MOSFETS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         disable_mosfets();
         rs485_transmit_no_error_packet(is_broadcast);
         break;
     case ENABLE_MOSFETS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         check_current_sensor_and_enable_mosfets();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
@@ -232,7 +241,7 @@ void process_packet(void)
                 int32_t displacement;
                 uint32_t time;
             } trapezoid_move_inputs;
-            copy_input_parameters_and_check_size(&trapezoid_move_inputs, payload, sizeof(trapezoid_move_inputs), TRAPEZOID_MOVE_COMMAND_SIZE);
+            copy_input_parameters_and_check_size(&trapezoid_move_inputs, payload, sizeof(trapezoid_move_inputs), payload_size);
             rs485_done_with_this_packet();
             add_trapezoid_move_to_queue(trapezoid_move_inputs.displacement, trapezoid_move_inputs.time);
         }
@@ -240,7 +249,8 @@ void process_packet(void)
         break;
     case SET_MAX_VELOCITY_COMMAND:
         {
-            uint32_t max_velocity = *(uint32_t*)payload;
+            uint32_t max_velocity;
+            copy_input_parameters_and_check_size(&max_velocity, payload, sizeof(max_velocity), payload_size);
             rs485_done_with_this_packet();
             set_max_velocity(max_velocity);
         }
@@ -248,22 +258,27 @@ void process_packet(void)
         break;
     case GO_TO_POSITION_COMMAND:
         {
-            int32_t end_position = ((int32_t*)payload)[0];
-            uint32_t move_time = ((uint32_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int32_t end_position;
+                uint32_t move_time;
+            } go_to_position_input;
+            copy_input_parameters_and_check_size(&go_to_position_input, payload, sizeof(go_to_position_input), payload_size);
             rs485_done_with_this_packet();
-            add_go_to_position_to_queue(end_position, move_time);
+            add_go_to_position_to_queue(go_to_position_input.end_position, go_to_position_input.move_time);
         }
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case SET_MAX_ACCELERATION_COMMAND:
         {
-            uint32_t max_acceleration = *(uint32_t*)payload;
+            uint32_t max_acceleration;
+            copy_input_parameters_and_check_size(&max_acceleration, payload, sizeof(max_acceleration), payload_size);
             rs485_done_with_this_packet();
             set_max_acceleration(max_acceleration);
         }
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case START_CALIBRATION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         start_calibration(0);
@@ -279,7 +294,7 @@ void process_packet(void)
                 uint16_t division_factor;
             } capture_hall_sensor_data_input_t;
             capture_hall_sensor_data_input_t capture_hall_sensor_data_input;
-            memcpy(&capture_hall_sensor_data_input, payload, sizeof(capture_hall_sensor_data_input));
+            copy_input_parameters_and_check_size(&capture_hall_sensor_data_input, payload, sizeof(capture_hall_sensor_data_input), payload_size);
             rs485_done_with_this_packet();
             if ( !((capture_hall_sensor_data_input.capture_type == 1) ||
                    (capture_hall_sensor_data_input.capture_type == 2) ||
@@ -329,11 +344,13 @@ void process_packet(void)
         }
         break;
     case RESET_TIME_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         reset_time();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case GET_CURRENT_TIME_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -348,7 +365,7 @@ void process_packet(void)
     case TIME_SYNC_COMMAND:
         {
             uint64_t time_from_master;
-            memcpy(&time_from_master, (void*)payload, 6); // Typecast to discard the volatile qualifier. I am not sure how to do this a better way.
+            copy_input_parameters_and_check_size(&time_from_master, payload, 6, payload_size);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
                 struct __attribute__((__packed__)) {
@@ -364,6 +381,7 @@ void process_packet(void)
         }
         break;
     case GET_N_ITEMS_IN_QUEUE_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -376,28 +394,34 @@ void process_packet(void)
         }
         break;
     case EMERGENCY_STOP_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         emergency_stop();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case ZERO_POSITION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         zero_position();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case HOMING_COMMAND:
         {
-            int32_t max_homing_travel_displacement = ((int32_t*)payload)[0];
-            uint32_t max_homing_time = ((uint32_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int32_t max_homing_travel_displacement;
+                uint32_t max_homing_time;
+            } homing_input;
+            copy_input_parameters_and_check_size(&homing_input, payload, sizeof(homing_input), payload_size);
             rs485_done_with_this_packet();
             char buf[100];
-            sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", max_homing_travel_displacement, max_homing_time);
+            sprintf(buf, "homing: max_homing_travel_displacement: " _PRId32 "   max_homing_time: " _PRIu32 "\n", homing_input.max_homing_travel_displacement, homing_input.max_homing_time);
             print_debug_string(buf);
-            start_homing(max_homing_travel_displacement, max_homing_time);
+            start_homing(homing_input.max_homing_travel_displacement, homing_input.max_homing_time);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case GET_POSITION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -410,6 +434,7 @@ void process_packet(void)
         }
         break;
     case GET_HALL_SENSOR_POSITION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -422,6 +447,7 @@ void process_packet(void)
         }
         break;
     case GET_COMPREHENSIVE_POSITION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
@@ -440,6 +466,7 @@ void process_packet(void)
         }
         break;
     case GET_STATUS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -457,11 +484,13 @@ void process_packet(void)
         }
         break;
     case GO_TO_CLOSED_LOOP_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         start_go_to_closed_loop_mode();
         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         break;
     case GET_PRODUCT_SPECS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -477,24 +506,34 @@ void process_packet(void)
         break;
     case MOVE_WITH_ACCELERATION_COMMAND:
         {
-            int32_t acceleration = ((int32_t*)payload)[0];
-            uint32_t time_steps = ((uint32_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int32_t acceleration;
+                uint32_t time_steps;
+            } acceleration_input;
+            copy_input_parameters_and_check_size(&acceleration_input, payload, sizeof(acceleration_input), payload_size);
             rs485_done_with_this_packet();
         //            char buf[100];
-        //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration, time_steps);
+        //            sprintf(buf, "move_with_acceleration: %ld %lu\n", acceleration_input.acceleration, acceleration_input.time_steps);
         //            print_debug_string(buf);
-            add_to_queue(acceleration, time_steps, MOVE_WITH_ACCELERATION);
+            add_to_queue(acceleration_input.acceleration, acceleration_input.time_steps, MOVE_WITH_ACCELERATION);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case DETECT_DEVICES_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         detect_devices_delay = get_random_number(99);
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
-            uint8_t new_alias = payload[0];
+            uint8_t new_alias;
+            copy_input_parameters_and_check_size(&new_alias, payload, sizeof(new_alias), payload_size);
             rs485_done_with_this_packet();
+            if ( (new_alias == EXTENDED_ADDRESSING              ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_ENABLED ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_DISABLED)    ) {
+                fatal_error(ERROR_BAD_ALIAS);
+            }
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
             rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
@@ -504,6 +543,7 @@ void process_packet(void)
         }
         break;
     case GET_PRODUCT_INFO_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -517,6 +557,7 @@ void process_packet(void)
         }
         break;
     case GET_PRODUCT_DESCRIPTION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -529,6 +570,7 @@ void process_packet(void)
         }
         break;
     case GET_FIRMWARE_VERSION_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -542,47 +584,63 @@ void process_packet(void)
         break;
     case MOVE_WITH_VELOCITY_COMMAND:
         {
-            int32_t velocity = ((int32_t*)payload)[0];
-            uint32_t time_steps;
-            time_steps = ((uint32_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int32_t velocity;
+                uint32_t time_steps;
+            } velocity_input;
+            copy_input_parameters_and_check_size(&velocity_input, payload, sizeof(velocity_input), payload_size);
             rs485_done_with_this_packet();
     //            char buf[100];
-    //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity, time_steps);
+    //            sprintf(buf, "move_with_velocity: %ld %lu\n", velocity_input.velocity, velocity_input.time_steps);
     //            print_debug_string(buf);
-            add_to_queue(velocity, time_steps, MOVE_WITH_VELOCITY);
+            add_to_queue(velocity_input.velocity, velocity_input.time_steps, MOVE_WITH_VELOCITY);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case SYSTEM_RESET_COMMAND:
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
         NVIC_SystemReset();
         break;
     case SET_MAXIMUM_MOTOR_CURRENT:
         {
-            uint16_t new_maximum_motor_current = ((uint16_t*)payload)[0];
-            uint16_t new_maximum_motor_regen_current = ((uint16_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                uint16_t new_maximum_motor_current;
+                uint16_t new_maximum_motor_regen_current;
+            } current_input;
+            copy_input_parameters_and_check_size(&current_input, payload, sizeof(current_input), payload_size);
             rs485_done_with_this_packet();
-            set_max_motor_current(new_maximum_motor_current, new_maximum_motor_regen_current);
+            set_max_motor_current(current_input.new_maximum_motor_current, current_input.new_maximum_motor_regen_current);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case MULTI_MOVE_COMMAND:
         {
-            struct move_parameters_struct {
+            typedef struct __attribute__((__packed__)) {
                 union { // if the bitfield shows a 0 for this move then this parameter represents the acceleration, otherwise it represents the velocity
                     int32_t acceleration;
                     int32_t velocity;
                 };
                 int32_t time_steps;
-            };
-            struct multi_move_command_buffer_struct {
-                uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
-                struct move_parameters_struct move_parameters[MAX_MULTI_MOVES];
-            };
+            } move_parameters_t;
+
+            // First check if we have at least one byte for n_moves_in_this_command
+            if (payload_size < 1) {
+                fatal_error(ERROR_COMMAND_SIZE_WRONG);
+            }
             uint8_t n_moves_in_this_command = ((int8_t*)payload)[0];
-            struct multi_move_command_buffer_struct multi_move_command_buffer;
 
-            memcpy(&multi_move_command_buffer, (void*)(payload + 1), sizeof(int32_t) + n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t)));
-
+            typedef struct __attribute__((__packed__)) {
+                uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
+//                move_parameters_t move_parameters[MAX_MULTI_MOVES];
+                move_parameters_t move_parameters[n_moves_in_this_command];
+            } multi_move_command_buffer_t;
+            multi_move_command_buffer_t multi_move_command_buffer;
+            
+            // Calculate the expected payload size: 1 byte for n_moves + 4 bytes for move_type_bits + n_moves * 8 bytes for parameters
+//            uint16_t expected_size = sizeof(n_moves_in_this_command) + sizeof(multi_move_command_buffer.move_type_bits) + n_moves_in_this_command * sizeof(multi_move_command_buffer.move_parameters);
+            uint16_t expected_size = sizeof(n_moves_in_this_command) + sizeof(multi_move_command_buffer);
+            copy_input_parameters_and_check_size(&multi_move_command_buffer, payload + 1, expected_size, payload_size - 1);
             rs485_done_with_this_packet();
     //            char buf[100];
     //            sprintf(buf, "multimove: %hu   %lu\n", n_moves_in_this_command, multi_move_command_buffer.move_type_bits);
@@ -609,27 +667,37 @@ void process_packet(void)
         break;
     case SET_SAFETY_LIMITS_COMMAND:
         {
-            int64_t lower_limit = ((int64_t*)payload)[0];
-            int64_t upper_limit = ((int64_t*)payload)[1];
+            struct __attribute__((__packed__)) {
+                int64_t lower_limit;
+                int64_t upper_limit;
+            } limits_input;
+            copy_input_parameters_and_check_size(&limits_input, payload, sizeof(limits_input), payload_size);
             rs485_done_with_this_packet();
     //            char buf[100];
-    //            sprintf(buf, "movement limits %ld to %ld\n", lower_limit, upper_limit);
+    //            sprintf(buf, "movement limits %ld to %ld\n", limits_input.lower_limit, limits_input.upper_limit);
     //            print_debug_string(buf);
-            set_movement_limits(lower_limit, upper_limit);
-            print_int64("lower_limit:", lower_limit);
-            print_int64("upper_limit:", upper_limit);
+            set_movement_limits(limits_input.lower_limit, limits_input.upper_limit);
+            print_int64("lower_limit:", limits_input.lower_limit);
+            print_int64("upper_limit:", limits_input.upper_limit);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case ADD_TO_QUEUE_TEST_COMMAND:
         {
             struct __attribute__((__packed__)) {
+                int32_t param1;
+                uint32_t param2;
+                uint8_t param3;
+            } queue_test_input;
+            copy_input_parameters_and_check_size(&queue_test_input, payload, sizeof(queue_test_input), payload_size);
+            rs485_done_with_this_packet();
+            
+            struct __attribute__((__packed__)) {
                 uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 add_to_queue_test_results_t add_to_queue_test_results;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } add_to_queue_test_reply;
-            add_to_queue_test(((int32_t*)payload)[0], ((uint32_t*)payload)[1], ((uint8_t*)payload)[8], &add_to_queue_test_reply.add_to_queue_test_results);
-            rs485_done_with_this_packet();
+            add_to_queue_test(queue_test_input.param1, queue_test_input.param2, queue_test_input.param3, &add_to_queue_test_reply.add_to_queue_test_results);
             if(!is_broadcast) {
                 rs485_finalize_and_transmit_packet(&add_to_queue_test_reply, sizeof(add_to_queue_test_reply));
             }
@@ -642,7 +710,7 @@ void process_packet(void)
                 uint8_t ping_payload[PING_PAYLOAD_SIZE];
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } ping_reply;
-            memcpy(ping_reply.ping_payload, payload, PING_PAYLOAD_SIZE);
+            copy_input_parameters_and_check_size(ping_reply.ping_payload, payload, sizeof(ping_reply.ping_payload), payload_size);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
                 rs485_finalize_and_transmit_packet(&ping_reply, sizeof(ping_reply));
@@ -651,7 +719,8 @@ void process_packet(void)
         break;
     case CONTROL_HALL_SENSOR_STATISTICS_COMMAND:
         {
-            uint8_t control_hall_sensor_statistics_subcommand = ((int8_t*)payload)[0];
+            uint8_t control_hall_sensor_statistics_subcommand;
+            copy_input_parameters_and_check_size(&control_hall_sensor_statistics_subcommand, payload, sizeof(control_hall_sensor_statistics_subcommand), payload_size);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
                 if(control_hall_sensor_statistics_subcommand == 0) {
@@ -665,6 +734,7 @@ void process_packet(void)
         }
         break;
     case GET_HALL_SENSOR_STATISTICS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -677,6 +747,7 @@ void process_packet(void)
         }
         break;
     case READ_MULTIPURPOSE_BUFFER_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             uint8_t data_type;
@@ -730,6 +801,7 @@ void process_packet(void)
         }
         break;
     case GET_SUPPLY_VOLTAGE_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
@@ -744,6 +816,7 @@ void process_packet(void)
         }
         break;
     case GET_MAX_PID_ERROR_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
@@ -764,7 +837,8 @@ void process_packet(void)
         break;
     case TEST_MODE_COMMAND:
         {
-            uint8_t test_mode = payload[0];
+            uint8_t test_mode;
+            copy_input_parameters_and_check_size(&test_mode, payload, sizeof(test_mode), payload_size);
             rs485_done_with_this_packet();
             if (test_mode == 0) {
                 set_motor_test_mode(0);
@@ -784,7 +858,8 @@ void process_packet(void)
         break;
     case VIBRATE_COMMAND:
         {
-            uint8_t vibration_level = payload[0];
+            uint8_t vibration_level;
+            copy_input_parameters_and_check_size(&vibration_level, payload, sizeof(vibration_level), payload_size);
             rs485_done_with_this_packet();
             vibrate(vibration_level);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
@@ -799,17 +874,17 @@ void process_packet(void)
         }
         break;
     case IDENTIFY_COMMAND:
-        {
-            rs485_done_with_this_packet();
-            SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
-            green_led_action_counter = 0;
-            n_identify_flashes = 30;
-            SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
-            print_debug_string("Identifying\n");
-            rs485_transmit_no_error_packet(is_broadcast);
-        }
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
+        SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; // temporarily disable the SysTick interrupt
+        green_led_action_counter = 0;
+        n_identify_flashes = 30;
+        SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; // reneable the interrupt
+        print_debug_string("Identifying\n");
+        rs485_transmit_no_error_packet(is_broadcast);
         break;
     case GET_TEMPERATURE_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         {
             struct __attribute__((__packed__)) {
@@ -825,27 +900,32 @@ void process_packet(void)
         break;
     case SET_PID_CONSTANTS_COMMAND:
         {
-            uint32_t p = ((uint32_t*)payload)[0];
-            uint32_t i = ((uint32_t*)payload)[1];
-            uint32_t d = ((uint32_t*)payload)[2];
+            struct __attribute__((__packed__)) {
+                uint32_t p;
+                uint32_t i;
+                uint32_t d;
+            } pid_constants;
+            copy_input_parameters_and_check_size(&pid_constants, payload, sizeof(pid_constants), payload_size);
             rs485_done_with_this_packet();
             char buf[100];
-            sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", p, i, d);
+            sprintf(buf, "PID constants: " _PRIu32 ", " _PRIu32 ", " _PRIu32 "\n", pid_constants.p, pid_constants.i, pid_constants.d);
             print_debug_string(buf);
-            set_pid_constants(p, i, d);
+            set_pid_constants(pid_constants.p, pid_constants.i, pid_constants.d);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case SET_MAX_ALLOWABLE_POSITION_DEVIATION:
         {
-            int64_t new_max_allowable_position_deviation = llabs(((int64_t*)payload)[0]);
+            int64_t new_max_allowable_position_deviation;
+            copy_input_parameters_and_check_size(&new_max_allowable_position_deviation, payload, sizeof(new_max_allowable_position_deviation), payload_size);
             rs485_done_with_this_packet();
-            set_max_allowable_position_deviation(new_max_allowable_position_deviation);
+            set_max_allowable_position_deviation(llabs(new_max_allowable_position_deviation));
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         }
         break;
     case GET_DEBUG_VALUES_COMMAND:
         {
+            check_payload_size_is_zero(payload_size);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
                 int64_t max_acceleration;
@@ -960,7 +1040,8 @@ void process_packet(void)
         break;
     case CRC32_CONTROL_COMMAND:
         {
-            uint8_t crc32_enable_new_state = payload[0];
+            uint8_t crc32_enable_new_state;
+            copy_input_parameters_and_check_size(&crc32_enable_new_state, payload, sizeof(crc32_enable_new_state), payload_size);
             rs485_done_with_this_packet();
             rs485_set_crc32_enable(crc32_enable_new_state);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
@@ -968,7 +1049,8 @@ void process_packet(void)
         break;        
     case GET_COMMUNICATION_STATISTICS_COMMAND:
         {
-            uint8_t reset_statistics = payload[0];
+            uint8_t reset_statistics;
+            copy_input_parameters_and_check_size(&reset_statistics, payload, sizeof(reset_statistics), payload_size);
             rs485_done_with_this_packet();
             {            
                 if(!is_broadcast) {

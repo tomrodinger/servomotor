@@ -225,7 +225,7 @@ uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t 
             uint64_t our_device_id = get_unique_id();
             uint64_t *received_unique_id = (uint64_t *)&receiveBuffers[receiveBufferReadPosition][bytes_parsed];
             simulation_printf("         deviceID indicates extended addressing with the character (%u)   our_device_id = %llX   *received_unique_id = %llX.\n", EXTENDED_ADDRESSING, our_device_id, *received_unique_id);
-            if (*received_unique_id != our_device_id) {
+            if (memcmp(received_unique_id, &our_device_id, sizeof(our_device_id)) != 0) {
                 simulation_printf("         *received_unique_id != our_device_id. returning.\n");
                 return 0; // extended addressing was used but the unique ID did not match and so this packet is not for us
             }
@@ -287,7 +287,7 @@ uint8_t rs485_validate_packet_crc32(void)
     }
 
     uint32_t received_crc32;
-    memcpy(&received_crc32, (void* )&receiveBuffers[receiveBufferReadPosition][packet_size - sizeof(uint32_t)], sizeof(uint32_t));
+    memcpy(&received_crc32, (void *)&receiveBuffers[receiveBufferReadPosition][packet_size - sizeof(uint32_t)], sizeof(uint32_t));
     simulation_printf("         received_crc32 = %X\n", received_crc32);
     if (packet_size < sizeof(uint32_t)) {
         #ifdef MOTOR_SIMULATION
@@ -522,7 +522,7 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
 
     if(crc32_enabled) {
         uint32_t crc32 = calculate_crc32_buffer((uint8_t*)data, structure_size - sizeof(uint32_t));
-        *(uint32_t *)(((uint8_t*)data) + (structure_size - sizeof(uint32_t))) = crc32; // place the crc32 as the last 4 bytes of the packet
+        memcpy(((uint8_t*)data) + (structure_size - sizeof(uint32_t)), &crc32, sizeof(uint32_t));
         #ifdef MOTOR_SIMULATION
         uint16_t crc32_calculation_n_bytes = structure_size - sizeof(uint32_t);
         simulation_printf("         calculating the CRC32 of the following buffer (size is %hu):", crc32_calculation_n_bytes);

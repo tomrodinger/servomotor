@@ -78,6 +78,21 @@ void SysTick_Handler(void)
     }
 }
 
+void copy_input_parameters_and_check_size(void *destination, const void *source, uint32_t destination_size, uint32_t source_size)
+{
+    if (destination_size != source_size) {
+        fatal_error(ERROR_COMMAND_SIZE_WRONG);
+    }
+    memcpy(destination, source, destination_size);
+}
+
+void check_payload_size_is_zero(uint16_t payload_size)
+{
+    if (payload_size != 0) {
+        fatal_error(ERROR_COMMAND_SIZE_WRONG);
+    }
+}
+
 void process_packet(void)
 {
     uint8_t command;
@@ -99,15 +114,23 @@ void process_packet(void)
     }
 
     launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
+
     switch(command) {
     case DETECT_DEVICES_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         detect_devices_delay = get_random_number(99);
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
-            uint8_t new_alias = payload[8];
+            uint8_t new_alias = 0;
+            copy_input_parameters_and_check_size(&new_alias, payload, sizeof(new_alias), payload_size);
             rs485_done_with_this_packet();
+            if ( (new_alias == EXTENDED_ADDRESSING              ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_ENABLED ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_DISABLED)    ) {
+                fatal_error(ERROR_BAD_ALIAS);
+            }
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             transmit("Match\n", 6);
             rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
@@ -116,51 +139,61 @@ void process_packet(void)
         }
         break;
     case FIRMWARE_UPGRADE_COMMAND:
-        {
-            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
-            
-            // Check model code match
-            if(memcmp(payload, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
-                transmit("This firmware is not for this model\n", 36);
+        {   
+            if (payload_size < MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH) {
+                transmit("This firmware payload is too small\n", 35);
             }
             else {
-                // Check firmware compatibility code
-                if(*(payload + MODEL_CODE_LENGTH) != product_info->firmware_compatibility_code) {
-                    transmit("Firmware compatibility code mismatch\n", 37);
+                struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+                // Check model code match
+                if(memcmp(payload, product_info->model_code, MODEL_CODE_LENGTH) != 0) {
+                    transmit("This firmware is not for this model\n", 36);
                 }
                 else {
-                    uint8_t firmware_page = *(payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
-                    char message[100]; // Local message buffer for this case
-                    sprintf(message, "Valid firmware page %hu\n", firmware_page);
-                    transmit(message, strlen(message));
-                    
-                    // Burn the firmware directly from the payload buffer
-                    uint8_t error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
-                    if (error_code == 0) {
+                    // Check firmware compatibility code
+                    if(*(payload + MODEL_CODE_LENGTH) != product_info->firmware_compatibility_code) {
+                        transmit("Firmware compatibility code mismatch\n", 37);
+                    }
+                    else {
+                        uint8_t firmware_page;
+                        // For firmware upgrade, we expect a specific fixed size
+                        uint16_t expected_size = MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page) + FLASH_PAGE_SIZE;            
+                        if (payload_size != expected_size) {
+                            fatal_error(ERROR_COMMAND_SIZE_WRONG);
+                        }
+                        firmware_page = *(payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH);
+                        char message[100]; // Local message buffer for this case
+                        sprintf(message, "Valid firmware page %hu\n", firmware_page);
+                        transmit(message, strlen(message));
+                        
+                        // Burn the firmware directly from the payload buffer
+                        uint8_t error_code = burn_firmware_page(firmware_page, payload + MODEL_CODE_LENGTH + FIRMWARE_COMPATIBILITY_CODE_LENGTH + sizeof(firmware_page));
+                        if (error_code != 0) {
+                            fatal_error(ERROR_INVALID_FLASH_PAGE);
+                        }
                         rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
                     }
                 }
-            }
-            
+            }            
             rs485_done_with_this_packet();
         }
         break;
     case GET_PRODUCT_INFO_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
                 uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
-                uint8_t product_info_length;
                 struct product_info_struct product_info;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } product_info_reply;
-            
-            product_info_reply.product_info_length = sizeof(struct product_info_struct);
-            memcpy(&product_info_reply.product_info, (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION), sizeof(struct product_info_struct));
+            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            memcpy(&product_info_reply.product_info, product_info, sizeof(struct product_info_struct));
             rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply));
         }
         break;
     case GET_STATUS_COMMAND:
+        check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
@@ -168,13 +201,14 @@ void process_packet(void)
                 struct device_status_struct status;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } status_reply;
-            
             set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
             memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
             rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
         }
         break;
     case SYSTEM_RESET_COMMAND:
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
         NVIC_SystemReset();
         break;
     default:
@@ -187,7 +221,7 @@ void transmit_detect_devices_response(void)
 {
     struct __attribute__((__packed__)) {
         uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
-        uint32_t unique_id;
+        uint64_t unique_id;
         uint8_t alias;
         uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
     } detect_devices_reply;

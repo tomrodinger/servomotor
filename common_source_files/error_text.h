@@ -54,7 +54,9 @@ typedef enum {
     ERROR_HALL_POSITION_DELTA_TOO_LARGE = 47,
     ERROR_INVALID_FIRST_BYTE = 48,
     ERROR_CAPTURE_BAD_PARAMETERS = 49,
-    ERROR_COMMAND_SIZE_WRONG = 50
+    ERROR_BAD_ALIAS = 50,
+    ERROR_COMMAND_SIZE_WRONG = 51,
+    ERROR_INVALID_FLASH_PAGE = 52
 } error_code_t;
 
 #define ERROR_TEXT_INITIALIZER \
@@ -108,7 +110,9 @@ typedef enum {
     "hall position delta too large\0"         /* ERROR_HALL_POSITION_DELTA_TOO_LARGE */ \
     "invalid first byte format\0"             /* ERROR_INVALID_FIRST_BYTE */ \
     "capture bad parameters\0"                /* ERROR_CAPTURE_BAD_PARAMETERS */ \
+    "bad alias\0"                             /* ERROR_BAD_ALIAS */ \
     "command size wrong\0"                    /* ERROR_COMMAND_SIZE_WRONG */ \
+    "invalid flash page\0"                    /* ERROR_INVALID_FLASH_PAGE */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

@@ -442,6 +442,98 @@ void process_packet(void)
 }
 ```
 
+## Payload Size Checking and Alignment Fixes
+
+In addition to the structured data format changes, two other critical areas need attention:
+
+1. **Ensuring proper payload size checking for all commands**
+2. **Fixing alignment issues for commands with multiple parameters**
+
+### Payload Size Checking
+
+Every command in the `process_packet()` function should include explicit payload size validation through one of the following mechanisms:
+
+1. **For commands with no payload**: Add calls to `check_payload_size_is_zero(payload_size)` to verify that no unexpected data was received.
+   ```c
+   case IDENTIFY_COMMAND:
+       check_payload_size_is_zero(payload_size);
+       rs485_done_with_this_packet();
+       // Command implementation...
+   ```
+
+2. **For commands with fixed-size payloads**: Replace direct `memcpy` calls with `copy_input_parameters_and_check_size()` to ensure the received payload matches the expected size.
+   ```c
+   case SET_MAX_VELOCITY_COMMAND:
+   {
+       uint32_t max_velocity;
+       copy_input_parameters_and_check_size(&max_velocity, payload, sizeof(max_velocity), payload_size);
+       rs485_done_with_this_packet();
+       // Command implementation...
+   }
+   ```
+
+3. **For commands with variable-sized payloads**: Implement custom size validation logic that calculates the expected payload size based on command parameters.
+   ```c
+   case MULTI_MOVE_COMMAND:
+   {
+       // First check if we have at least one byte for n_moves_in_this_command
+       if (payload_size < 1) {
+           fatal_error(ERROR_COMMAND_SIZE_WRONG);
+       }
+       
+       uint8_t n_moves_in_this_command = ((int8_t*)payload)[0];
+       
+       // Calculate the expected payload size
+       uint16_t expected_size = 1 + sizeof(uint32_t) + 
+           n_moves_in_this_command * (sizeof(int32_t) + sizeof(int32_t));
+       
+       if (payload_size != expected_size) {
+           fatal_error(ERROR_COMMAND_SIZE_WRONG);
+       }
+       
+       // Command implementation...
+   }
+   ```
+
+### Alignment Fixes
+
+Alignment fixes address potential issues with data structure alignment on the microcontroller:
+
+1. **Single-parameter commands**: Change from using structs to direct variables for better efficiency and clarity.
+   ```c
+   // Before:
+   struct __attribute__((__packed__)) {
+       uint32_t max_velocity;
+   } velocity_input;
+   copy_input_parameters_and_check_size(&velocity_input, payload, sizeof(velocity_input), payload_size);
+   set_max_velocity(velocity_input.max_velocity);
+   
+   // After:
+   uint32_t max_velocity;
+   copy_input_parameters_and_check_size(&max_velocity, payload, sizeof(max_velocity), payload_size);
+   set_max_velocity(max_velocity);
+   ```
+
+2. **Multi-parameter commands**: Ensure consistent use of packed structs to prevent alignment issues.
+   ```c
+   struct __attribute__((__packed__)) {
+       int32_t displacement;
+       uint32_t time;
+   } trapezoid_move_inputs;
+   copy_input_parameters_and_check_size(&trapezoid_move_inputs, payload, sizeof(trapezoid_move_inputs), payload_size);
+   ```
+
+3. **Response structures**: Maintain consistent structure with header, data fields, and CRC32 fields for all command responses.
+   ```c
+   struct __attribute__((__packed__)) {
+       uint8_t header[3]; // filled by rs485_finalize_and_transmit_packet()
+       int64_t motor_position;
+       uint32_t crc32; // filled by rs485_finalize_and_transmit_packet()
+   } position_reply;
+   ```
+
+These changes ensure that all commands properly validate their input parameters, prevent potential buffer overflows or misaligned data access, and maintain a consistent structure for command handling throughout the firmware.
+
 ## Testing After Updates
 
 After making these changes, it's important to test each command to ensure:

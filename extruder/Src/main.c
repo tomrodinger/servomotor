@@ -512,8 +512,14 @@ void process_packet(void)
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
-            uint8_t new_alias = payload[0];
+            uint8_t new_alias;
+            copy_input_parameters_and_check_size(&new_alias, payload, sizeof(new_alias), payload_size);
             rs485_done_with_this_packet();
+            if ( (new_alias == EXTENDED_ADDRESSING              ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_ENABLED ) ||
+                 (new_alias == RESPONSE_CHARACTER_CRC32_DISABLED)    ) {
+                fatal_error(ERROR_BAD_ALIAS);
+            }
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             print_number("Unique ID matches. Will save the alias and reset. New alias:", (uint16_t)new_alias);
             rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out
@@ -728,13 +734,13 @@ void transmit_detect_devices_response(void)
 {
     struct __attribute__((__packed__)) {
         uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
-        uint32_t unique_id;
+        uint64_t unique_id;
         uint8_t alias;
         uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
     } detect_devices_reply;
     detect_devices_reply.unique_id = my_unique_id;
     detect_devices_reply.alias = global_settings.my_alias;
-    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply), crc32_enabled);
+    rs485_finalize_and_transmit_packet(&detect_devices_reply, sizeof(detect_devices_reply));
 }
 
 
