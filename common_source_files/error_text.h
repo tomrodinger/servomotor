@@ -28,7 +28,7 @@ typedef enum {
     ERROR_CAPTURE_OVERFLOW = 21,
     ERROR_CURRENT_SENSOR_FAILED = 22,
     ERROR_MAX_PWM_VOLTAGE_TOO_HIGH = 23,
-    ERROR_MULTI_MOVE_MORE_THAN_32_MOVES = 24,
+    ERROR_MULTIMOVE_MORE_THAN_32_MOVES = 24,
     ERROR_SAFETY_LIMIT_EXCEEDED = 25,
     ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE = 26,
     ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE = 27,
@@ -84,7 +84,7 @@ typedef enum {
     "capture overflow\0"                      /* ERROR_CAPTURE_OVERFLOW */ \
     "current sensor failed\0"                 /* ERROR_CURRENT_SENSOR_FAILED */ \
     "max pwm voltage too high\0"              /* ERROR_MAX_PWM_VOLTAGE_TOO_HIGH */ \
-    "multi-move more than 32 moves\0"         /* ERROR_MULTI_MOVE_MORE_THAN_32_MOVES */ \
+    "multi-move more than 32 moves\0"         /* ERROR_MULTIMOVE_MORE_THAN_32_MOVES */ \
     "safety limit exceeded\0"                 /* ERROR_SAFETY_LIMIT_EXCEEDED */ \
     "turn point out of safety zone\0"         /* ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE */ \
     "predicted position out of safety zone\0" /* ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE */ \

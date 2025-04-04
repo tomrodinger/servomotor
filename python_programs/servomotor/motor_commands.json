@@ -560,9 +560,9 @@
         "CommandGroup": "Configuration"
     },
     {
-        "CommandString": "Multi move",
+        "CommandString": "Multimove",
         "CommandEnum": 29,
-        "Description": "Multi move command allows you to compose multiple moves one after eachother. The last move must set the motor's velocity to 0 for a period of time(e.g. 0.1s) to allow the motor to stop, otherwise the motor will enter in an error state.",
+        "Description": "Multi-move command allows you to compose multiple moves one after eachother. The last move must set the motor's velocity to 0 for a period of time(e.g. 0.1s) to allow the motor to stop, otherwise the motor will enter in an error state.",
         "Input": [
             {
                 "Description": "u8: Specify how many moves are being communicated in this one shot.",

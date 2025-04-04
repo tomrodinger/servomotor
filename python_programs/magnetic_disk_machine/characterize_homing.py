@@ -120,7 +120,7 @@ def execute_multimove_command(alias, multi_moves):
     print("Moves types:", move_types)
     print("Move types int:", move_types_int)
     print("Multi-moves string:", multi_moves_str)
-    parsed_response = communication.execute_command(alias, "MULTI_MOVE_COMMAND", [len(multi_moves), move_types_int, multi_moves_str], verbose = VERBOSE)
+    parsed_response = communication.execute_command(alias, "MULTIMOVE_COMMAND", [len(multi_moves), move_types_int, multi_moves_str], verbose = VERBOSE)
 
 
 def move_one_cycle_and_collect_position(alias, move_velocity, move_time_s, mosfet_current, start_time = 0):

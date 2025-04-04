@@ -474,7 +474,7 @@ Every command in the `process_packet()` function should include explicit payload
 
 3. **For commands with variable-sized payloads**: Implement custom size validation logic that calculates the expected payload size based on command parameters.
    ```c
-   case MULTI_MOVE_COMMAND:
+   case MULTIMOVE_COMMAND:
    {
        // First check if we have at least one byte for n_moves_in_this_command
        if (payload_size < 1) {

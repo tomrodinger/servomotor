@@ -382,7 +382,7 @@
         },
         {
             "code": 24,
-            "enum": "ERROR_MULTI_MOVE_MORE_THAN_32_MOVES",
+            "enum": "ERROR_MULTIMOVE_MORE_THAN_32_MOVES",
             "short_desc": "multi-move more than 32 moves",
             "long_desc": "Multi-move sequence exceeds maximum allowed number of moves",
             "causes": [

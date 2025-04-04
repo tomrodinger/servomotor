@@ -44,12 +44,21 @@ def calculate_crc32(data):
 
 
 arg_parser = argparse.ArgumentParser(description="Capture and Plot Hall Sensor Data")
-arg_parser.add_argument('-a', '--alias', metavar='ALIAS', help='Alias of the device to capture data from (for example: X, Y, Z, E, 0, 1, etc.)')
+arg_parser.add_argument('-a', '--alias', metavar='ALIAS', help='Alias of the device to capture data from (for example: X, Y, Z, E, 0, 1, etc.)', required=True)
 arg_parser.add_argument('-p', '--port', help='serial port device', default=None)
 arg_parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 arg_parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
 arg_parser.add_argument('--no-graph', action='store_true', help="Disable the plotting of the graph")
-args = arg_parser.parse_args()
+
+try:
+    args = arg_parser.parse_args()
+except SystemExit as e:
+    if str(e) == '2': # This is the exit code when required args are missing
+        print("\nERROR: Missing required argument -a/--alias")
+        print("You must specify the motor alias using the -a or --alias parameter.")
+        print("Example: python capture_hall_sensor_data.py -a X")
+        print("\nValid aliases include: X, Y, Z, E, 0, 1, etc. depending on your motor configuration.")
+    raise
 
 if args.verbose:
     verbose_level = 2

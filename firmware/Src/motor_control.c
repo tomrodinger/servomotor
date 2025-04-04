@@ -3367,7 +3367,7 @@ void clear_multipurpose_data(void)
 void set_motor_test_mode(uint8_t new_test_mode)
 {
     if (new_test_mode == READ_GC6609_REGISTERS_TEST_MODE) {
-        multipurpose_data_size = 0; // wipre previously stored data (if any)
+        multipurpose_data_size = 0; // wipe previously stored data (if any)
     }
     test_mode = new_test_mode;
 }
