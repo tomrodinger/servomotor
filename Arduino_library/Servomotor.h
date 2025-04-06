@@ -280,11 +280,33 @@ typedef struct {
 
 class Servomotor {
 public:
+    // Original constructor with standard addressing (using alias)
     Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
+    
+    // Additional constructor for extended addressing (using 64-bit Unique ID)
+    static Servomotor withUniqueId(uint64_t uniqueId, HardwareSerial& serialPort = Serial1);
+
     void setAlias(uint8_t new_alias);
     uint8_t getAlias();
+    
+    // Helper method to send commands using the appropriate addressing mode
+    void sendCommand(uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
+    void setUniqueId(uint64_t uniqueId);
+    uint64_t getUniqueId() const;
+    bool isUsingExtendedAddressing() const;
     void openSerialPort();
     int getError() const;
+    
+    // Set device alias (for the current device)
+    void setDeviceAlias(uint8_t alias);
+    
+    // Set device alias for a specific device by its Unique ID
+    void setDeviceAliasByUniqueId(uint64_t uniqueId, uint8_t alias);
+    
+    // CRC32 control methods
+    void enableCRC32();
+    void disableCRC32();
+    bool isCRC32Enabled() const;
 
     // Unit settings
     void setTimeUnit(TimeUnit unit);
@@ -363,6 +385,8 @@ public:
 
 private:
     uint8_t _alias;
+    uint64_t _uniqueId;
+    bool _useExtendedAddressing;
     Communication _comm;
     int _errno;
 

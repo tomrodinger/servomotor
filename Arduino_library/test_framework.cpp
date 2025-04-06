@@ -10,15 +10,19 @@ const char* getErrorMessage(int errorCode) {
         case COMMUNICATION_SUCCESS:
             return "No error";
         case COMMUNICATION_ERROR_TIMEOUT:
-            return "Communication error: Timeout";
+            return "Communication error: Timeout waiting for response bytes";
         case COMMUNICATION_ERROR_DATA_WRONG_SIZE:
-            return "Communication error: Wrong data size";
+            return "Communication error: Received data size does not match expected size";
         case COMMUNICATION_ERROR_BAD_RESPONSE_CHAR:
-            return "Communication error: Bad response character";
-        case COMMUNICATION_ERROR_BAD_STATUS_CHAR:
-            return "Communication error: Bad status character";
+            return "Communication error: Invalid response character (not 252 or 253)";
         case COMMUNICATION_ERROR_BUFFER_TOO_SMALL:
-            return "Communication error: Buffer too small";
+            return "Communication error: Buffer size mismatch with received payload";
+        case COMMUNICATION_ERROR_CRC32_MISMATCH:
+            return "Communication error: CRC32 validation failed";
+        case COMMUNICATION_ERROR_BAD_FIRST_BYTE:
+            return "Communication error: Invalid first byte format (LSB not set)";
+        case COMMUNICATION_ERROR_BAD_THIRD_BYTE:
+            return "Communication error: Invalid command byte in response";
         default:
             return "Unknown error";
     }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Serial port to use for tests
-SERIAL_PORT="/dev/ttys015"
+SERIAL_PORT="/dev/ttys014"
 
 # Colors for output
 GREEN='\033[0;32m'

@@ -209,6 +209,7 @@ void process_packet(void)
     case SYSTEM_RESET_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
+        rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out before resetting the device
         NVIC_SystemReset();
         break;
     default:

@@ -600,6 +600,8 @@ void process_packet(void)
     case SYSTEM_RESET_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
+        rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+        rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out before resetting the device
         NVIC_SystemReset();
         break;
     case SET_MAXIMUM_MOTOR_CURRENT:
@@ -629,7 +631,9 @@ void process_packet(void)
                 fatal_error(ERROR_COMMAND_SIZE_WRONG);
             }
             uint8_t n_moves_in_this_command = ((int8_t*)payload)[0];
-
+            #ifdef MOTOR_SIMULATION
+            printf("n_moves_in_this_command: %hhu\n", n_moves_in_this_command);
+            #endif
             typedef struct __attribute__((__packed__)) {
                 uint32_t move_type_bits; // a bit field specifying the type of each move: 0 = move with acceleration; 1 = move with velocuty
                 move_parameters_t move_parameters[MAX_MULTIMOVES];
@@ -639,6 +643,9 @@ void process_packet(void)
             
             // Calculate the expected payload size: 1 byte for n_moves + 4 bytes for move_type_bits + n_moves * 8 bytes for parameters
             uint16_t expected_size = sizeof(multi_move_command_buffer.move_type_bits) + n_moves_in_this_command * sizeof(multi_move_command_buffer.move_parameters[0]);
+            #ifdef MOTOR_SIMULATION
+            printf("expected_size: %hu   payload_size - 1: %hu\n", expected_size, (uint16_t)(payload_size - 1));
+            #endif
 //            uint16_t expected_size = sizeof(n_moves_in_this_command) + sizeof(multi_move_command_buffer);
             copy_input_parameters_and_check_size(&multi_move_command_buffer, payload + 1, expected_size, payload_size - 1);
             rs485_done_with_this_packet();

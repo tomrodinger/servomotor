@@ -13,7 +13,7 @@
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
 // compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
-//#define SIMULATOR_DEBUG_PRINTING
+#define SIMULATOR_DEBUG_PRINTING
 #ifdef MOTOR_SIMULATION
 #ifdef SIMULATOR_DEBUG_PRINTING
 #include <stdio.h>
@@ -72,8 +72,8 @@ void check_for_UART_timeout_sim(void)
         return;
     }
     
-    // Check if it's been more than 10ms (10,000 microseconds) since the last byte
-    if (current_time - last_byte_received_time > 10000) {
+    // Check if it's been more than 10ms (20,000 microseconds) since the last byte
+    if (current_time - last_byte_received_time > 20000) {
         // Set the timeout flag
         USART1->ISR |= USART_ISR_RTOF;
         simulation_printf("A timeout on the UART was detected in this simulation. Setting the timeout flag of the UART.\n");

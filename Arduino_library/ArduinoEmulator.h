@@ -21,6 +21,7 @@ public:
     virtual void println(float val) = 0;
     virtual void print(int val) = 0;
     virtual void println(int val) = 0;
+    virtual void print(int val, int base) = 0;
     virtual void println(int val, int base) = 0;
     virtual void println() = 0;
     virtual ~SerialBase() {}
@@ -45,6 +46,24 @@ public:
     void println(float val) override { std::cout << val << std::endl; }
     void print(int val) override { std::cout << val; }
     void println(int val) override { std::cout << val << std::endl; }
+    void print(int val, int base) override {
+        if (base == 16) {
+            std::cout << std::hex << val << std::dec;
+        } else if (base == 2) {
+            // Convert to binary representation
+            std::string binary;
+            int temp = val;
+            while (temp > 0) {
+                binary = (temp % 2 ? "1" : "0") + binary;
+                temp /= 2;
+            }
+            std::cout << binary;
+        } else if (base == 8) {
+            std::cout << std::oct << val << std::dec;
+        } else {
+            std::cout << val;
+        }
+    }
     void println(int val, int base) override {
         if (base == 16) {
             std::cout << std::hex << val << std::dec << std::endl;
@@ -176,6 +195,11 @@ public:
         if (_fd >= 0) {
             ::write(_fd, &b, 1);
             tcdrain(_fd);  // Wait for output to be transmitted
+            
+            // Debug output
+            std::cout << "[HW TX] 0x";
+            if (b < 0x10) std::cout << "0";
+            std::cout << std::hex << (int)b << std::dec << std::endl;
         }
     }
 
@@ -184,6 +208,15 @@ public:
         if (_fd >= 0 && buffer && size > 0) {
             ::write(_fd, buffer, size);
             tcdrain(_fd);  // Wait for output to be transmitted
+            
+            // Debug output
+            std::cout << "[HW TX] Buffer:";
+            for (size_t i = 0; i < size; i++) {
+                std::cout << " 0x";
+                if (buffer[i] < 0x10) std::cout << "0";
+                std::cout << std::hex << (int)buffer[i] << std::dec;
+            }
+            std::cout << std::endl;
         }
     }
 
@@ -200,7 +233,13 @@ public:
         if (_fd < 0) return 0;
         uint8_t b;
         ssize_t n = ::read(_fd, &b, 1);
-        if (n > 0) return b;
+        if (n > 0) {
+            // Debug output
+            std::cout << "[HW RX] 0x";
+            if (b < 0x10) std::cout << "0";
+            std::cout << std::hex << (int)b << std::dec << std::endl;
+            return b;
+        }
         return 0;
     }
 
@@ -244,6 +283,34 @@ public:
     void print(int val) override {
         if (_fd >= 0) {
             std::string s = std::to_string(val);
+            ::write(_fd, s.c_str(), s.length());
+            tcdrain(_fd);
+        }
+    }
+
+    void print(int val, int base) override {
+        if (_fd >= 0) {
+            std::string s;
+            if (base == 16) {
+                char hexStr[11]; // 0x + 8 hex digits + null terminator
+                sprintf(hexStr, "%X", val);
+                s = std::string(hexStr);
+            } else if (base == 2) {
+                // Convert to binary representation
+                std::string binary;
+                int temp = val;
+                while (temp > 0) {
+                    binary = (temp % 2 ? "1" : "0") + binary;
+                    temp /= 2;
+                }
+                s = binary;
+            } else if (base == 8) {
+                char octStr[12]; // Enough for 32-bit int in octal
+                sprintf(octStr, "%o", val);
+                s = std::string(octStr);
+            } else {
+                s = std::to_string(val);
+            }
             ::write(_fd, s.c_str(), s.length());
             tcdrain(_fd);
         }

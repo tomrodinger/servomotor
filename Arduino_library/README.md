@@ -61,6 +61,110 @@ Below is an updated overview of the key files after renaming and restructuring:
    - Otherwise, `ArduinoEmulator.h` provides stubs for Serial/delay so the same code builds on desktop.  
    - **Test programs** can be built via a standard C++ compiler on desktop or compiled as `.ino`/C++ sources on an Arduino platform.
 
+## RS485 Communication Protocol
+
+The library implements a robust RS485 communication protocol for reliable communication between a controller (master) and one or more devices (slaves). The protocol supports both standard addressing (using device aliases) and extended addressing (using 64-bit Unique IDs).
+
+### Packet Format
+
+All packets follow this basic structure:
+
+1. **Size Bytes**: First byte(s) indicating total packet size
+   - For sizes 1-127: Single byte containing size (left-shifted 7 bits with LSB=1)
+   - For sizes >127: Three bytes
+     - First byte: `0xFF` (encoded value of 127 with LSB=1)
+     - Two additional bytes: Little-endian 16-bit size
+
+2. **Address Bytes**:
+   - **Standard Addressing**: Single byte containing device alias
+     - `255` (`ALL_ALIAS`): Broadcasts to all devices
+     - `254` (`EXTENDED_ADDRESSING`): Indicates extended addressing mode
+     - `253` and `252` are not allowed because they are used to indicate responses (see below)
+     - `0-251`: Normal device aliases
+   - **Extended Addressing**: When address byte is `254`, next 8 bytes contain 64-bit Unique ID (little-endian)
+
+3. **Command Byte**: 8-bit command identifier
+
+4. **Payload Data**: Variable length data specific to the command
+
+5. **CRC32**: Optional 4-byte CRC32 checksum (enabled by default but can be disabled)
+
+### Response Format
+
+Responses from devices follow this structure:
+
+1. **Size Bytes**: Same format as command packet
+
+2. **Response Character**: Single byte indicating response and CRC32 state
+   - `253` (`RESPONSE_CHARACTER_CRC32_ENABLED`): Response from device with CRC32 enabled
+   - `252` (`RESPONSE_CHARACTER_CRC32_DISABLED`): Response from device with CRC32 disabled
+
+3. **Command Byte**: 8-bit value indicating status
+   - `0`: Success and there is no firther data in the response
+   - `1`: Success and there is some further data in the response
+   - Other values: Currently not used and reserved for future use
+
+4. **Payload Data**: Variable length response data
+
+5. **CRC32**: Optional 4-byte checksum (enabled by default but can be disabled)
+
+### CRC32 Implementation
+
+CRC32 checksums provide additional data integrity verification:
+
+- Uses polynomial 0xEDB88320
+- Initialized to 0xFFFFFFFF
+- Calculated over entire packet contents (including size, address/response character, command, and payload bytes)
+- Final value is inverted to get the final CRC32 value
+- The CRC32 calculation gives the same result as Pythons zlib.crc32() or binascii.crc32() functions
+
+- Control:
+  - Enabled by default after device reset
+  - Can be enabled or disabled on a per-device basis by sending a `CRC32_CONTROL_COMMAND`
+  - The response has encoded in it whether the device has appended a CRC32 in the response or not
+  - Error statistics can be retrieved by issuing a `GET_CRC32_ERROR_COUNT_COMMAND` to the device
+
+### Error Handling
+
+The protocol includes robust error handling with specific error codes. The `Communication` class functions (particularly `getResponse`) return specific negative error codes on failure, or `COMMUNICATION_SUCCESS` (0) on success:
+
+- `COMMUNICATION_ERROR_TIMEOUT` (-1): Timed out waiting for response bytes at various stages:
+  - First byte
+  - Size bytes
+  - Response character
+  - Command byte
+  - Payload
+  - CRC (if enabled)
+- `COMMUNICATION_ERROR_DATA_WRONG_SIZE` (-2): Received data size does not match expected size
+- `COMMUNICATION_ERROR_BAD_RESPONSE_CHAR` (-3): The response character byte was not `RESPONSE_CHARACTER_CRC32_ENABLED (253)` or `RESPONSE_CHARACTER_CRC32_DISABLED (252)`
+- `COMMUNICATION_ERROR_BUFFER_TOO_SMALL` (-5): The provided buffer size did not match the calculated payload size in the received response
+- `COMMUNICATION_ERROR_CRC32_MISMATCH` (-6): Calculated CRC32 of the received response did not match the received CRC32 value (when CRC enabled)
+- `COMMUNICATION_ERROR_BAD_FIRST_BYTE` (-7): The first byte of a received packet did not have LSB=1, indicating a format error or corrupted data
+- `COMMUNICATION_ERROR_BAD_THIRD_BYTE` (-8): The third byte in the response (expected to be the Command Byte) was invalid
+
+### Buffer Handling
+
+When using the Arduino library's `getResponse` function for commands that do not return any payload data, `nullptr` can be passed as the buffer. The library will still receive and validate the full response (including CRC32 check if applicable) but will not attempt to copy the (empty) payload.
+
+### Command Processing Flow
+
+1. Controller sends command packet
+2. Device receives and processes command
+3. Device sends response packet (if required)
+4. Controller receives and validates response
+
+### Communication Class Methods
+
+The `Communication` class provides the following key methods:
+
+- `Communication(HardwareSerial& serialPort)`: Constructor, requires a `HardwareSerial` port (e.g., `Serial1`)
+- `sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize)`: Sends a command using standard alias addressing
+- `sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize)`: Sends a command using extended 64-bit Unique ID addressing
+- `getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize)`: Waits for, receives, validates, and processes a response packet from a device. Returns `COMMUNICATION_SUCCESS` or a negative error code. Fills `buffer` with payload and `receivedSize` with payload length on success
+- `enableCRC32() / disableCRC32()`: Manages the library's expectation of whether CRC32 should be included in *outgoing* commands. Note: The library automatically updates its internal CRC state based on the response character received from the device
+- `isCRC32Enabled()`: Returns true if the library currently expects CRC32 to be used
+- `flush()`: Discards any unread incoming serial data and waits for outgoing data to finish transmitting
+
 ## Installation
 
 1. Download the Arduino library

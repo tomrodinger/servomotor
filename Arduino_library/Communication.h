@@ -13,18 +13,29 @@
 #define COMMUNICATION_ERROR_BAD_RESPONSE_CHAR  -3
 #define COMMUNICATION_ERROR_BAD_STATUS_CHAR  -4
 #define COMMUNICATION_ERROR_BUFFER_TOO_SMALL  -5
+#define COMMUNICATION_ERROR_CRC32_MISMATCH  -6
+#define COMMUNICATION_ERROR_BAD_FIRST_BYTE  -7
+#define COMMUNICATION_ERROR_BAD_THIRD_BYTE  -8
 #define COMMUNICATION_SUCCESS 0
 
-// Device ID bit manipulation constants
+// First byte encoding constants
 #define FIRST_BYTE_LSB_MASK 0x01  // Mask for checking if LSB is set
-#define FIRST_BYTE_SHIFT 1         // Number of bits to shift for device ID interpretation
+#define FIRST_BYTE_SHIFT 1         // Number of bits to shift for size interpretation
+#define DECODED_FIRST_BYTE_EXTENDED_SIZE 127  // Value indicating extended size format
 
 // Reserved aliases with special meaning (these are the actual values, not encoded)
 #define ALL_ALIAS 255             // to address all devices on the bus at the same time
 #define EXTENDED_ADDRESSING 254   // indicates that we will use extended addressing
-#define RESPONSE_CHARACTER 253    // indicates that the response is coming from the device being addressed
+#define RESPONSE_CHARACTER_CRC32_ENABLED 253    // indicates that the response is coming from the device with CRC32 enabled
+#define RESPONSE_CHARACTER_CRC32_DISABLED 252    // indicates that the response is coming from the device with CRC32 disabled
 
-// Helper functions for device ID encoding/decoding
+// CRC32 control commands
+#define CRC32_ENABLE 1
+#define CRC32_DISABLE 0
+#define CRC32_ERROR_READ_ONLY 0
+#define CRC32_ERROR_RESET 1
+
+// Helper functions for size byte encoding/decoding
 inline uint8_t encodeFirstByte(uint8_t firstByte) {
     return (firstByte << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK;
 }
@@ -37,16 +48,36 @@ inline bool isValidFirstByteFormat(uint8_t encodedFirstByte) {
     return (encodedFirstByte & FIRST_BYTE_LSB_MASK) == FIRST_BYTE_LSB_MASK;
 }
 
+// CRC32 calculation function
+uint32_t calculate_crc32(const uint8_t* data, size_t length);
+
 class Communication {
 public:
     Communication(HardwareSerial& serialPort);
 
     void openSerialPort();
+    
+    // Standard addressing command
     void sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
+    
+    // Extended addressing command (using 64-bit Unique ID)
+    void sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
+    
     int8_t getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize);
-    void flush(); // Add the flush declaration
+    void flush();
+    
+    // CRC32 control
+    void enableCRC32();
+    void disableCRC32();
+    bool isCRC32Enabled() const;
 
 protected:
     HardwareSerial& _serial; // Store the reference to the actual serial port
+    bool _crc32Enabled; // Flag to track if CRC32 is enabled
+    
+    // Helper methods for packet handling
+    void writePacketSize(uint16_t size);
+    void writePacket(const uint8_t* data, uint16_t size);
+    void finalizePacket(uint8_t* buffer, uint16_t& size);
 };
 #endif // COMMUNICATION_H
