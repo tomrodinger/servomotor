@@ -13,7 +13,7 @@
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
 // compiles to nothing if the SIMULATOR_DEBUG_PRINTING is not defined (ie. you are not debugging)
-#define SIMULATOR_DEBUG_PRINTING
+//#define SIMULATOR_DEBUG_PRINTING
 #ifdef MOTOR_SIMULATION
 #ifdef SIMULATOR_DEBUG_PRINTING
 #include <stdio.h>

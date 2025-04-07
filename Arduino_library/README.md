@@ -363,9 +363,10 @@ After running the script, you can execute any of the compiled test programs dire
 
 ```bash
 # Example: Run the emergency stop test with a serial port
-./test_emergency_stop /dev/ttys004  # On macOS
-./test_emergency_stop /dev/ttyUSB0  # On Linux (not tested yet but should work)
-./test_emergency_stop COM3          # On Windows (not tested yet)
+./test_emergency_stop /dev/ttys004 X                # On macOS, using alias 'X'
+./test_emergency_stop /dev/ttys004 0123456789ABCDEF  # On macOS, using Unique ID
+./test_emergency_stop /dev/ttyUSB0 X                # On Linux, using alias 'X'
+./test_emergency_stop COM3 X                        # On Windows, using alias 'X'
 ```
 
 The serial port parameter is required for any test that communicates with the motor. This includes all movement tests, status queries, and configuration commands. The only tests that might not require a serial port are those that exclusively test unit conversions without motor communication.

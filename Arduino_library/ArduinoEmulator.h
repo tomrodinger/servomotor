@@ -382,6 +382,11 @@ private:
 extern ConsoleSerial Serial;
 extern HardwareSerial Serial1;
 
+// Global variables to store the identifier (alias or uniqueID)
+extern char g_motorAlias; // Default alias
+extern uint64_t g_uniqueId; // Default uniqueID 
+extern bool g_useUniqueId; // Flag to indicate if uniqueID should be used
+
 // Replacement for Arduino delay(ms)
 inline void delay(unsigned long ms) {
     std::this_thread::sleep_for(std::chrono::milliseconds(ms));

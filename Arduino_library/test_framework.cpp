@@ -1,8 +1,10 @@
 #include "test_framework.h"
 #include "Communication.h"  // For error code constants
-#include <iomanip>
+#include <iomanip> // For std::setw, std::setfill
 #include <iostream>
 #include <cstdlib>  // For exit()
+#include <sstream> // For std::stringstream
+#include <string>  // For std::string
 
 // Error code to message mapping
 const char* getErrorMessage(int errorCode) {
@@ -28,16 +30,6 @@ const char* getErrorMessage(int errorCode) {
     }
 }
 
-void checkMotorError(Servomotor& motor, const std::string& commandName) {
-    int error = motor.getError();
-    if (error != 0) {
-        std::cerr << "\nERROR: Motor failed to respond to " << commandName << " command.\n";
-        std::cerr << "Error code: " << error << " - " << getErrorMessage(error) << "\n";
-        std::cerr << "Make sure the motor is connected and powered on.\n";
-        exit(1);
-    }
-}
-
 // Initialize static member
 std::vector<TestResult> TestRunner::results;
 
@@ -46,42 +38,128 @@ void TestRunner::addResult(const std::string& name, bool passed, const std::stri
 }
 
 void TestRunner::printResults() {
-    // Calculate column widths
-    size_t nameWidth = 4;  // "Name"
-    size_t statusWidth = 6;  // "Status"
-    size_t messageWidth = 7;  // "Message"
-
+    std::cout << "\nTest Results Summary\n";
+    std::cout << "==================\n";
+    
+    int maxNameLength = 0;
     for (const auto& result : results) {
-        nameWidth = std::max(nameWidth, result.name.length());
-        messageWidth = std::max(messageWidth, result.message.length());
+        maxNameLength = std::max(maxNameLength, static_cast<int>(result.name.length()));
     }
-
-    // Print header
-    std::cout << "\nTest Results\n";
-    std::cout << std::string(nameWidth + statusWidth + messageWidth + 8, '=') << "\n";
-    std::cout << std::left << std::setw(nameWidth) << "Name" << " | "
-              << std::setw(statusWidth) << "Status" << " | "
-              << "Message\n";
-    std::cout << std::string(nameWidth + statusWidth + messageWidth + 8, '-') << "\n";
-
-    // Print results
-    int passed = 0;
+    
     for (const auto& result : results) {
-        std::cout << std::left << std::setw(nameWidth) << result.name << " | "
-                  << std::setw(statusWidth) << (result.passed ? "PASS" : "FAIL") << " | "
-                  << result.message << "\n";
-        if (result.passed) passed++;
+        std::cout << std::left << std::setw(maxNameLength + 2) << result.name
+                  << (result.passed ? "PASS" : "FAIL");
+        if (!result.message.empty()) {
+            std::cout << " - " << result.message;
+        }
+        std::cout << "\n";
     }
-
-    // Print summary
-    std::cout << std::string(nameWidth + statusWidth + messageWidth + 8, '-') << "\n";
-    std::cout << "Summary: " << passed << "/" << results.size() << " tests passed ("
-              << (results.empty() ? 0 : (passed * 100 / results.size())) << "%)\n";
 }
 
 bool TestRunner::allTestsPassed() {
     for (const auto& result : results) {
-        if (!result.passed) return false;
+        if (!result.passed) {
+            return false;
+        }
     }
     return true;
+}
+
+bool TestRunner::parseArgs(int argc, char* argv[], std::string& serialPort, std::string& deviceId, std::string& addressingMode) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <serial_port> <device_id>\n";
+        std::cerr << "  serial_port: Serial port device (e.g. /dev/ttys014)\n";
+        std::cerr << "  device_id: Device alias (ASCII char or number 0-251) or unique ID (16-char hex)\n";
+        std::cerr << "    - If device_id is 4 or more characters, it is treated as a unique ID\n";
+        std::cerr << "    - If device_id is less than 4 characters, it is treated as an alias\n";
+        return false;
+    }
+
+    serialPort = argv[1];
+    deviceId = argv[2];
+
+    // Determine addressing mode based on device ID length
+    if (deviceId.length() >= 4) {
+        // Treat as unique ID
+        addressingMode = "unique";
+        // Validate unique ID format (16-character hex)
+        if (deviceId.length() != 16 || deviceId.find_first_not_of("0123456789ABCDEFabcdef") != std::string::npos) {
+            std::cerr << "Error: Unique ID must be a 16-character hex number\n";
+            return false;
+        }
+    } else {
+        // Treat as alias
+        addressingMode = "alias";
+        // Check if alias is a single character or number 0-251
+        if (deviceId.length() == 1 && isalnum(deviceId[0])) {
+            // Valid single character alias
+        } else if (deviceId.find_first_not_of("0123456789") == std::string::npos) {
+            // Check if it's a valid number
+            int aliasNum = std::stoi(deviceId);
+            if (aliasNum < 0 || aliasNum > 251) {
+                std::cerr << "Error: Alias number must be between 0 and 251\n";
+                return false;
+            }
+        } else {
+            std::cerr << "Error: Alias must be a single character or number 0-251\n";
+            return false;
+        }
+    }
+
+    return true;
+}
+
+Servomotor createMotor(const std::string& serialPort, const std::string& deviceId, const std::string& addressingMode) {
+    // Initialize Serial1 with the specified port
+    Serial1.begin(230400);
+    
+    if (addressingMode == "alias") {
+        // Create motor with alias
+        if (deviceId.length() == 1 && isalnum(deviceId[0])) {
+            return Servomotor(deviceId[0], Serial1);
+        } else {
+            // Convert numeric alias to char
+            int aliasNum = std::stoi(deviceId);
+            return Servomotor(static_cast<char>(aliasNum), Serial1);
+        }
+    } else {
+        // Create motor with unique ID
+        // Convert hex string to uint64_t
+        uint64_t uniqueId;
+        std::stringstream ss;
+        ss << std::hex << deviceId;
+        ss >> uniqueId;
+        return Servomotor::withUniqueId(uniqueId, Serial1);
+    }
+}
+
+void checkMotorError(Servomotor& motor, const std::string& commandName) {
+    if (motor.getError() != 0) {
+        std::cerr << "Error in " << commandName << ": " << getErrorMessage(motor.getError()) << "\n";
+        exit(1);
+    }
+}
+
+Servomotor* Servomotor_TestModeConvenienceWrapper() {
+    if (g_useUniqueId) {
+        // Use extended addressing with uniqueID
+        // Use stringstream for reliable hex formatting
+        std::stringstream ss;
+        ss << std::hex << std::setw(16) << std::setfill('0') << g_uniqueId;
+        Serial.print("Creating motor with uniqueID: 0x");
+        Serial.println(ss.str().c_str()); // Use c_str() for ConsoleSerial compatibility
+        
+        // Create motor with standard addressing first
+        Servomotor* motor = new Servomotor(0, Serial1);
+        
+        // Then set it up for extended addressing
+        motor->setUniqueId(g_uniqueId);
+        
+        return motor;
+    } else {
+        // Use standard addressing with alias
+        Serial.print("Creating motor with alias: ");
+        Serial.println(g_motorAlias);
+        return new Servomotor(g_motorAlias, Serial1);
+    }
 }

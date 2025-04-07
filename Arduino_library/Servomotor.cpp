@@ -5,6 +5,8 @@
 #include "Servomotor.h"
 #include "Commands.h"
 #include "Utils.h"
+#include <sstream> // For std::stringstream
+#include <iomanip> // For std::setw, std::setfill
 
 Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
     : _alias(alias), _uniqueId(0), _useExtendedAddressing(false), _comm(serialPort), _errno(0),
@@ -51,8 +53,6 @@ void Servomotor::setAlias(uint8_t new_alias) {
     Serial.println(_alias);
 }
 
-
-
 uint8_t Servomotor::getAlias() {
     return _alias;
 }
@@ -60,16 +60,11 @@ uint8_t Servomotor::getAlias() {
 void Servomotor::setUniqueId(uint64_t uniqueId) {
     _uniqueId = uniqueId;
     _useExtendedAddressing = true;
+    // Use stringstream for reliable hex formatting
+    std::stringstream ss;
+    ss << std::hex << std::setw(16) << std::setfill('0') << _uniqueId; // Use the member variable _uniqueId
     Serial.print("[Motor] Set Unique ID to 0x");
-    for (int i = 7; i >= 0; i--) {
-        uint8_t byte = (uniqueId >> (i * 8)) & 0xFF;
-        if (byte < 0x10) Serial.print("0");
-        // Print hex value without using HEX constant
-        char hexChars[] = "0123456789ABCDEF";
-        Serial.print(hexChars[byte >> 4]);
-        Serial.print(hexChars[byte & 0x0F]);
-    }
-    Serial.println();
+    Serial.println(ss.str().c_str()); // Use c_str() for ConsoleSerial compatibility
 }
 
 uint64_t Servomotor::getUniqueId() const {

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <cstdlib>
 #include "Servomotor.h"
 
 // Helper function to check if two floats are approximately equal
@@ -29,12 +30,18 @@ public:
     // Returns true if all tests passed
     static bool allTestsPassed();
 
+    // Parse command line arguments
+    static bool parseArgs(int argc, char* argv[], std::string& serialPort, std::string& deviceId, std::string& addressingMode);
+
 private:
     static std::vector<TestResult> results;
 };
 
 // Function to check for motor errors and exit if an error is found
 void checkMotorError(Servomotor& motor, const std::string& commandName);
+
+// Function to create a Servomotor instance based on global configuration
+Servomotor* Servomotor_TestModeConvenienceWrapper();
 
 // Macro to help with test reporting
 #define TEST_RESULT(name, condition) \

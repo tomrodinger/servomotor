@@ -198,165 +198,59 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
 }
 
 void Communication::sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
-    // Calculate total packet size (excluding the size byte itself)
-    uint16_t totalSize = 1; // Address byte (EXTENDED_ADDRESSING)
-    totalSize += 8;         // 64-bit Unique ID
-    totalSize += 1;         // Command byte
-    totalSize += payloadSize;
-    
+    uint8_t sizeByte;
+    bool isExtendedSize = false;
+    uint8_t sizeLow = 0;
+    uint8_t sizeHigh = 0;
+    uint8_t extendedAddrByte = EXTENDED_ADDRESSING; // Use the constant
+
+    // Calculate packet content size (excluding size bytes)
+    // Content = ExtendedAddrByte + UniqueID + CommandID + Payload + CRC (if enabled)
+    uint16_t contentSize = sizeof(extendedAddrByte) + sizeof(uniqueId) + sizeof(commandID) + payloadSize;
     if (_crc32Enabled) {
-        totalSize += 4;     // CRC32 (4 bytes)
+        contentSize += sizeof(uint32_t); // Add 4 bytes for CRC32
     }
-    
-    // Note: The size byte itself will be added in writePacketSize
-    uint16_t totalSizeWithSizeByte = totalSize + 1; // Include size byte
-    
-    // Write packet size
-    writePacketSize(totalSizeWithSizeByte);
-    
-    // Write extended addressing indicator
-    _serial.write(EXTENDED_ADDRESSING);
-    
+
+    // Determine number of size bytes and total packet size
+    uint8_t numSizeBytes;
+    uint16_t totalPacketSize;
+    if (contentSize + 1 <= DECODED_FIRST_BYTE_EXTENDED_SIZE) { // Check if content + 1 size byte fits
+        numSizeBytes = 1;
+        totalPacketSize = contentSize + numSizeBytes;
+        sizeByte = encodeFirstByte(totalPacketSize);
+    } else { // Need 3 size bytes
+        numSizeBytes = 3;
+        totalPacketSize = contentSize + numSizeBytes;
+        sizeByte = encodeFirstByte(DECODED_FIRST_BYTE_EXTENDED_SIZE); // 0xFF
+        sizeLow = (uint8_t)(totalPacketSize & 0xFF);
+        sizeHigh = (uint8_t)((totalPacketSize >> 8) & 0xFF);
+        isExtendedSize = true;
+    }
+
+    // --- Start Writing ---
+    // Write size byte(s)
+    _serial.write(sizeByte);
+    if (isExtendedSize) {
+        _serial.write(sizeLow);
+        _serial.write(sizeHigh);
+    }
+
+    // Write extended addressing indicator byte
+    _serial.write(extendedAddrByte);
+
     // Write 64-bit Unique ID (little endian)
     for (int i = 0; i < 8; i++) {
         _serial.write((uint8_t)((uniqueId >> (i * 8)) & 0xFF));
     }
-    
+
     // Write command byte
     _serial.write(commandID);
-    
+
     // Write payload
     if (payload != nullptr && payloadSize > 0) {
         _serial.write(payload, payloadSize);
-    }
-    
-    // Calculate and write CRC32 if enabled
-    if (_crc32Enabled) {
-        // Create a buffer with all the data for CRC calculation
-        uint16_t bufferSize = totalSize + 1 - 4; // Total size + size bytes - CRC32
-        uint8_t* buffer = new uint8_t[bufferSize];
-        uint16_t index = 0;
-        
-        // Add size byte(s)
-        uint8_t sizeByte;
-        uint8_t sizeLow = 0, sizeHigh = 0;
-        bool isExtendedSize = false;
-        
-        // Determine the size byte value
-        if (totalSizeWithSizeByte <= 127) {
-            sizeByte = encodeFirstByte(totalSizeWithSizeByte);
-        } else {
-            isExtendedSize = true;
-            sizeByte = encodeFirstByte(DECODED_FIRST_BYTE_EXTENDED_SIZE);
-            sizeLow = (uint8_t)(totalSizeWithSizeByte & 0xFF);
-            sizeHigh = (uint8_t)((totalSizeWithSizeByte >> 8) & 0xFF);
-        }
-        
-        buffer[index++] = sizeByte;
-        if (isExtendedSize) {
-            buffer[index++] = sizeLow;
-            buffer[index++] = sizeHigh;
-        }
-        
-        // Add extended addressing indicator
-        buffer[index++] = EXTENDED_ADDRESSING;
-        
-        // Add 64-bit Unique ID
-        for (int i = 0; i < 8; i++) {
-            buffer[index++] = (uint8_t)((uniqueId >> (i * 8)) & 0xFF);
-        }
-        
-        // Add command byte
-        buffer[index++] = commandID;
-        
-        // Add payload
-        if (payload != nullptr && payloadSize > 0) {
-            memcpy(buffer + index, payload, payloadSize);
-            index += payloadSize;
-        }
-        
-        // Calculate CRC32
-        uint32_t crc = calculate_crc32(buffer, index);
-        
-        // Write CRC32 (little endian)
-        _serial.write((uint8_t)(crc & 0xFF));
-        _serial.write((uint8_t)((crc >> 8) & 0xFF));
-        _serial.write((uint8_t)((crc >> 16) & 0xFF));
-        _serial.write((uint8_t)((crc >> 24) & 0xFF));
-        
-        delete[] buffer;
-    }
-    
-    #ifdef VERBOSE
-    Serial.print("Sent extended command with ");
-    Serial.print(_crc32Enabled ? "CRC32 enabled" : "CRC32 disabled");
-    Serial.print(", uniqueId: 0x");
-    for (int i = 7; i >= 0; i--) {
-        uint8_t byte = (uniqueId >> (i * 8)) & 0xFF;
-        if (byte < 0x10) Serial.print("0");
-        Serial.print(static_cast<int>(byte), HEX);
-    }
-    Serial.print(", command: ");
-    Serial.println(commandID);
-    
-    // Print raw bytes being sent
-    Serial.println("Raw bytes sent (hex):");
-    
-    // Size byte(s)
-    if (totalSize + 1 <= 127) { // +1 for size byte itself
-        uint8_t encodedSize = ((totalSize + 1) << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK;
-        Serial.print("Size byte: 0x");
-        if (encodedSize < 0x10) Serial.print("0");
-        Serial.print(encodedSize, HEX);
-        Serial.print(" (represents ");
-        Serial.print(totalSize + 1);
-        Serial.println(" bytes total)");
-    } else {
-        // Extended size format (3 bytes)
-        uint8_t encodedFirstByte = (DECODED_FIRST_BYTE_EXTENDED_SIZE << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK;
-        Serial.print("Size bytes: 0x");
-        if (encodedFirstByte < 0x10) Serial.print("0");
-        Serial.print(encodedFirstByte, HEX);
-        Serial.print(" 0x");
-        uint16_t extendedSize = totalSize + 3; // +3 for all three size bytes
-        uint8_t sizeLow = (extendedSize & 0xFF);
-        if (sizeLow < 0x10) Serial.print("0");
-        Serial.print(sizeLow, HEX);
-        Serial.print(" 0x");
-        uint8_t sizeHigh = ((extendedSize >> 8) & 0xFF);
-        if (sizeHigh < 0x10) Serial.print("0");
-        Serial.print(sizeHigh, HEX);
-        Serial.print(" (represents ");
-        Serial.print(extendedSize);
-        Serial.println(" bytes total)");
-    }
-    
-    // Extended addressing indicator
-    Serial.print("Extended addressing indicator: 0x");
-    if (EXTENDED_ADDRESSING < 0x10) Serial.print("0");
-    Serial.print(EXTENDED_ADDRESSING, HEX);
-    Serial.println();
-    
-    // Unique ID bytes (little endian)
-    Serial.print("Unique ID bytes (little endian): ");
-    for (int i = 0; i < 8; i++) {
-        uint8_t byte = (uniqueId >> (i * 8)) & 0xFF;
-        Serial.print("0x");
-        if (byte < 0x10) Serial.print("0");
-        Serial.print(byte, HEX);
-        Serial.print(" ");
-    }
-    Serial.println();
-    
-    // Command byte
-    Serial.print("Command byte: 0x");
-    if (commandID < 0x10) Serial.print("0");
-    Serial.print(commandID, HEX);
-    Serial.println();
-    
-    // Payload bytes
-    if (payload != nullptr && payloadSize > 0) {
-        Serial.print("Payload bytes: ");
+        #ifdef VERBOSE
+        Serial.print("Payload bytes (extended): ");
         for (uint16_t i = 0; i < payloadSize; i++) {
             Serial.print("0x");
             if (payload[i] < 0x10) Serial.print("0");
@@ -364,15 +258,60 @@ void Communication::sendCommandExtended(uint64_t uniqueId, uint8_t commandID, co
             Serial.print(" ");
         }
         Serial.println();
+        #endif
     } else {
-        Serial.println("No payload");
+        #ifdef VERBOSE
+        Serial.println("No payload (extended)");
+        #endif
     }
-    
-    // CRC32 bytes
+
+    // Calculate and write CRC32 if enabled
     if (_crc32Enabled) {
-        Serial.println("CRC32 bytes: (calculated from data)");
+        crc32_init();
+        // CRC over size byte(s)
+        calculate_crc32_buffer_without_reinit(&sizeByte, sizeof(sizeByte));
+        if (isExtendedSize) {
+            calculate_crc32_buffer_without_reinit(&sizeLow, sizeof(sizeLow));
+            calculate_crc32_buffer_without_reinit(&sizeHigh, sizeof(sizeHigh));
+        }
+        // CRC over EXTENDED_ADDRESSING byte
+        calculate_crc32_buffer_without_reinit(&extendedAddrByte, sizeof(extendedAddrByte));
+        // CRC over Unique ID (must be done byte-by-byte in correct order - little endian)
+        for (int i = 0; i < 8; i++) {
+             uint8_t idByte = (uint8_t)((uniqueId >> (i * 8)) & 0xFF);
+             calculate_crc32_buffer_without_reinit(&idByte, sizeof(idByte));
+        }
+        // CRC over command ID
+        calculate_crc32_buffer_without_reinit(&commandID, sizeof(commandID));
+        // CRC over payload
+        if (payload != nullptr && payloadSize > 0) {
+            calculate_crc32_buffer_without_reinit(payload, payloadSize);
+        }
+
+        // Get final CRC and write it
+        uint32_t crc = get_crc32();
+        _serial.write((uint8_t*)(&crc), sizeof(crc)); // Writes little endian
+
+        #ifdef VERBOSE
+        Serial.print("calculated CRC32 bytes sent (extended): 0x");
+        Serial.print(crc, HEX);
+        Serial.println();
+        #endif
     }
-    
+
+    #ifdef VERBOSE
+    Serial.print("Sent extended command with ");
+    Serial.print(_crc32Enabled ? "CRC32 enabled" : "CRC32 disabled");
+    Serial.print(", uniqueId: 0x");
+    // Print Unique ID in big-endian format for readability
+    for (int i = 7; i >= 0; i--) {
+        uint8_t byte = (uniqueId >> (i * 8)) & 0xFF;
+        if (byte < 0x10) Serial.print("0");
+        Serial.print(static_cast<int>(byte), HEX);
+    }
+    Serial.print(", command: 0x");
+    if (commandID < 0x10) Serial.print("0");
+    Serial.println(commandID, HEX);
     Serial.println("End of extended command");
     #endif
 }
