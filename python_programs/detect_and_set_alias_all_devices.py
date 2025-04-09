@@ -55,21 +55,16 @@ def detect_all_devices_multiple_passes(n_passes):
         for device in response:
             unique_id = device[0]
             alias = device[1]
-            crc = device[2]
-            # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
-            crc32_value = compute_crc32(unique_id, alias)
-            # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
-            if crc == crc32_value:
-                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK IS OK)")
-                if unique_id in device_dict:
-                    print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                    if alias != device_dict[unique_id].alias:
-                        print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
-                else:
-                    new_device = Device(unique_id, alias)
-                    device_dict[unique_id] = new_device
+            print(f"Unique ID: {unique_id:016X}, Alias: {alias}")
+            if unique_id in device_dict:
+                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                if alias != device_dict[unique_id].alias:
+                    print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
             else:
-                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
+                new_device = Device(unique_id, alias)
+                device_dict[unique_id] = new_device
+#            else:
+#                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
     return device_dict
 
 
