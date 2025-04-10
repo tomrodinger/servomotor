@@ -24,6 +24,7 @@ Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
     openSerialPort();
 }
 
+#if 0
 Servomotor Servomotor::withUniqueId(uint64_t uniqueId, HardwareSerial& serialPort) {
     // Create a Servomotor instance with standard addressing first
     Servomotor motor(0, serialPort);
@@ -45,6 +46,7 @@ Servomotor Servomotor::withUniqueId(uint64_t uniqueId, HardwareSerial& serialPor
     
     return motor;
 }
+#endif
 
 void Servomotor::setAlias(uint8_t new_alias) {
     _alias = new_alias;
@@ -1110,4 +1112,11 @@ getDebugValuesResponse Servomotor::getDebugValues() {
     getDebugValuesResponse defaultResponse = {0};
     return defaultResponse;
 }
+
+//void Servomotor::setDeviceAlias(uint64_t uniqueId, uint8_t alias) {
+//    Serial.println("[Motor] setDeviceAlias with uniqueId called.");
+//    // Sets the alias of a device with a specific unique ID
+//    // This is a wrapper around setDeviceAliasByUniqueId for API consistency
+//    setDeviceAliasByUniqueId(uniqueId, alias);
+//}
 

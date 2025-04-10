@@ -109,6 +109,7 @@ bool TestRunner::parseArgs(int argc, char* argv[], std::string& serialPort, std:
     return true;
 }
 
+#if 0
 Servomotor createMotor(const std::string& serialPort, const std::string& deviceId, const std::string& addressingMode) {
     // Initialize Serial1 with the specified port
     Serial1.begin(230400);
@@ -132,6 +133,7 @@ Servomotor createMotor(const std::string& serialPort, const std::string& deviceI
         return Servomotor::withUniqueId(uniqueId, Serial1);
     }
 }
+#endif
 
 void checkMotorError(Servomotor& motor, const std::string& commandName) {
     if (motor.getError() != 0) {

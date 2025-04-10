@@ -98,7 +98,6 @@ typedef struct __attribute__((__packed__)) {
 typedef struct __attribute__((__packed__)) {
     uint64_t uniqueId;
     uint8_t alias;
-    uint32_t crc;
 } detectDevicesResponse;
 
 // Structure for Set device alias command payload
@@ -284,7 +283,7 @@ public:
     Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
     
     // Additional constructor for extended addressing (using 64-bit Unique ID)
-    static Servomotor withUniqueId(uint64_t uniqueId, HardwareSerial& serialPort = Serial1);
+    //static Servomotor withUniqueId(uint64_t uniqueId, HardwareSerial& serialPort = Serial1);
 
     void setAlias(uint8_t new_alias);
     uint8_t getAlias();
@@ -347,7 +346,7 @@ public:
     void moveWithAcceleration(float acceleration, float timeSteps);
     detectDevicesResponse detectDevices();
     detectDevicesResponse detectDevicesGetAnotherResponse();
-    void setDeviceAlias(uint64_t uniqueId, uint8_t alias);
+//    void setDeviceAlias(uint64_t uniqueId, uint8_t alias);
     getProductInfoResponse getProductInfo();
     void firmwareUpgrade(uint8_t firmwarePage[2058]);
     getProductDescriptionResponse getProductDescription();
@@ -398,9 +397,6 @@ private:
     CurrentUnit m_currentUnit = CurrentUnit::INTERNAL_CURRENT_UNITS;
     VoltageUnit m_voltageUnit = VoltageUnit::MILLIVOLTS;
     TemperatureUnit m_temperatureUnit = TemperatureUnit::CELSIUS;
-
-    bool _initialized;
-    void ensureInitialized();
 };
 
 #endif // SERVOMOTOR_H

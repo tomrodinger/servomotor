@@ -359,7 +359,38 @@ The build_tests.sh script:
 - Adds the REQUIRE_SERIAL_PORT flag for tests that need hardware communication
 - Creates executable files with the same name as the test file (without the .cpp extension)
 
-After running the script, you can execute any of the compiled test programs directly. Most test programs require a serial port parameter because they interact with the physical motor or the motor simulator:
+After building the tests, you can run them individually or use the `run_all_tests.sh` script to run all tests:
+
+```bash
+# Run all tests with default settings (alias 'X' and unique ID '0123456789ABCDEF')
+./run_all_tests.sh
+
+# Run all tests with a specific serial port
+./run_all_tests.sh -p /dev/ttys004
+
+# Run all tests with a specific alias
+./run_all_tests.sh -a Y
+
+# Run all tests with a specific unique ID
+./run_all_tests.sh -u FEDCBA9876543210
+
+# Run all tests in alias mode only
+./run_all_tests.sh -s -a X
+
+# Run all tests in unique ID mode only
+./run_all_tests.sh -s -u 0123456789ABCDEF
+```
+
+The `run_all_tests.sh` script:
+- By default, runs each test twice: once with alias addressing and once with unique ID addressing
+- Provides command-line options to customize the test execution:
+  - `-p, --port PORT`: Specify the serial port to use (default: /dev/ttys014)
+  - `-a, --alias ID`: Specify the alias to use (default: X)
+  - `-u, --unique-id ID`: Specify the unique ID to use (default: 0123456789ABCDEF)
+  - `-s, --single-mode`: Run tests only in the mode specified by -a or -u
+  - `-h, --help`: Show help message
+
+You can also run individual test programs directly. Most test programs require a serial port parameter because they interact with the physical motor or the motor simulator:
 
 ```bash
 # Example: Run the emergency stop test with a serial port

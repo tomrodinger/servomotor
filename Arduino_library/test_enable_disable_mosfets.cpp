@@ -6,27 +6,27 @@ void setup() {
     Serial.begin(115200);  // For debug output
     Serial.println("test_enable_disable_mosfets: BEGIN\n");
 
-    // Create a Servomotor instance
-    Servomotor motor('X', Serial1);  // Initialize with alias 'X' and Serial1 port
+    // Create a Servomotor instance using the wrapper
+    Servomotor* motor = Servomotor_TestModeConvenienceWrapper();
 
     // Reset system to get to a known state
-    motor.systemReset();
+    motor->systemReset();
     delay(1500);  // Wait for system to reset
 
     // Test 1: Check initial status (mosfets should be disabled after reset)
-    StatusResponse initial_status = motor.getStatus();
+    StatusResponse initial_status = motor->getStatus();
     printf("Initial status flags: 0x%02X\n", initial_status.statusFlags);
 
     // Test 2: Enable mosfets and verify status change
-    motor.enableMosfets();
+    motor->enableMosfets();
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor.getStatus();
+    StatusResponse enabled_status = motor->getStatus();
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     
     // Test 3: Disable mosfets and verify status change
-    motor.disableMosfets();
+    motor->disableMosfets();
     delay(100);  // Wait for status to update
-    StatusResponse disabled_status = motor.getStatus();
+    StatusResponse disabled_status = motor->getStatus();
     printf("Status after disable: 0x%02X\n", disabled_status.statusFlags);
 
     // Print test results
@@ -52,6 +52,9 @@ void setup() {
 
     // Print test results
     TestRunner::printResults();
+
+    // Clean up
+    delete motor;
 
     // Exit with appropriate status
     exit(TestRunner::allTestsPassed() ? 0 : 1);

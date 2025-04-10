@@ -74,10 +74,5 @@ public:
 protected:
     HardwareSerial& _serial; // Store the reference to the actual serial port
     bool _crc32Enabled; // Flag to track if CRC32 is enabled
-    
-    // Helper methods for packet handling
-    void writePacketSize(uint16_t size);
-    void writePacket(const uint8_t* data, uint16_t size);
-    void finalizePacket(uint8_t* buffer, uint16_t& size);
 };
 #endif // COMMUNICATION_H

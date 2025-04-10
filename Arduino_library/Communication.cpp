@@ -1,7 +1,7 @@
 // Communication.cpp
 #include "Communication.h"
 
-#define VERBOSE
+//#define VERBOSE
 #define TIMEOUT_MS 1000  // Define timeout duration (1 second)
 
 #ifndef ARDUINO
@@ -52,75 +52,6 @@ void Communication::openSerialPort() {
     // Serial port is already initialized by ArduinoEmulator
 }
 
-void Communication::writePacketSize(uint16_t size) {
-    // The size parameter is the number of bytes in the packet EXCLUDING the size byte itself
-    // We need to add 1 to include the size byte itself in the total packet size
-    uint16_t totalSize = size + 1; // Add 1 for the size byte itself
-    
-    // If total size can fit in 7 bits (0-127), use a single byte
-    if (totalSize <= 127) {
-        // Encode size: shift left by 1 and set LSB to 1
-        uint8_t encodedSize = (totalSize << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK;
-        _serial.write(encodedSize);
-        
-        #ifdef VERBOSE
-        Serial.print("Encoded size byte: 0x");
-        if (encodedSize < 0x10) Serial.print("0");
-        Serial.print(encodedSize, HEX);
-        Serial.print(" (represents ");
-        Serial.print(totalSize);
-        Serial.println(" bytes including size byte)");
-        #endif
-    }
-    // Otherwise, use extended size format (3 bytes)
-    else {
-        // First byte indicates extended size format
-        uint8_t encodedFirstByte = (DECODED_FIRST_BYTE_EXTENDED_SIZE << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK;
-        
-        // Size bytes (little endian)
-        uint8_t sizeLow = (totalSize & 0xFF);
-        uint8_t sizeHigh = ((totalSize >> 8) & 0xFF);
-        
-        _serial.write(encodedFirstByte);
-        _serial.write(sizeLow);
-        _serial.write(sizeHigh);
-        
-        #ifdef VERBOSE
-        Serial.print("Extended size bytes: 0x");
-        if (encodedFirstByte < 0x10) Serial.print("0");
-        Serial.print(encodedFirstByte, HEX);
-        Serial.print(" 0x");
-        if (sizeLow < 0x10) Serial.print("0");
-        Serial.print(sizeLow, HEX);
-        Serial.print(" 0x");
-        if (sizeHigh < 0x10) Serial.print("0");
-        Serial.print(sizeHigh, HEX);
-        Serial.print(" (represents ");
-        Serial.print(totalSize);
-        Serial.println(" bytes including size bytes)");
-        #endif
-    }
-}
-
-void Communication::writePacket(const uint8_t* data, uint16_t size) {
-    if (data != nullptr && size > 0) {
-        _serial.write(data, size);
-    }
-}
-
-void Communication::finalizePacket(uint8_t* buffer, uint16_t& size) {
-    // Add CRC32 if enabled
-    if (_crc32Enabled) {
-        uint32_t crc = calculate_crc32(buffer, size);
-        
-        // Append CRC32 to the buffer (little endian)
-        buffer[size++] = (uint8_t)(crc & 0xFF);
-        buffer[size++] = (uint8_t)((crc >> 8) & 0xFF);
-        buffer[size++] = (uint8_t)((crc >> 16) & 0xFF);
-        buffer[size++] = (uint8_t)((crc >> 24) & 0xFF);
-    }
-}
-
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
     uint8_t sizeByte;
     bool isExtendedSize = false;
@@ -158,6 +89,7 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
     if (payload != nullptr && payloadSize > 0) {
         _serial.write(payload, payloadSize);
 
+        #ifdef VERBOSE
         Serial.print("Payload bytes: ");
         for (uint16_t i = 0; i < payloadSize; i++) {
             Serial.print("0x");
@@ -166,9 +98,12 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
             Serial.print(" ");
         }
         Serial.println();
+        #endif
     }
     else {
+        #ifdef VERBOSE
         Serial.println("No payload");
+        #endif
     }
 
     // Calculate and write CRC32 if enabled

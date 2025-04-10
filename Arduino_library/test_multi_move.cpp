@@ -3,10 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
-// Create Servomotor instance on the stack
-// This is safe because ArduinoEmulator.cpp ensures Serial1 is initialized
-// before setup() is called, and exits if initialization fails
-Servomotor motor('X', Serial1);
+// Servomotor instance will be created in setup() using the wrapper
 
 // Helper function to calculate and perform delay for multiMove sequences
 template<typename T>
@@ -46,16 +43,20 @@ void multiMoveDelayInternalTimeInput(uint8_t multiMoveCount, const multiMoveList
 
 
 // Test multiMove with different velocity units
-void testMultiMoveVelocityUnits() {
+void testMultiMoveVelocityUnits(Servomotor* motor) {
     printf("\n=== Testing multiMove with different velocity units ===\n");
     
     // Test with ROTATIONS_PER_SECOND
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(ROTATIONS_PER_SECOND)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of moves
     const uint8_t multiMoveCount = 2;
@@ -69,23 +70,27 @@ void testMultiMoveVelocityUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with ROTATIONS_PER_SECOND...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (ROTATIONS_PER_SECOND)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (ROTATIONS_PER_SECOND)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
     TEST_RESULT("multiMove with ROTATIONS_PER_SECOND", approxEqual(end_pos, 2.0f));
     
     // Test with RPM
-    motor.setVelocityUnit(VelocityUnit::RPM);
+    motor->setVelocityUnit(VelocityUnit::RPM);
+    checkMotorError(*motor, "setVelocityUnit(RPM)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with RPM units (120 RPM = 2 RPS)
     multiMoveListConverted_t multiMoveListRPM[multiMoveCount] = {
@@ -95,23 +100,27 @@ void testMultiMoveVelocityUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RPM...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    checkMotorError(*motor, "multiMove (RPM)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListRPM);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (RPM)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
     TEST_RESULT("multiMove with RPM", approxEqual(end_pos, 2.0f));
     
     // Test with DEGREES_PER_SECOND
-    motor.setVelocityUnit(VelocityUnit::DEGREES_PER_SECOND);
+    motor->setVelocityUnit(VelocityUnit::DEGREES_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(DEGREES_PER_SECOND)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with degrees/sec units (720 deg/sec = 2 RPS)
     multiMoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
@@ -121,23 +130,27 @@ void testMultiMoveVelocityUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with DEGREES_PER_SECOND...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    checkMotorError(*motor, "multiMove (DEGREES_PER_SECOND)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListDegrees);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (DEGREES_PER_SECOND)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
     TEST_RESULT("multiMove with DEGREES_PER_SECOND", approxEqual(end_pos, 2.0f));
     
     // Test with RADIANS_PER_SECOND
-    motor.setVelocityUnit(VelocityUnit::RADIANS_PER_SECOND);
+    motor->setVelocityUnit(VelocityUnit::RADIANS_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(RADIANS_PER_SECOND)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with radians/sec units (4π rad/sec = 2 RPS)
     multiMoveListConverted_t multiMoveListRadians[multiMoveCount] = {
@@ -147,13 +160,15 @@ void testMultiMoveVelocityUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RADIANS_PER_SECOND...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    checkMotorError(*motor, "multiMove (RADIANS_PER_SECOND)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListRadians);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (RADIANS_PER_SECOND)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
@@ -161,16 +176,20 @@ void testMultiMoveVelocityUnits() {
 }
 
 // Test multiMove with different acceleration units
-void testMultiMoveAccelerationUnits() {
+void testMultiMoveAccelerationUnits(Servomotor* motor) {
     printf("\n=== Testing multiMove with different acceleration units ===\n");
     
     // Test with ROTATIONS_PER_SECOND_SQUARED
-    motor.setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
+    checkMotorError(*motor, "setAccelerationUnit(ROTATIONS_PER_SECOND_SQUARED)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of moves
     const uint8_t multiMoveCount = 3;
@@ -185,13 +204,15 @@ void testMultiMoveAccelerationUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with ROTATIONS_PER_SECOND_SQUARED...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (ROTATIONS_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (ROTATIONS_PER_SECOND_SQUARED)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 8 rotations
@@ -206,10 +227,12 @@ void testMultiMoveAccelerationUnits() {
     TEST_RESULT("multiMove with ROTATIONS_PER_SECOND_SQUARED", approxEqual(end_pos, 8.0f));
     
     // Test with RPM_PER_SECOND
-    motor.setAccelerationUnit(AccelerationUnit::RPM_PER_SECOND);
+    motor->setAccelerationUnit(AccelerationUnit::RPM_PER_SECOND);
+    checkMotorError(*motor, "setAccelerationUnit(RPM_PER_SECOND)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with RPM/sec units (120 RPM/sec = 2 RPS²)
     multiMoveListConverted_t multiMoveListRPM[multiMoveCount] = {
@@ -220,23 +243,27 @@ void testMultiMoveAccelerationUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RPM_PER_SECOND...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    checkMotorError(*motor, "multiMove (RPM_PER_SECOND)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListRPM);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (RPM_PER_SECOND)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 8 rotations
     TEST_RESULT("multiMove with RPM_PER_SECOND", approxEqual(end_pos, 8.0f));
     
     // Test with DEGREES_PER_SECOND_SQUARED
-    motor.setAccelerationUnit(AccelerationUnit::DEGREES_PER_SECOND_SQUARED);
+    motor->setAccelerationUnit(AccelerationUnit::DEGREES_PER_SECOND_SQUARED);
+    checkMotorError(*motor, "setAccelerationUnit(DEGREES_PER_SECOND_SQUARED)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with degrees/sec² units (720 deg/sec² = 2 RPS²)
     multiMoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
@@ -247,23 +274,27 @@ void testMultiMoveAccelerationUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with DEGREES_PER_SECOND_SQUARED...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    checkMotorError(*motor, "multiMove (DEGREES_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListDegrees);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (DEGREES_PER_SECOND_SQUARED)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 8 rotations
     TEST_RESULT("multiMove with DEGREES_PER_SECOND_SQUARED", approxEqual(end_pos, 8.0f));
     
     // Test with RADIANS_PER_SECOND_SQUARED
-    motor.setAccelerationUnit(AccelerationUnit::RADIANS_PER_SECOND_SQUARED);
+    motor->setAccelerationUnit(AccelerationUnit::RADIANS_PER_SECOND_SQUARED);
+    checkMotorError(*motor, "setAccelerationUnit(RADIANS_PER_SECOND_SQUARED)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with radians/sec² units (4π rad/sec² = 2 RPS²)
     multiMoveListConverted_t multiMoveListRadians[multiMoveCount] = {
@@ -274,13 +305,15 @@ void testMultiMoveAccelerationUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RADIANS_PER_SECOND_SQUARED...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    checkMotorError(*motor, "multiMove (RADIANS_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveListRadians);
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (RADIANS_PER_SECOND_SQUARED)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 8 rotations
@@ -288,16 +321,20 @@ void testMultiMoveAccelerationUnits() {
 }
 
 // Test multiMove with different time units
-void testMultiMoveTimeUnits() {
+void testMultiMoveTimeUnits(Servomotor* motor) {
     printf("\n=== Testing multiMove with different time units ===\n");
     
     // Test with SECONDS
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(ROTATIONS_PER_SECOND)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of moves
     const uint8_t multiMoveCount = 2;
@@ -312,23 +349,27 @@ void testMultiMoveTimeUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with SECONDS...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (SECONDS)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (SECONDS)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
     TEST_RESULT("multiMove with SECONDS", approxEqual(end_pos, 2.0f));
     
     // Test with MILLISECONDS
-    motor.setTimeUnit(TimeUnit::MILLISECONDS);
+    motor->setTimeUnit(TimeUnit::MILLISECONDS);
+    checkMotorError(*motor, "setTimeUnit(MILLISECONDS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with milliseconds units
     multiMoveListConverted_t multiMoveListMS[multiMoveCount] = {
@@ -338,23 +379,27 @@ void testMultiMoveTimeUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with MILLISECONDS...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListMS);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListMS);
+    checkMotorError(*motor, "multiMove (MILLISECONDS)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList); // Note: We are using the array containing the time in units of seconds
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (MILLISECONDS)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
     TEST_RESULT("multiMove with MILLISECONDS", approxEqual(end_pos, 2.0f));
     
     // Test with MINUTES
-    motor.setTimeUnit(TimeUnit::MINUTES);
+    motor->setTimeUnit(TimeUnit::MINUTES);
+    checkMotorError(*motor, "setTimeUnit(MINUTES)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create move list with minutes units
     multiMoveListConverted_t multiMoveListMin[multiMoveCount] = {
@@ -364,13 +409,15 @@ void testMultiMoveTimeUnits() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with MINUTES...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveListMin);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListMin);
+    checkMotorError(*motor, "multiMove (MINUTES)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList); // Note: We are using the array containing the time in units of seconds
     
     // Get final position
-    end_pos = motor.getPosition();
+    end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (MINUTES)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
@@ -378,11 +425,12 @@ void testMultiMoveTimeUnits() {
 }
 
 // Test multiMoveRaw with internal units
-void testMultiMoveRaw() {
+void testMultiMoveRaw(Servomotor* motor) {
     printf("\n=== Testing multiMoveRaw with internal units ===\n");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of moves
     const uint8_t multiMoveCount = 2;
@@ -398,13 +446,15 @@ void testMultiMoveRaw() {
     
     // Execute the multi-move sequence with raw units
     printf("Testing multiMoveRaw...\n");
-    motor.multiMoveRaw(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMoveRaw(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMoveRaw");
     
     // Wait for the sequence to complete
     multiMoveDelayInternalTimeInput(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (Raw)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position: 2 rotations
@@ -412,17 +462,22 @@ void testMultiMoveRaw() {
 }
 
 // Test complex motion sequence with mixed velocity and acceleration moves
-void testComplexMotionSequence() {
+void testComplexMotionSequence(Servomotor* motor) {
     printf("\n=== Testing complex motion sequence with mixed moves ===\n");
     
     // Set units
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(ROTATIONS_PER_SECOND)");
+    motor->setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
+    checkMotorError(*motor, "setAccelerationUnit(ROTATIONS_PER_SECOND_SQUARED)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of moves
     const uint8_t multiMoveCount = 4;
@@ -438,13 +493,15 @@ void testComplexMotionSequence() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing complex motion sequence...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (Complex)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (Complex)");
     printf("Position after move: %.2f rotations\n", end_pos);
     
     // Expected position calculation:
@@ -464,16 +521,20 @@ void testComplexMotionSequence() {
 }
 
 // Test maximum number of moves (32) with velocity moves
-void testMaximumNumberOfVelocityMoves() {
+void testMaximumNumberOfVelocityMoves(Servomotor* motor) {
     printf("\n=== Testing maximum number of velocity moves (32) ===\n");
     
     // Set units
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    checkMotorError(*motor, "setVelocityUnit(ROTATIONS_PER_SECOND)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of 32 moves (maximum)
     const uint8_t multiMoveCount = 32;
@@ -499,31 +560,37 @@ void testMaximumNumberOfVelocityMoves() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing maximum number of velocity moves...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (Max Velocity Moves)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (Max Velocity Moves)");
     printf("Position after velocity moves: %.2f rotations\n", end_pos);
     
     // We're not checking the exact position here, just that the command executed without errors
-    TEST_RESULT("Maximum number of velocity moves", motor.getError() == 0);
+    TEST_RESULT("Maximum number of velocity moves", motor->getError() == 0);
 }
 
 // Test maximum number of moves (32) with acceleration moves
-void testMaximumNumberOfAccelerationMoves() {
+void testMaximumNumberOfAccelerationMoves(Servomotor* motor) {
     printf("\n=== Testing maximum number of acceleration moves (32) ===\n");
     
     // Set units
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
-    motor.setTimeUnit(TimeUnit::SECONDS);
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    motor->setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
+    checkMotorError(*motor, "setAccelerationUnit(ROTATIONS_PER_SECOND_SQUARED)");
+    motor->setTimeUnit(TimeUnit::SECONDS);
+    checkMotorError(*motor, "setTimeUnit(SECONDS)");
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    checkMotorError(*motor, "setPositionUnit(SHAFT_ROTATIONS)");
     
     // Reset position
-    motor.zeroPosition();
+    motor->zeroPosition();
+    checkMotorError(*motor, "zeroPosition");
     
     // Create a sequence of 32 moves (maximum)
     const uint8_t multiMoveCount = 32;
@@ -555,60 +622,67 @@ void testMaximumNumberOfAccelerationMoves() {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing maximum number of acceleration moves...\n");
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    checkMotorError(*motor, "multiMove (Max Acceleration Moves)");
     
     // Wait for the sequence to complete
     multiMoveDelay(multiMoveCount, multiMoveList);
     
     // Get final position
-    float end_pos = motor.getPosition();
+    float end_pos = motor->getPosition();
+    checkMotorError(*motor, "getPosition (Max Acceleration Moves)");
     printf("Position after acceleration moves: %.2f rotations\n", end_pos);
     
     // We're not checking the exact position here, just that the command executed without errors
-    TEST_RESULT("Maximum number of acceleration moves", motor.getError() == 0);
+    TEST_RESULT("Maximum number of acceleration moves", motor->getError() == 0);
 }
 
 void setup() {
+    // Create a Servomotor instance using the wrapper
+    Servomotor* motor = Servomotor_TestModeConvenienceWrapper();
     Serial.begin(115200);  // Debugging port at 115200 baud
     
     printf("\n\n=== Starting multiMove Tests ===\n\n");
     
     // Reset system to get to a known state
     printf("Resetting system...\n");
-    motor.systemReset();
+    motor->systemReset();
     delay(1500);  // Wait for system to reset
     // Note: We don't check for errors after systemReset because the motor resets and doesn't respond
     
     // Configure motor units
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
-    motor.setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
-    motor.setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
-    motor.setTimeUnit(TimeUnit::SECONDS);
+    motor->setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+    motor->setVelocityUnit(VelocityUnit::ROTATIONS_PER_SECOND);
+    motor->setAccelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED);
+    motor->setTimeUnit(TimeUnit::SECONDS);
     
     // Enable mosfets before moving
     printf("Enabling MOSFETs...\n");
-    motor.enableMosfets();
-    checkMotorError(motor, "enableMosfets");
+    motor->enableMosfets();
+    checkMotorError(*motor, "enableMosfets");
     
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor.getStatus();
-    checkMotorError(motor, "getStatus");
+    StatusResponse enabled_status = motor->getStatus();
+    checkMotorError(*motor, "getStatus");
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     TEST_RESULT("MOSFETs Successfully Enabled", (enabled_status.statusFlags & 0x02) == 0x02);
     
     // Run tests
-    testMultiMoveVelocityUnits();
-    testMultiMoveAccelerationUnits();
-    testMultiMoveTimeUnits();
-    testMultiMoveRaw();
-    testComplexMotionSequence();
-    testMaximumNumberOfVelocityMoves();
-    testMaximumNumberOfAccelerationMoves();
+    testMultiMoveVelocityUnits(motor);
+    testMultiMoveAccelerationUnits(motor);
+    testMultiMoveTimeUnits(motor);
+    testMultiMoveRaw(motor);
+    testComplexMotionSequence(motor);
+    testMaximumNumberOfVelocityMoves(motor);
+    testMaximumNumberOfAccelerationMoves(motor);
     
     printf("\n=== All tests completed ===\n");
     
     // Print test results
     TestRunner::printResults();
+
+    // Clean up
+    delete motor;
     
     // Exit with appropriate status
     exit(TestRunner::allTestsPassed() ? 0 : 1);
