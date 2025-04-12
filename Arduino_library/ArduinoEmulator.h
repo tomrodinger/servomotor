@@ -1,6 +1,8 @@
 #ifndef ARDUINO_EMULATOR_H
 #define ARDUINO_EMULATOR_H
 
+//#define VERBOSE  // Uncomment this line to enable debug output
+
 #include <iostream>
 #include <string>
 #include <thread>
@@ -184,9 +186,11 @@ public:
             _fd = -1;
             return false;
         }
-
-        std::cout << "[HardwareSerial] Opened " << _portName
-                  << " at baud " << baud << "\n";
+#ifdef VERBOSE
+std::cout << "[HardwareSerial] Opened " << _portName
+          << " at baud " << baud << "\n";
+#endif
+return true;
         return true;
     }
 
@@ -196,10 +200,12 @@ public:
             ::write(_fd, &b, 1);
             tcdrain(_fd);  // Wait for output to be transmitted
             
+            #ifdef VERBOSE
             // Debug output
             std::cout << "[HW TX] 0x";
             if (b < 0x10) std::cout << "0";
             std::cout << std::hex << (int)b << std::dec << std::endl;
+            #endif
         }
     }
 
@@ -209,6 +215,7 @@ public:
             ::write(_fd, buffer, size);
             tcdrain(_fd);  // Wait for output to be transmitted
             
+            #ifdef VERBOSE
             // Debug output
             std::cout << "[HW TX] Buffer:";
             for (size_t i = 0; i < size; i++) {
@@ -217,6 +224,7 @@ public:
                 std::cout << std::hex << (int)buffer[i] << std::dec;
             }
             std::cout << std::endl;
+            #endif
         }
     }
 
@@ -234,10 +242,12 @@ public:
         uint8_t b;
         ssize_t n = ::read(_fd, &b, 1);
         if (n > 0) {
+            #ifdef VERBOSE
             // Debug output
             std::cout << "[HW RX] 0x";
             if (b < 0x10) std::cout << "0";
             std::cout << std::hex << (int)b << std::dec << std::endl;
+            #endif
             return b;
         }
         return 0;

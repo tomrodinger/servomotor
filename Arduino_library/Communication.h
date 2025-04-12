@@ -70,9 +70,13 @@ public:
     void enableCRC32();
     void disableCRC32();
     bool isCRC32Enabled() const;
-
 protected:
     HardwareSerial& _serial; // Store the reference to the actual serial port
     bool _crc32Enabled; // Flag to track if CRC32 is enabled
+    
+private:
+    // Core function that handles the common logic for both addressing modes
+    void sendCommandCore(bool isExtended, uint64_t addressValue, uint8_t commandID,
+                         const uint8_t* payload, uint16_t payloadSize);
 };
 #endif // COMMUNICATION_H

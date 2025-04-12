@@ -1,5 +1,6 @@
 // Communication.cpp
 #include "Communication.h"
+#include <limits>  // For std::numeric_limits
 
 //#define VERBOSE
 #define TIMEOUT_MS 1000  // Define timeout duration (1 second)
@@ -18,11 +19,12 @@ void crc32_init(void)
     crc32_value = 0xFFFFFFFF;
 }
 
-uint32_t calculate_crc32_buffer_without_reinit(const uint8_t* data, size_t length)
+uint32_t calculate_crc32_buffer_without_reinit(const void* data, size_t length)
 {
     uint32_t i, j;
+    uint8_t *d = (uint8_t *)data;
     for (i = 0; i < length; i++) {
-        crc32_value ^= data[i];
+        crc32_value ^= d[i];
         for (j = 0; j < 8; j++) {
             if (crc32_value & 1)
                 crc32_value = (crc32_value >> 1) ^ CRC32_POLYNOMIAL;
@@ -53,13 +55,24 @@ void Communication::openSerialPort() {
 }
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
+    sendCommandCore(false, alias, commandID, payload, payloadSize);
+}
+
+void Communication::sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
+    sendCommandCore(true, uniqueId, commandID, payload, payloadSize);
+}
+
+void Communication::sendCommandCore(bool isExtendedAddress, uint64_t addressValue, uint8_t commandID,
+                                   const uint8_t* payload, uint16_t payloadSize) {
+    
     uint8_t sizeByte;
     bool isExtendedSize = false;
-    uint8_t sizeLow = 0;
-    uint8_t sizeHigh = 0;
-
-    // Calculate total packet size (including the size byte itself)
-    uint16_t totalPacketSize = sizeof(sizeByte) + sizeof(alias) + sizeof(commandID) + payloadSize;
+    uint16_t size16Bit;
+    // Calculate address size
+    const uint16_t addressSize = isExtendedAddress ? (sizeof(uint8_t) + sizeof(uint64_t)) : sizeof(uint8_t); // Extended: 1 byte flag + 8 bytes ID, Standard: 1 byte alias
+    
+    // Calculate total packet size (initial calculation without extended size bytes)
+    uint32_t totalPacketSize = sizeof(sizeByte) + addressSize + sizeof(commandID) + payloadSize;
     if (_crc32Enabled) {
         totalPacketSize += sizeof(uint32_t); // Add 4 bytes for CRC32
     }
@@ -70,27 +83,87 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
         _serial.write(sizeByte);
     } else {
         isExtendedSize = true;
-        totalPacketSize += sizeof(uint16_t); // Add 2 bytes for the extended size
         sizeByte = encodeFirstByte(DECODED_FIRST_BYTE_EXTENDED_SIZE);
-        sizeLow = (uint8_t)(totalPacketSize & 0xFF);
-        sizeHigh = (uint8_t)((totalPacketSize >> 8) & 0xFF);
+        totalPacketSize += sizeof(uint16_t); // Add 2 bytes for the extended size
+        if (totalPacketSize > std::numeric_limits<uint16_t>::max()) {
+            #ifdef VERBOSE
+            Serial.println("Packet larger than protocol supports. Nothing being transmitted.");
+            #endif
+            return;
+        }
+        size16Bit = (uint16_t)totalPacketSize;
         _serial.write(sizeByte);
-        _serial.write(sizeLow);
-        _serial.write(sizeHigh);
+        _serial.write((uint8_t *)&size16Bit, sizeof(size16Bit));
     }
     
-    // Write alias byte
-    _serial.write(alias);
+    // Initialize CRC calculation if enabled
+    if (_crc32Enabled) {
+        crc32_init();
+        calculate_crc32_buffer_without_reinit(&sizeByte, sizeof(sizeByte));
+        if (isExtendedSize) {
+            calculate_crc32_buffer_without_reinit(&size16Bit, sizeof(size16Bit));
+        }
+    }
+    
+    // Write address bytes
+    if (isExtendedAddress) {
+        const uint8_t extendedAddrByte = EXTENDED_ADDRESSING;
+        _serial.write(extendedAddrByte);
+        _serial.write((uint8_t *)&addressValue, sizeof(addressValue));
+        if (_crc32Enabled) {
+            calculate_crc32_buffer_without_reinit(&extendedAddrByte, sizeof(extendedAddrByte));
+            calculate_crc32_buffer_without_reinit(&addressValue, sizeof(addressValue));        
+        }
+    }
+    else {
+        const uint8_t alias = (uint8_t)addressValue;
+        _serial.write(alias);
+        
+        // Add to CRC if enabled
+        if (_crc32Enabled) {
+            calculate_crc32_buffer_without_reinit(&alias, sizeof(alias));
+        }
+    }
     
     // Write command byte
     _serial.write(commandID);
     
+    #ifdef VERBOSE
+    if (isExtendedAddress) {
+        Serial.print("Sent extended command with ");
+        Serial.print(_crc32Enabled ? "CRC32 enabled" : "CRC32 disabled");
+        Serial.print(", uniqueId: 0x");
+        // Print Unique ID in big-endian format for readability
+        for (int i = 7; i >= 0; i--) {
+            uint8_t byte = (addressValue >> (i * 8)) & 0xFF;
+            if (byte < 0x10) Serial.print("0");
+            Serial.print(static_cast<int>(byte), HEX);
+        }
+        Serial.print(", command: 0x");
+        if (commandID < 0x10) Serial.print("0");
+        Serial.println(commandID, HEX);
+        Serial.println();
+    }
+    #endif
+
+    // Add command to CRC if enabled
+    if (_crc32Enabled) {
+        calculate_crc32_buffer_without_reinit(&commandID, sizeof(commandID));
+    }
+    
     // Write payload
     if (payload != nullptr && payloadSize > 0) {
         _serial.write(payload, payloadSize);
-
+        
+        // Add payload to CRC if enabled
+        if (_crc32Enabled) {
+            calculate_crc32_buffer_without_reinit(payload, payloadSize);
+        }
+        
         #ifdef VERBOSE
-        Serial.print("Payload bytes: ");
+        Serial.print("Payload bytes");
+        if (isExtendedAddress) Serial.print(" (extended address)");
+        Serial.print(": ");
         for (uint16_t i = 0; i < payloadSize; i++) {
             Serial.print("0x");
             if (payload[i] < 0x10) Serial.print("0");
@@ -102,159 +175,32 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
     }
     else {
         #ifdef VERBOSE
-        Serial.println("No payload");
-        #endif
-    }
-
-    // Calculate and write CRC32 if enabled
-    if (_crc32Enabled) {
-        crc32_init();
-        calculate_crc32_buffer_without_reinit(&sizeByte, sizeof(sizeByte));
-        if (isExtendedSize) {
-            calculate_crc32_buffer_without_reinit(&sizeLow, sizeof(sizeLow));
-            calculate_crc32_buffer_without_reinit(&sizeHigh, sizeof(sizeHigh));
-        }
-        calculate_crc32_buffer_without_reinit(&alias, sizeof(alias));
-        calculate_crc32_buffer_without_reinit(&commandID, sizeof(commandID));
-        if (payload != nullptr && payloadSize > 0) {
-            calculate_crc32_buffer_without_reinit(payload, payloadSize);
-        }
-        
-        // Calculate CRC32 and transmit it in the case when CRC32 is enabled
-        uint32_t crc = get_crc32();
-        _serial.write((uint8_t*)(&crc), sizeof(crc));
-
-        #ifdef VERBOSE
-        Serial.print("calculated CRC32 bytes sent: 0x");
-        Serial.print(crc, HEX);
+        Serial.print("No payload");
+        if (isExtendedAddress) Serial.print(" (extended address)");
         Serial.println();
         #endif
     }
-}
-
-void Communication::sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
-    uint8_t sizeByte;
-    bool isExtendedSize = false;
-    uint8_t sizeLow = 0;
-    uint8_t sizeHigh = 0;
-    uint8_t extendedAddrByte = EXTENDED_ADDRESSING; // Use the constant
-
-    // Calculate packet content size (excluding size bytes)
-    // Content = ExtendedAddrByte + UniqueID + CommandID + Payload + CRC (if enabled)
-    uint16_t contentSize = sizeof(extendedAddrByte) + sizeof(uniqueId) + sizeof(commandID) + payloadSize;
-    if (_crc32Enabled) {
-        contentSize += sizeof(uint32_t); // Add 4 bytes for CRC32
-    }
-
-    // Determine number of size bytes and total packet size
-    uint8_t numSizeBytes;
-    uint16_t totalPacketSize;
-    if (contentSize + 1 <= DECODED_FIRST_BYTE_EXTENDED_SIZE) { // Check if content + 1 size byte fits
-        numSizeBytes = 1;
-        totalPacketSize = contentSize + numSizeBytes;
-        sizeByte = encodeFirstByte(totalPacketSize);
-    } else { // Need 3 size bytes
-        numSizeBytes = 3;
-        totalPacketSize = contentSize + numSizeBytes;
-        sizeByte = encodeFirstByte(DECODED_FIRST_BYTE_EXTENDED_SIZE); // 0xFF
-        sizeLow = (uint8_t)(totalPacketSize & 0xFF);
-        sizeHigh = (uint8_t)((totalPacketSize >> 8) & 0xFF);
-        isExtendedSize = true;
-    }
-
-    // --- Start Writing ---
-    // Write size byte(s)
-    _serial.write(sizeByte);
-    if (isExtendedSize) {
-        _serial.write(sizeLow);
-        _serial.write(sizeHigh);
-    }
-
-    // Write extended addressing indicator byte
-    _serial.write(extendedAddrByte);
-
-    // Write 64-bit Unique ID (little endian)
-    for (int i = 0; i < 8; i++) {
-        _serial.write((uint8_t)((uniqueId >> (i * 8)) & 0xFF));
-    }
-
-    // Write command byte
-    _serial.write(commandID);
-
-    // Write payload
-    if (payload != nullptr && payloadSize > 0) {
-        _serial.write(payload, payloadSize);
-        #ifdef VERBOSE
-        Serial.print("Payload bytes (extended): ");
-        for (uint16_t i = 0; i < payloadSize; i++) {
-            Serial.print("0x");
-            if (payload[i] < 0x10) Serial.print("0");
-            Serial.print(payload[i], HEX);
-            Serial.print(" ");
-        }
-        Serial.println();
-        #endif
-    } else {
-        #ifdef VERBOSE
-        Serial.println("No payload (extended)");
-        #endif
-    }
-
+    
     // Calculate and write CRC32 if enabled
     if (_crc32Enabled) {
-        crc32_init();
-        // CRC over size byte(s)
-        calculate_crc32_buffer_without_reinit(&sizeByte, sizeof(sizeByte));
-        if (isExtendedSize) {
-            calculate_crc32_buffer_without_reinit(&sizeLow, sizeof(sizeLow));
-            calculate_crc32_buffer_without_reinit(&sizeHigh, sizeof(sizeHigh));
-        }
-        // CRC over EXTENDED_ADDRESSING byte
-        calculate_crc32_buffer_without_reinit(&extendedAddrByte, sizeof(extendedAddrByte));
-        // CRC over Unique ID (must be done byte-by-byte in correct order - little endian)
-        for (int i = 0; i < 8; i++) {
-             uint8_t idByte = (uint8_t)((uniqueId >> (i * 8)) & 0xFF);
-             calculate_crc32_buffer_without_reinit(&idByte, sizeof(idByte));
-        }
-        // CRC over command ID
-        calculate_crc32_buffer_without_reinit(&commandID, sizeof(commandID));
-        // CRC over payload
-        if (payload != nullptr && payloadSize > 0) {
-            calculate_crc32_buffer_without_reinit(payload, payloadSize);
-        }
-
         // Get final CRC and write it
         uint32_t crc = get_crc32();
-        _serial.write((uint8_t*)(&crc), sizeof(crc)); // Writes little endian
-
+        _serial.write((uint8_t*)(&crc), sizeof(crc));
+        
         #ifdef VERBOSE
-        Serial.print("calculated CRC32 bytes sent (extended): 0x");
+        Serial.print("calculated CRC32 bytes sent");
+        if (isExtendedAddress) Serial.print(" (extended)");
+        Serial.print(": 0x");
         Serial.print(crc, HEX);
         Serial.println();
         #endif
     }
-
-    #ifdef VERBOSE
-    Serial.print("Sent extended command with ");
-    Serial.print(_crc32Enabled ? "CRC32 enabled" : "CRC32 disabled");
-    Serial.print(", uniqueId: 0x");
-    // Print Unique ID in big-endian format for readability
-    for (int i = 7; i >= 0; i--) {
-        uint8_t byte = (uniqueId >> (i * 8)) & 0xFF;
-        if (byte < 0x10) Serial.print("0");
-        Serial.print(static_cast<int>(byte), HEX);
-    }
-    Serial.print(", command: 0x");
-    if (commandID < 0x10) Serial.print("0");
-    Serial.println(commandID, HEX);
-    Serial.println("End of extended command");
-    #endif
 }
 
 int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize) {
     uint32_t startTime = millis();
     uint16_t packetSize = 0;
-    bool extendedSize = false;
+    bool isExtendedSize = false;
     
     // Wait for first size byte
     while (!_serial.available()) {
@@ -298,7 +244,7 @@ int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t
     
     // Check if we have extended size format
     if (decodedSize == DECODED_FIRST_BYTE_EXTENDED_SIZE) {
-        extendedSize = true;
+        isExtendedSize = true;
         
         // Wait for extended size bytes (2 bytes)
         while (_serial.available() < 2) {
@@ -332,7 +278,7 @@ int8_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t
     
     // Important: packetSize includes the size byte itself, so we need to subtract
     // 1 for standard size format or 3 for extended size format
-    if (extendedSize) {
+    if (isExtendedSize) {
         packetSize -= 3; // Subtract the 3 size bytes
     } else {
         packetSize -= 1; // Subtract the 1 size byte

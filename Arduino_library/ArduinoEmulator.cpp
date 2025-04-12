@@ -43,11 +43,13 @@ int main(int argc, char* argv[]) {
         // Convert hex string to uint64_t
         try {
             g_uniqueId = std::stoull(identifier, nullptr, 16);
-            // *** ADD DEBUG PRINT ***
+            #ifdef VERBOSE
             std::cout << "[DEBUG] g_uniqueId after stoull: 0x" << std::hex << g_uniqueId << std::dec << std::endl;
-            // *** END DEBUG PRINT ***
+            #endif
             g_useUniqueId = true;
+            #ifdef VERBOSE
             std::cout << "Using extended addressing with uniqueID: 0x" << identifier << std::endl;
+            #endif
         } catch (const std::exception& e) {
             std::cerr << "Error: Invalid uniqueID format. Must be 16 hex characters.\n";
             return 1;
@@ -56,7 +58,9 @@ int main(int argc, char* argv[]) {
         // It's an alias
         g_motorAlias = identifier[0];
         g_useUniqueId = false;
+        #ifdef VERBOSE
         std::cout << "Using standard addressing with alias: " << g_motorAlias << std::endl;
+        #endif
     } else {
         std::cerr << "Error: Invalid identifier format. Must be either:\n";
         std::cerr << "  - A single character alias (e.g., 'X')\n";
