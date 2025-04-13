@@ -468,7 +468,7 @@
     {
         "CommandString": "Get product description",
         "CommandEnum": 24,
-        "Description": "Get the product description. Documentation to be done later.",
+        "Description": "Get the product description.",
         "Input": null,
         "Output": [
             {
@@ -482,7 +482,7 @@
     {
         "CommandString": "Get firmware version",
         "CommandEnum": 25,
-        "Description": "Get the firmware version. Documentation to be done later.",
+        "Description": "Get the firmware version.",
         "Input": null,
         "Output": [
             {

@@ -35,10 +35,12 @@ UNIT_CONVERSIONS_JSON_FILE = os.path.join(PYTHON_PROGRAMS_DIR, "unit_conversions
 COMMANDS_H_FILE = os.path.join(ARDUINO_LIB_DIR, "Commands.h")
 SERVOMOTOR_CPP_FILE = os.path.join(ARDUINO_LIB_DIR, "Servomotor.cpp")
 SERVOMOTOR_H_FILE = os.path.join(ARDUINO_LIB_DIR, "Servomotor.h")
+SERVOMOTOR_CPP_FILE = os.path.join(ARDUINO_LIB_DIR, "Servomotor.cpp")
 
 # Template file paths
 COMMANDS_H_TEMPLATE = os.path.join(TEMPLATES_DIR, "Commands.h.template")
 SERVOMOTOR_H_TEMPLATE = os.path.join(TEMPLATES_DIR, "Servomotor.h.template")
+SERVOMOTOR_CPP_TEMPLATE = os.path.join(TEMPLATES_DIR, "Servomotor.cpp.template")
 
 
 def back_up_files(files):
@@ -142,6 +144,7 @@ def main():
     print(f"This script will generate the following files:")
     print(f"  {COMMANDS_H_FILE}")
     print(f"  {SERVOMOTOR_H_FILE}")
+    print(f"  {SERVOMOTOR_CPP_FILE}")
     
     # The existing files will be backed up unless --no-backup is given
     if '--no-backup' not in sys.argv:
@@ -165,7 +168,7 @@ def main():
     
     # Create backups of the files
     if backup_flag:
-        back_up_files([COMMANDS_H_FILE, SERVOMOTOR_H_FILE])
+        back_up_files([COMMANDS_H_FILE, SERVOMOTOR_H_FILE, SERVOMOTOR_CPP_FILE])
     
     # Load JSON data
     try:
@@ -201,6 +204,9 @@ def main():
     
     # Process the Servomotor.h template
     process_template(SERVOMOTOR_H_TEMPLATE, SERVOMOTOR_H_FILE, context)
+    
+    # Process the Servomotor.cpp template
+    process_template(SERVOMOTOR_CPP_TEMPLATE, SERVOMOTOR_CPP_FILE, context)
 
 
 if __name__ == '__main__':

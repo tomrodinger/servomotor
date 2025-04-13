@@ -1,0 +1,709 @@
+#!/usr/bin/env python3
+"""
+Module for generating command method implementations.
+This module contains a function that takes command data and returns 
+the method implementations for the Servomotor class.
+"""
+
+import re
+
+
+def format_command_name(command_string):
+    """
+    Format a command string to a camelCase function name using a simple algorithm.
+    
+    Args:
+        command_string: The command string to format
+        
+    Returns:
+        Formatted function name in camelCase
+    """
+    command_string = command_string.strip()
+    command_string = re.sub(r'[^a-zA-Z0-9]+', ' ', command_string)
+    words = command_string.split()
+    if not words:
+        return ''
+    
+    # First word lowercase, rest capitalized
+    return words[0].lower() + ''.join(w.capitalize() for w in words[1:])
+
+
+def format_response_name(command_string):
+    """
+    Format a command string to a response structure name.
+    
+    Args:
+        command_string: The command string to format
+        
+    Returns:
+        Formatted response name (e.g., "get status" -> "getStatusResponse")
+    """
+    return format_command_name(command_string) + 'Response'
+
+
+def format_payload_name(command_string):
+    """
+    Format a command string to a payload structure name.
+    
+    Args:
+        command_string: The command string to format
+        
+    Returns:
+        Formatted payload name (e.g., "trapezoid move" -> "trapezoidMovePayload")
+    """
+    return format_command_name(command_string) + 'Payload'
+
+
+def format_list_type_name(command_string, converted=False):
+    """
+    Format a command string to a list type name.
+    
+    Args:
+        command_string: The command string to format
+        converted: Whether to return the converted list type
+        
+    Returns:
+        Formatted list type name (e.g., "multi move" -> "multimoveList_t")
+    """
+    base_name = format_command_name(command_string)
+    if converted:
+        return f"{base_name}ListConverted_t"
+    else:
+        return f"{base_name}List_t"
+
+
+def generate_command_implementations(commands_data=None, data_types_data=None, **kwargs):
+    """
+    Generate the command method implementations for Servomotor.cpp.
+    
+    Args:
+        commands_data: List of command dictionaries from motor_commands.json
+        data_types_data: List of data type dictionaries from data_types.json
+        kwargs: Additional context data (not used by this function)
+        
+    Returns:
+        str: Formatted content for command method implementations
+    """
+    if commands_data is None:
+        return "// No command data available"
+    
+    # Create a type map for parameter conversion
+    type_map = {
+        # Basic types
+        'i8': 'int8_t',
+        'u8': 'uint8_t',
+        'i16': 'int16_t',
+        'u16': 'uint16_t',
+        'i24': 'int32_t',
+        'u24': 'uint32_t',
+        'i32': 'int32_t',
+        'u32': 'uint32_t',
+        'i48': 'int64_t',
+        'u48': 'uint64_t',
+        'i64': 'int64_t',
+        'u64': 'uint64_t',
+        'float': 'float',
+        'double': 'double',
+        
+        # Array types
+        'buf10': ('uint8_t', 10),
+        'string8': ('char', 8),
+        'string_null_term': ('char', 32),
+        'firmware_page': ('uint8_t', 2058),
+        
+        # Special types
+        'u24_version_number': 'uint32_t',
+        'u32_version_number': 'uint32_t',
+        'u64_unique_id': 'uint64_t',
+        'crc32': 'uint32_t'
+    }
+    
+    # Map unit types to conversion function names
+    unit_conversion_map = {
+        'position': 'convertPosition',
+        'time': 'convertTime',
+        'velocity': 'convertVelocity',
+        'acceleration': 'convertAcceleration',
+        'temperature': 'convertTemperature',
+        'voltage': 'convertVoltage',
+        'current': 'convertCurrent'
+    }
+    
+    # Map endianness conversion functions based on type
+    endian_conversion_map = {
+        'int8_t': '',
+        'uint8_t': '',
+        'int16_t': 'htole16',
+        'uint16_t': 'htole16',
+        'int32_t': 'htole32',
+        'uint32_t': 'htole32',
+        'int64_t': 'htole64',
+        'uint64_t': 'htole64',
+    }
+    
+    # Output implementations
+    implementations = []
+    
+    # Process each command
+    for cmd in commands_data:
+        cmd_str = cmd['CommandString']
+        cmd_id = cmd['CommandEnum']
+        func_name = format_command_name(cmd_str)
+        
+        # Determine if this command has inputs (parameters)
+        has_input = bool(cmd.get('Input'))
+        
+        # Determine if this command has outputs (returns a value)
+        has_output = cmd.get('Output') and cmd['Output'] != 'success_response'
+        
+        # Check if this command has any parameters requiring unit conversion
+        needs_unit_conversion = False
+        has_converted_response = False
+        has_unit_conversion_output = False
+        has_mixed_conversion = False
+        
+        # Check input parameters for UnitConversion
+        if cmd.get('Input'):
+            for param in cmd['Input']:
+                if param.get('UnitConversion'):
+                    needs_unit_conversion = True
+                    # Check for special mixed conversion type
+                    if param.get('UnitConversion', {}).get('Type') == 'mixed_acceleration_velocity_time':
+                        has_mixed_conversion = True
+                    break
+        
+        # Check output parameters for UnitConversion
+        if has_output and cmd.get('Output'):
+            for param in cmd.get('Output', []):
+                if param.get('UnitConversion'):
+                    needs_unit_conversion = True
+                    has_converted_response = True
+                    has_unit_conversion_output = True
+                    break
+        
+        # Determine the return type
+        return_type = "void"
+        if has_output:
+            # Generate response type name
+            return_type = format_response_name(cmd_str)
+            
+            # Check if the output is a single parameter with a built-in type
+            output_params = cmd.get('Output', [])
+            if len(output_params) == 1:
+                desc = output_params[0].get('Description', '')
+                match = re.match(r'(\w+):\s*(.*)', desc)
+                if match:
+                    type_str = match.group(1)
+                    if type_str in type_map and not isinstance(type_map[type_str], tuple):
+                        return_type = type_map[type_str]
+        
+        # Get wrapper return type if needed
+        wrapper_return_type = return_type
+        if has_unit_conversion_output:
+            if len(cmd.get('Output', [])) == 1:
+                # For single values with unit conversion, always return float
+                wrapper_return_type = "float"
+            else:
+                # For multiple values in a struct, use the converted struct type
+                wrapper_return_type = return_type.replace('Response', 'ResponseConverted')
+        
+        # Generate implementations
+        if needs_unit_conversion:
+            # First generate the Raw implementation
+            raw_method = generate_raw_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
+                return_type, type_map, endian_conversion_map
+            )
+            implementations.append(raw_method)
+            
+            # Then generate the wrapper implementation
+            wrapper_method = generate_wrapper_method_implementation(
+                cmd, cmd_str, func_name, has_input, has_output, 
+                wrapper_return_type, has_unit_conversion_output,
+                unit_conversion_map, has_mixed_conversion
+            )
+            implementations.append(wrapper_method)
+        else:
+            # Generate a single implementation for commands without unit conversion
+            simple_method = generate_simple_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
+                return_type, type_map, endian_conversion_map
+            )
+            implementations.append(simple_method)
+        
+        # Generate additional method for commands with multiple responses
+        if cmd.get('MultipleResponses'):
+            multi_response_method = generate_multi_response_method(cmd_str, func_name, return_type)
+            implementations.append(multi_response_method)
+    
+    return "\n".join(implementations)
+
+
+def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
+                                      return_type, type_map, endian_conversion_map):
+    """Generate the raw method implementation for commands that need unit conversion."""
+    method_lines = []
+    
+    # Add method signature
+    params = []
+    
+    # Process input parameters
+    if has_input:
+        input_params = cmd.get('Input', [])
+        for idx, param in enumerate(input_params):
+            desc = param.get('Description', '')
+            param_name = param.get('ParameterName')
+            
+            # Extract type and parameter information
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                remainder = match.group(2)
+                
+                if not param_name:
+                    # Simple name extraction
+                    words = remainder.strip().split()
+                    param_name = words[0] if words else f"param{idx}"
+                    param_name = re.sub(r'\W|^(?=\d)', '_', param_name.lower())
+                
+                # Handle special type for list_2d
+                if type_str == 'list_2d' or param.get('UnitConversion', {}).get('Type') == 'mixed_acceleration_velocity_time':
+                    list_type_name = format_list_type_name(cmd_str)
+                    params.append(f"{list_type_name}* {param_name}")
+                    continue
+                
+                # Get C++ type from our type map
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                
+                # Handle array types in parameters
+                if isinstance(cpp_type, tuple):
+                    base_type, array_size = cpp_type
+                    params.append(f"{base_type} {param_name}[{array_size}]")
+                else:
+                    params.append(f"{cpp_type} {param_name}")
+    
+    # Add function signature
+    params_str = ", ".join(params)
+    method_lines.append(f"{return_type} Servomotor::{func_name}Raw({params_str}) {{")
+    
+    # Add debug comment about what this method does
+    description = cmd.get('Description', 'No description available')
+    method_lines.append(f"    // {description} (Raw version)")
+    
+    # Add command ID
+    method_lines.append(f"    const uint8_t commandID = {cmd_str.upper().replace(' ', '_')};")
+    
+    # Create the payload if needed
+    if has_input:
+        payload_struct_name = format_payload_name(cmd_str)
+        method_lines.append(f"    {payload_struct_name} payload;")
+        
+        # Set payload values
+        for param in cmd.get('Input', []):
+            param_name = param.get('ParameterName')
+            # Skip parameters that don't have a clear mapping
+            if not param_name:
+                continue
+                
+            desc = param.get('Description', '')
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                # Handle special list_2d types
+                if type_str == 'list_2d' or param.get('UnitConversion', {}).get('Type') == 'mixed_acceleration_velocity_time':
+                    method_lines.append(f"    // Copy list data into payload")
+                    method_lines.append(f"    for (int i = 0; i < moveCount; i++) {{")
+                    method_lines.append(f"        payload.{param_name}[i] = {param_name}[i];")
+                    method_lines.append(f"    }}")
+                    continue
+                
+                # Get C++ type from our type map for endianness conversion
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                
+                # Handle array types in parameters
+                if isinstance(cpp_type, tuple):
+                    base_type, array_size = cpp_type
+                    method_lines.append(f"    // Copy array data into payload")
+                    method_lines.append(f"    memcpy(payload.{param_name}, {param_name}, sizeof(payload.{param_name}));")
+                else:
+                    # Get endianness conversion function
+                    endian_func = endian_conversion_map.get(cpp_type, '')
+                    if endian_func:
+                        method_lines.append(f"    payload.{param_name} = {endian_func}({param_name});")
+                    else:
+                        method_lines.append(f"    payload.{param_name} = {param_name};")
+        
+        # Send the command
+        method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
+    else:
+        # Send command with no payload
+        method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
+    
+    # Handle the response
+    if has_output:
+        response_struct_name = format_response_name(cmd_str)
+        method_lines.append(f"    uint8_t buffer[sizeof({response_struct_name})];")
+        method_lines.append(f"    uint16_t receivedSize;")
+        method_lines.append(f"    _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);")
+        method_lines.append(f"    if (_errno == 0) {{")
+        method_lines.append(f"        if (receivedSize == sizeof({response_struct_name})) {{")
+        method_lines.append(f"            {response_struct_name}* response = ({response_struct_name}*)buffer;")
+        method_lines.append(f"            return *response;")
+        method_lines.append(f"        }} else {{")
+        method_lines.append(f"            _errno = COMMUNICATION_ERROR_DATA_WRONG_SIZE;")
+        method_lines.append(f"        }}")
+        method_lines.append(f"    }}")
+        method_lines.append(f"    {response_struct_name} defaultResponse = {{0}};")
+        method_lines.append(f"    return defaultResponse;")
+    else:
+        method_lines.append(f"    uint16_t receivedSize;")
+        method_lines.append(f"    _errno = _comm.getResponse(nullptr, 0, receivedSize);")
+    
+    # Close the method
+    method_lines.append("}")
+    method_lines.append("")
+    
+    return "\n".join(method_lines)
+
+
+def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, has_output, 
+                                          return_type, has_unit_conversion_output,
+                                          unit_conversion_map, has_mixed_conversion):
+    """Generate the wrapper method implementation for commands with unit conversion."""
+    method_lines = []
+    
+    # Process input parameters
+    params = []
+    if has_input:
+        input_params = cmd.get('Input', [])
+        for idx, param in enumerate(input_params):
+            desc = param.get('Description', '')
+            param_name = param.get('ParameterName')
+            
+            # Extract type and parameter information
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                remainder = match.group(2)
+                
+                if not param_name:
+                    # Simple name extraction
+                    words = remainder.strip().split()
+                    param_name = words[0] if words else f"param{idx}"
+                    param_name = re.sub(r'\W|^(?=\d)', '_', param_name.lower())
+                
+                # Handle special type for list_2d
+                if type_str == 'list_2d' or param.get('UnitConversion', {}).get('Type') == 'mixed_acceleration_velocity_time':
+                    list_type_name = format_list_type_name(cmd_str, converted=True)
+                    params.append(f"{list_type_name}* {param_name}")
+                    continue
+                
+                # For unit conversion parameters, use float
+                if param.get('UnitConversion'):
+                    params.append(f"float {param_name}")
+                else:
+                    # For non-unit conversion parameters, keep original type
+                    # This should match what's in the `Raw` method
+                    cpp_type = get_cpp_type_from_desc(desc, type_str)
+                    params.append(f"{cpp_type} {param_name}")
+    
+    # Add function signature
+    params_str = ", ".join(params)
+    method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
+    
+    # Add debug output
+    method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
+    
+    # Add debug output for parameters with unit conversion
+    if has_input:
+        for param in cmd.get('Input', []):
+            if param.get('UnitConversion'):
+                param_name = param.get('ParameterName')
+                method_lines.append(f'    Serial.print("  {param_name} in chosen unit: "); Serial.println({param_name});')
+    
+    # Special handling for mixed conversion (like multimove)
+    if has_mixed_conversion:
+        # Handle special list_2d types with mixed conversions
+        method_lines.append(f"    // Convert list items from user units to internal units")
+        # Assuming the parameter is moveList - we should detect this from the actual param name
+        list_type_name = format_list_type_name(cmd_str)
+        method_lines.append(f"    {list_type_name} convertedList[32];")
+        method_lines.append(f"    for (int i = 0; i < moveCount; i++) {{")
+        method_lines.append(f"        // Determine conversion based on move type (velocity or acceleration)")
+        method_lines.append(f"        bool isVelocity = (moveTypes & (1 << i)) != 0;")
+        method_lines.append(f"        if (isVelocity) {{")
+        method_lines.append(f"            convertedList[i].value = (int32_t)::convertVelocity(moveList[i].value, m_velocityUnit, ConversionDirection::TO_INTERNAL);")
+        method_lines.append(f"        }} else {{")
+        method_lines.append(f"            convertedList[i].value = (int32_t)::convertAcceleration(moveList[i].value, m_accelerationUnit, ConversionDirection::TO_INTERNAL);")
+        method_lines.append(f"        }}")
+        method_lines.append(f"        convertedList[i].timeSteps = (uint32_t)::convertTime(moveList[i].duration, m_timeUnit, ConversionDirection::TO_INTERNAL);")
+        method_lines.append(f"    }}")
+        
+        # Call the raw method with the converted list
+        raw_params = ["moveCount", "moveTypes", "convertedList"]
+        raw_params_str = ", ".join(raw_params)
+        method_lines.append(f"    {func_name}Raw({raw_params_str});")
+    else:
+        # Regular parameter conversion
+        raw_params = []
+        for param in cmd.get('Input', []) if has_input else []:
+            param_name = param.get('ParameterName')
+            if param.get('UnitConversion'):
+                # Get unit conversion type and function
+                unit_type = param.get('UnitConversion', {}).get('Type')
+                conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                
+                # Get appropriate unit enum based on type
+                unit_enum = f"m_{unit_type}Unit"
+                
+                # Add conversion code - use the global function, not a class method
+                internal_var = f"{param_name}_internal"
+                method_lines.append(f"    float {internal_var} = ::{conversion_func}({param_name}, {unit_enum}, ConversionDirection::TO_INTERNAL);")
+                
+                # Add the converted parameter to the raw call
+                if conversion_func in ['convertPosition', 'convertAcceleration']:
+                    raw_params.append(f"(int32_t)({internal_var})")
+                else:
+                    raw_params.append(f"(uint32_t)({internal_var})")
+            else:
+                # No conversion needed
+                raw_params.append(param_name)
+        
+        # Call the raw method
+        raw_params_str = ", ".join(raw_params)
+        if has_output and has_unit_conversion_output:
+            method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
+            
+            # Convert the raw result to user units
+            if return_type == "float":
+                # Single value output
+                output_param = cmd.get('Output', [])[0]
+                unit_type = output_param.get('UnitConversion', {}).get('Type')
+                conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                unit_enum = f"m_{unit_type}Unit"
+                
+                # Check the original description to determine if it's a simple value or struct
+                desc = output_param.get('Description', '')
+                match = re.match(r'(\w+):\s*(.*)', desc)
+                type_str = match.group(1) if match else ''
+                
+                # If it's a simple type in our type_map, use rawResult directly
+                param_name = output_param.get('ParameterName')
+                primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i48', 'u48', 'i64', 'u64']
+                if type_str in primitive_types:
+                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                else:
+                    # Otherwise assume it's a struct with a field name matching the parameter name
+                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                
+                method_lines.append(f"    return converted;")
+            else:
+                # Multiple values in struct
+                method_lines.append(f"    {return_type} converted;")
+                for output_param in cmd.get('Output', []):
+                    if output_param.get('UnitConversion'):
+                        param_name = output_param.get('ParameterName')
+                        unit_type = output_param.get('UnitConversion', {}).get('Type')
+                        conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                        unit_enum = f"m_{unit_type}Unit"
+                        
+                        method_lines.append(f"    converted.{param_name} = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                    else:
+                        # Copy non-converted fields directly
+                        param_name = output_param.get('ParameterName')
+                        method_lines.append(f"    converted.{param_name} = rawResult.{param_name};")
+                
+                method_lines.append(f"    return converted;")
+        else:
+            # No return value to convert
+            method_lines.append(f"    {func_name}Raw({raw_params_str});")
+    
+    # Close the method
+    method_lines.append("}")
+    method_lines.append("")
+    
+    return "\n".join(method_lines)
+
+
+def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
+                                        return_type, type_map, endian_conversion_map):
+    """Generate the implementation for commands without unit conversion."""
+    method_lines = []
+    
+    # Add method signature
+    params = []
+    
+    # Process input parameters
+    if has_input:
+        input_params = cmd.get('Input', [])
+        for idx, param in enumerate(input_params):
+            desc = param.get('Description', '')
+            param_name = param.get('ParameterName')
+            
+            # Extract type and parameter information
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                remainder = match.group(2)
+                
+                if not param_name:
+                    # Simple name extraction
+                    words = remainder.strip().split()
+                    param_name = words[0] if words else f"param{idx}"
+                    param_name = re.sub(r'\W|^(?=\d)', '_', param_name.lower())
+                
+                # Get C++ type from our type map
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                
+                # Handle array types in parameters
+                if isinstance(cpp_type, tuple):
+                    base_type, array_size = cpp_type
+                    params.append(f"{base_type} {param_name}[{array_size}]")
+                else:
+                    params.append(f"{cpp_type} {param_name}")
+    
+    # Add function signature
+    params_str = ", ".join(params)
+    method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
+    
+    # Add debug output
+    method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
+    
+    # Add debug comment about what this method does
+    description = cmd.get('Description', 'No description available')
+    method_lines.append(f"    // {description}")
+    
+    # Add command ID
+    method_lines.append(f"    const uint8_t commandID = {cmd_str.upper().replace(' ', '_')};")
+    
+    # Create the payload if needed
+    if has_input:
+        payload_struct_name = format_payload_name(cmd_str)
+        method_lines.append(f"    {payload_struct_name} payload;")
+        
+        # Set payload values
+        for param in cmd.get('Input', []):
+            param_name = param.get('ParameterName')
+            # Skip parameters that don't have a clear mapping
+            if not param_name:
+                continue
+                
+            desc = param.get('Description', '')
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                
+                # Get C++ type from our type map for endianness conversion
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                
+                # Handle array types in parameters
+                if isinstance(cpp_type, tuple):
+                    base_type, array_size = cpp_type
+                    method_lines.append(f"    // Copy array data into payload")
+                    method_lines.append(f"    memcpy(payload.{param_name}, {param_name}, sizeof(payload.{param_name}));")
+                else:
+                    # Get endianness conversion function
+                    endian_func = endian_conversion_map.get(cpp_type, '')
+                    if endian_func:
+                        method_lines.append(f"    payload.{param_name} = {endian_func}({param_name});")
+                    else:
+                        method_lines.append(f"    payload.{param_name} = {param_name};")
+        
+        # Send the command
+        method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
+    else:
+        # Send command with no payload
+        method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
+    
+    # Handle the response
+    if has_output:
+        response_struct_name = format_response_name(cmd_str)
+        method_lines.append(f"    uint8_t buffer[sizeof({response_struct_name})];")
+        method_lines.append(f"    uint16_t receivedSize;")
+        method_lines.append(f"    _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);")
+        method_lines.append(f"    if (_errno == 0) {{")
+        method_lines.append(f"        if (receivedSize == sizeof({response_struct_name})) {{")
+        method_lines.append(f"            {response_struct_name}* response = ({response_struct_name}*)buffer;")
+        method_lines.append(f"            return *response;")
+        method_lines.append(f"        }} else {{")
+        method_lines.append(f"            _errno = COMMUNICATION_ERROR_DATA_WRONG_SIZE;")
+        method_lines.append(f"        }}")
+        method_lines.append(f"    }}")
+        method_lines.append(f"    {response_struct_name} defaultResponse = {{0}};")
+        method_lines.append(f"    return defaultResponse;")
+    else:
+        method_lines.append(f"    uint16_t receivedSize;")
+        method_lines.append(f"    _errno = _comm.getResponse(nullptr, 0, receivedSize);")
+    
+    # Close the method
+    method_lines.append("}")
+    method_lines.append("")
+    
+    return "\n".join(method_lines)
+
+
+def generate_multi_response_method(cmd_str, func_name, return_type):
+    """Generate method for commands that have multiple responses."""
+    method_lines = []
+    
+    # Add function signature
+    method_lines.append(f"{return_type} Servomotor::{func_name}GetAnotherResponse() {{")
+    
+    # Add debug output
+    method_lines.append(f'    Serial.println("[Motor] {func_name}GetAnotherResponse called.");')
+    
+    # Handle the response
+    response_struct_name = format_response_name(cmd_str)
+    method_lines.append(f"    uint8_t buffer[sizeof({response_struct_name})];")
+    method_lines.append(f"    uint16_t receivedSize;")
+    method_lines.append(f"    _errno = _comm.getResponse(buffer, sizeof(buffer), receivedSize);")
+    method_lines.append(f"    if (_errno == 0) {{")
+    method_lines.append(f"        if (receivedSize == sizeof({response_struct_name})) {{")
+    method_lines.append(f"            {response_struct_name}* response = ({response_struct_name}*)buffer;")
+    method_lines.append(f"            return *response;")
+    method_lines.append(f"        }} else {{")
+    method_lines.append(f"            _errno = COMMUNICATION_ERROR_DATA_WRONG_SIZE;")
+    method_lines.append(f"        }}")
+    method_lines.append(f"    }}")
+    method_lines.append(f"    {response_struct_name} defaultResponse = {{0}};")
+    method_lines.append(f"    return defaultResponse;")
+    
+    # Close the method
+    method_lines.append("}")
+    method_lines.append("")
+    
+    return "\n".join(method_lines)
+
+
+def get_cpp_type_from_desc(desc, type_str):
+    """Extract C++ type from type description."""
+    type_map = {
+        'i8': 'int8_t',
+        'u8': 'uint8_t',
+        'i16': 'int16_t',
+        'u16': 'uint16_t',
+        'i24': 'int32_t',
+        'u24': 'uint32_t',
+        'i32': 'int32_t',
+        'u32': 'uint32_t',
+        'i48': 'int64_t',
+        'u48': 'uint64_t',
+        'i64': 'int64_t',
+        'u64': 'uint64_t',
+        'float': 'float',
+        'double': 'double',
+    }
+    
+    if type_str in type_map:
+        return type_map[type_str]
+    
+    # Handle array types or other special cases
+    if type_str == 'buf10':
+        return 'uint8_t*'
+    elif type_str in ['string8', 'string_null_term']:
+        return 'char*'
+    elif type_str == 'firmware_page':
+        return 'uint8_t*'
+    
+    # Default to uint8_t for unknown types
+    return 'uint8_t'
