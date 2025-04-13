@@ -19,7 +19,7 @@ void setup() {
     checkMotorError(*motor, "enableMosfets");
     
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor->getStatus();
+    getStatusResponse enabled_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     TEST_RESULT("MOSFETs Successfully Enabled", (enabled_status.statusFlags & 0x02) == 0x02);
@@ -171,9 +171,9 @@ void setup() {
     printf("Position in rotations: %.2f rotations\n", pos_in_rotations);
     
     // Get position in raw encoder counts
-    getHallSensorPositionResponse raw_pos = motor->getPositionRaw();
+    int64_t raw_pos = motor->getPositionRaw();
     checkMotorError(*motor, "getPositionRaw");
-    printf("Position in raw encoder counts: %lld\n", raw_pos.hallSensorPosition);
+    printf("Position in raw encoder counts: %lld\n", raw_pos);
     
     // The raw position will include all the accumulated movements from previous tests
     // Calculate the expected raw position based on the accumulated movements:
@@ -189,7 +189,7 @@ void setup() {
     
     // We're checking if the position is approximately equal to the expected value
     // Use a reasonable tolerance for this test
-    TEST_RESULT("Raw Position Is Correct", abs(raw_pos.hallSensorPosition - expected_raw_pos) < 1000);
+    TEST_RESULT("Raw Position Is Correct", abs(raw_pos - expected_raw_pos) < 1000);
     
     // Test 5: Move with negative velocity
     printf("\n=== Test 5: Move with negative velocity ===\n");

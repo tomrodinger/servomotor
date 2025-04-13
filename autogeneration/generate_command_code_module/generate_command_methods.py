@@ -113,6 +113,34 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
     # Output lines with proper indentation
     method_lines = []
     
+    # Helper function to generate uniqueId overload method declarations
+    def add_uniqueid_overload(method_declaration):
+        """Generate a uniqueId overload variant of a method declaration."""
+        # Extract return type and function name
+        parts = method_declaration.strip().split(" ", 2)  # Split into [indent, return_type, rest]
+        if len(parts) < 3:
+            return None  # Invalid format
+            
+        indent, return_type, rest = parts
+        func_name_end = rest.find("(")
+        if func_name_end == -1:
+            return None  # No parameters found
+            
+        func_name = rest[:func_name_end]
+        params = rest[func_name_end:]
+        
+        # Insert uniqueId as first parameter
+        open_paren = params.find("(")
+        close_paren = params.find(")")
+        
+        if open_paren + 1 == close_paren:  # Empty parameter list
+            new_params = "(uint64_t uniqueId" + params[open_paren+1:]
+        else:
+            new_params = "(" + "uint64_t uniqueId, " + params[open_paren+1:]
+            
+        # Create the new declaration with same function name (overloaded)
+        return f"{indent}{return_type} {func_name}{new_params}"
+    
     # Process each command
     for cmd in commands_data:
         cmd_str = cmd['CommandString']
@@ -225,8 +253,9 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         wrapper_param_str = ", ".join(wrapper_params)
         
         if needs_unit_conversion:
-            # Add Raw and Converted methods
-            method_lines.append(f"{indent}{return_type} {func_name}Raw({raw_param_str});")
+            # Add Raw method
+            raw_method_declaration = f"{indent}{return_type} {func_name}Raw({raw_param_str});"
+            method_lines.append(raw_method_declaration)
             
             # For wrapper method with converted return type
             wrapper_return = return_type
@@ -240,10 +269,27 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
                     # For multiple values in a struct, use the converted struct type
                     wrapper_return = return_type.replace('Response', 'ResponseConverted')
             
-            method_lines.append(f"{indent}{wrapper_return} {func_name}({wrapper_param_str});")
+            method_declaration = f"{indent}{wrapper_return} {func_name}({wrapper_param_str});"
+            method_lines.append(method_declaration)
+            
+            # Comment out uniqueId overloads for now
+            # unique_id_method = add_uniqueid_overload(method_declaration)
+            # if unique_id_method:
+            #     method_lines.append(unique_id_method)
+            #
+            # # Add uniqueId overload for the Raw method (don't repeat the declaration)
+            # unique_id_raw_method = add_uniqueid_overload(raw_method_declaration)
+            # if unique_id_raw_method:
+            #     method_lines.append(unique_id_raw_method)
         else:
             # Just add the regular method for commands without unit conversion
-            method_lines.append(f"{indent}{return_type} {func_name}({raw_param_str});")
+            method_declaration = f"{indent}{return_type} {func_name}({raw_param_str});"
+            method_lines.append(method_declaration)
+            
+            # Comment out uniqueId overloads for now
+            # unique_id_method = add_uniqueid_overload(method_declaration)
+            # if unique_id_method:
+            #     method_lines.append(unique_id_method)
         
         # Add method for multiple responses if needed
         if cmd.get('MultipleResponses'):

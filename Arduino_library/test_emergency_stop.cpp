@@ -18,7 +18,7 @@ void setup() {
     delay(1500);  // Wait for system to reset
 
     // Check 1: Verify MOSFETs are disabled after system reset
-    StatusResponse reset_status = motor->getStatus();
+    getStatusResponse reset_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after reset: 0x%02X\n", reset_status.statusFlags);
     TEST_RESULT("MOSFETs Disabled After Reset", (reset_status.statusFlags & 0x02) == 0);
@@ -32,7 +32,7 @@ void setup() {
     motor->enableMosfets();
     checkMotorError(*motor, "enableMosfets");
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor->getStatus();
+    getStatusResponse enabled_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     TEST_RESULT("MOSFETs Successfully Enabled", (enabled_status.statusFlags & 0x02) == 0x02);
@@ -81,14 +81,14 @@ void setup() {
                 approxEqual(pos_before_stop, pos_after_stop, 0.1f));
 
     // Verify mosfets are disabled
-    StatusResponse emergency_status = motor->getStatus();
+    getStatusResponse emergency_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after emergency stop: 0x%02X\n", emergency_status.statusFlags);
     TEST_RESULT("Emergency Stop Disables MOSFETs", (emergency_status.statusFlags & 0x02) == 0);
 
     // Verify queue is empty
-    uint8_t items_in_queue = motor->getNumberOfQueuedItems();
-    checkMotorError(*motor, "getNumberOfQueuedItems");
+    uint8_t items_in_queue = motor->getNQueuedItems();
+    checkMotorError(*motor, "getNQueuedItems");
     TEST_RESULT("Emergency Stop Clears Queue", items_in_queue == 0);
     
     // Wait additional time to verify motor doesn't continue moving

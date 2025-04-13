@@ -23,7 +23,7 @@ void multiMoveDelay(uint8_t multiMoveCount, const T* multiMoveList) {
 }
 
 // Helper function to calculate and perform delay for multiMoveRaw sequences with internal time units
-void multiMoveDelayInternalTimeInput(uint8_t multiMoveCount, const multiMoveList_t* multiMoveList) {
+void multiMoveDelayInternalTimeInput(uint8_t multiMoveCount, const multimoveList_t* multiMoveList) {
     // Calculate total duration of the sequence in internal time units
     float totalDurationInternalUnits = 0.0f;
     for (int i = 0; i < multiMoveCount; i++) {
@@ -63,7 +63,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     uint32_t multiMoveTypes = 0b11;  // Both are velocity moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    multimoveListConverted_t multiMoveList[multiMoveCount] = {
         {2.0f, 1.0f},    // Velocity move: 2 rot/sec for 1 sec
         {0.0f, 0.1f}     // Velocity move: 0 rot/sec for 0.1 sec (stop)
     };
@@ -93,7 +93,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with RPM units (120 RPM = 2 RPS)
-    multiMoveListConverted_t multiMoveListRPM[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListRPM[multiMoveCount] = {
         {120.0f, 1.0f},  // Velocity move: 120 RPM for 1 sec
         {0.0f, 0.1f}     // Velocity move: 0 RPM for 0.1 sec (stop)
     };
@@ -123,7 +123,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with degrees/sec units (720 deg/sec = 2 RPS)
-    multiMoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
         {720.0f, 1.0f},  // Velocity move: 720 deg/sec for 1 sec
         {0.0f, 0.1f}     // Velocity move: 0 deg/sec for 0.1 sec (stop)
     };
@@ -153,7 +153,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with radians/sec units (4π rad/sec = 2 RPS)
-    multiMoveListConverted_t multiMoveListRadians[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListRadians[multiMoveCount] = {
         {4.0f * M_PI, 1.0f},  // Velocity move: 4π rad/sec for 1 sec
         {0.0f, 0.1f}          // Velocity move: 0 rad/sec for 0.1 sec (stop)
     };
@@ -196,7 +196,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     uint32_t multiMoveTypes = 0b001;  // First is velocity move, others are acceleration moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    multimoveListConverted_t multiMoveList[multiMoveCount] = {
         {0.0f, 0.1f},     // Velocity move: 0 rot/sec for 0.1 sec (start from rest)
         {2.0f, 2.0f},     // Acceleration move: 2 rot/sec² for 2 sec
         {-2.0f, 2.0f}     // Acceleration move: -2 rot/sec² for 2 sec (stop)
@@ -235,7 +235,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with RPM/sec units (120 RPM/sec = 2 RPS²)
-    multiMoveListConverted_t multiMoveListRPM[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListRPM[multiMoveCount] = {
         {0.0f, 0.1f},      // Velocity move: 0 rot/sec for 0.1 sec (start from rest)
         {120.0f, 2.0f},    // Acceleration move: 120 RPM/sec for 2 sec
         {-120.0f, 2.0f}    // Acceleration move: -120 RPM/sec for 2 sec (stop)
@@ -266,7 +266,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with degrees/sec² units (720 deg/sec² = 2 RPS²)
-    multiMoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListDegrees[multiMoveCount] = {
         {0.0f, 0.1f},      // Velocity move: 0 rot/sec for 0.1 sec (start from rest)
         {720.0f, 2.0f},    // Acceleration move: 720 deg/sec² for 2 sec
         {-720.0f, 2.0f}    // Acceleration move: -720 deg/sec² for 2 sec (stop)
@@ -297,7 +297,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with radians/sec² units (4π rad/sec² = 2 RPS²)
-    multiMoveListConverted_t multiMoveListRadians[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListRadians[multiMoveCount] = {
         {0.0f, 0.1f},           // Velocity move: 0 rot/sec for 0.1 sec (start from rest)
         {4.0f * M_PI, 2.0f},    // Acceleration move: 4π rad/sec² for 2 sec
         {-4.0f * M_PI, 2.0f}    // Acceleration move: -4π rad/sec² for 2 sec (stop)
@@ -342,7 +342,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     const float multiMoveTime0 = 1.0;
     const float multiMoveTime1 = 0.1;
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    multimoveListConverted_t multiMoveList[multiMoveCount] = {
         {2.0f, multiMoveTime0},    // Velocity move: 2 rot/sec for 1 sec
         {0.0f, multiMoveTime1}     // Velocity move: 0 rot/sec for 0.1 sec (stop)
     };
@@ -372,7 +372,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with milliseconds units
-    multiMoveListConverted_t multiMoveListMS[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListMS[multiMoveCount] = {
         {2.0f, multiMoveTime0 * 1000.0f},  // Velocity move: 2 rot/sec for 1000 ms
         {0.0f, multiMoveTime1 * 100.0f}    // Velocity move: 0 rot/sec for 100 ms (stop)
     };
@@ -402,7 +402,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     checkMotorError(*motor, "zeroPosition");
     
     // Create move list with minutes units
-    multiMoveListConverted_t multiMoveListMin[multiMoveCount] = {
+    multimoveListConverted_t multiMoveListMin[multiMoveCount] = {
         {2.0f, multiMoveTime0 / 60.0f},  // Velocity move: 2 rot/sec for 1/60 minute (1 sec)
         {0.0f, multiMoveTime1 / 60.0f}   // Velocity move: 0 rot/sec for 0.1/60 minute (0.1 sec)
     };
@@ -439,7 +439,7 @@ void testMultiMoveRaw(Servomotor* motor) {
     // Create move list with internal units
     // For velocity: CONVERSION_FACTOR_ROTATIONS_PER_SECOND = 109951162.777600005f
     // For time: CONVERSION_FACTOR_SECONDS = 31250.000000000f
-    multiMoveList_t multiMoveList[multiMoveCount] = {
+    multimoveList_t multiMoveList[multiMoveCount] = {
         {219902325, 31250},  // Velocity move: 2 rot/sec for 1 sec in internal units
         {0, 3125}            // Velocity move: 0 rot/sec for 0.1 sec in internal units
     };
@@ -484,7 +484,7 @@ void testComplexMotionSequence(Servomotor* motor) {
     uint32_t multiMoveTypes = 0b1001;  // 1st and 4th are velocity moves, 2nd and 3rd are acceleration moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    multimoveListConverted_t multiMoveList[multiMoveCount] = {
         {2.0f, 1.0f},    // Velocity move: 2 rot/sec for 1 sec
         {2.0f, 1.0f},    // Acceleration move: 2 rot/sec² for 1 sec
         {-2.0f, 1.0f},   // Acceleration move: -2 rot/sec² for 1 sec
@@ -541,7 +541,7 @@ void testMaximumNumberOfVelocityMoves(Servomotor* motor) {
     uint32_t multiMoveTypes = 0xFFFFFFFF;  // All velocity moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount];
+    multimoveListConverted_t multiMoveList[multiMoveCount];
     
     // Fill the move list with alternating positive and negative velocity moves
     // to make the motor wiggle back and forth
@@ -597,7 +597,7 @@ void testMaximumNumberOfAccelerationMoves(Servomotor* motor) {
     uint32_t multiMoveTypes = 0x00000000;  // All acceleration moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount];
+    multimoveListConverted_t multiMoveList[multiMoveCount];
     
     // Fill the move list with a wiggle pattern
     // One wiggle consists of 4 acceleration moves:
@@ -662,7 +662,7 @@ void setup() {
     checkMotorError(*motor, "enableMosfets");
     
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor->getStatus();
+    getStatusResponse enabled_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     TEST_RESULT("MOSFETs Successfully Enabled", (enabled_status.statusFlags & 0x02) == 0x02);

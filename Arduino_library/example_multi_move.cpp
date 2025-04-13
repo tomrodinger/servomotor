@@ -27,7 +27,7 @@ void setup() {
     uint32_t multiMoveTypes = 0b1001;  // 1001 in binary: 1st and 4th are velocity moves, 2nd and 3rd are acceleration moves
     
     // Create move list with user units
-    multiMoveListConverted_t multiMoveList[multiMoveCount] = {
+    multimoveListConverted_t multiMoveList[multiMoveCount] = {
         {2.0f, 1.0f},    // Velocity move: 2 rot/sec for 1 sec
         {2.0f, 1.0f},    // Acceleration move: 2 rot/sec² for 1 sec
         {-2.0f, 1.0f},   // Acceleration move: -2 rot/sec² for 1 sec

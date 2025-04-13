@@ -12,7 +12,7 @@ Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
       m_timeUnit(TimeUnit::SECONDS),
       m_temperatureUnit(TemperatureUnit::CELSIUS),
       m_voltageUnit(VoltageUnit::VOLTS),
-      m_currentUnit(CurrentUnit::AMPERES) {
+      m_currentUnit(CurrentUnit::AMPS) {
     
     Serial.print("[Motor] Initialized with standard addressing, Alias: ");
     Serial.println(_alias);
@@ -92,6 +92,9 @@ void Servomotor::setDeviceAliasByUniqueId(uint64_t uniqueId, uint8_t alias) {
     uint16_t receivedSize;
     _errno = _comm.getResponse(nullptr, 0, receivedSize);
 }
+
+// AUTO-GENERATED UNIT SETTER IMPLEMENTATIONS
+{{generate_unit_setters}}
 
 // AUTO-GENERATED COMMAND IMPLEMENTATIONS
 {{generate_command_implementations}}

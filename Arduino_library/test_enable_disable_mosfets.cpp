@@ -14,19 +14,19 @@ void setup() {
     delay(1500);  // Wait for system to reset
 
     // Test 1: Check initial status (mosfets should be disabled after reset)
-    StatusResponse initial_status = motor->getStatus();
+    getStatusResponse initial_status = motor->getStatus();
     printf("Initial status flags: 0x%02X\n", initial_status.statusFlags);
 
     // Test 2: Enable mosfets and verify status change
     motor->enableMosfets();
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor->getStatus();
+    getStatusResponse enabled_status = motor->getStatus();
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     
     // Test 3: Disable mosfets and verify status change
     motor->disableMosfets();
     delay(100);  // Wait for status to update
-    StatusResponse disabled_status = motor->getStatus();
+    getStatusResponse disabled_status = motor->getStatus();
     printf("Status after disable: 0x%02X\n", disabled_status.statusFlags);
 
     // Print test results

@@ -19,7 +19,7 @@ void setup() {
     checkMotorError(*motor, "enableMosfets");
     
     delay(100);  // Wait for status to update
-    StatusResponse enabled_status = motor->getStatus();
+    getStatusResponse enabled_status = motor->getStatus();
     checkMotorError(*motor, "getStatus");
     printf("Status after enable: 0x%02X\n", enabled_status.statusFlags);
     TEST_RESULT("MOSFETs Successfully Enabled", (enabled_status.statusFlags & 0x02) == 0x02);

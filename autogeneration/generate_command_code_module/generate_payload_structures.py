@@ -262,13 +262,9 @@ def generate_payload_structures(commands_data=None, data_types_data=None, **kwar
             if not isinstance(output_params, list):
                 output_params = []
                 
-            # Skip if the output is a single builtin type
-            if len(output_params) == 1:
-                desc = output_params[0].get('Description', '')
-                match = re.match(r'(\w+):\s*(.*)', desc)
-                if match and match.group(1) in ['u8', 'i8', 'u16', 'i16', 'u32', 'i32', 'u64', 'i64', 'float', 'double']:
-                    # This is a single built-in type, skip struct creation
-                    continue
+            # Even for single builtin types, we need to create a response structure
+            # because the implementation code expects these structures to exist
+            # DO NOT SKIP structure creation for single builtin types!
             
             # Process output parameters
             params = []
