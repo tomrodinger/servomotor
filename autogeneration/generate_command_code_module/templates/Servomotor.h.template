@@ -14,33 +14,8 @@
 // DATA STRUCTURES
 // ============================================================================
 
-// Structure for multi-move list item with raw internal units
-typedef struct {
-    int32_t value;  // acceleration or velocity value (internal units)
-    uint32_t timeSteps;  // duration in time steps (internal units)
-} multiMoveList_t;
-
-// Structure for multi-move list item with user-friendly units
-typedef struct {
-    float value;  // velocity or acceleration in user units
-    float duration;  // duration in user units (seconds, milliseconds, etc.)
-} multiMoveListConverted_t;
-
-// AUTO-GENERATED PAYLOAD AND RESPONSE STRUCTURES
+// AUTO-GENERATED DATA STRUCTURES
 {{generate_payload_structures}}
-
-// Structure for converted comprehensive position values
-typedef struct {
-    float commandedPosition;
-    float hallSensorPosition;
-    float externalEncoderPosition;
-} getComprehensivePositionResponseConverted;
-
-// Structure for converted max PID error values
-typedef struct {
-    float minPidError;
-    float maxPidError;
-} getMaxPidErrorResponseConverted;
 
 // ============================================================================
 // SERVOMOTOR CLASS

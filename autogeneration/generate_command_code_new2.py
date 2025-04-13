@@ -47,7 +47,7 @@ def back_up_files(files):
         try:
             with open(file, 'r') as f:
                 contents = f.read()
-            backup_filename = f"{file}.{datetime.now().strftime('%b-%-d-%Y-%H-%M-%S')}.bak"
+            backup_filename = file + "." + datetime.now().strftime('%b-%d-%Y-%H-%M-%S') + ".bak"
             with open(backup_filename, 'w') as bf:
                 bf.write(contents)
             print(f"Backed up {file} to {backup_filename}")
