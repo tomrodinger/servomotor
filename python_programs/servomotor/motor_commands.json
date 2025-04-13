@@ -562,7 +562,7 @@
     {
         "CommandString": "Multimove",
         "CommandEnum": 29,
-        "Description": "Multi-move command allows you to compose multiple moves one after eachother. The last move must set the motor's velocity to 0 for a period of time(e.g. 0.1s) to allow the motor to stop, otherwise the motor will enter in an error state.",
+        "Description": "The multimove command allows you to compose multiple moves one after another. Please note that when the queue becomes empty after all the moves are executed and the motor is not at a standstill then a fatal error will be triggered.",
         "Input": [
             {
                 "Description": "u8: Specify how many moves are being communicated in this one shot.",
@@ -577,7 +577,12 @@
             {
                 "Description": "list_2d: A 2D list in Python format (list of lists). Each item in the list is of type [i32, u32] representing a series of move commands. Each move command specifies the acceleration to move at or the velocity to instantly change to (according to the bits above) and the number of time steps over which this command is to be executed. For example: '[[100, 30000], [-200, 60000]]'. There is a limit of 32 move commands that can be listed in this one multi-move command. Each of the moves takes up one queue spot, so make sure there is enough space in the queue to store all of the commands.",
                 "TooltipDisplayFormat": "",
-                "ParameterName": "moveList"
+                "ParameterName": "moveList",
+                "UnitConversion": {
+                    "Type": "mixed_acceleration_velocity_time",
+                    "InternalUnit": "mixed_acceleration_velocity_time",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": "success_response",

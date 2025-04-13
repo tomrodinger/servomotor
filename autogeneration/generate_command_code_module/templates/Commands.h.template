@@ -1,0 +1,9 @@
+#ifndef COMMANDS_H
+#define COMMANDS_H
+
+// Command enumerations for the servomotor protocol
+enum Commands : uint8_t {
+{{generate_commands_header}}
+};
+
+#endif // COMMANDS_H

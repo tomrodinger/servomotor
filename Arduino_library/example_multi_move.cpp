@@ -37,7 +37,7 @@ void setup() {
     // Execute the multi-move sequence with automatic unit conversion
     printf("Executing multi-move sequence...\n");
     
-    motor.multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor.multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     
     // Calculate total duration of the sequence
     float totalDuration = 0.0f;

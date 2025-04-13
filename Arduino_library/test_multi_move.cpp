@@ -70,7 +70,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with ROTATIONS_PER_SECOND...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (ROTATIONS_PER_SECOND)");
     
     // Wait for the sequence to complete
@@ -100,7 +100,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RPM...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
     checkMotorError(*motor, "multiMove (RPM)");
     
     // Wait for the sequence to complete
@@ -130,7 +130,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with DEGREES_PER_SECOND...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
     checkMotorError(*motor, "multiMove (DEGREES_PER_SECOND)");
     
     // Wait for the sequence to complete
@@ -160,7 +160,7 @@ void testMultiMoveVelocityUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RADIANS_PER_SECOND...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
     checkMotorError(*motor, "multiMove (RADIANS_PER_SECOND)");
     
     // Wait for the sequence to complete
@@ -204,7 +204,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with ROTATIONS_PER_SECOND_SQUARED...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (ROTATIONS_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
@@ -243,7 +243,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RPM_PER_SECOND...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListRPM);
     checkMotorError(*motor, "multiMove (RPM_PER_SECOND)");
     
     // Wait for the sequence to complete
@@ -274,7 +274,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with DEGREES_PER_SECOND_SQUARED...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListDegrees);
     checkMotorError(*motor, "multiMove (DEGREES_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
@@ -305,7 +305,7 @@ void testMultiMoveAccelerationUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with RADIANS_PER_SECOND_SQUARED...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListRadians);
     checkMotorError(*motor, "multiMove (RADIANS_PER_SECOND_SQUARED)");
     
     // Wait for the sequence to complete
@@ -349,7 +349,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with SECONDS...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (SECONDS)");
     
     // Wait for the sequence to complete
@@ -379,7 +379,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with MILLISECONDS...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListMS);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListMS);
     checkMotorError(*motor, "multiMove (MILLISECONDS)");
     
     // Wait for the sequence to complete
@@ -409,7 +409,7 @@ void testMultiMoveTimeUnits(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing with MINUTES...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveListMin);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveListMin);
     checkMotorError(*motor, "multiMove (MINUTES)");
     
     // Wait for the sequence to complete
@@ -446,7 +446,7 @@ void testMultiMoveRaw(Servomotor* motor) {
     
     // Execute the multi-move sequence with raw units
     printf("Testing multiMoveRaw...\n");
-    motor->multiMoveRaw(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimoveRaw(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMoveRaw");
     
     // Wait for the sequence to complete
@@ -493,7 +493,7 @@ void testComplexMotionSequence(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing complex motion sequence...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (Complex)");
     
     // Wait for the sequence to complete
@@ -560,7 +560,7 @@ void testMaximumNumberOfVelocityMoves(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing maximum number of velocity moves...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (Max Velocity Moves)");
     
     // Wait for the sequence to complete
@@ -622,7 +622,7 @@ void testMaximumNumberOfAccelerationMoves(Servomotor* motor) {
     
     // Execute the multi-move sequence with automatic unit conversion
     printf("Testing maximum number of acceleration moves...\n");
-    motor->multiMove(multiMoveCount, multiMoveTypes, multiMoveList);
+    motor->multimove(multiMoveCount, multiMoveTypes, multiMoveList);
     checkMotorError(*motor, "multiMove (Max Acceleration Moves)");
     
     // Wait for the sequence to complete
