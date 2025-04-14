@@ -152,10 +152,10 @@ Servomotor* Servomotor_TestModeConvenienceWrapper() {
         Serial.println(ss.str().c_str()); // Use c_str() for ConsoleSerial compatibility
         
         // Create motor with standard addressing first
-        Servomotor* motor = new Servomotor(0, Serial1);
+        Servomotor* motor = new Servomotor(255, Serial1);
         
-        // Then set it up for extended addressing
-        motor->setUniqueId(g_uniqueId);
+        // Then set it up for extended addressing by default
+        motor->useUniqueId(g_uniqueId);
         
         return motor;
     } else {

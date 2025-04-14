@@ -61,7 +61,7 @@ public:
     void sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
     
     // Extended addressing command (using 64-bit Unique ID)
-    void sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
+    void sendCommandByUniqueId(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
     
     int8_t getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize);
     void flush();

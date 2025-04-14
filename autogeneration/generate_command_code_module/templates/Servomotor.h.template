@@ -29,19 +29,16 @@ public:
     // Constructor & basic methods
     Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
     
-    void setAlias(uint8_t new_alias);
-    uint8_t getAlias();
-    
     // Addressing and command methods
     void sendCommand(uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
-    void setUniqueId(uint64_t uniqueId);
-    uint64_t getUniqueId() const;
+    void useAlias(uint8_t alias);
+    void useUniqueId(uint64_t uniqueId);
+    uint64_t usingThisUniqueId() const;
+    uint8_t usingThisAlias() const;
     bool isUsingExtendedAddressing() const;
     void openSerialPort();
     int getError() const;
     
-    // Helper methods for device management
-    void setDeviceAliasByUniqueId(uint64_t uniqueId, uint8_t alias);
     
     // CRC32 control methods
     void enableCRC32();

@@ -58,7 +58,7 @@ void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t*
     sendCommandCore(false, alias, commandID, payload, payloadSize);
 }
 
-void Communication::sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
+void Communication::sendCommandByUniqueId(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
     sendCommandCore(true, uniqueId, commandID, payload, payloadSize);
 }
 

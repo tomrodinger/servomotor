@@ -159,7 +159,7 @@ The `Communication` class provides the following key methods:
 
 - `Communication(HardwareSerial& serialPort)`: Constructor, requires a `HardwareSerial` port (e.g., `Serial1`)
 - `sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize)`: Sends a command using standard alias addressing
-- `sendCommandExtended(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize)`: Sends a command using extended 64-bit Unique ID addressing
+- `sendCommandByUniqueId(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize)`: Sends a command using extended 64-bit Unique ID addressing
 - `getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize)`: Waits for, receives, validates, and processes a response packet from a device. Returns `COMMUNICATION_SUCCESS` or a negative error code. Fills `buffer` with payload and `receivedSize` with payload length on success
 - `enableCRC32() / disableCRC32()`: Manages the library's expectation of whether CRC32 should be included in *outgoing* commands. Note: The library automatically updates its internal CRC state based on the response character received from the device
 - `isCRC32Enabled()`: Returns true if the library currently expects CRC32 to be used

@@ -173,10 +173,10 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
                         method_lines.append(f"    payload.{param_name} = {param_name};")
             
             # Send command with payload using extended addressing
-            method_lines.append(f"    _comm.sendCommandExtended(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));")
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));")
         else:
             # Send command with no payload using extended addressing
-            method_lines.append(f"    _comm.sendCommandExtended(uniqueId, commandID, nullptr, 0);")
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, nullptr, 0);")
         
         # Handle response
         if has_output:
@@ -329,42 +329,46 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
             # First generate the Raw implementation
             raw_method = generate_raw_method_implementation(
                 cmd, cmd_str, cmd_id, func_name, has_input, has_output,
-                return_type, type_map, endian_conversion_map
+                return_type, type_map, endian_conversion_map, by_unique_id=False
             )
             implementations.append(raw_method)
             
-            # Comment out uniqueId versions for now
-            # by_unique_id_raw = generate_uniqueid_overload_implementation(
-            #     cmd, cmd_str, cmd_id, func_name + "Raw", has_input, has_output, return_type
-            # )
-            # implementations.append(by_unique_id_raw)
+            # Now generate the uniqueId version of the Raw implementation
+            raw_method_uniqueid = generate_raw_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, has_output,
+                return_type, type_map, endian_conversion_map, by_unique_id=True
+            )
+            implementations.append(raw_method_uniqueid)
             
             # Then generate the wrapper implementation
             wrapper_method = generate_wrapper_method_implementation(
                 cmd, cmd_str, func_name, has_input, has_output,
                 wrapper_return_type, has_unit_conversion_output,
-                unit_conversion_map, has_mixed_conversion, type_map
+                unit_conversion_map, has_mixed_conversion, type_map, by_unique_id=False
             )
             implementations.append(wrapper_method)
             
-            # Comment out uniqueId versions for now
-            # by_unique_id_wrapper = generate_uniqueid_overload_implementation(
-            #     cmd, cmd_str, cmd_id, func_name, has_input, has_output, wrapper_return_type
-            # )
-            # implementations.append(by_unique_id_wrapper)
+            # Now generate the uniqueId version of the wrapper implementation
+            wrapper_method_uniqueid = generate_wrapper_method_implementation(
+                cmd, cmd_str, func_name, has_input, has_output,
+                wrapper_return_type, has_unit_conversion_output,
+                unit_conversion_map, has_mixed_conversion, type_map, by_unique_id=True
+            )
+            implementations.append(wrapper_method_uniqueid)
         else:
             # Generate a single implementation for commands without unit conversion
             simple_method = generate_simple_method_implementation(
                 cmd, cmd_str, cmd_id, func_name, has_input, has_output,
-                return_type, type_map, endian_conversion_map
+                return_type, type_map, endian_conversion_map, by_unique_id=False
             )
             implementations.append(simple_method)
             
-            # Comment out uniqueId versions for now
-            # by_unique_id = generate_uniqueid_overload_implementation(
-            #     cmd, cmd_str, cmd_id, func_name, has_input, has_output, return_type
-            # )
-            # implementations.append(by_unique_id)
+            # Generate the uniqueId overloaded version
+            uniqueid_method = generate_simple_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, has_output,
+                return_type, type_map, endian_conversion_map, by_unique_id=True
+            )
+            implementations.append(uniqueid_method)
         
         # Generate additional method for commands with multiple responses
         if cmd.get('MultipleResponses'):
@@ -374,9 +378,22 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
     return "\n".join(implementations)
 
 
-def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
-                                      return_type, type_map, endian_conversion_map):
-    """Generate the raw method implementation for commands that need unit conversion."""
+def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output,
+                                       return_type, type_map, endian_conversion_map, by_unique_id=False):
+    """Generate the raw method implementation for commands that need unit conversion.
+    
+    Args:
+        cmd: Command dictionary from JSON
+        cmd_str: Command string
+        cmd_id: Command enum ID
+        func_name: Function name
+        has_input: Whether the command has input parameters
+        has_output: Whether the command has output parameters
+        return_type: Return type for the function
+        type_map: Type mapping dictionary
+        endian_conversion_map: Endianness conversion functions
+        by_unique_id: Whether to generate the uniqueId overload version
+    """
     method_lines = []
     
     # Add method signature
@@ -419,7 +436,19 @@ def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_inpu
     
     # Add function signature
     params_str = ", ".join(params)
-    method_lines.append(f"{return_type} Servomotor::{func_name}Raw({params_str}) {{")
+    if by_unique_id:
+        if params:
+            method_lines.append(f"{return_type} Servomotor::{func_name}Raw(uint64_t uniqueId, {params_str}) {{")
+        else:
+            method_lines.append(f"{return_type} Servomotor::{func_name}Raw(uint64_t uniqueId) {{")
+        
+        # Add debug output for uniqueId version
+        method_lines.append(f'    Serial.println("[Motor] {func_name}Raw called (by unique ID).");')
+    else:
+        method_lines.append(f"{return_type} Servomotor::{func_name}Raw({params_str}) {{")
+        
+        # Add debug output for regular version
+        method_lines.append(f'    Serial.println("[Motor] {func_name}Raw called.");')
     
     # Add debug comment about what this method does
     description = cmd.get('Description', 'No description available')
@@ -487,12 +516,21 @@ def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_inpu
         if has_list_param:
             method_lines.append(f"    // Calculate the actual payload size (just the header plus the used entries)")
             method_lines.append(f"    uint16_t payloadSize = sizeof(payload.moveCount) + sizeof(payload.moveTypes) + {list_param_name}Size;")
-            method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, payloadSize);")
+            if by_unique_id:
+                method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, (uint8_t*)&payload, payloadSize);")
+            else:
+                method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, payloadSize);")
         else:
-            method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
+            if by_unique_id:
+                method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));")
+            else:
+                method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
     else:
         # Send command with no payload
-        method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
+        if by_unique_id:
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, nullptr, 0);")
+        else:
+            method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
     
     # Handle the response
     if has_output:
@@ -547,8 +585,22 @@ def generate_raw_method_implementation(cmd, cmd_str, cmd_id, func_name, has_inpu
 
 def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, has_output,
                                            return_type, has_unit_conversion_output,
-                                           unit_conversion_map, has_mixed_conversion, type_map=None):
-    """Generate the wrapper method implementation for commands with unit conversion."""
+                                           unit_conversion_map, has_mixed_conversion, type_map=None, by_unique_id=False):
+    """Generate the wrapper method implementation for commands with unit conversion.
+    
+    Args:
+        cmd: Command dictionary from JSON
+        cmd_str: Command string
+        func_name: Function name
+        has_input: Whether the command has input parameters
+        has_output: Whether the command has output parameters
+        return_type: Return type for the function
+        has_unit_conversion_output: Whether the output needs unit conversion
+        unit_conversion_map: Unit conversion function map
+        has_mixed_conversion: Whether mixed unit conversion is needed
+        type_map: Type mapping dictionary
+        by_unique_id: Whether to generate the uniqueId overload version
+    """
     # Make sure we have the type_map
     if type_map is None:
         type_map = {
@@ -619,10 +671,19 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
     
     # Add function signature
     params_str = ", ".join(params)
-    method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
-    
-    # Add debug output
-    method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
+    if by_unique_id:
+        if params:
+            method_lines.append(f"{return_type} Servomotor::{func_name}(uint64_t uniqueId, {params_str}) {{")
+        else:
+            method_lines.append(f"{return_type} Servomotor::{func_name}(uint64_t uniqueId) {{")
+        
+        # Add debug output for uniqueId version
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called (by unique ID).");')
+    else:
+        method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
+        
+        # Add debug output for regular version
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
     
     # Add debug output for parameters with unit conversion
     if has_input:
@@ -656,7 +717,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         # Call the raw method with the converted list
         raw_params = ["moveCount", "moveTypes", "convertedList"]
         raw_params_str = ", ".join(raw_params)
-        method_lines.append(f"    {func_name}Raw({raw_params_str});")
+        if by_unique_id:
+            method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+        else:
+            method_lines.append(f"    {func_name}Raw({raw_params_str});")
     else:
         # Regular parameter conversion
         raw_params = []
@@ -698,7 +762,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         # Call the raw method
         raw_params_str = ", ".join(raw_params)
         if has_output and has_unit_conversion_output:
-            method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
+            if by_unique_id:
+                method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId, {raw_params_str});")
+            else:
+                method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
             
             # Convert the raw result to user units
             if return_type == "float":
@@ -742,7 +809,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                 method_lines.append(f"    return converted;")
         else:
             # No return value to convert
-            method_lines.append(f"    {func_name}Raw({raw_params_str});")
+            if by_unique_id:
+                method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+            else:
+                method_lines.append(f"    {func_name}Raw({raw_params_str});")
     
     # Close the method
     method_lines.append("}")
@@ -751,9 +821,22 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
     return "\n".join(method_lines)
 
 
-def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output, 
-                                        return_type, type_map, endian_conversion_map):
-    """Generate the implementation for commands without unit conversion."""
+def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input, has_output,
+                                        return_type, type_map, endian_conversion_map, by_unique_id=False):
+    """Generate the implementation for commands without unit conversion.
+    
+    Args:
+        cmd: Command dictionary from JSON
+        cmd_str: Command string
+        cmd_id: Command enum ID
+        func_name: Function name
+        has_input: Whether the command has input parameters
+        has_output: Whether the command has output parameters
+        return_type: Return type for the function
+        type_map: Type mapping dictionary
+        endian_conversion_map: Endianness conversion functions
+        by_unique_id: Whether to generate the uniqueId overload version
+    """
     method_lines = []
     
     # Add method signature
@@ -790,10 +873,19 @@ def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_i
     
     # Add function signature
     params_str = ", ".join(params)
-    method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
-    
-    # Add debug output
-    method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
+    if by_unique_id:
+        if params:
+            method_lines.append(f"{return_type} Servomotor::{func_name}(uint64_t uniqueId, {params_str}) {{")
+        else:
+            method_lines.append(f"{return_type} Servomotor::{func_name}(uint64_t uniqueId) {{")
+        
+        # Add debug output for uniqueId version
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called (by unique ID).");')
+    else:
+        method_lines.append(f"{return_type} Servomotor::{func_name}({params_str}) {{")
+        
+        # Add debug output for regular version
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
     
     # Add debug comment about what this method does
     description = cmd.get('Description', 'No description available')
@@ -835,11 +927,17 @@ def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_i
                     else:
                         method_lines.append(f"    payload.{param_name} = {param_name};")
         
-        # Send the command
-        method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
+        # Send the command - use sendCommandByUniqueId for uniqueId version
+        if by_unique_id:
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));")
+        else:
+            method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
     else:
-        # Send command with no payload
-        method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
+        # Send command with no payload - use sendCommandByUniqueId for uniqueId version
+        if by_unique_id:
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, nullptr, 0);")
+        else:
+            method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
     
     # Handle the response
     if has_output:

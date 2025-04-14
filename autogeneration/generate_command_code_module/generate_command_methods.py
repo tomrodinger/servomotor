@@ -74,6 +74,11 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
     if commands_data is None:
         return "// No command data available"
     
+    # Flag to enable uniqueId overloaded methods for all commands
+    generate_uniqueid_overloads = True
+    
+    print("\n=== DEBUG: Starting generate_command_methods ===")
+    
     # Create a comprehensive type map
     # For array types, use a tuple of (base_type, array_size)
     type_map = {
@@ -116,6 +121,8 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
     # Helper function to generate uniqueId overload method declarations
     def add_uniqueid_overload(method_declaration):
         """Generate a uniqueId overload variant of a method declaration."""
+        # Add debug print
+        print(f"Generating uniqueId overload for: {method_declaration}")
         # Extract return type and function name
         parts = method_declaration.strip().split(" ", 2)  # Split into [indent, return_type, rest]
         if len(parts) < 3:
@@ -272,24 +279,24 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
             method_declaration = f"{indent}{wrapper_return} {func_name}({wrapper_param_str});"
             method_lines.append(method_declaration)
             
-            # Comment out uniqueId overloads for now
-            # unique_id_method = add_uniqueid_overload(method_declaration)
-            # if unique_id_method:
-            #     method_lines.append(unique_id_method)
-            #
-            # # Add uniqueId overload for the Raw method (don't repeat the declaration)
-            # unique_id_raw_method = add_uniqueid_overload(raw_method_declaration)
-            # if unique_id_raw_method:
-            #     method_lines.append(unique_id_raw_method)
+            # Add uniqueId overloads for the methods
+            unique_id_method = add_uniqueid_overload(method_declaration)
+            if unique_id_method:
+                method_lines.append(unique_id_method)
+            
+            # Add uniqueId overload for the Raw method
+            unique_id_raw_method = add_uniqueid_overload(raw_method_declaration)
+            if unique_id_raw_method:
+                method_lines.append(unique_id_raw_method)
         else:
             # Just add the regular method for commands without unit conversion
             method_declaration = f"{indent}{return_type} {func_name}({raw_param_str});"
             method_lines.append(method_declaration)
             
-            # Comment out uniqueId overloads for now
-            # unique_id_method = add_uniqueid_overload(method_declaration)
-            # if unique_id_method:
-            #     method_lines.append(unique_id_method)
+            # Add uniqueId overload
+            unique_id_method = add_uniqueid_overload(method_declaration)
+            if unique_id_method:
+                method_lines.append(unique_id_method)
         
         # Add method for multiple responses if needed
         if cmd.get('MultipleResponses'):
@@ -298,4 +305,12 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         # Add a blank line after each command group
         method_lines.append("")
     
-    return "\n".join(method_lines)
+    # Debug print all lines before returning
+    print(f"\n=== DEBUG: Final method_lines has {len(method_lines)} lines ===")
+    for i, line in enumerate(method_lines):
+        if 'uniqueId' in line:
+            print(f"Line {i}: {line}")
+    
+    result = "\n".join(method_lines)
+    print(f"\n=== DEBUG: Result length is {len(result)} characters ===")
+    return result

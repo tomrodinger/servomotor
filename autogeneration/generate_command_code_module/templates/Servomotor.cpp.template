@@ -20,29 +20,29 @@ Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
     openSerialPort();
 }
 
-void Servomotor::setAlias(uint8_t new_alias) {
+void Servomotor::useAlias(uint8_t new_alias) {
     _alias = new_alias;
     _useExtendedAddressing = false;
-    Serial.print("[Motor] Set alias to ");
+    Serial.print("[Motor] Use alias: ");
     Serial.println(_alias);
 }
 
-uint8_t Servomotor::getAlias() {
-    return _alias;
-}
-
-void Servomotor::setUniqueId(uint64_t uniqueId) {
+void Servomotor::useUniqueId(uint64_t uniqueId) {
     _uniqueId = uniqueId;
     _useExtendedAddressing = true;
     // Use stringstream for reliable hex formatting
     std::stringstream ss;
-    ss << std::hex << std::setw(16) << std::setfill('0') << _uniqueId; // Use the member variable _uniqueId
-    Serial.print("[Motor] Set Unique ID to 0x");
+    ss << std::hex << std::setw(16) << std::setfill('0') << _uniqueId;
+    Serial.print("[Motor] Use Unique ID: 0x");
     Serial.println(ss.str().c_str()); // Use c_str() for ConsoleSerial compatibility
 }
 
-uint64_t Servomotor::getUniqueId() const {
+uint64_t Servomotor::usingThisUniqueId() const {
     return _uniqueId;
+}
+
+uint8_t Servomotor::usingThisAlias() const {
+    return _alias;
 }
 
 bool Servomotor::isUsingExtendedAddressing() const {
@@ -74,24 +74,12 @@ int Servomotor::getError() const {
 // Helper method to send commands using the appropriate addressing mode
 void Servomotor::sendCommand(uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
     if (_useExtendedAddressing) {
-        _comm.sendCommandExtended(_uniqueId, commandID, payload, payloadSize);
+        _comm.sendCommandByUniqueId(_uniqueId, commandID, payload, payloadSize);
     } else {
         _comm.sendCommand(_alias, commandID, payload, payloadSize);
     }
 }
 
-void Servomotor::setDeviceAliasByUniqueId(uint64_t uniqueId, uint8_t alias) {
-    // Direct implementation using extended addressing
-    const uint8_t commandID = SET_DEVICE_ALIAS;
-    setDeviceAliasPayload payload;
-    payload.alias = alias;
-    
-    // Directly call sendCommandExtended with the provided uniqueId
-    _comm.sendCommandExtended(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));
-    
-    uint16_t receivedSize;
-    _errno = _comm.getResponse(nullptr, 0, receivedSize);
-}
 
 // AUTO-GENERATED UNIT SETTER IMPLEMENTATIONS
 {{generate_unit_setters}}
