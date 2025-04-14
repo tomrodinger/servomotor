@@ -763,7 +763,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         raw_params_str = ", ".join(raw_params)
         if has_output and has_unit_conversion_output:
             if by_unique_id:
-                method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId, {raw_params_str});")
+                if raw_params_str:
+                    method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId, {raw_params_str});")
+                else:
+                    method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId);")
             else:
                 method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
             
@@ -810,7 +813,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         else:
             # No return value to convert
             if by_unique_id:
-                method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+                if raw_params_str:
+                    method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+                else:
+                    method_lines.append(f"    {func_name}Raw(uniqueId);")
             else:
                 method_lines.append(f"    {func_name}Raw({raw_params_str});")
     

@@ -77,8 +77,6 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
     # Flag to enable uniqueId overloaded methods for all commands
     generate_uniqueid_overloads = True
     
-    print("\n=== DEBUG: Starting generate_command_methods ===")
-    
     # Create a comprehensive type map
     # For array types, use a tuple of (base_type, array_size)
     type_map = {
@@ -121,14 +119,10 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
     # Helper function to generate uniqueId overload method declarations
     def add_uniqueid_overload(method_declaration):
         """Generate a uniqueId overload variant of a method declaration."""
-        # Add debug print
-        print(f"Generating uniqueId overload for: {method_declaration}")
-        
         # Use regex to capture indent, return type, function name, and parameters
         # Example: "    void funcName(int p1, float p2);"
         match = re.match(r'^(\s*)(.*?)\s+(\w+)(\(.*?\);)$', method_declaration)
         if not match:
-            print(f"DEBUG: Regex failed for: {method_declaration}")
             return None # Invalid format
 
         indent, return_type, func_name, params_with_semicolon = match.groups()
@@ -139,7 +133,6 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         close_paren = params.find(")")
         
         if open_paren == -1 or close_paren == -1:
-             print(f"DEBUG: Could not find parentheses in params: {params}")
              return None # Should not happen if regex matched
 
         if open_paren + 1 == close_paren:  # Empty parameter list, e.g., ()
@@ -307,12 +300,5 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         # Add a blank line after each command group
         method_lines.append("")
     
-    # Debug print all lines before returning
-    print(f"\n=== DEBUG: Final method_lines has {len(method_lines)} lines ===")
-    for i, line in enumerate(method_lines):
-        if 'uniqueId' in line:
-            print(f"Line {i}: {line}")
-    
     result = "\n".join(method_lines)
-    print(f"\n=== DEBUG: Result length is {len(result)} characters ===")
     return result
