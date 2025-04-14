@@ -123,30 +123,32 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         """Generate a uniqueId overload variant of a method declaration."""
         # Add debug print
         print(f"Generating uniqueId overload for: {method_declaration}")
-        # Extract return type and function name
-        parts = method_declaration.strip().split(" ", 2)  # Split into [indent, return_type, rest]
-        if len(parts) < 3:
-            return None  # Invalid format
-            
-        indent, return_type, rest = parts
-        func_name_end = rest.find("(")
-        if func_name_end == -1:
-            return None  # No parameters found
-            
-        func_name = rest[:func_name_end]
-        params = rest[func_name_end:]
+        
+        # Use regex to capture indent, return type, function name, and parameters
+        # Example: "    void funcName(int p1, float p2);"
+        match = re.match(r'^(\s*)(.*?)\s+(\w+)(\(.*?\);)$', method_declaration)
+        if not match:
+            print(f"DEBUG: Regex failed for: {method_declaration}")
+            return None # Invalid format
+
+        indent, return_type, func_name, params_with_semicolon = match.groups()
+        params = params_with_semicolon[:-1] # Remove trailing semicolon
         
         # Insert uniqueId as first parameter
         open_paren = params.find("(")
         close_paren = params.find(")")
         
-        if open_paren + 1 == close_paren:  # Empty parameter list
-            new_params = "(uint64_t uniqueId" + params[open_paren+1:]
-        else:
-            new_params = "(" + "uint64_t uniqueId, " + params[open_paren+1:]
+        if open_paren == -1 or close_paren == -1:
+             print(f"DEBUG: Could not find parentheses in params: {params}")
+             return None # Should not happen if regex matched
+
+        if open_paren + 1 == close_paren:  # Empty parameter list, e.g., ()
+            new_params = "(uint64_t uniqueId)"
+        else: # Non-empty parameter list, e.g., (int p1)
+            new_params = "(uint64_t uniqueId, " + params[open_paren+1:]
             
         # Create the new declaration with same function name (overloaded)
-        return f"{indent}{return_type} {func_name}{new_params}"
+        return f"{indent}{return_type} {func_name}{new_params};" # Add semicolon back
     
     # Process each command
     for cmd in commands_data:
