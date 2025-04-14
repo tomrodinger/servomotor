@@ -18,6 +18,9 @@ from pathlib import Path
 # Import the module functions
 from generate_command_code_module.generate_commands_header import generate_commands_header
 from generate_command_code_module.generate_payload_structures import generate_payload_structures
+from generate_command_code_module.generate_command_methods import generate_command_methods
+from generate_command_code_module.generate_unit_setters import generate_unit_setters
+from generate_command_code_module.generate_command_implementations import generate_command_implementations
 
 # Get the absolute path of the Arduino library directory
 ARDUINO_LIB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../Arduino_library/"))
@@ -104,27 +107,20 @@ def process_template(template_file, output_file, context):
     
     # Process each function call
     for func_name in function_calls:
-        # Try to get the function from the current module
-        try:
-            # Import the module
-            module = importlib.import_module(f"generate_command_code_module.{func_name}")
-            func = getattr(module, func_name)
-            
-            # Call the function with all the context data
-            # Each function will use what it needs from the context
-            result = func(**context)
-        except (ImportError, AttributeError, TypeError) as e:
-            print(f"Warning: Error calling function '{func_name}': {e}")
-            print("Trying with specific imports...")
-            
-            # Fallback to specific functions we know about
-            if func_name == 'generate_commands_header':
-                result = generate_commands_header(context['commands_data'])
-            elif func_name == 'generate_payload_structures':
-                result = generate_payload_structures(context['commands_data'], context['data_types_data'])
-            else:
-                print(f"Warning: Function '{func_name}' not implemented. Skipping.")
-                result = f"// Function {func_name} not implemented"
+        # Direct function calls based on marker name
+        if func_name == 'generate_commands_header':
+            result = generate_commands_header(context['commands_data'])
+        elif func_name == 'generate_payload_structures':
+            result = generate_payload_structures(context['commands_data'], context['data_types_data'])
+        elif func_name == 'generate_command_methods':
+            result = generate_command_methods(context['commands_data'], context['data_types_data'])
+        elif func_name == 'generate_unit_setters':
+            result = generate_unit_setters(context['commands_data'], context['unit_conversions_data'])
+        elif func_name == 'generate_command_implementations':
+            result = generate_command_implementations(context['commands_data'], context['data_types_data'])
+        else:
+            print(f"Error: Unknown function marker '{func_name}' in template")
+            sys.exit(1)
         
         # Replace the marker with the function result
         template_content = template_content.replace(f"{{{{{func_name}}}}}", result)

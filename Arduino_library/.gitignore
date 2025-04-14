@@ -36,3 +36,5 @@ test_get_comprehensive_position
 example_multi_move
 test_multi_move
 unneeded_files
+.roo
+
