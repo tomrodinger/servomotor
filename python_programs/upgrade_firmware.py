@@ -304,8 +304,7 @@ print("Will write this many bytes:", len(data))
 ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
 
 system_reset_command(ser, protocol=firmware_protocol)
-time.sleep(0.1) # wait for it to reset
-
+time.sleep(0.07) # wait for it to reset. I empirically determined that this delay needs to be between 0.002 and 0.13 for the firmware upgrade to work
 page_number = FIRST_FIRMWARE_PAGE_NUMBER
 while len(data) > 0:
     if page_number > LAST_FIRMWARE_PAGE_NUMBER:

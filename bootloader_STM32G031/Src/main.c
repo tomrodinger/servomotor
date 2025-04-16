@@ -20,7 +20,7 @@ extern uint32_t USART1_timout_timer;
 static uint64_t my_unique_id;
 static int16_t detect_devices_delay = -1;
 
-#define LAUNCH_APPLICATION_DELAY 50
+#define LAUNCH_APPLICATION_DELAY 25 // It was empirically determined that the minimum delay here is 12 (120ms), otherwise firmware upgrade will not work. For a lot of margin, setting this to 250ms
 static int32_t launch_applicaiton = -1;
 
 void clock_init(void)
