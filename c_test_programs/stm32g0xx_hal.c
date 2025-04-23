@@ -12,11 +12,21 @@ extern jmp_buf fatal_error_jmp_buf;
 extern pthread_t main_thread_id;
 #endif
 
+#include <execinfo.h>
+#define ENABLE_STACKTRACE_DEPTH 16
+
+// Globals for last __enable_irq call stack trace
+//void* g_enable_stacktrace[ENABLE_STACKTRACE_DEPTH];
+//int g_enable_stacktrace_size = 0;
+//char** g_enable_stacktrace_symbols = NULL;
+
 
 
 // Static peripheral instances and variables
 uint32_t SystemCoreClock = 64000000U;  // After PLL configuration in clock_init()
 const uint8_t AHBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 6U, 7U, 8U, 9U};
+volatile uint32_t n_enable_irq = 0;
+volatile uint32_t n_disable_irq = 0;
 
 // Mock RCC registers with proper initialization
 static RCC_TypeDef RCC_var = {
@@ -361,10 +371,16 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
 
 // Implementation of core functions
 void __enable_irq(void) {
+    n_enable_irq++;
     g_interrupts_enabled = 1;
 }
 
 void __disable_irq(void) {
+    // Capture stack trace (pointer may not be freeable on macOS)
+//    g_enable_stacktrace_size = backtrace(g_enable_stacktrace, ENABLE_STACKTRACE_DEPTH);
+//    g_enable_stacktrace_symbols = backtrace_symbols(g_enable_stacktrace, g_enable_stacktrace_size);
+
+    n_disable_irq++;
     g_interrupts_enabled = 0;
 }
 

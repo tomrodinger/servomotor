@@ -857,6 +857,20 @@
                 "Make sure to send the correct firmware page numbers and ensure the firmware is not too big. You can look at the FIRST_FIRMWARE_PAGE_NUMBER and LAST_FIRMWARE_PAGE_NUMBER settings in settings.h",
                 "Study the protocol and make sure that everything is encoded right"
             ]
+        },
+        {
+            "code": 53,
+            "enum": "ERROR_INVALID_TEST_MODE",
+            "short_desc": "invalid test mode",
+            "long_desc": "You tried to trigger a certain test mode but it is not a valid one",
+            "causes": [
+                "You are a user and doing something you should not and generally don't understand what you are getting yourself into",
+                "You are a developer and you did not study the source code enough yet to use the test modes successfully"
+            ],
+            "solutions": [
+                "Done call the Test mode command",
+                "Keep studying the source code until you know how this works"
+            ]
         }
     ]
 }

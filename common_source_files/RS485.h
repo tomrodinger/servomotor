@@ -55,10 +55,11 @@ rs485_error_statistics_t rs485_get_error_statistics_and_optionally_reset(uint8_t
 uint8_t rs485_has_a_packet(void);
 uint8_t rs485_get_next_packet(uint8_t *command, uint16_t *payload_size, uint8_t **payload, uint8_t *is_broadcast);
 uint8_t rs485_validate_packet_crc32(void);
+void rs485_done_with_this_packet_dont_disable_enable_irq(void);
 void rs485_done_with_this_packet(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
-uint8_t rs485_is_transmit_done(void);
+uint8_t rs485_transmit_not_done(void);
 void rs485_transmit_no_error_packet(uint8_t is_broadcast);
 void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size);
 void rs485_start_the_packet(uint16_t payload_size);

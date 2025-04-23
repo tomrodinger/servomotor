@@ -31,6 +31,7 @@
 #   -P, --PORT                Show all ports on the system and select from menu
 #   --firmware-protocol PROTO Protocol to use for resetting device (old/new)
 #   --bootloader-protocol PROTO Protocol to use for transferring firmware (old/new)
+#   -v, --verbose            Increase output verbosity (set verbose level to 2)
 #
 # Process flow:
 # 1. Parse command line arguments and read the firmware binary file
@@ -53,6 +54,7 @@ import binascii # in the future, if you eliminate using binascii.crc32 then remo
 import zlib
 import struct
 import servomotor
+import servomotor.communication
 
 FIRMWARE_UPGRADE_COMMAND = 23
 SYSTEM_RESET_COMMAND = 27
@@ -63,6 +65,8 @@ FIRST_FIRMWARE_PAGE_NUMBER = (BOOTLOADER_N_PAGES)
 LAST_FIRMWARE_PAGE_NUMBER = 30
 FLASH_SETTINGS_PAGE_NUMBER = 31
 
+WAIT_FOR_RESET_TIME = 0.07 # wait for it to reset. I empirically determined that this delay needs to be between 0.002 and 0.13 for the firmware upgrade to work
+DELAY_AFTER_EACH_PAGE = 0.18 # this is the time to wait after sending each page. I empirically determined that this delay needs to be 0.13 or larger for the firmware upgrade to work. If this delay is too small then it will overflow the buffer in the destination device
 MODEL_CODE_LENGTH = 8
 FIRMWARE_COMPATIBILITY_CODE_LENGTH = 1
 FIRMWARE_PAGE_NUMBER_LENGTH = 1
@@ -140,9 +144,9 @@ def program_one_page(ser, model_code, firmware_compatibility_code, page_number, 
 
         # write the bytes in three shots with a time delay between, otherwise there is a strange bug where bytes get dropped
         ser.write(command[0:1000])
-        time.sleep(0.05)
+        time.sleep(DELAY_AFTER_EACH_PAGE / 2)
         ser.write(command[1000:2000])
-        time.sleep(0.05)
+        time.sleep(DELAY_AFTER_EACH_PAGE / 2)
         ser.write(command[2000:])
     else:
         # New protocol implementation with proper size encoding and CRC32
@@ -242,17 +246,107 @@ def system_reset_command(ser, protocol='new'):
         ser.write(packet)
 
 
+def upgrade_firmware_old_protocol(ser, model_code, firmware_compatibility_code, data, bootloader_protocol, firmware_protocol):
+    system_reset_command(ser, protocol=firmware_protocol)
+    time.sleep(WAIT_FOR_RESET_TIME)
+    page_number = FIRST_FIRMWARE_PAGE_NUMBER
+    # Old protocol: broadcast only, no response expected
+    while len(data) > 0:
+        if page_number > LAST_FIRMWARE_PAGE_NUMBER:
+            print("Error: the firmware is too big to fit in the flash")
+            exit(1)
+        print("Size left:", len(data))
+        if len(data) < FLASH_PAGE_SIZE:
+            data = data + bytearray([0]) * (FLASH_PAGE_SIZE - len(data))
+            print("Size left after append:", len(data))
+        assert len(data) >= FLASH_PAGE_SIZE
+        program_one_page(ser, model_code, firmware_compatibility_code, page_number, data[0 : FLASH_PAGE_SIZE], protocol=bootloader_protocol)
+        time.sleep(0.1)
+        data = data[FLASH_PAGE_SIZE:]
+        page_number = page_number + 1
+    system_reset_command(ser, protocol=bootloader_protocol)
+    time.sleep(0.1)
+    ser.close()
+
+def upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data, args, verbose=2):
+    # New protocol: support alias/unique ID, check for response after each page
+    # Parse alias/unique ID
+    # Open the serial port using servomotor (required for send_command to work)
+    try:
+        servomotor.open_serial_port()
+    except Exception as e:
+        print(f"Error: Could not open serial port: {e}")
+        exit(1)
+    try:
+        reset_response = servomotor.communication.send_command(SYSTEM_RESET_COMMAND, bytearray(), crc32_enabled=True, verbose=verbose)
+    except Exception as e:
+        print(f"Error: Exception occurred while sending reset command: {e}")
+        exit(1)
+    time.sleep(WAIT_FOR_RESET_TIME)
+    page_number = FIRST_FIRMWARE_PAGE_NUMBER
+    alias, unique_id = servomotor.communication.string_to_alias_or_unique_id(args.alias)
+    if alias is None and unique_id is None:
+        print("Error: Could not parse the -a/--alias parameter. It must be an integer alias (0-255) or a 16-character hex string for unique ID.")
+        exit(1)
+    while len(data) > 0:
+        if page_number > LAST_FIRMWARE_PAGE_NUMBER:
+            print("Error: the firmware is too big to fit in the flash")
+            exit(1)
+        print("Size left:", len(data))
+        if len(data) < FLASH_PAGE_SIZE:
+            data = data + bytearray([0]) * (FLASH_PAGE_SIZE - len(data))
+            print("Size left after append:", len(data))
+        assert len(data) >= FLASH_PAGE_SIZE
+
+        # Prepare the payload for the firmware upgrade command
+        payload = bytearray()
+        payload += model_code
+        payload += int(firmware_compatibility_code).to_bytes(FIRMWARE_COMPATIBILITY_CODE_LENGTH, "little")
+        payload += int(page_number).to_bytes(FIRMWARE_PAGE_NUMBER_LENGTH, "little")
+        payload += data[0:FLASH_PAGE_SIZE]
+
+        # Send the command and check for response if not broadcast
+        try:
+            response_payloads = servomotor.communication.send_command(FIRMWARE_UPGRADE_COMMAND, payload, crc32_enabled=True, verbose=verbose)
+            if (alias != 255 or unique_id is not None):
+                if not response_payloads or len(response_payloads[0]) != 0:
+                    print(f"Error: Did not receive the expected response after sending page {page_number}.")
+                    print("Expected a zero-length payload response from the device. Aborting firmware upgrade.")
+                    exit(1)
+        except Exception as e:
+            print(f"Error: Exception occurred while sending firmware page {page_number}: {e}")
+            exit(1)
+
+        if alias == 255:
+            time.sleep(DELAY_AFTER_EACH_PAGE) # When using a broadcast method, there will be no acknowledgement sent back to indicate when the firmware page is finished writing, and so we need to limit the pacet rate to not overflow the buffer
+
+        data = data[FLASH_PAGE_SIZE:]
+        page_number = page_number + 1
+
+    try:
+        reset_response = servomotor.communication.send_command(SYSTEM_RESET_COMMAND, bytearray(), crc32_enabled=True, verbose=verbose)
+    except Exception as e:
+        print(f"Error: Exception occurred while sending reset command after upgrade: {e}")
+        exit(1)
+    time.sleep(0.1)
+
+
 # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
 # and it also takes a mandatory firmware file name
 parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new', 
+parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (only for new protocol)', default="255")
+parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new',
                     help='Protocol to use for resetting the device into bootloader mode (default: new)')
-parser.add_argument('--bootloader-protocol', choices=['old', 'new'], default='new', 
+parser.add_argument('--bootloader-protocol', choices=['old', 'new'], default='new',
                     help='Protocol to use for transferring the firmware (default: new)')
+parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
 parser.add_argument('firmware_filename', help='new firmware file to send to the device')
 args = parser.parse_args()
+
+# Set verbose level: 2 if -v is given, else 0
+verbose_level = 2 if args.verbose else 0
 
 if args.PORT == True:
     serial_port = "MENU"
@@ -263,6 +357,11 @@ firmware_filename = args.firmware_filename
 # Store protocol choices
 firmware_protocol = args.firmware_protocol
 bootloader_protocol = args.bootloader_protocol
+
+# Input validation for protocol and alias/unique ID
+if bootloader_protocol == 'old' and args.alias is not None and args.alias != '255':
+    print("Error: The -a/--alias parameter is not supported with the old protocol. The old protocol only supports broadcast (alias 255).")
+    exit(1)
 
 print(f"Using firmware protocol: {firmware_protocol}")
 print(f"Using bootloader protocol: {bootloader_protocol}")
@@ -301,27 +400,12 @@ data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4,
 
 print("Will write this many bytes:", len(data))
 
-ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
+# Set up servomotor communication context (required for send_command to work)
+servomotor.communication.set_standard_options_from_args(args)
 
-system_reset_command(ser, protocol=firmware_protocol)
-time.sleep(0.07) # wait for it to reset. I empirically determined that this delay needs to be between 0.002 and 0.13 for the firmware upgrade to work
-page_number = FIRST_FIRMWARE_PAGE_NUMBER
-while len(data) > 0:
-    if page_number > LAST_FIRMWARE_PAGE_NUMBER:
-        print("Error: the firmware is too big to fit in the flash")
-        exit(1)
-    print("Size left:", len(data))
-    if len(data) < FLASH_PAGE_SIZE:
-        data = data + bytearray([0]) * (FLASH_PAGE_SIZE - len(data))
-        print("Size left after append:", len(data))
-    assert len(data) >= FLASH_PAGE_SIZE
-    program_one_page(ser, model_code, firmware_compatibility_code, page_number, data[0 : FLASH_PAGE_SIZE], protocol=bootloader_protocol)
-    time.sleep(0.1)
-    data = data[FLASH_PAGE_SIZE:]
-    page_number = page_number + 1
-
-system_reset_command(ser, protocol=bootloader_protocol)
-
-time.sleep(0.1)
-
-ser.close()
+# Main protocol selection logic
+if bootloader_protocol == 'old':
+    ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
+    upgrade_firmware_old_protocol(ser, model_code, firmware_compatibility_code, data, bootloader_protocol, firmware_protocol)
+else:
+    upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data, args, verbose=verbose_level)

@@ -116,7 +116,7 @@
         "CommandEnum": 6,
         "Description": "Starts a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly",
         "Input": null,
-        "Output": null,
+        "Output": "success_response",
         "CommandGroup": "Configuration"
     },
     {
@@ -527,7 +527,7 @@
         "CommandEnum": 27,
         "Description": "System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning.",
         "Input": null,
-        "Output": null,
+        "Output": "success_response",
         "CommandGroup": "Basic Control"
     },
     {
@@ -746,10 +746,10 @@
     {
         "CommandString": "Test mode",
         "CommandEnum": 36,
-        "Description": "Set a test mode. Set this to 0 for the default operation.",
+        "Description": "Set or trigger a certain test mode. This is a bit undocumented at the moment. Don't use this unless you are a developer working on test cases.",
         "Input": [
             {
-                "Description": "u8: The test mode to use (0 = normal operation).",
+                "Description": "u8: The test mode to use or trigger",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "testMode"
             }

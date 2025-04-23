@@ -3152,14 +3152,20 @@ void emergency_stop(void)
 }
 
 
-//int32_t get_motor_position(void)
-int64_t get_motor_position(void)
+int64_t get_motor_position_without_disable_enable_irq(void)
 {
-//  int32_t motor_position;
     int64_t motor_position;
-    __disable_irq();
     ((int32_t*)&motor_position)[0] = current_position_i96.mid;
     ((int32_t*)&motor_position)[1] = current_position_i96.high;
+    return motor_position;
+}
+
+
+int64_t get_motor_position(void)
+{
+    int64_t motor_position;
+    __disable_irq();
+    motor_position = get_motor_position_without_disable_enable_irq();
     __enable_irq();
     return motor_position;
 }
@@ -3176,12 +3182,10 @@ int64_t get_hall_position(void)
     return ret;
 }
 
-
-uint8_t get_motor_status_flags(void)
+uint8_t get_motor_status_flags_without_disable_enable_irq(void)
 {
     uint8_t motor_status_flags = 0;
     
-    __disable_irq();
     if(is_mosfets_enabled()) {
         motor_status_flags |= (1 << STATUS_MOSFETS_ENABLED_FLAG_BIT);
     }
@@ -3200,6 +3204,16 @@ uint8_t get_motor_status_flags(void)
     if(motor_busy) {
         motor_status_flags |= (1 << STATUS_MOTOR_BUSY_FLAG_BIT);
     }
+
+    return motor_status_flags;
+}
+
+uint8_t get_motor_status_flags(void)
+{
+    uint8_t motor_status_flags = 0;
+    
+    __disable_irq();
+    motor_status_flags = get_motor_status_flags_without_disable_enable_irq();
     __enable_irq();
 
     return motor_status_flags;

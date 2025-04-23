@@ -80,6 +80,8 @@ def get_response(crc32_enabled=True, verbose=2):
     first_byte = ser.read(1)
     if len(first_byte) != 1:
         raise TimeoutError("Error: timeout while reading first byte")
+    if verbose >= 2:
+        print("Read the first byte:", first_byte)
     
     # Validate first byte format (LSB should be 1)
     if not is_valid_first_byte_format(first_byte[0]):
@@ -100,15 +102,23 @@ def get_response(crc32_enabled=True, verbose=2):
         packet_size = ext_size_bytes[0] | (ext_size_bytes[1] << 8)
         if verbose == 2:
             print(format_debug(f"Received packet with extended size: {packet_size}"))
+    if verbose >= 2:
+        print("Packet size is:", packet_size)
 
     # Read the rest of the packet (minus the size byte(s) we already read)
     remaining_bytes = packet_size - len(size_bytes)
     if remaining_bytes <= 0:
         raise CommunicationError(f"Error: there are less bytes than expected in the response")
+    if verbose >= 2:
+        print("Trying to read the remaining bytes. There should be this many:", remaining_bytes)
     packet_data = ser.read(remaining_bytes)
     if len(packet_data) != remaining_bytes:
         while len(packet_data) < remaining_bytes:
+            if verbose >= 2:
+                print("Trying to read more bytes:", remaining_bytes - len(packet_data))
             more_packet_data = ser.read(remaining_bytes - len(packet_data))
+            if len(more_packet_data) == 0:
+                raise TimeoutError("Error: timeout while reading remaining bytes")
             packet_data += more_packet_data
 
     if len(packet_data) != remaining_bytes:

@@ -158,7 +158,13 @@ static void *write_thread_func(void *arg)
     while (!gQuit) {
         // Handle transmit
         if ((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) == 0) {
+            #ifdef DEBUG_PRINTING
+            printf("                   write_thread_func Reading USART1->TDR\n");
+            #endif
             uint8_t txByte = USART1->TDR;
+            #ifdef DEBUG_PRINTING
+            printf("                   write_thread_func Finished reading USART1->TDR\n");
+            #endif
             ssize_t written = write(gMasterFD, &txByte, 1);
             if (written < 0) {
                 printf("Write error: %s (errno: %d)\n", strerror(errno), errno);
@@ -167,14 +173,28 @@ static void *write_thread_func(void *arg)
             else if (written == 0) {
                 printf("Write failed: no bytes written\n");
                 exit(1);
+            }
+            else {
+                #ifdef DEBUG_PRINTING
+                printf("                   write_thread_func write to the serial port to go to the Python program: %hhu\n", txByte);
+                #endif
             }            
             // Set TXE to indicate transmit complete
+            #ifdef DEBUG_PRINTING
+            printf("                   write_thread_func Setting USART_ISR_TXE_TXFNF_Msk\n");
+            #endif
             USART1->ISR |= USART_ISR_TXE_TXFNF_Msk;
+            #ifdef DEBUG_PRINTING
+            printf("                   write_thread_func Finished setting USART_ISR_TXE_TXFNF_Msk\n");
+            #endif
         }
-        if (   g_interrupts_enabled                                                                   &&
-                (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
-                 ((USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   )))    ) {
+        if ( g_interrupts_enabled                                                                   &&
+             (((USART1->CR1 & USART_CR1_TXFEIE)         && (USART1->ISR & USART_ISR_TXE_TXFNF_Msk)) ||
+              ((USART1->CR1 & USART_CR1_RXNEIE_RXFNEIE) && (USART1->ISR & USART_ISR_RXNE_RXFNE   )))    ) {
             USART1_IRQHandler();
+            #ifdef DEBUG_PRINTING
+            printf("                   write_thread_func Calling USART1_IRQHandler\n");
+            #endif
         }
         usleep(40);    // ~230400 baud timing (each byte takes ~43.4μs)
     }
@@ -617,11 +637,17 @@ static void *motor_control_thread_func(void *arg)
 
         #ifdef DEBUG_PRINTING
         static int debug_counter = 0;
+        extern uint32_t n_enable_irq;
+        extern uint32_t n_disable_irq;
+//        extern void* g_enable_stacktrace[];
+//        extern int g_enable_stacktrace_size;
+//        extern char** g_enable_stacktrace_symbols;
         if (debug_counter++ % 100000 == 0) {
-            printf("DEBUG: g_interrupts_enabled = %d, gResetProgress = %d, (USART1->ISR & USART_ISR_RXNE_RXFNE) = %u\n",
-                   g_interrupts_enabled, gResetProgress, USART1->ISR & USART_ISR_RXNE_RXFNE); // DEBUG - temporarily added to aid in debugging
-            void print_nReceivedBytes(void);
-            print_nReceivedBytes();
+            printf("DEBUG: g_interrupts_enabled = %hhu, gResetProgress = %d, (USART1->ISR & USART_ISR_RXNE_RXFNE) = %u, n_enable_irq = %u, n_disable_irq = %u\n",
+                   g_interrupts_enabled, gResetProgress, USART1->ISR & USART_ISR_RXNE_RXFNE, n_enable_irq, n_disable_irq); // DEBUG - temporarily added to aid in debugging
+//            for (int i = 0; i < g_enable_stacktrace_size; ++i) {
+//                printf("  [enable_stacktrace][%d] %s\n", i, g_enable_stacktrace_symbols[i]);
+//            }
         }
         #endif
         
@@ -638,7 +664,7 @@ static void *motor_control_thread_func(void *arg)
         
         // Update shared state (after motor control)
         pthread_mutex_lock(&gSharedState.mutex);
-        gSharedState.motor_position = get_motor_position();
+        gSharedState.motor_position = get_motor_position_without_disable_enable_irq();
         gSharedState.mosfets_enabled = is_mosfets_enabled();
         gSharedState.angle_deg = (double)gSharedState.motor_position * (360.0 / COUNTS_PER_ROTATION);
         pthread_mutex_unlock(&gSharedState.mutex);

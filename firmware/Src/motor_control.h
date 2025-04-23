@@ -196,7 +196,7 @@ int32_t get_current_velocity(void);
 void set_max_acceleration(uint32_t new_max_acceleration);
 int32_t get_max_acceleration(void);
 void emergency_stop(void);
-//int32_t get_motor_position(void);
+int64_t get_motor_position_without_disable_enable_irq(void);
 int64_t get_motor_position(void);
 //int32_t get_hall_position(void);
 int64_t get_hall_position(void);

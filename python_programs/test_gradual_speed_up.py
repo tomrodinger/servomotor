@@ -94,6 +94,7 @@ parser = argparse.ArgumentParser(description='Servomotor random speed stress tes
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
+parser.add_argument('-a', '--alias', help='Alias of the device (ignored by this test)', default=None) # Added to accept the argument
 args = parser.parse_args()
 
 # Print initial test description

@@ -33,11 +33,11 @@ uint16_t MotorHAL_GetCurrent(void) {
     return gState.motorCurrent;
 }
 
-// External declaration of get_motor_position from motor_control.c
-extern int64_t get_motor_position(void);
+// External declaration of get_motor_position_without_disable_enable_irq from motor_control.c
+extern int64_t get_motor_position_without_disable_enable_irq(void);
 
 double MotorHAL_GetPosition(void) {
-    int64_t current_position_i64 = get_motor_position();
+    int64_t current_position_i64 = get_motor_position_without_disable_enable_irq();
     return (double)current_position_i64 * (360.0 / COUNTS_PER_ROTATION);
 }
 

@@ -18,3 +18,11 @@ void set_device_error_code(uint8_t error_code)
 {
     device_status.error_code = error_code;
 }
+
+#ifdef MOTOR_SIMULATION
+void device_status_simulator_init(void)
+{
+    device_status.flags = 0;
+    device_status.error_code = 0;
+}
+#endif

@@ -318,26 +318,31 @@ uint8_t rs485_validate_packet_crc32(void)
     return 1; // the CRC32 matches and so the packet is valid
 }
 
-void rs485_done_with_this_packet(void)
+void rs485_done_with_this_packet_dont_disable_enable_irq(void)
 {
-    __disable_irq();
     if (receiveBuffersUsed > 0) {
         receiveBuffersUsed--;
         receiveBufferReadPosition = (receiveBufferReadPosition + 1) % N_RECEIVE_BUFFERS;
     }
     USART1->CR1 |= USART_CR1_RXNEIE_RXFNEIE; // enable receive interrupt
-    __enable_irq();
     #ifdef MOTOR_SIMULATION
     simulation_printf("* * * rs485_done_with_this_packet function finished its work. This is the current complete internal state:\n");
     print_internal_state();
     #endif
+}
 
+void rs485_done_with_this_packet(void)
+{
+    __disable_irq();
+    rs485_done_with_this_packet_dont_disable_enable_irq();
+    __enable_irq();
 }
 
 void USART1_IRQHandler(void)
 {
     #ifdef MOTOR_SIMULATION
     uint8_t want_print_internal_state = 0;
+    volatile static uint32_t transmit_counter = 0;
     #endif
 
     // In this interrupt handler we first handle receive related logic
@@ -401,12 +406,21 @@ void USART1_IRQHandler(void)
 
     // And now secondly in this interrupt handler we handle transmit related logic
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
+#ifdef MOTOR_SIMULATION
+        simulation_printf("                                             USART1_IRQHandler Writing to USART1->TDR: %hhu   USART1->ISR: %u   transmit_counter = %u\n", transmitBuffer[transmitIndex], USART1->ISR, transmit_counter);
+        transmit_counter++;
+#endif
         USART1->TDR = transmitBuffer[transmitIndex];
+#ifdef MOTOR_SIMULATION
+        simulation_printf("                                             USART1_IRQHandler Finished writing to USART1->TDR: %u (Timestamp %llu us)\n", USART1->TDR, (unsigned long long)get_microsecond_time());
+#endif
 #ifdef MOTOR_SIMULATION
         // In simulation, we need to clear TXE after writing to TDR
         // (In real hardware, this is done by the USART hardware)
+        simulation_printf("                                             USART1_IRQHandler Clearing USART_ISR_TXE_TXFNF_Msk\n");
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
-        simulation_printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
+        simulation_printf("                                             USART1_IRQHandler Cleared USART_ISR_TXE_TXFNF_Msk (Timestamp: %llu us)   USART1->ISR: %u\n\n", (unsigned long long)get_microsecond_time(), USART1->ISR);
+        simulation_printf("                                             USART1_IRQHandler * * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
         want_print_internal_state = 1;
 #endif
         transmitCount--;
@@ -452,10 +466,12 @@ void rs485_transmit(void *s, uint8_t len)
     while((USART1->ISR & USART_ISR_TXE_TXFNF_Msk) && (transmitCount > 0)) {
         USART1->TDR = transmitBuffer[transmitIndex];
 #ifdef MOTOR_SIMULATION
-        simulation_printf("* * * Transmitted a byte: %hhu\n", transmitBuffer[transmitIndex]);
+        simulation_printf("* * * Transmitted a byte (inside rs485_transmit): %hhu\n", transmitBuffer[transmitIndex]);
         // In simulation, we need to clear TXE after writing to TDR
         // (In real hardware, this is done by the USART hardware)
+        simulation_printf("Clearing USART_ISR_TXE_TXFNF_Msk (inside rs485_transmit)\n");
         USART1->ISR &= ~USART_ISR_TXE_TXFNF_Msk;
+        simulation_printf("Finished clearing USART_ISR_TXE_TXFNF_Msk (inside rs485_transmit)\n");
 #endif
         transmitCount--;
         transmitIndex++;
@@ -467,14 +483,14 @@ void rs485_transmit(void *s, uint8_t len)
     }
 }
 
-void rs485_wait_for_transmit_done(void)
+uint8_t rs485_transmit_not_done(void)
 {
-    while((transmitCount > 0) || ((USART1->ISR & USART_ISR_TC_Msk) == 0)); // wait for previous transmission to finish (buffer becomes empty and last data item writen to USART->TDR has been transmitted out of the shift register)
+    return ((transmitCount > 0) || ((USART1->ISR & USART_ISR_TC_Msk) == 0));
 }
 
-uint8_t rs485_is_transmit_done(void)
+void rs485_wait_for_transmit_done(void)
 {
-    return (transmitCount == 0);
+    while (rs485_transmit_not_done()); // wait for previous transmission to finish (buffer becomes empty and last data item writen to USART->TDR has been transmitted out of the shift register)
 }
 
 void rs485_transmit_no_error_packet(uint8_t is_broadcast)

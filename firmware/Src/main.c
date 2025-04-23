@@ -471,12 +471,12 @@ void process_packet(void)
         if(!is_broadcast) {
             struct __attribute__((__packed__)) {
                 uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
-                struct device_status_struct device_status;
+                struct device_status_struct status;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } status_reply;
             uint8_t motor_status_flags = get_motor_status_flags();
             set_device_status_flags(motor_status_flags);
-            memcpy(&status_reply.device_status, get_device_status(), sizeof(struct device_status_struct));
+            memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
             rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
             char buf[100];
             sprintf(buf, "Get status: %hu\n", motor_status_flags);
@@ -859,8 +859,14 @@ void process_packet(void)
             else if (test_mode < 10) {
                 set_motor_test_mode(test_mode);
             }
-            else {
+            else if (test_mode < 10 + 2) {
                 set_led_test_mode(test_mode - 10);
+            }
+            else if (test_mode < 12 + 60) { // test modes 12 to 71 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
+                fatal_error(test_mode - 12);
+            }
+            else {
+                fatal_error(ERROR_INVALID_TEST_MODE);
             }
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             char buf[100];

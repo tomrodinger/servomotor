@@ -3,6 +3,7 @@
 import servomotor
 import time
 import math
+import argparse # Import argparse
 from servomotor.communication import TimeoutError
 
 # Maximum allowed difference between expected and actual movement
@@ -98,134 +99,138 @@ def verify_homing_movement(motor, start_position, expected_direction, expected_c
     print("\nVerifying final position in all units:")
     verify_position_in_all_units(motor, end_position)
 
-def test_homing():
-    # Initialize motor with encoder counts as default position unit for precise verification
-    motorX = servomotor.M3("X", 
-                          time_unit="seconds", 
-                          position_unit="encoder_counts", 
-                          velocity_unit="rpm", 
-                          acceleration_unit="degrees_per_second_squared", 
-                          current_unit="amps", 
-                          voltage_unit="volts", 
-                          temperature_unit="celsius", 
-                          verbose=0)  # Set verbose=0 to reduce output
+def test_homing(motorX): # Accept motor object as argument
+    """Runs the homing tests. Assumes motor object is initialized and port is open."""
+    print("\nResetting motor...")
+    motorX.system_reset() # Use the passed motor object
+    time.sleep(1.5)  # Required delay after reset
 
-    try:
-        servomotor.open_serial_port()
-        print("\nResetting motor...")
-        motorX.system_reset()
-        time.sleep(1.5)  # Required delay after reset
-        
-        print("\nEnabling MOSFETs...")
-        motorX.enable_mosfets()
+    print("\nEnabling MOSFETs...")
+    motorX.enable_mosfets()
 
-        print("\nGoing to closed loop mode...")
-        motorX.go_to_closed_loop()
-        time.sleep(0.5)  # Give time to enter closed loop mode
+    print("\nGoing to closed loop mode...")
+    motorX.go_to_closed_loop()
+    time.sleep(0.5)  # Give time to enter closed loop mode
 
-        # Test homing in shaft rotations (2 rotations)
-        print("\nTesting homing in shaft rotations...")
-        print("Homing with distance of +2 rotations...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("shaft_rotations")  # Set to shaft_rotations for homing
-        motorX.homing(maxDistance=2, maxDuration=2)  # Home with +2 rotation distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 2 rotations = 2 * 3,276,800 counts
+    # Test homing in shaft rotations (2 rotations)
+    print("\nTesting homing in shaft rotations...")
+    print("Homing with distance of +2 rotations...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("shaft_rotations")  # Set to shaft_rotations for homing
+    motorX.homing(maxDistance=2, maxDuration=2)  # Home with +2 rotation distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 2 rotations = 2 * 3,276,800 counts
 
-        print("\nHoming with distance of -2 rotations...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("shaft_rotations")  # Set to shaft_rotations for homing
-        motorX.homing(maxDistance=-2, maxDuration=2)  # Home with -2 rotation distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -2 rotations = -2 * 3,276,800 counts
-        
-        # Test homing in degrees (720 degrees = 2 rotations)
-        print("\nTesting homing in degrees...")
-        print("Homing with distance of +720 degrees...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("degrees")  # Set to degrees for homing
-        motorX.homing(maxDistance=720, maxDuration=2)  # Home with +720 degrees distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 720 degrees = 2 rotations = 2 * 3,276,800 counts
+    print("\nHoming with distance of -2 rotations...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("shaft_rotations")  # Set to shaft_rotations for homing
+    motorX.homing(maxDistance=-2, maxDuration=2)  # Home with -2 rotation distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -2 rotations = -2 * 3,276,800 counts
 
-        print("\nHoming with distance of -720 degrees...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("degrees")  # Set to degrees for homing
-        motorX.homing(maxDistance=-720, maxDuration=2)  # Home with -720 degrees distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -720 degrees = -2 rotations = -2 * 3,276,800 counts
+    # Test homing in degrees (720 degrees = 2 rotations)
+    print("\nTesting homing in degrees...")
+    print("Homing with distance of +720 degrees...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("degrees")  # Set to degrees for homing
+    motorX.homing(maxDistance=720, maxDuration=2)  # Home with +720 degrees distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 720 degrees = 2 rotations = 2 * 3,276,800 counts
 
-        # Test homing in radians (4π radians = 2 rotations)
-        print("\nTesting homing in radians...")
-        print("Homing with distance of +4π radians...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("radians")  # Set to radians for homing
-        motorX.homing(maxDistance=4 * math.pi, maxDuration=2)  # Home with +4π radians distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 4π radians = 2 rotations = 2 * 3,276,800 counts
+    print("\nHoming with distance of -720 degrees...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("degrees")  # Set to degrees for homing
+    motorX.homing(maxDistance=-720, maxDuration=2)  # Home with -720 degrees distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -720 degrees = -2 rotations = -2 * 3,276,800 counts
 
-        print("\nHoming with distance of -4π radians...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
-        start_position = motorX.get_position()
-        motorX.set_position_unit("radians")  # Set to radians for homing
-        motorX.homing(maxDistance=-4 * math.pi, maxDuration=2)  # Home with -4π radians distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -4π radians = -2 rotations = -2 * 3,276,800 counts
+    # Test homing in radians (4π radians = 2 rotations)
+    print("\nTesting homing in radians...")
+    print("Homing with distance of +4π radians...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("radians")  # Set to radians for homing
+    motorX.homing(maxDistance=4 * math.pi, maxDuration=2)  # Home with +4π radians distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 4π radians = 2 rotations = 2 * 3,276,800 counts
 
-        # Test homing in encoder counts (6553600 counts = 2 rotations)
-        print("\nTesting homing in encoder counts...")
-        print("Homing with distance of +2 rotations in encoder counts...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Already in encoder counts
-        start_position = motorX.get_position()
-        motorX.homing(maxDistance=2 * 3276800, maxDuration=2)  # Home with +2 rotations distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 2 rotations = 2 * 3,276,800 counts
+    print("\nHoming with distance of -4π radians...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Get start position in encoder counts
+    start_position = motorX.get_position()
+    motorX.set_position_unit("radians")  # Set to radians for homing
+    motorX.homing(maxDistance=-4 * math.pi, maxDuration=2)  # Home with -4π radians distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -4π radians = -2 rotations = -2 * 3,276,800 counts
 
-        print("\nHoming with distance of -2 rotations in encoder counts...")
-        start_time = time.time()
-        motorX.set_position_unit("encoder_counts")  # Ensure we're in encoder counts
-        start_position = motorX.get_position()  # Already in encoder counts
-        motorX.homing(maxDistance=-2 * 3276800, maxDuration=2)  # Home with -2 rotations distance, 2 second limit
-        wait_for_moves_to_complete(motorX)
-        elapsed_time = time.time() - start_time
-        print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
-        verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -2 rotations = -2 * 3,276,800 counts
+    # Test homing in encoder counts (6553600 counts = 2 rotations)
+    print("\nTesting homing in encoder counts...")
+    print("Homing with distance of +2 rotations in encoder counts...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Already in encoder counts
+    start_position = motorX.get_position()
+    motorX.homing(maxDistance=2 * 3276800, maxDuration=2)  # Home with +2 rotations distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Positive direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, 1, 2 * 3276800)  # 2 rotations = 2 * 3,276,800 counts
 
-        print("\nTest complete!")
+    print("\nHoming with distance of -2 rotations in encoder counts...")
+    start_time = time.time()
+    motorX.set_position_unit("encoder_counts")  # Ensure we're in encoder counts
+    start_position = motorX.get_position()  # Already in encoder counts
+    motorX.homing(maxDistance=-2 * 3276800, maxDuration=2)  # Home with -2 rotations distance, 2 second limit
+    wait_for_moves_to_complete(motorX)
+    elapsed_time = time.time() - start_time
+    print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
+    verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -2 rotations = -2 * 3,276,800 counts
 
-    except Exception as e:
-        print(f"\nTest failed: {e}")
-        raise
-    finally:
-        servomotor.close_serial_port()
-        del motorX
+    print("\nTest complete!")
 
 if __name__ == "__main__":
-    test_homing()
-    print("\nPASSED")
+    parser = argparse.ArgumentParser(description='Test servomotor homing.')
+    parser.add_argument('-p', '--port', help='Serial port device', default=None)
+    parser.add_argument('-P', '--PORT', help='Show available ports and prompt for selection', action="store_true")
+    parser.add_argument('-a', '--alias', help='Alias of the device to control', required=True)
+    # Add verbosity later if needed, pass it to M3 constructor
+    args = parser.parse_args()
+
+    # Set port before opening
+    servomotor.set_serial_port_from_args(args)
+
+    motorX = None # Initialize motorX to None
+    try:
+        servomotor.open_serial_port()
+        # Initialize motor object after opening port and getting alias
+        motorX = servomotor.M3(args.alias,
+                              time_unit="seconds",
+                              position_unit="encoder_counts", # Start with counts for verification
+                              velocity_unit="rpm",
+                              acceleration_unit="degrees_per_second_squared",
+                              verbose=0) # Set verbose=0 to reduce output
+        test_homing(motorX) # Pass the motor object to the test function
+        print("\nPASSED")
+    finally:
+        servomotor.close_serial_port()
+        # No need to explicitly delete motorX, garbage collection handles it

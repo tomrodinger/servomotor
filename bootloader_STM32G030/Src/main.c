@@ -241,11 +241,23 @@ void process_packet(void)
         return;
     }
 
-//    print_number("Received a command with length: ", commandLen);
     launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
-//        print_number("Axis:", axis);
-//        print_number("command:", command);
+
     switch(command) {
+    case GET_STATUS_COMMAND:
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct device_status_struct status;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } status_reply;
+            set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
+            memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
+            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
+        }
+        break;
     case DETECT_DEVICES_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
@@ -322,23 +334,10 @@ void process_packet(void)
             rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply));
         }
         break;
-    case GET_STATUS_COMMAND:
-        check_payload_size_is_zero(payload_size);
-        rs485_done_with_this_packet();
-        if(!is_broadcast) {
-            struct __attribute__((__packed__)) {
-                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
-                struct device_status_struct status;
-                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
-            } status_reply;
-            set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
-            memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
-            rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
-        }
-        break;
     case SYSTEM_RESET_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
+        rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
         rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out before resetting the device
         NVIC_SystemReset();
         break;
