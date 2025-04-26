@@ -1,11 +1,6 @@
 #include "Servomotor.h"
 #include "test_framework.h"
 
-// External declarations to access the global variables from ArduinoEmulator.cpp
-extern char g_motorAlias;
-extern uint64_t g_uniqueId;
-extern bool g_useUniqueId;
-
 void setup() {
     Serial.begin(115200);  // For debug output
     Serial.println("test_emergency_stop: BEGIN\n");

@@ -551,7 +551,7 @@ void process_packet(void)
                 struct product_info_struct product_info;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } product_info_reply;
-            struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
+            struct product_info_struct *product_info = get_product_info();
             memcpy(&product_info_reply.product_info, product_info, sizeof(struct product_info_struct));
             rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply));
         }

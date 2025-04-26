@@ -122,7 +122,7 @@ for unique_id, device in new_device_dict.items():
 for unique_id, device in new_device_dict.items():
     print(f"\n=== Testing device {unique_id:016X} (Alias: {device.alias}) ===")
 
-    motor.set_alias(device.alias)
+    motor.use_alias(device.alias)
     motor.enable_mosfets()
     time.sleep(0.05)
     motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)

@@ -60,7 +60,7 @@ def main():
         # Enable and set velocities for each motor
         for unique_id, alias, velocity in MOTOR_CONFIGS:
             print(f"Moving device {unique_id} with alias {alias} (0x{alias:02x}) at {velocity:.2f} degrees/sec for 20 seconds...")
-            motor.set_alias(alias)
+            motor.use_alias(alias)
             motor.enable_mosfets()
             motor.set_maximum_motor_current(390, 390)  # Set to same max current as stress test
             motor.move_with_velocity(velocity, RUN_TIME)

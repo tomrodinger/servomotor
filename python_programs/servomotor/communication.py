@@ -312,7 +312,7 @@ def send_command(command_id, gathered_inputs, crc32_enabled=True, verbose=2):
     ser.write(packet)
     
     # Check if we should expect a response
-    if (unique_id is None) and (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
+    if (unique_id is None) and (alias == ALL_ALIAS) and (command_id != detect_devices_command_id):
         if verbose == 2:
             print(format_info(f"Sending a command to all devices (alias {alias}) and we expect there will be no response from any of them"))
         return []
@@ -739,8 +739,7 @@ def interpret_single_response(command_id, response, verbose=2):
                     print(format_info(f"   ---> {from_bytes_result}"))
             else:
                 if data_type_str == "string8":
-                    # remove the null terminator from the string
-                    data_item = data_item[:-1]
+#                    data_item = data_item[:-1] # remove the null terminator from the string. actually, there is no null terminator. this string is a certain length (currently 8 characters) and is padded with spaces.
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
                     if verbose >= 1:

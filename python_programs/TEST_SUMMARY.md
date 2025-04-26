@@ -34,6 +34,27 @@
 | `test_time_sync_multiple_devices.py`                                           | Tests time synchronization across multiple specified motors, reporting min/max error. Uses older `communication` module.                  | `communication` | Yes      | No               |
 | `test_time_sync.py`                                                            | Tests time synchronization for a single specified motor, reporting error continuously. Uses older `communication` module.                 | `communication` | Yes      | No               |
 
+## `test_set_device_alias.py`
+
+This test verifies the device alias setting functionality using the `servomotor` library and the `M3` class. It covers:
+- Setting a random valid alias (0–251) and verifying with device detection.
+- Attempting to set invalid aliases (254, 253, 252) and confirming the device enters a fatal error state.
+- Removing the alias (setting to 255) and confirming the device is detected with alias 255.
+
+**Command-line arguments:**
+- `-p`, `--port`: Serial port device name (required)
+- `--bootloader`: Enter bootloader mode before running the test
+- `--verbose`: Enable verbose output
+- `-P`, `--PORT`: Show available ports and prompt for selection
+- `--repeat N`: Repeat all test scenarios N times (default: 1)
+
+After each repeat, the script prints the number of passes and failures for each test scenario. At the end, a grand summary is printed. The script exits with code 0 if all tests pass in all repeats, or 1 if any test fails.
+
+Example usage:
+```
+python3 test_set_device_alias.py -p /dev/ttyUSB0 --repeat 5
+```
+
 ## Best Practices for Writing Tests
 
 Based on the modern tests using the `servomotor` module, follow these best practices:

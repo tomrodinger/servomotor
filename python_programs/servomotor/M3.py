@@ -422,6 +422,16 @@ class M3(AllMotors):
     def __del__(self):
         super().__del__()
 
-    def set_alias(self, new_alias):
-        """Change the alias of the motor"""
+    def use_alias(self, new_alias):
+        """Set the alias for addressing this motor (standard addressing mode)"""
+        from . import communication
+        communication.alias = new_alias
+        communication.unique_id = None
         self.alias = new_alias
+
+    def use_unique_id(self, unique_id):
+        """Set the unique ID for addressing this motor (extended addressing mode)"""
+        from . import communication
+        communication.unique_id = unique_id
+        communication.alias = None
+        self.unique_id = unique_id

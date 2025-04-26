@@ -405,7 +405,7 @@
         "Description": "Sets device alias",
         "Input": [
             {
-                "Description": "u8_alias: The alias (short one byte ID) ranging from 0 to 253. Cannot be 254 or 255 because those are reserved.",
+                "Description": "u8_alias: The alias (which is a one byte ID) ranging from 0 to 251. It cannot be 252 to 254 because those are reserved. You can set it to 255, which will remove the alias.",
                 "TooltipDisplayFormat": "%d,%c",
                 "ParameterName": "alias"
             }

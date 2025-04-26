@@ -225,7 +225,7 @@ def run_ping_test(motor255, device_dict, verbose=2):
 
     for ping_round in range(10):
         for unique_id, device in device_dict.items():
-            motor.set_alias(device.alias)
+            motor.use_alias(device.alias)
             # Try ping with retries
             for retry in range(PING_TIMEOUT_RETRIES):
                 try:
@@ -458,13 +458,13 @@ def main():
         try:
             # Enable MOSFETs and set current for selected devices
             for device in test_devices:
-                motor.set_alias(device.alias)
+                motor.use_alias(device.alias)
                 motor.enable_mosfets()
                 motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
 
             # Apply random velocity movement
             for device in test_devices:
-                motor.set_alias(device.alias)
+                motor.use_alias(device.alias)
                 
                 # Random speed between 0.1 and 3 rotations per second (convert to degrees/second)
                 speed = random.uniform(MIN_VELOCITY, MAX_VELOCITY) * 360  # Convert rotations/sec to degrees/sec
@@ -501,7 +501,7 @@ def main():
         # Let's do multiple passes to try to read the status of all the devices, ince I found that this step is unreliable
         for i in range(STATUS_CHECK_PASSES):
             for device in device_dict.values():
-                motor.set_alias(device.alias)
+                motor.use_alias(device.alias)
                 # Get status and check for errors
                 try:
                     time.sleep(0.15)
