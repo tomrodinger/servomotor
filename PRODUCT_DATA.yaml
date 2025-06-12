@@ -96,7 +96,23 @@
     firmwares:
     - version: 0.9.1.0
       compatibility: 3
-      date: January 3, 2024
+      date: January 3, 2025
       description: Firmware for the servomotor model M3
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.9.1.0_scc3_hwV11.firmware
       sha256: 69236b0e362e57d8a63f25a6fdcb3934c096c4e738471be43146689e24e82764
+  - version: 1.2
+    type: full_product
+    web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
+    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
+    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    schematic: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/PCB/Servomotor3/1.2/schematic/1.2-index-schTop.pdf
+    user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.1_Dec_5_2024.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/1.2
+    firmwares:
+    - version: 0.11.0.0
+      compatibility: 3
+      date: June 12, 2025
+      description: Firmware for the servomotor model M3
+      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.11.0.0_scc3_hw1.2.firmware
+      sha256: 01307afe2ed455a570d6dfdaf240b033c80e0eb4dbec9fdb2a3f93c1819222df
