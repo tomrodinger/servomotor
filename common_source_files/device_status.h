@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // The flags variable can contain up to 8 flags. These are defined so far:
-// Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)
+// Bit 0: In the bootloader (if this flag is set (ie. we are in the bootloader) then the other flags below will all be 0)
 // Bit 1: MOSFETs are enabled
 // Bit 2: Motor is in closed loop mode
 // Bit 3: Motor is currently executing the calibration command

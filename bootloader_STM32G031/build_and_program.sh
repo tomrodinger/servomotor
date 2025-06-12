@@ -129,12 +129,12 @@ build_new_bootloader() {
 
     # Get hardware version
     while true; do
-        echo "Hardware version (e.g., 0.9.0):"
+        echo "Hardware version (e.g., 0.9.0 or 1.2):"
         read hw_version
-        if [[ "$hw_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        if [[ "$hw_version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             break
         else
-            echo "Invalid version format. Please use X.Y.Z format (e.g., 0.9.0)"
+            echo "Invalid version format. Please use X.Y or X.Y.Z format (e.g., 1.2 or 0.9.0)"
         fi
     done
 

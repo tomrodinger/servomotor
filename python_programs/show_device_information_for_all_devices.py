@@ -142,7 +142,10 @@ for unique_id, device in device_dict.items():
         print(f"Communication error: {e}")
         exit(1)
     try:
-        device.firmware_version = motor.get_firmware_version()
+        response = motor.get_firmware_version()
+        device.firmware_version = response[0]
+        in_bootloader = response[1]
+        assert(in_bootloader == 0)
     except Exception as e:
         print(f"Communication error: {e}")
         exit(1)

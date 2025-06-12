@@ -15,6 +15,19 @@
 #include "device_status.h"
 #include "crc32.h"
 
+// Here we store the version information for the bootloader firmware (not the main firmware)
+struct __attribute__((__packed__)) firmware_version_struct {
+    uint8_t development;
+    uint8_t bugfix;
+    uint8_t minor;
+    uint8_t major;
+};
+#define MAJOR_FIRMWARE_VERSION 1
+#define MINOR_FIRMWARE_VERSION 0
+#define BUGFIX_FIRMWARE_VERSION 0
+#define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
+
 extern uint32_t USART1_timout_timer;
 
 static uint64_t my_unique_id;
@@ -125,7 +138,6 @@ void process_packet(void)
                 struct device_status_struct status;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } status_reply;
-            set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT);
             memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
             rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
         }
@@ -204,6 +216,21 @@ void process_packet(void)
             struct product_info_struct *product_info = (struct product_info_struct *)(PRODUCT_INFO_MEMORY_LOCATION);
             memcpy(&product_info_reply.product_info, product_info, sizeof(struct product_info_struct));
             rs485_finalize_and_transmit_packet(&product_info_reply, sizeof(product_info_reply));
+        }
+        break;
+    case GET_FIRMWARE_VERSION_COMMAND:
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                struct firmware_version_struct firmware_version_data;
+                uint8_t in_bootloader;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } firmware_version_reply;
+            memcpy(&firmware_version_reply.firmware_version_data, &firmware_version, sizeof(firmware_version));
+            firmware_version_reply.in_bootloader = 1; // 1 indicates that we are in the bootloader and the firmware version we are returning is the version of the bootloader
+            rs485_finalize_and_transmit_packet(&firmware_version_reply, sizeof(firmware_version_reply));
         }
         break;
     case SYSTEM_RESET_COMMAND:
@@ -303,6 +330,8 @@ int main(void)
     my_unique_id = get_unique_id();
 
     load_global_settings(); // load the settings from non-volatile memory
+
+    set_device_status_flags(1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT); // We are in the bootloader and our device status needs to reflect it
 
     __enable_irq();
 

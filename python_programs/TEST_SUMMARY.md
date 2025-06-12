@@ -10,6 +10,7 @@
 | `test_enable_disable.py`                                                       | Repeatedly enables and disables motor MOSFETs for many iterations. Reliability test. Uses older `communication` module.                   | `communication` | Yes      | No               |
 | `test_fast_short_move_with_velocity.py`                                        | Tests queuing and executing many short, fast moves using velocity control. Uses `servomotor` library.                                     | `servomotor`    | No       | Yes              |
 | `test_get_comprehensive_position.py`                                           | Continuously polls and prints the comprehensive position (motor, hall, external encoder) for a specified motor. Uses `servomotor` library. | `servomotor`    | No       | No               |
+| `test_get_firmware_version.py`                                                 | Tests the "Get firmware version" command in both main firmware and bootloader modes. Validates version format, consistency, and mode detection. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
 | `test_getch.py`                                                                | Tests the `getch` terminal input utility using a mock motor class. No hardware interaction.                                               | `N/A`           | Yes      | No               |
 | `test_glue_machine_rotation_matrix.py`                                         | Loads glue machine calibration/transform data, visualizes, and tests the transformation matrix accuracy. Application-specific.            | `N/A`           | No       | No               |
 | `test_go_to_closed_loop_mode_and_spin_motor.py`                                | Tests closed-loop entry, performs moves, checks final position, and gathers success statistics based on phase angle. Uses older `communication` module. | `communication` | Yes      | No               |
@@ -32,6 +33,7 @@
 | `test_set_velocity_to_specific_values.py`                                      | Moves specific, hardcoded motors at specific velocities. Debugging/characterization focus. Uses `servomotor` library.                     | `servomotor`    | No       | No               |
 | `test_terminal_formatting.py`                                                  | Tests the `terminal_formatting` utility module. No hardware interaction.                                                                  | `N/A`           | Yes      | No               |
 | `test_time_sync_multiple_devices.py`                                           | Tests time synchronization across multiple specified motors, reporting min/max error. Uses older `communication` module.                  | `communication` | Yes      | No               |
+| `test_test_mode.py`                                                            | Verifies the "Test mode" command, including invalid and fatal error scenarios. Checks for correct fatal error codes and enforces timeout behavior. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
 | `test_time_sync.py`                                                            | Tests time synchronization for a single specified motor, reporting error continuously. Uses older `communication` module.                 | `communication` | Yes      | No               |
 
 ## `test_set_device_alias.py`
@@ -53,6 +55,110 @@ After each repeat, the script prints the number of passes and failures for each 
 Example usage:
 ```
 python3 test_set_device_alias.py -p /dev/ttyUSB0 --repeat 5
+```
+
+## `test_test_mode.py`
+
+This test verifies the correct behavior of the "Test mode" command in the servomotor firmware/bootloader. It covers both invalid and valid (fatal error-triggering) scenarios, and ensures the device responds as expected.
+
+**Test Scenarios:**
+1. **Invalid Test Mode Parameter:**
+   - Sends a test_mode value >= 72 (e.g., 255), which is not supported by the firmware.
+   - Expects the device to enter the ERROR_INVALID_TEST_MODE (code 53) fatal error state.
+   - The device should NOT respond to the test_mode command (timeout is expected).
+   - The test then calls get_status to confirm the fatal error code is set.
+
+2. **Valid Test Mode Parameter (Triggers Fatal Error):**
+   - Randomly selects a fatal error code N in the range 0–59.
+   - Sends test_mode = N + 12, which, per firmware logic, triggers fatal_error(N).
+   - The device should NOT respond to the test_mode command (timeout is expected).
+   - The test then calls get_status to confirm the correct fatal error code is set.
+
+**Key Implementation Details:**
+- The test uses only the device's unique ID for all commands after initial detection, ensuring robust addressing even if the alias is 255.
+- After each fatal error is triggered, the test performs a system reset to return the device to a known state before the next scenario.
+- The test explicitly checks that a timeout occurs after sending a test_mode command that triggers a fatal error. If no timeout occurs, the test fails.
+- The test supports --bootloader and --repeat options for flexibility and repeated validation.
+- The test prints clear PASS/FAIL results and exits with code 0 on success, 1 on failure.
+
+**Firmware Mapping Reference:**
+- test_mode == 0: disables test mode
+- test_mode 1–9: set_motor_test_mode
+- test_mode 10–11: set_led_test_mode
+- test_mode 12–71: triggers fatal_error(test_mode - 12), i.e., test_mode 12 triggers fatal_error(0), 13 triggers fatal_error(1), ..., 71 triggers fatal_error(59)
+- test_mode >= 72: triggers fatal_error(ERROR_INVALID_TEST_MODE)
+
+**Command-line arguments:**
+- `-p`, `--port`: Serial port device name (required)
+- `--bootloader`: Enter bootloader mode before running the test
+- `--verbose`: Enable verbose output
+- `-P`, `--PORT`: Show available ports and prompt for selection
+- `--repeat N`: Repeat all test scenarios N times (default: 1)
+
+**Example usage:**
+```
+python3 test_test_mode.py -p /dev/ttyUSB0 --repeat 5 --verbose
+```
+
+## `test_get_firmware_version.py`
+
+This test verifies the "Get firmware version" command functionality in both main firmware and bootloader modes using the `servomotor` library and the `M3` class. It covers:
+
+- Testing the command in main firmware mode (returns firmware version with `inBootloader=0`)
+- Testing the command in bootloader mode (returns bootloader version with `inBootloader=1`)
+- Validating firmware version format (handles both list `[dev, patch, minor, major]` and u32 integer formats)
+- Verifying the `inBootloader` flag correctly reflects the current mode
+- Testing both alias and unique ID addressing methods
+- Ensuring consistency across multiple repeated calls
+- Comprehensive error handling and validation
+
+**Test Scenarios:**
+1. **Main Firmware Mode Test:**
+   - Resets device and enters main firmware mode (long delay after reset)
+   - Tests `get_firmware_version` command using alias addressing
+   - Tests `get_firmware_version` command using unique ID addressing
+   - Verifies both methods return identical results
+   - Validates that `inBootloader` flag is 0 (false)
+
+2. **Bootloader Mode Test:**
+   - Resets device and enters bootloader mode (short delay after reset)
+   - Tests `get_firmware_version` command using alias addressing
+   - Tests `get_firmware_version` command using unique ID addressing
+   - Verifies both methods return identical results
+   - Validates that `inBootloader` flag is 1 (true)
+
+3. **Repeat Testing:**
+   - When `--repeat N` is specified, performs multiple calls to verify consistency
+   - Validates all repeated calls return identical results
+
+**Key Implementation Details:**
+- Uses extended addressing (unique ID) for robust communication after device detection
+- Validates firmware version format: `[development, patch, minor, major]` or u32 integer
+- Converts version components to human-readable format (e.g., "0.11.0.0")
+- Supports both bootloader and main firmware modes via `--bootloader` flag
+- Comprehensive validation of version components and ranges
+- Clear PASS/FAIL reporting with detailed error messages
+
+**Command-line arguments:**
+- `-p`, `--port`: Serial port device name (required unless `-P` is used)
+- `-P`, `--PORT`: Show available ports and prompt for selection
+- `--bootloader`: Enter bootloader mode before running the test
+- `--repeat N`: Repeat all test scenarios N times (default: 1)
+- `--verbose`: Enable verbose output
+
+**Example usage:**
+```bash
+# Test in main firmware mode
+python3 test_get_firmware_version.py -p /dev/ttyUSB0
+
+# Test in bootloader mode
+python3 test_get_firmware_version.py -p /dev/ttyUSB0 --bootloader
+
+# Test with multiple repeats in bootloader mode
+python3 test_get_firmware_version.py -p /dev/ttyUSB0 --bootloader --repeat 5
+
+# Interactive port selection with verbose output
+python3 test_get_firmware_version.py -P --verbose
 ```
 
 ## Best Practices for Writing Tests

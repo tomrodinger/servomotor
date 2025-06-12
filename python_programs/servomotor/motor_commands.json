@@ -301,7 +301,7 @@
         "Input": null,
         "Output": [
             {
-                "Description": "u8: A series of flags which are 1 bit each",
+                "Description": "u16: A series of flags which are 1 bit each",
                 "Bit descriptions": [
                     "Bit 0: In the bootloader (if this flag is set then the other flags below will all be 0)",
                     "Bit 1: MOSFETs are enabled",
@@ -310,7 +310,15 @@
                     "Bit 4: Motor is currently executing a homing command",
                     "Bit 5: Motor is currently executing the procedure to go to closed loop mode",
                     "Bit 6: Motor is currently busy doing a time consuming task and is not ready to take another command",
-                    "Bit 7: Not used, set to 0"
+                    "Bit 7: Not used, set to 0",
+                    "Bit 8: Not used, set to 0",
+                    "Bit 9: Not used, set to 0",
+                    "Bit 10: Not used, set to 0",
+                    "Bit 11: Not used, set to 0",
+                    "Bit 12: Not used, set to 0",
+                    "Bit 13: Not used, set to 0",
+                    "Bit 14: Not used, set to 0",
+                    "Bit 15: Not used, set to 0"
                 ],
                 "TooltipDisplayFormat": "%b",
                 "ParameterName": "statusFlags"
@@ -482,13 +490,18 @@
     {
         "CommandString": "Get firmware version",
         "CommandEnum": 25,
-        "Description": "Get the firmware version.",
+        "Description": "Get the firmware version or the bootloader version depending on what mode we are in. This command also returns the status bits, where the least significan bit teels us if we are currently in the bootloader (=1) or the main firmware (=0)",
         "Input": null,
         "Output": [
             {
                 "Description": "u32_version_number: The firmware version stored as 4 bytes. The first byte is the development number, then patch version, followed by the minor and major versions.",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "firmwareVersion"
+            },
+            {
+                "Description": "u8: A flag that tells us if we are in the bootloader (=1) or in the reguslar firmware (=0)",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "inBootloader"
             }
         ],
         "CommandGroup": "Device Management"

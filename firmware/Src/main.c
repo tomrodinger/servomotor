@@ -53,16 +53,19 @@
 #define simulation_printf(...) ((void)0)
 #endif
 
+//#define CERTIFICATION_TEST_MODE // if this is uncommented then the motor will start spinning soon after power is applied and will continue spinning indefinitely
+
 char PRODUCT_DESCRIPTION[] = "Servomotor";
 
+// Here we store the version information for the main firmware (not the bootloader firmware)
 struct __attribute__((__packed__)) firmware_version_struct {
+    uint8_t development;
     uint8_t bugfix;
     uint8_t minor;
     uint8_t major;
-    uint8_t not_used;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 10
+#define MINOR_FIRMWARE_VERSION 11
 #define BUGFIX_FIRMWARE_VERSION 0
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
@@ -576,9 +579,11 @@ void process_packet(void)
             struct __attribute__((__packed__)) {
                 uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                 struct firmware_version_struct firmware_version_data;
+                uint8_t in_bootloader;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } firmware_version_reply;
             memcpy(&firmware_version_reply.firmware_version_data, &firmware_version, sizeof(firmware_version));
+            firmware_version_reply.in_bootloader = 0; // 0 indicates that we are running the main firmware (not the bootloader) and we are returning the firmware version of the main firmware
             rs485_finalize_and_transmit_packet(&firmware_version_reply, sizeof(firmware_version_reply));
         }
         break;
@@ -1396,7 +1401,10 @@ int main(void)
             print_fast_capture_data_result();
         }
 
+        #ifndef CERTIFICATION_TEST_MODE
         check_if_actual_vs_desired_position_deviated_too_much();
+        #endif
+
 #ifdef PRODUCT_NAME_M1
         process_go_to_closed_loop_data();
 #endif
@@ -1428,6 +1436,15 @@ int main(void)
     check_if_ADC_watchdog3_exceeded();
 #endif
         check_if_overtemperature();
+
+        #ifdef CERTIFICATION_TEST_MODE
+        if (get_n_items_in_queue() == 0) {
+            if (is_mosfets_enabled() == 0) {
+                check_current_sensor_and_enable_mosfets();
+            }
+            add_trapezoid_move_to_queue(BUTTON_PRESS_MOTOR_MOVE_DISTANCE * 60 * 10, get_update_frequency() * 60 * 10);    
+        }
+        #endif
     }
     return 0;
 }
