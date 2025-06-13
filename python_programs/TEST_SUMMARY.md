@@ -35,6 +35,65 @@
 | `test_time_sync_multiple_devices.py`                                           | Tests time synchronization across multiple specified motors, reporting min/max error. Uses older `communication` module.                  | `communication` | Yes      | No               |
 | `test_test_mode.py`                                                            | Verifies the "Test mode" command, including invalid and fatal error scenarios. Checks for correct fatal error codes and enforces timeout behavior. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
 | `test_time_sync.py`                                                            | Tests time synchronization for a single specified motor, reporting error continuously. Uses older `communication` module.                 | `communication` | Yes      | No               |
+| `test_get_temperature.py`                                                      | Tests the "Get temperature" command by measuring temperature changes during high-power motor operation. Validates thermal protection and step-skipping detection. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
+
+## `test_get_temperature.py`
+
+This test verifies the "Get temperature" command functionality by measuring temperature changes during high-power motor operation. It validates temperature measurement accuracy, thermal protection behavior, and motor step-skipping detection due to overheating.
+
+**Test Scenarios:**
+1. **Baseline Temperature Reading:**
+   - Takes initial temperature reading after cooling period
+   - Validates temperature is within acceptable range (10°C - 80°C by default)
+
+2. **High-Power Motor Operation:**
+   - Configures motor for maximum current (390) and specified velocity
+   - Queues single long-duration move followed by velocity=0 to prevent queue empty errors
+   - Monitors motor status for fatal errors during operation
+   - Runs motor continuously for specified duration (default: 120 seconds)
+
+3. **Final Temperature Reading:**
+   - Takes final temperature reading after motor operation
+   - Calculates temperature increase and validates against minimum threshold
+   - Ensures final temperature stays within safe operating range
+
+4. **Multi-Motor Support:**
+   - Detects all motors on bus with collision-resistant detection
+   - Tests all detected motors simultaneously
+   - Reports individual results for each motor
+
+**Key Implementation Details:**
+- Uses simplified queue management: one long move + velocity=0 command to prevent error 18
+- Sets proper time and velocity units for easy parameter specification
+- Monitors for thermal protection events and position deviation errors
+- Supports configurable test parameters via command line arguments
+- Provides comprehensive error handling and status reporting
+
+**Command-line arguments:**
+- `-p`, `--port`: Serial port device name (required unless `-P` is used)
+- `-P`, `--PORT`: Show available ports and prompt for selection
+- `--initial-sleep`: Initial cooling time in seconds (default: 30)
+- `--motor-run-time`: High-power motor run time in seconds (default: 120)
+- `--min-temp`: Minimum acceptable temperature in °C (default: 10)
+- `--max-temp`: Maximum acceptable temperature in °C (default: 80)
+- `--temp-increase`: Minimum expected temperature increase in °C (default: 5)
+- `--max-current`: Maximum motor current setting (default: 390)
+- `--velocity`: Motor velocity in rotations/second (default: 1.0)
+- `--position-deviation`: Max allowable position deviation (default: 100000)
+- `--repeat`: Number of times to repeat the test (default: 1)
+- `--verbose`: Enable verbose output
+
+**Example usage:**
+```bash
+# Basic test with default settings
+python3 test_get_temperature.py -p /dev/ttyUSB0
+
+# Extended test with custom parameters
+python3 test_get_temperature.py -p /dev/ttyUSB0 --initial-sleep 300 --motor-run-time 1800 --temp-increase 10
+
+# Quick test for development
+python3 test_get_temperature.py -p /dev/ttyUSB0 --initial-sleep 5 --motor-run-time 60 --temp-increase 2
+```
 
 ## `test_set_device_alias.py`
 
