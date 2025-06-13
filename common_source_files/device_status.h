@@ -23,12 +23,12 @@
 
 
 struct __attribute__((__packed__)) device_status_struct {
-    uint8_t flags;
+    uint16_t flags;
     uint8_t error_code;
 };
 
 struct device_status_struct *get_device_status(void);
-void set_device_status_flags(uint8_t device_status_flags);
+void set_device_status_flags(uint16_t device_status_flags);
 void set_device_error_code(uint8_t error_code);
 
 #endif

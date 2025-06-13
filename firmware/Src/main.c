@@ -477,7 +477,7 @@ void process_packet(void)
                 struct device_status_struct status;
                 uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
             } status_reply;
-            uint8_t motor_status_flags = get_motor_status_flags();
+            uint16_t motor_status_flags = get_motor_status_flags();
             set_device_status_flags(motor_status_flags);
             memcpy(&status_reply.status, get_device_status(), sizeof(struct device_status_struct));
             rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));

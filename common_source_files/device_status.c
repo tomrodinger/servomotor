@@ -8,7 +8,7 @@ struct device_status_struct *get_device_status(void)
     return &device_status;
 }
 
-void set_device_status_flags(uint8_t device_status_flags)
+void set_device_status_flags(uint16_t device_status_flags)
 {
     device_status.flags = device_status_flags;
 }

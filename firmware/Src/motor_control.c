@@ -1643,7 +1643,7 @@ void print_motor_status(void)
 {
     char buf[100];
 
-    uint8_t motor_status_flags = get_motor_status_flags();
+    uint16_t motor_status_flags = get_motor_status_flags();
     sprintf(buf, "status: %hu\n", motor_status_flags);
     print_debug_string(buf);
 }
@@ -3182,7 +3182,7 @@ int64_t get_hall_position(void)
     return ret;
 }
 
-uint8_t get_motor_status_flags_without_disable_enable_irq(void)
+uint16_t get_motor_status_flags_without_disable_enable_irq(void)
 {
     uint8_t motor_status_flags = 0;
     
@@ -3208,7 +3208,7 @@ uint8_t get_motor_status_flags_without_disable_enable_irq(void)
     return motor_status_flags;
 }
 
-uint8_t get_motor_status_flags(void)
+uint16_t get_motor_status_flags(void)
 {
     uint8_t motor_status_flags = 0;
     
