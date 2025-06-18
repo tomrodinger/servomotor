@@ -131,22 +131,16 @@ def run_tests(port, alias, test_files):
             print(result.stdout) # Print stdout regardless of pass/fail
 
             if result.returncode == 0:
-                should_print_pass_fail = True # Assume yes unless known otherwise
-                if test_script in ["test_get_comprehensive_position.py",
-                                   "test_gradual_speed_up.py",
-                                   "test_random_speed_stress.py",
-                                   "test_set_velocity_to_specific_values.py"]:
-                   should_print_pass_fail = False
-
-                if should_print_pass_fail and (not result.stdout or "PASSED" not in result.stdout.splitlines()[-1]):
-                     print(f"{RED}Warning: Test exited successfully but did not print 'PASSED'. Treating as FAIL.{NC}")
-                     failed += 1
-                     status_message = "FAILED (Missing PASSED message)"
-                     print(f"{RED}{test_script} {status_message}{NC}")
-                     if result.stderr:
-                         print("--- Stderr ---")
-                         print(result.stderr)
-                         print("--------------")
+                # All tests must print "PASSED" on the last line of stdout
+                if not result.stdout or "PASSED" not in result.stdout.strip().splitlines()[-1]:
+                    print(f"{RED}Warning: Test exited successfully but did not print 'PASSED'. Treating as FAIL.{NC}")
+                    failed += 1
+                    status_message = "FAILED (Missing PASSED message)"
+                    print(f"{RED}{test_script} {status_message}{NC}")
+                    if result.stderr:
+                        print("--- Stderr ---")
+                        print(result.stderr)
+                        print("--------------")
                 else:
                     passed += 1
                     status_message = "PASSED"
