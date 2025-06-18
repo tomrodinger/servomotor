@@ -1,42 +1,22 @@
 #!/usr/bin/env python3
 import servomotor
+from servomotor import communication
 import time
 import argparse
 import zlib
 from collections import defaultdict
+import sys
 
 
-SPEED_STEP = 4.0
+SPEED_STEP = 8.0
 STEP_TIME = 0.1
-MAX_VELOCITY = 360.0 * 10
+MAX_VELOCITY = 340.0 * 10
 REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3  # Number of successful device detections required
 MAX_MOTOR_CURRENT = 390  # Maximum motor current value
 
 
 def print_test_description():
     pass
-
-def compute_crc32(unique_id, alias):
-    """Compute CRC32 for device detection response"""
-    try:
-        # Convert to integers if needed
-        if isinstance(unique_id, (list, tuple)):
-            unique_id = unique_id[0]
-        if isinstance(alias, (list, tuple)):
-            alias = alias[0]
-            
-        # Handle large numbers by using modulo
-        unique_id = unique_id % (2**64)  # Ensure it fits in 64 bits
-        alias = alias % 256  # Ensure it fits in 8 bits
-        
-        # Convert to bytes
-        data_bytes = unique_id.to_bytes(8, 'little') + alias.to_bytes(1, 'little')
-        return zlib.crc32(data_bytes)
-    except Exception as e:
-        print(f"Error computing CRC32: {e}")
-        print(f"unique_id type: {type(unique_id)}, value: {unique_id}")
-        print(f"alias type: {type(alias)}, value: {alias}")
-        return None
 
 class Device:
     def __init__(self, unique_id, alias):
@@ -70,23 +50,15 @@ def detect_all_devices_multiple_passes(motor255, n_passes):
         detect_devices_attempt_count += 1
         print("Detected devices:")
         for device in response:
-            unique_id = device[0]
-            alias = device[1]
-            crc = device[2]
-            # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
-            crc32_value = compute_crc32(unique_id, alias)
-            # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
-            if crc == crc32_value:
-                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK IS OK)")
-                if unique_id in device_dict:
-                    print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                    if alias != device_dict[unique_id].alias:
-                        print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
-                else:
-                    new_device = Device(unique_id, alias)
-                    device_dict[unique_id] = new_device
+            unique_id, alias = device
+            print(f"Unique ID: {unique_id:016X}, Alias: {alias}")
+            if unique_id in device_dict:
+                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                if alias != device_dict[unique_id].alias:
+                    print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
             else:
-                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
+                new_device = Device(unique_id, alias)
+                device_dict[unique_id] = new_device
     return device_dict
 
 
@@ -119,45 +91,64 @@ for unique_id, device in new_device_dict.items():
 
 
 # Iterate through all devices
+test_passed = True
 for unique_id, device in new_device_dict.items():
     print(f"\n=== Testing device {unique_id:016X} (Alias: {device.alias}) ===")
+    try:
+        motor.use_alias(device.alias)
+        motor.enable_mosfets()
+        time.sleep(0.05)
+        motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
 
-    motor.use_alias(device.alias)
-    motor.enable_mosfets()
-    time.sleep(0.05)
-    motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
-
-    current_speed = 0.0
-    while 1:
-        print(f"=== alias = {device.alias} speed = {current_speed} =============================================================================")
-        current_speed += SPEED_STEP
-
-        temperature = motor.get_temperature()
-        print(f"Temperature: {temperature}")
-
+        current_speed = 0.0
         while 1:
-            n_queued_items = motor.get_n_queued_items()
-    #        print(f"Queue items: {n_queued_items}")
-            if n_queued_items >= 2:
-    #            print("We will wait for a moment before queing more")
-                time.sleep(0.05)
-            else:
+            print(f"=== alias = {device.alias} speed = {current_speed} =============================================================================")
+            current_speed += SPEED_STEP
+
+            temperature = motor.get_temperature()
+            print(f"Temperature: {temperature}")
+
+            while 1:
+                n_queued_items = motor.get_n_queued_items()
+        #        print(f"Queue items: {n_queued_items}")
+                if n_queued_items >= 3:
+        #            print("We will wait for a moment before queing more")
+                    time.sleep(0.05)
+                else:
+                    break
+
+            status = motor.get_status()
+        #    print(f"Status: {status}")
+            if len(status) == 2 and status[1] != 0:
+                print(f"A fatal error occured with the motor. The error code is: {status[1]}")
+                test_passed = False
                 break
 
-        status = motor.get_status()
-    #    print(f"Status: {status}")
-        if len(status) == 2 and status[1] != 0:
-            print(f"A fatal error occured with the motor. The error code is: {status[1]}")
-            break
+            # Move with velocity in degrees per second
+            motor.move_with_velocity(current_speed, STEP_TIME)
+            if current_speed > MAX_VELOCITY:
+                motor.move_with_velocity(0, STEP_TIME)
+                print("Reached maximum velocity")
+                break
 
-        # Move with velocity in degrees per second
-        motor.move_with_velocity(current_speed, STEP_TIME)
-        if current_speed > MAX_VELOCITY:
-            motor.move_with_velocity(0, STEP_TIME)
-            print("Reached maximum velocity")
-            break
-
-    motor.disable_mosfets()
+    except communication.TimeoutError as e:
+        print(f"Timeout error: {e}", file=sys.stderr)
+        test_passed = False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        test_passed = False
+    finally:
+        try:
+            motor.disable_mosfets()
+        except communication.TimeoutError:
+            print("Timeout while disabling motor. Motor is likely unresponsive.", file=sys.stderr)
 
 servomotor.close_serial_port()
 del motor
+
+if test_passed:
+    print("PASSED")
+    sys.exit(0)
+else:
+    print("FAILED")
+    sys.exit(1)

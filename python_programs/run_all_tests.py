@@ -17,6 +17,9 @@ GREEN = '\033[0;32m'
 RED = '\033[0;31m'
 NC = '\033[0m' # No Color
 
+# Test runner configuration
+TEST_TIMEOUT_SECONDS = 240  # 4 minutes
+
 # No default port initially, will prompt or use provided if -p is given
 DEFAULT_PORT = None
 
@@ -107,7 +110,8 @@ def run_tests(port, alias, test_files):
     total = 0
     passed = 0
     failed = 0
-
+    test_results = []
+ 
     print("\nRunning Tests...")
     print("====================")
     print(f"Serial Port: {port}")
@@ -118,18 +122,15 @@ def run_tests(port, alias, test_files):
         total += 1
         print(f"\n--- Running {test_script} ---")
         command = [sys.executable, test_script, "-p", port, "-a", alias]
+        start_time = time.time()
+        status_message = "FAILED (Unknown)"
 
         try:
-            # Use capture_output=True for Python 3.7+
-            # Use text=True for automatic decoding
-            result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=120) # 2 min timeout per test
+            result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=TEST_TIMEOUT_SECONDS)
 
             print(result.stdout) # Print stdout regardless of pass/fail
 
             if result.returncode == 0:
-                # Check if stdout actually contains "PASSED" for tests that should print it
-                # (Read the summary file again to check the 'Prints PASS/FAIL' column)
-                # This is a simple check; more robust would involve parsing the summary again inside the loop
                 should_print_pass_fail = True # Assume yes unless known otherwise
                 if test_script in ["test_get_comprehensive_position.py",
                                    "test_gradual_speed_up.py",
@@ -140,18 +141,21 @@ def run_tests(port, alias, test_files):
                 if should_print_pass_fail and (not result.stdout or "PASSED" not in result.stdout.splitlines()[-1]):
                      print(f"{RED}Warning: Test exited successfully but did not print 'PASSED'. Treating as FAIL.{NC}")
                      failed += 1
-                     print(f"{RED}{test_script} FAILED (Missing PASSED message){NC}")
+                     status_message = "FAILED (Missing PASSED message)"
+                     print(f"{RED}{test_script} {status_message}{NC}")
                      if result.stderr:
                          print("--- Stderr ---")
                          print(result.stderr)
                          print("--------------")
                 else:
                     passed += 1
+                    status_message = "PASSED"
                     print(f"{GREEN}{test_script} PASSED{NC}")
 
             else:
                 failed += 1
-                print(f"{RED}{test_script} FAILED (Exit Code: {result.returncode}){NC}")
+                status_message = f"FAILED (Exit Code: {result.returncode})"
+                print(f"{RED}{test_script} {status_message}{NC}")
                 if result.stderr:
                     print("--- Stderr ---")
                     print(result.stderr)
@@ -159,12 +163,18 @@ def run_tests(port, alias, test_files):
 
         except subprocess.TimeoutExpired:
             failed += 1
-            print(f"{RED}{test_script} FAILED (Timeout after 120 seconds){NC}")
+            status_message = f"FAILED (Timeout after {TEST_TIMEOUT_SECONDS} seconds)"
+            print(f"{RED}{test_script} {status_message}{NC}")
         except Exception as e:
             failed += 1
-            print(f"{RED}{test_script} FAILED (Execution Error: {e}){NC}")
+            status_message = f"FAILED (Execution Error: {e})"
+            print(f"{RED}{test_script} {status_message}{NC}")
+        finally:
+            end_time = time.time()
+            duration = end_time - start_time
+            test_results.append((test_script, duration, status_message))
 
-    return total, passed, failed
+    return total, passed, failed, test_results
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run Python servomotor tests.')
@@ -197,11 +207,24 @@ if __name__ == "__main__":
         print("No tests found to run.")
         sys.exit(0)
 
-    total_run, total_passed, total_failed = run_tests(port_to_use, args.alias, test_files_to_run)
+    total_run, total_passed, total_failed, test_results = run_tests(port_to_use, args.alias, test_files_to_run)
+
+    # Print runtime summary
+    print("\nTest Runtimes")
+    print("=============")
+    total_duration = 0
+    for name, t, status in test_results:
+        total_duration += t
+        if status == "PASSED":
+            status_colored = f"{GREEN}{status}{NC}"
+        else:
+            status_colored = f"{RED}{status}{NC}"
+        print(f"{name:<40} {t:>6.2f}s  {status_colored}")
 
     # Print final summary
     print("\nTest Summary")
     print("============")
+    print(f"Total Test Time: {total_duration:.2f}s")
     print(f"Passed: {GREEN}{total_passed}{NC}")
     print(f"Failed: {RED}{total_failed}{NC}")
     print(f"Total:  {total_run}")

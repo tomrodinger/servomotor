@@ -230,7 +230,8 @@ if __name__ == "__main__":
                               acceleration_unit="degrees_per_second_squared",
                               verbose=0) # Set verbose=0 to reduce output
         test_homing(motorX) # Pass the motor object to the test function
-        print("\nPASSED")
-    finally:
         servomotor.close_serial_port()
-        # No need to explicitly delete motorX, garbage collection handles it
+        print("\nPASSED")
+    except:
+        servomotor.close_serial_port()
+        raise

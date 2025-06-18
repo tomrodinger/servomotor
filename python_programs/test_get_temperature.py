@@ -25,7 +25,7 @@ Test Flow:
 """
 
 import servomotor
-from servomotor import M3
+from servomotor import M3, communication
 import argparse
 import time
 import sys
@@ -72,26 +72,54 @@ def print_countdown(message, duration_seconds):
     print("  Time's up!")
 
 def detect_devices_with_retries(motor_broadcast, verbose=False):
-    """Detect devices with multiple attempts to handle collisions"""
-    print("Detecting devices on the bus...")
+    """Detect devices with multiple retry attempts using proper multi-pass strategy"""
+    device_dict = {}
+    successful_detect_devices_count = 0
+    detect_devices_attempt_count = 0
+    max_attempts = 3
     
-    for attempt in range(MAX_DETECTION_ATTEMPTS):
-        if attempt > 0:
-            print(f"Detection attempt {attempt + 1} of {MAX_DETECTION_ATTEMPTS}")
+    while successful_detect_devices_count < max_attempts:
+        print("Resetting the system")
+        motor_broadcast.system_reset(verbose=verbose)
+        time.sleep(1.5)
+        
+        print("Flushing the receive buffer")
+        servomotor.flush_receive_buffer()
+        print(f"Detecting devices attempt {detect_devices_attempt_count + 1}/{max_attempts}")
         
         try:
-            devices = motor_broadcast.detect_devices()
-            if devices and len(devices) > 0:
-                print(f"Detected {len(devices)} device(s) on attempt {attempt + 1}")
-                return devices
+            response = motor_broadcast.detect_devices(verbose=verbose)
+            successful_detect_devices_count += 1
         except Exception as e:
-            print(f"Detection attempt {attempt + 1} failed: {e}")
+            print(f"Communication error: {e}")
+            detect_devices_attempt_count += 1
+            continue
+            
+        detect_devices_attempt_count += 1
+        print("Detected devices:")
         
-        if attempt < MAX_DETECTION_ATTEMPTS - 1:
-            print("Waiting 1 second before retry...")
-            time.sleep(1.0)
+        if response and len(response) > 0:
+            for device in response:
+                if len(device) >= 2:
+                    unique_id = device[0]
+                    alias = device[1]
+                    
+                    print(f"Unique ID: {unique_id:016X}, Alias: {alias}")
+                    if unique_id in device_dict:
+                        print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                        if alias != device_dict[unique_id]:
+                            print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id]}")
+                    else:
+                        device_dict[unique_id] = alias
+                else:
+                    print(f"Invalid device response format: {device}")
+        else:
+            print("No devices detected in this attempt")
     
-    return []
+    # Convert device_dict to list of tuples (unique_id, alias) for compatibility
+    devices = [(unique_id, alias) for unique_id, alias in device_dict.items()]
+    print(f"Final device count after {max_attempts} detection passes: {len(devices)}")
+    return devices
 
 def get_motor_status_with_retries(motor, motor_id, verbose=False):
     """Get motor status with retries, return None if all attempts fail"""
@@ -228,7 +256,10 @@ def test_get_temperature(motors_info, args):
             result = results[motor_id]
             
             try:
+                print("Using alias:", alias)
                 motor = M3(alias, verbose=args.verbose)
+                
+
                 temp = safe_motor_command(motor, motor.get_temperature, motor_id, "get_temperature", verbose=args.verbose)
                 
                 if temp is not None:
@@ -263,7 +294,10 @@ def test_get_temperature(motors_info, args):
             
             try:
                 motor = M3(alias, verbose=args.verbose)
-                motor.use_unique_id(unique_id)  # Use unique ID for robust addressing
+                if unique_id != 0:
+                    motor.use_unique_id(unique_id)
+                else:
+                    motor.use_alias(alias)
                 
                 if configure_motor_for_test(motor, motor_id, args.max_current, args.position_deviation, args.verbose):
                     active_motors.append((motor, motor_id, result))
@@ -458,6 +492,7 @@ def main():
     parser = argparse.ArgumentParser(description="Test the 'Get temperature' command with thermal stress testing.")
     parser.add_argument('-p', '--port', type=str, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, help='Alias of the device to control (if not provided, will auto-detect)')
     parser.add_argument('--initial-sleep', type=int, default=30, help='Initial cooling time in seconds (default: 30)')
     parser.add_argument('--motor-run-time', type=int, default=120, help='High-power motor run time in seconds (default: 120)')
     parser.add_argument('--min-temp', type=int, default=10, help='Minimum acceptable temperature in °C (default: 10)')
@@ -478,29 +513,43 @@ def main():
         args.verbose = 2
     
     overall_passed = True
-    
+
+    servomotor.set_serial_port_from_args(args)
+    servomotor.open_serial_port(timeout=1.5)
+
     for repeat_idx in range(args.repeat):
         if args.repeat > 1:
             print(f"\n========== REPEAT {repeat_idx + 1} of {args.repeat} ==========")
-        
-        servomotor.set_serial_port_from_args(args)
-        servomotor.open_serial_port(timeout=1.5)
-        
+                
         try:
             # Step 1: Reset all devices (broadcast)
             motor_broadcast = M3(255, verbose=args.verbose)
             reset_device(motor_broadcast, 255, args.verbose)
             
-            # Step 2: Detect devices with retries
-            devices = detect_devices_with_retries(motor_broadcast, args.verbose)
-            if not devices:
-                print("FAILED: No devices detected on the bus.")
-                overall_passed = False
-                continue
+            # Step 2: Get devices (either from provided alias or auto-detect)
+            if args.alias:
+                # If a specific alias is provided, parse it and create the device list
+                parsed_alias, unique_id = communication.string_to_alias_or_unique_id(args.alias)
+                if unique_id is not None:
+                    print(f"Error: This test does not support unique ID addressing. Please use an alias.", file=sys.stderr)
+                    sys.exit(1)
+                devices = [(0, parsed_alias)]  # unique_id=0 as placeholder
+                print(f"Testing single motor with alias: {parsed_alias}")
+            else:
+                # Auto-detect all devices
+                devices = detect_devices_with_retries(motor_broadcast, args.verbose)
+                if not devices:
+                    print("FAILED: No devices detected on the bus.")
+                    overall_passed = False
+                    continue
+                
+                print(f"Found {len(devices)} motor(s) for testing:")
+                for unique_id, alias in devices:
+                    print(f"  - Alias: {alias}, Unique ID: 0x{unique_id:016X}")
             
-            print(f"Found {len(devices)} motor(s) for testing:")
-            for unique_id, alias in devices:
-                print(f"  - Alias: {alias}, Unique ID: 0x{unique_id:016X}")
+            # Always flush the buffer after detection or alias parsing
+            print("Flushing the receive buffer")
+            servomotor.flush_receive_buffer()
             
             # Step 3: Configure units for all motors
             print(f"\n--- Configuring Units for All Motors ---")
@@ -508,7 +557,8 @@ def main():
                 motor_id = f"alias_{alias}"
                 try:
                     motor = M3(alias, verbose=args.verbose)
-                    motor.use_unique_id(unique_id)
+                    if unique_id != 0:
+                        motor.use_unique_id(unique_id)
                     configure_motor_units(motor, motor_id, args.verbose)
                 except Exception as e:
                     print(f"Motor {motor_id}: Unit configuration failed: {e}")
@@ -528,10 +578,9 @@ def main():
         except Exception as e:
             print(f"\nFAILED: Unexpected error during test: {e}")
             overall_passed = False
-        
-        finally:
-            servomotor.close_serial_port()
-    
+
+    servomotor.close_serial_port()
+
     # Final result
     if overall_passed:
         print("\nALL TESTS PASSED")

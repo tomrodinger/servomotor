@@ -441,7 +441,7 @@ def open_serial_port(timeout = 1.2):
     ser = serial_functions.open_serial_port(serial_port, 230400, timeout = timeout)
 
 def close_serial_port():
-    ser.close
+    ser.close()
     print(format_info("Closed the serial port"))
 
 def input_or_response_to_string(data):

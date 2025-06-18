@@ -4,6 +4,8 @@ import servomotor
 import time
 import math
 from servomotor.communication import TimeoutError
+import argparse
+import sys
 
 def wait_for_moves_to_complete(motor):
     """Wait until all queued moves are complete"""
@@ -67,20 +69,24 @@ def verify_position(motor, expected_position, tolerance=10):
     
     assert max_diff <= tolerance, f"Position error ({max_diff} counts) exceeds tolerance ({tolerance} counts)"
 
-def test_position_units():
-    # Initialize motor with encoder counts as default position unit for precise verification
-    motorX = servomotor.M3("X", 
-                          time_unit="seconds", 
-                          position_unit="encoder_counts", 
-                          velocity_unit="rpm", 
-                          acceleration_unit="degrees_per_second_squared", 
-                          current_unit="amps", 
-                          voltage_unit="volts", 
-                          temperature_unit="celsius", 
-                          verbose=0)  # Set verbose=0 to reduce output
-
+def main(args):
+    test_passed = True
+    motorX = None
     try:
+        servomotor.set_serial_port_from_args(args)
         servomotor.open_serial_port()
+
+        # Initialize motor with encoder counts as default position unit for precise verification
+        motorX = servomotor.M3(args.alias,
+                               time_unit="seconds",
+                               position_unit="encoder_counts",
+                               velocity_unit="rpm",
+                               acceleration_unit="degrees_per_second_squared",
+                               current_unit="amps",
+                               voltage_unit="volts",
+                               temperature_unit="celsius",
+                               verbose=0)  # Set verbose=0 to reduce output
+
         print("\nResetting motor...")
         motorX.system_reset()
         time.sleep(1.5)  # Required delay after reset
@@ -167,12 +173,29 @@ def test_position_units():
         print("\nTest complete!")
 
     except Exception as e:
-        print(f"\nTest failed: {e}")
-        raise
+        print(f"\nTest failed: {e}", file=sys.stderr)
+        test_passed = False
     finally:
+        if motorX:
+            # Attempt to disable mosfets, but don't let it crash the script
+            try:
+                motorX.disable_mosfets()
+            except Exception as e:
+                print(f"Failed to disable mosfets: {e}", file=sys.stderr)
         servomotor.close_serial_port()
-        del motorX
+        print("Closed the serial port")
+
+    if test_passed:
+        print("\nPASSED")
+        sys.exit(0)
+    else:
+        print("\nFAILED")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    test_position_units()
-    print("\nPASSED")
+    parser = argparse.ArgumentParser(description='Test go_to_position command.')
+    parser.add_argument('-p', '--port', help='serial port device', default=None)
+    parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', help='Alias of the device to control', default='X')
+    args = parser.parse_args()
+    main(args)

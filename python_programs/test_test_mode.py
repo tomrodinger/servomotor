@@ -170,6 +170,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test the 'Test mode' command.")
     parser.add_argument('-p', '--port', type=str, required=True, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, help='Alias of the device to control (if not provided, will auto-detect)')
     parser.add_argument('--bootloader', action='store_true', help='Enter bootloader mode before running the test')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat the test (default: 1)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
@@ -197,9 +198,17 @@ if __name__ == "__main__":
             else:
                 print(f"Sleeping for {DONT_GO_TO_BOOTLOADER_RESET_TIME}s after reset (normal mode).")
                 time.sleep(DONT_GO_TO_BOOTLOADER_RESET_TIME)
-            # Step 2: Detect device and get unique_id
-            unique_id = detect_device_and_get_unique_id(motor, verbose=args.verbose)
-            motor.use_unique_id(unique_id)
+            
+            # Step 2: Set up addressing (either provided alias or auto-detect with unique_id)
+            if args.alias:
+                # Use provided alias directly, skip detection
+                print(f"Using provided alias: {args.alias}")
+                motor = M3(args.alias, verbose=args.verbose)
+                # No need for unique_id when alias is provided
+            else:
+                # Auto-detect device and use unique_id for robust addressing
+                unique_id = detect_device_and_get_unique_id(motor, verbose=args.verbose)
+                motor.use_unique_id(unique_id)
 
             # All further operations use unique ID
             all_passed = True
@@ -224,11 +233,14 @@ if __name__ == "__main__":
                 print("FAILED: One or more test mode scenarios failed (this repeat).")
             overall_passed &= all_passed
 
-        if overall_passed:
-            print("\nALL REPEATS PASSED")
-            sys.exit(0)
-        else:
-            print("\nFAILED: One or more tests failed in at least one repeat.")
-            sys.exit(1)
+    except:
+        overall_passed = False
     finally:
         servomotor.close_serial_port()
+    
+    if overall_passed:
+        print("PASSED")
+        sys.exit(0)
+    else:
+        print("FAILED: One or more tests failed in at least one repeat.")
+        sys.exit(1)

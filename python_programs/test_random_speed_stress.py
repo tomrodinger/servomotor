@@ -21,8 +21,8 @@ PING_TIMEOUT_RETRIES = 3  # Number of retries on ping timeout
 DETECT_DEVICES_INTERVAL = 60 * 5  # Reset the system and Detect devices every this number of seconds
 PRINT_TEST_STATISTICS_INTERVAL = 30  # Print test statistics every this number of seconds
 PRINT_TEST_DESCRIPTION_INTERVAL = 60 * 5  # Print test description every this number of seconds, so that the user knows what test is running
-MIN_VELOCITY = -5.0  # Minimum velocity in rotations per second
-MAX_VELOCITY = 5.0  # Maximum velocity in rotations per second
+MIN_VELOCITY = -4.0  # Minimum velocity in rotations per second
+MAX_VELOCITY = 4.0  # Maximum velocity in rotations per second
 STATUS_CHECK_PASSES = 5
 
 # MQTT Configuration
@@ -92,28 +92,6 @@ def send_statistics_to_mqtt(device_dict, start_time, movement_iterations_done, i
     except Exception as e:
         print(f"Failed to send statistics to MQTT: {e}")
 
-def compute_crc32(unique_id, alias):
-    """Compute CRC32 for device detection response"""
-    try:
-        # Convert to integers if needed
-        if isinstance(unique_id, (list, tuple)):
-            unique_id = unique_id[0]
-        if isinstance(alias, (list, tuple)):
-            alias = alias[0]
-            
-        # Handle large numbers by using modulo
-        unique_id = unique_id % (2**64)  # Ensure it fits in 64 bits
-        alias = alias % 256  # Ensure it fits in 8 bits
-        
-        # Convert to bytes
-        data_bytes = unique_id.to_bytes(8, 'little') + alias.to_bytes(1, 'little')
-        return zlib.crc32(data_bytes)
-    except Exception as e:
-        print(f"Error computing CRC32: {e}")
-        print(f"unique_id type: {type(unique_id)}, value: {unique_id}")
-        print(f"alias type: {type(alias)}, value: {alias}")
-        return None
-
 class Device:
     def __init__(self, unique_id, alias):
         self.unique_id = unique_id
@@ -149,21 +127,14 @@ def detect_all_devices_multiple_passes(motor255, n_passes):
         for device in response:
             unique_id = device[0]
             alias = device[1]
-            crc = device[2]
-            # We need to compute the CRC32 of the unique ID and the alias and then compare it to the CRC value
-            crc32_value = compute_crc32(unique_id, alias)
-            # The unique ID should be printed as a 16 digit hexadecimal and the CRC should be printed as a 8 digit hexadecimal
-            if crc == crc32_value:
-                print(f"Unique ID: {unique_id:016X}, Alias: {get_human_readable_alias(alias)}, CRC: {crc:08X} (CHECK IS OK)")
-                if unique_id in device_dict:
-                    print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                    if alias != device_dict[unique_id].alias:
-                        print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias(alias)} vs {get_human_readable_alias(device_dict[unique_id].alias)}")
-                else:
-                    new_device = Device(unique_id, alias)
-                    device_dict[unique_id] = new_device
+            print(f"Unique ID: {unique_id:016X}, Alias: {get_human_readable_alias(alias)}")
+            if unique_id in device_dict:
+                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
+                if alias != device_dict[unique_id].alias:
+                    print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias(alias)} vs {get_human_readable_alias(device_dict[unique_id].alias)}")
             else:
-                print(f"Unique ID: {unique_id:016X}, Alias: {get_human_readable_alias(alias)}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
+                new_device = Device(unique_id, alias)
+                device_dict[unique_id] = new_device
     return device_dict
 
 
@@ -225,7 +196,13 @@ def run_ping_test(motor255, device_dict, verbose=2):
 
     for ping_round in range(10):
         for unique_id, device in device_dict.items():
-            motor.use_alias(device.alias)
+            if device.unique_id != 0:
+                motor.use_unique_id(device.unique_id)
+            elif device.alias != None:
+                motor.use_alias(device.alias)
+            else:
+                print("Invalid alias or unique id")
+                exit(1)
             # Try ping with retries
             for retry in range(PING_TIMEOUT_RETRIES):
                 try:
@@ -358,6 +335,8 @@ def main():
     parser = argparse.ArgumentParser(description='Servomotor random speed stress test')
     parser.add_argument('-p', '--port', help='serial port device', default=None)
     parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
+    parser.add_argument('-a', '--alias', help='Alias of a specific device to test (will filter auto-detected devices)', default=None)
+    parser.add_argument('-d', '--duration', type=int, default=30, help='Total duration of the test in seconds.')
     parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
     args = parser.parse_args()
 
@@ -376,7 +355,8 @@ def main():
                             current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", 
                             verbose=verbose_level)
     servomotor.open_serial_port()
-
+    servomotor.flush_receive_buffer()
+    
     # Setup MQTT connection
     setup_mqtt()
 
@@ -393,16 +373,34 @@ def main():
     iterations_with_errors = 0
     n_devices_detected_historgram = defaultdict(int)
 
-    motor = servomotor.M3(255, time_unit="seconds", position_unit="degrees", 
-                    velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared", 
+    motor = servomotor.M3(255, time_unit="seconds", position_unit="degrees",
+                    velocity_unit="degrees_per_second", acceleration_unit="degrees_per_second_squared",
                     current_unit="milliamps", voltage_unit="volts", temperature_unit="celsius", verbose=verbose_level)
 
+    # If an alias is provided, skip detection and test that device directly
+    if args.alias:
+        try:
+            alias, unique_id = servomotor.communication.string_to_alias_or_unique_id(args.alias)
+            # Use a placeholder for unique_id as it's not known without detection
+            if unique_id == None:
+                unique_id = 0
+            device_dict[unique_id] = Device(unique_id, alias)
+            unique_aliases_assigned = True # Skip alias assignment logic
+            n_devices_detected_historgram[1] += 1
+            print(f"Bypassing auto-detection. Testing single device with alias: {alias}")
+            print("Resetting the system")
+            motor255.system_reset()
+            time.sleep(1.5)
+        except Exception as e:
+            print(f"Error: Could not process alias '{args.alias}': {e}")
+            exit(1)
 
-    while True:
+    while time.time() - start_time < args.duration:
         current_time = time.time()
 
         # At the start and also every once in a while, do system reset and device detection
-        if (current_time - last_reset_time >= DETECT_DEVICES_INTERVAL) or fatal_error_detected:
+        # This block is skipped if a specific alias was provided
+        if not args.alias and ((current_time - last_reset_time >= DETECT_DEVICES_INTERVAL) or fatal_error_detected):
             # Initial system reset
             print("Performing initial or periodic system reset...")
             motor255.system_reset()
@@ -428,6 +426,7 @@ def main():
             continue
 
         # Assign unique aliases, but do this just one time at the start
+        # This block is skipped if a specific alias was provided
         if not unique_aliases_assigned:
             print("\nAssigning unique aliases...")
             assign_unique_aliases(motor255, device_dict)
@@ -452,27 +451,44 @@ def main():
             last_stats_time = current_time
 
         # Randomly select N devices to test
-        test_devices = random.sample(list(device_dict.values()), 
-                                    min(N_ENABLED_DEVICES_AT_SAME_TIME, len(device_dict)))
+        test_devices = random.sample(list(device_dict.values()), min(N_ENABLED_DEVICES_AT_SAME_TIME, len(device_dict)))
         
         try:
             # Enable MOSFETs and set current for selected devices
             for device in test_devices:
-                motor.use_alias(device.alias)
+                if device.unique_id != 0:
+                    motor.use_unique_id(device.unique_id)
+                elif device.alias != None:
+                    motor.use_alias(device.alias)
+                else:
+                    print("Invalid alias or unique id")
+                    exit(1)
                 motor.enable_mosfets()
                 motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
 
             # Apply random velocity movement
             for device in test_devices:
-                motor.use_alias(device.alias)
+                if device.unique_id != 0:
+                    motor.use_unique_id(device.unique_id)
+                elif device.alias != None:
+                    motor.use_alias(device.alias)
+                else:
+                    print("Invalid alias or unique id")
+                    exit(1)
                 
                 # Random speed between 0.1 and 3 rotations per second (convert to degrees/second)
                 speed = random.uniform(MIN_VELOCITY, MAX_VELOCITY) * 360  # Convert rotations/sec to degrees/sec
                 
                 # Move at random speed for 2 seconds
-                print(f"Moving device {device.unique_id:016X} with alias {get_human_readable_alias(device.alias)} at {speed:.2f} degrees/sec for 2 seconds...")
+                if device.unique_id != 0:
+                    print(f"Moving device {device.unique_id:016X} at {speed:.2f} degrees/sec for 2 seconds...")
+                elif device.alias != None:
+                    print(f"Moving device with alias {get_human_readable_alias(device.alias)} at {speed:.2f} degrees/sec for 2 seconds...")
+
+                print(f"DEBUG: move_with_velocity args: speed={speed}, duration=2.0")
                 motor.move_with_velocity(speed, 2.0)  # Pass as positional args
                 # Stop over 0.01 seconds
+                print(f"DEBUG: move_with_velocity args: speed=0, duration=0.01")
                 motor.move_with_velocity(0, 0.01)  # Pass as positional args
 
         except Exception as e:
@@ -501,11 +517,22 @@ def main():
         # Let's do multiple passes to try to read the status of all the devices, ince I found that this step is unreliable
         for i in range(STATUS_CHECK_PASSES):
             for device in device_dict.values():
-                motor.use_alias(device.alias)
+                if device.unique_id != 0:
+                    motor.use_unique_id(device.unique_id)
+                elif device.alias != None:
+                    motor.use_alias(device.alias)
+                else:
+                    print("Invalid alias or unique id")
+                    exit(1)
                 # Get status and check for errors
                 try:
                     time.sleep(0.15)
+                    if device.unique_id != 0:
+                        print(f"DEBUG: get_status for unique_id {device.unique_id:016X}")
+                    elif device.alias != None:
+                        print(f"DEBUG: get_status for alias {get_human_readable_alias(device.alias)}")
                     status = motor.get_status()
+                    print(f"DEBUG: status = {status}")
                     assert len(status) == 2
                     error_code = status[1]
                     if error_code != 0:
@@ -537,4 +564,29 @@ def main():
             iterations_with_errors += 1
 
 if __name__ == "__main__":
-    main()
+    test_passed = True
+    start_time = time.time()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nTest interrupted by user.")
+        test_passed = False
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}")
+        test_passed = False
+    finally:
+        # Ensure MQTT client is properly shut down
+        if mqtt_client:
+            mqtt_client.loop_stop()
+            mqtt_client.disconnect()
+        # Ensure serial port is closed
+        servomotor.close_serial_port()
+        end_time = time.time()
+        print(f"\nTest finished in {end_time - start_time:.2f} seconds.")
+
+    if test_passed:
+        print("\nPASSED")
+        exit(0)
+    else:
+        print("\nFAILED")
+        exit(1)

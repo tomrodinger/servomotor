@@ -5,9 +5,11 @@ import time
 import math
 import random
 import string
+import argparse
+import sys
+from servomotor import communication
 
 # Constants
-MOTOR_ALIAS = 10
 MAX_MOTOR_CURRENT = 200  # Maximum MOSFET current in milliamps
 
 def generate_random_string(length=10):
@@ -39,9 +41,9 @@ def print_statistics(elapsed_time, ping_count, failed_pings, queued_moves):
           f"Success Rate: {success_rate:.2f}% | "
           f"Queued Moves: {queued_moves}")
 
-def test_communication_while_high_speed():
+def test_communication_while_high_speed(motor_alias):
     # Initialize motor with RPM as velocity unit for easier speed control
-    motorX = servomotor.M3(MOTOR_ALIAS,
+    motorX = servomotor.M3(motor_alias,
                           time_unit="seconds",
                           position_unit="encoder_counts",
                           velocity_unit="rpm",
@@ -129,15 +131,41 @@ def test_communication_while_high_speed():
         # Verify all pings succeeded
         assert failed_pings == 0, f"Communication test failed: {failed_pings} pings failed"
 
+    except communication.TimeoutError as e:
+        print(f"\nTest failed: {e}", file=sys.stderr)
+        test_passed = False
     except Exception as e:
-        print(f"\nTest failed: {e}")
-        raise
+        print(f"\nTest failed: {e}", file=sys.stderr)
+        test_passed = False
     finally:
         print("\nDisabling MOSFETs...")
-        motorX.disable_mosfets()
+        try:
+            motorX.disable_mosfets()
+        except communication.TimeoutError:
+            print("Timeout while disabling motor. Motor is likely unresponsive.", file=sys.stderr)
         servomotor.close_serial_port()
         del motorX
 
 if __name__ == "__main__":
-    test_communication_while_high_speed()
-    print("\nPASSED")
+    parser = argparse.ArgumentParser(description="Test communication while motor runs at high speed.")
+    parser.add_argument('-p', '--port', type=str, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
+    parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, default='X', help='Alias of the device to control (default: X)')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
+    args = parser.parse_args()
+    
+    # Set up serial port
+    servomotor.set_serial_port_from_args(args)
+    
+    test_passed = True
+    try:
+        test_communication_while_high_speed(args.alias)
+    except Exception:
+        test_passed = False
+
+    if test_passed:
+        print("\nPASSED")
+        sys.exit(0)
+    else:
+        print("\nFAILED")
+        sys.exit(1)

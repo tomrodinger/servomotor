@@ -166,6 +166,7 @@ def main():
     parser = argparse.ArgumentParser(description="Test the 'Get firmware version' command.")
     parser.add_argument('-p', '--port', type=str, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, help='Alias of the device to control (if not provided, will auto-detect)')
     parser.add_argument('--bootloader', action='store_true', help='Enter bootloader mode before running the test')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat the test (default: 1)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
@@ -192,10 +193,17 @@ def main():
             motor_broadcast = M3(255, verbose=args.verbose)
             reset_device(motor_broadcast, 255, args.bootloader, verbose=args.verbose)
             
-            # Step 2: Detect device and get alias/unique_id
-            alias, unique_id = detect_device_and_get_alias(motor_broadcast, verbose=args.verbose)
+            # Step 2: Get alias and unique_id (either from args or auto-detect)
+            if args.alias:
+                # Use provided alias, skip auto-detection
+                alias = args.alias
+                unique_id = None  # We don't have unique_id when alias is provided
+                print(f"Using provided alias: {alias}")
+            else:
+                # Auto-detect device
+                alias, unique_id = detect_device_and_get_alias(motor_broadcast, verbose=args.verbose)
             
-            # Step 3: Create M3 object with the detected alias
+            # Step 3: Create M3 object with the alias
             motor = M3(alias, verbose=args.verbose)
             
             # Step 4: Determine expected mode (skip status check since get_status has issues)
@@ -212,22 +220,25 @@ def main():
                 print(f"FAILED: Get firmware version test with alias addressing: {e}")
                 current_repeat_passed = False
             
-            # Step 6: Test get_firmware_version using unique ID addressing
-            print(f"\n=== Testing with unique ID addressing (unique_id={unique_id:016X}) ===")
-            motor.use_unique_id(unique_id)
-            try:
-                firmware_info_uid = test_get_firmware_version(motor, expected_in_bootloader, repeat=1, verbose=args.verbose)
-                print(f"SUCCESS: Get firmware version test with unique ID addressing")
-                
-                # Verify both methods return the same result
-                if firmware_info_alias == firmware_info_uid:
-                    print("SUCCESS: Both alias and unique ID addressing return identical results")
-                else:
-                    print(f"WARNING: Different results - alias: {firmware_info_alias}, unique_id: {firmware_info_uid}")
+            # Step 6: Test get_firmware_version using unique ID addressing (only if we have unique_id)
+            if unique_id is not None:
+                print(f"\n=== Testing with unique ID addressing (unique_id={unique_id:016X}) ===")
+                motor.use_unique_id(unique_id)
+                try:
+                    firmware_info_uid = test_get_firmware_version(motor, expected_in_bootloader, repeat=1, verbose=args.verbose)
+                    print(f"SUCCESS: Get firmware version test with unique ID addressing")
                     
-            except Exception as e:
-                print(f"FAILED: Get firmware version test with unique ID addressing: {e}")
-                current_repeat_passed = False
+                    # Verify both methods return the same result
+                    if firmware_info_alias == firmware_info_uid:
+                        print("SUCCESS: Both alias and unique ID addressing return identical results")
+                    else:
+                        print(f"WARNING: Different results - alias: {firmware_info_alias}, unique_id: {firmware_info_uid}")
+                        
+                except Exception as e:
+                    print(f"FAILED: Get firmware version test with unique ID addressing: {e}")
+                    current_repeat_passed = False
+            else:
+                print(f"\n=== Skipping unique ID addressing test (alias was provided manually) ===")
             
             # Step 7: If repeat > 1, test multiple calls
             if args.repeat > 1:

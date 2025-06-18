@@ -171,6 +171,8 @@ if __name__ == "__main__":
                               acceleration_unit='counts_per_second_squared',
                               verbose=0)
         test_acceleration_units(motorX)
-        print("\nPASSED")
-    finally:
         servomotor.close_serial_port()
+        print("\nPASSED")
+    except:
+        servomotor.close_serial_port()
+        raise
