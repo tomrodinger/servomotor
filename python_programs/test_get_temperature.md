@@ -24,6 +24,7 @@ This test verifies the "Get temperature" command functionality by measuring temp
 - `--position-deviation`: Max allowable position deviation (default: 100000)
 - `--queue-threshold`: Queue size threshold for refilling (default: 5)
 - `--repeat`: Number of times to repeat the test (default: 1)
+- `--devices-per-batch`: Maximum number of devices to test concurrently in a single batch (default: test all devices)
 - `--verbose`: Enable verbose output
 
 ## Test Flow
@@ -92,6 +93,39 @@ for attempt in range(3):
     if devices:
         break
     time.sleep(1.0)  # Wait before retry
+```
+
+### Batched Testing
+
+The test now supports batched execution to prevent excessive current draw when testing many motors simultaneously:
+
+```python
+# Test all devices in batches of 2
+python3 test_get_temperature.py -p /dev/ttyUSB0 --devices-per-batch 2
+
+# Test with default behavior (all devices at once)
+python3 test_get_temperature.py -p /dev/ttyUSB0
+```
+
+**Batching Benefits:**
+- Prevents power supply overload when testing many motors
+- Maintains thermal safety through controlled batch sizes
+- Allows testing of larger motor arrays safely
+- Configurable batch sizes for different hardware setups
+
+**Batch Output Format:**
+```
+========== BATCH 1 of 3 (2 devices) ==========
+[Test execution for batch 1]
+
+========== BATCH 2 of 3 (2 devices) ==========
+[Test execution for batch 2]
+
+========== BATCH 3 of 3 (1 device) ==========
+[Test execution for batch 3]
+
+========== CONSOLIDATED TEMPERATURE TEST SUMMARY ==========
+[Combined results from all batches]
 ```
 
 ### Timeout and Error Handling

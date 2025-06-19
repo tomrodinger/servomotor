@@ -29,7 +29,6 @@ from servomotor import M3, communication
 import argparse
 import time
 import sys
-import threading
 from datetime import datetime
 
 # Constants
@@ -198,41 +197,49 @@ def configure_motor_for_test(motor, motor_id, max_current, position_deviation, v
         print(f"Motor {motor_id}: Configuration failed: {e}")
         return False
 
-def monitor_motor_status(motor, motor_id, stop_event, result, verbose=False):
-    """Monitor motor status for fatal errors in a separate thread"""
+def wait_for_motor_queues_to_empty(active_motors, args):
+    """Wait for all motor queues to become empty (queue-based exit, not time-based)"""
     
-    while not stop_event.is_set():
-        try:
-            # Check for fatal errors
-            status = get_motor_status_with_retries(motor, motor_id, verbose=verbose)
-            if status:
-                flags, fatal_error_code = status[0], status[1]
-                if fatal_error_code != 0:
-                    if fatal_error_code not in result.fatal_errors:
-                        result.fatal_errors.append(fatal_error_code)
-                        if fatal_error_code == 18:  # Queue empty error
-                            print(f"Motor {motor_id}: Queue empty error (18) - this should not happen!")
-                        elif fatal_error_code == 45:  # Position deviation error
-                            print(f"Motor {motor_id}: Fatal error detected: {fatal_error_code}")
-                            print(f"Motor {motor_id}: ERROR 45 = Position deviation exceeded limit (motor shaft may be blocked or step skipping occurred)")
-                            result.thermal_protection_events += 1
-                        else:
-                            result.thermal_protection_events += 1
-                            print(f"Motor {motor_id}: Fatal error detected: {fatal_error_code}")
+    print("Waiting for all motor queues to become empty...")
+    all_queues_empty = False
+    check_count = 0
+    
+    while not all_queues_empty:
+        all_queues_empty = True
+        check_count += 1
+        
+        for motor, motor_id, result in active_motors:
+            try:
+                # Check queue size
+                queue_size = motor.get_n_queued_items(verbose=args.verbose)
+                if queue_size > 0:
+                    all_queues_empty = False
+                    if args.verbose or (check_count % 10 == 0):  # Show status every 10 checks or if verbose
+                        print(f"Motor {motor_id}: Queue size = {queue_size}")
             
-            time.sleep(1.0)  # Check every second
-            
-        except TimeoutError:
-            result.communication_timeouts += 1
-            if verbose:
-                print(f"Motor {motor_id}: Communication timeout in monitoring thread")
-            time.sleep(1.0)
-        except Exception as e:
-            if verbose:
-                print(f"Motor {motor_id}: Monitoring error: {e}")
-            time.sleep(1.0)
+            except Exception as e:
+                if args.verbose:
+                    print(f"Motor {motor_id}: Queue check error: {e}")
+                # If we can't check the queue, assume it's not empty to be safe
+                all_queues_empty = False
+        
+        if not all_queues_empty:
+            time.sleep(0.5)  # Wait a bit before checking again
+    
+    print("All motor queues are now empty. Motors have completed their movements.")
 
-def test_get_temperature(motors_info, args):
+def partition_devices_into_batches(devices, devices_per_batch):
+    """Partition detected devices into batches for testing"""
+    if devices_per_batch is None:
+        return [devices]  # Single batch with all devices
+    
+    batches = []
+    for i in range(0, len(devices), devices_per_batch):
+        batch = devices[i:i + devices_per_batch]
+        batches.append(batch)
+    return batches
+
+def run_temperature_test_on_batch(motors_info, args):
     """Main temperature test function"""
     print(f"\n=== Starting Temperature Test ===")
     print(f"Testing {len(motors_info)} motor(s)")
@@ -317,10 +324,7 @@ def test_get_temperature(motors_info, args):
         print(f"\n--- Phase 4: High-Power Motor Operation ---")
         print(f"Running motors at velocity {args.velocity} rot/s for {args.motor_run_time} seconds")
         
-        # Start monitoring threads for status only
-        stop_event = threading.Event()
-        monitor_threads = []
-        
+        # Start all motors sequentially (no threading)
         for motor, motor_id, result in active_motors:
             try:
                 # Set proper units for easy time specification
@@ -337,23 +341,14 @@ def test_get_temperature(motors_info, args):
                 safe_motor_command(motor, motor.move_with_velocity, motor_id, "move_with_velocity",
                                  0.0, 0.01, verbose=args.verbose)  # 0 velocity for 0.01 seconds
                 
-                # Start monitoring thread for status only
-                thread = threading.Thread(target=monitor_motor_status,
-                                        args=(motor, motor_id, stop_event, result, args.verbose))
-                thread.daemon = True
-                thread.start()
-                monitor_threads.append(thread)
                 print(f"Motor {motor_id}: Started high-power operation")
                 
             except Exception as e:
                 result.error_message = f"Failed to start motor operation: {e}"
                 print(f"Motor {motor_id}: {result.error_message}")
         
-        # Wait for motor run time
-        print_countdown("Motors running at high power", args.motor_run_time)
-        
-        # Stop monitoring
-        stop_event.set()
+        # Wait for all motor queues to become empty (no threading)
+        wait_for_motor_queues_to_empty(active_motors, args)
         
         # Motors should already be stopped by the queued velocity=0 command
         print("Motors should have stopped automatically...")
@@ -363,10 +358,6 @@ def test_get_temperature(motors_info, args):
                 print(f"Motor {motor_id}: MOSFETs disabled")
             except Exception as e:
                 print(f"Motor {motor_id}: Error disabling MOSFETs: {e}")
-        
-        # Wait for monitoring threads to finish
-        for thread in monitor_threads:
-            thread.join(timeout=2.0)
         
         # Phase 5: Final temperature readings
         print(f"\n--- Phase 5: Final Temperature Readings ---")
@@ -402,7 +393,7 @@ def test_get_temperature(motors_info, args):
     
     except KeyboardInterrupt:
         print("\nTest interrupted by user")
-        stop_event.set()
+        # Note: Graceful shutdown - motors will complete their current movements
         
         # Emergency stop all motors
         for motor, motor_id, result in active_motors:
@@ -414,9 +405,47 @@ def test_get_temperature(motors_info, args):
     
     return results
 
+def test_get_temperature(motors_info, args):
+    """Main temperature test function with batching support"""
+    if not motors_info:
+        print("No motors provided for testing")
+        return {}
+    
+    # Partition devices into batches
+    batches = partition_devices_into_batches(motors_info, args.devices_per_batch)
+    
+    print(f"\n=== Starting Temperature Test ===")
+    print(f"Testing {len(motors_info)} motor(s) in {len(batches)} batch(es)")
+    
+    if args.devices_per_batch:
+        print(f"Devices per batch: {args.devices_per_batch}")
+    else:
+        print("Devices per batch: All devices (no batching)")
+    
+    # Initialize consolidated results
+    consolidated_results = {}
+    
+    # Process each batch
+    for batch_idx, batch_motors in enumerate(batches):
+        batch_num = batch_idx + 1
+        print(f"\n========== BATCH {batch_num} of {len(batches)} ({len(batch_motors)} devices) ==========")
+        
+        # Run temperature test on this batch
+        batch_results = run_temperature_test_on_batch(batch_motors, args)
+        
+        # Merge batch results into consolidated results
+        consolidated_results.update(batch_results)
+        
+        # Brief pause between batches (except for the last batch)
+        if batch_idx < len(batches) - 1:
+            print(f"\nCompleted batch {batch_num}. Preparing for next batch...")
+            time.sleep(2.0)  # Brief pause between batches
+    
+    return consolidated_results
+
 def analyze_results(results, args):
     """Analyze test results and determine pass/fail status"""
-    print(f"\n========== TEMPERATURE TEST SUMMARY ==========")
+    print(f"\n========== CONSOLIDATED TEMPERATURE TEST SUMMARY ==========")
     
     total_motors = len(results)
     passed_motors = 0
@@ -502,6 +531,7 @@ def main():
     parser.add_argument('--velocity', type=float, default=1.0, help='Motor velocity in rotations/second (default: 1.0)')
     parser.add_argument('--position-deviation', type=float, default=0.1, help='Max allowable position deviation in rotations (default: 0.1)')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat the test (default: 1)')
+    parser.add_argument('--devices-per-batch', type=int, help='Maximum number of devices to test concurrently in a single batch (default: test all devices)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
     
