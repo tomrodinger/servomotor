@@ -4,7 +4,7 @@ import random
 import time
 import argparse
 import servomotor
-from servomotor import get_human_readable_alias
+from servomotor import get_human_readable_alias_or_unique_id
 from collections import defaultdict
 import zlib
 import paho.mqtt.client as mqtt
@@ -74,7 +74,7 @@ def send_statistics_to_mqtt(device_dict, start_time, movement_iterations_done, i
         for unique_id, device in device_dict.items():
             device_data = {
                 "unique_id": f"{unique_id:016X}",
-                "alias": get_human_readable_alias(device.alias),
+                "alias": get_human_readable_alias_or_unique_id(device.alias),
                 "total_fatal_errors": device.total_fatal_errors,
                 "error_counts": {str(k): v for k, v in device.fatal_error_counts.items()}
             }
@@ -127,11 +127,11 @@ def detect_all_devices_multiple_passes(motor255, n_passes):
         for device in response:
             unique_id = device[0]
             alias = device[1]
-            print(f"Unique ID: {unique_id:016X}, Alias: {get_human_readable_alias(alias)}")
+            print(f"Unique ID: {unique_id:016X}, Alias: {get_human_readable_alias_or_unique_id(alias)}")
             if unique_id in device_dict:
                 print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
                 if alias != device_dict[unique_id].alias:
-                    print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias(alias)} vs {get_human_readable_alias(device_dict[unique_id].alias)}")
+                    print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias_or_unique_id(alias)} vs {get_human_readable_alias_or_unique_id(device_dict[unique_id].alias)}")
             else:
                 new_device = Device(unique_id, alias)
                 device_dict[unique_id] = new_device
@@ -145,7 +145,7 @@ def merge_device_dict(device_dict, new_device_dict):
         if unique_id in device_dict:
             print(f"Unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
             if new_device.alias != device_dict[unique_id].alias:
-                print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias(new_device.alias)} vs {get_human_readable_alias(device_dict[unique_id].alias)}")
+                print(f"Error: we discovered an inconsistency: the alias is different: {get_human_readable_alias_or_unique_id(new_device.alias)} vs {get_human_readable_alias_or_unique_id(device_dict[unique_id].alias)}")
         else:
             device_dict[unique_id] = new_device
 
@@ -153,7 +153,7 @@ def merge_device_dict(device_dict, new_device_dict):
 def assign_unique_aliases(motor255, device_dict):
     """Assign unique aliases to all devices"""
     if len(device_dict) > MAX_ALIAS - MIN_ALIAS + 1:
-        raise ValueError(f"Too many devices ({len(device_dict)}) for available alias range ({get_human_readable_alias(MIN_ALIAS)}-{get_human_readable_alias(MAX_ALIAS)})")
+        raise ValueError(f"Too many devices ({len(device_dict)}) for available alias range ({get_human_readable_alias_or_unique_id(MIN_ALIAS)}-{get_human_readable_alias_or_unique_id(MAX_ALIAS)})")
         
     used_aliases = []
     reassigned_devices = []
@@ -170,14 +170,14 @@ def assign_unique_aliases(motor255, device_dict):
         try:
             new_alias = next(i for i in range(MIN_ALIAS, MAX_ALIAS + 1) if i not in used_aliases)
             used_aliases.append(new_alias)
-            print(f"Reassigning device {device.unique_id:016X} from alias {get_human_readable_alias(device.alias)} to {get_human_readable_alias(new_alias)}")
+            print(f"Reassigning device {device.unique_id:016X} from alias {get_human_readable_alias_or_unique_id(device.alias)} to {get_human_readable_alias_or_unique_id(new_alias)}")
             response = motor255.set_device_alias(device.unique_id, new_alias)
             device.alias = new_alias
             # Add delay after each reassignment
             time.sleep(0.1)
         except StopIteration:
-            print(f"Error: No more available aliases in range {get_human_readable_alias(MIN_ALIAS)}-{get_human_readable_alias(MAX_ALIAS)}")
-            raise ValueError(f"No more available aliases in range {get_human_readable_alias(MIN_ALIAS)}-{get_human_readable_alias(MAX_ALIAS)}")
+            print(f"Error: No more available aliases in range {get_human_readable_alias_or_unique_id(MIN_ALIAS)}-{get_human_readable_alias_or_unique_id(MAX_ALIAS)}")
+            raise ValueError(f"No more available aliases in range {get_human_readable_alias_or_unique_id(MIN_ALIAS)}-{get_human_readable_alias_or_unique_id(MAX_ALIAS)}")
     
     # If any devices were reassigned, do a system reset
     if reassigned_devices:
@@ -197,9 +197,9 @@ def run_ping_test(motor255, device_dict, verbose=2):
     for ping_round in range(10):
         for unique_id, device in device_dict.items():
             if device.unique_id != 0:
-                motor.use_unique_id(device.unique_id)
+                motor.use_this_alias_or_unique_id(device.unique_id)
             elif device.alias != None:
-                motor.use_alias(device.alias)
+                motor.use_this_alias_or_unique_id(device.alias)
             else:
                 print("Invalid alias or unique id")
                 exit(1)
@@ -211,17 +211,17 @@ def run_ping_test(motor255, device_dict, verbose=2):
                     response = motor.ping(ping_data)
                     if response != ping_data:
                         ping_test_passed = False
-                        print(f"Ping test round {ping_round + 1}/10 failed for device {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)})")
+                        print(f"Ping test round {ping_round + 1}/10 failed for device {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)})")
                         print(f"Sent: {ping_data}")
                         print(f"Received: {response}")
                     else:
-                        print(f"Ping test round {ping_round + 1}/10 successful for device {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)})")
+                        print(f"Ping test round {ping_round + 1}/10 successful for device {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)})")
                     break  # Success, exit retry loop
                 except Exception as e:
                     ping_test_passed = False
-                    print(f"Ping test round {ping_round + 1}/10 attempt {retry + 1}/{PING_TIMEOUT_RETRIES} failed for device {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)}): {e}")
+                    print(f"Ping test round {ping_round + 1}/10 attempt {retry + 1}/{PING_TIMEOUT_RETRIES} failed for device {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)}): {e}")
                     if retry == PING_TIMEOUT_RETRIES - 1:  # Last retry
-                        print(f"All ping retries failed for device {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)})")
+                        print(f"All ping retries failed for device {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)})")
                     else:
                         time.sleep(0.1)  # Delay before retry
         
@@ -254,7 +254,7 @@ def print_statistics(device_dict, start_time, movement_iterations_done, iteratio
     
     error_type_counts = {}
     for unique_id, device in device_dict.items():
-        print(f"\nDevice {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)}):")
+        print(f"\nDevice {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)}):")
         print(f"   Total fatal errors: {device.total_fatal_errors}")
         if device.fatal_error_counts:
             print("      Fatal error breakdown:")
@@ -380,14 +380,11 @@ def main():
     # If an alias is provided, skip detection and test that device directly
     if args.alias:
         try:
-            alias, unique_id = servomotor.communication.string_to_alias_or_unique_id(args.alias)
-            # Use a placeholder for unique_id as it's not known without detection
-            if unique_id == None:
-                unique_id = 0
-            device_dict[unique_id] = Device(unique_id, alias)
+            alias_or_unique_id = servomotor.communication.string_to_alias_or_unique_id(args.alias)
+            device_dict[alias_or_unique_id] = Device(alias_or_unique_id, alias_or_unique_id)
             unique_aliases_assigned = True # Skip alias assignment logic
             n_devices_detected_historgram[1] += 1
-            print(f"Bypassing auto-detection. Testing single device with alias: {alias}")
+            print(f"Bypassing auto-detection. Testing single device with alias or unique ID: {alias_or_unique_id}")
             print("Resetting the system")
             motor255.system_reset()
             time.sleep(1.5)
@@ -412,7 +409,7 @@ def main():
             new_device_dict = detect_all_devices_multiple_passes(motor255, REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
             print(f"\nDetected {len(new_device_dict)} devices:")
             for unique_id, device in new_device_dict.items():
-                print(f"  Device {unique_id:016X} (Alias: {get_human_readable_alias(device.alias)})")
+                print(f"  Device {unique_id:016X} (Alias: {get_human_readable_alias_or_unique_id(device.alias)})")
             n_devices_detected_historgram[len(new_device_dict)] += 1
             merge_device_dict(device_dict, new_device_dict)
 
@@ -457,9 +454,9 @@ def main():
             # Enable MOSFETs and set current for selected devices
             for device in test_devices:
                 if device.unique_id != 0:
-                    motor.use_unique_id(device.unique_id)
+                    motor.use_this_alias_or_unique_id(device.unique_id)
                 elif device.alias != None:
-                    motor.use_alias(device.alias)
+                    motor.use_this_alias_or_unique_id(device.alias)
                 else:
                     print("Invalid alias or unique id")
                     exit(1)
@@ -469,9 +466,9 @@ def main():
             # Apply random velocity movement
             for device in test_devices:
                 if device.unique_id != 0:
-                    motor.use_unique_id(device.unique_id)
+                    motor.use_this_alias_or_unique_id(device.unique_id)
                 elif device.alias != None:
-                    motor.use_alias(device.alias)
+                    motor.use_this_alias_or_unique_id(device.alias)
                 else:
                     print("Invalid alias or unique id")
                     exit(1)
@@ -483,7 +480,7 @@ def main():
                 if device.unique_id != 0:
                     print(f"Moving device {device.unique_id:016X} at {speed:.2f} degrees/sec for 2 seconds...")
                 elif device.alias != None:
-                    print(f"Moving device with alias {get_human_readable_alias(device.alias)} at {speed:.2f} degrees/sec for 2 seconds...")
+                    print(f"Moving device with alias {get_human_readable_alias_or_unique_id(device.alias)} at {speed:.2f} degrees/sec for 2 seconds...")
 
                 print(f"DEBUG: move_with_velocity args: speed={speed}, duration=2.0")
                 motor.move_with_velocity(speed, 2.0)  # Pass as positional args
@@ -518,9 +515,9 @@ def main():
         for i in range(STATUS_CHECK_PASSES):
             for device in device_dict.values():
                 if device.unique_id != 0:
-                    motor.use_unique_id(device.unique_id)
+                    motor.use_this_alias_or_unique_id(device.unique_id)
                 elif device.alias != None:
-                    motor.use_alias(device.alias)
+                    motor.use_this_alias_or_unique_id(device.alias)
                 else:
                     print("Invalid alias or unique id")
                     exit(1)
@@ -530,7 +527,7 @@ def main():
                     if device.unique_id != 0:
                         print(f"DEBUG: get_status for unique_id {device.unique_id:016X}")
                     elif device.alias != None:
-                        print(f"DEBUG: get_status for alias {get_human_readable_alias(device.alias)}")
+                        print(f"DEBUG: get_status for alias {get_human_readable_alias_or_unique_id(device.alias)}")
                     status = motor.get_status()
                     print(f"DEBUG: status = {status}")
                     assert len(status) == 2

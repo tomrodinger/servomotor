@@ -95,7 +95,7 @@ test_passed = True
 for unique_id, device in new_device_dict.items():
     print(f"\n=== Testing device {unique_id:016X} (Alias: {device.alias}) ===")
     try:
-        motor.use_alias(device.alias)
+        motor.use_this_alias_or_unique_id(device.alias)
         motor.enable_mosfets()
         time.sleep(0.05)
         motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)

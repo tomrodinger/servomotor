@@ -226,7 +226,7 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
                 converted_inputs = [int(round(v)) if isinstance(v, float) else v for v in (list(args) + list(kwargs.values()))]
 
         # Execute the command and get response
-        possibly_multiple_responses = communication.execute_command(self.alias, command_id, converted_inputs, verbose=self.verbose)
+        possibly_multiple_responses = communication.execute_command(command_id, converted_inputs, alias_or_unique_id=self.alias_or_unique_id, verbose=self.verbose)
 
         if not isinstance(possibly_multiple_responses, list):
             print("Error: Expected the response to be a list, but got: ", possibly_multiple_responses)
@@ -316,20 +316,22 @@ def define_commands(m3_class, data_type_dict, command_dict, verbose=2):
     communication.set_data_types_and_command_data(data_type_dict, command_dict)
 
 class AllMotors:
-    def __init__(self, alias, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
-        # Convert string alias to integer if needed
-        if isinstance(alias, str):
-            if len(alias) == 1:
-                self.alias = ord(alias)  # Convert single character to ASCII value
+    def __init__(self, alias_or_unique_id=None, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
+        if isinstance(alias_or_unique_id, int) or (alias_or_unique_id == None):
+            self.alias_or_unique_id = alias_or_unique_id
+        elif isinstance(alias_or_unique_id, str):
+            # Convert string to integer if needed
+            if len(alias_or_unique_id) == 1:
+                self.alias_or_unique_id = ord(alias_or_unique_id)  # Convert single character to ASCII value
             else:
                 try:
-                    self.alias = int(alias)
+                    self.alias_or_unique_id = int(alias_or_unique_id)
                 except ValueError:
-                    raise ValueError("Alias must be a single character or an integer between 0-255")
-                if not (0 <= self.alias <= 255):
-                    raise ValueError("Alias must be between 0-255")
+                    raise ValueError("Alias or unique_id must be a single character or an integer")
         else:
-            self.alias = alias
+            raise ValueError("Alias or unique_id must be a single character such as X or an integer such as 123 or a hex string such as AABBCCDDEEFF0011")
+        if self.alias_or_unique_id < 0 or self.alias_or_unique_id > 0xFFFFFFFFFFFFFFFF:
+            raise ValueError("Alias or unique_id must be in the range from 0 to 0xFFFFFFFFFFFFFFFF")
 
         if time_unit == None:
             time_unit = next(iter(TimeUnit)).value
@@ -414,24 +416,15 @@ class AllMotors:
             self._voltage_unit = VoltageUnit(next(iter(VoltageUnit)).value)
 
 class M3(AllMotors):
-    def __init__(self, alias, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
-        super().__init__(alias, time_unit=time_unit, position_unit=position_unit, velocity_unit=velocity_unit, 
+    def __init__(self, alias_or_unique_id=None, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):
+        super().__init__(alias_or_unique_id, time_unit=time_unit, position_unit=position_unit, velocity_unit=velocity_unit,
                         acceleration_unit=acceleration_unit, temperature_unit=temperature_unit,
                         current_unit=current_unit, voltage_unit=voltage_unit, verbose=verbose)
 
     def __del__(self):
         super().__del__()
 
-    def use_alias(self, new_alias):
+    def use_this_alias_or_unique_id(self, alias_or_unique_id):
         """Set the alias for addressing this motor (standard addressing mode)"""
-        from . import communication
-        communication.alias = new_alias
-        communication.unique_id = None
-        self.alias = new_alias
+        self.alias_or_unique_id = alias_or_unique_id
 
-    def use_unique_id(self, unique_id):
-        """Set the unique ID for addressing this motor (extended addressing mode)"""
-        from . import communication
-        communication.unique_id = unique_id
-        communication.alias = None
-        self.unique_id = unique_id

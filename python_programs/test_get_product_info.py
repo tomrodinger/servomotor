@@ -58,7 +58,7 @@ def reset_device(motor, alias, go_to_bootloader, verbose=2):
     If alias == 255 (broadcast), perform reset, call get_status, but do NOT check the result.
     If alias != 255, check bootloader status as appropriate.
     """
-    motor.use_alias(alias)
+    motor.use_this_alias_or_unique_id(alias)
     print(f"Resetting device at alias {alias} (go_to_bootloader={go_to_bootloader})...")
     motor.system_reset(verbose=verbose)
     if go_to_bootloader:
@@ -153,8 +153,7 @@ if __name__ == "__main__":
         alias, unique_id = detect_device_and_get_alias(motor_broadcast, verbose=args.verbose)
 
         # Step 3: Create M3 object and use extended addressing to talk to the device (by unique ID)
-        motor = M3(255, verbose=args.verbose)
-        motor.use_unique_id(unique_id)
+        motor = M3(unique_id, verbose=args.verbose)
 
         # Step 4: Run the test
         test_get_product_info(motor, unique_id, repeat=args.repeat, verbose=args.verbose)

@@ -190,7 +190,6 @@ if __name__ == "__main__":
             # Step 1: Reset with broadcast alias
             motor = M3(255, verbose=args.verbose)
             print("Initial reset with broadcast alias 255...")
-            motor.use_alias(255)
             motor.system_reset(verbose=args.verbose)
             if args.bootloader:
                 print(f"Sleeping for {GO_TO_BOOTLOADER_RESET_TIME}s after reset (bootloader mode).")
@@ -208,7 +207,7 @@ if __name__ == "__main__":
             else:
                 # Auto-detect device and use unique_id for robust addressing
                 unique_id = detect_device_and_get_unique_id(motor, verbose=args.verbose)
-                motor.use_unique_id(unique_id)
+                motor.use_this_alias_or_unique_id(unique_id)
 
             # All further operations use unique ID
             all_passed = True

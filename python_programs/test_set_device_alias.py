@@ -61,7 +61,7 @@ def reset_device(motor, alias, go_to_bootloader, verbose=2):
     If alias == 255 (broadcast), perform reset, call get_status, but do NOT check the result.
     If alias != 255, check bootloader status as appropriate.
     """
-    motor.use_alias(alias)
+    motor.use_this_alias_or_unique_id(alias)
     print(f"Resetting device at alias {alias} (go_to_bootloader={go_to_bootloader})...")
     motor.system_reset(verbose=verbose)
     if go_to_bootloader:
@@ -91,7 +91,7 @@ def test_set_device_alias(motor, current_alias, alias_to_set, expect_fatal_error
     try:
         print(f"\n--- {description} ---")
         print(f"Setting alias to {alias_to_set} (expect fatal error: {expect_fatal_error})")
-        motor.use_alias(current_alias)
+        motor.use_this_alias_or_unique_id(current_alias)
         try:
             print(f"Calling set_device_alias({alias_to_set})")
             ret = motor.set_device_alias(alias_to_set)
@@ -108,7 +108,7 @@ def test_set_device_alias(motor, current_alias, alias_to_set, expect_fatal_error
             print("Sleeping for 0.1s after setting invalid alias before get_status.")
             time.sleep(0.1)
             # Do NOT update current_alias; use previous valid alias for get_status and reset
-            motor.use_alias(current_alias)
+            motor.use_this_alias_or_unique_id(current_alias)
             try:
                 check_the_status(motor, current_alias, go_to_bootloader, expect_fatal_error, verbose=verbose)
             except:
@@ -124,7 +124,7 @@ def test_set_device_alias(motor, current_alias, alias_to_set, expect_fatal_error
                 delay_time = DONT_GO_TO_BOOTlOADER_RESET_TIME + FLASH_WRITE_TIME
                 print(f"Sleeping for {delay_time:0.3}s after setting alias before detect_devices. We will not go to the bootloader, so we will use a long delay")
             time.sleep(delay_time)
-            motor.use_alias(alias_to_set)
+            motor.use_this_alias_or_unique_id(alias_to_set)
 
             check_the_status(motor, alias_to_set, go_to_bootloader, expect_fatal_error, verbose=verbose)
 

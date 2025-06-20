@@ -73,6 +73,29 @@ FIRMWARE_PAGE_NUMBER_LENGTH = 1
 CRC32_SIZE = 4
 MINIMUM_FIRWARE_SIZE = FLASH_PAGE_SIZE - CRC32_SIZE
 
+
+def print_flash_memory_map(last_page_used_by_this_firmware):
+    if last_page_used_by_this_firmware > LAST_FIRMWARE_PAGE_NUMBER:
+        print("Error: the firmware is too large and cannot be stored on this chip")
+        exit(1)
+    print("\nFLASH MEMORY MAP:")
+    print("----------------------------------------------------------------------")
+    s1 = f"Pages 0 to {BOOTLOADER_N_PAGES - 1}"
+    print(f"{s1:15} | Factory settings and bootloader")
+    s2 = f"Pages {FIRST_FIRMWARE_PAGE_NUMBER} to {last_page_used_by_this_firmware}"
+    print(f"{s2:15} | This firmware")
+    if last_page_used_by_this_firmware + 1 < LAST_FIRMWARE_PAGE_NUMBER:
+        s3 = f"Pages {last_page_used_by_this_firmware + 1} to {LAST_FIRMWARE_PAGE_NUMBER}"
+        print(f"{s3:15} | Currently unused and available for future firmware")
+    elif last_page_used_by_this_firmware + 1 == LAST_FIRMWARE_PAGE_NUMBER:
+        s3 = f"Page {last_page_used_by_this_firmware + 1}"
+        print(f"{s3:15} | Currently unused and available for future firmware")
+    s4 = f"Page {FLASH_SETTINGS_PAGE_NUMBER}"
+    print(f"{s4:15} | Non volatile settings storage")
+    print("----------------------------------------------------------------------")
+    print(f"This chip has a total of {FLASH_SETTINGS_PAGE_NUMBER + 1} flash memory pages")
+    print(f"Page size: {FLASH_PAGE_SIZE} bytes\n")
+
 def print_data(data):
     print(data)
     for d in data:
@@ -268,31 +291,27 @@ def upgrade_firmware_old_protocol(ser, model_code, firmware_compatibility_code, 
     time.sleep(0.1)
     ser.close()
 
+# New protocol: support alias/unique ID, checks for response after each page if we are not broadcasting
 def upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data, args, verbose=2):
-    # New protocol: support alias/unique ID, check for response after each page
-    # Parse alias/unique ID
-    # Open the serial port using servomotor (required for send_command to work)
     try:
         servomotor.open_serial_port()
     except Exception as e:
         print(f"Error: Could not open serial port: {e}")
         exit(1)
     try:
-        reset_response = servomotor.communication.send_command(SYSTEM_RESET_COMMAND, bytearray(), crc32_enabled=True, verbose=verbose)
+        parsed_response = servomotor.execute_command(SYSTEM_RESET_COMMAND, bytearray(), alias_or_unique_id=None, crc32_enabled=True, verbose=verbose)
     except Exception as e:
         print(f"Error: Exception occurred while sending reset command: {e}")
         exit(1)
     time.sleep(WAIT_FOR_RESET_TIME)
     page_number = FIRST_FIRMWARE_PAGE_NUMBER
-    alias, unique_id = servomotor.communication.string_to_alias_or_unique_id(args.alias)
-    if alias is None and unique_id is None:
-        print("Error: Could not parse the -a/--alias parameter. It must be an integer alias (0-255) or a 16-character hex string for unique ID.")
-        exit(1)
+    print(f"Now entering the loop where we will write the firmware pages.\nNote that the factory settings and bootloader occupies the first {FIRST_FIRMWARE_PAGE_NUMBER} pages and we won't overwrite them.")
+    print(f"This chip has a total of {FLASH_SETTINGS_PAGE_NUMBER + 1} pages in its flash memory.")
+    print(f"The last page is used for settings storage and won't be used for firmware.")
     while len(data) > 0:
         if page_number > LAST_FIRMWARE_PAGE_NUMBER:
             print("Error: the firmware is too big to fit in the flash")
             exit(1)
-        print("Size left:", len(data))
         if len(data) < FLASH_PAGE_SIZE:
             data = data + bytearray([0]) * (FLASH_PAGE_SIZE - len(data))
             print("Size left after append:", len(data))
@@ -305,29 +324,35 @@ def upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data,
         payload += int(page_number).to_bytes(FIRMWARE_PAGE_NUMBER_LENGTH, "little")
         payload += data[0:FLASH_PAGE_SIZE]
 
-        # Send the command and check for response if not broadcast
         try:
-            response_payloads = servomotor.communication.send_command(FIRMWARE_UPGRADE_COMMAND, payload, crc32_enabled=True, verbose=verbose)
-            if (alias != 255 or unique_id is not None):
-                if not response_payloads or len(response_payloads[0]) != 0:
-                    print(f"Error: Did not receive the expected response after sending page {page_number}.")
-                    print("Expected a zero-length payload response from the device. Aborting firmware upgrade.")
-                    exit(1)
-        except Exception as e:
-            print(f"Error: Exception occurred while sending firmware page {page_number}: {e}")
+            parsed_response = servomotor.execute_command(FIRMWARE_UPGRADE_COMMAND, [payload], alias_or_unique_id=None, crc32_enabled=True, verbose=verbose)
+        except servomotor.TimeoutError as e:
+            print(str(e))
+            exit(1)
+        except servomotor.CommunicationError as e:
+            print(f"Error interpreting response: {str(e)}")
+            exit(1)
+        except servomotor.PayloadError as e:
+            print(f"Error interpreting response: {str(e)}")
+            exit(1)
+        except servomotor.NoAliasOrUniqueIdSet as e:
+            print(f"Error interpreting response: {str(e)}")
             exit(1)
 
-        if alias == 255:
+        if servomotor.get_global_alias_or_unique_id() == 255:
             time.sleep(DELAY_AFTER_EACH_PAGE) # When using a broadcast method, there will be no acknowledgement sent back to indicate when the firmware page is finished writing, and so we need to limit the pacet rate to not overflow the buffer
 
         data = data[FLASH_PAGE_SIZE:]
         page_number = page_number + 1
 
+        print(f"Firmware page number {page_number} written successfully. {len(data)} bytes still need to be written.")
+
     try:
-        reset_response = servomotor.communication.send_command(SYSTEM_RESET_COMMAND, bytearray(), crc32_enabled=True, verbose=verbose)
+        parsed_response = servomotor.execute_command(SYSTEM_RESET_COMMAND, bytearray(), alias_or_unique_id=None, crc32_enabled=True, verbose=verbose)
     except Exception as e:
         print(f"Error: Exception occurred while sending reset command after upgrade: {e}")
         exit(1)
+
     time.sleep(0.1)
 
 
@@ -358,13 +383,19 @@ firmware_filename = args.firmware_filename
 firmware_protocol = args.firmware_protocol
 bootloader_protocol = args.bootloader_protocol
 
+servomotor.set_standard_options_from_args(args)
+global_alias_or_unique_id = servomotor.get_global_alias_or_unique_id()
+
 # Input validation for protocol and alias/unique ID
-if bootloader_protocol == 'old' and args.alias is not None and args.alias != '255':
+if (bootloader_protocol == 'old') and (global_alias_or_unique_id is not None) and (global_alias_or_unique_id != servomotor.ALL_ALIAS):
     print("Error: The -a/--alias parameter is not supported with the old protocol. The old protocol only supports broadcast (alias 255).")
     exit(1)
 
 print(f"Using firmware protocol: {firmware_protocol}")
 print(f"Using bootloader protocol: {bootloader_protocol}")
+if (firmware_protocol == 'old') and (bootloader_protocol == 'new'):
+    print("Error: we don't support the combination of a new bootloader protocol and old firmware protocol. No devices should need this.")
+    exit(1)
 
 model_code, firmware_compatibility_code, data = read_binary(firmware_filename)
 
@@ -399,9 +430,9 @@ print("Firmware size is %u 32-bit values. Firmware CRC32 is 0x%08X." % (firmware
 data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4, "little")
 
 print("Will write this many bytes:", len(data))
-
-# Set up servomotor communication context (required for send_command to work)
-servomotor.communication.set_standard_options_from_args(args)
+firmware_pages_needed = (len(data) + FLASH_PAGE_SIZE - 1) // FLASH_PAGE_SIZE
+last_page_used_by_this_firmware = FIRST_FIRMWARE_PAGE_NUMBER - 1 + firmware_pages_needed
+print_flash_memory_map(last_page_used_by_this_firmware)
 
 # Main protocol selection logic
 if bootloader_protocol == 'old':

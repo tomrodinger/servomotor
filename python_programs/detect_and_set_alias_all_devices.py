@@ -137,11 +137,11 @@ if not reassign_aliases:
 print("---------------------------------------------------------------")
 n_reassigned_aliases = 0
 for unique_id, device in device_dict.items():
-    alias_str = servomotor.get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
     if device.reassigned_alias is None:
         reassigned_alias_str = "                 "
     else:
-        reassigned_alias_str = servomotor.get_human_readable_alias(device.reassigned_alias)
+        reassigned_alias_str = servomotor.get_human_readable_alias_or_unique_id(device.reassigned_alias)
         n_reassigned_aliases += 1
     print(f"{unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
 print("---------------------------------------------------------------")

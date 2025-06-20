@@ -37,11 +37,15 @@ MAX_DETECTION_ATTEMPTS = 3
 MAX_STATUS_RETRY_ATTEMPTS = 3
 QUEUE_REFILL_DURATION = 10.0  # Duration for each velocity command in seconds
 
+class InconsistencyError(Exception):
+    """Raised when device detection finds inconsistent alias assignments"""
+    pass
+
+
 class MotorTestResult:
     """Stores test results for a single motor"""
-    def __init__(self, alias, unique_id):
-        self.alias = alias
-        self.unique_id = unique_id
+    def __init__(self, alias_or_unique_id):
+        self.alias_or_unique_id = alias_or_unique_id
         self.initial_temp = None
         self.final_temp = None
         self.temp_increase = None
@@ -107,7 +111,7 @@ def detect_devices_with_retries(motor_broadcast, verbose=False):
                     if unique_id in device_dict:
                         print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
                         if alias != device_dict[unique_id]:
-                            print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id]}")
+                            raise InconsistencyError(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id]}")
                     else:
                         device_dict[unique_id] = alias
                 else:
@@ -120,8 +124,26 @@ def detect_devices_with_retries(motor_broadcast, verbose=False):
     print(f"Final device count after {max_attempts} detection passes: {len(devices)}")
     return devices
 
-def get_motor_status_with_retries(motor, motor_id, verbose=False):
+def create_motor_objects(devices, verbose=False):
+    """Create M3 motor objects with proper addressing for each detected device"""
+    motor_objects = []
+    
+    print("\n--- Creating Motor Objects ---")
+    for device in devices:
+        unique_id = device[0]
+        try:
+            motor = M3(unique_id, verbose=verbose)
+            motor_objects.append(motor)
+            print(f"Created motor object using unique ID 0x{unique_id:016X}")
+            
+        except Exception as e:
+            print(f"Failed to create motor object for {unique_id}: {e}")
+    
+    return motor_objects
+
+def get_motor_status_with_retries(motor, alias_or_unique_id, verbose=False):
     """Get motor status with retries, return None if all attempts fail"""
+    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
     for attempt in range(MAX_STATUS_RETRY_ATTEMPTS):
         try:
             status = motor.get_status(verbose=verbose)
@@ -129,72 +151,77 @@ def get_motor_status_with_retries(motor, motor_id, verbose=False):
         except Exception as e:
             if attempt < MAX_STATUS_RETRY_ATTEMPTS - 1:
                 if verbose:
-                    print(f"Motor {motor_id}: Status attempt {attempt + 1} failed: {e}, retrying...")
+                    print(f"Motor {alias_or_unique_id_str}: Status attempt {attempt + 1} failed: {e}, retrying...")
                 time.sleep(0.1)
             else:
                 if verbose:
-                    print(f"Motor {motor_id}: All status attempts failed: {e}")
+                    print(f"Motor {alias_or_unique_id_str}: All status attempts failed: {e}")
     return None
 
-def safe_motor_command(motor, command_func, motor_id, command_name, *args, **kwargs):
+def safe_motor_command(motor, command_func, alias_or_unique_id, command_name, *args, **kwargs):
     """Execute motor command with timeout handling"""
+    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
     try:
         return command_func(*args, **kwargs)
     except Exception as e:
         if "timeout" in str(e).lower():
-            print(f"Motor {motor_id}: Timeout during {command_name} - checking status...")
-            status = get_motor_status_with_retries(motor, motor_id)
+            print(f"Motor {alias_or_unique_id_str}: Timeout during {command_name} - checking status...")
+            status = get_motor_status_with_retries(motor, alias_or_unique_id)
             if status:
+                print(f"DEBUG: get_status returned: {status}, type: {type(status)}")
                 flags, fatal_error_code = status[0], status[1]
                 if fatal_error_code != 0:
-                    print(f"Motor {motor_id}: Fatal error detected: {fatal_error_code}")
+                    print(f"Motor {alias_or_unique_id_str}: Fatal error detected: {fatal_error_code}")
                     return None, fatal_error_code
-            raise TimeoutError(f"Motor {motor_id}: {command_name} timed out")
+            raise TimeoutError(f"Motor {alias_or_unique_id_str}: {command_name} timed out")
         else:
             raise
 
-def reset_device(motor, alias, verbose=False):
+def reset_device(motor, alias_or_unique_id, verbose=False):
     """Reset device and wait for startup"""
-    motor.use_alias(alias)
-    print(f"Resetting device at alias {alias}...")
+    motor.use_this_alias_or_unique_id(alias_or_unique_id)
+    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
+    print(f"Resetting device at {alias_or_unique_id_str}...")
     motor.system_reset(verbose=verbose)
     print(f"Sleeping for {DONT_GO_TO_BOOTLOADER_RESET_TIME}s after reset (normal mode).")
     time.sleep(DONT_GO_TO_BOOTLOADER_RESET_TIME)
 
-def configure_motor_units(motor, motor_id, verbose=False):
+def configure_motor_units(motor, alias_or_unique_id, verbose=False):
     """Configure motor units for consistent operation"""
+    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
     try:
-        print(f"Motor {motor_id}: Setting units...")
+        print(f"Motor {alias_or_unique_id_str}: Setting units...")
         motor.set_time_unit("seconds")
         motor.set_position_unit("shaft_rotations")
         motor.set_velocity_unit("rotations_per_second")
         motor.set_acceleration_unit("rotations_per_second_squared")
-        print(f"Motor {motor_id}: Units configured successfully")
+        print(f"Motor {alias_or_unique_id_str}: Units configured successfully")
         return True
     except Exception as e:
-        print(f"Motor {motor_id}: Unit configuration failed: {e}")
+        print(f"Motor {alias_or_unique_id_str}: Unit configuration failed: {e}")
         return False
 
-def configure_motor_for_test(motor, motor_id, max_current, position_deviation, verbose=False):
+def configure_motor_for_test(motor, alias_or_unique_id, max_current, position_deviation, verbose=False):
     """Configure motor for high-power temperature test"""
+    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
     try:
         # Enable MOSFETs
-        print(f"Motor {motor_id}: Enabling MOSFETs...")
-        safe_motor_command(motor, motor.enable_mosfets, motor_id, "enable_mosfets", verbose=verbose)
+        print(f"Motor {alias_or_unique_id_str}: Enabling MOSFETs...")
+        safe_motor_command(motor, motor.enable_mosfets, alias_or_unique_id, "enable_mosfets", verbose=verbose)
         
         # Set maximum motor current
-        print(f"Motor {motor_id}: Setting maximum motor current to {max_current}...")
-        safe_motor_command(motor, motor.set_maximum_motor_current, motor_id, "set_maximum_motor_current",
+        print(f"Motor {alias_or_unique_id_str}: Setting maximum motor current to {max_current}...")
+        safe_motor_command(motor, motor.set_maximum_motor_current, alias_or_unique_id, "set_maximum_motor_current",
                           max_current, 200, verbose=verbose)  # 200 for regeneration current
         
         # Set position deviation limit to detect step skipping (now in shaft_rotations)
-        print(f"Motor {motor_id}: Setting position deviation limit to {position_deviation} shaft_rotations...")
-        safe_motor_command(motor, motor.set_max_allowable_position_deviation, motor_id,
+        print(f"Motor {alias_or_unique_id_str}: Setting position deviation limit to {position_deviation} shaft_rotations...")
+        safe_motor_command(motor, motor.set_max_allowable_position_deviation, alias_or_unique_id,
                           "set_max_allowable_position_deviation", position_deviation, verbose=verbose)
         
         return True
     except Exception as e:
-        print(f"Motor {motor_id}: Configuration failed: {e}")
+        print(f"Motor {alias_or_unique_id_str}: Configuration failed: {e}")
         return False
 
 def wait_for_motor_queues_to_empty(active_motors, args):
@@ -208,18 +235,19 @@ def wait_for_motor_queues_to_empty(active_motors, args):
         all_queues_empty = True
         check_count += 1
         
-        for motor, motor_id, result in active_motors:
+        for motor, alias_or_unique_id, result in active_motors:
+            alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             try:
                 # Check queue size
                 queue_size = motor.get_n_queued_items(verbose=args.verbose)
                 if queue_size > 0:
                     all_queues_empty = False
                     if args.verbose or (check_count % 10 == 0):  # Show status every 10 checks or if verbose
-                        print(f"Motor {motor_id}: Queue size = {queue_size}")
+                        print(f"Motor {alias_or_unique_id_str}: Queue size = {queue_size}")
             
             except Exception as e:
                 if args.verbose:
-                    print(f"Motor {motor_id}: Queue check error: {e}")
+                    print(f"Motor {alias_or_unique_id_str}: Queue check error: {e}")
                 # If we can't check the queue, assume it's not empty to be safe
                 all_queues_empty = False
         
@@ -239,142 +267,130 @@ def partition_devices_into_batches(devices, devices_per_batch):
         batches.append(batch)
     return batches
 
-def run_temperature_test_on_batch(motors_info, args):
+def run_temperature_test_on_batch(motor_objects, args):
     """Main temperature test function"""
     print(f"\n=== Starting Temperature Test ===")
-    print(f"Testing {len(motors_info)} motor(s)")
+    print(f"Testing {len(motor_objects)} motor(s)")
     
     results = {}
     
     # Initialize results for each motor
-    for unique_id, alias in motors_info:  # Note: detect_devices returns (unique_id, alias)
-        motor_id = f"alias_{alias}"
-        results[motor_id] = MotorTestResult(alias, unique_id)
+    for motor_obj in motor_objects:
+        results[motor_obj.alias_or_unique_id] = MotorTestResult(motor_obj.alias_or_unique_id)
     
     try:
-        # Phase 1: Initial sleep period
-        print(f"\n--- Phase 1: Initial Cooling Period ---")
-        print_countdown("Waiting for motors to cool down", args.initial_sleep)
-        
-        # Phase 2: Take baseline temperature readings
-        print(f"\n--- Phase 2: Baseline Temperature Readings ---")
-        for unique_id, alias in motors_info:  # Note: detect_devices returns (unique_id, alias)
-            motor_id = f"alias_{alias}"
-            result = results[motor_id]
+        # Phase 1: Take baseline temperature readings
+        print(f"\n--- Phase 1: Baseline Temperature Readings ---")
+        for motor_obj in motor_objects:
+            result = results[motor_obj.alias_or_unique_id]
             
             try:
-                print("Using alias:", alias)
-                motor = M3(alias, verbose=args.verbose)
-                
-
-                temp = safe_motor_command(motor, motor.get_temperature, motor_id, "get_temperature", verbose=args.verbose)
+                alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(motor_obj.alias_or_unique_id)
+                print("Using alias or unique ID:", alias_or_unique_id_str)
+                temp = safe_motor_command(motor_obj, motor_obj.get_temperature, motor_obj.alias_or_unique_id, "get_temperature", verbose=args.verbose)
                 
                 if temp is not None:
                     result.initial_temp = temp[0] if isinstance(temp, (list, tuple)) else temp
-                    print(f"Motor {motor_id}: Initial temperature = {result.initial_temp}°C")
+                    print(f"Motor {alias_or_unique_id_str}: Initial temperature = {result.initial_temp}°C")
                     
                     # Validate temperature range
                     if result.initial_temp < args.min_temp or result.initial_temp > args.max_temp:
                         result.error_message = f"Initial temperature {result.initial_temp}°C out of range ({args.min_temp}-{args.max_temp}°C)"
-                        print(f"Motor {motor_id}: {result.error_message}")
+                        print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                         continue
                 else:
                     result.error_message = "Failed to read initial temperature"
-                    print(f"Motor {motor_id}: {result.error_message}")
+                    print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                     continue
                     
             except Exception as e:
                 result.error_message = f"Initial temperature reading failed: {e}"
-                print(f"Motor {motor_id}: {result.error_message}")
+                print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                 continue
         
-        # Phase 3: Configure motors for high-power operation
-        print(f"\n--- Phase 3: Motor Configuration ---")
+        # Phase 2: Configure motors for high-power operation
+        print(f"\n--- Phase 2: Motor Configuration ---")
         active_motors = []
         
-        for unique_id, alias in motors_info:  # Note: detect_devices returns (unique_id, alias)
-            motor_id = f"alias_{alias}"
-            result = results[motor_id]
+        for motor_obj in motor_objects:
+            result = results[motor_obj.alias_or_unique_id]
             
             if result.error_message:
                 continue  # Skip motors that failed initial temperature reading
             
-            try:
-                motor = M3(alias, verbose=args.verbose)
-                if unique_id != 0:
-                    motor.use_unique_id(unique_id)
-                else:
-                    motor.use_alias(alias)
-                
-                if configure_motor_for_test(motor, motor_id, args.max_current, args.position_deviation, args.verbose):
-                    active_motors.append((motor, motor_id, result))
-                    print(f"Motor {motor_id}: Configuration successful")
+            alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(motor_obj.alias_or_unique_id)
+            try:                
+                if configure_motor_for_test(motor_obj, motor_obj.alias_or_unique_id, args.max_current, args.position_deviation, args.verbose):
+                    active_motors.append((motor_obj, motor_obj.alias_or_unique_id, result))
+                    print(f"Motor {alias_or_unique_id_str}: Configuration successful")
                 else:
                     result.error_message = "Motor configuration failed"
                     
             except Exception as e:
                 result.error_message = f"Motor configuration error: {e}"
-                print(f"Motor {motor_id}: {result.error_message}")
+                print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
         
         if not active_motors:
             print("No motors successfully configured for testing!")
             return results
         
-        # Phase 4: High-Power Motor Operation
-        print(f"\n--- Phase 4: High-Power Motor Operation ---")
+        # Phase 3: High-Power Motor Operation
+        print(f"\n--- Phase 3: High-Power Motor Operation ---")
         print(f"Running motors at velocity {args.velocity} rot/s for {args.motor_run_time} seconds")
         
         # Start all motors sequentially (no threading)
-        for motor, motor_id, result in active_motors:
+        for motor, alias_or_unique_id, result in active_motors:
+            alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             try:
                 # Set proper units for easy time specification
                 motor.set_time_unit("seconds")
                 motor.set_velocity_unit("rotations_per_second")
                 
                 # Queue one long move for the entire test duration
-                print(f"Motor {motor_id}: Queuing long move for {args.motor_run_time} seconds")
-                safe_motor_command(motor, motor.move_with_velocity, motor_id, "move_with_velocity",
+                print(f"Motor {alias_or_unique_id_str}: Queuing long move for {args.motor_run_time} seconds")
+                safe_motor_command(motor, motor.move_with_velocity, alias_or_unique_id, "move_with_velocity",
                                  args.velocity, args.motor_run_time, verbose=args.verbose)
                 
                 # Immediately queue a velocity=0 command to prevent error 18
-                print(f"Motor {motor_id}: Queuing velocity=0 to prevent queue empty error")
-                safe_motor_command(motor, motor.move_with_velocity, motor_id, "move_with_velocity",
+                print(f"Motor {alias_or_unique_id_str}: Queuing velocity=0 to prevent queue empty error")
+                safe_motor_command(motor, motor.move_with_velocity, alias_or_unique_id, "move_with_velocity",
                                  0.0, 0.01, verbose=args.verbose)  # 0 velocity for 0.01 seconds
                 
-                print(f"Motor {motor_id}: Started high-power operation")
+                print(f"Motor {alias_or_unique_id_str}: Started high-power operation")
                 
             except Exception as e:
                 result.error_message = f"Failed to start motor operation: {e}"
-                print(f"Motor {motor_id}: {result.error_message}")
+                print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
         
         # Wait for all motor queues to become empty (no threading)
         wait_for_motor_queues_to_empty(active_motors, args)
         
-        # Motors should already be stopped by the queued velocity=0 command
-        print("Motors should have stopped automatically...")
-        for motor, motor_id, result in active_motors:
+        # Motors should already be stopped by the queued velocity=0 command and now we will disable the MOSFETs
+        for motor, alias_or_unique_id, result in active_motors:
+            alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             try:
                 motor.disable_mosfets(verbose=args.verbose)
-                print(f"Motor {motor_id}: MOSFETs disabled")
+                print(f"Motor {alias_or_unique_id_str}: MOSFETs disabled")
             except Exception as e:
-                print(f"Motor {motor_id}: Error disabling MOSFETs: {e}")
+                print(f"Motor {alias_or_unique_id_str}: Error disabling MOSFETs: {e}")
         
-        # Phase 5: Final temperature readings
-        print(f"\n--- Phase 5: Final Temperature Readings ---")
+        # Phase 4: Final temperature readings
+        print(f"\n--- Phase 4: Final Temperature Readings ---")
         time.sleep(2.0)  # Brief pause before final readings
         
-        for motor, motor_id, result in active_motors:
+        for motor, alias_or_unique_id, result in active_motors:
+            alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             try:
-                temp = safe_motor_command(motor, motor.get_temperature, motor_id, "get_temperature", verbose=args.verbose)
+                temp = safe_motor_command(motor, motor.get_temperature, alias_or_unique_id, "get_temperature", verbose=args.verbose)
                 
                 if temp is not None:
                     result.final_temp = temp[0] if isinstance(temp, (list, tuple)) else temp
-                    print(f"Motor {motor_id}: Final temperature = {result.final_temp}°C")
+                    print(f"Motor {alias_or_unique_id_str}: Final temperature = {result.final_temp}°C")
                     
                     # Calculate temperature increase
                     if result.initial_temp is not None and result.final_temp is not None:
                         result.temp_increase = result.final_temp - result.initial_temp
-                        print(f"Motor {motor_id}: Temperature increase = {result.temp_increase}°C")
+                        print(f"Motor {alias_or_unique_id_str}: Temperature increase = {result.temp_increase}°C")
                     
                     # Validate final temperature range
                     if result.final_temp is not None:
@@ -389,14 +405,14 @@ def run_temperature_test_on_batch(motors_info, args):
                     
             except Exception as e:
                 result.error_message = f"Final temperature reading failed: {e}"
-                print(f"Motor {motor_id}: {result.error_message}")
+                print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
     
     except KeyboardInterrupt:
         print("\nTest interrupted by user")
         # Note: Graceful shutdown - motors will complete their current movements
         
         # Emergency stop all motors
-        for motor, motor_id, result in active_motors:
+        for motor, alias_or_unique_id, result in active_motors:
             try:
                 motor.emergency_stop()
                 motor.disable_mosfets()
@@ -405,17 +421,17 @@ def run_temperature_test_on_batch(motors_info, args):
     
     return results
 
-def test_get_temperature(motors_info, args):
+def test_get_temperature(motor_objects, args):
     """Main temperature test function with batching support"""
-    if not motors_info:
+    if not motor_objects:
         print("No motors provided for testing")
         return {}
     
-    # Partition devices into batches
-    batches = partition_devices_into_batches(motors_info, args.devices_per_batch)
+    # Partition motor objects into batches
+    batches = partition_devices_into_batches(motor_objects, args.devices_per_batch)
     
     print(f"\n=== Starting Temperature Test ===")
-    print(f"Testing {len(motors_info)} motor(s) in {len(batches)} batch(es)")
+    print(f"Testing {len(motor_objects)} motor(s) in {len(batches)} batch(es)")
     
     if args.devices_per_batch:
         print(f"Devices per batch: {args.devices_per_batch}")
@@ -424,6 +440,10 @@ def test_get_temperature(motors_info, args):
     
     # Initialize consolidated results
     consolidated_results = {}
+    
+    # Initial cooling period (only once at the beginning)
+    print(f"\n--- Initial Cooling Period ---")
+    print_countdown("Waiting for motors to cool down", args.initial_sleep)
     
     # Process each batch
     for batch_idx, batch_motors in enumerate(batches):
@@ -451,8 +471,9 @@ def analyze_results(results, args):
     passed_motors = 0
     failed_motors = 0
     
-    for motor_id, result in results.items():
-        print(f"\nMotor {motor_id} (Alias: {result.alias}, Unique ID: 0x{result.unique_id:016X}):")
+    for alias_or_unique_id, result in results.items():
+        alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
+        print(f"\nMotor {alias_or_unique_id_str}:")
         
         if result.error_message:
             print(f"  Error: {result.error_message}")
@@ -559,12 +580,9 @@ def main():
             # Step 2: Get devices (either from provided alias or auto-detect)
             if args.alias:
                 # If a specific alias is provided, parse it and create the device list
-                parsed_alias, unique_id = communication.string_to_alias_or_unique_id(args.alias)
-                if unique_id is not None:
-                    print(f"Error: This test does not support unique ID addressing. Please use an alias.", file=sys.stderr)
-                    sys.exit(1)
-                devices = [(0, parsed_alias)]  # unique_id=0 as placeholder
-                print(f"Testing single motor with alias: {parsed_alias}")
+                alias_or_unique_id = communication.string_to_alias_or_unique_id(args.alias)
+                devices = [(alias_or_unique_id, alias_or_unique_id)]  # unique_id=0 as placeholder
+                print(f"Testing single motor with alias or unique ID: {alias_or_unique_id}")
             else:
                 # Auto-detect all devices
                 devices = detect_devices_with_retries(motor_broadcast, args.verbose)
@@ -581,20 +599,22 @@ def main():
             print("Flushing the receive buffer")
             servomotor.flush_receive_buffer()
             
-            # Step 3: Configure units for all motors
-            print(f"\n--- Configuring Units for All Motors ---")
-            for unique_id, alias in devices:
-                motor_id = f"alias_{alias}"
-                try:
-                    motor = M3(alias, verbose=args.verbose)
-                    if unique_id != 0:
-                        motor.use_unique_id(unique_id)
-                    configure_motor_units(motor, motor_id, args.verbose)
-                except Exception as e:
-                    print(f"Motor {motor_id}: Unit configuration failed: {e}")
+            # Step 3: Create motor objects with proper addressing
+            print(f"\n--- Creating Motor Objects ---")
+            print(f"DEBUG: devices = {devices}")
+            motor_objects = create_motor_objects(devices, args.verbose)
             
-            # Step 4: Run temperature test
-            results = test_get_temperature(devices, args)
+            # Step 4: Configure units for all motors
+            print(f"\n--- Configuring Units for All Motors ---")
+            for motor_obj in motor_objects:
+                alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(motor_obj.alias_or_unique_id)
+                try:
+                    configure_motor_units(motor_obj, motor_obj.alias_or_unique_id, args.verbose)
+                except Exception as e:
+                    print(f"Motor {alias_or_unique_id_str}: Unit configuration failed: {e}")
+            
+            # Step 5: Run temperature test
+            results = test_get_temperature(motor_objects, args)
             
             # Step 5: Analyze results
             test_passed = analyze_results(results, args)

@@ -29,11 +29,8 @@ PROTOCOL_VERSION = 20
 registered_data_types = None
 registered_commands = None
 ser = None
-alias = ALL_ALIAS  # Default to addressing all devices
-unique_id = None   # Default to not using extended addressing
 detect_devices_command_id = None
-set_device_alias_command_id = None
-
+global_alias_or_unique_id = None # This is a globally set alias or unique ID which will be used if a sepecific one is not given to the device's object
 # When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
 # Timeout on the communication
 class TimeoutError(Exception):
@@ -43,6 +40,12 @@ class CommunicationError(Exception):
     pass
 # The payload appears to be wrong or invalid
 class PayloadError(Exception):
+    pass
+# No alias or unique ID was set by either command line arguments or via the program
+# These can be set using the contructor of the the device object (constructor of M3 for example) or
+# with a call to use_this_alias_or_unique_id or
+# by specifying it on the command line with the -a or --alias parameter
+class NoAliasOrUniqueIdSet(Exception):
     pass
 
 # Encode a device ID by shifting left and setting LSB to 1
@@ -66,14 +69,17 @@ def print_data(prefix_message, data, print_size=True, verbose=2):
             message += f"[{len(data)} bytes]"
         print(format_debug(message))
 
-def get_human_readable_alias(alias):
-    if alias is None:
-        return "The alias is not specified"
-    elif alias >= 33 and alias <= 126:
-        alias_str = f"{chr(alias)} ({alias})"
+def get_human_readable_alias_or_unique_id(alias_or_unique_id):
+    if alias_or_unique_id is None:
+        return "The alias or unique ID was not specified"
+    elif alias_or_unique_id < 0:
+        return "Invalid negative alias or unique ID"
+    elif alias_or_unique_id > 255:
+        return f"{alias_or_unique_id:016X}"
+    elif alias_or_unique_id >= 33 and alias_or_unique_id <= 126:
+        return f"{chr(alias_or_unique_id)} ({alias_or_unique_id})"
     else:
-        alias_str = f"{alias} (0x{alias:02x})"
-    return alias_str
+        return f"{alias_or_unique_id} (0x{alias_or_unique_id:02x})"
 
 def get_response(crc32_enabled=True, verbose=2):
     # Read the first byte (size byte)
@@ -81,7 +87,7 @@ def get_response(crc32_enabled=True, verbose=2):
     if len(first_byte) != 1:
         raise TimeoutError("Error: timeout while reading first byte")
     if verbose >= 2:
-        print("Read the first byte:", first_byte)
+        print(f"Read the first byte: 0x{first_byte[0]:02X}")
     
     # Validate first byte format (LSB should be 1)
     if not is_valid_first_byte_format(first_byte[0]):
@@ -110,7 +116,7 @@ def get_response(crc32_enabled=True, verbose=2):
     if remaining_bytes <= 0:
         raise CommunicationError(f"Error: there are less bytes than expected in the response")
     if verbose >= 2:
-        print("Trying to read the remaining bytes. There should be this many:", remaining_bytes)
+        print(f"Trying to read the remaining {remaining_bytes} bytes")
     packet_data = ser.read(remaining_bytes)
     if len(packet_data) != remaining_bytes:
         while len(packet_data) < remaining_bytes:
@@ -166,7 +172,7 @@ def get_response(crc32_enabled=True, verbose=2):
             print(format_success("This response indicates SUCCESS and has no payload"))
         else:
             print(format_debug("Got a valid payload:"))
-            print_data("Payload:", payload, verbose=verbose)
+            print_data("Payload: ", payload, verbose=verbose)
     if crc32_enabled == True and received_crc32_enabled == False:
         print(format_warning("The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended"))
     if crc32_enabled == False and received_crc32_enabled == True:
@@ -268,16 +274,16 @@ def calculate_crc32(data):
     import zlib
     return zlib.crc32(data) & 0xffffffff
 
-def send_command(command_id, gathered_inputs, crc32_enabled=True, verbose=2):
+def send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=True, verbose=2):
     # Check if we're using extended addressing
-    if unique_id is not None:
-        # Extended addressing mode
-        # Format: address byte (EXTENDED_ADDRESSING) + 8 bytes unique ID + command byte + payload
-        address_part = struct.pack('<BQ', EXTENDED_ADDRESSING, unique_id)
-    else:
+    if alias_or_unique_id <= 255:
         # Standard addressing mode
         # Format: address byte (alias) + command byte + payload
-        address_part = struct.pack('<B', alias)
+        address_part = struct.pack('<B', alias_or_unique_id)
+    else:
+        # Extended addressing mode
+        # Format: address byte (EXTENDED_ADDRESSING) + 8 bytes unique ID + command byte + payload
+        address_part = struct.pack('<BQ', EXTENDED_ADDRESSING, alias_or_unique_id)
     
     # Add command byte and payload
     command_part = struct.pack('<B', command_id) + gathered_inputs
@@ -306,15 +312,16 @@ def send_command(command_id, gathered_inputs, crc32_enabled=True, verbose=2):
             print_data("Calculating CRC32 of: ", packet, print_size=True, verbose=verbose)
         crc32_value = calculate_crc32(packet)
         packet += struct.pack('<I', crc32_value)    
-        
+    
+    # Here is where we actually send out the bytes to the serial port
     if verbose == 2:
         print_data("Sending packet: ", packet, print_size=True, verbose=verbose)
     ser.write(packet)
     
     # Check if we should expect a response
-    if (unique_id is None) and (alias == ALL_ALIAS) and (command_id != detect_devices_command_id):
+    if (alias_or_unique_id == ALL_ALIAS) and (command_id != detect_devices_command_id):
         if verbose == 2:
-            print(format_info(f"Sending a command to all devices (alias {alias}) and we expect there will be no response from any of them"))
+            print(format_info(f"Sending a command to all devices (alias {alias_or_unique_id}) and we expect there will be no response from any of them"))
         return []
     for command_index, item in enumerate(registered_commands):
         if command_id == item["CommandEnum"]:
@@ -324,13 +331,14 @@ def send_command(command_id, gathered_inputs, crc32_enabled=True, verbose=2):
             print(format_info("This command is expected to not return any response"))
         return []
     
+    # And now let's read the response back from the serial port (reading occurs inside of the get_response function)
     all_response_payloads = []
     while(1):
         try:
             response_payload = get_response(crc32_enabled=crc32_enabled, verbose=verbose)
             all_response_payloads.append(response_payload)
         except TimeoutError:
-            if unique_id is None and alias == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
+            if alias_or_unique_id == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
             if registered_commands[command_index]["MultipleResponses"] == True:  # check if this command may have any number of responses (including none)
                 break
@@ -381,10 +389,10 @@ def string_to_alias_or_unique_id(input_str):
     """Convert the input string to either an alias or a unique ID based on its format"""
     if len(input_str) >= 4:
         # The user probably has intended this to be a a unique ID (16-character hex string) given the length of the input string
-        return None, string_to_u64_unique_id(input_str)
+        return string_to_u64_unique_id(input_str)
     else:
         # It's a probably a regular alias since the length of the string is short
-        return string_to_u8_alias(input_str), None
+        return string_to_u8_alias(input_str)
 
 def set_serial_port_from_args(args):
     global serial_port
@@ -395,8 +403,6 @@ def set_serial_port_from_args(args):
         serial_port = args.port
 
 def set_standard_options_from_args(args):
-    global alias, unique_id
-    
     set_serial_port_from_args(args)
     
     # Determine verbosity level
@@ -407,34 +413,30 @@ def set_standard_options_from_args(args):
         verbose = 2
     
     if args.alias is None:
-        print(format_error("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help."))
+        print(format_error("Error: you must specify an alias or unique id with the -a option. Run this command with -h to get more detailed help."))
         exit(1)
     else:
         # Determine if the alias is actually a unique ID
-        alias_val, unique_id_val = string_to_alias_or_unique_id(args.alias)
+        global global_alias_or_unique_id
+        global_alias_or_unique_id = string_to_alias_or_unique_id(args.alias)
         
-        if unique_id_val is not None:
-            # It's a unique ID
-            unique_id = unique_id_val
-            alias = None
-            if verbose >= 1:
-                print(format_info(f"Using extended addressing with unique ID: 0x{unique_id:016X}"))
-        else:
-            # It's a regular alias
-            alias = alias_val
-            unique_id = None
-            if verbose >= 1:
-                print(format_info(f"Using standard addressing with alias: {get_human_readable_alias(alias)}"))
+        if verbose >= 1:
+            if global_alias_or_unique_id <= 255:
+                print(format_info(f"Using standard addressing with alias: {get_human_readable_alias_or_unique_id(global_alias_or_unique_id)}"))
+            else:
+                print(format_info(f"Using extended addressing with unique ID: 0x{global_alias_or_unique_id:016X}"))
+
+def get_global_alias_or_unique_id():
+    global global_alias_or_unique_id
+    return global_alias_or_unique_id
 
 def set_data_types_and_command_data(new_data_types, new_registered_commands):
     global registered_data_types
     global registered_commands
     global detect_devices_command_id
-    global set_device_alias_command_id
     registered_data_types = new_data_types
     registered_commands = new_registered_commands
     detect_devices_command_id = get_command_id("Detect devices")
-    set_device_alias_command_id = get_command_id("Set device alias")
 
 def open_serial_port(timeout = 1.2):
     global ser
@@ -623,6 +625,8 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
                     print(format_error("The allowed range is: 0 to 0xFFFFFFFFFFFFFFFF"))
                     exit(1)
                 input_packed = input.to_bytes(8, byteorder = "little")
+        elif registered_data_types[data_type_id].data_type_str == "firmware_page":
+            input_packed = input
         else:
             print(format_error(f"Error: didn't yet implement a converter to handle the input type: {registered_data_types[data_type_id].data_type_str}"))
             exit(1)
@@ -800,22 +804,25 @@ def interpret_response(command_id, response, verbose=2):
         parsed_response.append(partial_parsed_response)
     return parsed_response
 
-def execute_command(_alias, command_id_or_str, inputs, crc32_enabled=True, verbose=2):
-    global alias
-    alias = _alias
+def execute_command(command_id_or_str, inputs, alias_or_unique_id=None, crc32_enabled=True, verbose=2):
+    if alias_or_unique_id == None:
+        global global_alias_or_unique_id
+        alias_or_unique_id = global_alias_or_unique_id
+    if alias_or_unique_id == None:
+        raise NoAliasOrUniqueIdSet(f"ERROR: No alias or unique ID given, so we don't know who we should communicate with")
     if isinstance(command_id_or_str, int):
         command_id = command_id_or_str
         command_str = registered_commands[command_id]["CommandString"]
     else:
-        command_id = get_command_id(command_str)
+        command_id = get_command_id(command_id_or_str)
         command_str = command_id_or_str
     if command_id == None:
-        print(format_error(f"ERROR: The command {command_id_or_str} is not supported"))
+        print(format_error(f"ERROR: Unknown command: `{command_id_or_str}`"))
         exit(1)
     if verbose >= 1:
-        print(format_info(f"The command is: {command_str} and it has ID {command_id}"))
+        print(format_info(f"The command is: {command_str} (CommandEnum {command_id})"))
     gathered_inputs = gather_inputs(command_id, inputs, verbose=verbose)
-    response = send_command(command_id, gathered_inputs, crc32_enabled=crc32_enabled, verbose=verbose)
+    response = send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=crc32_enabled, verbose=verbose)
     parsed_response = interpret_response(command_id, response, verbose=verbose)
     return parsed_response
 

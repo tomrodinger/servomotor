@@ -64,7 +64,7 @@ def reset_device(motor, alias, go_to_bootloader, verbose=2):
     If alias == 255 (broadcast), perform reset, call get_status, but do NOT check the result.
     If alias != 255, check bootloader status as appropriate.
     """
-    motor.use_alias(alias)
+    motor.use_this_alias_or_unique_id(alias)
     print(f"Resetting device at alias {alias} (go_to_bootloader={go_to_bootloader})...")
     motor.system_reset(verbose=verbose)
     if go_to_bootloader:
@@ -223,7 +223,7 @@ def main():
             # Step 6: Test get_firmware_version using unique ID addressing (only if we have unique_id)
             if unique_id is not None:
                 print(f"\n=== Testing with unique ID addressing (unique_id={unique_id:016X}) ===")
-                motor.use_unique_id(unique_id)
+                motor.use_this_alias_or_unique_id(unique_id)
                 try:
                     firmware_info_uid = test_get_firmware_version(motor, expected_in_bootloader, repeat=1, verbose=args.verbose)
                     print(f"SUCCESS: Get firmware version test with unique ID addressing")

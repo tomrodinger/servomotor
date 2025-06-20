@@ -39,7 +39,7 @@ if args.command == None:
 
 command_id = servomotor.get_command_id(args.command)
 if command_id == None:
-    print(format_error(f"The command '{args.command}' is not supported"))
+    print(format_error(f"Unknown command: '{args.command}'"))
     print(format_info("Please run this program with the -c option to see all supported commands"))
     exit(1)
 
@@ -54,10 +54,25 @@ else:
 if verbose_level >= 1:
     print(format_info(f"Command ID: {command_id}"))
 
-gathered_inputs = servomotor.gather_inputs(command_id, args.inputs, verbose=verbose_level)
-
 servomotor.set_standard_options_from_args(args) # This will find out the port to use and the alias/unique_id of the device and store those in the communication module
 servomotor.open_serial_port()
+
+try:
+    parsed_response = servomotor.execute_command(args.command, args.inputs, crc32_enabled=True, verbose=verbose_level)
+    print(format_success("Command executed successfully"))
+except servomotor.TimeoutError as e:
+    print(format_error(str(e)))
+except servomotor.CommunicationError as e:
+    print(format_error(f"Error interpreting response: {str(e)}"))
+except servomotor.PayloadError as e:
+    print(format_error(f"Error interpreting response: {str(e)}"))
+except servomotor.NoAliasOrUniqueIdSet as e:
+    print(format_error(f"Error interpreting response: {str(e)}"))
+servomotor.close_serial_port()
+exit(0)
+
+gathered_inputs = servomotor.gather_inputs(command_id, args.inputs, verbose=verbose_level)
+
 # Determine if CRC32 should be enabled (default is enabled unless --crc32-disabled flag is used)
 crc32_enabled = not args.crc32_disabled
 if verbose_level >= 1 and args.crc32_disabled:

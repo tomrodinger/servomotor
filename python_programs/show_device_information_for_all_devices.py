@@ -31,7 +31,7 @@ class Device:
         self.firmware_version = None
 
 
-def detect_all_devices_multiple_passes(n_passes):
+def detect_all_devices_multiple_passes(motor255, n_passes):
     # Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
     device_dict = {}
     successful_detect_devices_count = 0
@@ -89,11 +89,10 @@ args = parser.parse_args()
 
 servomotor.set_serial_port_from_args(args)
 
-motor255 = servomotor.M3(255, verbose=args.verbose)
+motor255 = servomotor.M3(alias_or_unique_id=255, verbose=args.verbose)
 servomotor.open_serial_port()
 
-device_dict = detect_all_devices_multiple_passes(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
-
+device_dict = detect_all_devices_multiple_passes(motor255, REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
 # Let's count how many of each alias there is in all the devices and the print out a report
 # At the same time, let's check if there are any duplicate aliases
 print()
@@ -123,7 +122,7 @@ for unique_id, device in device_dict.items():
     if device.alias == 255:
         print(f"Skipping device with alias {device.alias} as it wont respond to this multicast alias")
         continue
-    alias_str = servomotor.get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
     print(f"Getting product info for device with unique ID {unique_id:016X} and alias {alias_str}")
     motor = servomotor.M3(device.alias, verbose=args.verbose)
     try:
@@ -156,7 +155,7 @@ print("\nDevice report:")
 print("Unique ID        |         Alias  | Product Code   | Firmware Compatibility Code | Hardware Version   | Serial Number | Firmware Version")
 print("----------------------------------------------------------------------------------------------------------------------------------------")
 for unique_id, device in device_dict.items():
-    alias_str = servomotor.get_human_readable_alias(device.alias)
+    alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
     if device.alias == 255:
         print(f"{unique_id:016X} | {alias_str:14s} | *** Warning: No alias assigned: Cannot communicate until an alias is set ***")
     elif device.alias in duplicate_alias_list:

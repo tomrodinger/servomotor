@@ -9,7 +9,9 @@ from .communication import (
     print_protocol_version,
     print_data_type_descriptions,
     print_registered_commands,
-    get_human_readable_alias,
+    get_human_readable_alias_or_unique_id,
+    string_to_alias_or_unique_id,
+    get_global_alias_or_unique_id,
     set_standard_options_from_args,
     set_serial_port_from_args,
     get_command_id,
@@ -24,6 +26,10 @@ from .communication import (
     close_serial_port,
     read_raw_byte,
     execute_command,
+    TimeoutError,
+    CommunicationError,
+    PayloadError,
+    NoAliasOrUniqueIdSet
 )
 
 # Get the absolute path to the servomotor module directory

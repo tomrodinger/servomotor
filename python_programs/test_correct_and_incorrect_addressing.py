@@ -74,7 +74,7 @@ def reset_device(motor, alias, go_to_bootloader, verbose=2):
     If alias == 255 (broadcast), perform reset, call get_status, but do NOT check the result.
     If alias != 255, check bootloader status as appropriate.
     """
-    motor.use_alias(alias)
+    motor.use_this_alias_or_unique_id(alias)
     print(f"Resetting device at alias {alias} (go_to_bootloader={go_to_bootloader})...")
     motor.system_reset(verbose=verbose)
     if go_to_bootloader:
@@ -103,7 +103,7 @@ def set_alias_if_needed(motor, current_alias, unique_id, go_to_bootloader=False,
     # Set alias to 1 (or any valid alias 0-251)
     new_alias = random.randint(0, 251)
     print(f"Setting device alias from 255 to {new_alias}...")
-    motor.use_alias(255)
+    motor.use_this_alias_or_unique_id(255)
     ret = motor.set_device_alias(new_alias)
     print(f"set_device_alias({new_alias}) returned: {ret}")
     # Wait for flash write and device to restart, with correct timing for bootloader/app mode
@@ -114,7 +114,7 @@ def set_alias_if_needed(motor, current_alias, unique_id, go_to_bootloader=False,
         delay_time = DONT_GO_TO_BOOTLOADER_RESET_TIME + FLASH_WRITE_TIME
         print(f"Sleeping for {delay_time:0.3f}s after setting alias (normal mode).")
     time.sleep(delay_time)
-    motor.use_alias(new_alias)
+    motor.use_this_alias_or_unique_id(new_alias)
     # Call check_the_status to ensure device is in correct mode
     check_the_status(motor, new_alias, go_to_bootloader, False, verbose=verbose)
     return new_alias
@@ -174,9 +174,9 @@ def validate_product_info(info, expected_unique_id):
 def try_get_status(motor, addressing_method, value, expect_success, verbose=False):
     try:
         if addressing_method == "alias":
-            motor.use_alias(value)
+            motor.use_this_alias_or_unique_id(value)
         elif addressing_method == "unique_id":
-            motor.use_unique_id(value)
+            motor.use_this_alias_or_unique_id(value)
         else:
             raise ValueError("Unknown addressing method")
         status = motor.get_status(verbose=verbose)
@@ -268,7 +268,7 @@ def main():
             # Additional check: after alias=255, test get_product_info with correct unique ID
             print("\nNow testing get_product_info with correct unique ID after alias=255 test...")
             try:
-                motor.use_unique_id(unique_id)
+                motor.use_this_alias_or_unique_id(unique_id)
                 info = motor.get_product_info(verbose=args.verbose)
                 print(f"get_product_info() returned: {info}")
                 validate_product_info(info, unique_id)
