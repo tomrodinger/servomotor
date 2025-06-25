@@ -4,11 +4,12 @@ import servomotor
 import time
 import argparse
 import matplotlib.pyplot as plt
+import os
 
 OUT_BIN_FILENAME = "hall_calibration_raw_data.bin"
 OUT_TEXT_FILENAME = "hall_calibration_one_rotation.txt"
 
-def plot_data(data):
+def plot_data(data, save_png=False, png_filename=None):
     col1, col2, col3 = zip(*data)
 
     X = list(range(len(data)))
@@ -35,7 +36,20 @@ def plot_data(data):
     axs[3].set_ylabel('Y-axis value')
 
     plt.tight_layout()
-    plt.show()
+    
+    if save_png and png_filename:
+        # Create hall_sensor_scans directory if it doesn't exist
+        os.makedirs('hall_sensor_scans', exist_ok=True)
+        
+        # Save the plot as PNG
+        png_path = os.path.join('hall_sensor_scans', png_filename)
+        plt.savefig(png_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved as: {png_path}")
+    
+    if not save_png:
+        plt.show()
+    else:
+        plt.close()  # Close the figure to free memory when saving
 
 def calculate_crc32(data):
     """Calculate CRC32 checksum for a byte array"""
@@ -49,6 +63,7 @@ arg_parser.add_argument('-p', '--port', help='serial port device', default=None)
 arg_parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
 arg_parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
 arg_parser.add_argument('--no-graph', action='store_true', help="Disable the plotting of the graph")
+arg_parser.add_argument('--save-png', action='store_true', help="Save the plot as PNG file in hall_sensor_scans directory instead of displaying it")
 
 try:
     args = arg_parser.parse_args()
@@ -131,4 +146,9 @@ if not args.no_graph:
             values = list(map(int, line.split()))
             file_data.append(values)
 
-    plot_data(file_data)
+    if args.save_png:
+        # Generate PNG filename based on alias
+        png_filename = f"{args.alias}.png"
+        plot_data(file_data, save_png=True, png_filename=png_filename)
+    else:
+        plot_data(file_data)
