@@ -48,6 +48,7 @@ class MotorTestResult:
         self.alias_or_unique_id = alias_or_unique_id
         self.initial_temp = None
         self.final_temp = None
+        self.last_known_temp = None  # Last valid temperature reading before any errors
         self.temp_increase = None
         self.thermal_protection_events = 0
         self.position_deviation_errors = 0
@@ -56,6 +57,9 @@ class MotorTestResult:
         self.test_completed = False
         self.error_message = None
         self.motor_failed = False  # If motor becomes unresponsive
+        self.error_types = []  # List of error types encountered
+        self.last_successful_temp_time = None  # When last temp reading was successful
+        self.motor_start_time = None  # When motor operation started
 
 def print_countdown(message, duration_seconds):
     """Print countdown with minute intervals"""
@@ -118,7 +122,11 @@ def detect_devices_with_retries(motor_broadcast, verbose=False):
                     print(f"Invalid device response format: {device}")
         else:
             print("No devices detected in this attempt")
-    
+
+    print("Resetting the system one last time after detection")
+    motor_broadcast.system_reset(verbose=verbose)
+    time.sleep(1.5)
+
     # Convert device_dict to list of tuples (unique_id, alias) for compatibility
     devices = [(unique_id, alias) for unique_id, alias in device_dict.items()]
     print(f"Final device count after {max_attempts} detection passes: {len(devices)}")
@@ -141,14 +149,17 @@ def create_motor_objects(devices, verbose=False):
     
     return motor_objects
 
-def get_motor_status_with_retries(motor, alias_or_unique_id, verbose=False):
+def get_motor_status_with_retries(motor, alias_or_unique_id, verbose=True):
     """Get motor status with retries, return None if all attempts fail"""
     alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
     for attempt in range(MAX_STATUS_RETRY_ATTEMPTS):
+        if verbose:
+            print(f"Attempting to get status {attempt + 1} of {MAX_STATUS_RETRY_ATTEMPTS}")
         try:
             status = motor.get_status(verbose=verbose)
             return status
         except Exception as e:
+            print(f"An exception occured while trying to get the status: {e}")
             if attempt < MAX_STATUS_RETRY_ATTEMPTS - 1:
                 if verbose:
                     print(f"Motor {alias_or_unique_id_str}: Status attempt {attempt + 1} failed: {e}, retrying...")
@@ -157,25 +168,6 @@ def get_motor_status_with_retries(motor, alias_or_unique_id, verbose=False):
                 if verbose:
                     print(f"Motor {alias_or_unique_id_str}: All status attempts failed: {e}")
     return None
-
-def safe_motor_command(motor, command_func, alias_or_unique_id, command_name, *args, **kwargs):
-    """Execute motor command with timeout handling"""
-    alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
-    try:
-        return command_func(*args, **kwargs)
-    except Exception as e:
-        if "timeout" in str(e).lower():
-            print(f"Motor {alias_or_unique_id_str}: Timeout during {command_name} - checking status...")
-            status = get_motor_status_with_retries(motor, alias_or_unique_id)
-            if status:
-                print(f"DEBUG: get_status returned: {status}, type: {type(status)}")
-                flags, fatal_error_code = status[0], status[1]
-                if fatal_error_code != 0:
-                    print(f"Motor {alias_or_unique_id_str}: Fatal error detected: {fatal_error_code}")
-                    return None, fatal_error_code
-            raise TimeoutError(f"Motor {alias_or_unique_id_str}: {command_name} timed out")
-        else:
-            raise
 
 def reset_device(motor, alias_or_unique_id, verbose=False):
     """Reset device and wait for startup"""
@@ -207,33 +199,40 @@ def configure_motor_for_test(motor, alias_or_unique_id, max_current, position_de
     try:
         # Enable MOSFETs
         print(f"Motor {alias_or_unique_id_str}: Enabling MOSFETs...")
-        safe_motor_command(motor, motor.enable_mosfets, alias_or_unique_id, "enable_mosfets", verbose=verbose)
+        motor.enable_mosfets(verbose=verbose)
         
         # Set maximum motor current
         print(f"Motor {alias_or_unique_id_str}: Setting maximum motor current to {max_current}...")
-        safe_motor_command(motor, motor.set_maximum_motor_current, alias_or_unique_id, "set_maximum_motor_current",
-                          max_current, 200, verbose=verbose)  # 200 for regeneration current
+        motor.set_maximum_motor_current(max_current, 200, verbose=verbose)
         
         # Set position deviation limit to detect step skipping (now in shaft_rotations)
         print(f"Motor {alias_or_unique_id_str}: Setting position deviation limit to {position_deviation} shaft_rotations...")
-        safe_motor_command(motor, motor.set_max_allowable_position_deviation, alias_or_unique_id,
-                          "set_max_allowable_position_deviation", position_deviation, verbose=verbose)
+        motor.set_max_allowable_position_deviation(position_deviation, verbose=verbose)
         
         return True
     except Exception as e:
         print(f"Motor {alias_or_unique_id_str}: Configuration failed: {e}")
         return False
 
-def wait_for_motor_queues_to_empty(active_motors, args):
+def wait_for_motor_queues_to_empty(active_motors, batch_number, n_batches, args):
     """Wait for all motor queues to become empty (queue-based exit, not time-based)"""
     
     print("Waiting for all motor queues to become empty...")
     all_queues_empty = False
     check_count = 0
+    start_time = time.time()  # Track start time for countdown
     
     while not all_queues_empty:
         all_queues_empty = True
         check_count += 1
+        
+        # Calculate estimated time remaining
+        elapsed_time = time.time() - start_time
+        estimated_time_left = max(0, args.motor_run_time - elapsed_time)
+        
+        # Print countdown header before motor status (every 10 checks or if verbose)
+        if args.verbose or (check_count % 10 == 0):
+            print(f"======== Approximate time left in this batch: {estimated_time_left:.0f} seconds. This is batch number {batch_number} of {n_batches} ========")
         
         for motor, alias_or_unique_id, result in active_motors:
             alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
@@ -242,14 +241,48 @@ def wait_for_motor_queues_to_empty(active_motors, args):
                 queue_size = motor.get_n_queued_items(verbose=args.verbose)
                 if queue_size > 0:
                     all_queues_empty = False
-                    if args.verbose or (check_count % 10 == 0):  # Show status every 10 checks or if verbose
-                        print(f"Motor {alias_or_unique_id_str}: Queue size = {queue_size}")
+                
+                # Get temperature reading and track it
+                try:
+                    temp = motor.get_temperature(verbose=args.verbose)
+                    temperature = temp[0] if isinstance(temp, (list, tuple)) else temp
+                    temp_str = f", Temperature = {temperature}°C"
+                    
+                    # Update last known temperature and time
+                    result.last_known_temp = temperature
+                    result.last_successful_temp_time = time.time()
+                    
+                except Exception as temp_e:
+                    temp_str = f", Temperature = ERROR ({temp_e})"
+                    
+                    # Track timeout/communication errors
+                    if "timeout" in str(temp_e).lower():
+                        result.communication_timeouts += 1
+                        if "timeout" not in result.error_types:
+                            result.error_types.append("timeout")
+                    else:
+                        if "communication_error" not in result.error_types:
+                            result.error_types.append("communication_error")
+                
+                if args.verbose or (check_count % 10 == 0):  # Show status every 10 checks or if verbose
+                    print(f"Motor {alias_or_unique_id_str}: Queue size = {queue_size}{temp_str}")
             
             except Exception as e:
-                if args.verbose:
-                    print(f"Motor {alias_or_unique_id_str}: Queue check error: {e}")
-                # If we can't check the queue, assume it's not empty to be safe
-                all_queues_empty = False
+                print(f"Motor {alias_or_unique_id_str}: Queue check error: {e}")
+                
+                # Track different types of errors
+                if "timeout" in str(e).lower():
+                    result.communication_timeouts += 1
+                    if "timeout" not in result.error_types:
+                        result.error_types.append("timeout")
+                elif "fatal" in str(e).lower():
+                    if "fatal_error" not in result.error_types:
+                        result.error_types.append("fatal_error")
+                else:
+                    if "communication_error" not in result.error_types:
+                        result.error_types.append("communication_error")
+                
+                time.sleep(5) # A problem occurred, such as overheat or some other, let's wait a while and check less often
         
         if not all_queues_empty:
             time.sleep(0.5)  # Wait a bit before checking again
@@ -267,7 +300,7 @@ def partition_devices_into_batches(devices, devices_per_batch):
         batches.append(batch)
     return batches
 
-def run_temperature_test_on_batch(motor_objects, args):
+def run_temperature_test_on_batch(motor_objects, batch_number, n_batches, args):
     """Main temperature test function"""
     print(f"\n=== Starting Temperature Test ===")
     print(f"Testing {len(motor_objects)} motor(s)")
@@ -287,24 +320,33 @@ def run_temperature_test_on_batch(motor_objects, args):
             try:
                 alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(motor_obj.alias_or_unique_id)
                 print("Using alias or unique ID:", alias_or_unique_id_str)
-                temp = safe_motor_command(motor_obj, motor_obj.get_temperature, motor_obj.alias_or_unique_id, "get_temperature", verbose=args.verbose)
+                temp = motor_obj.get_temperature(verbose=args.verbose)
                 
                 if temp is not None:
                     result.initial_temp = temp[0] if isinstance(temp, (list, tuple)) else temp
+                    result.last_known_temp = result.initial_temp  # Initialize last known temp
+                    result.last_successful_temp_time = time.time()
                     print(f"Motor {alias_or_unique_id_str}: Initial temperature = {result.initial_temp}°C")
                     
                     # Validate temperature range
                     if result.initial_temp < args.min_temp or result.initial_temp > args.max_temp:
                         result.error_message = f"Initial temperature {result.initial_temp}°C out of range ({args.min_temp}-{args.max_temp}°C)"
+                        result.error_types.append("temperature_out_of_range")
                         print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                         continue
                 else:
                     result.error_message = "Failed to read initial temperature"
+                    result.error_types.append("initial_temp_read_failed")
                     print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                     continue
                     
             except Exception as e:
                 result.error_message = f"Initial temperature reading failed: {e}"
+                if "timeout" in str(e).lower():
+                    result.communication_timeouts += 1
+                    result.error_types.append("timeout")
+                else:
+                    result.error_types.append("communication_error")
                 print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
                 continue
         
@@ -338,6 +380,9 @@ def run_temperature_test_on_batch(motor_objects, args):
         print(f"\n--- Phase 3: High-Power Motor Operation ---")
         print(f"Running motors at velocity {args.velocity} rot/s for {args.motor_run_time} seconds")
         
+        # Record the start time for all motors
+        motor_operation_start_time = time.time()
+        
         # Start all motors sequentially (no threading)
         for motor, alias_or_unique_id, result in active_motors:
             alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
@@ -346,15 +391,16 @@ def run_temperature_test_on_batch(motor_objects, args):
                 motor.set_time_unit("seconds")
                 motor.set_velocity_unit("rotations_per_second")
                 
+                # Record when this motor's operation started
+                result.motor_start_time = motor_operation_start_time
+                
                 # Queue one long move for the entire test duration
                 print(f"Motor {alias_or_unique_id_str}: Queuing long move for {args.motor_run_time} seconds")
-                safe_motor_command(motor, motor.move_with_velocity, alias_or_unique_id, "move_with_velocity",
-                                 args.velocity, args.motor_run_time, verbose=args.verbose)
+                motor.move_with_velocity(args.velocity, args.motor_run_time, verbose=args.verbose)
                 
                 # Immediately queue a velocity=0 command to prevent error 18
                 print(f"Motor {alias_or_unique_id_str}: Queuing velocity=0 to prevent queue empty error")
-                safe_motor_command(motor, motor.move_with_velocity, alias_or_unique_id, "move_with_velocity",
-                                 0.0, 0.01, verbose=args.verbose)  # 0 velocity for 0.01 seconds
+                motor.move_with_velocity(0.0, 0.01, verbose=args.verbose)  # 0 velocity for 0.01 seconds)
                 
                 print(f"Motor {alias_or_unique_id_str}: Started high-power operation")
                 
@@ -363,7 +409,7 @@ def run_temperature_test_on_batch(motor_objects, args):
                 print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
         
         # Wait for all motor queues to become empty (no threading)
-        wait_for_motor_queues_to_empty(active_motors, args)
+        wait_for_motor_queues_to_empty(active_motors, batch_number, n_batches, args)
         
         # Motors should already be stopped by the queued velocity=0 command and now we will disable the MOSFETs
         for motor, alias_or_unique_id, result in active_motors:
@@ -381,10 +427,12 @@ def run_temperature_test_on_batch(motor_objects, args):
         for motor, alias_or_unique_id, result in active_motors:
             alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             try:
-                temp = safe_motor_command(motor, motor.get_temperature, alias_or_unique_id, "get_temperature", verbose=args.verbose)
+                temp = motor.get_temperature(verbose=args.verbose)
                 
                 if temp is not None:
                     result.final_temp = temp[0] if isinstance(temp, (list, tuple)) else temp
+                    result.last_known_temp = result.final_temp  # Update last known temp
+                    result.last_successful_temp_time = time.time()
                     print(f"Motor {alias_or_unique_id_str}: Final temperature = {result.final_temp}°C")
                     
                     # Calculate temperature increase
@@ -396,15 +444,23 @@ def run_temperature_test_on_batch(motor_objects, args):
                     if result.final_temp is not None:
                         if result.final_temp < args.min_temp or result.final_temp > args.max_temp:
                             result.error_message = f"Final temperature {result.final_temp}°C out of range ({args.min_temp}-{args.max_temp}°C)"
+                            result.error_types.append("final_temp_out_of_range")
                         else:
                             result.test_completed = True
                     else:
                         result.error_message = "Final temperature reading returned None"
+                        result.error_types.append("final_temp_read_failed")
                 else:
                     result.error_message = "Failed to read final temperature"
+                    result.error_types.append("final_temp_read_failed")
                     
             except Exception as e:
                 result.error_message = f"Final temperature reading failed: {e}"
+                if "timeout" in str(e).lower():
+                    result.communication_timeouts += 1
+                    result.error_types.append("final_temp_timeout")
+                else:
+                    result.error_types.append("final_temp_communication_error")
                 print(f"Motor {alias_or_unique_id_str}: {result.error_message}")
     
     except KeyboardInterrupt:
@@ -448,16 +504,17 @@ def test_get_temperature(motor_objects, args):
     # Process each batch
     for batch_idx, batch_motors in enumerate(batches):
         batch_num = batch_idx + 1
-        print(f"\n========== BATCH {batch_num} of {len(batches)} ({len(batch_motors)} devices) ==========")
+        n_batches = len(batches)
+        print(f"\n========== BATCH {batch_num} of {n_batches} ({len(batch_motors)} devices) ==========")
         
         # Run temperature test on this batch
-        batch_results = run_temperature_test_on_batch(batch_motors, args)
+        batch_results = run_temperature_test_on_batch(batch_motors, batch_num, n_batches, args)
         
         # Merge batch results into consolidated results
         consolidated_results.update(batch_results)
         
         # Brief pause between batches (except for the last batch)
-        if batch_idx < len(batches) - 1:
+        if batch_idx < n_batches - 1:
             print(f"\nCompleted batch {batch_num}. Preparing for next batch...")
             time.sleep(2.0)  # Brief pause between batches
     
@@ -475,20 +532,34 @@ def analyze_results(results, args):
         alias_or_unique_id_str = communication.get_human_readable_alias_or_unique_id(alias_or_unique_id)
         print(f"\nMotor {alias_or_unique_id_str}:")
         
-        if result.error_message:
-            print(f"  Error: {result.error_message}")
-            print(f"  Status: FAILED")
-            failed_motors += 1
-            continue
-        
+        # Always show initial temperature if available
         if result.initial_temp is not None:
             print(f"  Initial Temperature: {result.initial_temp}°C")
+        else:
+            print(f"  Initial Temperature: Not available")
         
+        # Show final temperature or last known temperature
         if result.final_temp is not None:
             print(f"  Final Temperature: {result.final_temp}°C")
+        elif result.last_known_temp is not None:
+            print(f"  Final Temperature: Not available")
+            print(f"  Last Known Temperature: {result.last_known_temp}°C")
+            if result.last_successful_temp_time and result.motor_start_time:
+                time_since_motor_start = result.last_successful_temp_time - result.motor_start_time
+                print(f"  Last Valid Reading: {time_since_motor_start:.1f}s after motor start")
+        else:
+            print(f"  Final Temperature: Not available")
+            print(f"  Last Known Temperature: Not available")
         
+        # Calculate temperature increase using best available data
         if result.temp_increase is not None:
             print(f"  Temperature Increase: {result.temp_increase}°C")
+        elif result.initial_temp is not None and result.last_known_temp is not None:
+            temp_increase = result.last_known_temp - result.initial_temp
+            print(f"  Temperature Increase: {temp_increase}°C (based on last known temp)")
+            result.temp_increase = temp_increase  # Store for pass/fail evaluation
+        else:
+            print(f"  Temperature Increase: Cannot calculate")
         
         print(f"  Thermal Protection Events: {result.thermal_protection_events}")
         print(f"  Position Deviation Errors: {result.position_deviation_errors}")
@@ -497,26 +568,41 @@ def analyze_results(results, args):
         if result.fatal_errors:
             print(f"  Fatal Error Codes: {result.fatal_errors}")
         
+        # Show error types if any occurred
+        if result.error_types:
+            print(f"  Error Types: {', '.join(result.error_types)}")
+        
         # Determine pass/fail status
         passed = True
         failure_reasons = []
         
-        if not result.test_completed:
+        # Check if we have enough data to evaluate the test
+        if result.initial_temp is None:
             passed = False
-            failure_reasons.append("Test not completed")
+            failure_reasons.append("No initial temperature reading")
+        elif result.final_temp is None and result.last_known_temp is None:
+            passed = False
+            failure_reasons.append("No temperature readings during test")
+        elif not result.test_completed and result.temp_increase is None:
+            passed = False
+            failure_reasons.append("Test not completed and no temperature data available")
         
+        # Check temperature increase if we have data
         if result.temp_increase is not None and result.temp_increase < args.temp_increase:
             passed = False
             failure_reasons.append(f"Insufficient temperature increase ({result.temp_increase}°C < {args.temp_increase}°C)")
         
-        if result.communication_timeouts > 5:  # Allow some timeouts
-            passed = False
-            failure_reasons.append(f"Too many communication timeouts ({result.communication_timeouts})")
+        
+        # Show specific error message if available
+        if result.error_message and not passed:
+            print(f"  Error Details: {result.error_message}")
         
         if passed:
             print(f"  Status: PASSED")
             if result.thermal_protection_events > 0:
                 print(f"    (thermal protection detected as expected)")
+            if "timeout" in result.error_types:
+                print(f"    (completed despite communication timeouts)")
             passed_motors += 1
         else:
             print(f"  Status: FAILED")
@@ -575,10 +661,10 @@ def main():
         try:
             # Step 1: Reset all devices (broadcast)
             motor_broadcast = M3(255, verbose=args.verbose)
-            reset_device(motor_broadcast, 255, args.verbose)
             
             # Step 2: Get devices (either from provided alias or auto-detect)
             if args.alias:
+                reset_device(motor_broadcast, 255, args.verbose)
                 # If a specific alias is provided, parse it and create the device list
                 alias_or_unique_id = communication.string_to_alias_or_unique_id(args.alias)
                 devices = [(alias_or_unique_id, alias_or_unique_id)]  # unique_id=0 as placeholder

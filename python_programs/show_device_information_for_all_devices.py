@@ -6,8 +6,9 @@ import argparse
 import time
 import zlib
 import servomotor
+from servomotor.device_detection import detect_devices_iteratively
 
-REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3
+REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 4
 
 def compute_crc32(data_64bit, data_8bit):
     # Convert to bytes in little-endian format
@@ -16,59 +17,6 @@ def compute_crc32(data_64bit, data_8bit):
     # Compute the CRC32
     crc32_value = zlib.crc32(data_bytes)
     return crc32_value
-
-
-class Device:
-    def __init__(self, unique_id, alias):
-        self.unique_id = unique_id
-        self.alias = alias
-        self.product_code = None
-        self.firmware_compatibility_code = None
-        self.hardware_version = None
-        self.serial_number = None
-        self.unique_id_2 = None
-        self.unused = None
-        self.firmware_version = None
-
-
-def detect_all_devices_multiple_passes(motor255, n_passes):
-    # Let's detect all devices (possible multiple times) and store the data (unique_id and alias) in a dictionary
-    device_dict = {}
-    successful_detect_devices_count = 0
-    detect_devices_attempt_count = 0
-    while 1:
-        print("Resetting the system")
-        motor255.system_reset()
-        time.sleep(1.5)
-
-        if successful_detect_devices_count >= n_passes:
-            break
-
-        print("Flushing the receive buffer")
-        servomotor.flush_receive_buffer()
-        print(f"Detecting devices attempt {detect_devices_attempt_count+1}/{n_passes}")
-        try:
-            response = motor255.detect_devices()
-            successful_detect_devices_count += 1
-        except Exception as e:
-            print(f"Communication error: {e}")
-            continue
-        detect_devices_attempt_count += 1
-        print("Detected devices:")
-        for device in response:
-            unique_id = device[0]
-            alias = device[1]
-            print(f"Unique ID: {unique_id:016X}, Alias: {alias}")
-            if unique_id in device_dict:
-                print(f"This unique ID {unique_id:016X} is already in the device dictionary, so not adding it again")
-                if alias != device_dict[unique_id].alias:
-                    print(f"Error: we discovered an inconsistency: the alias is different: {alias} vs {device_dict[unique_id].alias}")
-            else:
-                new_device = Device(unique_id, alias)
-                device_dict[unique_id] = new_device
-#            else:
-#                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
-    return device_dict
 
 
 def find_unused_alias(alias_dict, min_alias, max_alias):
@@ -92,13 +40,13 @@ servomotor.set_serial_port_from_args(args)
 motor255 = servomotor.M3(alias_or_unique_id=255, verbose=args.verbose)
 servomotor.open_serial_port()
 
-device_dict = detect_all_devices_multiple_passes(motor255, REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
+devices = detect_devices_iteratively(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT, verbose=args.verbose)
 # Let's count how many of each alias there is in all the devices and the print out a report
 # At the same time, let's check if there are any duplicate aliases
 print()
 alias_count = {}
 duplicate_alias_list = []
-for unique_id, device in device_dict.items():
+for device in devices:
     alias = device.alias
     if alias in alias_count:
         alias_count[alias] += 1
@@ -115,7 +63,7 @@ for alias, count in alias_count.items():
 
 # Now, lets run the Get Product Info command for all the detected devices one by one
 # Skip any where the alias is in the duplicate_alias_list, as communication withe such devices is not possible until the alias is reassigned so there is no conflict
-for unique_id, device in device_dict.items():
+for device in devices:
     if device.alias in duplicate_alias_list:
         print(f"Skipping device with alias {device.alias} as it is in the duplicate alias list")
         continue
@@ -123,8 +71,8 @@ for unique_id, device in device_dict.items():
         print(f"Skipping device with alias {device.alias} as it wont respond to this multicast alias")
         continue
     alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
-    print(f"Getting product info for device with unique ID {unique_id:016X} and alias {alias_str}")
-    motor = servomotor.M3(device.alias, verbose=args.verbose)
+    print(f"Getting product info for device with unique ID {device.unique_id:016X} and alias {alias_str}")
+    motor = servomotor.M3(device.unique_id, verbose=args.verbose)
     try:
         response = motor.get_product_info()
         device.product_code = response[0]
@@ -132,8 +80,8 @@ for unique_id, device in device_dict.items():
         device.hardware_version = response[2]
         device.serial_number = response[3]
         unique_id_2 = response[4]
-        if unique_id_2 != unique_id:
-            print(f"Error: the unique ID 2 value is different from the unique ID: {unique_id_2:016X} vs {unique_id:016X}")
+        if unique_id_2 != device.unique_id:
+            print(f"Error: the unique ID 2 value is different from the unique ID: {unique_id_2:016X} vs {device.unique_id:016X}")
             print("This is a sanity check and this error should never occur")
             exit(1)
         device.unused = response[5]
@@ -154,18 +102,18 @@ for unique_id, device in device_dict.items():
 print("\nDevice report:")
 print("Unique ID        |         Alias  | Product Code   | Firmware Compatibility Code | Hardware Version   | Serial Number | Firmware Version")
 print("----------------------------------------------------------------------------------------------------------------------------------------")
-for unique_id, device in device_dict.items():
+for device in devices:
     alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
     if device.alias == 255:
-        print(f"{unique_id:016X} | {alias_str:14s} | *** Warning: No alias assigned: Cannot communicate until an alias is set ***")
+        print(f"{device.unique_id:016X} | {alias_str:14s} | *** Warning: No alias assigned: Cannot communicate until an alias is set ***")
     elif device.alias in duplicate_alias_list:
-        print(f"{unique_id:016X} | {alias_str:14s} | *** Warning: Conflicting alias: Cannot communicate until a unique alias is set ***")
+        print(f"{device.unique_id:016X} | {alias_str:14s} | *** Warning: Conflicting alias: Cannot communicate until a unique alias is set ***")
     else:
         hardware_version_str = f"{device.hardware_version[2]}.{device.hardware_version[1]}.{device.hardware_version[0]}"
         firmware_version_str = f"{device.firmware_version[3]}.{device.firmware_version[2]}.{device.firmware_version[1]}.{device.firmware_version[0]}"
-        print(f"{unique_id:016X} | {alias_str:14s} | {device.product_code:14s} | {device.firmware_compatibility_code:27d} | {hardware_version_str:18s} | {device.serial_number:13d} | {firmware_version_str:16s}")
+        print(f"{device.unique_id:016X} | {alias_str:14s} | {device.product_code:14s} | {device.firmware_compatibility_code:27d} | {hardware_version_str:18s} | {device.serial_number:13d} | {firmware_version_str:16s}")
 print("----------------------------------------------------------------------------------------------------------------------------------------")
-print(f"A total of {len(device_dict)} devices were detected")
+print(f"A total of {len(devices)} devices were detected")
 print("----------------------------------------------------------------------------------------------------------------------------------------\n")
 
 

@@ -34,7 +34,8 @@
 | `test_time_sync_multiple_devices.py`                                           | Tests time synchronization across multiple specified motors, reporting min/max error. Uses older `communication` module.                  | `communication` | Yes      | No               |
 | `test_test_mode.py`                                                            | Verifies the "Test mode" command, including invalid and fatal error scenarios. Checks for correct fatal error codes and enforces timeout behavior. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
 | `test_time_sync.py`                                                            | Tests time synchronization for a single specified motor, reporting error continuously. Uses older `communication` module.                 | `communication` | Yes      | No               |
-| `test_get_temperature.py`                                                      | Tests the "Get temperature" command by measuring temperature changes during high-power motor operation. Validates thermal protection and step-skipping detection. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
+| `test_trigger_framing_error.py`                                                | Tests framing error generation and detection by sending random bytes using 8-bit + even parity mode to trigger framing errors in devices. Verifies fatal error code 36, resets devices, and confirms error clearance. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
+| `test_get_temperature.py`                                                      | Tests the "Get temperature" command by measuring temperature changes during high-power motor operation. Displays real-time temperature, queue status, and countdown timer during testing. Validates thermal protection and step-skipping detection. Uses `servomotor` library. | `servomotor`    | No       | Yes              |
 
 ## `test_get_temperature.py`
 
@@ -48,7 +49,9 @@ This test verifies the "Get temperature" command functionality by measuring temp
 2. **High-Power Motor Operation:**
    - Configures motor for maximum current (390) and specified velocity
    - Queues single long-duration move followed by velocity=0 to prevent queue empty errors
-   - Monitors motor status for fatal errors during operation
+   - Continuously monitors motor status, queue size, and real-time temperature during operation
+   - Displays countdown timer showing estimated time remaining in current batch
+   - Displays live temperature readings alongside queue status for each motor
    - Runs motor continuously for specified duration (default: 120 seconds)
 
 3. **Final Temperature Reading:**
@@ -65,6 +68,8 @@ This test verifies the "Get temperature" command functionality by measuring temp
 - Uses simplified queue management: one long move + velocity=0 command to prevent error 18
 - Sets proper time and velocity units for easy parameter specification
 - Monitors for thermal protection events and position deviation errors
+- Displays real-time temperature and queue status during motor operation
+- Shows countdown timer with estimated time remaining based on motor run time parameter
 - Supports configurable test parameters via command line arguments
 - Provides comprehensive error handling and status reporting
 
@@ -286,3 +291,60 @@ This test script aims to verify the core functionalities of the STM32G031 bootlo
 *   **Implementation:** Uses `servomotor.communication` module functions (`send_command`, `get_response`) for packet handling, following standard test structure. Requires manual entry into bootloader mode before running.
 *   **Tests Implemented:** Basic Communication & Identification, Alias Configuration.
 *   **Current Issues:** Encountered `TimeoutError` during broadcast `DETECT_DEVICES` command, potentially due to timeout handling logic in `communication.send_command` for alias 0. Further investigation or workarounds within the test script needed. Other test sections (Firmware Upgrade, Reset, Error Handling) are placeholders.
+
+## `test_trigger_framing_error.py`
+
+This test verifies framing error generation and detection functionality by intentionally creating communication framing errors and confirming devices properly detect and report them.
+
+**Test Scenarios:**
+1. **Framing Error Generation:**
+   - Sends random bytes using 8-bit + even parity mode to create 9-bit frames
+   - This triggers framing errors in devices expecting standard 8-bit, no-parity communication
+   - Configurable transmission frequency and duration
+
+2. **Error Detection:**
+   - Queries each device using `get_status` command to check for fatal error code 36 (ERROR_FRAMING)
+   - Verifies that framing errors are properly detected and reported by the firmware
+
+3. **Error Recovery:**
+   - Resets each device individually using `system_reset` command
+   - Waits 1 second after reset for device recovery
+   - Verifies framing error is cleared (fatal error code returns to 0)
+
+**Key Implementation Details:**
+- Uses `detect_devices_iteratively` for automatic device discovery or accepts specific alias via `-a` parameter
+- Creates `M3` motor objects with proper verbose flag handling for clean output
+- Uses `verify_expected_status()` function to check for both error presence (36) and clearance (0)
+- Supports both single-device and multi-device testing modes
+- Provides comprehensive error handling and status reporting
+
+**Command-line arguments:**
+- `-p`, `--port`: Serial port device name (required unless `-P` is used)
+- `-P`, `--PORT`: Show available ports and prompt for selection
+- `-a`, `--alias`: Alias of specific device to test (if not provided, auto-detects all devices)
+- `--send-frequency`: Transmission frequency in Hz (default: 1.0)
+- `--duration`: Duration to send framing error data in seconds (default: 10.0)
+- `--verbose`: Enable verbose output showing detailed command execution
+
+**Example usage:**
+```bash
+# Test all detected devices with default settings
+python test_trigger_framing_error.py -p /dev/ttyUSB0
+
+# Test specific device with higher frequency
+python test_trigger_framing_error.py -p /dev/ttyUSB0 -a 05 --send-frequency 10 --duration 2
+
+# Verbose mode for debugging
+python test_trigger_framing_error.py -p /dev/ttyUSB0 --verbose
+```
+
+**Test Flow:**
+1. Detect devices (auto-detection or specific alias)
+2. Send framing error data using even parity serial communication
+3. For each device:
+   - Check for framing error (fatal error code 36)
+   - Reset device to clear error
+   - Verify error is cleared (fatal error code 0)
+4. Report PASSED if all devices successfully trigger and clear framing errors
+
+This test validates the firmware's ability to detect communication framing errors and recover from them properly, ensuring robust error handling in real-world deployment scenarios.

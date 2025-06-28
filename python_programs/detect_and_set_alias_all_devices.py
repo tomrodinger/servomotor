@@ -6,8 +6,9 @@ import argparse
 import time
 import zlib
 import servomotor
+from servomotor.device_detection import detect_devices_iteratively
 
-REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 3
+REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT = 4
 MIN_ALIAS = 1
 MAX_ALIAS = 253
 
@@ -18,14 +19,6 @@ def compute_crc32(data_64bit, data_8bit):
     # Compute the CRC32
     crc32_value = zlib.crc32(data_bytes)
     return crc32_value
-
-
-class Device:
-    def __init__(self, unique_id, alias):
-        self.unique_id = unique_id
-        self.alias = alias
-        self.need_to_reassign_alias = False
-        self.reassigned_alias = None
 
 
 def detect_all_devices_multiple_passes(n_passes):
@@ -96,13 +89,14 @@ motor255 = servomotor.M3(255, time_unit="seconds", position_unit="degrees",
                         verbose=args.verbose)
 servomotor.open_serial_port()
 
-device_dict = detect_all_devices_multiple_passes(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT)
+devices = detect_devices_iteratively(REQUIRED_SUCCESSFUL_DETECT_DEVICES_COUNT, verbose=args.verbose)
 
 # Let's count how many of each alias there is in all the devices and the print out a report
 print()
 alias_count = {}
-for unique_id, device in device_dict.items():
+for device in devices:
     alias = device.alias
+    unique_id = device.unique_id
     if alias in alias_count:
         alias_count[alias] += 1
     else:
@@ -116,12 +110,16 @@ for alias, count in alias_count.items():
 
 # Now, we need to check which aliases are used more than once and reassign them as necessary to avoid conflicts (and to adhere to the allowed alias range from MIN_ALIAS to MAX_ALIAS)
 valid_used_alias_list = []
-for unique_id, device in device_dict.items():
+for device in devices:
+    alias = device.alias
     if device.alias >= MIN_ALIAS and device.alias <= MAX_ALIAS and device.alias not in valid_used_alias_list:
         valid_used_alias_list.append(device.alias)
     else:
         device.need_to_reassign_alias = True
-for unique_id, device in device_dict.items():
+for device in devices:
+    alias = device.alias
+    if not hasattr(device, "need_to_reassign_alias"):
+        device.need_to_reassign_alias = False
     if device.need_to_reassign_alias:
         new_alias = find_unused_alias(valid_used_alias_list, MIN_ALIAS, MAX_ALIAS)
         valid_used_alias_list.append(new_alias)
@@ -136,33 +134,34 @@ if not reassign_aliases:
     print("                 |                 | execute the reassignments)")
 print("---------------------------------------------------------------")
 n_reassigned_aliases = 0
-for unique_id, device in device_dict.items():
+for device in devices:
     alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
-    if device.reassigned_alias is None:
+    if not hasattr(device, "reassigned_alias") or device.reassigned_alias is None:
         reassigned_alias_str = "                 "
     else:
         reassigned_alias_str = servomotor.get_human_readable_alias_or_unique_id(device.reassigned_alias)
         n_reassigned_aliases += 1
-    print(f"{unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
+    print(f"{device.unique_id:016X} | {alias_str:15s} | {reassigned_alias_str:15s}")
 print("---------------------------------------------------------------")
-print(f"A total of {len(device_dict)} devices were detected")
-print(f"and {n_reassigned_aliases} aliases were reassigned")
+print(f"A total of {len(devices)} devices were detected")
+print(f"and {n_reassigned_aliases} will be reassigned if the -r option is given")
 print("---------------------------------------------------------------\n")
 
 # Now, let's reassign the aliases (if the user has specified to do so) to the devices by running the "Set device alias" command for each device that needs to be reassigned
 if reassign_aliases:
-    for unique_id, device in device_dict.items():
-        if device.reassigned_alias is not None:
-            print(f"Reassigning the alias of the device with unique ID {unique_id:016X} from {device.alias} to {device.reassigned_alias}")
-            response = motor255.set_device_alias(device.unique_id, device.reassigned_alias)
+    for device in devices:
+        if hasattr(device, "reassigned_alias") and device.reassigned_alias is not None:
+            print(f"Reassigning the alias of the device with unique ID {device.unique_id:016X} from {device.alias} to {device.reassigned_alias}")
+            motor255.use_this_alias_or_device_id(device.unique_id)
+            response = motor255.set_device_alias(device.reassigned_alias)
             print("Response:", response)
 
 # If the user has specified to do so, then we will calibrate all the devices one by one (so as to not overload the power supply)
 failed_calibrations = {}
 if do_calibration:
     print("Calibration mode activated")
-    for unique_id, device in device_dict.items():
-        print(f"Calibrating the device with unique ID {unique_id:016X} and alias {device.alias}")
+    for device in devices:
+        print(f"Calibrating the device with unique ID {device.unique_id:016X} and alias {device.alias}")
         motor_to_calibrate = servomotor.M3(device.alias)
         response = motor_to_calibrate.start_calibration()
         print("Response from Start Calibration command:", response)
@@ -178,7 +177,15 @@ if do_calibration:
     if len(failed_calibrations) > 0:
         print("The following devices failed calibration:")
         for unique_id in failed_calibrations:
-            print(f"   Device with unique ID {unique_id:016X} and alias {device_dict[unique_id].alias}")
+            found_alias = None
+            for device in devices:
+                if device.unique_id == unique_id:
+                    found_alias = device.alias
+            if found_alias == None:
+                print(f"Error: could not find the alias for the device with unique_id {unique_id:016X}")
+                exit(1)
+            alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
+            print(f"   Device with unique ID {unique_id:016X} and alias {alias_str}")
     else:
         print("All devices were successfully calibrated")
 

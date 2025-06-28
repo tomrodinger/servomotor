@@ -31,12 +31,14 @@ static volatile uint32_t systick_previous_value;
 static uint8_t fatal_error_occurred = 0;
 static volatile uint8_t reset_requested = 0;
 
+
 static void fatal_error_systick_init(void)
 {
     SysTick->LOAD  = SYSTICK_LOAD_VALUE;       // set this timer to roll over twice per second
     SysTick->VAL   = 0;       // Load the SysTick Counter Value
     SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;  // Enable SysTick Timer
 }
+
 
 #ifdef MOTOR_SIMULATION
 #include <time.h>
@@ -47,12 +49,14 @@ static uint64_t get_monotonic_64MHz_tick(void) {
     return (uint64_t)ts.tv_sec * 64000000ULL + (uint64_t)ts.tv_nsec * 1000ULL / 15625ULL;
 }
 
+
 extern uint32_t get_updated_systick_val(void)
 {
     uint64_t current_time = get_monotonic_64MHz_tick();
     return current_time % 16000000;
 }
 #endif
+
 
 static void handle_packet(void)
 {
@@ -93,6 +97,10 @@ static void handle_packet(void)
             memcpy(&status_reply.device_status, get_device_status(), sizeof(struct device_status_struct));
             rs485_finalize_and_transmit_packet(&status_reply, sizeof(status_reply));
         }
+        break;
+    default:
+        rs485_done_with_this_packet_dont_disable_enable_irq();
+        break;
     }
 }
 
@@ -170,7 +178,7 @@ void fatal_error(uint16_t error_code)
     disable_mosfets();
     green_LED_off();
     fatal_error_systick_init();
-    rs485_init();
+//    rs485_init(); // reinitialize the UART, just in case it got corrupted. maybe don't need to do this if the risk of curruption is low.
     fatal_error_occurred = 1;
     set_device_error_code(error_code);
 
@@ -201,21 +209,9 @@ void fatal_error(uint16_t error_code)
                 #endif
             }
 //            transmit_without_interrupts(message, strlen(message));  // DEBUG commented out
-            #ifdef MOTOR_SIMULATION
-//            printf("__disable_irq() (3) g_interrupts_enabled = %hhu\n", g_interrupts_enabled);
-            #endif
-            systick_half_cycle_delay_plus_handle_commands(error_code);
-            #ifdef MOTOR_SIMULATION
-//            printf("__disable_irq() (4) g_interrupts_enabled = %hhu\n", g_interrupts_enabled);
-            #endif
-            systick_half_cycle_delay_plus_handle_commands(error_code);
-            #ifdef MOTOR_SIMULATION
-//            printf("__disable_irq() (5) g_interrupts_enabled = %hhu\n", g_interrupts_enabled);
-            #endif
-            systick_half_cycle_delay_plus_handle_commands(error_code);
-            #ifdef MOTOR_SIMULATION
-//            printf("__disable_irq() (6) g_interrupts_enabled = %hhu\n", g_interrupts_enabled);
-            #endif
+            for (uint32_t led_off_time_counter = 0; led_off_time_counter < 5; led_off_time_counter++) {
+                systick_half_cycle_delay_plus_handle_commands(error_code);
+            }
             
             #ifdef MOTOR_SIMULATION
             // Check if we should exit the fatal error state
@@ -228,6 +224,7 @@ void fatal_error(uint16_t error_code)
         }
     }
 }
+
 
 const char *get_error_text(uint16_t error_code)
 {

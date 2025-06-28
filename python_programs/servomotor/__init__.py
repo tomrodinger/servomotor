@@ -46,3 +46,6 @@ data_type_dict, command_dict = command_loader.load_data_types_and_commands(str(d
 # Import M3 class and define commands
 from .M3 import M3, define_commands
 define_commands(M3, data_type_dict, command_dict, verbose=0)
+
+# Import device detection functions
+from .device_detection import detect_devices_iteratively, Device

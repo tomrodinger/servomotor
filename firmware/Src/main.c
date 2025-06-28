@@ -67,7 +67,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 11
 #define BUGFIX_FIRMWARE_VERSION 0
-#define DEVELOPMENT_FIRMWARE_VERSION 1 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+#define DEVELOPMENT_FIRMWARE_VERSION 2 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -77,7 +77,8 @@ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION,
 extern volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
 static uint64_t my_unique_id;
-static int16_t detect_devices_delay = -1;
+static int16_t detect_devices_delay_to_answer = -1;
+static int16_t detect_devices_delay_to_reenable_packet_processing = -1;
 static uint32_t hall_sensor_n_points_to_capture = 0;
 static uint8_t hall_sensor_point_size = 0;
 static uint16_t captured_point_division_factor = 1;
@@ -154,8 +155,11 @@ void SysTick_Handler(void)
         }
     }
 
-    if(detect_devices_delay > 0) {
-        detect_devices_delay--;
+    if(detect_devices_delay_to_answer > 0) {
+        detect_devices_delay_to_answer--;
+    }
+    if(detect_devices_delay_to_reenable_packet_processing >= 0) {
+        detect_devices_delay_to_reenable_packet_processing--;
     }
 
 //    if((GPIOB->IDR & (1 << OVERVOLTAGE_PORT_B_PIN)) == 0) {
@@ -525,7 +529,8 @@ void process_packet(void)
     case DETECT_DEVICES_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
-        detect_devices_delay = get_random_number(99);
+        detect_devices_delay_to_reenable_packet_processing = 100;
+        detect_devices_delay_to_answer = get_random_number(95);
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
@@ -1351,7 +1356,7 @@ int main(void)
         #endif
 
         if(rs485_has_a_packet()) {
-            if((detect_devices_delay >= 0) || (hall_sensor_n_points_to_capture > 0)) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID. Also, if we are capturing the hall sensor data then also we will ignore commands because if there are commands then that is wrong use of the protocol.
+            if((detect_devices_delay_to_reenable_packet_processing >= 0) || (hall_sensor_n_points_to_capture > 0)) { // if a "Detect devices" has been issued then we will ignore all other commands until the delay is over and we send out the unique ID. Also, if we are capturing the hall sensor data then also we will ignore commands because if there are commands then that is wrong use of the protocol.
                 rs485_done_with_this_packet();
             }
             else {
@@ -1365,10 +1370,10 @@ int main(void)
             }
         }
 
-        if(detect_devices_delay == 0) {
+        if(detect_devices_delay_to_answer == 0) {
             print_debug_string("Transmitting unique ID\n");
             transmit_detect_devices_response();
-            detect_devices_delay--;
+            detect_devices_delay_to_answer--;
         }
 
         if(hall_sensor_n_points_to_capture > 0) {
@@ -1452,7 +1457,8 @@ int main(void)
 #ifdef MOTOR_SIMULATION
 void main_simulation_init(void)
 {
-    detect_devices_delay = -1;
+    detect_devices_delay_to_answer = -1;
+    detect_devices_delay_to_reenable_packet_processing = -1;
     green_led_action_counter = 0;
     n_identify_flashes = 0;
 

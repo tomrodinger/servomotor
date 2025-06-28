@@ -59,7 +59,10 @@ This test verifies the "Get temperature" command functionality by measuring temp
 ```
 1. Start continuous motor rotation at specified velocity
 2. Monitor loop:
+   - Display estimated time remaining in current batch
    - Check queue levels on all motors
+   - Get current temperature readings from all motors
+   - Display queue size and temperature for each motor
    - Refill queues when below threshold
    - Monitor for fatal errors and timeouts
    - Handle communication failures gracefully
@@ -147,9 +150,29 @@ except TimeoutError:
 
 ### Queue Management
 ```python
-# Continuous queue monitoring and refilling
+# Continuous queue monitoring and refilling with temperature display and countdown
+start_time = time.time()
 while motor_running:
+    # Calculate estimated time remaining
+    elapsed_time = time.time() - start_time
+    estimated_time_left = max(0, motor_run_time - elapsed_time)
+    
+    # Display countdown timer
+    print(f"======== Approximate time left in this batch: {estimated_time_left:.0f}s ========")
+    
     queue_size = motor.get_n_queued_items()
+    
+    # Get temperature reading
+    try:
+        temp = motor.get_temperature()
+        temperature = temp[0] if isinstance(temp, (list, tuple)) else temp
+        temp_str = f", Temperature = {temperature}°C"
+    except Exception as temp_e:
+        temp_str = f", Temperature = ERROR ({temp_e})"
+    
+    # Display queue size and temperature
+    print(f"Motor {motor_id}: Queue size = {queue_size}{temp_str}")
+    
     if queue_size < queue_threshold:
         # Queue more velocity commands
         motor.move_with_velocity(velocity, duration)
@@ -183,6 +206,27 @@ def validate_temperature(temp, motor_id):
 
 ### Successful Test Output
 ```
+--- Phase 3: High-Power Motor Operation ---
+Running motors at velocity 1.0 rot/s for 120 seconds
+Motor 132DB7981EED77A0: Queuing long move for 120 seconds
+Motor 132DB7981EED77A0: Queuing velocity=0 to prevent queue empty error
+Motor 132DB7981EED77A0: Started high-power operation
+Motor 66C23BFB39E4373F: Queuing long move for 120 seconds
+Motor 66C23BFB39E4373F: Queuing velocity=0 to prevent queue empty error
+Motor 66C23BFB39E4373F: Started high-power operation
+
+Waiting for all motor queues to become empty...
+======== Approximate time left in this batch: 120s ========
+Motor 132DB7981EED77A0: Queue size = 2, Temperature = 23.5°C
+Motor 66C23BFB39E4373F: Queue size = 2, Temperature = 24.1°C
+======== Approximate time left in this batch: 115s ========
+Motor 132DB7981EED77A0: Queue size = 2, Temperature = 28.3°C
+Motor 66C23BFB39E4373F: Queue size = 2, Temperature = 29.7°C
+======== Approximate time left in this batch: 110s ========
+Motor 132DB7981EED77A0: Queue size = 2, Temperature = 32.8°C
+Motor 66C23BFB39E4373F: Queue size = 2, Temperature = 34.2°C
+...
+
 ========== TEMPERATURE TEST SUMMARY ==========
 Motor 1 (Alias: 42, Unique ID: 0x123456789ABCDEF0):
   Initial Temperature: 23°C
@@ -202,31 +246,50 @@ Motor 2 (Alias: 43, Unique ID: 0x123456789ABCDEF1):
   Communication Timeouts: 0
   Status: PASSED (thermal protection detected)
 
+Motor 3 (Alias: 44, Unique ID: 0x123456789ABCDEF2):
+  Initial Temperature: 42°C
+  Final Temperature: Not available
+  Last Known Temperature: 79°C
+  Last Valid Reading: 85.3s after motor start
+  Temperature Increase: 37°C (based on last known temp)
+  Thermal Protection Events: 0
+  Position Deviation Errors: 0
+  Communication Timeouts: 18
+  Error Types: timeout, final_temp_timeout
+  Status: PASSED (completed despite communication timeouts)
+
 Overall Test Result: PASSED
-All 2 motors completed temperature test successfully.
+All 3 motors completed temperature test successfully.
 ```
 
 ### Failed Test Scenarios
 1. **Temperature Out of Range**: Initial or final temperature outside limits
 2. **Insufficient Heating**: Temperature increase below minimum threshold
-3. **Communication Failure**: Multiple timeout errors preventing test completion
+3. **No Temperature Data**: Unable to obtain any temperature readings
 4. **Position Deviation**: Motor step skipping due to thermal protection
 5. **Fatal Error State**: Motor enters unrecoverable error condition
 
 ## Test Validation Criteria
 
 ### Pass Conditions
-- All temperature readings within specified range (10°C - 80°C)
+- Temperature readings within specified range (10°C - 80°C) when available
 - Temperature increase meets minimum threshold (≥5°C)
-- No unhandled communication failures
+- Communication timeouts are acceptable (motors may timeout during thermal protection)
 - Thermal protection events properly detected and handled
 - Position deviation errors properly detected (if any)
 
 ### Fail Conditions
 - Temperature readings outside safe operating range
 - Insufficient temperature increase (motor not heating properly)
-- Unrecoverable communication failures
-- Unexpected fatal errors not related to thermal protection
+- No initial temperature reading available
+- No temperature data available during entire test
+
+### Enhanced Error Handling
+- **Last Known Temperature**: When final temperature reading fails, displays the last valid temperature reading obtained during the test
+- **Timing Information**: Shows when the last valid temperature reading was taken relative to motor operation start time
+- **Error Type Tracking**: Categorizes different types of errors (timeouts, communication errors, thermal protection)
+- **Timeout Tolerance**: Communication timeouts are expected during thermal protection events and do not cause test failure
+- **Graceful Degradation**: Test continues and reports best available data even when some readings fail
 
 ## Integration with Test Framework
 

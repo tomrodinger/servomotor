@@ -85,6 +85,7 @@ def get_response(crc32_enabled=True, verbose=2):
     # Read the first byte (size byte)
     first_byte = ser.read(1)
     if len(first_byte) != 1:
+        print(f"DEBUG: Reading the first byte failed. we got a length of {len(first_byte)}")
         raise TimeoutError("Error: timeout while reading first byte")
     if verbose >= 2:
         print(f"Read the first byte: 0x{first_byte[0]:02X}")
@@ -338,6 +339,7 @@ def send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=
             response_payload = get_response(crc32_enabled=crc32_enabled, verbose=verbose)
             all_response_payloads.append(response_payload)
         except TimeoutError:
+            print("DEBUG: It seems that a timeout occurred")
             if alias_or_unique_id == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
             if registered_commands[command_index]["MultipleResponses"] == True:  # check if this command may have any number of responses (including none)
