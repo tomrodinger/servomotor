@@ -515,10 +515,10 @@ void rs485_transmit_no_error_packet(uint8_t is_broadcast)
         return; // if the received message was a broadcasted message then we will not respond (to prevent a collision on the bus if there are multiple devices)
     }
     if (crc32_enabled) {
-        rs485_transmit(NO_ERROR_RESPONSE_CRC32_ENABLED, 7); // because this response will be use frequently, I am hard coding the extra precomputed CRC32 bytes. the above commented out code calculates the CRC32 on the fly.
+        rs485_transmit(NO_ERROR_RESPONSE_CRC32_ENABLED, sizeof(NO_ERROR_RESPONSE_CRC32_ENABLED) - 1); // because this response will be use frequently, I am hard coding the extra precomputed CRC32 bytes. the above commented out code calculates the CRC32 on the fly. subtract 1 from the size becuase we don't want to transmit the null terminator
     }
     else {
-        rs485_transmit(NO_ERROR_RESPONSE_CRC32_DISABLED, 3);
+        rs485_transmit(NO_ERROR_RESPONSE_CRC32_DISABLED, sizeof(NO_ERROR_RESPONSE_CRC32_DISABLED) - 1); // subtract 1 becuase we don't want to transmit the null terminator
     }
 }
 
