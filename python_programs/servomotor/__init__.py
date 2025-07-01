@@ -29,7 +29,8 @@ from .communication import (
     TimeoutError,
     CommunicationError,
     PayloadError,
-    NoAliasOrUniqueIdSet
+    NoAliasOrUniqueIdSet,
+    FatalError
 )
 
 # Get the absolute path to the servomotor module directory

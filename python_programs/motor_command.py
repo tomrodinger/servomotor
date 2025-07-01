@@ -61,13 +61,21 @@ try:
     parsed_response = servomotor.execute_command(args.command, args.inputs, crc32_enabled=True, verbose=verbose_level)
     print(format_success("Command executed successfully"))
 except servomotor.TimeoutError as e:
-    print(format_error(str(e)))
+    print(format_error("Timeout Error: The device did not respond"))
+    print(format_warning(
+        "This may be that your device is not connected and powered on, "
+        "or that the serial port is not correct, "
+        "or that the alias/unique ID is not correct for your target device, "
+        "or your wiring is not right"
+    ))
 except servomotor.CommunicationError as e:
     print(format_error(f"Error interpreting response: {str(e)}"))
 except servomotor.PayloadError as e:
     print(format_error(f"Error interpreting response: {str(e)}"))
 except servomotor.NoAliasOrUniqueIdSet as e:
     print(format_error(f"Error interpreting response: {str(e)}"))
+except servomotor.FatalError as e:
+    print(format_error(f"Error: the device is in a fatal error state. The error code is {e}."))
 servomotor.close_serial_port()
 exit(0)
 

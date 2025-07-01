@@ -47,6 +47,9 @@ class PayloadError(Exception):
 # by specifying it on the command line with the -a or --alias parameter
 class NoAliasOrUniqueIdSet(Exception):
     pass
+# If the device is in a fatal error state then it will return an error code and we will throw an exception and pass the error code to the user to deal with
+class FatalError(Exception):
+    pass
 
 # Encode a device ID by shifting left and setting LSB to 1
 def encode_first_byte(device_id):
@@ -85,7 +88,6 @@ def get_response(crc32_enabled=True, verbose=2):
     # Read the first byte (size byte)
     first_byte = ser.read(1)
     if len(first_byte) != 1:
-        print(f"DEBUG: Reading the first byte failed. we got a length of {len(first_byte)}")
         raise TimeoutError("Error: timeout while reading first byte")
     if verbose >= 2:
         print(f"Read the first byte: 0x{first_byte[0]:02X}")
@@ -116,6 +118,9 @@ def get_response(crc32_enabled=True, verbose=2):
     remaining_bytes = packet_size - len(size_bytes)
     if remaining_bytes <= 0:
         raise CommunicationError(f"Error: there are less bytes than expected in the response")
+
+    # If we go to this point then it guarantees that there is at least one more byte to read, but perhaps more
+
     if verbose >= 2:
         print(f"Trying to read the remaining {remaining_bytes} bytes")
     packet_data = ser.read(remaining_bytes)
@@ -131,12 +136,12 @@ def get_response(crc32_enabled=True, verbose=2):
     if len(packet_data) != remaining_bytes:
         raise CommunicationError(f"Error: received {len(packet_data)} bytes, expected {remaining_bytes}")
     
-    # Full packet for CRC calculation
-    full_packet = size_bytes + packet_data
-
     if verbose == 2:
+        full_packet = size_bytes + packet_data
         print_data("Received packet: ", full_packet, print_size=True, verbose=verbose)
-    
+
+    # At this point we have read at least one byte, but perhaps more. data is stored in packet_data
+
     # Check if first address byte is one of the response characters
     if packet_data[0] == RESPONSE_CHARACTER_CRC32_ENABLED:
         received_crc32_enabled = 1
@@ -161,24 +166,37 @@ def get_response(crc32_enabled=True, verbose=2):
         
         if calculated_crc32 != received_crc32:
             raise CommunicationError(f"CRC32 validation failed: calculated {calculated_crc32:08X}, received {received_crc32:08X}")
-        
+
         # Payload is everything after address and command bytes, but before CRC32
-        payload = packet_data[2:-4]
+        payload = packet_data[1:-4]
+
+        if not crc32_enabled:
+            print(format_warning("The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended"))
     else:
         # Payload is everything after address and command bytes
-        payload = packet_data[2:]
+        payload = packet_data[1:]
+
+        if crc32_enabled:
+            print(format_warning("The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended"))
+
+    # At this point the packet has been valiadated (if crc32 is enabled).
+    # It might be a success response, where there is nothing in the payload.
+    # It might indicate a fatal error, where the first (and probably only) byte in the bayload is the fatal error code.
+    # If bigger than one byte then the first byte should be 0, which indicates that there is no error. The rest will be the response to the command.
     
-    if verbose == 2:
-        if len(payload) == 0:
+    if len(payload) == 0:
+        if verbose == 2:
             print(format_success("This response indicates SUCCESS and has no payload"))
-        else:
-            print(format_debug("Got a valid payload:"))
+        return payload
+    else:
+        if verbose == 2:
+            print(format_debug("Got a payload:"))
             print_data("Payload: ", payload, verbose=verbose)
-    if crc32_enabled == True and received_crc32_enabled == False:
-        print(format_warning("The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended"))
-    if crc32_enabled == False and received_crc32_enabled == True:
-        print(format_warning("The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended"))
-    return payload
+        error_code = payload[0]
+        if error_code != 0:
+            raise FatalError(error_code)
+        payload = payload[1:] # delete that error code since we already checked it
+        return payload
 
 def sniffer(crc32_enabled=True):
     """Sniff RS485 traffic and decode packets according to the protocol"""
@@ -339,13 +357,12 @@ def send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=
             response_payload = get_response(crc32_enabled=crc32_enabled, verbose=verbose)
             all_response_payloads.append(response_payload)
         except TimeoutError:
-            print("DEBUG: It seems that a timeout occurred")
             if alias_or_unique_id == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
             if registered_commands[command_index]["MultipleResponses"] == True:  # check if this command may have any number of responses (including none)
                 break
             # There is no legitimate reason that we should get a timeout here, so we need to raise this Timeout error again
-            raise TimeoutError("Error: timeout")
+            raise TimeoutError
         if registered_commands[command_index]["MultipleResponses"] == False:
             break
     return all_response_payloads

@@ -1135,6 +1135,21 @@
                 "Description": "u32: Number of packet decode errors detected",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "packetDecodeErrorCount"
+            },
+            {
+                "Description": "u32: Number of framing errors detected during reception from the RS485 interface",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "framingErrorCount"
+            },
+            {
+                "Description": "u32: Number of overrun errors detected during reception from the RS485 interface",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "overrunErrorCount"
+            },
+            {
+                "Description": "u32: Number of noise errors detected during reception from the RS485 interface",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "noiseErrorCount"
             }
         ],
         "CommandGroup": "Status & Monitoring"

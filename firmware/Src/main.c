@@ -65,9 +65,9 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t major;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 11
+#define MINOR_FIRMWARE_VERSION 12
 #define BUGFIX_FIRMWARE_VERSION 0
-#define DEVELOPMENT_FIRMWARE_VERSION 2 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+#define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -223,6 +223,10 @@ void process_packet(void)
         // CRC32 validation failed, allow next command and return
         rs485_done_with_this_packet();
         return;
+    }
+
+    if (!is_broadcast) {
+        if_fatal_error_then_respond(); // set up the fatal error logic such that if a fatal error occurs during the processing of this command then we will respond back with the fatal error code
     }
 
     #ifdef MOTOR_SIMULATION
@@ -778,7 +782,7 @@ void process_packet(void)
                     uint8_t packet_size;
                     uint16_t extended_packet_size;
                     uint8_t response_character;
-                    uint8_t command;
+                    uint8_t error_code;
                     uint8_t data_type;
                 } multipurpose_data_response_header;
                 multipurpose_data_response_header.packet_size = 255; // when size is 255 then we get the actual size from the next 16 bit number (thus allowing sizes up to 65535)
@@ -791,7 +795,7 @@ void process_packet(void)
                 else {
                     multipurpose_data_response_header.response_character = RESPONSE_CHARACTER_CRC32_DISABLED;
                 }
-                multipurpose_data_response_header.command = '\x01';
+                multipurpose_data_response_header.error_code = ERROR_CODE_NO_ERROR;
                 multipurpose_data_response_header.data_type = data_type;
                 rs485_transmit(&multipurpose_data_response_header, sizeof(multipurpose_data_response_header));
                 if (rs485_is_crc32_enabled()) {
@@ -1097,6 +1101,8 @@ void process_packet(void)
         rs485_done_with_this_packet();
         break;
     }
+
+    if_fatal_error_then_dont_respond(); // we no longer need the fatal error logic to respond back with the fatal error code if we hit a fatal error, because the command was full processed and a response was sent back already
 }
 
 

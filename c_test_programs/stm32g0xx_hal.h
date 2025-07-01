@@ -341,6 +341,9 @@ void NVIC_SystemReset(void);
 #define USART_ISR_TC_Pos             (6U)
 #define USART_ISR_TC_Msk             (0x1UL << USART_ISR_TC_Pos)
 
+#define USART_ICR_FECF               (1 << 1)   // Framing error clear flag
+#define USART_ICR_NECF               (1 << 2)   // Noise error clear flag
+#define USART_ICR_ORECF              (1 << 3)   // Overrun error clear flag
 #define USART_ICR_RTOCF              (1 << 11)  // Receiver timeout clear flag
 
 #define USART_RTOR_RTO_Pos           0U         // Receiver timeout value

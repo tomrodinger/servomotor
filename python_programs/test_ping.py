@@ -28,19 +28,14 @@ def main():
     servomotor.set_serial_port_from_args(args)
     
     # Create motor instance with provided alias
-    motorX = servomotor.M3(args.alias,
-                          time_unit="seconds",
-                          position_unit="degrees",
-                          velocity_unit="degrees_per_second",
-                          acceleration_unit="degrees_per_second_squared",
-                          current_unit="milliamps",
-                          voltage_unit="volts",
-                          temperature_unit="celsius",
-                          verbose=verbose_level)
+    motor = servomotor.M3(args.alias, verbose=verbose_level)
 
     servomotor.open_serial_port()
-    motorX.system_reset()
+    motor.system_reset()
     time.sleep(1.2)
+#    servomotor.flush_receive_buffer()
+
+
 
     start_time = time.time()
     last_progress_time = start_time
@@ -53,7 +48,7 @@ def main():
             last_progress_time = current_time
         
         random_10_byte_string = generate_random_10_byte_string()
-        response = motorX.ping(random_10_byte_string)
+        response = motor.ping(random_10_byte_string)
         # Make sure the response is the same as the random 10 byte string
         if response != random_10_byte_string:
             print("Ping failed")
@@ -67,7 +62,7 @@ def main():
     print(f"Completed {N_PINGS} pings in {total_time:.2f} seconds")
 
     servomotor.close_serial_port()
-    del motorX
+    del motor
 
     print("PASSED")
 

@@ -30,6 +30,7 @@ static volatile uint32_t systick_new_value = SYSTICK_LOAD_VALUE;
 static volatile uint32_t systick_previous_value;
 static uint8_t fatal_error_occurred = 0;
 static volatile uint8_t reset_requested = 0;
+static volatile uint8_t if_fatal_error_then_respond_flag = 0;
 
 
 static void fatal_error_systick_init(void)
@@ -100,6 +101,10 @@ static void handle_packet(void)
         break;
     default:
         rs485_done_with_this_packet_dont_disable_enable_irq();
+        if(!is_broadcast && !rs485_transmit_not_done()) { // we won't transmit if already transmitting (to prevent a deadlock inside the while(transmitCount > 0); statement inside the rs485_transmit function)
+            struct device_status_struct *device_status = get_device_status();
+            rs485_transmit_error_packet(device_status->error_code); // we will send the error response (since we are in a fatal error state) in response to any command given (except the above two commands) and that will let the user know what is the error code
+        }
         break;
     }
 }
@@ -114,6 +119,11 @@ static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
             return;
         }
         #endif
+
+        if (if_fatal_error_then_respond_flag) {
+            rs485_transmit_error_packet(error_code);
+            if_fatal_error_then_respond_flag = 0;
+        }
 
         // Since interrupts are now disabled to minimize the chance of any abnormal behaviour during a fata error state,
         // we need to call the interrupt routine that handle receive and transmit over the TS485 interface manually
@@ -137,6 +147,18 @@ static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
         #endif
         systick_new_value = SysTick->VAL;
     } while ((systick_new_value < (SYSTICK_LOAD_VALUE >> 1)) == (systick_previous_value < (SYSTICK_LOAD_VALUE >> 1)));
+}
+
+
+void if_fatal_error_then_respond(void)
+{
+    if_fatal_error_then_respond_flag = 1;
+}
+
+
+void if_fatal_error_then_dont_respond(void)
+{
+    if_fatal_error_then_respond_flag = 0;
 }
 
 
@@ -257,7 +279,8 @@ void error_handling_simulator_init(void)
     systick_new_value = 0;
     fatal_error_occurred = 0;
     reset_requested = 0;
-    
+    if_fatal_error_then_respond_flag = 0;
+
     printf("After reset: fatal_error_occurred = %d\n", fatal_error_occurred);
 }
 #endif
