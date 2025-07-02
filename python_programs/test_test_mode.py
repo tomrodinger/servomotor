@@ -10,19 +10,19 @@ Test Scenarios:
 1. Invalid Test Mode Parameter:
    - Sends a test_mode value >= 72 (e.g., 255), which is not supported by the firmware.
    - Expects the device to enter the ERROR_INVALID_TEST_MODE (code 53) fatal error state.
-   - The device should NOT respond to the test_mode command (timeout is expected).
+   - The device responds with a FatalError exception containing the error code.
    - The test then calls get_status to confirm the fatal error code is set.
 
 2. Valid Test Mode Parameter (Triggers Fatal Error):
    - Randomly selects a fatal error code N in the range 0–59.
    - Sends test_mode = N + 12, which, per firmware logic, triggers fatal_error(N).
-   - The device should NOT respond to the test_mode command (timeout is expected).
+   - The device responds with a FatalError exception containing the error code.
    - The test then calls get_status to confirm the correct fatal error code is set.
 
 Key Implementation Details:
 - The test uses only the device's unique ID for all commands after initial detection, ensuring robust addressing even if the alias is 255.
 - After each fatal error is triggered, the test performs a system reset to return the device to a known state before the next scenario.
-- The test explicitly checks that a timeout occurs after sending a test_mode command that triggers a fatal error. If no timeout occurs, the test fails.
+- The test explicitly checks that a FatalError exception occurs after sending a test_mode command that triggers a fatal error. If no FatalError occurs, the test fails.
 - The test supports --bootloader and --repeat options for flexibility and repeated validation.
 - The test prints clear PASS/FAIL results and exits with code 0 on success, 1 on failure.
 
@@ -38,6 +38,7 @@ This test ensures that the "Test mode" command is robustly implemented and that 
 
 import servomotor
 from servomotor import M3
+from servomotor.communication import FatalError
 import argparse
 import time
 import sys
@@ -116,21 +117,27 @@ def test_invalid_test_mode(motor, go_to_bootloader, verbose):
     try:
         invalid_mode = 255  # >= 72 triggers ERROR_INVALID_TEST_MODE
         print(f"Sending invalid test mode: {invalid_mode}")
-        timeout_occurred = False
+        fatal_error_occurred = False
         try:
             motor.test_mode(invalid_mode)
-            time.sleep(0.1)
+            # If we reach here, the test should fail
+            raise AssertionError("FAIL: Expected a FatalError but command succeeded.")
+        except FatalError as e:
+            # Extract error code from the FatalError exception
+            error_code = e.args[0] if e.args else None
+            if error_code != ERROR_INVALID_TEST_MODE:
+                raise AssertionError(f"FAIL: Expected fatal error code {ERROR_INVALID_TEST_MODE} but got {error_code}")
+            print(f"Expected FatalError caught with error code: {error_code}")
+            fatal_error_occurred = True
         except Exception as e:
-            if "timeout" in str(e).lower():
-                print(f"Expected exception (should be a timeout) after triggering fatal error: {e}")
-                timeout_occurred = True
-            else:
-                print(f"Unexpected exception after triggering fatal error: {e}")
-                raise
-        if not timeout_occurred:
-            raise AssertionError("FAIL: Expected a timeout after triggering fatal error, but did not get one.")
+            print(f"Unexpected exception after triggering fatal error: {e}")
+            raise
+        
+        if not fatal_error_occurred:
+            raise AssertionError("FAIL: Expected a FatalError after triggering fatal error, but did not get one.")
         else:
-            print("Confirmwad that the timeout happed as expected")
+            print("Confirmed that the FatalError occurred as expected")
+        
         check_the_status(motor, go_to_bootloader, True, verbose=verbose, expected_fatal_error_code=ERROR_INVALID_TEST_MODE)
         print("PASS: Invalid test mode triggered ERROR_INVALID_TEST_MODE as expected.")
         return True
@@ -144,21 +151,27 @@ def test_random_fatal_test_mode(motor, go_to_bootloader, verbose):
         fatal_error = random.randint(0, MAX_FATAL_ERROR)
         test_mode_value = fatal_error + 12
         print(f"Sending test mode: {test_mode_value} (should trigger fatal_error {fatal_error})")
-        timeout_occurred = False
+        fatal_error_occurred = False
         try:
             motor.test_mode(test_mode_value)
-            time.sleep(0.1)
+            # If we reach here, the test should fail
+            raise AssertionError("FAIL: Expected a FatalError but command succeeded.")
+        except FatalError as e:
+            # Extract error code from the FatalError exception
+            error_code = e.args[0] if e.args else None
+            if error_code != fatal_error:
+                raise AssertionError(f"FAIL: Expected fatal error code {fatal_error} but got {error_code}")
+            print(f"Expected FatalError caught with error code: {error_code}")
+            fatal_error_occurred = True
         except Exception as e:
-            if "timeout" in str(e).lower():
-                print(f"Expected exception (should be a timeout) after triggering fatal error: {e}")
-                timeout_occurred = True
-            else:
-                print(f"Unexpected exception after triggering fatal error: {e}")
-                raise
-        if not timeout_occurred:
-            raise AssertionError("FAIL: Expected a timeout after triggering fatal error, but did not get one.")
+            print(f"Unexpected exception after triggering fatal error: {e}")
+            raise
+        
+        if not fatal_error_occurred:
+            raise AssertionError("FAIL: Expected a FatalError after triggering fatal error, but did not get one.")
         else:
-            print("Confirmwad that the timeout happed as expected")
+            print("Confirmed that the FatalError occurred as expected")
+        
         check_the_status(motor, go_to_bootloader, True, verbose=verbose, expected_fatal_error_code=fatal_error)
         print(f"PASS: Test mode {test_mode_value} triggered fatal_error {fatal_error} as expected.")
         return True

@@ -4,7 +4,8 @@ Framing Error Test Program
 
 This script sends random bytes to a serial port using 9-bit mode with even parity.
 This should trigger framing errors in devices operating in 8-bit mode.
-After sending data, it queries devices for framing errors to verify the test worked.
+After sending data, it queries devices for communication statistics to verify
+the framing error counter increased.
 """
 
 import argparse
@@ -17,44 +18,21 @@ from servomotor import M3
 from servomotor.device_detection import detect_devices_iteratively
 
 
-def verify_expected_status(motor, expected_status, verbose=False):
-    """Check if a device has the expected fatal error status code."""
-    try:
-        status = motor.get_status(verbose=verbose)
-        
-        if verbose:
-            print(f"  Raw status response: {status} (type: {type(status)})")
-        
-        if status is None:
-            print(f"Warning: No status response from device")
-            return False
-            
-        if not isinstance(status, (list, tuple)):
-            print(f"Warning: Status response is not a list/tuple: {status} (type: {type(status)})")
-            return False
-            
-        if len(status) < 2:
-            print(f"Warning: Status response too short: {status} (length: {len(status)})")
-            return False
-            
-        status_flags = status[0]
-        fatal_error_code = status[1]
-        
-        if verbose:
-            print(f"  Status flags: {status_flags}, Fatal error code: {fatal_error_code}")
-        
-        if fatal_error_code is None:
-            print(f"Warning: Fatal error code is None")
-            return False
-            
-        return fatal_error_code == expected_status
-        
-    except Exception as e:
-        print(f"Error querying device status: {e}")
-        if verbose:
-            import traceback
-            traceback.print_exc()
-        return False
+def get_framing_error_count(motor, reset_counter=0, verbose=False):
+    """Get the current framing error count from communication statistics."""
+    # Call get_communication_statistics with the specified reset_counter flag
+    stats = motor.get_communication_statistics(reset_counter, verbose=verbose)
+    
+    if verbose:
+        print(f"  Raw communication statistics response: {stats}")
+        print(f"  CRC32 errors: {stats[0]}")
+        print(f"  Packet decode errors: {stats[1]}")
+        print(f"  Framing errors: {stats[2]}")
+        print(f"  Overrun errors: {stats[3]}")
+        print(f"  Noise errors: {stats[4]}")
+    
+    # Return the framing error count (3rd element, index 2)
+    return stats[2]
 
 
 def send_framing_error_data(port, frequency, duration, verbose=False):
@@ -180,10 +158,30 @@ def main():
             # Convert to simple format for consistency
             devices = [(device.alias, device.alias) for device in detected_devices]
         
-        # Close servomotor serial port before sending framing error data
+        # Step 1: Get initial framing error counts for all devices
+        print("Getting initial framing error counts for all devices...")
+        initial_counts = {}
+        
+        for i, device_info in enumerate(devices, 1):
+            if isinstance(device_info, tuple) and len(device_info) >= 2:
+                alias_or_unique_id, _ = device_info
+            else:
+                alias_or_unique_id = device_info
+                
+            alias_str = servomotor.get_human_readable_alias_or_unique_id(alias_or_unique_id)
+            print(f"Getting initial count for device {i}/{len(devices)} (Alias: {alias_str})...")
+            
+            # Create motor object for this device
+            motor = M3(alias_or_unique_id, verbose=args.verbose)
+            
+            initial_count = get_framing_error_count(motor, verbose=args.verbose)
+            print(f"  Initial framing error count: {initial_count}")
+            initial_counts[alias_or_unique_id] = initial_count
+        
+        # Step 2: Close servomotor serial port before sending framing error data
         servomotor.close_serial_port()
         
-        # Send framing error data using the same port
+        # Step 3: Send framing error data using the same port
         port_name = args.port if args.port else servomotor.communication.serial_port_name
         success = send_framing_error_data(port_name, args.send_frequency, args.duration, args.verbose)
         
@@ -191,13 +189,13 @@ def main():
             print("Failed to send framing error data")
             sys.exit(1)
         
-        # Reopen servomotor serial port to check for errors
+        # Step 4: Reopen servomotor serial port to check for errors
         servomotor.open_serial_port()
         
-        # Check for framing errors
-        print("Checking devices for framing errors...")
+        # Step 5: Check for framing error count increases
+        print("Checking devices for framing error count increases...")
         
-        devices_with_errors = 0
+        devices_with_increased_errors = 0
         total_devices = len(devices)
         
         for i, device_info in enumerate(devices, 1):
@@ -209,53 +207,36 @@ def main():
             alias_str = servomotor.get_human_readable_alias_or_unique_id(alias_or_unique_id)
             print(f"Checking device {i}/{total_devices} (Alias: {alias_str})...")
             
+            initial_count = initial_counts[alias_or_unique_id]
+            
             # Create motor object for this device
             motor = M3(alias_or_unique_id, verbose=args.verbose)
             
-            # Step 1: Check for framing error (fatal error code 36)
-            try:
-                has_framing_error = verify_expected_status(motor, 36, verbose=args.verbose)
-            except Exception as e:
-                print(f"Exception in verify_expected_status: {e}")
-                import traceback
-                traceback.print_exc()
-                has_framing_error = False
+            # Get final framing error count and reset counters
+            print(f"  Getting final framing error count and resetting counters...")
+            final_count = get_framing_error_count(motor, reset_counter=1, verbose=args.verbose)
+            print(f"  Final framing error count: {final_count}")
+            print(f"  ✓ Communication statistics counters reset")
             
-            if has_framing_error:
-                print(f"  ✓ Device has framing error (fatal error code 36)")
-                devices_with_errors += 1
+            # Check if framing error count increased
+            error_increase = final_count - initial_count
+            if error_increase > 0:
+                print(f"  ✓ Framing error count increased by {error_increase} (from {initial_count} to {final_count})")
+                devices_with_increased_errors += 1
                 
-                # Step 2: Reset the device to clear the framing error
-                print(f"  Resetting device to clear framing error...")
-                try:
-                    motor.system_reset(verbose=args.verbose)
-                    time.sleep(1.0)  # Wait 1 second after reset
-                    
-                    # Step 3: Verify the framing error was cleared (status should be 0)
-                    print(f"  Verifying framing error was cleared...")
-                    status_cleared = verify_expected_status(motor, 0, verbose=args.verbose)
-                    
-                    if status_cleared:
-                        print(f"  ✓ Framing error successfully cleared (fatal error code 0)")
-                    else:
-                        print(f"  ✗ Framing error was NOT cleared properly")
-                        devices_with_errors -= 1  # Don't count this as a success
-                        
-                except Exception as e:
-                    print(f"  ✗ Error during reset/verification: {e}")
-                    devices_with_errors -= 1  # Don't count this as a success
+                # Verify that counters were reset by reading them again
+                print(f"  Verifying counters are reset to 0...")
+                post_reset_count = get_framing_error_count(motor, reset_counter=0, verbose=args.verbose)
+                if post_reset_count == 0:
+                    print(f"  ✓ Framing error counter successfully reset to 0")
+                else:
+                    print(f"  ✗ Framing error counter was NOT reset to 0: {post_reset_count}")
+                    devices_with_increased_errors -= 1  # Don't count this as a success
             else:
-                print(f"  ✗ Device does NOT have framing error")
+                print(f"  ✗ Framing error count did NOT increase (from {initial_count} to {final_count})")
         
-        print(f"\nResults: {devices_with_errors}/{total_devices} devices successfully triggered and cleared framing errors")
-        
-        if devices_with_errors == total_devices and total_devices > 0:
-            print("PASSED")
-            return 0
-        else:
-            print("FAILED")
-            return 1
-        
+        print(f"\nResults: {devices_with_increased_errors}/{total_devices} devices successfully detected framing error count increases")
+                
     except Exception as e:
         print(f"Error during test: {e}")
         import traceback
@@ -266,6 +247,12 @@ def main():
         # Close serial port
         servomotor.close_serial_port()
 
+    if devices_with_increased_errors == total_devices and total_devices > 0:
+        print("PASSED")
+        return 0
+    else:
+        print("FAILED")
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
