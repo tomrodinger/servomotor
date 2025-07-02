@@ -132,3 +132,9 @@
       description: Firmware for the servomotor model M3
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.11.0.1_scc3_hw1.3.firmware
       sha256: 4efa761edb1f6337da95eed12d4ba78fd727c98d0487c39e6eddbb9f083282f6
+    - version: 0.12.0.0
+      compatibility: 3
+      date: July 2, 2025
+      description: Firmware for the servomotor model M3
+      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.12.0.0_scc3_hw1.3.firmware
+      sha256: dea721652cec3d5684bcfaa999c7f371926dc2a224e210119199dd5080b798b3
