@@ -14,6 +14,7 @@ Requirements:
 
 import servomotor
 from servomotor import M3
+from servomotor.communication import FatalError
 import argparse
 import random
 import time
@@ -43,7 +44,7 @@ def check_the_status(motor, alias_to_set, go_to_bootloader, expect_fatal_error, 
             assert in_bootloader, "Device is NOT in bootloader mode after reset, which is unexpected"
             print("Device is in bootloader mode after reset, which is correct")
         else:
-            assert not in_bootloader, "Device IS in bootloader mode after reset, which is unexpected"
+            assert not in_bootloader, "Device is in bootloader mode after reset, which is unexpected"
             print("Device is not in bootloader mode, which is correct")
 
         if expect_fatal_error:
@@ -96,13 +97,22 @@ def test_set_device_alias(motor, current_alias, alias_to_set, expect_fatal_error
             print(f"Calling set_device_alias({alias_to_set})")
             ret = motor.set_device_alias(alias_to_set)
             print(f"set_device_alias({alias_to_set}) returned: {ret}")
-        except Exception as e:
-            # Timeout is only expected for set_device_alias when expect_fatal_error is True
-            if "timeout" in str(e).lower() and expect_fatal_error:
-                print(f"Set alias to {alias_to_set} timed out as expected for invalid alias.")
+            # If we reach here and expect_fatal_error is True, the test should fail
+            if expect_fatal_error:
+                raise AssertionError("FAIL: Expected a FatalError but command succeeded.")
+        except FatalError as e:
+            # Extract error code from the FatalError exception
+            error_code = e.args[0] if e.args else None
+            if expect_fatal_error:
+                if error_code != ERROR_BAD_ALIAS:
+                    raise AssertionError(f"FAIL: Expected fatal error code {ERROR_BAD_ALIAS} but got {error_code}")
+                print(f"Expected FatalError caught with error code: {error_code}")
             else:
-                print(f"set_device_alias({alias_to_set}) exception: {e}")
+                print(f"Unexpected FatalError when setting alias {alias_to_set}: error code {error_code}")
                 raise
+        except Exception as e:
+            print(f"set_device_alias({alias_to_set}) exception: {e}")
+            raise
 
         if expect_fatal_error:
             print("Sleeping for 0.1s after setting invalid alias before get_status.")

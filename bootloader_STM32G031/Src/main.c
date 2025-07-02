@@ -31,7 +31,8 @@ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION,
 extern uint32_t USART1_timout_timer;
 
 static uint64_t my_unique_id;
-static int16_t detect_devices_delay = -1;
+static int16_t detect_devices_delay_to_answer = -1;
+static int16_t detect_devices_delay_to_reenable_packet_processing = -1;
 
 #define LAUNCH_APPLICATION_DELAY 25 // It was empirically determined that the minimum delay here is 12 (120ms), otherwise firmware upgrade will not work. For a lot of margin, setting this to 250ms
 static int32_t launch_applicaiton = -1;
@@ -82,8 +83,11 @@ void SysTick_Handler(void)
         toggle_counter = 0;
     }
 
-    if(detect_devices_delay > 0) {
-        detect_devices_delay--;
+    if(detect_devices_delay_to_answer > 0) {
+        detect_devices_delay_to_answer--;
+    }
+    if(detect_devices_delay_to_reenable_packet_processing >= 0) {
+        detect_devices_delay_to_reenable_packet_processing--;
     }
 
     if(launch_applicaiton > 0) {
@@ -126,6 +130,10 @@ void process_packet(void)
         return;
     }
 
+    if (!is_broadcast) {
+        if_fatal_error_then_respond(); // set up the fatal error logic such that if a fatal error occurs during the processing of this command then we will respond back with the fatal error code
+    }
+
     launch_applicaiton = -1; // cancel the launching of the apllicaiton in case it is pending so that we can upload a new firmware
 
     switch(command) {
@@ -145,7 +153,8 @@ void process_packet(void)
     case DETECT_DEVICES_COMMAND:
         check_payload_size_is_zero(payload_size);
         rs485_done_with_this_packet();
-        detect_devices_delay = get_random_number(99);
+        detect_devices_delay_to_reenable_packet_processing = 100;
+        detect_devices_delay_to_answer = get_random_number(95);
         break;
     case SET_DEVICE_ALIAS_COMMAND:
         {
@@ -258,6 +267,8 @@ void process_packet(void)
         rs485_done_with_this_packet();
         break;
     }
+
+    if_fatal_error_then_dont_respond(); // we no longer need the fatal error logic to respond back with the fatal error code if we hit a fatal error, because the command was full processed and a response was sent back already
 }
 
 void transmit_detect_devices_response(void)
@@ -357,7 +368,7 @@ int main(void)
 
     while(1) {
         if(rs485_has_a_packet()) {
-            if(detect_devices_delay >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
+            if(detect_devices_delay_to_reenable_packet_processing >= 0) { // if a DETECT_DEVICES_COMMAND has been issued then we will ignore all other commands until the delay is over and we send out the unique ID
                 rs485_done_with_this_packet();
             }
             else {
@@ -365,9 +376,9 @@ int main(void)
             }
         }
 
-        if(detect_devices_delay == 0) {
+        if(detect_devices_delay_to_answer == 0) {
             transmit_detect_devices_response();
-            detect_devices_delay--;
+            detect_devices_delay_to_answer--;
         }
 
         if(launch_applicaiton == 0) {
