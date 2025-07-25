@@ -49,6 +49,7 @@ static volatile uint8_t receiveBufferOverflow;
 static uint8_t crc32_enabled = 1;
 static uint32_t crc32_error_count = 0;
 static uint32_t packet_decode_error_count = 0;
+static uint32_t first_bit_error_count = 0;
 static uint32_t framing_error_count = 0;
 static uint32_t overrun_error_count = 0;
 static uint32_t noise_error_count = 0;
@@ -180,6 +181,7 @@ rs485_error_statistics_t rs485_get_error_statistics_and_optionally_reset(uint8_t
     rs485_error_statistics_t stats = {
         .crc32_error_count = crc32_error_count,
         .packet_decode_error_count = packet_decode_error_count,
+        .first_bit_error_count = first_bit_error_count,
         .framing_error_count = framing_error_count,
         .overrun_error_count = overrun_error_count,
         .noise_error_count = noise_error_count
@@ -188,6 +190,7 @@ rs485_error_statistics_t rs485_get_error_statistics_and_optionally_reset(uint8_t
     if (reset) {
         crc32_error_count = 0;
         packet_decode_error_count = 0;
+        first_bit_error_count = 0;
         framing_error_count = 0;
         overrun_error_count = 0;
         noise_error_count = 0;
@@ -396,6 +399,7 @@ void USART1_IRQHandler(void)
             if (receiveIndex == 0) {
                 if(!is_valid_first_byte_format(receivedByte)) {
                     firstByteInvalid = 1;
+                    first_bit_error_count++;
                 }
                 receivePacketSize = decode_first_byte(receivedByte);
                 receiveBufferOverflow = 0;
@@ -651,6 +655,7 @@ void RS485_simulator_init(void)
     crc32_enabled = 1;
     crc32_error_count = 0;
     packet_decode_error_count = 0;
+    first_bit_error_count = 0;
     framing_error_count = 0;
     overrun_error_count = 0;
     noise_error_count = 0;

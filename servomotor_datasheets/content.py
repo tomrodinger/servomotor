@@ -86,7 +86,7 @@ def add_unit_system(story, style):
     elements.append(Spacer(1, 4))  # Reduced spacing
     
     elements.append(Paragraph(
-        'The M3 Series Servomotors have certain internal units so that they can perform the calculations '
+        'The M17 Series Servomotors have certain internal units so that they can perform the calculations '
         'associated with motion efficiently (using integer math). It is the responsibility of the controlling '
         'software to support multiple units of measurement for various quantities. Our Python library handles '
         'unit conversions automatically, allowing you to work with your preferred units. Below are the supported '
@@ -156,7 +156,7 @@ def add_getting_started_section(story, style):
     story.append(Paragraph('Getting Started Guide', create_heading_style()))
     
     story.append(Paragraph(
-        'To help you get started with your M3 Series Servomotor, we provide a comprehensive online guide '
+        'To help you get started with your M17 Series Servomotor, we provide a comprehensive online guide '
         'that covers everything from initial setup to advanced protocol implementations. This guide includes:',
         style
     ))

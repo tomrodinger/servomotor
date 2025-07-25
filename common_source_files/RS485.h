@@ -49,6 +49,7 @@ static inline uint8_t is_valid_first_byte_format(uint8_t encoded_first_byte) {
 typedef struct {
     uint32_t crc32_error_count;
     uint32_t packet_decode_error_count;
+    uint32_t first_bit_error_count;
     uint32_t framing_error_count;
     uint32_t overrun_error_count;
     uint32_t noise_error_count;

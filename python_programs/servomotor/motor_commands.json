@@ -1137,6 +1137,11 @@
                 "ParameterName": "packetDecodeErrorCount"
             },
             {
+                "Description": "u32: Number of times that the first bit in the first byte of a packet was not 1 as expected",
+                "TooltipDisplayFormat": "%u",
+                "ParameterName": "firstBitErrorCount"
+            },
+            {
                 "Description": "u32: Number of framing errors detected during reception from the RS485 interface",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "framingErrorCount"

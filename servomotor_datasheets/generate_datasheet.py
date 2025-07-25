@@ -94,7 +94,7 @@ def generate_pdf():
     normal_style = create_normal_style()
     
     # Add title
-    story.append(Paragraph('M3 Series Servomotors - DATASHEET', title_style))
+    story.append(Paragraph('M17 Series Servomotors - DATASHEET', title_style))
     story.append(Spacer(1, 3))
     
     # Add logo

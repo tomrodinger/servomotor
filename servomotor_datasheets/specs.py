@@ -18,8 +18,8 @@ def add_technical_specs(story, style):
     elements.append(Spacer(1, 6))  # Reduced spacing
     
     data = [
-        ['Parameter', 'M3-60', 'M3-48', 'M3-40'],
-        ['Operating Voltage', '12-30V', '12-30V', '12-30V'],
+        ['Parameter', 'M17-60', 'M17-48', 'M17-40'],
+        ['Operating Voltage', '12-24V', '12-24V', '12-24V'],
         ['Rated Torque', '0.65 N.m', '0.55 N.m', '0.42 N.m'],
         ['Maximum Speed', '560 RPM', '560 RPM', '560 RPM'],
         ['Maximum Current', '1.1A', '1.1A', '1.1A'],
@@ -44,7 +44,7 @@ def add_mechanical_specs(story, style):
     elements.append(Spacer(1, 2))  # Minimal spacing after heading
     
     data = [
-        ['Parameter', 'M3-60', 'M3-48', 'M3-40'],
+        ['Parameter', 'M17-60', 'M17-48', 'M17-40'],
         ['Dimensions (LxW)', '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm'],
         ['Height', '59.8 mm', '48.6 mm', '41.6 mm'],
         ['Shaft Length', '20.4 mm', '20.4 mm', '18.5 mm'],
