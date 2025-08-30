@@ -88,7 +88,7 @@ def add_unit_system(story, style):
     elements.append(Paragraph(
         'The M17 Series Servomotors have certain internal units so that they can perform the calculations '
         'associated with motion efficiently (using integer math). It is the responsibility of the controlling '
-        'software to support multiple units of measurement for various quantities. Our Python library handles '
+        'software to support multiple units of measurement for various quantities. Our Python and Arduino libraries handle '
         'unit conversions automatically, allowing you to work with your preferred units. Below are the supported '
         'units for each quantity:', style))
     elements.append(Spacer(1, 4))  # Reduced spacing

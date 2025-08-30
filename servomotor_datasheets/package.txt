@@ -1,7 +1,7 @@
 NEMA 17 Servomotor Specifications
 
 Common specifications across all models:
-- Voltage range: 12-30V
+- Voltage range: 12-24V
 - Maximum Speed: 560 RPM
 - Maximum Current: 1.1A
 - Dimensions (LxW): 42.2 x 42.2 mm
