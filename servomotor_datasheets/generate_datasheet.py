@@ -19,6 +19,8 @@ from company_info import add_company_info
 from versioning import add_version_info, get_latest_version
 from open_source import add_open_source_section
 from indicators import add_indicators_section
+from python_library import add_python_library_section
+from arduino_library import add_arduino_library_section
 
 def firstPage(canvas, doc):
     """First page has no footer"""
@@ -126,6 +128,8 @@ def generate_pdf():
         add_indicators_section(story, normal_style)
         add_all_protocol(story, normal_style)
         add_all_specs(story, normal_style)
+        add_python_library_section(story, normal_style)
+        add_arduino_library_section(story, normal_style)
         add_company_info(story, normal_style)
         add_open_source_section(story, normal_style)
         add_version_info(story, normal_style)
