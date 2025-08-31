@@ -1,6 +1,6 @@
 # Servomotor Python API Documentation
 
-Generated: 2025-08-31 10:58:50
+Generated: 2025-08-31 12:15:11
 
 ## Latest Firmware Versions
 
