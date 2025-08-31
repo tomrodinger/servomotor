@@ -1,0 +1,50 @@
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE Files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+.Spotlight-V100
+.Trashes
+
+# Logs and Temporary Files
+*.log
+*.tmp
+*.temp
+.cache/
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation build files
+docs/_build/
