@@ -325,8 +325,93 @@ class APIDocumentationGenerator:
         return '\n'.join(example_lines)
     
     def generate_markdown(self):
-        """Generate Markdown documentation"""
-        print("\nGenerating Markdown documentation...")
+        """Generate both Python and Arduino Markdown documentation"""
+        # Generate Python documentation
+        self.generate_python_markdown()
+        # Generate Arduino documentation
+        self.generate_arduino_markdown()
+        return True
+    
+    def generate_arduino_example(self, command):
+        """Generate Arduino code example for a command - simplified without Serial output"""
+        cmd_string = command['CommandString']
+        method_name = ''.join(word.capitalize() if i > 0 else word.lower()
+                             for i, word in enumerate(cmd_string.split()))
+        
+        example_lines = []
+        example_lines.append(f"// {cmd_string}")
+        
+        # Handle input parameters - declare variables
+        param_names = []
+        if command['Input'] and command['Input'] != "null":
+            for param in command['Input']:
+                param_name = param.get('ParameterName', 'value')
+                param_desc = param.get('Description', '')
+                
+                # Determine data type and value based on description
+                if 'float' in param_desc.lower() or 'f32' in param_desc:
+                    data_type = "float"
+                    default_value = "10.0"
+                    if 'velocity' in param_name.lower():
+                        default_value = "2.0"
+                    elif 'acceleration' in param_name.lower():
+                        default_value = "4.0"
+                    elif 'time' in param_name.lower() or 'duration' in param_name.lower():
+                        default_value = "3.0"
+                elif 'bool' in param_desc.lower():
+                    data_type = "bool"
+                    default_value = "true"
+                elif 'u32' in param_desc or 'uint32' in param_desc.lower():
+                    data_type = "uint32_t"
+                    default_value = "1000"
+                elif 'i32' in param_desc or 'int32' in param_desc.lower():
+                    data_type = "int32_t"
+                    default_value = "1000"
+                elif 'u16' in param_desc or 'uint16' in param_desc.lower():
+                    data_type = "uint16_t"
+                    default_value = "100"
+                elif 'i16' in param_desc or 'int16' in param_desc.lower():
+                    data_type = "int16_t"
+                    default_value = "100"
+                elif 'u8' in param_desc or 'uint8' in param_desc.lower():
+                    data_type = "uint8_t"
+                    default_value = "1"
+                elif 'i8' in param_desc or 'int8' in param_desc.lower():
+                    data_type = "int8_t"
+                    default_value = "1"
+                else:
+                    data_type = "float"
+                    default_value = "0"
+                
+                example_lines.append(f"{data_type} {param_name} = {default_value};")
+                param_names.append(param_name)
+            
+            if param_names:
+                example_lines.append("")
+        
+        # Handle the function call and return values
+        if command['Output'] and command['Output'] != "success_response":
+            # Command returns values - Always returns a structure in Arduino
+            # Structure name is based on method name + Response
+            struct_name = f"{method_name}Response"
+            
+            # Instantiate the structure and call the function
+            if param_names:
+                example_lines.append(f"{struct_name} response = motor.{method_name}({', '.join(param_names)});")
+            else:
+                example_lines.append(f"{struct_name} response = motor.{method_name}();")
+        else:
+            # Command doesn't return values (just success response)
+            if param_names:
+                example_lines.append(f"motor.{method_name}({', '.join(param_names)});")
+            else:
+                example_lines.append(f"motor.{method_name}();")
+        
+        return '\n'.join(example_lines)
+    
+    def generate_python_markdown(self):
+        """Generate Python Markdown documentation"""
+        print("\nGenerating Python Markdown documentation...")
         
         md_content = []
         md_content.append("# Servomotor Python API Documentation\n")
@@ -567,12 +652,265 @@ class APIDocumentationGenerator:
         else:
             md_content.append("Error codes not available.\n")
         
-        # Write to file - one directory level up
-        output_file = "../servomotor_api_documentation.md"
+        # Write to file in parent directory
+        output_file = "../M17_servomotor_Python_API_documentation.md"
         with open(output_file, 'w') as f:
             f.write('\n'.join(md_content))
         
-        print(f"✓ Generated Markdown documentation: {output_file}")
+        print(f"✓ Generated Python Markdown documentation: {output_file}")
+        return True
+    def generate_data_types_for_pdf(self, story, doc, heading_style, normal_style):
+        """Generate Data Types section for PDF - shared by Python and Arduino"""
+        story.append(Paragraph('Data Types', heading_style))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph('This section describes the various data types used in the Servomotor API commands.', normal_style))
+        story.append(Spacer(1, 12))
+        
+        # Separate integer and non-integer types
+        integer_types = [dt for dt in self.data_types if dt.get('is_integer', False)]
+        special_types = [dt for dt in self.data_types if not dt.get('is_integer', False)]
+        
+        # Integer Data Types
+        story.append(Paragraph('<b>Integer Data Types</b>', heading_style))
+        story.append(Spacer(1, 8))
+        
+        # Create style for table cells
+        table_cell_style = ParagraphStyle(
+            'TableCell',
+            parent=normal_style,
+            fontSize=9,
+            leading=11
+        )
+        
+        table_header_style = ParagraphStyle(
+            'TableHeader',
+            parent=normal_style,
+            fontSize=10,
+            fontName='Helvetica-Bold',
+            textColor=colors.whitesmoke
+        )
+        
+        # Create table for integer types
+        int_table_data = [[
+            Paragraph('Type', table_header_style),
+            Paragraph('Size (bytes)', table_header_style),
+            Paragraph('Range', table_header_style),
+            Paragraph('Description', table_header_style)
+        ]]
+        
+        for dt in integer_types:
+            min_val = dt.get('min_value', 'N/A')
+            max_val = dt.get('max_value', 'N/A')
+            if min_val != 'N/A' and max_val != 'N/A':
+                range_str = f"{min_val:,} to {max_val:,}"
+            else:
+                range_str = "N/A"
+            
+            int_table_data.append([
+                Paragraph(dt['data_type'], table_cell_style),
+                Paragraph(str(dt['size']), table_cell_style),
+                Paragraph(range_str, table_cell_style),
+                Paragraph(dt['description'], table_cell_style)
+            ])
+        
+        int_table = Table(int_table_data, colWidths=[50, 50, 100, doc.width - 200])
+        int_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34a853')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BOX', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(int_table)
+        story.append(Spacer(1, 12))
+        
+        # Special Data Types
+        story.append(Paragraph('<b>Special Data Types</b>', heading_style))
+        story.append(Spacer(1, 8))
+        
+        # Create table for special types
+        special_table_data = [[
+            Paragraph('Type', table_header_style),
+            Paragraph('Size (bytes)', table_header_style),
+            Paragraph('Description', table_header_style)
+        ]]
+        
+        for dt in special_types:
+            size = dt.get('size', 'Variable')
+            if size is None:
+                size = 'Variable'
+            
+            special_table_data.append([
+                Paragraph(dt['data_type'], table_cell_style),
+                Paragraph(str(size), table_cell_style),
+                Paragraph(dt['description'], table_cell_style)
+            ])
+        
+        special_table = Table(special_table_data, colWidths=[70, 60, doc.width - 130])
+        special_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34a853')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BOX', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        story.append(special_table)
+        story.append(Spacer(1, 12))
+    
+    
+    def generate_arduino_markdown(self):
+        """Generate Arduino Markdown documentation"""
+        print("\nGenerating Arduino Markdown documentation...")
+        
+        md_content = []
+        md_content.append("# Servomotor Arduino API Documentation\n")
+        md_content.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        
+        # Add firmware information if available
+        if self.latest_firmware:
+            md_content.append("## Latest Firmware Versions\n")
+            md_content.append("At the time of generating this API reference, the latest released firmware versions for the servomotors are:\n")
+            for model, firmware_file in sorted(self.latest_firmware.items()):
+                md_content.append(f"- **{model}**: `{firmware_file}`\n")
+            md_content.append("\nIf you are experiencing problems, you can try to set the firmware of your product to this version and try again.\n")
+        
+        # Table of Contents
+        md_content.append("## Table of Contents\n")
+        md_content.append("1. [Getting Started](#getting-started)")
+        md_content.append("2. [Data Types](#data-types)")
+        md_content.append("3. [Command Reference](#command-reference)")
+        toc_index = 4
+        for group in sorted(self.commands_by_group.keys()):
+            anchor = group.lower().replace(' ', '-').replace('&', 'and')
+            md_content.append(f"{toc_index}. [{group}](#{anchor})")
+            toc_index += 1
+        md_content.append(f"{toc_index}. [Error Handling](#error-handling)")
+        toc_index += 1
+        md_content.append(f"{toc_index}. [Error Codes](#error-codes)\n")
+        
+        # Getting Started Section
+        md_content.append("## Getting Started\n")
+        md_content.append("This section provides a complete example showing how to control a servomotor with Arduino.\n")
+        md_content.append("### Trapezoid Move Example\n")
+        md_content.append("```cpp")
+        
+        # Read and include the Arduino example file
+        try:
+            with open('arduino_library_example.cpp', 'r') as f:
+                example_code = f.read()
+            md_content.append(example_code)
+        except FileNotFoundError:
+            md_content.append("// Example file arduino_library_example.cpp not found")
+        
+        md_content.append("```\n")
+        
+        # Data Types Section
+        md_content.append("## Data Types\n")
+        md_content.append("This section describes the various data types used in the Servomotor Arduino API.\n")
+        
+        # Add data types information if loaded
+        if self.data_types:
+            # Separate integer and non-integer types
+            integer_types = [dt for dt in self.data_types if dt.get('is_integer', False)]
+            special_types = [dt for dt in self.data_types if not dt.get('is_integer', False)]
+            
+            md_content.append("### Integer Data Types\n")
+            md_content.append("| Type | Size (bytes) | Range | Description |")
+            md_content.append("|------|--------------|-------|-------------|")
+            for dt in integer_types:
+                min_val = dt.get('min_value', 'N/A')
+                max_val = dt.get('max_value', 'N/A')
+                if min_val != 'N/A' and max_val != 'N/A':
+                    range_str = f"{min_val:,} to {max_val:,}"
+                else:
+                    range_str = "N/A"
+                md_content.append(f"| {dt['data_type']} | {dt['size']} | {range_str} | {dt['description']} |")
+            md_content.append("")
+            
+            md_content.append("### Special Data Types\n")
+            md_content.append("| Type | Size (bytes) | Description |")
+            md_content.append("|------|--------------|-------------|")
+            for dt in special_types:
+                size = dt.get('size', 'Variable')
+                if size is None:
+                    size = 'Variable'
+                md_content.append(f"| {dt['data_type']} | {size} | {dt['description']} |")
+            md_content.append("")
+        
+        # Command Reference
+        md_content.append("## Command Reference\n")
+        md_content.append("This section documents all available commands organized by category.\n")
+        
+        # Generate commands by group for Arduino
+        for group in sorted(self.commands_by_group.keys()):
+            md_content.append(f"### {group}\n")
+            
+            for cmd in self.commands_by_group[group]:
+                # Command name
+                md_content.append(f"#### {cmd['CommandString']}\n")
+                
+                # Description
+                md_content.append(f"**Description:** {cmd['Description']}\n")
+                
+                # Parameters
+                if cmd['Input']:
+                    md_content.append("**Parameters:**")
+                    for param in cmd['Input']:
+                        param_desc = param.get('Description', 'No description')
+                        param_name = param.get('ParameterName', 'parameter')
+                        md_content.append(f"- `{param_name}`: {param_desc}")
+                    md_content.append("")
+                
+                # Return values
+                if cmd['Output'] and cmd['Output'] != "success_response":
+                    if isinstance(cmd['Output'], list):
+                        md_content.append("**Returns:**")
+                        for output in cmd['Output']:
+                            out_name = output.get('ParameterName', 'unknown')
+                            out_desc = output.get('Description', 'No description')
+                            md_content.append(f"- `{out_name}`: {out_desc}")
+                        md_content.append("")
+                
+                # Arduino example - use the proper generator function
+                md_content.append("**Example:**")
+                md_content.append("```cpp")
+                example_code = self.generate_arduino_example(cmd)
+                md_content.append(example_code)
+                md_content.append("```\n")
+        
+        # Error Handling Section
+        md_content.append("## Error Handling\n")
+        if hasattr(self, 'error_handling_text'):
+            for paragraph in self.error_handling_text.split('\n'):
+                if paragraph.strip():
+                    md_content.append(paragraph)
+            md_content.append("")
+        else:
+            md_content.append("Error handling description not available.\n")
+        
+        # Error Codes Section
+        md_content.append("## Error Codes\n")
+        md_content.append("This section lists all possible error codes that can be returned by the servomotor.\n")
+        
+        if self.error_codes:
+            md_content.append("| Code | Enum | Description |")
+            md_content.append("|------|------|-------------|")
+            for error in self.error_codes:
+                if error['code'] == 0:  # Skip ERROR_NONE
+                    continue
+                md_content.append(f"| {error['code']} | {error['enum']} | {error['long_desc']} |")
+            md_content.append("")
+        
+        # Write to file in parent directory
+        output_file = "../M17_servomotor_Arduino_API_documentation.md"
+        with open(output_file, 'w') as f:
+            f.write('\n'.join(md_content))
+        
+        print(f"✓ Generated Arduino Markdown documentation: {output_file}")
         return True
     
     class CodeBox(Flowable):
@@ -610,13 +948,21 @@ class APIDocumentationGenerator:
             self.canv.drawText(text_obj)
     
     def generate_pdf(self):
-        """Generate PDF documentation"""
-        print("\nGenerating PDF documentation...")
+        """Generate both Python and Arduino PDF documentation"""
+        # Generate Python documentation
+        self.generate_python_pdf()
+        # Generate Arduino documentation
+        self.generate_arduino_pdf()
+        return True
+    
+    def generate_python_pdf(self):
+        """Generate Python PDF documentation"""
+        print("\nGenerating Python PDF documentation...")
         
-        # Get version info for document content (not for filename)
+        # Get version info for document content
         version, date_str = get_latest_version()
-        # Simple filename without version/date
-        output_filename = '../servomotor_api_documentation.pdf'
+        # Use the specified filename format in parent directory
+        output_filename = '../M17_servomotor_Python_API_documentation.pdf'
         
         # Create PDF document
         doc = SimpleDocTemplate(
@@ -802,105 +1148,8 @@ pip install -r requirements.txt"""
         
         story.append(PageBreak())
         
-        # Data Types Section
-        story.append(Paragraph('Data Types', heading_style))
-        story.append(Spacer(1, 12))
-        story.append(Paragraph('This section describes the various data types used in the Servomotor API commands.', normal_style))
-        story.append(Spacer(1, 12))
-        
-        # Separate integer and non-integer types
-        integer_types = [dt for dt in self.data_types if dt.get('is_integer', False)]
-        special_types = [dt for dt in self.data_types if not dt.get('is_integer', False)]
-        
-        # Integer Data Types
-        story.append(Paragraph('<b>Integer Data Types</b>', heading_style))
-        story.append(Spacer(1, 8))
-        
-        # Create style for table cells
-        table_cell_style = ParagraphStyle(
-            'TableCell',
-            parent=normal_style,
-            fontSize=9,
-            leading=11
-        )
-        
-        table_header_style = ParagraphStyle(
-            'TableHeader',
-            parent=normal_style,
-            fontSize=10,
-            fontName='Helvetica-Bold',
-            textColor=colors.whitesmoke
-        )
-        
-        # Create table for integer types
-        int_table_data = [[
-            Paragraph('Type', table_header_style),
-            Paragraph('Size (bytes)', table_header_style),
-            Paragraph('Range', table_header_style),
-            Paragraph('Description', table_header_style)
-        ]]
-        
-        for dt in integer_types:
-            min_val = dt.get('min_value', 'N/A')
-            max_val = dt.get('max_value', 'N/A')
-            if min_val != 'N/A' and max_val != 'N/A':
-                range_str = f"{min_val:,} to {max_val:,}"
-            else:
-                range_str = "N/A"
-            
-            int_table_data.append([
-                Paragraph(dt['data_type'], table_cell_style),
-                Paragraph(str(dt['size']), table_cell_style),
-                Paragraph(range_str, table_cell_style),
-                Paragraph(dt['description'], table_cell_style)
-            ])
-        
-        int_table = Table(int_table_data, colWidths=[50, 50, 100, doc.width - 200])
-        int_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34a853')),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('BOX', (0, 0), (-1, -1), 1, colors.black),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        story.append(int_table)
-        story.append(Spacer(1, 12))
-        
-        # Special Data Types
-        story.append(Paragraph('<b>Special Data Types</b>', heading_style))
-        story.append(Spacer(1, 8))
-        
-        # Create table for special types
-        special_table_data = [[
-            Paragraph('Type', table_header_style),
-            Paragraph('Size (bytes)', table_header_style),
-            Paragraph('Description', table_header_style)
-        ]]
-        
-        for dt in special_types:
-            size = dt.get('size', 'Variable')
-            if size is None:
-                size = 'Variable'
-            
-            special_table_data.append([
-                Paragraph(dt['data_type'], table_cell_style),
-                Paragraph(str(size), table_cell_style),
-                Paragraph(dt['description'], table_cell_style)
-            ])
-        
-        special_table = Table(special_table_data, colWidths=[70, 60, doc.width - 130])
-        special_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34a853')),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('BOX', (0, 0), (-1, -1), 1, colors.black),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ]))
-        story.append(special_table)
+        # Data Types Section - use the modular function
+        self.generate_data_types_for_pdf(story, doc, heading_style, normal_style)
         
         story.append(PageBreak())
         
@@ -1127,7 +1376,189 @@ motor.set_velocity_unit('rotations_per_second')"""
         
         # Build PDF
         doc.build(story)
-        print(f"✓ Generated PDF documentation: {output_filename}")
+        print(f"✓ Generated Python PDF documentation: {output_filename}")
+        return True
+    
+    def generate_arduino_pdf(self):
+        """Generate Arduino PDF documentation"""
+        print("\nGenerating Arduino PDF documentation...")
+        
+        # Get version info for document content
+        version, date_str = get_latest_version()
+        # Output to parent directory
+        output_filename = '../M17_servomotor_Arduino_API_documentation.pdf'
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(
+            output_filename,
+            pagesize=A4,
+            rightMargin=18*mm,
+            leftMargin=18*mm,
+            topMargin=20*mm,
+            bottomMargin=20*mm
+        )
+        
+        # Initialize story
+        story = []
+        
+        # Styles
+        title_style = create_title_style()
+        subtitle_style = create_subtitle_style()
+        heading_style = create_heading_style()
+        normal_style = create_normal_style()
+        
+        # Code style for examples
+        code_style = ParagraphStyle(
+            'Code',
+            parent=getSampleStyleSheet()['Code'],
+            fontName='Courier',
+            fontSize=8,
+            leftIndent=10,
+            rightIndent=10,
+            spaceBefore=6,
+            spaceAfter=6,
+            backColor=colors.HexColor('#f5f5f5')
+        )
+        
+        # Command name style
+        command_style = ParagraphStyle(
+            'CommandName',
+            parent=normal_style,
+            fontSize=14,
+            textColor=colors.HexColor('#34a853'),
+            fontName='Helvetica-Bold',
+            spaceBefore=12,
+            spaceAfter=6
+        )
+        
+        # Title page
+        story.append(Paragraph('Servomotor Arduino API Documentation', title_style))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph(f'Version {version}', subtitle_style))
+        story.append(Paragraph(f'Generated: {datetime.now().strftime("%Y-%m-%d")}', subtitle_style))
+        story.append(Spacer(1, 12))
+        
+        # Add firmware information if available
+        if self.latest_firmware:
+            firmware_style = ParagraphStyle(
+                'FirmwareInfo',
+                parent=normal_style,
+                fontSize=10,
+                textColor=colors.HexColor('#34a853'),
+                spaceBefore=6,
+                spaceAfter=6
+            )
+            
+            story.append(Paragraph('<b>Latest Firmware Versions</b>', firmware_style))
+            story.append(Spacer(1, 6))
+            story.append(Paragraph('At the time of generating this API reference, the latest released firmware versions for the servomotors are:', normal_style))
+            story.append(Spacer(1, 6))
+            
+            for model, firmware_file in sorted(self.latest_firmware.items()):
+                story.append(Paragraph(f'• <b>{model}:</b> {firmware_file}', normal_style))
+            
+            story.append(Spacer(1, 8))
+        
+        story.append(PageBreak())
+        
+        # Table of Contents
+        story.append(Paragraph('Table of Contents', heading_style))
+        story.append(Spacer(1, 12))
+        
+        # TOC style
+        toc_style = ParagraphStyle(
+            'TOC',
+            parent=normal_style,
+            fontSize=12,
+            textColor=colors.black,
+            fontName='Helvetica-Bold',
+            spaceBefore=6,
+            spaceAfter=6
+        )
+        
+        story.append(Paragraph('1. Getting Started', toc_style))
+        story.append(Paragraph('2. Data Types', toc_style))
+        story.append(Paragraph('3. Command Reference', toc_style))
+        
+        toc_index = 4
+        for group in sorted(self.commands_by_group.keys()):
+            story.append(Paragraph(f'{toc_index}. {group}', toc_style))
+            toc_index += 1
+        
+        story.append(Paragraph(f'{toc_index}. Error Handling', toc_style))
+        story.append(Paragraph(f'{toc_index + 1}. Error Codes', toc_style))
+        
+        story.append(PageBreak())
+        
+        # Getting Started Section
+        story.append(Paragraph('Getting Started', heading_style))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph('This example demonstrates a trapezoid move with the servomotor:', normal_style))
+        story.append(Spacer(1, 12))
+        
+        # Read and include the Arduino example file in a grey box
+        try:
+            with open('arduino_library_example.cpp', 'r') as f:
+                example_code = f.read()
+            # Use CodeBox to display in grey box
+            code_box = self.CodeBox(example_code, doc.width - 20, code_style)
+            story.append(code_box)
+        except FileNotFoundError:
+            story.append(Paragraph('Example file arduino_library_example.cpp not found', normal_style))
+        
+        story.append(PageBreak())
+        
+        # Data Types Section - use the same modular function as Python
+        self.generate_data_types_for_pdf(story, doc, heading_style, normal_style)
+        
+        story.append(PageBreak())
+        
+        # Command Reference section
+        story.append(Paragraph('Command Reference', heading_style))
+        story.append(Spacer(1, 12))
+        
+        for group in sorted(self.commands_by_group.keys()):
+            story.append(Paragraph(group, heading_style))
+            story.append(Spacer(1, 12))
+            
+            for cmd in self.commands_by_group[group]:
+                # Keep command information together
+                cmd_content = []
+                
+                # Command name
+                cmd_content.append(Paragraph(cmd['CommandString'], command_style))
+                
+                # Description
+                cmd_content.append(Paragraph(cmd['Description'], normal_style))
+                cmd_content.append(Spacer(1, 6))
+                
+                # Parameters
+                if cmd['Input']:
+                    param_text = '<b>Parameters:</b><br/>'
+                    for param in cmd['Input']:
+                        param_desc = param.get('Description', 'No description')
+                        param_name = param.get('ParameterName', 'parameter')
+                        param_desc = param_desc.replace('<', '&lt;').replace('>', '&gt;')
+                        param_text += f'• <i>{param_name}</i>: {param_desc}<br/>'
+                    cmd_content.append(Paragraph(param_text, normal_style))
+                    cmd_content.append(Spacer(1, 6))
+                
+                # Arduino example - use the proper generator function
+                cmd_content.append(Paragraph('<b>Example:</b>', normal_style))
+                example_code = self.generate_arduino_example(cmd)
+                
+                code_box = self.CodeBox(example_code, doc.width - 20, code_style)
+                cmd_content.append(code_box)
+                cmd_content.append(Spacer(1, 12))
+                
+                # Add as KeepTogether
+                story.append(KeepTogether(cmd_content))
+            
+            story.append(PageBreak())
+        
+        # Build PDF
+        doc.build(story)
+        print(f"✓ Generated Arduino PDF documentation: {output_filename}")
         return True
     
     def run(self):
@@ -1182,8 +1613,10 @@ motor.set_velocity_unit('rotations_per_second')"""
             print("✅ DOCUMENTATION GENERATION COMPLETE!")
             print("="*80)
             print("\nGenerated files (in parent directory):")
-            print("  • ../servomotor_api_documentation.md")
-            print("  • ../servomotor_api_documentation.pdf")
+            print("  • ../M17_servomotor_Python_API_documentation.md")
+            print("  • ../M17_servomotor_Python_API_documentation.pdf")
+            print("  • ../M17_servomotor_Arduino_API_documentation.md")
+            print("  • ../M17_servomotor_Arduino_API_documentation.pdf")
         else:
             print("\n❌ Documentation generation failed. Please check the errors above.")
             sys.exit(1)
