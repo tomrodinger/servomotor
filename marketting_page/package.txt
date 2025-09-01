@@ -1,0 +1,40 @@
+NEMA 17 Servomotor Specifications
+
+Common specifications across all models:
+- Voltage range: 12-24V
+- Maximum Speed: 560 RPM
+- Maximum Current: 1.1A
+- Dimensions (LxW): 42.2 x 42.2 mm
+
+Model-specific specifications:
+
+M3-60:
+- Torque: 0.65 Nm
+- Weight: 470g
+- Height: 59.8mm
+- Shaft Length: 20.4mm
+
+M3-48:
+- Torque: 0.55 Nm
+- Weight: 360g
+- Height: 48.6mm
+- Shaft Length: 20.4mm
+
+M3-40:
+- Torque: 0.42 Nm
+- Weight: 285g
+- Height: 41.6mm
+- Shaft Length: 18.5mm
+
+Additional Features:
+- All-in-one motor, driver, and motion controller
+- Compatible with Raspberry Pi, Arduino, PC, and Mac
+- Requires RS485 adapter (sold separately)
+- Includes wire
+
+Manufacturer Information:
+Green Eco Technology (Shenzhen) Company Limited
+Room C301E, 3F, Block CD, Tianjing Building
+Shatou Street, Futian District
+Shenzhen City, Guangdong Province
+China
