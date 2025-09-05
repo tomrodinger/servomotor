@@ -16,6 +16,7 @@
 #define COMMUNICATION_ERROR_CRC32_MISMATCH  -6
 #define COMMUNICATION_ERROR_BAD_FIRST_BYTE  -7
 #define COMMUNICATION_ERROR_BAD_THIRD_BYTE  -8
+#define COMMUNICATION_ERROR_PACKET_TOO_SMALL -9
 #define COMMUNICATION_SUCCESS 0
 
 // First byte encoding constants
@@ -63,7 +64,7 @@ public:
     // Extended addressing command (using 64-bit Unique ID)
     void sendCommandByUniqueId(uint64_t uniqueId, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);
     
-    int8_t getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize);
+    int16_t getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_t& receivedSize);
     void flush();
     
     // CRC32 control
@@ -78,5 +79,8 @@ private:
     // Core function that handles the common logic for both addressing modes
     void sendCommandCore(bool isExtended, uint64_t addressValue, uint8_t commandID,
                          const uint8_t* payload, uint16_t payloadSize);
+    
+    // Helper function to receive bytes with timeout checking
+    int8_t receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes);
 };
 #endif // COMMUNICATION_H

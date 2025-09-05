@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "PWM.h"
 
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #if SOFTWARE_COMPATIBILITY_CODE >= 2
 #include "AT5833.h" // if using the AT5833 stepper motor driver chip, then make sure to uncomment this (V11RC2 is using this chip)
 #elif SOFTWARE_COMPATIBILITY_CODE == 1
@@ -19,13 +19,13 @@
 #ifdef PRODUCT_NAME_M2
 #include "hall_sensor_constants_M2.h"
 #endif
-#ifdef PRODUCT_NAME_M3
-#include "hall_sensor_constants_M3.h"
-#include "commutation_table_M3.h"
+#ifdef PRODUCT_NAME_M17
+#include "hall_sensor_constants_M17.h"
+#include "commutation_table_M17.h"
 #endif
-#ifdef PRODUCT_NAME_M4
-#include "hall_sensor_constants_M4.h"
-#include "commutation_table_M4.h"
+#ifdef PRODUCT_NAME_M23
+#include "hall_sensor_constants_M23.h"
+#include "commutation_table_M23.h"
 #endif
 
 #define MOVEMENT_QUEUE_SIZE 32 // this has to be a power of 2
@@ -73,7 +73,7 @@
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   100000
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #ifdef GC6609
 #define PROPORTIONAL_CONSTANT_PID 2000
 #define INTEGRAL_CONSTANT_PID     5
@@ -84,7 +84,7 @@
 #define DERIVATIVE_CONSTANT_PID   175000
 #endif
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define PROPORTIONAL_CONSTANT_PID 500
 #define INTEGRAL_CONSTANT_PID     1
 #define DERIVATIVE_CONSTANT_PID   1000
@@ -96,10 +96,10 @@
 #ifdef PRODUCT_NAME_M2
 #define PID_SHIFT_RIGHT 18
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #define PID_SHIFT_RIGHT 11
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define PID_SHIFT_RIGHT 14
 #endif
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
@@ -114,11 +114,11 @@
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 200
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 200
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define DEFAULT_MAX_MOTOR_PWM_VOLTAGE 100
 #define DEFAULT_MAX_MOTOR_REGEN_PWM_VOLTAGE 100
 #endif
@@ -229,7 +229,7 @@ void clear_multipurpose_data(void);
 void set_commutation_position_offset(uint32_t new_commutation_position_offset);
 void check_current_sensor_and_enable_mosfets(void);
 void set_motor_test_mode(uint8_t new_test_mode);
-void test_M3_motor_spin(void);
+void test_M17_motor_spin(void);
 void get_motor_control_debug_values(int64_t *_max_acceleration, int64_t *_max_velocity, int64_t *_current_velocity, int32_t *_measured_velocity, uint32_t *_n_time_steps, int64_t *_debug_value1, int64_t *_debug_value2, int64_t *_debug_value3, int64_t *_debug_value4);
 
 #ifdef MOTOR_SIMULATION

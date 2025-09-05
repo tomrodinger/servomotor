@@ -332,7 +332,7 @@ int main(void)
 
     clock_init();
     systick_init();
-    GPIO_init(); // Using product-specific GPIO initialization. gpio.h will select a specific init function for the product. Look at files like gpio_M1.c, gpio_M2.c, gpio_M3.c, gpio_M4.c, etc.
+    GPIO_init(); // Using product-specific GPIO initialization. gpio.h will select a specific init function for the product. Look at files like gpio_M1.c, gpio_M2.c, gpio_M3.c, gpio_M23.c, etc.
     debug_uart_init();
     rs485_init();
 

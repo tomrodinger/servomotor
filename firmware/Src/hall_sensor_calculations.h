@@ -10,11 +10,11 @@
 #include "commutation_table_M2.h"
 #include "hall_sensor_constants_M2.h"
 #endif
-#ifdef PRODUCT_NAME_M3
-#include "hall_sensor_constants_M3.h"
+#ifdef PRODUCT_NAME_M17
+#include "hall_sensor_constants_M17.h"
 #endif
-#ifdef PRODUCT_NAME_M4
-#include "hall_sensor_constants_M4.h"
+#ifdef PRODUCT_NAME_M23
+#include "hall_sensor_constants_M23.h"
 #endif
 
 typedef struct __attribute__((__packed__)) {

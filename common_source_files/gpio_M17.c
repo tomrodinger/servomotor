@@ -1,7 +1,7 @@
 #include "stm32g0xx_hal.h"
 #include "gpio.h"
 
-#define BUTTON_PORT_A_PIN 13 // products M3 and M4
+#define BUTTON_PORT_A_PIN 13 // products M17 and M17
 #define TOUCH_BUTTON_PORT_A_PIN 15
 
 static void portA_init(void)
@@ -102,14 +102,14 @@ static void portC_init(void)
 }
 
 
-void GPIO_init_M3(void)
+void GPIO_init_M17(void)
 {
     portA_init();
     portB_init();
     portC_init();
 }
 
-inline uint8_t get_button_state_M3(void)
+inline uint8_t get_button_state_M17(void)
 {
     return ((GPIOA->IDR & (1 << BUTTON_PORT_A_PIN)) == 0);
 }

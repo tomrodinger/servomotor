@@ -32,11 +32,11 @@
 #include "commutation_table_M2.h"
 #include "hall_sensor_constants_M2.h"
 #endif
-#ifdef PRODUCT_NAME_M3
-#include "commutation_table_M3.h"
+#ifdef PRODUCT_NAME_M17
+#include "commutation_table_M17.h"
 #endif
-#ifdef PRODUCT_NAME_M4
-#include "commutation_table_M4.h"
+#ifdef PRODUCT_NAME_M23
+#include "commutation_table_M23.h"
 #endif
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
@@ -1312,7 +1312,7 @@ int main(void)
     clock_init();
     systick_init();
     #endif
-    #if defined(PRODUCT_NAME_M3) && defined(GC6609)
+    #if defined(PRODUCT_NAME_M17) && defined(GC6609)
     power_off_GC6609();
     #endif
     GPIO_init();
@@ -1325,7 +1325,7 @@ int main(void)
     #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     step_and_direction_init();
     #endif
-    #if defined(PRODUCT_NAME_M3) && defined(GC6609)
+    #if defined(PRODUCT_NAME_M17) && defined(GC6609)
     reset_GC6609();
     init_GC6609_through_UART();
     #endif

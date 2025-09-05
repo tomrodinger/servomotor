@@ -17,11 +17,11 @@ void pwm_init(void)
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL10_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
     GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL3_Pos);                                                               // see tables 13 to 17 in the chip's datasheet
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
     TIM1->CCR1 = 0;
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
     TIM1->CCR1 = 0;
     TIM1->CCR2 = 0;
     GPIOA->AFR[1] |= (2 << GPIO_AFRH_AFSEL8_Pos) | (2 << GPIO_AFRH_AFSEL11_Pos); // choose the right alternate function to put on these pins to make the PWM
@@ -46,13 +46,13 @@ void pwm_init(void)
     TIM1->AF1 = (4 << TIM1_AF1_ETRSEL_Pos) | TIM1_AF1_BKINE; // choose analog watchdog 2 as the break source, break on high signal, enable the break function
 //    TIM1->AF2 = TIM1_AF2_BK2INE; // enable the break 2 function
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
     TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos); // set channel 1
     TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
     TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC4E; // enable the outputs on channels 1 and 4
     TIM1->BDTR = TIM_BDTR_MOE; // main output enable
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
     TIM1->CCMR1 = (6 << TIM_CCMR1_OC1M_Pos) | (6 << TIM_CCMR1_OC2M_Pos); // set channels 1 and 2 as PWM mode 1
     TIM1->CCMR2 = (6 << TIM_CCMR2_OC4M_Pos); // and 4 as PWM mode 1
     TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC4E; // enable the outputs on channels 1, 2 and 4
@@ -68,7 +68,7 @@ void pwm_init(void)
 
 
 
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
     RCC->APBENR1 |= RCC_APBENR1_TIM3EN; // enable the clock to TIM3
     GPIOB->AFR[0] |= (1 << GPIO_AFRL_AFSEL4_Pos) | (1 << GPIO_AFRL_AFSEL5_Pos); // select the alternative function 1 for pins PB4 and PB5
 

@@ -24,23 +24,23 @@
 #elif defined(PRODUCT_NAME_M2)
     #define GPIO_init() GPIO_init_M2()
     #define get_button_state() get_button_state_M2()
-#elif defined(PRODUCT_NAME_M3)
-    #define GPIO_init() GPIO_init_M3()
-    #define get_button_state() get_button_state_M3()
-#elif defined(PRODUCT_NAME_M4)
-    #define GPIO_init() GPIO_init_M4()
-    #define get_button_state() get_button_state_M4()
+#elif defined(PRODUCT_NAME_M17)
+    #define GPIO_init() GPIO_init_M17()
+    #define get_button_state() get_button_state_M17()
+#elif defined(PRODUCT_NAME_M23)
+    #define GPIO_init() GPIO_init_M23()
+    #define get_button_state() get_button_state_M23()
 #else
-    #error "Invalid or missing PRODUCT_NAME_X define. Must be one of: PRODUCT_NAME_M1, PRODUCT_NAME_M2, PRODUCT_NAME_M3, PRODUCT_NAME_M4"
+    #error "Invalid or missing PRODUCT_NAME_X define. Must be one of: PRODUCT_NAME_M1, PRODUCT_NAME_M2, PRODUCT_NAME_M17, PRODUCT_NAME_M23"
 #endif
 
 void GPIO_init_M1(void);
 void GPIO_init_M2(void);
-void GPIO_init_M3(void);
-void GPIO_init_M4(void);
+void GPIO_init_M17(void);
+void GPIO_init_M23(void);
 uint8_t get_button_state_M1(void);
 uint8_t get_button_state_M2(void);
-uint8_t get_button_state_M3(void);
-uint8_t get_button_state_M4(void);
+uint8_t get_button_state_M17(void);
+uint8_t get_button_state_M23(void);
 
 #endif // GPIO_H

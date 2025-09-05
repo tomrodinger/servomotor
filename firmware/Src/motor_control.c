@@ -16,11 +16,11 @@
 #ifdef PRODUCT_NAME_M2
 #include "commutation_table_M2.h"
 #endif
-#ifdef PRODUCT_NAME_M3
-#include "commutation_table_M3.h"
+#ifdef PRODUCT_NAME_M17
+#include "commutation_table_M17.h"
 #endif
-#ifdef PRODUCT_NAME_M4
-#include "commutation_table_M4.h"
+#ifdef PRODUCT_NAME_M23
+#include "commutation_table_M23.h"
 #endif
 #include "goertzel_algorithm_constants.h"
 #include "error_handling.h"
@@ -51,16 +51,16 @@
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY 300
 #endif
-#if defined(PRODUCT_NAME_M3)
+#if defined(PRODUCT_NAME_M17)
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY 390
 #endif
-#if defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M23)
 #define MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY PWM_PERIOD_TIM1
 #endif
-#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M3)
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M17)
 #define ANALOG_WATCHDOG_LIMIT_MULTIPLIER 200
 #endif
-#if defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M23)
 #define ANALOG_WATCHDOG_LIMIT_MULTIPLIER 200
 #endif
 #ifdef PRODUCT_NAME_M1
@@ -69,7 +69,7 @@
 #ifdef PRODUCT_NAME_M2
 #define VOLTS_PER_ROTATIONAL_VELOCITY 300
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define VOLTS_PER_ROTATIONAL_VELOCITY 200
 #endif
 //#define DO_DETAILED_PROFILING
@@ -89,7 +89,7 @@
 #define DEFAULT_MAX_ALLOWABLE_POSITION_DEVIATION (ONE_REVOLUTION_MICROSTEPS * 2) // set at two shaft rotations by default
 #define COMPUTED_VELOCITY_CALIBRATION_CONSTANT 3000
 #define COMPUTED_VELOCITY_CALIBRATION_SHIFT 16
-#if defined (PRODUCT_NAME_M1) || defined (PRODUCT_NAME_M2) || defined (PRODUCT_NAME_M4)
+#if defined (PRODUCT_NAME_M1) || defined (PRODUCT_NAME_M2) || defined (PRODUCT_NAME_M23)
 const struct three_phase_data_struct commutation_lookup_table[N_COMMUTATION_STEPS] = COMMUTATION_LOOKUP_TABLE_INITIALIZER;
 #endif
 
@@ -136,7 +136,7 @@ static int64_t hall_position_i64 = 0;
 static int64_t max_allowable_position_deviation = DEFAULT_MAX_ALLOWABLE_POSITION_DEVIATION;
 
 //static position_union predicted_end_of_queue_position = {0};
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M17) || defined(PRODUCT_NAME_M23)
 #define DEFAULT_ACTUAL_STEP_POSITION (COMMUTATION_POSITION_OFFSET_DEFAULT / N_COMMUTATION_SUB_STEPS) & (N_COMMUTATION_STEPS - 1)
 static uint32_t actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
 #endif
@@ -224,7 +224,7 @@ static uint16_t multipurpose_data_size = 0;
 // coast phase, the motor will rotate through one hall sensor revolution (ie. moves CALIBRATION_MOVEMENT_DISTANCE).
 #define CALIBRATION_COAST_TIME (CALIBRATION_MOVEMENT_DISTANCE / CALIBRATION_MAX_VELOCITY)
 
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M17) || defined(PRODUCT_NAME_M23)
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP1 400
 #define CALIBRATION_DESIRED_MOTOR_PWM_VOLTAGE_STEP2 400
 #else
@@ -465,14 +465,14 @@ uint16_t hall_data_buffer[3];
 #ifdef PRODUCT_NAME_M2
 #define CALIBRATION_TIME (get_update_frequency() * 2)
 #else
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #define CALIBRATION_TIME (get_update_frequency() * 4)
 #else
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define CALIBRATION_TIME (get_update_frequency() * 4)
 // If no servomotor is defined then exit with a compile time error
 #else
-#error "PRODUCT_NAME_M1 or PRODUCT_NAME_M2 or PRODUCT_NAME_M3 or PRODUCT_NAME_M4 must be defined"
+#error "PRODUCT_NAME_M1 or PRODUCT_NAME_M2 or PRODUCT_NAME_M17 or PRODUCT_NAME_M23 must be defined"
 #endif
 #endif
 #endif
@@ -531,7 +531,7 @@ void start_calibration(uint8_t print_output)
     }
 
 
-#if defined(PRODUCT_NAME_M3)
+#if defined(PRODUCT_NAME_M17)
 #if defined(GC6609)
     reset_GC6609();
 #endif
@@ -561,7 +561,7 @@ void start_calibration(uint8_t print_output)
     global_settings.motor_phases_reversed = 0;
     global_settings.commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
     commutation_position_offset = COMMUTATION_POSITION_OFFSET_DEFAULT;
-#if defined (PRODUCT_NAME_M3) || defined (PRODUCT_NAME_M4)
+#if defined (PRODUCT_NAME_M17) || defined (PRODUCT_NAME_M23)
     actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
 #endif
 
@@ -2459,7 +2459,7 @@ void motor_movement_calculations(void)
     }
 #endif
 
-#if defined(PRODUCT_NAME_M3)
+#if defined(PRODUCT_NAME_M17)
     if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 //      commutation_position = current_position.i32[1] + commutation_position_offset;
         commutation_position = current_position_i96.mid + commutation_position_offset;
@@ -2517,7 +2517,7 @@ void motor_movement_calculations(void)
     }
 #endif
 
-#if defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M23)
     if(motor_control_mode == OPEN_LOOP_POSITION_CONTROL) {
 //      commutation_position = current_position.i32[1] + commutation_position_offset;
         commutation_position = current_position_i96.mid + commutation_position_offset;
@@ -2658,7 +2658,7 @@ void motor_phase_calculations(void)
 }
 #endif
 
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 void motor_phase_calculations(void)
 {
     volatile uint32_t delay;
@@ -2722,7 +2722,7 @@ void motor_phase_calculations(void)
 }
 #endif
 
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 void motor_phase_calculations(void)
 {
     static uint16_t commutation_step = 0;
@@ -3260,7 +3260,7 @@ void set_max_motor_current(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_
         fatal_error(ERROR_MAX_PWM_VOLTAGE_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
     }
     recompute_pid_parameters_and_set_pwm_voltage(new_max_motor_pwm_voltage, new_max_motor_regen_pwm_voltage);
-//#ifndef PRODUCT_NAME_M3
+//#ifndef PRODUCT_NAME_M17
     calculate_and_set_analog_watchdog_limits();
 //#endif
 }
@@ -3323,7 +3323,7 @@ void check_current_sensor_and_enable_mosfets(void)
 }
 #endif
 
-#if defined(PRODUCT_NAME_M3)
+#if defined(PRODUCT_NAME_M17)
 void check_current_sensor_and_enable_mosfets(void)
 {
     if(is_mosfets_enabled()) {
@@ -3336,7 +3336,7 @@ void check_current_sensor_and_enable_mosfets(void)
 }
 #endif
 
-#if defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M23)
 void check_current_sensor_and_enable_mosfets(void)
 {
     char buf[100];
@@ -3390,7 +3390,7 @@ void set_motor_test_mode(uint8_t new_test_mode)
 // set the enable line low to enable the motor (active low)
 // set the direction line high to let the motor spin in the forward direction (not sure of that is clockwise or counter-clockwise)
 // put a pulse onto the step line to make the motor take steps. the pulse will be at 1 kHz
-void test_M3_motor_spin(void)
+void test_M17_motor_spin(void)
 {
     volatile uint32_t delay = 0; 
 //    volatile uint32_t delay2 = 0;
@@ -3542,7 +3542,7 @@ void motor_control_simulator_init(void)
     // Initialize motor current baseline
     motor_current_baseline = 1350;
     
-#if defined(PRODUCT_NAME_M3) || defined(PRODUCT_NAME_M4)
+#if defined(PRODUCT_NAME_M17) || defined(PRODUCT_NAME_M23)
     actual_step_position = DEFAULT_ACTUAL_STEP_POSITION;
 #endif
 

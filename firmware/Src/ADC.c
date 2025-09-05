@@ -13,10 +13,10 @@
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
 #endif
-#ifdef PRODUCT_NAME_M3
+#ifdef PRODUCT_NAME_M17
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 28120
 #endif
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 28039
 #endif
 
@@ -55,7 +55,7 @@ void adc_init(void)
                    (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
                    (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     #endif
-    #if defined(PRODUCT_NAME_M3)
+    #if defined(PRODUCT_NAME_M17)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
                    (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
                    (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -65,7 +65,7 @@ void adc_init(void)
                    (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
                    (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     #endif
-    #if defined(PRODUCT_NAME_M4)
+    #if defined(PRODUCT_NAME_M23)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
                    (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
                    (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -100,7 +100,7 @@ void adc_init(void)
 
     DMA1_Channel1->CCR |= DMA_CCR_EN; // enable the DMA channel as the last step (see section 11.4.3 in the reference manual).
 
-#ifdef PRODUCT_NAME_M4
+#ifdef PRODUCT_NAME_M23
     ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
     ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
     ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt

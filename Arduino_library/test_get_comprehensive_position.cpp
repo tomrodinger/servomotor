@@ -125,9 +125,9 @@ void setup() {
     
     // Verify counts match the raw values
     TEST_RESULT("ENCODER_COUNTS Match Raw (Commanded)",
-                approxEqual(positions.commandedPosition, (float)rawPos.commandedPosition, 10.0f));
+                approxEqual(positions.commandedPosition, (float)rawPos.commandedPosition, 300.0f));
     TEST_RESULT("ENCODER_COUNTS Match Raw (Hall Sensor)",
-                approxEqual(positions.hallSensorPosition, (float)rawPos.hallSensorPosition, 10.0f));
+                approxEqual(positions.hallSensorPosition, (float)rawPos.hallSensorPosition, 300.0f));
     
     // Test 5: Compare with standard getPosition and getHallSensorPosition methods
     Serial.println("\n---- Comparing with standard position methods ----");

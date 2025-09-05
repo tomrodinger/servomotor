@@ -49,8 +49,8 @@ build_bootloader() {
         ${COMMON_SOURCE_FILES_DIR}/device_status.c \
         ${COMMON_SOURCE_FILES_DIR}/gpio_M1.c \
         ${COMMON_SOURCE_FILES_DIR}/gpio_M2.c \
-        ${COMMON_SOURCE_FILES_DIR}/gpio_M3.c \
-        ${COMMON_SOURCE_FILES_DIR}/gpio_M4.c"
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M17.c \
+        ${COMMON_SOURCE_FILES_DIR}/gpio_M23.c"
 
     # Create build directory if it doesn't exist
     mkdir -p ${BUILD_DIR}
@@ -118,12 +118,12 @@ build_new_bootloader() {
     
     # Get product name
     while true; do
-        echo "Product name (e.g., M1, M2, M3, M4, C1):"
+        echo "Product name (up to 8 characters, e.g., M1, M17, ABC123):"
         read product_name
-        if [[ "$product_name" =~ ^[A-Za-z][0-9]$ ]]; then
+        if [[ "$product_name" =~ ^.{1,8}$ ]]; then
             break
         else
-            echo "Invalid product name format. Please use a letter followed by a number (e.g., M1)"
+            echo "Invalid product name format. Please use up to 8 characters (e.g., M1, M17, ABC123)"
         fi
     done
 
