@@ -22,6 +22,8 @@ from indicators import add_indicators_section
 from python_library import add_python_library_section
 from arduino_library import add_arduino_library_section
 
+import shutil
+
 def firstPage(canvas, doc):
     """First page has no footer"""
     pass
@@ -143,7 +145,14 @@ def generate_pdf():
     story.append(Paragraph('For more information and technical support, please contact our sales team.', footer_style))
     
     # Generate PDF
-    doc.build(story)
+    try:
+        doc.build(story)
+        # Copy to latest
+        shutil.copy(output_filename, 'servomotor_datasheet_latest.pdf')
+        print("Success: Datasheet generated successfully.")
+        print(f"Generated files: {output_filename}, servomotor_datasheet_latest.pdf")
+    except Exception as e:
+        print(f"Error generating datasheet: {e}")
 
 if __name__ == '__main__':
     generate_pdf()

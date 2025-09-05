@@ -140,6 +140,23 @@
       sha256: dea721652cec3d5684bcfaa999c7f371926dc2a224e210119199dd5080b798b3
 - product: M17
   versions:
+  - version: 1.0
+    type: full_product
+    web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
+    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
+    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
+    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.0/schematic/1.0-index-schTop.pdf
+    user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_latest.pdf
+    tutorial: https://servo-tutorial.netlify.app/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/1.0
+    firmwares:
+    - version: 0.13.0.0
+      compatibility: 3
+      date: August 27, 2025
+      description: Firmware for the servomotor model M17
+      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M17_fw0.13.0.0_scc3_hw1.0.firmware
+      sha256: 0c6ddd1d88d84a304e057422fabfa612cdfebd2ee5ee2bee8ca8846a1b399bb8
   - version: 1.3
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
@@ -151,15 +168,9 @@
     tutorial: https://servo-tutorial.netlify.app/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/1.3
     firmwares:
-    - version: 0.12.0.0
-      compatibility: 3
-      date: July 2, 2025
-      description: Firmware for the servomotor model M3
-      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.12.0.0_scc3_hw1.3.firmware
-      sha256: dea721652cec3d5684bcfaa999c7f371926dc2a224e210119199dd5080b798b3
     - version: 0.13.0.0
       compatibility: 3
-      date: July 25, 2025
+      date: August 27, 2025
       description: Firmware for the servomotor model M17
-      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.13.0.0_scc3_hw1.3.firmware
-      sha256: 18c4f201cc817af11cec17f6c7a54cf662e82a9727521a8c35bb2e4f9918d555
+      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M17_fw0.13.0.0_scc3_hw1.3.firmware
+      sha256: 0c6ddd1d88d84a304e057422fabfa612cdfebd2ee5ee2bee8ca8846a1b399bb8
