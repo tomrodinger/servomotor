@@ -37,4 +37,6 @@ example_multi_move
 test_multi_move
 unneeded_files
 .roo
-
+out
+SERVOMOTOR_PUBLISH_STATUS.md
+README_ARDUINO_SUBMISSION.md

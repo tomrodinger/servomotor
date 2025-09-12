@@ -102,40 +102,15 @@ git push origin main
 
 ## Step 7: Submit to Arduino Library Manager
 
-1. Go to the [Arduino Library Manager GitHub repository](https://github.com/arduino/library-registry).
-2. Click on "Fork" in the top-right corner to create your own fork of the repository.
-3. In your forked repository, navigate to the "repositories" folder.
-4. Click "Add file" > "Create new file".
-5. Name the file "servomotor.json".
-6. Add the following content to the file:
+Arduino Library Manager reads your metadata directly from your repository's `library.properties` in tagged releases. Do not add custom JSON files.
 
-```json
-{
-  "name": "Servomotor",
-  "keywords": "servo, motor, control, communication",
-  "description": "Library for controlling Gearotons servo motors with advanced features like motion control, torque setting, and homing.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yourusername/Arduino-Servomotor.git"
-  },
-  "authors": {
-    "name": "Tom Rodinger",
-    "email": "tom.rodinger@alumni.utoronto.ca",
-    "url": "https://github.com/tomrodinger"
-  },
-  "version": "0.9.0",
-  "license": "MIT",
-  "frameworks": "arduino",
-  "platforms": "*"
-}
-```
+1. Ensure your repository is public and the library is at the repository root with the standard structure (library.properties, src/, examples/, keywords.txt, LICENSE, README.md).
+2. Create a Git tag that exactly matches the version in library.properties (e.g., `v0.9.0`) and publish a GitHub Release for that tag.
+3. Go to the Arduino Library Registry and follow the "Submitting a library" instructions:
+   - https://github.com/arduino/library-registry#submitting-a-library
+4. Submit your library by opening the "Add your library" request as described there and provide your repository URL (e.g., `https://github.com/yourusername/Arduino-Servomotor`).
 
-7. Click "Commit new file".
-8. Click on "Pull requests" > "New pull request".
-9. Make sure the base repository is "arduino/library-registry" and the base branch is "main".
-10. Click "Create pull request".
-11. Add a title and description for your pull request.
-12. Click "Create pull request" again.
+Once your submission is accepted, the indexer will process your latest release and your library will appear in the Arduino Library Manager.
 
 ## Step 8: Wait for Approval
 

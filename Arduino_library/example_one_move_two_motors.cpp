@@ -24,8 +24,8 @@ void setup() {
     motorX.trapezoidMove(2.0f, 3.0f);
     motorY.trapezoidMove(1.0f, 2.0f);
 
-    // Exit after moves are complete
-    exit(0);
+    // Wait for moves to complete
+    delay(4000);
 }
 
 void loop() {

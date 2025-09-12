@@ -38,7 +38,7 @@ resetTime	KEYWORD2
 getCurrentTime	KEYWORD2
 getCurrentTimeRaw	KEYWORD2
 timeSync	KEYWORD2
-getNumberOfQueuedItems	KEYWORD2
+getNQueuedItems	KEYWORD2
 emergencyStop	KEYWORD2
 zeroPosition	KEYWORD2
 homing	KEYWORD2
@@ -47,7 +47,7 @@ getHallSensorPosition	KEYWORD2
 getHallSensorPositionRaw	KEYWORD2
 getStatus	KEYWORD2
 goToClosedLoop	KEYWORD2
-getUpdateFrequency	KEYWORD2
+getProductSpecs	KEYWORD2
 moveWithAcceleration	KEYWORD2
 moveWithAccelerationRaw	KEYWORD2
 detectDevices	KEYWORD2
@@ -62,8 +62,8 @@ moveWithVelocityRaw	KEYWORD2
 systemReset	KEYWORD2
 setMaximumMotorCurrent	KEYWORD2
 setMaximumMotorCurrentRaw	KEYWORD2
-multiMove	KEYWORD2
-multiMoveRaw	KEYWORD2
+multimove	KEYWORD2
+multimoveRaw	KEYWORD2
 setSafetyLimits	KEYWORD2
 setSafetyLimitsRaw	KEYWORD2
 ping	KEYWORD2
@@ -83,7 +83,7 @@ vibrate	KEYWORD2
 identify	KEYWORD2
 getTemperature	KEYWORD2
 getTemperatureRaw	KEYWORD2
-setPIDConstants	KEYWORD2
+setPidConstants	KEYWORD2
 setMaxAllowablePositionDeviation	KEYWORD2
 setMaxAllowablePositionDeviationRaw	KEYWORD2
 getDebugValues	KEYWORD2

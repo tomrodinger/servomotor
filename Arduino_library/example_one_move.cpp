@@ -18,7 +18,9 @@ void setup() {
 
     // Get initial position
     float start_pos = motor.getPosition();
-    printf("Position before move: %.2f rotations\n", start_pos);
+    Serial.print("Position before move: ");
+    Serial.print(start_pos, 2);
+    Serial.println(" rotations");
 
     // 2) Perform trapezoid move
     //    2 shaft rotations over 3 seconds
@@ -29,10 +31,11 @@ void setup() {
 
     // Get final position
     float end_pos = motor.getPosition();
-    printf("Position after move: %.2f rotations\n", end_pos);
+    Serial.print("Position after move: ");
+    Serial.print(end_pos, 2);
+    Serial.println(" rotations");
 
-    // Exit after move is complete
-    exit(0);
+    // Finished
 }
 
 void loop() {

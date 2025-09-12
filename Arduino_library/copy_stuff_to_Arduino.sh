@@ -50,7 +50,7 @@ for FILE in "${CORE_FILES[@]}"; do
             cp "$FILE" "$DEST_DIR/src"
             cp "$FILE" "$DEST_DIR"
             echo "  ✅ $FILE (copied to both root and src/)"
-        elif [[ "$FILE" == "library.properties" || "$FILE" == "README.md" ]]; then
+        elif [[ "$FILE" == "library.properties" || "$FILE" == "README.md" || "$FILE" == "LICENSE" || "$FILE" == "keywords.txt" ]]; then
             # These files go to root only
             cp "$FILE" "$DEST_DIR"
             echo "  ✅ $FILE (copied to root)"

@@ -13,6 +13,7 @@
 #define CRC32_POLYNOMIAL 0xEDB88320
 
 static uint32_t crc32_value;
+static bool s_commSerialOpened = false;
 
 void crc32_init(void)
 {
@@ -51,7 +52,15 @@ Communication::Communication(HardwareSerial& serialPort) : _serial(serialPort), 
 }
 
 void Communication::openSerialPort() {
-    // Serial port is already initialized by ArduinoEmulator
+#ifdef ARDUINO
+    // Initialize the RS485 hardware serial port once (even if multiple Servomotor instances exist)
+    if (!s_commSerialOpened) {
+        _serial.begin(230400);
+        s_commSerialOpened = true;
+    }
+#else
+    // On desktop (ArduinoEmulator), Serial1 is initialized in ArduinoEmulator.cpp main()
+#endif
 }
 
 void Communication::sendCommand(uint8_t alias, uint8_t commandID, const uint8_t* payload, uint16_t payloadSize) {
@@ -210,7 +219,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     int32_t bytesLeftToReadWithoutTheCRC32;
 
     // Read first (encoded) size byte. From it we will determine the packet size or determine it to indicate extended size
-    if((error_code = receiveBytes(&(sizeBytes[0]), 1, 1)) != 0) {
+    if((error_code = receiveBytes(&(sizeBytes[0]), 1, 1, TIMEOUT_MS - (millis() - startTime))) != 0) {
         return error_code;
     }
 
@@ -247,7 +256,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
 
         // We determined that the size byte indicates an extended size where the size is incoded in 16-bite. Read them.
         uint16_t extendedSize;
-        if((error_code = receiveBytes(&extendedSize, sizeof(extendedSize), sizeof(extendedSize))) != 0) {
+        if((error_code = receiveBytes(&extendedSize, sizeof(extendedSize), sizeof(extendedSize), TIMEOUT_MS - (millis() - startTime))) != 0) {
             return error_code;
         }
         sizeBytes[1] = ((uint8_t*)&extendedSize)[0];
@@ -283,7 +292,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
         
     // Read response character
     uint8_t responseChar;
-    if((error_code = receiveBytes(&responseChar, 1, 1)) != 0) {
+    if((error_code = receiveBytes(&responseChar, 1, 1, TIMEOUT_MS - (millis() - startTime))) != 0) {
         goto flush_read_remaining_bytes_and_return_error;
     }
     #ifdef VERBOSE
@@ -326,7 +335,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
 
     // Now receive the error code byte from the remote device if there are enough bytes left
     if (bytesLeftToReadWithoutTheCRC32 >= 1) {
-        if((error_code = receiveBytes(&remoteErrorCode, sizeof(remoteErrorCode), sizeof(remoteErrorCode))) != 0) {
+        if((error_code = receiveBytes(&remoteErrorCode, sizeof(remoteErrorCode), sizeof(remoteErrorCode), TIMEOUT_MS - (millis() - startTime))) != 0) {
             goto flush_read_remaining_bytes_and_return_error;
         }
         remoteErrorCodePresent = 1;
@@ -338,7 +347,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     }
 
     // Read the payload
-    if((error_code = receiveBytes(buffer, bufferSize, bytesLeftToReadWithoutTheCRC32)) != 0) {
+    if((error_code = receiveBytes(buffer, bufferSize, bytesLeftToReadWithoutTheCRC32, TIMEOUT_MS - (millis() - startTime))) != 0) {
         goto flush_read_remaining_bytes_and_return_error;
     }
     receivedSize = bytesLeftToReadWithoutTheCRC32;
@@ -346,7 +355,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     // Receive the CRC32 if there is one
     if (responseChar == RESPONSE_CHARACTER_CRC32_ENABLED) {
         uint32_t crc32 = 0;
-        if((error_code = receiveBytes(&crc32, sizeof(crc32), sizeof(crc32))) != 0) {
+        if((error_code = receiveBytes(&crc32, sizeof(crc32), sizeof(crc32), TIMEOUT_MS - (millis() - startTime))) != 0) {
             goto flush_read_remaining_bytes_and_return_error;
         }
         // And also calculate the CRC32 and compare to make sure that the received CRC32 is correct. Include all bytes, including the size bytes, in the calculation except don't include the CRC32 bytes themselves.
@@ -538,7 +547,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
 */
 flush_read_remaining_bytes_and_return_error:
     if (bytesLeftToRead > 0) {
-        receiveBytes(nullptr, 0, bytesLeftToRead);
+        receiveBytes(nullptr, 0, bytesLeftToRead, TIMEOUT_MS - (millis() - startTime));
     }
     return error_code;
 }
@@ -550,7 +559,7 @@ void Communication::flush() {
     }
 }
 
-int8_t Communication::receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes) {
+int8_t Communication::receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes, int32_t timeout_ms) {
     if (numBytes == 0) {
         return COMMUNICATION_SUCCESS;
     }
@@ -565,7 +574,7 @@ int8_t Communication::receiveBytes(void* buffer, uint16_t bufferSize, int32_t nu
     // Wait for all bytes to arrive
     uint32_t startTime = millis();
     while (_serial.available() < numBytes) {
-        if (millis() - startTime > TIMEOUT_MS) {
+        if (millis() - startTime > timeout_ms) {
             #ifdef VERBOSE
             Serial.println("A timeout error occured while receiving");
             #endif
