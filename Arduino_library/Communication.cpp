@@ -47,7 +47,12 @@ uint32_t get_crc32(void)
     return ~crc32_value;
 }
 
-Communication::Communication(HardwareSerial& serialPort) : _serial(serialPort), _crc32Enabled(true) {
+Communication::Communication(HardwareSerial& serialPort, uint32_t baud, int8_t rxPin, int8_t txPin)
+    : _serial(serialPort),
+      _crc32Enabled(true),
+      _baud(baud),
+      _rxPin(rxPin),
+      _txPin(txPin) {
     // No initialization needed for direct CRC32 calculation
 }
 
@@ -55,7 +60,15 @@ void Communication::openSerialPort() {
 #ifdef ARDUINO
     // Initialize the RS485 hardware serial port once (even if multiple Servomotor instances exist)
     if (!s_commSerialOpened) {
-        _serial.begin(230400);
+        #if defined(ESP32)
+        if (_rxPin >= 0 && _txPin >= 0) {
+            _serial.begin(_baud, SERIAL_8N1, _rxPin, _txPin);
+        } else {
+            _serial.begin(_baud);
+        }
+        #else
+        _serial.begin(_baud);
+        #endif
         s_commSerialOpened = true;
     }
 #else

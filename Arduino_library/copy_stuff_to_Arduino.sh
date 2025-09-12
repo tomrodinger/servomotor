@@ -5,6 +5,12 @@
 
 DEST_DIR="/Users/tom/Documents/Arduino/libraries/Servomotor"
 
+# Resolve repo root (this script lives at repo root) and ensure predictable globbing
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$SCRIPT_DIR"
+shopt -s nullglob
+cd "$REPO_DIR"
+
 # Ensure destination directory exists
 if [ ! -d "$DEST_DIR" ]; then
     echo "Creating destination directory: $DEST_DIR"
@@ -65,28 +71,21 @@ for FILE in "${CORE_FILES[@]}"; do
 done
 mkdir -p "$DEST_DIR/examples"
 
-# Define examples to be included
-EXAMPLES=(
-    "example_one_move.cpp:One_Move"
-    "example_one_move_two_motors.cpp:One_Move_Two_Motors"
-    "example_multi_move.cpp:Multi_Move"
-)
-
+# Autodiscover examples: any example_*.cpp at repo root
 echo "Creating examples:"
-for EXAMPLE in "${EXAMPLES[@]}"; do
-    SRC="${EXAMPLE%%:*}"
-    DIR="${EXAMPLE##*:}"
-    
-    if [ -f "$SRC" ]; then
-        # Create example directory
-        mkdir -p "$DEST_DIR/examples/$DIR"
-        
-        # Copy and rename the test file to match directory name
-        cp "$SRC" "$DEST_DIR/examples/$DIR/$DIR.ino"
-        echo "  ✅ Created example: $DIR from $SRC"
-    else
-        echo "  ❌ Warning: Example source $SRC not found!"
-    fi
+FOUND=0
+for SRC in "$REPO_DIR"/example_*.cpp; do
+    [ -f "$SRC" ] || continue
+    FOUND=1
+    bn="$(basename "$SRC")"
+    DIR="${bn%.cpp}"   # example name = filename without .cpp
+    mkdir -p "$DEST_DIR/examples/$DIR"
+    # Copy and rename the example to match directory name (Arduino sketch convention)
+    cp "$SRC" "$DEST_DIR/examples/$DIR/$DIR.ino"
+    echo "  ✅ Created example: $DIR from $bn"
 done
+if [ "$FOUND" -eq 0 ]; then
+    echo "  ⚠️  No example_*.cpp files found in $REPO_DIR"
+fi
 
 echo "Done! Library copied to $DEST_DIR"

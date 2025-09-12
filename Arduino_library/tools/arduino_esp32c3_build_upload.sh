@@ -11,12 +11,16 @@ FQBN="${FQBN:-${ARDUINO_FQBN:-esp32:esp32:esp32c3}}"
 LIB_COPY_SCRIPT="${REPO_DIR}/copy_stuff_to_Arduino.sh"
 LIB_DEST="${HOME}/Documents/Arduino/libraries/Servomotor"
 
-# Map example directory names to source files in this repo
-declare -a EXAMPLES_PAIRS=(
-  "One_Move:example_one_move.cpp"
-  "One_Move_Two_Motors:example_one_move_two_motors.cpp"
-  "Multi_Move:example_multi_move.cpp"
-)
+# Autodiscover examples: all files matching example_*.cpp at repo root
+discover_examples() {
+  local f bn name
+  for f in "${REPO_DIR}"/example_*.cpp; do
+    [[ -f "$f" ]] || continue
+    bn="$(basename "$f")"
+    name="${bn%.cpp}"
+    printf "%s:%s\n" "$name" "$bn"
+  done
+}
 
 usage() {
   cat <<'EOF'
@@ -78,10 +82,11 @@ sync_library() {
 
 list_examples() {
   echo "Available examples:"
-  for pair in "${EXAMPLES_PAIRS[@]}"; do
-    IFS=':' read -r dir src <<<"$pair"
-    printf "  - %s (src: %s)\n" "$dir" "$src"
-  done
+  local pair name src
+  while IFS= read -r pair; do
+    IFS=':' read -r name src <<<"$pair"
+    printf "  - %s (src: %s)\n" "$name" "$src"
+  done < <(discover_examples)
 }
 
 sketch_dir_for() {
@@ -104,19 +109,37 @@ compile_one() {
 }
 
 compile_all() {
-  for pair in "${EXAMPLES_PAIRS[@]}"; do
-    IFS=':' read -r dir _src <<<"$pair"
-    compile_one "$dir"
-  done
+  local pair name _src
+  while IFS= read -r pair; do
+    IFS=':' read -r name _src <<<"$pair"
+    compile_one "$name"
+  done < <(discover_examples)
 }
 
 detect_port() {
-  # Try arduino-cli first
-  local port
-  port="$(arduino-cli board list | awk 'NR>1 && ($1 ~ /^\/dev\//) {print $1; exit}')" || true
-  if [[ -z "${port:-}" ]]; then
-    port="$(ls /dev/cu.usb* /dev/tty.usb* 2>/dev/null | head -n1)" || true
+  # Prefer OS-specific USB serial device patterns to avoid Bluetooth ports
+  local port os
+  os="$(uname -s 2>/dev/null || echo Unknown)"
+
+  if [[ "$os" == "Darwin" ]]; then
+    # Common macOS USB serial device names
+    for pattern in /dev/cu.usbmodem* /dev/cu.usbserial* /dev/tty.usbmodem* /dev/tty.usbserial*; do
+      port="$(ls $pattern 2>/dev/null | head -n1)" || true
+      [[ -n "${port:-}" ]] && break
+    done
+  elif [[ "$os" == "Linux" ]]; then
+    # Common Linux USB serial device names
+    for pattern in /dev/ttyUSB* /dev/ttyACM*; do
+      port="$(ls $pattern 2>/dev/null | head -n1)" || true
+      [[ -n "${port:-}" ]] && break
+    done
   fi
+
+  # Fallback to arduino-cli, but exclude Bluetooth and non-USB pseudo-ports
+  if [[ -z "${port:-}" ]]; then
+    port="$(arduino-cli board list | awk 'NR>1 && ($1 ~ /^\/dev\/(cu|tty)\.(usb|usbserial|usbmodem|ttyUSB|ttyACM)/) {print $1; exit}')" || true
+  fi
+
   echo "${port:-}"
 }
 
@@ -155,21 +178,34 @@ main() {
     esac
   done
 
-  ensure_cli
-  ensure_core
-  if [[ "$no_copy" != "1" ]]; then
-    sync_library
-  fi
-
   case "$sub" in
-    list) list_examples ;;
-    compile-all) compile_all ;;
+    list)
+      list_examples
+      ;;
+    compile-all)
+      ensure_cli
+      ensure_core
+      if [[ "$no_copy" != "1" ]]; then
+        sync_library
+      fi
+      compile_all
+      ;;
     compile)
       : "${EXAMPLE_NAME:?--example NAME is required}"
+      ensure_cli
+      ensure_core
+      if [[ "$no_copy" != "1" ]]; then
+        sync_library
+      fi
       compile_one "$EXAMPLE_NAME"
       ;;
     upload)
       : "${EXAMPLE_NAME:?--example NAME is required}"
+      ensure_cli
+      ensure_core
+      if [[ "$no_copy" != "1" ]]; then
+        sync_library
+      fi
       upload_one "$EXAMPLE_NAME" "${PORT:-}"
       ;;
     help|*)

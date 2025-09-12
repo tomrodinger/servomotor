@@ -1,43 +1,49 @@
-#include "Servomotor.h"
+#include <Servomotor.h>
 
-// Create Servomotor instance on the stack
-// This is safe because ArduinoEmulator.cpp ensures Serial1 is initialized
-// before setup() is called, and exits if initialization fails
-Servomotor motor('X', Serial1);
+#define ALIAS 'X'
+
+// Example RS485 pins for ESP32 (adjust if your board uses different pins)
+#if defined(ESP32)
+#define RS485_TXD 4
+#define RS485_RXD 5
+#endif
 
 void setup() {
-    Serial.begin(115200);  // Debugging port at 115200 baud
+  Serial.begin(115200);
 
-    // Example usage:
-    // 1) We want position in shaft rotations, time in seconds
-    motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
-    motor.setTimeUnit(TimeUnit::SECONDS);
+  // Create the motor; serial port opens on first instantiation.
+#if defined(ESP32)
+  Servomotor motor(ALIAS, Serial1, RS485_RXD, RS485_TXD);
+#else
+  Servomotor motor(ALIAS, Serial1);
+#endif
 
-    // Enable mosfets before moving
-    motor.enableMosfets();
+  // Configure units
+  motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
+  motor.setTimeUnit(TimeUnit::SECONDS);
 
-    // Get initial position
-    float start_pos = motor.getPosition();
-    Serial.print("Position before move: ");
-    Serial.print(start_pos, 2);
-    Serial.println(" rotations");
+  // Enable mosfets before moving
+  motor.enableMosfets();
 
-    // 2) Perform trapezoid move
-    //    2 shaft rotations over 3 seconds
-    motor.trapezoidMove(2.0f, 3.0f);
+  // Get initial position
+  float start_pos = motor.getPosition();
+  Serial.print("Position before move: ");
+  Serial.print(start_pos, 2);
+  Serial.println(" rotations");
 
-    // Wait for move to complete
-    delay(4000);  // Wait 4 seconds (longer than the move)
+  // Perform trapezoid move: 2 rotations over 3 seconds
+  motor.trapezoidMove(2.0f, 3.0f);
 
-    // Get final position
-    float end_pos = motor.getPosition();
-    Serial.print("Position after move: ");
-    Serial.print(end_pos, 2);
-    Serial.println(" rotations");
+  // Wait for the move to complete
+  delay(4000);  // 4 seconds (slightly longer than the commanded duration)
 
-    // Finished
+  // Get final position
+  float end_pos = motor.getPosition();
+  Serial.print("Position after move: ");
+  Serial.print(end_pos, 2);
+  Serial.println(" rotations");
 }
 
 void loop() {
-    // Not used
+  // Not used
 }

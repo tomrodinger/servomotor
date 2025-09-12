@@ -342,7 +342,8 @@ typedef struct __attribute__((__packed__)) {
 class Servomotor {
 public:
     // Constructor & basic methods
-    Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1);
+    // Optionally pass RX/TX pins and baud; if pins are -1, platform defaults are used
+    Servomotor(uint8_t alias = 'X', HardwareSerial& serialPort = Serial1, int8_t rxPin = -1, int8_t txPin = -1, uint32_t baud = 230400);
     
     // Addressing and command methods
     void sendCommand(uint8_t commandID, const uint8_t* payload, uint16_t payloadSize);

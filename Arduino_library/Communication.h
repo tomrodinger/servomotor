@@ -54,7 +54,8 @@ uint32_t calculate_crc32(const uint8_t* data, size_t length);
 
 class Communication {
 public:
-    Communication(HardwareSerial& serialPort);
+    // Optionally pass baud and RX/TX pins (-1 = use platform defaults)
+    Communication(HardwareSerial& serialPort, uint32_t baud = 230400, int8_t rxPin = -1, int8_t txPin = -1);
 
     void openSerialPort();
     
@@ -76,6 +77,10 @@ protected:
     bool _crc32Enabled; // Flag to track if CRC32 is enabled
     
 private:
+    uint32_t _baud;
+    int8_t _rxPin;
+    int8_t _txPin;
+
     // Core function that handles the common logic for both addressing modes
     void sendCommandCore(bool isExtended, uint64_t addressValue, uint8_t commandID,
                          const uint8_t* payload, uint16_t payloadSize);
