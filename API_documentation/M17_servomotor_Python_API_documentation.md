@@ -1,12 +1,12 @@
 # Servomotor Python API Documentation
 
-Generated: 2025-08-31 12:15:11
+Generated: 2025-09-12 11:31:50
 
 ## Latest Firmware Versions
 
 At the time of generating this API reference, the latest released firmware versions for the servomotors are:
 
-- **Model M17**: `servomotor_M17_fw0.13.0.0_scc3_hw1.4.firmware`
+- **Model M17**: `servomotor_M17_fw0.13.0.0_scc3_hw1.3.firmware`
 
 
 If you are experiencing problems, you can try to set the firmware of your product to this version and try again, and report the problem to us using the feedback page.
@@ -78,42 +78,35 @@ This section provides a complete example showing how to initialize and control a
 ### Complete Example Program
 
 ```python
-import servomotor
-import time
+#!/usr/bin/env python3
+"""
+Minimal trapezoid move: rotate 1 turn in 1 second.
+Edit ALIAS below if needed. Uses rotations and seconds.
+"""
+import time, servomotor
+from servomotor import communication
 
-# Connect to the servomotor
-motor = servomotor.M3(port='/dev/ttyUSB0')
+# Hard-coded settings for a minimal demo
+ALIAS = 'X'                             # Device alias, change if needed
+SERIAL_PORT = "/dev/tty.usbserial-110"  # Serial device path; change if needed (e.g., "COM3" on
+                                        #  Windows)
+DISPLACEMENT_ROTATIONS = 1.0            # 1 rotation
+DURATION_SECONDS = 1.0                  # 1 second
+DELAY_MARGIN = 0.10                     # +10% wait margin because the motor's clock is not
+                                        #  perfectly accurate
 
-# Enable the mosfets (power on the motor)
-motor.enable_mosfets()
+communication.serial_port = SERIAL_PORT # if you comment this out then the program
+                                        #  should prompt you for the serial port or it will use
+                                        #  the last used port from a file
+servomotor.open_serial_port()
 
-# Wait for motor to be ready
-time.sleep(0.5)
+m = servomotor.M3(ALIAS, time_unit="seconds", position_unit="shaft_rotations", verbose=0)
+m.enable_mosfets()
+m.trapezoid_move(DISPLACEMENT_ROTATIONS, DURATION_SECONDS)
+time.sleep(DURATION_SECONDS * (1.0 + DELAY_MARGIN))
+m.disable_mosfets()
 
-# Perform a trapezoid move
-# Move 10000 steps with acceleration 1000, velocity 5000
-motor.trapezoid_move(
-    position=10000,  # Target position in steps
-    velocity=5000,   # Maximum velocity in steps/second
-    acceleration=1000 # Acceleration in steps/second^2
-)
-
-# Wait for move to complete
-motor.wait_for_move_complete()
-
-# Move back to starting position
-motor.trapezoid_move(
-    position=0,
-    velocity=5000,
-    acceleration=1000
-)
-
-# Wait and disable mosfets
-motor.wait_for_move_complete()
-motor.disable_mosfets()
-
-# Close connection
-motor.close()
+servomotor.close_serial_port()
 ```
 
 ## Data Types
