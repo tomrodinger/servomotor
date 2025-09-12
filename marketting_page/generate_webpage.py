@@ -342,7 +342,7 @@ def generate_protocol_section():
     
     # Add command line instructions
     commands = '''pip3 install servomotor   # run this just once to install the library and programs
-motor_command.py -c'''
+servomotor_command.py -c'''
     html += create_code_block(commands, 'bash')
     
     html += '    <p>This will print out the information contained in the motor_commands.json file in a nicer way and give some usage information for sending commands to the motor from the command line.</p>\n'

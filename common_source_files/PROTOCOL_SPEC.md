@@ -148,8 +148,8 @@ The protocol supports addressing devices by their 64-bit Unique ID:
    - The system automatically detects whether to use standard or extended addressing based on the input format
 
 3. **Usage Example**:
-   - Standard addressing: `python3 motor_command.py -a 1 ENABLE_MOSFETS`
-   - Extended addressing: `python3 motor_command.py -a 0123456789ABCDEF ENABLE_MOSFETS`
+   - Standard addressing: `python3 servomotor_command.py -a 1 ENABLE_MOSFETS`
+   - Extended addressing: `python3 servomotor_command.py -a 0123456789ABCDEF ENABLE_MOSFETS`
 
 ## CRC32-Related Commands
 
@@ -163,7 +163,7 @@ The protocol supports addressing devices by their 64-bit Unique ID:
    - Payload: Single byte (CRC32_ERROR_READ_ONLY or CRC32_ERROR_RESET)
    - Response: 32-bit numbers for each type of error
    - Can optionally reset the error counter after getting the counts
-   - See the motor_commands.json file for more details or run `python3 motor_command.py -c`
+   - See the motor_commands.json file for more details or run `python3 servomotor_command.py -c`
 
 ## Future Enhancements
 

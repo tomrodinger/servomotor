@@ -202,9 +202,9 @@ The goal is to create a comprehensive simulator for a servomotor that:
     * Single command that handles acceleration/deceleration automatically
     * Example with position verification:
       ```bash
-      ./motor_command.py -a 01 -p /dev/ttys123 "Enable MOSFETs" ; \
-      ./motor_command.py -a 01 -p /dev/ttys123 "Go to position" 1000000 31250 ; \
-      sleep 2 ; ./motor_command.py -a 01 -p /dev/ttys123 "Get comprehensive position"
+      ./servomotor_command.py -a 01 -p /dev/ttys123 "Enable MOSFETs" ; \
+      ./servomotor_command.py -a 01 -p /dev/ttys123 "Go to position" 1000000 31250 ; \
+      sleep 2 ; ./servomotor_command.py -a 01 -p /dev/ttys123 "Get comprehensive position"
       ```
   - Compound Commands:
     * "Move with velocity": 
@@ -214,8 +214,8 @@ The goal is to create a comprehensive simulator for a servomotor that:
         3. Sleep longer than total movement time
       - Example: 
         ```bash
-        ./motor_command.py -a 01 -p /dev/ttys123 "Move with velocity" 1000000 31250 ; \
-        ./motor_command.py -a 01 -p /dev/ttys123 "Move with velocity" 0 1000 ; \
+        ./servomotor_command.py -a 01 -p /dev/ttys123 "Move with velocity" 1000000 31250 ; \
+        ./servomotor_command.py -a 01 -p /dev/ttys123 "Move with velocity" 0 1000 ; \
         sleep 2
         ```
       - Fatal error occurs if velocity not brought to 0
@@ -226,8 +226,8 @@ The goal is to create a comprehensive simulator for a servomotor that:
         3. Sleep longer than total movement time
       - Example:
         ```bash
-        ./motor_command.py -a 01 -p /dev/ttys123 "Move with acceleration" 400000 31250 ; \
-        ./motor_command.py -a 01 -p /dev/ttys123 "Move with acceleration" -400000 31250 ; \
+        ./servomotor_command.py -a 01 -p /dev/ttys123 "Move with acceleration" 400000 31250 ; \
+        ./servomotor_command.py -a 01 -p /dev/ttys123 "Move with acceleration" -400000 31250 ; \
         sleep 2
         ```
       - Ensures velocity returns to 0
@@ -250,17 +250,17 @@ The goal is to create a comprehensive simulator for a servomotor that:
 For each feature implementation:
 1. Verify project compiles successfully
 2. Confirm program runs without crashes
-3. Test commands using motor_command.py:
+3. Test commands using servomotor_command.py:
    ```bash
-   ./motor_command.py -a <alias> -p <port> "<command name>" [parameters...]
+   ./servomotor_command.py -a <alias> -p <port> "<command name>" [parameters...]
    ```
    Example:
    ```bash
-   ./motor_command.py -a 01 -p /dev/ttys123 "Set maximum velocity" 1000
+   ./servomotor_command.py -a 01 -p /dev/ttys123 "Set maximum velocity" 1000
    ```
 4. Document test results and any issues found
 
-Note: Always use motor_command.py to send commands rather than raw byte sequences. This ensures we use the correct command format and parameter encoding.
+Note: Always use servomotor_command.py to send commands rather than raw byte sequences. This ensures we use the correct command format and parameter encoding.
 
 ## Source Files
 - servo_simulator.c: Main simulator implementation

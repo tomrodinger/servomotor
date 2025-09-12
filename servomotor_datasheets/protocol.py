@@ -156,7 +156,7 @@ def add_command_reference(story, style):
     
     # Add command line instructions in grey box with border
     commands = """pip3 install servomotor   # run this just once to install the library and programs
-motor_command.py -c"""
+servomotor_command.py -c"""
     
     # Use CodeBox for consistent styling with code examples
     command_box = CodeBox(commands, content_width)

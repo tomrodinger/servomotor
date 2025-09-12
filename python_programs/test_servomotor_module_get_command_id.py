@@ -51,7 +51,7 @@ all_commands = \
  43: Set PID constants
 '''
 # You can generate this list of supported commands by running:
-#        ./motor_command.py -c | grep ": " | grep -v "Input" | grep -v "Response"
+#        ./servomotor_command.py -c | grep ": " | grep -v "Input" | grep -v "Response"
 
 print("We are going to test that the get_command_id function works correctly by seeing if it return the right values for all of the following commands:")
 print(all_commands)
