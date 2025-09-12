@@ -1,1 +1,5 @@
+detect_and_set_alias_all_devices
 servomotor
+servomotor_command
+show_device_information_for_all_devices
+terminal_formatting

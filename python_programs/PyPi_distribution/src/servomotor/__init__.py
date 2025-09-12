@@ -9,7 +9,9 @@ from .communication import (
     print_protocol_version,
     print_data_type_descriptions,
     print_registered_commands,
-    get_human_readable_alias,
+    get_human_readable_alias_or_unique_id,
+    string_to_alias_or_unique_id,
+    get_global_alias_or_unique_id,
     set_standard_options_from_args,
     set_serial_port_from_args,
     get_command_id,
@@ -17,12 +19,18 @@ from .communication import (
     send_command,
     interpret_response,
     flush_receive_buffer,
-    RESPONSE_CHARACTER,
-    ENCODED_RESPONSE_CHARACTER,
+    RESPONSE_CHARACTER_CRC32_ENABLED,
+    RESPONSE_CHARACTER_CRC32_DISABLED,
+    ALL_ALIAS,
     open_serial_port,
     close_serial_port,
     read_raw_byte,
     execute_command,
+    TimeoutError,
+    CommunicationError,
+    PayloadError,
+    NoAliasOrUniqueIdSet,
+    FatalError
 )
 
 # Get the absolute path to the servomotor module directory
@@ -39,3 +47,6 @@ data_type_dict, command_dict = command_loader.load_data_types_and_commands(str(d
 # Import M3 class and define commands
 from .M3 import M3, define_commands
 define_commands(M3, data_type_dict, command_dict, verbose=0)
+
+# Import device detection functions
+from .device_detection import detect_devices_iteratively, Device

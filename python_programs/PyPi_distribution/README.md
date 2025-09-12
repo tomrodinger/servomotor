@@ -28,6 +28,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Tom Rodinger - tom.rodinger@utoronto.ca
+Tom Rodinger - tom.rodinger@alumni.utoronto.ca
 
-Project Link: [https://github.com/tomrodinger/servomotor](https://github.com/tomrodinger/servomotor)
+Project Link: [https://gearotons.com](https://gearotons.com)

@@ -14,6 +14,7 @@
 *.bak13
 *.bak14
 *.bak15
+*.backup
 servomotor_simulator.py
 .saved_vscode_terminal_sessions
 PyPi_distribution/dist/
@@ -22,3 +23,6 @@ MY_AXIS
 hall_calibration_one_rotation.txt
 hall_calibration_raw_data.bin
 hall_sensor_scans
+*.pyc
+__pycache__/
+hall_sensor_data/

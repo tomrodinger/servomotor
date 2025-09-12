@@ -1,1 +1,1 @@
-/dev/ttys022
+/dev/tty.usbserial-110

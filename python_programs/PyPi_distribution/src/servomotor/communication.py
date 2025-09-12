@@ -6,20 +6,22 @@ from . import serial_functions
 import textwrap
 import sys
 import os
+import struct
 
 # Import our terminal formatting module
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from terminal_formatting import format_error, format_info, format_warning, format_success, format_debug, STYLE
 
-# Device ID bit manipulation constants
-DEVICE_ID_LSB_MASK = 0x01  # Mask for checking if LSB is set
-DEVICE_ID_SHIFT = 1        # Number of bits to shift for device ID interpretation
+# Protocol constants for packet format
+FIRST_BYTE_LSB_MASK = 0x01  # Mask for checking if LSB is set
+FIRST_BYTE_SHIFT = 1        # Number of bits to shift for first byte interpretation
+DECODED_FIRST_BYTE_EXTENDED_SIZE = 127  # Value indicating extended size format
 
-# Reserved aliases with special meaning (these are the actual values, not encoded)
-ALL_ALIAS = 127           # to address all devices on the bus at the same time
-RESPONSE_CHARACTER = 126   # indicates that the response is coming from the device being addressed
-EXTENDED_ADDRESSING = 125  # indicates that we will use extended addressing
-ENCODED_RESPONSE_CHARACTER = (RESPONSE_CHARACTER << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK # this will be the first byte sent on the line as a response to a command
+# Reserved aliases with special meaning. All other values are normal device aliases that can be assigned freely to devices so that they can be individually addressed with just one byte
+ALL_ALIAS = 255            # to address all devices on the bus at the same time
+EXTENDED_ADDRESSING = 254  # indicates that we will use extended addressing
+RESPONSE_CHARACTER_CRC32_ENABLED = 253   # indicates that the response is coming from the device being addressed and the response has a CRC32 appended
+RESPONSE_CHARACTER_CRC32_DISABLED = 252   # indicates that the response is coming from the device being addressed and the response does not have a CRC32 appended
 
 # Protocol constants
 serial_port = None
@@ -27,10 +29,8 @@ PROTOCOL_VERSION = 20
 registered_data_types = None
 registered_commands = None
 ser = None
-alias = ALL_ALIAS  # Default to addressing all devices
 detect_devices_command_id = None
-set_device_alias_command_id = None
-
+global_alias_or_unique_id = None # This is a globally set alias or unique ID which will be used if a sepecific one is not given to the device's object
 # When we try to communicate with some external device, a number of things can go wrong. Here are some custom exceptions
 # Timeout on the communication
 class TimeoutError(Exception):
@@ -41,18 +41,27 @@ class CommunicationError(Exception):
 # The payload appears to be wrong or invalid
 class PayloadError(Exception):
     pass
+# No alias or unique ID was set by either command line arguments or via the program
+# These can be set using the contructor of the the device object (constructor of M3 for example) or
+# with a call to use_this_alias_or_unique_id or
+# by specifying it on the command line with the -a or --alias parameter
+class NoAliasOrUniqueIdSet(Exception):
+    pass
+# If the device is in a fatal error state then it will return an error code and we will throw an exception and pass the error code to the user to deal with
+class FatalError(Exception):
+    pass
 
 # Encode a device ID by shifting left and setting LSB to 1
-def encode_device_id(device_id):
-    return (device_id << DEVICE_ID_SHIFT) | DEVICE_ID_LSB_MASK
+def encode_first_byte(device_id):
+    return (device_id << FIRST_BYTE_SHIFT) | FIRST_BYTE_LSB_MASK
 
 # Decode a device ID by shifting right by one bit
-def decode_device_id(encoded_id):
-    return encoded_id >> DEVICE_ID_SHIFT
+def decode_first_byte(encoded_id):
+    return encoded_id >> FIRST_BYTE_SHIFT
 
 # Check if a device ID has the correct format (LSB set to 1)
-def is_valid_device_id_format(device_id):
-    return (device_id & DEVICE_ID_LSB_MASK) == DEVICE_ID_LSB_MASK
+def is_valid_first_byte_format(device_id):
+    return (device_id & FIRST_BYTE_LSB_MASK) == FIRST_BYTE_LSB_MASK
 
 def print_data(prefix_message, data, print_size=True, verbose=2):
     if verbose == 2:
@@ -63,116 +72,275 @@ def print_data(prefix_message, data, print_size=True, verbose=2):
             message += f"[{len(data)} bytes]"
         print(format_debug(message))
 
-def get_human_readable_alias(alias):
-    if alias >= 33 and alias <= 126:
-        alias_str = f"{chr(alias)} ({alias})"
+def get_human_readable_alias_or_unique_id(alias_or_unique_id):
+    if alias_or_unique_id is None:
+        return "The alias or unique ID was not specified"
+    elif alias_or_unique_id < 0:
+        return "Invalid negative alias or unique ID"
+    elif alias_or_unique_id > 255:
+        return f"{alias_or_unique_id:016X}"
+    elif alias_or_unique_id >= 33 and alias_or_unique_id <= 126:
+        return f"{chr(alias_or_unique_id)} ({alias_or_unique_id})"
     else:
-        alias_str = f"{alias} (0x{alias:02x})"
-    return alias_str
+        return f"{alias_or_unique_id} (0x{alias_or_unique_id:02x})"
 
-def get_response(verbose=2):
-    response = ser.read(3)
-    if len(response) == 0:
-        raise TimeoutError("Error: timeout")
-    if len(response) != 3:
-        print(format_error(f"Received: {response}"))
-        raise CommunicationError("Error: the response is not 3 bytes long")
-    if verbose == 2:
-        print_data("Received a response: ", response, print_size=True, verbose=verbose)
-    # The response character should be encoded (shifted and LSB set to 1)
-    if response[0] != ENCODED_RESPONSE_CHARACTER:
-        error_text = f"Error: the first byte (which should indicate a response, {response[0]}) is not the expected {ENCODED_RESPONSE_CHARACTER} (encoded from {RESPONSE_CHARACTER})"
-        raise CommunicationError(error_text)
-    payload_size = response[2]
-    if payload_size == 0xff:
-        response2 = ser.read(2)
-        if len(response2) == 0:
-            raise TimeoutError("Error: timeout")
-        if len(response2) != 2:
-            raise CommunicationError("Error: the response indicated a size of 255 and then the second response is not 2 bytes long")
-        payload_size = response2[0] + (response2[1] << 8)
+def get_response(crc32_enabled=True, verbose=2):
+    # Read the first byte (size byte)
+    first_byte = ser.read(1)
+    if len(first_byte) != 1:
+        raise TimeoutError("Error: timeout while reading first byte")
+    if verbose >= 2:
+        print(f"Read the first byte: 0x{first_byte[0]:02X}")
+    
+    # Validate first byte format (LSB should be 1)
+    if not is_valid_first_byte_format(first_byte[0]):
+        raise CommunicationError(f"Error: first byte {first_byte[0]} does not have LSB set to 1")
+
+    # Decode the size from the first byte
+    packet_size = decode_first_byte(first_byte[0])
+    size_bytes = first_byte
+    
+    # Check if we have extended size format
+    if packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE:
+        # Read the next two bytes for extended size
+        ext_size_bytes = ser.read(2)
+        if len(ext_size_bytes) != 2:
+            raise CommunicationError("Error: couldn't read extended size bytes")
+        
+        size_bytes += ext_size_bytes
+        packet_size = ext_size_bytes[0] | (ext_size_bytes[1] << 8)
         if verbose == 2:
-            print(format_debug(f"Received an extended size: {payload_size}"))
-    if payload_size == 0:
-        if response[1] != 0:
-            raise CommunicationError(f"Error: the second byte should be 0 if there is no payload, instead it is: {response[1]}")
-    else:
-        if response[1] != 1:
-            raise CommunicationError(f"Error: the second byte should be 1 if there is a payload, instead it is: {response[1]}")
+            print(format_debug(f"Received packet with extended size: {packet_size}"))
+    if verbose >= 2:
+        print("Packet size is:", packet_size)
 
-    if payload_size == 0:
+    # Read the rest of the packet (minus the size byte(s) we already read)
+    remaining_bytes = packet_size - len(size_bytes)
+    if remaining_bytes <= 0:
+        raise CommunicationError(f"Error: there are less bytes than expected in the response")
+
+    # If we go to this point then it guarantees that there is at least one more byte to read, but perhaps more
+
+    if verbose >= 2:
+        print(f"Trying to read the remaining {remaining_bytes} bytes")
+    packet_data = ser.read(remaining_bytes)
+    if len(packet_data) != remaining_bytes:
+        while len(packet_data) < remaining_bytes:
+            if verbose >= 2:
+                print("Trying to read more bytes:", remaining_bytes - len(packet_data))
+            more_packet_data = ser.read(remaining_bytes - len(packet_data))
+            if len(more_packet_data) == 0:
+                raise TimeoutError("Error: timeout while reading remaining bytes")
+            packet_data += more_packet_data
+
+    if len(packet_data) != remaining_bytes:
+        raise CommunicationError(f"Error: received {len(packet_data)} bytes, expected {remaining_bytes}")
+    
+    if verbose == 2:
+        full_packet = size_bytes + packet_data
+        print_data("Received packet: ", full_packet, print_size=True, verbose=verbose)
+
+    # At this point we have read at least one byte, but perhaps more. data is stored in packet_data
+
+    # Check if first address byte is one of the response characters
+    if packet_data[0] == RESPONSE_CHARACTER_CRC32_ENABLED:
+        received_crc32_enabled = 1
+    elif packet_data[0] == RESPONSE_CHARACTER_CRC32_DISABLED:
+        received_crc32_enabled = 0
+    else:
+        error_text = f"Error: the address byte (which should indicate a response, {packet_data[0]}) is not one of the response characters: {RESPONSE_CHARACTER_CRC32_ENABLED} or {RESPONSE_CHARACTER_CRC32_DISABLED}"
+        raise CommunicationError(error_text)
+    
+    # Extract payload (everything after address and command bytes)
+    # If CRC32 is enabled, the last 4 bytes are the CRC32
+    if received_crc32_enabled:
+        # Verify CRC32
+        if len(packet_data) < 4:
+            raise CommunicationError("Error: packet too small to contain CRC32")
+        
+        # Extract CRC32 from the end of the packet
+        received_crc32 = struct.unpack('<I', packet_data[-4:])[0]
+        
+        # Calculate CRC32 on all bytes except the CRC32 itself
+        calculated_crc32 = calculate_crc32(size_bytes + packet_data[:-4])
+        
+        if calculated_crc32 != received_crc32:
+            raise CommunicationError(f"CRC32 validation failed: calculated {calculated_crc32:08X}, received {received_crc32:08X}")
+
+        # Payload is everything after address and command bytes, but before CRC32
+        payload = packet_data[1:-4]
+
+        if not crc32_enabled:
+            print(format_warning("The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended"))
+    else:
+        # Payload is everything after address and command bytes
+        payload = packet_data[1:]
+
+        if crc32_enabled:
+            print(format_warning("The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended"))
+
+    # At this point the packet has been valiadated (if crc32 is enabled).
+    # It might be a success response, where there is nothing in the payload.
+    # It might indicate a fatal error, where the first (and probably only) byte in the bayload is the fatal error code.
+    # If bigger than one byte then the first byte should be 0, which indicates that there is no error. The rest will be the response to the command.
+    
+    if len(payload) == 0:
         if verbose == 2:
             print(format_success("This response indicates SUCCESS and has no payload"))
-        return b''
+        return payload
+    else:
+        if verbose == 2:
+            print(format_debug("Got a payload:"))
+            print_data("Payload: ", payload, verbose=verbose)
+        error_code = payload[0]
+        if error_code != 0:
+            raise FatalError(error_code)
+        payload = payload[1:] # delete that error code since we already checked it
+        return payload
 
-    payload = ser.read(payload_size)
-    if len(payload) != payload_size:
-        raise PayloadError(f"Error: didn't receive the right length ({payload_size} bytes) payload. Received ({len(payload)} bytes): {payload}")
-
-    if verbose == 2:
-        print(format_debug("Got a valid payload:"))
-        print_data("Got a valid payload:", payload, verbose=verbose)
-
-    return payload
-
-def sniffer():
-    n_bytes_received = 0
-    while True:
-        new_byte = ser.read(1)
-        if len(new_byte) != 1:
-            if n_bytes_received > 0:
-                print(format_warning("---------------------------------------------------------------"))
-                print(format_warning("Timed out after incomplete communication. Here is what we know:"))
-                print(format_info(f"   Received {n_bytes_received} bytes"))
-                if n_bytes_received >= 1:
-                    if alias >= 33 and alias <= 126:
-                        alias = chr(alias)
-                    else:
-                        alias = str(alias)
-                    print(format_info(f"   Alias: {alias}"))
-                if n_bytes_received >= 2:
-                    print(format_info(f"   Command ID: {command_id}"))
-                if n_bytes_received >= 3:
-                    print(format_info(f"   Payload length: {payload_len}"))
-                if n_bytes_received >= 4:
-                    print(format_info(f"   Payload: {payload}"))
-                print(format_warning("---------------------------------------------------------------"))
-                return None, None, None
-            continue
-        new_byte = new_byte[0]
-        n_bytes_received += 1
-        if n_bytes_received == 1:
-            alias = new_byte
-            payload = bytearray()
-        elif n_bytes_received == 2:
-            command_id = new_byte
-        else:
-            if n_bytes_received == 3:
-                payload_len = new_byte
-                if payload_len == 0:
-                    break
+def sniffer(crc32_enabled=True):
+    """Sniff RS485 traffic and decode packets according to the protocol"""
+    packet_data = bytearray()
+    address_byte = None
+    command_byte = None
+    payload = None
+    packet_size = None
+    extended_size = False
+    
+    # Read first byte (size byte)
+    first_byte = ser.read(1)
+    if len(first_byte) != 1:
+        print(format_warning("No data received (timeout)"))
+        return None, None, None
+    
+    # Check if first byte has LSB set to 1
+    if not is_valid_first_byte_format(first_byte[0]):
+        print(format_error(f"Invalid first byte format: 0x{first_byte[0]:02X} (LSB not set to 1)"))
+        return None, None, None
+    
+    # Decode size from first byte
+    packet_size = decode_first_byte(first_byte[0])
+    packet_data.append(first_byte[0])
+    
+    # Check for extended size format
+    if packet_size == DECODED_FIRST_BYTE_EXTENDED_SIZE:
+        extended_size = True
+        # Read two more bytes for extended size
+        ext_size_bytes = ser.read(2)
+        if len(ext_size_bytes) != 2:
+            print(format_error("Timeout while reading extended size bytes"))
+            return None, None, None
+        
+        packet_data.extend(ext_size_bytes)
+        packet_size = ext_size_bytes[0] | (ext_size_bytes[1] << 8)
+        print(format_info(f"Extended size packet: {packet_size} bytes"))
+    else:
+        print(format_info(f"Standard size packet: {packet_size} bytes"))
+    
+    # Calculate remaining bytes to read
+    remaining_bytes = packet_size - len(packet_data)
+    
+    # Read the rest of the packet
+    remaining_data = ser.read(remaining_bytes)
+    if len(remaining_data) != remaining_bytes:
+        print(format_error(f"Incomplete packet: expected {remaining_bytes} more bytes, got {len(remaining_data)}"))
+        return None, None, None
+    
+    packet_data.extend(remaining_data)
+    
+    # Extract address byte
+    address_byte = remaining_data[0]
+    
+    # Extract command byte
+    command_byte = remaining_data[1]
+    
+    # Extract payload
+    if crc32_enabled:
+        # Last 4 bytes are CRC32
+        if len(remaining_data) >= 6:  # address + command + at least 1 payload byte + 4 CRC bytes
+            payload = remaining_data[2:-4]
+            crc32_bytes = remaining_data[-4:]
+            received_crc32 = struct.unpack('<I', crc32_bytes)[0]
+            
+            # Calculate CRC32 on all bytes except the CRC32 itself
+            calculated_crc32 = calculate_crc32(packet_data[:-4])
+            
+            if calculated_crc32 != received_crc32:
+                print(format_error(f"CRC32 validation failed: calculated 0x{calculated_crc32:08X}, received 0x{received_crc32:08X}"))
             else:
-                payload.append(new_byte)
-                if len(payload) >= payload_len:
-                    break
-
-    return alias, command_id, payload
+                print(format_success(f"CRC32 validation passed: 0x{received_crc32:08X}"))
+        else:
+            payload = bytearray()
+            print(format_warning("Packet too small to contain CRC32"))
+    else:
+        # No CRC32, payload is everything after address and command
+        payload = remaining_data[2:]
+    
+    # Print packet information
+    print(format_info(f"Address: {address_byte} (0x{address_byte:02X})"))
+    print(format_info(f"Command: {command_byte} (0x{command_byte:02X})"))
+    print(format_info(f"Payload: {len(payload)} bytes"))
+    if len(payload) > 0:
+        print_data("Payload data: ", payload, print_size=True, verbose=2)
+    
+    return address_byte, command_byte, payload
 
 def flush_receive_buffer():
     ser.reset_input_buffer()
 
-def send_command(command_id, gathered_inputs, verbose=2):
-    command_payload_len = len(gathered_inputs)
-    encoded_alias = encode_device_id(alias)
-    # Debug print removed to prevent polluting the serial stream
-    # print("******************************* Encoded alias: %d" % (encoded_alias))
-    command = bytearray([encoded_alias, command_id, command_payload_len]) + gathered_inputs
+def calculate_crc32(data):
+    """Calculate CRC32 checksum for a byte array"""
+    import zlib
+    return zlib.crc32(data) & 0xffffffff
+
+def send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=True, verbose=2):
+    # Check if we're using extended addressing
+    if alias_or_unique_id <= 255:
+        # Standard addressing mode
+        # Format: address byte (alias) + command byte + payload
+        address_part = struct.pack('<B', alias_or_unique_id)
+    else:
+        # Extended addressing mode
+        # Format: address byte (EXTENDED_ADDRESSING) + 8 bytes unique ID + command byte + payload
+        address_part = struct.pack('<BQ', EXTENDED_ADDRESSING, alias_or_unique_id)
+    
+    # Add command byte and payload
+    command_part = struct.pack('<B', command_id) + gathered_inputs
+    
+    # Combine address and command parts
+    packet_content = address_part + command_part
+
+    # Calculate total packet size
+    packet_size = 1 + len(packet_content)  # +1 for the size byte itself
+    if crc32_enabled:
+        packet_size += 4 # the CRC32 is 4 extra bytes
+
+    # Check if we need extended size format (size > 127)
+    if packet_size > 127:
+        packet_size += 2 # since we cannot encode the size in just 1 byte, we will use extended size format, which is a total of 3 bytes (so add two more bytes)
+        # Extended size format: first byte = 127 (encoded), followed by 2-byte size
+        size_bytes = struct.pack('<BH', encode_first_byte(127), packet_size)
+        packet = size_bytes + packet_content
+    else:
+        # Standard size format: first byte = encoded size
+        packet = bytearray([encode_first_byte(packet_size)]) + packet_content
+
+    # Add CRC32 if enabled
+    if crc32_enabled:
+        if verbose >= 2:
+            print_data("Calculating CRC32 of: ", packet, print_size=True, verbose=verbose)
+        crc32_value = calculate_crc32(packet)
+        packet += struct.pack('<I', crc32_value)    
+    
+    # Here is where we actually send out the bytes to the serial port
     if verbose == 2:
-        print_data("Sending command: ", command, print_size=True, verbose=verbose)
-    ser.write(command)
-    if (alias == ALL_ALIAS) and (command_id != detect_devices_command_id) and (command_id != set_device_alias_command_id):
+        print_data("Sending packet: ", packet, print_size=True, verbose=verbose)
+    ser.write(packet)
+    
+    # Check if we should expect a response
+    if (alias_or_unique_id == ALL_ALIAS) and (command_id != detect_devices_command_id):
         if verbose == 2:
-            print(format_info(f"Sending a command to all devices (alias {alias}) and we expect there will be no response from any of them"))
+            print(format_info(f"Sending a command to all devices (alias {alias_or_unique_id}) and we expect there will be no response from any of them"))
         return []
     for command_index, item in enumerate(registered_commands):
         if command_id == item["CommandEnum"]:
@@ -181,18 +349,20 @@ def send_command(command_id, gathered_inputs, verbose=2):
         if verbose == 2:
             print(format_info("This command is expected to not return any response"))
         return []
+    
+    # And now let's read the response back from the serial port (reading occurs inside of the get_response function)
     all_response_payloads = []
     while(1):
         try:
-            response_payload = get_response(verbose=verbose)
+            response_payload = get_response(crc32_enabled=crc32_enabled, verbose=verbose)
             all_response_payloads.append(response_payload)
         except TimeoutError:
-            if alias == 255: # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
+            if alias_or_unique_id == ALL_ALIAS:  # we are sending a command to all devices and so we are expecting to get no response and rather a timeout
                 break
-            if registered_commands[command_index]["MultipleResponses"] == True: # check if this commmand may have any number of responses (including none)
+            if registered_commands[command_index]["MultipleResponses"] == True:  # check if this command may have any number of responses (including none)
                 break
-            # There is no legitamate reason that we should get a timeout here, so we need to raise this Timeout error again
-            raise TimeoutError("Error: timeout")
+            # There is no legitimate reason that we should get a timeout here, so we need to raise this Timeout error again
+            raise TimeoutError
         if registered_commands[command_index]["MultipleResponses"] == False:
             break
     return all_response_payloads
@@ -209,11 +379,14 @@ def string_to_u8_alias(input):
             print(format_error("Error: it is not a single character nor is it an integer"))
             exit(1)
         if converted_input < 0 or converted_input > ALL_ALIAS:
-            print(format_error(f"Error: it is not within the allowed range. The allowed range is 0 to {ALL_ALIAS}"))
+            print(format_error(f"Error: The alias (if not using extended addressing) is not within the allowed range. The allowed range is 0 to {ALL_ALIAS}"))
             exit(1)
     # Check for reserved values
-    if converted_input == RESPONSE_CHARACTER:
-        print(format_error(f"Error: the alias {RESPONSE_CHARACTER} is not allowed because it is reserved to indicate a response"))
+    if converted_input == RESPONSE_CHARACTER_CRC32_ENABLED:
+        print(format_error(f"Error: the alias {RESPONSE_CHARACTER_CRC32_ENABLED} is not allowed because it is reserved to indicate a response with a CRC32 check appended"))
+        exit(1)
+    if converted_input == RESPONSE_CHARACTER_CRC32_DISABLED:
+        print(format_error(f"Error: the alias {RESPONSE_CHARACTER_CRC32_DISABLED} is not allowed because it is reserved to indicate a response without a CRC32 check appended"))
         exit(1)
     if converted_input == EXTENDED_ADDRESSING:
         print(format_error(f"Error: the alias {EXTENDED_ADDRESSING} is not allowed because it is reserved for extended addressing"))
@@ -231,6 +404,15 @@ def string_to_u64_unique_id(input):
         exit(1)
     return converted_input
 
+def string_to_alias_or_unique_id(input_str):
+    """Convert the input string to either an alias or a unique ID based on its format"""
+    if len(input_str) >= 4:
+        # The user probably has intended this to be a a unique ID (16-character hex string) given the length of the input string
+        return string_to_u64_unique_id(input_str)
+    else:
+        # It's a probably a regular alias since the length of the string is short
+        return string_to_u8_alias(input_str)
+
 def set_serial_port_from_args(args):
     global serial_port
 
@@ -240,34 +422,47 @@ def set_serial_port_from_args(args):
         serial_port = args.port
 
 def set_standard_options_from_args(args):
-    global alias
-
     set_serial_port_from_args(args)
-
-    alias = args.alias
-    if alias == None:
-        print(format_error("Error: you must specify an alias with the -a option. Run this command with -h to get more detailed help."))
+    
+    # Determine verbosity level
+    verbose = 1  # Default verbosity level
+    if hasattr(args, 'verbose_level') and args.verbose_level is not None:
+        verbose = args.verbose_level
+    elif hasattr(args, 'verbose') and args.verbose:
+        verbose = 2
+    
+    if args.alias is None:
+        print(format_error("Error: you must specify an alias or unique id with the -a option. Run this command with -h to get more detailed help."))
         exit(1)
+    else:
+        # Determine if the alias is actually a unique ID
+        global global_alias_or_unique_id
+        global_alias_or_unique_id = string_to_alias_or_unique_id(args.alias)
+        
+        if verbose >= 1:
+            if global_alias_or_unique_id <= 255:
+                print(format_info(f"Using standard addressing with alias: {get_human_readable_alias_or_unique_id(global_alias_or_unique_id)}"))
+            else:
+                print(format_info(f"Using extended addressing with unique ID: 0x{global_alias_or_unique_id:016X}"))
 
-    alias = string_to_u8_alias(alias)
-    print(format_info(f"The alias of the device we want to communicate with is {get_human_readable_alias(alias)}"))
+def get_global_alias_or_unique_id():
+    global global_alias_or_unique_id
+    return global_alias_or_unique_id
 
 def set_data_types_and_command_data(new_data_types, new_registered_commands):
     global registered_data_types
     global registered_commands
     global detect_devices_command_id
-    global set_device_alias_command_id
     registered_data_types = new_data_types
     registered_commands = new_registered_commands
     detect_devices_command_id = get_command_id("Detect devices")
-    set_device_alias_command_id = get_command_id("Set device alias")
 
 def open_serial_port(timeout = 1.2):
     global ser
     ser = serial_functions.open_serial_port(serial_port, 230400, timeout = timeout)
 
 def close_serial_port():
-    ser.close
+    ser.close()
     print(format_info("Closed the serial port"))
 
 def input_or_response_to_string(data):
@@ -449,6 +644,8 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
                     print(format_error("The allowed range is: 0 to 0xFFFFFFFFFFFFFFFF"))
                     exit(1)
                 input_packed = input.to_bytes(8, byteorder = "little")
+        elif registered_data_types[data_type_id].data_type_str == "firmware_page":
+            input_packed = input
         else:
             print(format_error(f"Error: didn't yet implement a converter to handle the input type: {registered_data_types[data_type_id].data_type_str}"))
             exit(1)
@@ -565,8 +762,7 @@ def interpret_single_response(command_id, response, verbose=2):
                     print(format_info(f"   ---> {from_bytes_result}"))
             else:
                 if data_type_str == "string8":
-                    # remove the null terminator from the string
-                    data_item = data_item[:-1]
+#                    data_item = data_item[:-1] # remove the null terminator from the string. actually, there is no null terminator. this string is a certain length (currently 8 characters) and is padded with spaces.
                     data_item = data_item.decode("utf-8")
                     parsed_response.append(data_item)
                     if verbose >= 1:
@@ -627,22 +823,25 @@ def interpret_response(command_id, response, verbose=2):
         parsed_response.append(partial_parsed_response)
     return parsed_response
 
-def execute_command(_alias, command_id_or_str, inputs, verbose=2):
-    global alias
-    alias = _alias
+def execute_command(command_id_or_str, inputs, alias_or_unique_id=None, crc32_enabled=True, verbose=2):
+    if alias_or_unique_id == None:
+        global global_alias_or_unique_id
+        alias_or_unique_id = global_alias_or_unique_id
+    if alias_or_unique_id == None:
+        raise NoAliasOrUniqueIdSet(f"ERROR: No alias or unique ID given, so we don't know who we should communicate with")
     if isinstance(command_id_or_str, int):
         command_id = command_id_or_str
         command_str = registered_commands[command_id]["CommandString"]
     else:
-        command_id = get_command_id(command_str)
+        command_id = get_command_id(command_id_or_str)
         command_str = command_id_or_str
     if command_id == None:
-        print(format_error(f"ERROR: The command {command_id_or_str} is not supported"))
+        print(format_error(f"ERROR: Unknown command: `{command_id_or_str}`"))
         exit(1)
     if verbose >= 1:
-        print(format_info(f"The command is: {command_str} and it has ID {command_id}"))
+        print(format_info(f"The command is: {command_str} (CommandEnum {command_id})"))
     gathered_inputs = gather_inputs(command_id, inputs, verbose=verbose)
-    response = send_command(command_id, gathered_inputs, verbose=verbose)
+    response = send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=crc32_enabled, verbose=verbose)
     parsed_response = interpret_response(command_id, response, verbose=verbose)
     return parsed_response
 
