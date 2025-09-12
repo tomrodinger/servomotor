@@ -47,12 +47,17 @@ SERVOMOTOR_CPP_TEMPLATE = os.path.join(TEMPLATES_DIR, "Servomotor.cpp.template")
 
 
 def back_up_files(files):
-    """Create timestamped backups of files."""
+    """Create timestamped backups of files into a 'backups' subfolder next to each file."""
     for file in files:
         try:
             with open(file, 'r') as f:
                 contents = f.read()
-            backup_filename = file + "." + datetime.now().strftime('%b-%d-%Y-%H-%M-%S') + ".bak"
+            directory = os.path.dirname(file)
+            backup_dir = os.path.join(directory, "backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            basename = os.path.basename(file)
+            timestamp = datetime.now().strftime('%b-%d-%Y-%H-%M-%S')
+            backup_filename = os.path.join(backup_dir, f"{basename}.{timestamp}.bak")
             with open(backup_filename, 'w') as bf:
                 bf.write(contents)
             print(f"Backed up {file} to {backup_filename}")
@@ -144,7 +149,7 @@ def main():
     
     # The existing files will be backed up unless --no-backup is given
     if '--no-backup' not in sys.argv:
-        print("The existing files will be backed up and then overwritten.")
+        print("The existing files will be backed up (to a 'backups' subfolder) and then overwritten.")
         print("You can give the --no-backup command line option to not make any backups.")
         backup_flag = True
     else:

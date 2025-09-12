@@ -1,0 +1,1 @@
+Please start by familiarizing yourself with this project. Read README.md along with the main program called generate_command_code.py and other source files as you see fit. Then, follow the users requests.

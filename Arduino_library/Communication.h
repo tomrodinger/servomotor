@@ -55,7 +55,7 @@ uint32_t calculate_crc32(const uint8_t* data, size_t length);
 class Communication {
 public:
     // Optionally pass baud and RX/TX pins (-1 = use platform defaults)
-    Communication(HardwareSerial& serialPort, uint32_t baud = 230400, int8_t rxPin = -1, int8_t txPin = -1);
+    Communication(HardwareSerial& serialPort, uint32_t baud = 115200, int8_t rxPin = -1, int8_t txPin = -1);
 
     void openSerialPort();
     

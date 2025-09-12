@@ -4,8 +4,8 @@
 #include <sstream> // For std::stringstream
 #include <iomanip> // For std::setw, std::setfill
 
-Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort)
-    : _alias(alias), _uniqueId(0), _useExtendedAddressing(false), _comm(serialPort), _errno(0),
+Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort, int8_t rxPin, int8_t txPin, uint32_t baud)
+    : _alias(alias), _uniqueId(0), _useExtendedAddressing(false), _comm(serialPort, baud, rxPin, txPin), _errno(0),
       m_positionUnit(PositionUnit::SHAFT_ROTATIONS),
       m_velocityUnit(VelocityUnit::ROTATIONS_PER_SECOND),
       m_accelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED),
