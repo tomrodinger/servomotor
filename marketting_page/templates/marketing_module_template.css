@@ -1,0 +1,415 @@
+/* Override global dark background for marketing page */
+.marketing {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #ffffff !important;
+    min-height: 100vh;
+    --primary-color: #1b4d3e;
+    --secondary-color: #34a853;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --border-color: #ddd;
+    --code-bg: #f8f8f8;
+}
+
+/* Ensure marketing page overrides global dark styles */
+.marketing * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Override global main styles for marketing page */
+.marketing main {
+    background-color: #ffffff !important;
+    color: #333 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    display: block !important;
+    justify-content: initial !important;
+    align-items: initial !important;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Hero Section */
+.heroSection {
+    padding: 60px 0;
+    background: #ffffff;
+    text-align: center;
+}
+
+.logo {
+    max-width: 120px;
+    height: auto;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.mainTitle {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 1.25rem;
+    color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+.heroImage {
+    max-width: 100%;
+    height: auto;
+    margin-top: 40px;
+}
+
+/* CTA Button */
+.ctaContainer {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.ctaButton {
+    display: inline-block;
+    padding: 15px 40px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.ctaButton:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Content Sections */
+.contentSection {
+    padding: 60px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.contentSection:last-of-type {
+    border-bottom: none;
+}
+
+.contentSection h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.contentSection h3 {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin: 30px 0 20px;
+}
+
+.contentSection p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+}
+
+/* Features List - Simplified */
+.featuresListSimple {
+    list-style-type: disc;
+    padding-left: 40px;
+    margin: 20px 0;
+}
+
+.featuresListSimple li {
+    margin-bottom: 12px;
+    line-height: 1.8;
+}
+
+/* Guide features list */
+.guideFeatures {
+    list-style-type: disc;
+    padding-left: 40px;
+    margin: 20px 0;
+}
+
+.guideFeatures li {
+    margin-bottom: 12px;
+    line-height: 1.8;
+}
+
+/* Images */
+.sectionImageContainer {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.sectionImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.diagramImage {
+    max-width: 100%;
+    height: auto;
+    margin: 30px auto;
+    display: block;
+}
+
+/* Dimension Images */
+.dimensionImages {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin: 30px 0;
+    gap: 20px;
+}
+
+.dimensionImageContainer {
+    text-align: center;
+    flex: 1;
+    min-width: 200px;
+}
+
+.dimensionImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.dimensionLabel {
+    margin-top: 10px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Tables */
+.specsTable, .conditionsTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9rem;
+}
+
+.specsTable th, .specsTable td,
+.conditionsTable th, .conditionsTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.specsTable th, .conditionsTable th {
+    background-color: var(--light-gray);
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.specsTable tbody tr:hover,
+.conditionsTable tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Links and CTAs */
+.guideLink, .commandLink, .githubLink {
+    text-align: center;
+    margin: 30px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.clickIcon {
+    width: 24px;
+    height: 24px;
+}
+
+.clickIconSmall {
+    width: 16px;
+    height: 16px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btnPrimary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btnPrimary:hover {
+    background-color: var(--secondary-color);
+}
+
+/* Code blocks */
+.marketing pre {
+    background-color: var(--code-bg);
+    padding: 20px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 20px 0;
+    border: 1px solid var(--border-color);
+}
+
+.marketing code {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+}
+
+/* Library sections */
+.librarySection {
+    margin: 40px 0;
+}
+
+.librarySection h3 {
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+/* Applications */
+.applicationsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin: 30px 0;
+}
+
+.applicationCard {
+    text-align: center;
+    padding: 20px;
+}
+
+.applicationCard h3 {
+    color: var(--primary-color);
+    margin: 15px 0 10px;
+}
+
+.applicationImage {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+/* Company section */
+.companyContent {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.companyImageContainer {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.companyImage {
+    max-width: 100%;
+    height: auto;
+}
+
+.imageCaption {
+    margin-top: 10px;
+    font-style: italic;
+    color: #666;
+}
+
+/* Open source section */
+.openSourceContent {
+    text-align: center;
+}
+
+.openSourceLogos {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.oshLogo, .osiLogo {
+    height: 60px;
+    width: auto;
+}
+
+/* Footer */
+.footer {
+    background-color: var(--light-gray);
+    padding: 40px 0;
+    text-align: center;
+    margin-top: 60px;
+}
+
+.footerLogo {
+    max-width: 100px;
+    height: auto;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.versionInfo {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.copyright {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .mainTitle {
+        font-size: 2rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .contentSection {
+        padding: 40px 0;
+    }
+
+    .contentSection h2 {
+        font-size: 1.5rem;
+    }
+
+    .dimensionImages {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .applicationsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .openSourceLogos {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .specsTable, .conditionsTable {
+        font-size: 0.8rem;
+    }
+
+    .specsTable th, .specsTable td,
+    .conditionsTable th, .conditionsTable td {
+        padding: 8px;
+    }
+}

@@ -2,45 +2,135 @@
 
 import os
 import json
+import argparse
+import shutil
 from datetime import datetime
-from web_utils import (
-    create_html_section, create_html_table, create_image_element,
-    create_code_block, wrap_html_document, save_css_file
-)
-from web_styles import generate_css
+
+def ensure_dir(directory):
+    """Ensure directory exists, create if it doesn't"""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created directory: {directory}")
+
+def copy_file(src, dst):
+    """Copy a file from src to dst"""
+    shutil.copy2(src, dst)
+    print(f"Copied: {src} -> {dst}")
+
+def format_file_size(size_bytes):
+    """Format file size in human-readable format"""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.1f} TB"
+
+def get_image_dimensions(image_path):
+    """Get dimensions of an image"""
+    try:
+        from PIL import Image
+        if os.path.exists(image_path):
+            with Image.open(image_path) as img:
+                return img.size  # Returns (width, height)
+    except ImportError:
+        print(f"Warning: PIL not installed, cannot get dimensions for {image_path}")
+    except Exception as e:
+        print(f"Error getting dimensions for {image_path}: {e}")
+    return None
+
+def get_smart_max_width(image_name):
+    """Determine optimal max width based on image type"""
+    # Technical diagrams and dimension drawings - preserve detail
+    if 'diagram' in image_name.lower() or 'dimensions' in image_name.lower():
+        return 1200
+    # Logos and icons - moderate size
+    elif 'logo' in image_name.lower() or 'icon' in image_name.lower() or 'click_here' in image_name.lower():
+        return 400
+    # Overview images - good quality
+    elif 'overview' in image_name.lower():
+        return 800
+    # Regular photos - standard web optimization
+    else:
+        return 800
+
+def optimize_and_copy_image(src, dst, max_width=None):
+    """Copy and optimize image for web, returning metadata"""
+    if not os.path.exists(src):
+        print(f"Warning: Source image {src} not found")
+        return None
+    
+    # Auto-determine max width if not specified
+    if max_width is None:
+        max_width = get_smart_max_width(src)
+    
+    # Get original file info
+    original_size = os.path.getsize(src)
+    original_dims = get_image_dimensions(src)
+    
+    # Try to optimize the image
+    optimization_result = resize_image(src, dst, max_width)
+    
+    # Get optimized file info
+    if os.path.exists(dst):
+        optimized_size = os.path.getsize(dst)
+        optimized_dims = get_image_dimensions(dst)
+        
+        # Calculate compression ratio
+        if original_size > 0:
+            compression_ratio = ((original_size - optimized_size) / original_size) * 100
+        else:
+            compression_ratio = 0
+        
+        return {
+            'src_path': src,
+            'dst_path': dst,
+            'original_size': original_size,
+            'optimized_size': optimized_size,
+            'original_dims': original_dims,
+            'optimized_dims': optimized_dims,
+            'compression_ratio': compression_ratio,
+            'optimization_applied': optimization_result
+        }
+    
+    return None
 
 def resize_image(input_path, output_path, max_width=600):
     """Resize image to optimize for web, creating a smaller version"""
     try:
         from PIL import Image
-        
+
         # Check if input file exists
         if not os.path.exists(input_path):
             print(f"Warning: Image {input_path} not found, skipping resize")
             return False
-            
-        # Open and resize image
+
+        # Open image
         with Image.open(input_path) as img:
             # Calculate new size maintaining aspect ratio
-            width_percent = max_width / float(img.size[0])
-            new_height = int(float(img.size[1]) * width_percent)
-            
-            # Only resize if image is larger than max_width
             if img.size[0] > max_width:
+                width_percent = max_width / float(img.size[0])
+                new_height = int(float(img.size[1]) * width_percent)
+                
+                # Resize the image
                 img_resized = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
                 img_resized.save(output_path, optimize=True, quality=85)
-                print(f"Created optimized image: {output_path}")
+                print(f"Created optimized image: {output_path} ({max_width}x{new_height})")
+                return True
             else:
                 # If already small enough, just copy with optimization
                 img.save(output_path, optimize=True, quality=85)
-                print(f"Optimized image: {output_path}")
-            
-            return True
+                print(f"Optimized image: {output_path} (preserved size {img.size[0]}x{img.size[1]})")
+                return True
+
     except ImportError:
         print("Warning: PIL not installed. Install with: pip install Pillow")
+        # Fallback to simple copy
+        copy_file(input_path, output_path)
         return False
     except Exception as e:
         print(f"Error resizing image {input_path}: {e}")
+        # Fallback to simple copy
+        copy_file(input_path, output_path)
         return False
 
 def get_optimized_image_name(image_name):
@@ -93,497 +183,409 @@ def get_latest_version():
         pass
     return '1.0', 'December 2024'
 
-def generate_header_section():
-    """Generate the header section with title and logo"""
-    html = '<header class="hero-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <img src="Gearotons_Logo.png" alt="Gearotons Logo" class="logo">\n'
-    html += '    <h1 class="main-title">M17 Series Servomotors</h1>\n'
-    html += '    <p class="subtitle">Affordable and Simple All-in-One Motion Control</p>\n'
-    html += '    <p class="subtitle">From Education to Innovation</p>\n'
-    html += '    <img src="M17_series_overview.jpg" alt="M17 Series Overview" class="hero-image">\n'
-    html += '  </div>\n'
-    html += '</header>\n\n'
-    return html
+def generate_nextjs_content(image_dimensions, is_standalone=False):
+    """Generate content for Next.js templates with dynamic image dimensions"""
+    # Read template files
+    with open('templates/next_index_template.jsx', 'r', encoding='utf-8') as f:
+        jsx_template = f.read()
 
-def generate_introduction_section():
-    """Generate the introduction section"""
-    html = '<section id="introduction" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Introduction</h2>\n'
+    with open('templates/marketing_module_template.css', 'r', encoding='utf-8') as f:
+        css_template = f.read()
     
+    # Fix import path based on context
+    if is_standalone:
+        # For standalone preview, use relative path
+        jsx_template = jsx_template.replace("import styles from '../styles/Marketing.module.css'",
+                                            "import styles from '../styles/Marketing.module.css'")
+    else:
+        # For e-commerce integration, use alias path
+        jsx_template = jsx_template.replace("import styles from '../styles/Marketing.module.css'",
+                                            "import styles from '@/styles/Marketing.module.css'")
+
+    # Generate dynamic content
+    intro_paragraphs = generate_intro_paragraphs()
+    features_li = generate_features_list()
+    unit_table = generate_unit_table_html()
+    company_paragraphs = generate_company_paragraphs()
+    version, date = get_latest_version()
+
+    # Replace content tokens in templates
+    jsx_content = jsx_template.replace('__INTRO_PARAGRAPHS__', intro_paragraphs)
+    jsx_content = jsx_content.replace('__FEATURES_LI__', features_li)
+    jsx_content = jsx_content.replace('__UNIT_TABLE__', unit_table)
+    jsx_content = jsx_content.replace('__COMPANY_PARAGRAPHS__', company_paragraphs)
+    jsx_content = jsx_content.replace('__VERSION__', version)
+    jsx_content = jsx_content.replace('__DATE__', date)
+    
+    # Replace image dimension tokens
+    # Create a comprehensive mapping for all possible image names to their dimensions
+    dimension_replacements = {}
+    
+    for image_name, dims in image_dimensions.items():
+        if dims:
+            width, height = dims
+            # Create token names from image name - handle various formats
+            base_name = image_name.replace('.jpg', '').replace('.png', '').replace('.svg', '')
+            base_name = base_name.replace('-', '_').replace(' ', '_').replace('.', '_')
+            
+            # Store dimensions for this image
+            dimension_replacements[base_name] = (width, height)
+    
+    # Apply all dimension replacements
+    for base_name, (width, height) in dimension_replacements.items():
+        width_token = f'__WIDTH_{base_name}__'
+        height_token = f'__HEIGHT_{base_name}__'
+        
+        # Replace in JSX content
+        jsx_content = jsx_content.replace(width_token, str(width))
+        jsx_content = jsx_content.replace(height_token, str(height))
+    
+    # Check for any remaining unreplaced tokens and provide defaults
+    import re
+    width_pattern = r'__WIDTH_([^_]+(?:_[^_]+)*)__'
+    height_pattern = r'__HEIGHT_([^_]+(?:_[^_]+)*)__'
+    
+    # Find any unreplaced width tokens
+    remaining_widths = re.findall(width_pattern, jsx_content)
+    remaining_heights = re.findall(height_pattern, jsx_content)
+    
+    if remaining_widths or remaining_heights:
+        print("\nWarning: Some image dimension tokens were not replaced:")
+        for token in set(remaining_widths):
+            print(f"  - __WIDTH_{token}__")
+            # Provide reasonable defaults based on image type
+            if 'logo' in token.lower():
+                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '200')
+            elif 'dimension' in token.lower() or 'diagram' in token.lower():
+                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '1200')
+            else:
+                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '800')
+        
+        for token in set(remaining_heights):
+            print(f"  - __HEIGHT_{token}__")
+            # Provide reasonable defaults
+            if 'logo' in token.lower():
+                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '200')
+            elif 'dimension' in token.lower() or 'diagram' in token.lower():
+                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '1200')
+            else:
+                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '600')
+
+    return jsx_content, css_template
+
+def generate_intro_paragraphs():
+    """Generate introduction paragraphs for JSX"""
     content = read_file_content('introduction.txt')
-    if content:
-        paragraphs = content.split('\n')
-        for paragraph in paragraphs:
-            if paragraph.strip():
-                html += f'    <p>{paragraph.strip()}</p>\n'
-    
-    # Resize and add image to introduction section
-    original_img = 'one_motor.jpg'
-    optimized_img = get_optimized_image_name(original_img)
-    resize_image(original_img, optimized_img)
-    
-    html += '    <div class="section-image-container">\n'
-    html += f'      <img src="{optimized_img}" alt="M17 Servomotor" class="section-image">\n'
-    html += '    </div>\n'
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
+    if not content:
+        return '<p>The M17 Series Servomotors are all-in-one motion control solutions that integrate a motor, motor driver, motion controller, and encoder in a single compact package.</p>'
+
+    paragraphs = content.split('\n')
+    html = ''
+    for paragraph in paragraphs:
+        if paragraph.strip():
+            html += f'<p>{paragraph.strip()}</p>\n'
     return html
 
-def generate_features_section():
-    """Generate the key features section from features.txt"""
-    html = '<section id="features" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Key Features</h2>\n'
-    
-    # Resize and add image to features section
-    original_img = 'kit_with_three_motors.jpg'
-    optimized_img = get_optimized_image_name(original_img)
-    resize_image(original_img, optimized_img)
-    
-    html += '    <div class="section-image-container">\n'
-    html += f'      <img src="{optimized_img}" alt="M17 Servomotor Kit" class="section-image">\n'
-    html += '    </div>\n'
-    
-    html += '    <ul class="features-list-simple">\n'
-    
+def generate_features_list():
+    """Generate features list items for JSX"""
     features = read_features()
+    html = ''
     for feature in features:
-        html += f'      <li>{feature}</li>\n'
-    
-    html += '    </ul>\n'
-    html += '  </div>\n'
-    html += '</section>\n\n'
+        html += f'<li>{feature}</li>\n'
     return html
 
-def generate_connection_diagram_section():
-    """Generate the connection diagram section"""
-    html = '<section id="connection" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Connection Diagram</h2>\n'
-    html += '    <img src="connection_diagram.jpg" alt="Connection Diagram" class="diagram-image">\n'
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
-
-def generate_unit_system_section():
-    """Generate the unit system section"""
-    html = '<section id="unit-system" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Unit System</h2>\n'
-    html += '    <p>The M17 Series Servomotors have certain internal units so that they can perform the calculations '
-    html += 'associated with motion efficiently (using integer math). It is the responsibility of the controlling '
-    html += 'software to support multiple units of measurement for various quantities. Our Python and Arduino libraries handle '
-    html += 'unit conversions automatically, allowing you to work with your preferred units. Below are the supported '
-    html += 'units for each quantity:</p>\n'
-    
+def generate_unit_table_html():
+    """Generate unit system table for JSX"""
     # Try to load unit conversion data
     unit_data = load_json_file('../python_programs/servomotor/unit_conversions_M3.json')
     if unit_data and 'units' in unit_data:
         units = unit_data['units']
-        table_data = [['Quantity', 'Available Units']]
-        
+        html = '''<table className={styles.specsTable}>
+      <thead>
+        <tr>
+          <th>Quantity</th>
+          <th>Available Units</th>
+        </tr>
+      </thead>
+      <tbody>'''
+
         for quantity, unit_list in units.items():
             quantity_name = quantity.replace('_', ' ').title()
             unit_text = ', '.join(unit.replace('_', ' ') for unit in unit_list)
-            table_data.append([quantity_name, unit_text])
-        
-        html += create_html_table(table_data, 'specs-table')  # Use specs-table class for consistent styling
+            html += f'''
+        <tr>
+          <td>{quantity_name}</td>
+          <td>{unit_text}</td>
+        </tr>'''
+
+        html += '''
+      </tbody>
+    </table>'''
     else:
         # Fallback table with common units
-        table_data = [
-            ['Quantity', 'Available Units'],
-            ['Position', 'degrees, radians, revolutions, encoder counts'],
-            ['Speed', 'RPM, degrees/sec, radians/sec'],
-            ['Acceleration', 'degrees/sec², radians/sec²'],
-            ['Time', 'seconds, milliseconds, microseconds'],
-            ['Current', 'milliamps, amps'],
-            ['Voltage', 'millivolts, volts']
-        ]
-        html += create_html_table(table_data, 'specs-table')
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
+        html = '''<table className={styles.specsTable}>
+      <thead>
+        <tr>
+          <th>Quantity</th>
+          <th>Available Units</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Time</td><td>timesteps, seconds, milliseconds, minutes</td></tr>
+        <tr><td>Position</td><td>shaft rotations, degrees, radians, encoder counts</td></tr>
+        <tr><td>Velocity</td><td>rotations per second, rpm, degrees per second, radians per second, counts per second, counts per timestep</td></tr>
+        <tr><td>Acceleration</td><td>rotations per second squared, rpm per second, degrees per second squared, radians per second squared, counts per second squared, counts per timestep squared</td></tr>
+        <tr><td>Current</td><td>internal current units, milliamps, amps</td></tr>
+        <tr><td>Voltage</td><td>millivolts, volts</td></tr>
+        <tr><td>Temperature</td><td>celsius, fahrenheit, kelvin</td></tr>
+      </tbody>
+    </table>'''
+
     return html
 
-def generate_specifications_section():
-    """Generate the technical and mechanical specifications section"""
-    html = '<section id="specifications" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Technical Specifications</h2>\n'
-    
-    # Mechanical specs table (displayed first in the PDF)
-    html += '    <h3>Mechanical Specifications</h3>\n'
-    mech_data = [
-        ['Parameter', 'M17-60', 'M17-48', 'M17-40'],
-        ['Dimensions (LxW)', '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm'],
-        ['Height', '59.8 mm', '48.6 mm', '41.6 mm'],
-        ['Shaft Length', '20.4 mm', '20.4 mm', '18.5 mm'],
-        ['Shaft Diameter', '5 mm', '5 mm', '5 mm'],
-        ['Weight', '470g', '360g', '285g'],
-        ['Protection Class', 'IP20', 'IP20', 'IP20']
-    ]
-    html += create_html_table(mech_data, 'specs-table')
-    
-    # Add dimension images for each model
-    html += '    <div class="dimension-images">\n'
-    for model in ['M17-60', 'M17-48', 'M17-40']:
-        html += f'      <div class="dimension-image-container">\n'
-        html += f'        <img src="{model}_dimensions.png" alt="{model} Dimensions" class="dimension-image">\n'
-        html += f'        <p class="dimension-label">{model}</p>\n'
-        html += f'      </div>\n'
-    html += '    </div>\n'
-    
-    # Technical specs table
-    html += '    <h3>Electrical Specifications</h3>\n'
-    tech_data = [
-        ['Parameter', 'M17-60', 'M17-48', 'M17-40'],
-        ['Operating Voltage', '12-24V', '12-24V', '12-24V'],
-        ['Rated Torque', '0.65 N.m', '0.55 N.m', '0.42 N.m'],
-        ['Maximum Speed', '560 RPM', '560 RPM', '560 RPM'],
-        ['Maximum Current', '1.1A', '1.1A', '1.1A'],
-        ['Rated Power', '38W', '32W', '25W']
-    ]
-    html += create_html_table(tech_data, 'specs-table')
-    
-    # Operating conditions
-    html += '    <h3>Operating Conditions</h3>\n'
-    conditions_data = [
-        ['Parameter', 'Specification'],
-        ['Operating Temperature', '0°C to +80°C'],
-        ['Storage Temperature', '-20°C to +60°C'],
-        ['Humidity Range', '20% to 80% RH (non-condensing)'],
-        ['Installation Environment', 'Indoor use only']
-    ]
-    html += create_html_table(conditions_data, 'conditions-table')
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
+def generate_company_paragraphs():
+    """Generate company profile paragraphs for JSX"""
+    content = read_file_content('company_profile.txt')
+    if not content:
+        return '<p>We are an innovative startup committed to making precision motion control accessible to everyone: to makers, educators, and engineers alike.</p>'
+
+    paragraphs = content.split('\n')
+    html = ''
+    for paragraph in paragraphs:
+        if paragraph.strip():
+            html += f'<p>{paragraph.strip()}</p>\n'
     return html
 
-def generate_indicators_section():
-    """Generate the Indicator LEDs and Buttons section"""
-    html = '<section id="indicators" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Indicator LEDs and Buttons</h2>\n'
+def print_optimization_summary(image_metadata_list):
+    """Print a summary of image optimization results"""
+    print("\n" + "="*60)
+    print("IMAGE OPTIMIZATION SUMMARY")
+    print("="*60)
     
-    # Resize and add image showing motor back with LEDs and buttons
-    original_img = 'motor_back.jpg'
-    optimized_img = get_optimized_image_name(original_img)
-    resize_image(original_img, optimized_img)
+    total_original = 0
+    total_optimized = 0
     
-    html += '    <div class="section-image-container">\n'
-    html += f'      <img src="{optimized_img}" alt="Motor Back with LEDs and Buttons" class="section-image">\n'
-    html += '    </div>\n'
+    for metadata in image_metadata_list:
+        if metadata:
+            image_name = os.path.basename(metadata['src_path'])
+            original_size_str = format_file_size(metadata['original_size'])
+            optimized_size_str = format_file_size(metadata['optimized_size'])
+            
+            print(f"\n📸 {image_name}")
+            
+            # Dimensions
+            if metadata['original_dims']:
+                orig_w, orig_h = metadata['original_dims']
+                print(f"   Original:  {orig_w}x{orig_h}, {original_size_str}")
+            else:
+                print(f"   Original:  {original_size_str}")
+            
+            if metadata['optimized_dims']:
+                opt_w, opt_h = metadata['optimized_dims']
+                print(f"   Optimized: {opt_w}x{opt_h}, {optimized_size_str}")
+            else:
+                print(f"   Optimized: {optimized_size_str}")
+            
+            # Compression ratio
+            if metadata['compression_ratio'] > 0:
+                print(f"   Reduction: {metadata['compression_ratio']:.1f}%")
+            
+            total_original += metadata['original_size']
+            total_optimized += metadata['optimized_size']
     
-    # LED description from indicators.py
-    led_description = (
-        "The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat "
-        "and quickly to indicate that the bootloader is running rather than the application. The red LED will "
-        "light up briefly to show communication on the bus and will indicate fatal error codes by flashing a "
-        "certain number of times."
-    )
+    # Print totals
+    if total_original > 0:
+        print("\n" + "-"*60)
+        print(f"TOTAL ORIGINAL SIZE:  {format_file_size(total_original)}")
+        print(f"TOTAL OPTIMIZED SIZE: {format_file_size(total_optimized)}")
+        total_reduction = ((total_original - total_optimized) / total_original) * 100
+        print(f"TOTAL REDUCTION:      {total_reduction:.1f}%")
+        print(f"SPACE SAVED:          {format_file_size(total_original - total_optimized)}")
     
-    # Button description from indicators.py
-    button_description = (
-        "The servomotor has two buttons labelled \"Reset\" and \"Test\". The Reset button will reset the internal "
-        "microcontroller and all state will go back to default values. The Test button will cause the motor to spin. "
-        "Press briefly to let it spin one way and press for more than 0.3 seconds and release to let it spin the other "
-        "way. Hold down for at least 2 seconds and release to cause the motor to go to closed loop mode. Hold down for "
-        "more than 15 seconds and release to let the motor perform a calibration on itself. Note that it will spin during "
-        "calibration and must be able to spin freely for calibration to be successful, so remove any loads before doing "
-        "this operation."
-    )
-    
-    html += f'    <p>{led_description}</p>\n'
-    html += f'    <p>{button_description}</p>\n'
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+    print("="*60 + "\n")
 
-def generate_protocol_section():
-    """Generate the communication protocol section"""
-    html = '<section id="protocol" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Communication Protocol</h2>\n'
+def copy_assets_to_nextjs(nextjs_path, skip_assets=False):
+    """Copy and optimize assets to Next.js project, returning dimension map"""
+    if skip_assets:
+        print("Skipping asset copy...")
+        return {}
+
+    public_dir = os.path.join(nextjs_path, 'public')
+    images_dir = os.path.join(public_dir, 'marketing', 'images')
+    logos_dir = os.path.join(public_dir, 'marketing', 'logos')
+
+    ensure_dir(images_dir)
+    ensure_dir(logos_dir)
+
+    # Track all image metadata
+    all_image_metadata = []
+    image_dimensions = {}
+
+    # Copy logos (usually don't need heavy optimization)
+    logos_to_copy = [
+        ('Gearotons_Logo.png', 'Gearotons_Logo.png')
+    ]
+
+    for src_name, dst_name in logos_to_copy:
+        if os.path.exists(src_name):
+            dst_path = os.path.join(logos_dir, dst_name)
+            metadata = optimize_and_copy_image(src_name, dst_path, max_width=800)
+            if metadata:
+                all_image_metadata.append(metadata)
+                if metadata['optimized_dims']:
+                    image_dimensions[dst_name] = metadata['optimized_dims']
+
+    # Define images to copy with their optimization strategy
+    # Format: (source, destination)
+    images_to_copy = [
+        ('M17_series_overview.jpg', 'M17_series_overview.jpg'),
+        ('connection_diagram.jpg', 'connection_diagram.jpg'),
+        ('M17-40_dimensions.png', 'M17-40_dimensions.png'),
+        ('M17-48_dimensions.png', 'M17-48_dimensions.png'),
+        ('M17-60_dimensions.png', 'M17-60_dimensions.png'),
+        ('one_motor.jpg', 'one_motor_small.jpg'),
+        ('kit_with_three_motors.jpg', 'kit_with_three_motors_small.jpg'),
+        ('motor_back.jpg', 'motor_back_small.jpg'),
+        ('adapter_and_wire.jpg', 'adapter_and_wire_small.jpg'),
+        ('robotics.jpg', 'robotics_small.jpg'),
+        ('automation.jpg', 'automation_small.jpg'),
+        ('test_rack.jpg', 'test_rack_small.jpg'),
+        ('click_here.png', 'click_here.png'),
+        ('Open-source-hardware-logo.svg.png', 'Open_source_hardware_logo_svg.png'),
+        ('Open_Source_Initiative.svg.png', 'Open_Source_Initiative_svg.png')
+    ]
+
+    for src_name, dst_name in images_to_copy:
+        if os.path.exists(src_name):
+            dst_path = os.path.join(images_dir, dst_name)
+            metadata = optimize_and_copy_image(src_name, dst_path)
+            if metadata:
+                all_image_metadata.append(metadata)
+                if metadata['optimized_dims']:
+                    image_dimensions[dst_name] = metadata['optimized_dims']
+
+    # Print optimization summary
+    print_optimization_summary(all_image_metadata)
     
-    # Resize and add adapter and wire image
-    original_img = 'adapter_and_wire.jpg'
-    optimized_img = get_optimized_image_name(original_img)
-    resize_image(original_img, optimized_img)
-    
-    html += '    <div class="section-image-container">\n'
-    html += f'      <img src="{optimized_img}" alt="RS-485 Adapter and Wire" class="section-image">\n'
-    html += '    </div>\n'
-    
-    # Protocol overview
-    content = read_file_content('protocol.txt')
-    if content:
-        html += f'    <p>{content}</p>\n'
+    return image_dimensions
+
+def generate_nextjs_files(nextjs_path, overwrite_index=False, skip_css=False, image_dimensions=None, is_standalone=False):
+    """Generate Next.js files with dynamic image dimensions"""
+    pages_dir = os.path.join(nextjs_path, 'pages')
+    components_dir = os.path.join(nextjs_path, 'components')
+    styles_dir = os.path.join(nextjs_path, 'styles')
+
+    ensure_dir(pages_dir)
+    ensure_dir(components_dir)
+    ensure_dir(styles_dir)
+
+    # Generate content with image dimensions
+    jsx_content, css_content = generate_nextjs_content(image_dimensions or {}, is_standalone=is_standalone)
+
+    # Write JSX file
+    if overwrite_index:
+        jsx_path = os.path.join(pages_dir, 'index.js')
+        print(f"Writing pages/index.js")
     else:
-        html += '    <p>The M17 series uses RS-485 communication with a simple command-based protocol. Multiple motors can be daisy-chained on a single bus, each with a unique ID.</p>\n'
-    
-    # Command reference - matching the actual datasheet
-    html += '    <h3>Command Reference Summary</h3>\n'
-    html += '    <p>For the up to date source of truth for all available commands, you can look at this document.</p>\n'
-    
-    # Add link to GitHub
-    html += '    <div class="command-link">\n'
-    html += '      <img src="click_here.png" alt="Click Here" class="click-icon-small">\n'
-    html += '      <a href="https://github.com/tomrodinger/servomotor/blob/main/python_programs/servomotor/motor_commands.json" target="_blank">\n'
-    html += '        https://github.com/tomrodinger/servomotor/blob/main/python_programs/servomotor/motor_commands.json\n'
-    html += '      </a>\n'
-    html += '    </div>\n'
-    
-    html += '    <p>You can also run this command:</p>\n'
-    
-    # Add command line instructions
-    commands = '''pip3 install servomotor   # run this just once to install the library and programs
-servomotor_command.py -c'''
-    html += create_code_block(commands, 'bash')
-    
-    html += '    <p>This will print out the information contained in the motor_commands.json file in a nicer way and give some usage information for sending commands to the motor from the command line.</p>\n'
-    
-    # Since we don't have motor_commands.json, provide a link to documentation
-    html += '    <p>The commands are grouped by functionality including Basic Control, Motion Control, Configuration, Status & Monitoring, and Device Management.</p>\n'
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+        jsx_path = os.path.join(components_dir, 'MarketingContent.js')
+        print(f"Writing components/MarketingContent.js")
 
-def generate_library_section():
-    """Generate the library support section"""
-    html = '<section id="libraries" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Library Support</h2>\n'
+    with open(jsx_path, 'w', encoding='utf-8') as f:
+        f.write(jsx_content)
+
+    # Write CSS file
+    if not skip_css:
+        css_path = os.path.join(styles_dir, 'Marketing.module.css')
+        with open(css_path, 'w', encoding='utf-8') as f:
+            f.write(css_content)
+        print(f"Writing styles/Marketing.module.css")
+
+def create_standalone_nextjs(output_dir='./preview'):
+    """Create a minimal standalone Next.js app for preview"""
+    print(f"\n🚀 Creating standalone Next.js preview app in {output_dir}...")
     
-    # Python library
-    html += '    <div class="library-section">\n'
-    html += '      <h3>Python Library</h3>\n'
-    html += '      <p>Easy-to-use Python library for controlling M17 servomotors:</p>\n'
+    ensure_dir(output_dir)
     
-    # Try to read the actual Python example
-    python_code = read_file_content('python_library_example.py')
-    if not python_code:
-        # Fallback example
-        python_code = '''from m17_servo import M17Controller
-
-# Initialize controller
-controller = M17Controller('/dev/ttyUSB0')
-
-# Connect to motor with ID 1
-motor = controller.get_motor(1)
-
-# Move to position
-motor.move_to(90)  # Move to 90 degrees
-motor.move_by(45)  # Move 45 degrees relative
-
-# Read position
-position = motor.get_position()
-print(f"Current position: {position}°")'''
+    # Create package.json
+    package_json = {
+        "name": "marketing-preview",
+        "version": "1.0.0",
+        "private": True,
+        "scripts": {
+            "dev": "next dev",
+            "build": "next build",
+            "start": "next start"
+        },
+        "dependencies": {
+            "next": "14.0.0",
+            "react": "^18",
+            "react-dom": "^18"
+        }
+    }
     
-    html += create_code_block(python_code, 'python')
-    html += '    </div>\n'
+    with open(os.path.join(output_dir, 'package.json'), 'w') as f:
+        json.dump(package_json, f, indent=2)
     
-    # Arduino library
-    html += '    <div class="library-section">\n'
-    html += '      <h3>Arduino Library</h3>\n'
-    html += '      <p>Arduino library for easy integration with Arduino boards:</p>\n'
-    
-    # Try to read the actual Arduino example
-    arduino_code = read_file_content('arduino_library_example.cpp')
-    if not arduino_code:
-        # Fallback example
-        arduino_code = '''#include <M17Servomotor.h>
-
-M17Servomotor motor(1);  // Motor ID 1
-
-void setup() {
-  Serial1.begin(115200);  // RS-485 communication
-  motor.begin(&Serial1);
+    # Create next.config.js
+    next_config = """/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    unoptimized: true
+  }
 }
 
-void loop() {
-  motor.moveTo(90);   // Move to 90 degrees
-  delay(2000);
-  motor.moveTo(0);    // Move to 0 degrees
-  delay(2000);
-}'''
+module.exports = nextConfig
+"""
     
-    html += create_code_block(arduino_code, 'cpp')
-    html += '    </div>\n'
+    with open(os.path.join(output_dir, 'next.config.js'), 'w') as f:
+        f.write(next_config)
     
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+    # Copy and optimize assets, generate files
+    image_dimensions = copy_assets_to_nextjs(output_dir, skip_assets=False)
+    generate_nextjs_files(output_dir, overwrite_index=True, skip_css=False, image_dimensions=image_dimensions, is_standalone=True)
+    
+    print(f"\n✅ Standalone preview app created in '{output_dir}'!")
+    print("\n📋 To preview the marketing page:")
+    print(f"   1. cd {output_dir}")
+    print("   2. npm install")
+    print("   3. npm run dev")
+    print("   4. Open http://localhost:3000 in your browser\n")
 
-def generate_getting_started_section():
-    """Generate the getting started guide section"""
-    html = '<section id="getting-started" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Getting Started Guide</h2>\n'
-    html += '    <p>To help you get started with your M17 Series Servomotor, we provide a comprehensive online guide '
-    html += 'that covers everything from initial setup to advanced protocol implementations. This guide includes:</p>\n'
-    
-    html += '    <ul class="guide-features">\n'
-    html += '      <li>Step-by-step setup instructions</li>\n'
-    html += '      <li>Detailed communication protocol documentation</li>\n'
-    html += '      <li>Programming examples and code snippets</li>\n'
-    html += '      <li>Description of error codes</li>\n'
-    html += '      <li>Troubleshooting tips and best practices</li>\n'
-    html += '    </ul>\n'
-    
-    html += '    <div class="guide-link">\n'
-    html += '      <img src="click_here.png" alt="Click Here" class="click-icon">\n'
-    html += '      <a href="https://servo-tutorial.netlify.app/" target="_blank" class="btn btn-primary">Click Here to Visit our Getting Started Guide</a>\n'
-    html += '    </div>\n'
-    
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+def main():
+    """Main function - generates Next.js marketing content"""
+    parser = argparse.ArgumentParser(description='Generate Next.js marketing content for M17 servomotors')
+    parser.add_argument('--preview', action='store_true',
+                       help='Create a standalone preview app in ./preview directory')
+    parser.add_argument('--preview-dir', default='./preview',
+                       help='Directory for standalone preview (default: ./preview)')
+    parser.add_argument('--nextjs-path', default='../../AI_testing/selling_web_site',
+                       help='Path to existing Next.js project root')
+    parser.add_argument('--overwrite-index', action='store_true',
+                       help='Overwrite pages/index.js instead of creating components/MarketingContent.js')
+    parser.add_argument('--skip-assets', action='store_true',
+                       help='Skip copying assets to Next.js project')
+    parser.add_argument('--skip-css', action='store_true',
+                       help='Skip generating CSS Module for Next.js')
 
-def generate_applications_section():
-    """Generate the applications section with images"""
-    html = '<section id="applications" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Applications</h2>\n'
-    html += '    <p>The M17 Series servomotors are perfect for a wide range of applications, from educational projects to industrial automation.</p>\n'
-    html += '    <div class="applications-grid">\n'
-    
-    # Robotics application - resize image
-    robotics_img = 'robotics.jpg'
-    robotics_optimized = get_optimized_image_name(robotics_img)
-    resize_image(robotics_img, robotics_optimized)
-    
-    html += '      <div class="application-card">\n'
-    html += f'        <img src="{robotics_optimized}" alt="Robotics Application" class="application-image">\n'
-    html += '        <h3>Robotics</h3>\n'
-    html += '        <p>Build precise robotic arms, mobile robots, and educational robotics platforms with easy-to-control servomotors.</p>\n'
-    html += '      </div>\n'
-    
-    # Automation application - resize image
-    automation_img = 'automation.jpg'
-    automation_optimized = get_optimized_image_name(automation_img)
-    resize_image(automation_img, automation_optimized)
-    
-    html += '      <div class="application-card">\n'
-    html += f'        <img src="{automation_optimized}" alt="Automation Application" class="application-image">\n'
-    html += '        <h3>Automation</h3>\n'
-    html += '        <p>Perfect for automated systems, CNC machines, 3D printers, and industrial control applications.</p>\n'
-    html += '      </div>\n'
-    
-    html += '    </div>\n'
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+    args = parser.parse_args()
 
-def generate_company_profile_section():
-    """Generate the company profile section"""
-    html = '<section id="company-profile" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Company Profile</h2>\n'
-    html += '    <div class="company-content">\n'
-    
-    # Read company profile content
-    profile_content = read_file_content('company_profile.txt')
-    if profile_content:
-        paragraphs = profile_content.split('\n')
-        for paragraph in paragraphs:
-            if paragraph.strip():
-                html += f'      <p>{paragraph.strip()}</p>\n'
-    
-    # Resize and add test rack image
-    test_rack_img = 'test_rack.jpg'
-    test_rack_optimized = get_optimized_image_name(test_rack_img)
-    resize_image(test_rack_img, test_rack_optimized)
-    
-    html += '      <div class="company-image-container">\n'
-    html += f'        <img src="{test_rack_optimized}" alt="Test Rack" class="company-image">\n'
-    html += '        <p class="image-caption">Our testing facility ensures every motor meets quality standards</p>\n'
-    html += '      </div>\n'
-    
-    html += '    </div>\n'
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
+    if args.preview:
+        # Create standalone preview app
+        create_standalone_nextjs(args.preview_dir)
+    else:
+        # Generate for existing Next.js project
+        print(f"Generating Next.js marketing content for {args.nextjs_path}...")
+        
+        # First copy and optimize assets, collecting dimension data
+        image_dimensions = copy_assets_to_nextjs(args.nextjs_path, args.skip_assets)
+        
+        # Then generate Next.js files with the collected dimensions
+        generate_nextjs_files(args.nextjs_path, args.overwrite_index, args.skip_css, image_dimensions, is_standalone=False)
 
-def generate_open_source_section():
-    """Generate the open source section"""
-    html = '<section id="open-source" class="content-section">\n'
-    html += '  <div class="container">\n'
-    html += '    <h2>Open Source</h2>\n'
-    html += '    <div class="open-source-content">\n'
-    # Use the real description from open_source.py
-    html += '      <p>We believe in making the world better through technology. All software, firmware, and PCB design files are available here:</p>\n'
-    html += '      <div class="github-link">\n'
-    html += '        <img src="click_here.png" alt="Click Here" class="click-icon-small">\n'
-    html += '        <a href="https://github.com/tomrodinger/servomotor" target="_blank">https://github.com/tomrodinger/servomotor</a>\n'
-    html += '      </div>\n'
-    html += '      <div class="open-source-logos">\n'
-    html += '        <img src="Open-source-hardware-logo.svg.png" alt="Open Source Hardware" class="osh-logo">\n'
-    html += '        <img src="Open_Source_Initiative.svg.png" alt="Open Source Initiative" class="osi-logo">\n'
-    html += '      </div>\n'
-    html += '    </div>\n'
-    html += '  </div>\n'
-    html += '</section>\n\n'
-    return html
-
-def generate_footer_section():
-    """Generate the footer section"""
-    version, date = get_latest_version()
-    
-    html = '<footer class="footer">\n'
-    html += '  <div class="container">\n'
-    html += '    <img src="Gearotons_Logo.png" alt="Gearotons" class="footer-logo">\n'
-    html += f'    <p class="version-info">Version {version} - {date}</p>\n'
-    html += '    <p class="copyright">© 2024 Gearotons. All specifications subject to change without notice.</p>\n'
-    html += '    <p>For more information and technical support, please contact our sales team.</p>\n'
-    html += '  </div>\n'
-    html += '</footer>\n'
-    return html
-
-def generate_html():
-    """Generate the complete HTML marketing page"""
-    # Build the body content
-    body_content = ''
-    
-    # Add all sections (matching the PDF datasheet order)
-    body_content += generate_header_section()
-    body_content += generate_introduction_section()
-    body_content += generate_features_section()
-    body_content += generate_connection_diagram_section()
-    body_content += generate_unit_system_section()
-    body_content += generate_getting_started_section()
-    body_content += generate_indicators_section()
-    body_content += generate_protocol_section()
-    body_content += generate_specifications_section()
-    body_content += generate_library_section()
-    body_content += generate_applications_section()  # NEW
-    body_content += generate_company_profile_section()  # NEW
-    body_content += generate_open_source_section()
-    body_content += generate_footer_section()
-    
-    # Wrap in HTML document structure
-    html = wrap_html_document(
-        body_content,
-        title='M17 Series Servomotors - Marketing',
-        css_file='marketing.css'
-    )
-    
-    # Save HTML file
-    with open('marketing.html', 'w', encoding='utf-8') as f:
-        f.write(html)
-    
-    # Generate and save CSS
-    css_content = generate_css()
-    save_css_file('marketing.css', css_content)
-    
-    print("Marketing page generated successfully!")
-    print("- HTML: marketing.html")
-    print("- CSS: marketing.css")
+        print("\n✅ Next.js marketing content generated successfully!")
+        print(f"📁 Files created in: {args.nextjs_path}")
+        print("🚀 To preview: cd to your Next.js project and run 'npm run dev'")
 
 if __name__ == '__main__':
-    generate_html()
+    main()
