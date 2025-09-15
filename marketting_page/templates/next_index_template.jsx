@@ -304,41 +304,13 @@ servomotor_command.py -c`}</code></pre>
             <div className={styles.librarySection}>
               <h3>Python Library</h3>
               <p>Easy-to-use Python library for controlling M17 servomotors:</p>
-              <pre><code className="language-python">{`from m17_servo import M17Controller
-
-# Initialize controller
-controller = M17Controller('/dev/ttyUSB0')
-
-# Connect to motor with ID 1
-motor = controller.get_motor(1)
-
-# Move to position
-motor.move_to(90)  # Move to 90 degrees
-motor.move_by(45)  # Move 45 degrees relative
-
-# Read position
-position = motor.get_position()
-print(f"Current position: {position}°)`}</code></pre>
+              <pre><code className="language-python">{`__PYTHON_EXAMPLE__`}</code></pre>
             </div>
 
             <div className={styles.librarySection}>
               <h3>Arduino Library</h3>
               <p>Arduino library for easy integration with Arduino boards:</p>
-              <pre><code className="language-cpp">{`#include <M17Servomotor.h>
-
-M17Servomotor motor(1);  // Motor ID 1
-
-void setup() {
-  Serial1.begin(115200);  // RS-485 communication
-  motor.begin(&Serial1);
-}
-
-void loop() {
-  motor.moveTo(90);   // Move to 90 degrees
-  delay(2000);
-  motor.moveTo(0);    // Move to 0 degrees
-  delay(2000);
-}`}</code></pre>
+              <pre><code className="language-cpp">{`__ARDUINO_EXAMPLE__`}</code></pre>
             </div>
           </div>
         </section>

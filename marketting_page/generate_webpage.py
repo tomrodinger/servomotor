@@ -199,6 +199,8 @@ def generate_marketing_component(image_dimensions):
     unit_table = generate_unit_table_html()
     company_paragraphs = generate_company_paragraphs()
     version, date = get_latest_version()
+    python_example = read_python_example()
+    arduino_example = read_arduino_example()
 
     # Replace content tokens in templates
     jsx_content = jsx_template.replace('__INTRO_PARAGRAPHS__', intro_paragraphs)
@@ -207,6 +209,8 @@ def generate_marketing_component(image_dimensions):
     jsx_content = jsx_content.replace('__COMPANY_PARAGRAPHS__', company_paragraphs)
     jsx_content = jsx_content.replace('__VERSION__', version)
     jsx_content = jsx_content.replace('__DATE__', date)
+    jsx_content = jsx_content.replace('__PYTHON_EXAMPLE__', python_example)
+    jsx_content = jsx_content.replace('__ARDUINO_EXAMPLE__', arduino_example)
     
     # Fix Open Source image filename references
     jsx_content = jsx_content.replace(
@@ -388,6 +392,24 @@ def generate_company_paragraphs():
         if paragraph.strip():
             html += f'<p>{paragraph.strip()}</p>\n'
     return html
+
+def read_python_example():
+    """Read Python library example code"""
+    try:
+        with open('python_library_example.py', 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print("Warning: python_library_example.py not found")
+        return ""
+
+def read_arduino_example():
+    """Read Arduino library example code"""
+    try:
+        with open('arduino_library_example.cpp', 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        print("Warning: arduino_library_example.cpp not found")
+        return ""
 
 def print_optimization_summary(image_metadata_list):
     """Print a summary of image optimization results"""

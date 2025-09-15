@@ -1,6 +1,6 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2025-09-12 11:31:50
+Generated: 2025-09-15 12:21:15
 
 ## Latest Firmware Versions
 
@@ -42,7 +42,6 @@ This section provides a complete example showing how to control a servomotor wit
 // - Configure Serial1 pins for your board (ESP32 example pins below).
 // - Motor is created AFTER Serial1.begin(...) so hardware UART pins are set first.
 
-#include <Arduino.h>
 #include <Servomotor.h>
 
 #define ALIAS 'X'                   // Device alias
@@ -60,19 +59,14 @@ This section provides a complete example showing how to control a servomotor wit
 #endif
 
 void setup() {
-  Serial.begin(115200); // Console serial, set baud rate here
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-  // Initialize the RS485 UART (set pins before constructing Servomotor)
-#if defined(ESP32)
-  Serial1.begin(BAUD, SERIAL_8N1, RS485_RXD, RS485_TXD);
-#else
-  Serial1.begin(BAUD);
-#endif
+  Serial.begin(115200); // Console serial for debugging
 
-  // Create the motor object AFTER Serial1 is configured
+  // Create the motor; serial port opens on first instantiation.
+#if defined(ESP32)
+  Servomotor motor(ALIAS, Serial1, RS485_RXD, RS485_TXD);
+#else
   Servomotor motor(ALIAS, Serial1);
+#endif
 
   // Use units: rotations for position, seconds for time
   motor.setPositionUnit(PositionUnit::SHAFT_ROTATIONS);
