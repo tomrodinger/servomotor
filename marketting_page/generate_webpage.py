@@ -183,24 +183,15 @@ def get_latest_version():
         pass
     return '1.0', 'December 2024'
 
-def generate_nextjs_content(image_dimensions, is_standalone=False):
-    """Generate content for Next.js templates with dynamic image dimensions"""
-    # Read template files
+def generate_marketing_component(image_dimensions):
+    """Generate MarketingContent.js component for e-commerce compatibility"""
+    # Read template file
     with open('templates/next_index_template.jsx', 'r', encoding='utf-8') as f:
         jsx_template = f.read()
-
-    with open('templates/marketing_module_template.css', 'r', encoding='utf-8') as f:
-        css_template = f.read()
     
-    # Fix import path based on context
-    if is_standalone:
-        # For standalone preview, use relative path
-        jsx_template = jsx_template.replace("import styles from '../styles/Marketing.module.css'",
-                                            "import styles from '../styles/Marketing.module.css'")
-    else:
-        # For e-commerce integration, use alias path
-        jsx_template = jsx_template.replace("import styles from '../styles/Marketing.module.css'",
-                                            "import styles from '@/styles/Marketing.module.css'")
+    # Use e-commerce compatible import path
+    jsx_template = jsx_template.replace("import styles from '../styles/Marketing.module.css'",
+                                        "import styles from '@/styles/Marketing.module.css'")
 
     # Generate dynamic content
     intro_paragraphs = generate_intro_paragraphs()
@@ -217,8 +208,17 @@ def generate_nextjs_content(image_dimensions, is_standalone=False):
     jsx_content = jsx_content.replace('__VERSION__', version)
     jsx_content = jsx_content.replace('__DATE__', date)
     
+    # Fix Open Source image filename references
+    jsx_content = jsx_content.replace(
+        'src="/marketing/images/Open-source-hardware-logo.svg.png"',
+        'src="/marketing/images/Open_source_hardware_logo_svg.png"'
+    )
+    jsx_content = jsx_content.replace(
+        'src="/marketing/images/Open_Source_Initiative.svg.png"',
+        'src="/marketing/images/Open_Source_Initiative_svg.png"'
+    )
+    
     # Replace image dimension tokens
-    # Create a comprehensive mapping for all possible image names to their dimensions
     dimension_replacements = {}
     
     for image_name, dims in image_dimensions.items():
@@ -249,29 +249,62 @@ def generate_nextjs_content(image_dimensions, is_standalone=False):
     remaining_widths = re.findall(width_pattern, jsx_content)
     remaining_heights = re.findall(height_pattern, jsx_content)
     
-    if remaining_widths or remaining_heights:
-        print("\nWarning: Some image dimension tokens were not replaced:")
-        for token in set(remaining_widths):
-            print(f"  - __WIDTH_{token}__")
-            # Provide reasonable defaults based on image type
-            if 'logo' in token.lower():
-                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '200')
-            elif 'dimension' in token.lower() or 'diagram' in token.lower():
-                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '1200')
-            else:
-                jsx_content = jsx_content.replace(f'__WIDTH_{token}__', '800')
-        
-        for token in set(remaining_heights):
-            print(f"  - __HEIGHT_{token}__")
-            # Provide reasonable defaults
-            if 'logo' in token.lower():
-                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '200')
-            elif 'dimension' in token.lower() or 'diagram' in token.lower():
-                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '1200')
-            else:
-                jsx_content = jsx_content.replace(f'__HEIGHT_{token}__', '600')
+    # Provide defaults for any remaining tokens
+    for token_name in remaining_widths:
+        default_width = "800"  # Default width
+        jsx_content = jsx_content.replace(f'__WIDTH_{token_name}__', default_width)
+        print(f"Warning: Used default width {default_width} for {token_name}")
+    
+    for token_name in remaining_heights:
+        default_height = "600"  # Default height
+        jsx_content = jsx_content.replace(f'__HEIGHT_{token_name}__', default_height)
+        print(f"Warning: Used default height {default_height} for {token_name}")
+    
+    return jsx_content
 
-    return jsx_content, css_template
+def generate_css_content():
+    """Generate CSS content for Marketing.module.css"""
+    with open('templates/marketing_module_template.css', 'r', encoding='utf-8') as f:
+        css_content = f.read()
+    return css_content
+
+def generate_preview_index():
+    """Generate simple pages/index.js for preview that imports the component"""
+    return '''import MarketingContent from '../components/MarketingContent';
+
+export default function Home() {
+  return <MarketingContent />;
+}
+'''
+
+def generate_unified_files(output_dir, image_dimensions):
+    """Generate unified file structure compatible with e-commerce"""
+    # Create directories
+    components_dir = os.path.join(output_dir, 'components')
+    pages_dir = os.path.join(output_dir, 'pages')
+    styles_dir = os.path.join(output_dir, 'styles')
+    
+    ensure_dir(components_dir)
+    ensure_dir(pages_dir)
+    ensure_dir(styles_dir)
+    
+    # Generate MarketingContent.js (e-commerce compatible)
+    marketing_component = generate_marketing_component(image_dimensions)
+    with open(os.path.join(components_dir, 'MarketingContent.js'), 'w', encoding='utf-8') as f:
+        f.write(marketing_component)
+    print("✅ Generated components/MarketingContent.js")
+    
+    # Generate pages/index.js (preview only)
+    preview_index = generate_preview_index()
+    with open(os.path.join(pages_dir, 'index.js'), 'w', encoding='utf-8') as f:
+        f.write(preview_index)
+    print("✅ Generated pages/index.js (preview wrapper)")
+    
+    # Generate CSS Module
+    css_content = generate_css_content()
+    with open(os.path.join(styles_dir, 'Marketing.module.css'), 'w', encoding='utf-8') as f:
+        f.write(css_content)
+    print("✅ Generated styles/Marketing.module.css")
 
 def generate_intro_paragraphs():
     """Generate introduction paragraphs for JSX"""
@@ -469,44 +502,14 @@ def copy_assets_to_nextjs(nextjs_path, skip_assets=False):
     
     return image_dimensions
 
-def generate_nextjs_files(nextjs_path, overwrite_index=False, skip_css=False, image_dimensions=None, is_standalone=False):
-    """Generate Next.js files with dynamic image dimensions"""
-    pages_dir = os.path.join(nextjs_path, 'pages')
-    components_dir = os.path.join(nextjs_path, 'components')
-    styles_dir = os.path.join(nextjs_path, 'styles')
 
-    ensure_dir(pages_dir)
-    ensure_dir(components_dir)
-    ensure_dir(styles_dir)
-
-    # Generate content with image dimensions
-    jsx_content, css_content = generate_nextjs_content(image_dimensions or {}, is_standalone=is_standalone)
-
-    # Write JSX file
-    if overwrite_index:
-        jsx_path = os.path.join(pages_dir, 'index.js')
-        print(f"Writing pages/index.js")
-    else:
-        jsx_path = os.path.join(components_dir, 'MarketingContent.js')
-        print(f"Writing components/MarketingContent.js")
-
-    with open(jsx_path, 'w', encoding='utf-8') as f:
-        f.write(jsx_content)
-
-    # Write CSS file
-    if not skip_css:
-        css_path = os.path.join(styles_dir, 'Marketing.module.css')
-        with open(css_path, 'w', encoding='utf-8') as f:
-            f.write(css_content)
-        print(f"Writing styles/Marketing.module.css")
-
-def create_standalone_nextjs(output_dir='./preview'):
-    """Create a minimal standalone Next.js app for preview"""
-    print(f"\n🚀 Creating standalone Next.js preview app in {output_dir}...")
+def create_unified_preview(output_dir='./preview'):
+    """Create unified preview structure compatible with e-commerce"""
+    print(f"\n🚀 Creating unified marketing content in {output_dir}...")
     
     ensure_dir(output_dir)
     
-    # Create package.json
+    # Create package.json for preview
     package_json = {
         "name": "marketing-preview",
         "version": "1.0.0",
@@ -526,7 +529,7 @@ def create_standalone_nextjs(output_dir='./preview'):
     with open(os.path.join(output_dir, 'package.json'), 'w') as f:
         json.dump(package_json, f, indent=2)
     
-    # Create next.config.js
+    # Create next.config.js for preview
     next_config = """/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -541,51 +544,81 @@ module.exports = nextConfig
     with open(os.path.join(output_dir, 'next.config.js'), 'w') as f:
         f.write(next_config)
     
+    # Create jsconfig.json for @ alias support in preview
+    jsconfig = """{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}"""
+    
+    with open(os.path.join(output_dir, 'jsconfig.json'), 'w') as f:
+        f.write(jsconfig)
+    
     # Copy and optimize assets, generate files
     image_dimensions = copy_assets_to_nextjs(output_dir, skip_assets=False)
-    generate_nextjs_files(output_dir, overwrite_index=True, skip_css=False, image_dimensions=image_dimensions, is_standalone=True)
     
-    print(f"\n✅ Standalone preview app created in '{output_dir}'!")
-    print("\n📋 To preview the marketing page:")
-    print(f"   1. cd {output_dir}")
-    print("   2. npm install")
-    print("   3. npm run dev")
-    print("   4. Open http://localhost:3000 in your browser\n")
+    # Generate the unified files
+    generate_unified_files(output_dir, image_dimensions)
+    
+    print(f"\n✅ Unified marketing content created in '{output_dir}'!")
+    print("📁 Structure: components/MarketingContent.js + pages/index.js + styles/Marketing.module.css")
+
+def copy_to_ecommerce(preview_dir='./preview', ecommerce_path='../../AI_testing/selling_web_site'):
+    """Copy generated files from preview to e-commerce site"""
+    print(f"\n📁 Copying files from {preview_dir} to {ecommerce_path}...")
+    
+    # Define what files/folders to copy
+    files_to_copy = [
+        ('components/MarketingContent.js', 'components/MarketingContent.js'),
+        ('styles/Marketing.module.css', 'styles/Marketing.module.css'),
+        ('public/marketing/', 'public/marketing/')
+    ]
+    
+    copied_count = 0
+    for src_path, dst_path in files_to_copy:
+        src_full = os.path.join(preview_dir, src_path)
+        dst_full = os.path.join(ecommerce_path, dst_path)
+        
+        if os.path.exists(src_full):
+            if os.path.isdir(src_full):
+                # Copy directory
+                if os.path.exists(dst_full):
+                    shutil.rmtree(dst_full)
+                shutil.copytree(src_full, dst_full)
+                print(f"  📂 Copied directory: {src_path}")
+            else:
+                # Copy file
+                ensure_dir(os.path.dirname(dst_full))
+                shutil.copy2(src_full, dst_full)
+                print(f"  📄 Copied file: {src_path}")
+            copied_count += 1
+        else:
+            print(f"  ⚠️  Source not found: {src_path}")
+    
+    if copied_count > 0:
+        print(f"\n✅ Successfully copied {copied_count} items to e-commerce site!")
+        print("🚀 The e-commerce site should now have the updated marketing content.")
+    else:
+        print("\n❌ No files were copied. Please check the preview generation.")
 
 def main():
-    """Main function - generates Next.js marketing content"""
-    parser = argparse.ArgumentParser(description='Generate Next.js marketing content for M17 servomotors')
-    parser.add_argument('--preview', action='store_true',
-                       help='Create a standalone preview app in ./preview directory')
-    parser.add_argument('--preview-dir', default='./preview',
-                       help='Directory for standalone preview (default: ./preview)')
-    parser.add_argument('--nextjs-path', default='../../AI_testing/selling_web_site',
-                       help='Path to existing Next.js project root')
-    parser.add_argument('--overwrite-index', action='store_true',
-                       help='Overwrite pages/index.js instead of creating components/MarketingContent.js')
-    parser.add_argument('--skip-assets', action='store_true',
-                       help='Skip copying assets to Next.js project')
-    parser.add_argument('--skip-css', action='store_true',
-                       help='Skip generating CSS Module for Next.js')
-
-    args = parser.parse_args()
-
-    if args.preview:
-        # Create standalone preview app
-        create_standalone_nextjs(args.preview_dir)
-    else:
-        # Generate for existing Next.js project
-        print(f"Generating Next.js marketing content for {args.nextjs_path}...")
-        
-        # First copy and optimize assets, collecting dimension data
-        image_dimensions = copy_assets_to_nextjs(args.nextjs_path, args.skip_assets)
-        
-        # Then generate Next.js files with the collected dimensions
-        generate_nextjs_files(args.nextjs_path, args.overwrite_index, args.skip_css, image_dimensions, is_standalone=False)
-
-        print("\n✅ Next.js marketing content generated successfully!")
-        print(f"📁 Files created in: {args.nextjs_path}")
-        print("🚀 To preview: cd to your Next.js project and run 'npm run dev'")
+    """Main function - generates everything automatically"""
+    print("🚀 Generating marketing content...")
+    
+    # Step 1: Generate preview structure
+    preview_dir = './preview'
+    ecommerce_path = '../../AI_testing/selling_web_site'
+    
+    create_unified_preview(preview_dir)
+    
+    # Step 2: Copy to e-commerce site
+    copy_to_ecommerce(preview_dir, ecommerce_path)
+    
+    print("\n🎉 All done! Marketing content generated and deployed.")
+    print(f"📋 To test preview: cd {preview_dir} && npm install && npm run dev")
 
 if __name__ == '__main__':
     main()

@@ -96,9 +96,11 @@ export default function Home() {
         </section>
 
         {/* Connection Diagram */}
-        <section id="connection" className={styles.contentSection}>
+        <section id="connection" className={`${styles.contentSection} ${styles.diagramSection}`}>
           <div className={styles.container}>
             <h2>Connection Diagram</h2>
+          </div>
+          <div className={styles.diagramContainer}>
             <Image
               src="/marketing/images/connection_diagram.jpg"
               alt="Connection Diagram"

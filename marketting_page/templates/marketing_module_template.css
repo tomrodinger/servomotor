@@ -29,6 +29,9 @@
     display: block !important;
     justify-content: initial !important;
     align-items: initial !important;
+    /* Ensure host app width constraints don't shrink our marketing content */
+    width: 100% !important;
+    max-width: none !important;
 }
 
 .container {
@@ -158,10 +161,38 @@
 }
 
 .diagramImage {
-    max-width: 100%;
+    width: 100%;
     height: auto;
     margin: 30px auto;
     display: block;
+}
+
+/* Full-bleed wrapper that breaks out of host width constraints while keeping inner content centered */
+.diagramFullBleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+}
+
+/* Inner container for the connection diagram; keep EXACT 1200px content width on desktop */
+.diagramContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0; /* No side padding to avoid shrinking the image to 1160px */
+    /* TEMP: debug outline; remove after verification */
+    
+}
+
+/* Optional section hook for future adjustments if needed */
+.diagramSection {}
+
+@media (max-width: 1250px) {
+    .diagramContainer {
+        padding: 0 20px;
+    }
 }
 
 /* Dimension Images */

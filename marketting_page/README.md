@@ -1,154 +1,130 @@
 # Servomotor Marketing Web Page Generator
 
 ## Quick Overview
-Generates a Next.js marketing page for M17 Series Servomotors with automatic image optimization and dimension detection.
+Generates a unified Next.js marketing page for M17 Series Servomotors with automatic deployment to both preview and e-commerce sites.
 
-## ✨ Features (v2.1 - Image Aspect Ratio Fixed!)
-- **Next.js Integration**: Generate React components and CSS Modules directly compatible with Next.js
-- **Dynamic Image Dimensions**: Automatic detection and injection of actual image dimensions into Next.js Image components
-- **Smart Image Optimization**: Different optimization strategies based on image type (diagrams, photos, logos)
-- **File Size Reporting**: Comprehensive summary showing optimization results and space savings (~83% average reduction)
-- **Standalone Preview**: Create a minimal Next.js app for local testing without needing the full e-commerce site
-- **Template-Based Generation**: Safe token replacement system avoiding JSX escaping issues
-- **Asset Pipeline**: Automatic image optimization and copying to Next.js public directories (preserves originals)
-
-## Main Output
-- **Output**: Next.js JSX components + CSS Modules
-- **Layout**: Single continuous scrolling page (no pagination)
-- **Sections**: Introduction, Features, Connection Diagram, Specifications, Company Profile, Applications
+## ✨ Features (v3.0 - Unified Architecture!)
+- **Single Generation Path**: One command generates everything - no more dual modes
+- **Unified Architecture**: Both preview and e-commerce use identical components  
+- **Automatic Deployment**: Generates preview AND copies to e-commerce site automatically
+- **Dynamic Image Dimensions**: Automatic detection and injection of actual image dimensions
+- **Smart Image Optimization**: Different strategies based on image type (83% average reduction)
+- **Fixed Image Issues**: Open Source images now work correctly in both contexts
+- **Perfect Parity**: Identical rendering between preview and e-commerce (all sections included)
 
 ## 🚀 Quick Start
 
-### Generate for Existing Next.js Site
+### Generate Everything (Recommended)
 ```bash
 python3 generate_webpage.py
 ```
-This generates optimized Next.js components and copies images to your e-commerce site.
 
-### Create Standalone Preview
+This single command:
+1. ✅ Generates preview structure in `./preview/`
+2. ✅ Copies identical files to e-commerce site
+3. ✅ Ensures perfect parity between both contexts
+
+### Test Preview Locally
 ```bash
-python3 generate_webpage.py --preview
 cd preview
 npm install
 npm run dev
 ```
-Then open http://localhost:3000 to see your marketing page locally.
+Then open http://localhost:3000
 
-## 📁 File Structure
+## 📁 Generated Structure
+
 ```
-generate_webpage.py           # Main generator script
-generate_webpage.sh           # Shell wrapper (if needed)
-templates/
-  ├── next_index_template.jsx     # Next.js JSX template
-  └── marketing_module_template.css # CSS Module template
-preview/                      # Standalone preview app (when generated)
-  ├── package.json
-  ├── pages/index.js
-  ├── styles/Marketing.module.css
-  └── public/marketing/       # Optimized images
+preview/                           # Complete Next.js preview app
+├── components/MarketingContent.js  # Main component (copied to e-commerce)
+├── pages/index.js                 # Preview wrapper (imports component)
+├── styles/Marketing.module.css    # CSS Module (copied to e-commerce)
+├── public/marketing/              # Optimized images (copied to e-commerce)
+├── package.json                   # Next.js dependencies
+├── next.config.js                 # Next.js configuration
+└── jsconfig.json                  # Path alias support
+
+E-commerce site integration:
+├── components/MarketingContent.js  # ← Copied from preview
+├── pages/index.js                 # ← Modified to use component
+├── styles/Marketing.module.css    # ← Copied from preview
+└── public/marketing/              # ← Copied from preview
 ```
 
-## 🎯 Generation Options
+## 🎯 Architecture Solution
 
-```bash
-python3 generate_webpage.py [OPTIONS]
+**Previous Problem**: Dual generation modes created inconsistent files
+**Solution**: Single generation + clean component architecture
 
-Options:
-  --preview                Create standalone preview app
-  --preview-dir PATH       Directory for preview (default: ./preview)
-  --nextjs-path PATH       Path to Next.js project (default: ../../AI_testing/selling_web_site)
-  --overwrite-index        Overwrite pages/index.js instead of creating component
-  --skip-assets            Skip copying assets
-  --skip-css               Skip generating CSS Module
-```
+- **Preview**: `pages/index.js` → imports `components/MarketingContent.js`
+- **E-commerce**: `pages/index.js` → imports `components/MarketingContent.js`
+- **Result**: Perfect parity - both use identical component, CSS, and images
 
 ## 📋 Content Sources
 
 The generator pulls content from these source files:
-
 - `introduction.txt` → Introduction section paragraphs
-- `features.txt` → Key features list items
+- `features.txt` → Key features list items  
 - `company_profile.txt` → Company profile paragraphs
 - `versions.txt` → Version and date information
-- Images in current directory → Optimized and copied to Next.js
+- Images in current directory → Optimized and copied to both sites
 - `../python_programs/servomotor/unit_conversions_M3.json` → Unit system table
 
-## 🛠️ Integration with Next.js
+## 🛠️ Key Fixes Implemented
 
-### Option A: Use as Component (Recommended)
-```javascript
-// pages/index.js
-import MarketingContent from '@/components/MarketingContent';
+### Fixed Missing Sections Issue
+- **Root Cause**: E-commerce site was using hardcoded `pages/index.js` instead of generated component
+- **Solution**: Modified e-commerce site to use the same `MarketingContent.js` component
 
-export default function Home() {
-  return (
-    <main>
-      <MarketingContent />
-      {/* Your existing content */}
-    </main>
-  );
-}
-```
+### Fixed Image Sizing Differences  
+- **Root Cause**: Hardcoded dimensions vs dynamic dimensions
+- **Solution**: Both sites now use identical dynamic image dimensions
 
-### Option B: Direct Homepage Override
-```bash
-python3 generate_webpage.py --nextjs-path ../your-site --overwrite-index
-```
-
-## 📚 Documentation
-
-- `NEXTJS_INTEGRATION_USAGE_GUIDE.md` - Complete usage guide with examples
-- `NEXTJS_INTEGRATION_TESTING_CHECKLIST.md` - Comprehensive testing checklist
-- `NEXTJS_INTEGRATION_LEARNINGS_AND_FAILURE_ANALYSIS.md` - Solution to aspect ratio issues
-- `AUTOGENERATOR_NEXTJS_INTEGRATION_RETROSPECTIVE.md` - Technical background
-
-## 🔄 Template System
-
-The Next.js generation uses a safe token replacement system:
-
-- `__INTRO_PARAGRAPHS__` → Introduction content
-- `__FEATURES_LI__` → Features list
-- `__UNIT_TABLE__` → Unit conversion table
-- `__COMPANY_PARAGRAPHS__` → Company profile
-- `__VERSION__` and `__DATE__` → Version info
-- `__WIDTH_imagename__` and `__HEIGHT_imagename__` → Dynamic image dimensions
+### Fixed Open Source Images
+- **Root Cause**: Filename case mismatch after processing
+- **Solution**: Updated template references to match processed filenames
 
 ## ⚡ Performance Features
 
-- **Smart Image Optimization**: Intelligent sizing based on content type:
-  - Technical diagrams: 1200px (preserves readability and aspect ratio)
-  - Photos: 800px (standard web optimization)
-  - Logos: 400px (balanced size)
-  - UI elements: No resize if under 200px
-- **Dynamic Dimension Detection**: Automatically detects and uses actual image dimensions
-- **CSS Modules**: Scoped styling to prevent conflicts (fixed camelCase naming)
+- **Smart Image Optimization**: Intelligent sizing based on content type
+- **Dynamic Dimension Detection**: Automatically uses actual image dimensions  
+- **CSS Modules**: Scoped styling prevents conflicts
 - **Lazy Loading**: Next.js Image component optimization
-- **Fallback Handling**: Graceful degradation when PIL is not available
-- **Optimization Summary**: Detailed report showing file sizes before/after and space saved
+- **83% Average Reduction**: Comprehensive optimization summary
 
-## 🐛 Troubleshooting
+## 🔄 Workflow
 
-### Common Issues
-- **PIL not installed**: Images still copy but aren't optimized. Install with: `pip install Pillow`
-- **Missing source files**: Fallback content is used automatically
-- **Path issues**: Use absolute paths for custom Next.js locations
+1. **Generate**: Run `python3 generate_webpage.py`
+2. **Test**: Preview works in standalone mode
+3. **Deploy**: Files automatically copied to e-commerce site
+4. **Result**: Perfect parity between both contexts
 
-### Testing Without E-commerce Site
-Use the `--preview` flag to create a standalone app for testing:
-```bash
-python3 generate_webpage.py --preview
-cd preview
-npm install
-npm run dev
-```
+## 📚 Generated Sections
 
-## 📈 Technical Approach
-- **Template-based generation** avoids JSX string concatenation issues
-- **Token replacement system** ensures safe content injection
-- **Dynamic dimension detection** fixes aspect ratio problems
-- **Error handling** with graceful fallbacks for missing dependencies
-- **Asset optimization** pipeline for web performance
+All sections now appear in both preview and e-commerce:
+- Hero & Introduction
+- Key Features  
+- Connection Diagram
+- Unit System
+- Getting Started Guide
+- Indicator LEDs and Buttons
+- Communication Protocol
+- **Technical Specifications** ✅ (Now included in e-commerce)
+- **Library Support** ✅ (Now included in e-commerce)
+- Applications
+- Company Profile
+- Open Source
+- Footer
+
+## 🎉 Success Metrics
+
+- ✅ Single command generates everything
+- ✅ Perfect rendering parity achieved
+- ✅ All sections present in both contexts
+- ✅ Consistent image sizing
+- ✅ Clean, maintainable architecture
+- ✅ 83% average image size reduction
 
 ---
 
-**Ready to generate your marketing content?** Just run `python3 generate_webpage.py --preview` to test locally! 🎉
+**Ready to generate identical marketing content for both sites?** Just run `python3 generate_webpage.py`! 🚀
