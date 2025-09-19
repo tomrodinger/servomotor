@@ -1,0 +1,1 @@
+Here are a bunch of python programs, some used for normal usage of the servomotor product and some are used for testing. These use a Python library that is located in the servomotor folder.

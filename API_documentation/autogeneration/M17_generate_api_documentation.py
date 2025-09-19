@@ -32,6 +32,8 @@ class APIDocumentationGenerator:
         self.error_handling_text_path = "error_handling.txt"
         self.firmware_dir_path = "../../firmware/firmware_releases"
         self.valid_products_path = "VALID_PRODUCTS.txt"
+        self.install_instructions_path = "install_instructions_example.sh"
+        self.servomotor_command_examples_path = "servomotor_command_utility_examples.sh"
         self.commands = []
         self.data_types = []
         self.error_codes = []
@@ -95,6 +97,51 @@ class APIDocumentationGenerator:
             print(f"\n❌ ERROR: Could not find error handling text at {self.error_handling_text_path}")
             self.error_handling_text = "Error handling description not available."
             return False
+    
+    def load_install_instructions(self):
+        """Load installation instructions from the symlinked file"""
+        try:
+            with open(self.install_instructions_path, 'r') as f:
+                instructions = f.read().strip()
+            print(f"✓ Loaded installation instructions from {self.install_instructions_path}")
+            return instructions
+        except FileNotFoundError:
+            print(f"\n❌ ERROR: Could not find installation instructions at {self.install_instructions_path}")
+            return None
+    
+    def load_servomotor_command_examples(self):
+        """Load servomotor command utility examples"""
+        try:
+            with open(self.servomotor_command_examples_path, 'r') as f:
+                examples = f.read().strip()
+            print(f"✓ Loaded servomotor command examples from {self.servomotor_command_examples_path}")
+            return examples
+        except FileNotFoundError:
+            print(f"\n❌ ERROR: Could not find servomotor command examples at {self.servomotor_command_examples_path}")
+            return None
+    
+    def convert_to_windows_commands(self, unix_commands):
+        """Convert Unix/macOS installation commands to Windows equivalents"""
+        lines = unix_commands.split('\n')
+        windows_lines = []
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith('#'):
+                # Keep comments as-is
+                windows_lines.append(line)
+            elif 'python3 -m venv venv' in line:
+                windows_lines.append('python -m venv venv')
+            elif 'source venv/bin/activate' in line:
+                windows_lines.append('venv\\Scripts\\activate')
+            elif 'pip3 install' in line:
+                # Convert pip3 to pip for Windows
+                windows_lines.append(line.replace('pip3', 'pip'))
+            elif line:
+                # Keep other non-empty lines as-is
+                windows_lines.append(line)
+        
+        return '\n'.join(windows_lines)
     
     def load_valid_products(self):
         """Load valid product names from VALID_PRODUCTS.txt"""
@@ -428,10 +475,11 @@ class APIDocumentationGenerator:
         # Table of Contents
         md_content.append("## Table of Contents\n")
         md_content.append("1. [Install the Python Library](#install-the-python-library)")
-        md_content.append("2. [Getting Started](#getting-started)")
-        md_content.append("3. [Data Types](#data-types)")
-        md_content.append("4. [Command Reference](#command-reference)")
-        toc_index = 5
+        md_content.append("2. [Controlling the Servomotor From the Command Line](#controlling-the-servomotor-from-the-command-line)")
+        md_content.append("3. [Getting Started](#getting-started)")
+        md_content.append("4. [Data Types](#data-types)")
+        md_content.append("5. [Command Reference](#command-reference)")
+        toc_index = 6
         for group in sorted(self.commands_by_group.keys()):
             anchor = group.lower().replace(' ', '-').replace('&', 'and')
             md_content.append(f"{toc_index}. [{group}](#{anchor})")
@@ -448,36 +496,61 @@ class APIDocumentationGenerator:
         md_content.append("```bash")
         md_content.append("pip3 install servomotor")
         md_content.append("```\n")
-        md_content.append("If you want to work in a virtual environment then you can create it, activate it, and install the requirements. You can create the following requirements.txt file and then run the following commands:\n")
-        md_content.append("**Create requirements.txt:**")
-        md_content.append("```text")
-        md_content.append("servomotor")
-        md_content.append("```\n")
+        
+        # Load installation instructions from symlinked file
+        install_instructions = self.load_install_instructions()
+        if install_instructions is None:
+            print("\n" + "="*80)
+            print("❌ FATAL ERROR: Installation instructions file not found")
+            print("="*80)
+            print(f"\nCould not find installation instructions at: {self.install_instructions_path}")
+            print("\n📝 TO FIX THIS ERROR:")
+            print("1. Ensure the symlink exists:")
+            print(f"   ls -la {self.install_instructions_path}")
+            print("2. If the symlink is broken, recreate it:")
+            print(f"   ln -sf ../../python_programs/install_instructions_example.sh {self.install_instructions_path}")
+            print("3. Ensure the source file exists:")
+            print("   ls -la ../../python_programs/install_instructions_example.sh")
+            print("\n" + "="*80)
+            return False
+        
+        md_content.append("If you want to work in a virtual environment, you can create it, activate it, and install the library:\n")
         md_content.append("**For macOS/Linux:**")
         md_content.append("```bash")
-        md_content.append("# Create virtual environment")
-        md_content.append("python3 -m venv venv")
-        md_content.append("")
-        md_content.append("# Activate virtual environment")
-        md_content.append("source venv/bin/activate")
-        md_content.append("")
-        md_content.append("# Install requirements")
-        md_content.append("pip3 install -r requirements.txt")
+        md_content.append(install_instructions)
         md_content.append("```\n")
+        
+        # Convert to Windows commands
+        windows_instructions = self.convert_to_windows_commands(install_instructions)
         md_content.append("**For Windows:**")
         md_content.append("```bash")
-        md_content.append("# Create virtual environment")
-        md_content.append("python -m venv venv")
-        md_content.append("")
-        md_content.append("# Activate virtual environment")
-        md_content.append("venv\\Scripts\\activate")
-        md_content.append("")
-        md_content.append("# Install requirements")
-        md_content.append("pip install -r requirements.txt")
+        md_content.append(windows_instructions)
         md_content.append("```\n")
         md_content.append("After installation, you can verify the servomotor library is installed correctly by running:")
         md_content.append("```python")
         md_content.append("python3 -c \"import servomotor; print('Servomotor library installed successfully!')\"")
+        md_content.append("```\n")
+        
+        # Controlling the Servomotor From the Command Line Section
+        md_content.append("## Controlling the Servomotor From the Command Line\n")
+        md_content.append("You can send commands to the servomotor from the command line using the servomotor_command utility, which gets installed along with the Python library. Make sure to install that library according to the instructions above. After installation, the servomotor_command program should be in the path. You can try running some of the following commands to communicate with the servomotor(s):\n")
+        
+        # Load and include servomotor command examples
+        command_examples = self.load_servomotor_command_examples()
+        if command_examples is None:
+            print("\n" + "="*80)
+            print("❌ FATAL ERROR: Servomotor command examples file not found")
+            print("="*80)
+            print(f"\nCould not find servomotor command examples at: {self.servomotor_command_examples_path}")
+            print("\n📝 TO FIX THIS ERROR:")
+            print("1. Ensure the file exists:")
+            print(f"   ls -la {self.servomotor_command_examples_path}")
+            print("2. Create the file if missing with example commands")
+            print("\n" + "="*80)
+            return False
+        
+        md_content.append("```bash")
+        md_content.append(command_examples)
         md_content.append("```\n")
         
         # Getting Started Section
@@ -1054,8 +1127,14 @@ class APIDocumentationGenerator:
             spaceAfter=2
         )
         
-        toc_items = ['1. Install the Python Library', '2. Getting Started', '3. Data Types', '4. Command Reference']
-        toc_index = 5
+        toc_items = [
+            '1. Install the Python Library',
+            '2. Controlling the Servomotor From the Command Line',
+            '3. Getting Started',
+            '4. Data Types',
+            '5. Command Reference'
+        ]
+        toc_index = 6
         for group in sorted(self.commands_by_group.keys()):
             toc_items.append(f'   {toc_index}. {group}')
             toc_index += 1
@@ -1081,41 +1160,36 @@ class APIDocumentationGenerator:
         story.append(code_box)
         story.append(Spacer(1, 12))
         
-        story.append(Paragraph('If you want to work in a virtual environment then you can create it, activate it, and install the requirements. You can create the following requirements.txt file and then run the following commands:', normal_style))
-        story.append(Spacer(1, 8))
+        # Load installation instructions from symlinked file
+        install_instructions = self.load_install_instructions()
+        if install_instructions is None:
+            print("\n" + "="*80)
+            print("❌ FATAL ERROR: Installation instructions file not found")
+            print("="*80)
+            print(f"\nCould not find installation instructions at: {self.install_instructions_path}")
+            print("\n📝 TO FIX THIS ERROR:")
+            print("1. Ensure the symlink exists:")
+            print(f"   ls -la {self.install_instructions_path}")
+            print("2. If the symlink is broken, recreate it:")
+            print(f"   ln -sf ../../python_programs/install_instructions_example.sh {self.install_instructions_path}")
+            print("3. Ensure the source file exists:")
+            print("   ls -la ../../python_programs/install_instructions_example.sh")
+            print("\n" + "="*80)
+            return []
         
-        story.append(Paragraph('<b>Create requirements.txt:</b>', normal_style))
-        story.append(Spacer(1, 6))
-        requirements_content = "servomotor"
-        code_box = self.CodeBox(requirements_content, doc.width - 20, code_style)
-        story.append(code_box)
+        story.append(Paragraph('If you want to work in a virtual environment, you can create it, activate it, and install the library:', normal_style))
         story.append(Spacer(1, 8))
         
         story.append(Paragraph('<b>For macOS/Linux:</b>', normal_style))
         story.append(Spacer(1, 6))
-        macos_linux_cmds = """# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install requirements
-pip3 install -r requirements.txt"""
-        code_box = self.CodeBox(macos_linux_cmds, doc.width - 20, code_style)
+        code_box = self.CodeBox(install_instructions, doc.width - 20, code_style)
         story.append(code_box)
         story.append(Spacer(1, 8))
         
         story.append(Paragraph('<b>For Windows:</b>', normal_style))
         story.append(Spacer(1, 6))
-        windows_cmds = """# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-venv\\Scripts\\activate
-
-# Install requirements
-pip install -r requirements.txt"""
-        code_box = self.CodeBox(windows_cmds, doc.width - 20, code_style)
+        windows_instructions = self.convert_to_windows_commands(install_instructions)
+        code_box = self.CodeBox(windows_instructions, doc.width - 20, code_style)
         story.append(code_box)
         story.append(Spacer(1, 12))
         
@@ -1123,6 +1197,30 @@ pip install -r requirements.txt"""
         story.append(Spacer(1, 6))
         verify_cmd = 'python3 -c "import servomotor; print(\'Servomotor library installed successfully!\')"'
         code_box = self.CodeBox(verify_cmd, doc.width - 20, code_style)
+        story.append(code_box)
+        story.append(Spacer(1, 16))
+        
+        # Controlling the Servomotor From the Command Line Section
+        story.append(Paragraph('Controlling the Servomotor From the Command Line', heading_style))
+        story.append(Spacer(1, 12))
+        story.append(Paragraph('You can send commands to the servomotor from the command line using the servomotor_command utility, which gets installed along with the Python library. Make sure to install that library according to the instructions above. After installation, the servomotor_command program should be in the path. You can try running some of the following commands to communicate with the servomotor(s):', normal_style))
+        story.append(Spacer(1, 8))
+        
+        # Load and include servomotor command examples
+        command_examples = self.load_servomotor_command_examples()
+        if command_examples is None:
+            print("\n" + "="*80)
+            print("❌ FATAL ERROR: Servomotor command examples file not found")
+            print("="*80)
+            print(f"\nCould not find servomotor command examples at: {self.servomotor_command_examples_path}")
+            print("\n📝 TO FIX THIS ERROR:")
+            print("1. Ensure the file exists:")
+            print(f"   ls -la {self.servomotor_command_examples_path}")
+            print("2. Create the file if missing with example commands")
+            print("\n" + "="*80)
+            return []
+        
+        code_box = self.CodeBox(command_examples, doc.width - 20, code_style)
         story.append(code_box)
         
         story.append(PageBreak())
@@ -1582,6 +1680,14 @@ motor.set_velocity_unit('rotations_per_second')"""
         # Load error handling text
         if not self.load_error_handling_text():
             print("⚠️  Warning: Error handling text not loaded. Using default text.")
+        
+        # Load installation instructions
+        if self.load_install_instructions() is None:
+            sys.exit(1)
+        
+        # Load servomotor command examples
+        if self.load_servomotor_command_examples() is None:
+            sys.exit(1)
         
         # Find latest firmware versions
         self.find_latest_firmware()

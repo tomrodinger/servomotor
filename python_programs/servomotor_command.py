@@ -10,7 +10,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description='This program will let you send any supported command to the motor')
     parser.add_argument('-p', '--port', help='serial port device', default=None)
     parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-    parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (extended addressing)', default=None)
+    parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (extended addressing). Default is 255 (broadcast)', default=None)
     parser.add_argument('-c', '--commands', help='list all supported commands with detailed descriptions', action="store_true")
     parser.add_argument('--crc32-disabled', help='disable CRC32 checksum transmission', action="store_true")
     parser.add_argument('-v', '--verbose', help='equivalent to --verbose-level 2', action="store_true")
@@ -33,15 +33,29 @@ def main() -> int:
         servomotor.print_registered_commands()
         return 0
 
-    if args.command is None:
-        print(format_error("You didn't specify the command to run."))
-        print(format_info("Please run this program with the -c option to see all supported commands or run this program with the -h option to see the usage information"))
-        return 1
+    servomotor.set_standard_options_from_args(args)  # This will set port and alias/unique_id
+    servomotor.open_serial_port()
 
+    # Special case: -P without command means just select and save port, then exit
+    if args.PORT:
+        print(format_success("Port selection completed and serial port was successfully opened"))
+
+    if args.command is None:
+        if args.PORT:
+            servomotor.close_serial_port()
+            return 0
+        else:
+            print(format_error("You didn't specify the command to run."))
+            print(format_info("Please run this program with the -c option to see all supported commands or run this program with the -h option to see the usage information"))
+            servomotor.close_serial_port()
+            return 1
+    
     command_id = servomotor.get_command_id(args.command)
+
     if command_id is None:
         print(format_error(f"Unknown command: '{args.command}'"))
-        print(format_info("Please run this program with the -c option to see all supported commands"))
+        servomotor.close_serial_port()
+        print(format_info("Please run this program with the -c option to see all supported commands or run this program with the -h option to see the usage information"))
         return 1
 
     # Determine verbosity level
@@ -54,9 +68,6 @@ def main() -> int:
 
     if verbose_level >= 1:
         print(format_info(f"Command ID: {command_id}"))
-
-    servomotor.set_standard_options_from_args(args)  # This will set port and alias/unique_id
-    servomotor.open_serial_port()
     try:
         _ = servomotor.execute_command(args.command, args.inputs, crc32_enabled=not args.crc32_disabled, verbose=verbose_level)
         print(format_success("Command executed successfully"))

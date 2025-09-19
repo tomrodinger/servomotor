@@ -431,12 +431,15 @@ def set_standard_options_from_args(args):
     elif hasattr(args, 'verbose') and args.verbose:
         verbose = 2
     
+    # Determine if the alias is actually a unique ID
+    global global_alias_or_unique_id
+    
     if args.alias is None:
-        print(format_error("Error: you must specify an alias or unique id with the -a option. Run this command with -h to get more detailed help."))
-        exit(1)
+        # Use broadcast address as default when no alias specified
+        global_alias_or_unique_id = ALL_ALIAS
+        if verbose >= 1:
+            print(format_info(f"No alias specified, using broadcast address: {get_human_readable_alias_or_unique_id(global_alias_or_unique_id)}"))
     else:
-        # Determine if the alias is actually a unique ID
-        global global_alias_or_unique_id
         global_alias_or_unique_id = string_to_alias_or_unique_id(args.alias)
         
         if verbose >= 1:

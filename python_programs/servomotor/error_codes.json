@@ -868,7 +868,7 @@
                 "You are a developer and you did not study the source code enough yet to use the test modes successfully"
             ],
             "solutions": [
-                "Done call the Test mode command",
+                "Don't call the Test mode command",
                 "Keep studying the source code until you know how this works"
             ]
         }

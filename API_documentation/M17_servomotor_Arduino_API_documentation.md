@@ -1,6 +1,6 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2025-09-15 12:21:15
+Generated: 2025-09-19 15:50:50
 
 ## Latest Firmware Versions
 

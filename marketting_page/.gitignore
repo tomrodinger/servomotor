@@ -56,3 +56,5 @@ marketing.css
 # Temporary files
 *.tmp
 *.temp
+
+preview/

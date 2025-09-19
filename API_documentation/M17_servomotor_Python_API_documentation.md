@@ -1,6 +1,6 @@
 # Servomotor Python API Documentation
 
-Generated: 2025-09-15 12:21:15
+Generated: 2025-09-19 15:50:50
 
 ## Latest Firmware Versions
 
@@ -14,18 +14,19 @@ If you are experiencing problems, you can try to set the firmware of your produc
 ## Table of Contents
 
 1. [Install the Python Library](#install-the-python-library)
-2. [Getting Started](#getting-started)
-3. [Data Types](#data-types)
-4. [Command Reference](#command-reference)
-5. [Basic Control](#basic-control)
-6. [Configuration](#configuration)
-7. [Device Management](#device-management)
-8. [Motion Control](#motion-control)
-9. [Other](#other)
-10. [Status & Monitoring](#status-and-monitoring)
-11. [Unit Conversions](#unit-conversions)
-12. [Error Handling](#error-handling)
-13. [Error Codes](#error-codes)
+2. [Controlling the Servomotor From the Command Line](#controlling-the-servomotor-from-the-command-line)
+3. [Getting Started](#getting-started)
+4. [Data Types](#data-types)
+5. [Command Reference](#command-reference)
+6. [Basic Control](#basic-control)
+7. [Configuration](#configuration)
+8. [Device Management](#device-management)
+9. [Motion Control](#motion-control)
+10. [Other](#other)
+11. [Status & Monitoring](#status-and-monitoring)
+12. [Unit Conversions](#unit-conversions)
+13. [Error Handling](#error-handling)
+14. [Error Codes](#error-codes)
 
 ## Install the Python Library
 
@@ -35,40 +36,51 @@ You need to install the servomotor Python library before you can use it in your 
 pip3 install servomotor
 ```
 
-If you want to work in a virtual environment then you can create it, activate it, and install the requirements. You can create the following requirements.txt file and then run the following commands:
-
-**Create requirements.txt:**
-```text
-servomotor
-```
+If you want to work in a virtual environment, you can create it, activate it, and install the library:
 
 **For macOS/Linux:**
 ```bash
 # Create virtual environment
 python3 -m venv venv
-
 # Activate virtual environment
 source venv/bin/activate
-
-# Install requirements
-pip3 install -r requirements.txt
+# Install the needed library
+pip3 install servomotor
 ```
 
 **For Windows:**
 ```bash
 # Create virtual environment
 python -m venv venv
-
 # Activate virtual environment
 venv\Scripts\activate
-
-# Install requirements
-pip install -r requirements.txt
+# Install the needed library
+pip install servomotor
 ```
 
 After installation, you can verify the servomotor library is installed correctly by running:
 ```python
 python3 -c "import servomotor; print('Servomotor library installed successfully!')"
+```
+
+## Controlling the Servomotor From the Command Line
+
+You can send commands to the servomotor from the command line using the servomotor_command utility, which gets installed along with the Python library. Make sure to install that library according to the instructions above. After installation, the servomotor_command program should be in the path. You can try running some of the following commands to communicate with the servomotor(s):
+
+```bash
+servomotor_command --help   # get help information about this command line utility
+servomotor_command -c       # print out all commands currently available
+servomotor_command -P       # select the serial port to be used for communication from a menu
+servomotor_command "Detect devices"  # detect connected servomotors
+
+# The following will set the alias for a device. Use the unique ID discovered from the
+# "Detect devices" command. The example sets the alias to X. After the alias is set, you
+# can send commands to the device and target it with the alias instead of the unique ID. 
+servomotor_command -a 1122334455667788 "Set device alias" X  # set the alias for a device
+
+servomotor_command -a X "Enable mosfets" # enable the MOSFETS of the servomotor with alias X
+servomotor_command -p /dev/ttyUSB0 "Enable mosfets"  # same as above but hard specify the port
+servomotor_command -a X "Trapezoid move" 3000000 32000  # move the motor
 ```
 
 ## Getting Started
