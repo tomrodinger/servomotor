@@ -87,7 +87,21 @@
   - version: V11
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
-    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
+    picture: 
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153751.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153753.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153754.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_202507141537551.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153757.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153758.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153759.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153937.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153938.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153942.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153943.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153944.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153945.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153946.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
     schematic: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/PCB/Servomotor3/V11/schematic/V11-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.1_Dec_5_2024.pdf
