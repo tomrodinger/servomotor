@@ -143,8 +143,9 @@
   - version: 1.0
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
-    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
-    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
+    picture: 
+    - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
+    - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.0/schematic/1.0-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_latest.pdf
@@ -160,8 +161,9 @@
   - version: 1.3
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
-    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
-    picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
+    picture: 
+    - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
+    - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
     description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.3/schematic/1.3-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.2_Jul_12_2025.pdf
