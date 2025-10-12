@@ -26,3 +26,4 @@ hall_sensor_scans
 *.pyc
 __pycache__/
 hall_sensor_data/
+logs/

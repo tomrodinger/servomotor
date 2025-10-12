@@ -184,7 +184,7 @@ def add_getting_started_section(story, style):
     icon_link = IconLink(
         'click_here.png',
         'Click Here to Visit our Getting Started Guide',
-        'https://servo-tutorial.netlify.app/',
+        'https://tutorial.gearotons.com',
         content_width
     )
     story.append(icon_link)

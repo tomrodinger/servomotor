@@ -1,13 +1,1 @@
-High level of integration combines a motor, motor driver, motion control system, and RS-485 commincation interface
-Compact form factor nearly the same size as a NEMA 17 stepper motor with the same specifications
-Standardized NEMA 17 mounting dimensions
-Wide voltage range (12-24V) for flexible power options
-High-precision position control with build in encoder and PID control loop that runs at 32 kHz
-Integrated over-current, over-voltage, and over-temperature protection
-High maximum speed can reach 580 RPM
-Torque-to-weight ratio is the same as an equivalent stepper motor
-Compatible with a wide variety of interfaces and hardware, such as Raspberry Pi, Arduino, ESP32, Mac, and PC
-We strive to provide excellent documentation and tutorials to get you up and running fast
-We provide AI friendly documentation in case you want your favorite AI to do all the work for you
-Suitable for robotics, CNC, automation, scientific instruments, testing jigs, 3D printers, and everything else
-Available in different sizes so you can find the right torque and price for your application
+../marketting_page/features.txt

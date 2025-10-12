@@ -140,7 +140,7 @@ export default function Home() {
                 width={__WIDTH_click_here__}
                 height={__HEIGHT_click_here__}
               />
-              <a href="https://servo-tutorial.netlify.app/" target="_blank" className={`${styles.btn} ${styles.btnPrimary}`}>
+              <a href="https://tutorial.gearotons.com/" target="_blank" className={`${styles.btn} ${styles.btnPrimary}`}>
                 Click Here to Visit our Getting Started Guide
               </a>
             </div>
