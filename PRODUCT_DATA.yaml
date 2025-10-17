@@ -154,7 +154,7 @@
       sha256: dea721652cec3d5684bcfaa999c7f371926dc2a224e210119199dd5080b798b3
 - product: M17
   versions:
-  - version: 1.0
+  - version: '1.0'
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
     picture: 
