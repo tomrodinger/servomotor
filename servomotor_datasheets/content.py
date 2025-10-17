@@ -197,7 +197,7 @@ def add_getting_started_section(story, style):
     # Add custom icon link flowable
     icon_link = IconLink(
         'click_here.png',
-        'Click Here to Visit our Getting Started Guide',
+        'Click Here to Visit our Getting Started Guide: tutorial.gearotons.com',
         'https://tutorial.gearotons.com/',
         content_width
     )
