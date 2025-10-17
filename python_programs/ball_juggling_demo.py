@@ -7,17 +7,17 @@ import os
 import random
 import math
 
-THROW_TIME = 0.12
-THROW_ANGLE = 15.5
+THROW_TIME = 0.09
+THROW_ANGLE = 14.3
 MAX_HOMING_TIME = 3
 WIND_UP_ANGLE = 25
 WIND_UP_ROTATIONS = WIND_UP_ANGLE / 360
 START_POSITION_ROTATIONS = 0.25
 WIND_UP_TIME = 0.3
 THROW_ROTATIONS = THROW_ANGLE / 360
-CATCH_START_ANGLE = 150
+CATCH_START_ANGLE = 140
 PAUSE_AFTER_THROW_TIME = 0.1
-TO_CATCH_POSITION_TIME = 0.2
+TO_CATCH_POSITION_TIME = 0.15
 CATCH_ANGLE = 50
 CATCH_TIME = 0.2
 GO_BACK_TO_START_TIME = 1.0
@@ -25,7 +25,7 @@ GO_BACK_TO_START_TIME = 1.0
 VERBOSE = 0
 
 THROW_MOSFET_CURRENT = 300
-CATCH_CURRENT = 45
+CATCH_CURRENT = 20
 THROW_ACCELERATION = 37108500
 
 N_COMMUTATION_STEPS               = 64
@@ -39,7 +39,7 @@ MICROSTEPS_PER_ROTATION = N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS * ONE_RE
 ONE_DEGREE_MICROSTEPS = MICROSTEPS_PER_ROTATION / 360
 TIME_STEPS_PER_SECOND   = 31250
 THROW_VELOCITY          = int(MAX_RPS * MICROSTEPS_PER_ROTATION * (1 << 32) / TIME_STEPS_PER_SECOND / (1 << 12))
-THROW_VELOCITY          = 2.96
+THROW_VELOCITY          = 4
 
 MM_PER_ROTATION                                   = 20
 MAX_ACCELERATION_MM_PER_SECOND_SQUARED            = 10000
@@ -47,7 +47,7 @@ MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED     = (MAX_ACCELERATION_MM_PER_SEC
 MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED    = (MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * MICROSTEPS_PER_ROTATION)
 MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED = (MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
 THROW_ACCELERATION                                = int(MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED * (1 << 32) / (1 << 8))
-THROW_ACCELERATION = 60
+THROW_ACCELERATION = 100
 
 
 OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
@@ -69,7 +69,9 @@ def do_a_throw(direction):
 
 #    m.trapezoid_move(-WIND_UP_ROTATIONS * direction, 0.4, verbose=VERBOSE) # wind up just before the throw
 
-    time.sleep(1.5)
+    print("Waiting 0.5 seconds before the throw")
+
+    time.sleep(0.5)
 
     m.trapezoid_move((WIND_UP_ROTATIONS + THROW_ROTATIONS) * direction, THROW_TIME, verbose=VERBOSE) # throw the ball
     m.trapezoid_move(0, PAUSE_AFTER_THROW_TIME, verbose=VERBOSE) # pause for a short time without movement to wait for the ball to leave the arm
@@ -79,25 +81,39 @@ def do_a_throw(direction):
             break
     parsed_response = m.set_maximum_motor_current(CATCH_CURRENT, CATCH_CURRENT, verbose=VERBOSE)   # let's make the motor much more weak so that it has flex and causes the ball to be caught without bouncing out
 
-    t = time.time()
-    while 1:
-        commanded, sensed, external = m.get_comprehensive_position(verbose=VERBOSE)
-        expected_position_after_catch = (full_range / 2) * direction
-        error_from_expected_position = abs(sensed - expected_position_after_catch)
-        print(f"Error from expected position: {error_from_expected_position}")
-        if error_from_expected_position < 0.01:
-            print("CAUGHT IT")
-            break
-        if time.time() - t > 120:
-            print("FAILED TO CATCH")
-            return -1
-        time.sleep(0.01)
+    time.sleep(0.5)
+    # let's determine if there is a ball there or not by seeing if the motor is moving when we disable the MOSFETs (ball will pull the motor by gravity if it is there)
+    commanded, sensed_before_disable, external = m.get_comprehensive_position(verbose=VERBOSE)  # get the position once more to make sure the motor is not moving
+    m.disable_mosfets(verbose=VERBOSE)                     # disable MOSFETs to avoid heating up the motor
+    time.sleep(0.05)
+    commanded, sensed_after_disable, external = m.get_comprehensive_position(verbose=VERBOSE)  # get the position once more to make sure the motor is not moving
+    m.enable_mosfets(verbose=VERBOSE)                      # enable MOSFETs again   
+    distance_motor_moved_while_disabled = abs(sensed_after_disable - sensed_before_disable)
+    print(f"The motor moved {distance_motor_moved_while_disabled} rotations while MOSFETs were disabled")
+    if distance_motor_moved_while_disabled < 0.01:
+        print("DID NOT CATCH IT. WILL WAIT FOR THE BALL TO BE PLACED BY THE HUMAN")
+        t = time.time()
+        while 1:
+            commanded, sensed, external = m.get_comprehensive_position(verbose=VERBOSE)
+            expected_position_after_catch = (full_range / 2) * direction
+            error_from_expected_position = abs(sensed - expected_position_after_catch)
+            print(f"Error from expected position: {error_from_expected_position}")
+            if error_from_expected_position < 0.03:
+                print("CAUGHT IT")
+                break
+            if time.time() - t > 60 * 5:
+                print("FAILED TO CATCH")
+                return -1
+            time.sleep(0.01)
+    else:
+        print("CAUGHT IT")
+
 
     start_current = 15
     parsed_response = m.set_maximum_motor_current(start_current, start_current, verbose=VERBOSE)   # let's make the motor super weak so it can no longer push the ball up against gravity
     print(f"Set the current to {start_current}")
 
-    m.go_to_position((START_POSITION_ROTATIONS + WIND_UP_ROTATIONS) * direction, 1, verbose=VERBOSE) # wind up just before the throw
+    m.go_to_position((START_POSITION_ROTATIONS + WIND_UP_ROTATIONS) * direction, 0.1, verbose=VERBOSE) # wind up just before the throw
 
     n_steps = 40
     for i in range(n_steps):
@@ -108,9 +124,6 @@ def do_a_throw(direction):
         m.set_maximum_motor_current(current_at_this_step, current_at_this_step, verbose=VERBOSE)   # let's make the motor super weak so it can no longer push the ball up against gravity
         time.sleep(0.01)
     #m.trapezoid_move(CATCH_ANGLE / 360, CATCH_TIME, verbose=VERBOSE) # we will move the motor as the ball is coming down to ease it into the catch
-
-    time.sleep(1)
-
 
 # create the directory for saving the data logs if it does not already exist
 if not os.path.exists(OUTPUT_LOG_FILE_DIRECTORY):
@@ -214,83 +227,5 @@ m.system_reset(verbose=VERBOSE)
 
 time.sleep(0.2)
 
-exit(0)
-
-
-time.sleep(0.3)
-
-
-
-movement_time_device_units = int(31250 * CATCH_TIME)
-rotation_motor_units = -int(ONE_DEGREE_MICROSTEPS * CATCH_ANGLE)
-parsed_response = communication.execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-if len(parsed_response) != 0:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
-    exit(1)
-
-time.sleep(2)
-# we will move the motor back to the start position
-movement_time_device_units = int(31250 * GO_BACK_TO_START_TIME)
-rotation_motor_units = int(ONE_DEGREE_MICROSTEPS * (CATCH_START_ANGLE + CATCH_ANGLE))
-parsed_response = communication.execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-if len(parsed_response) != 0:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
-    exit(1)
-
-time.sleep(GO_BACK_TO_START_TIME + 0.1)
-
-# decrease the MOSFET current so motor does not get hot
-parsed_response = communication.execute_command(ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [400, 400], verbose=VERBOSE)
-if len(parsed_response) != 0:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the SET_MAXIMUM_MOTOR_CURRENT command")
-    exit(1)
-
-time.sleep(0.1)
-
-exit(0)
-
-motor_position_list = []
-hall_sensor_position_list = []
-position_deviation_list = []
-start_time = time.time()
-stop_time = start_time + TIME_FOR_N_ROTATIONS + 0.3
-while time.time() < stop_time:
-    parsed_response = communication.execute_command(ALIAS, "GET_COMPREHENSIVE_POSITION_COMMAND", [], verbose=VERBOSE)
-    if len(parsed_response) != 3:
-        print("ERROR: The device with alias", ALIAS, "did not respond correctly to the GET_COMPREHENSIVE_POSITION_COMMAND")
-        exit(1)
-    motor_position = parsed_response[0]
-    hall_sensor_position = parsed_response[1]
-    position_deviation = hall_sensor_position - motor_position
-    motor_position_list.append(motor_position)
-    hall_sensor_position_list.append(hall_sensor_position)
-    position_deviation_list.append(hall_sensor_position - motor_position)
-    log_fh.write(str(time.time()) + " " + str(motor_position) + " " + str(hall_sensor_position) + " " + str(position_deviation) + "\n")
-    print("Motor position:", motor_position, "Hall sensor position:", hall_sensor_position, "Position deviation:", position_deviation)
-
-# set the MOSFET current
-parsed_response = communication.execute_command(ALIAS, "SET_MAXIMUM_MOTOR_CURRENT", [400, 400], verbose=VERBOSE)
-if len(parsed_response) != 0:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the SET_MAXIMUM_MOTOR_CURRENT command")
-    exit(1)
-
-time.sleep(0.1)
-
-# we will return the arm back to the original position (slowly) so that we can load the next ball
-TIME_FOR_N_ROTATIONS = 1.0
-N_ROTATIONS = -(N_ROTATIONS + N_ROTATIONS_FOR_PREPARE_TO_THROW)
-movement_time_device_units = int(31250 * TIME_FOR_N_ROTATIONS)
-rotation_motor_units = int(MICROSTEPS_PER_ROTATION * N_ROTATIONS)
-parsed_response = communication.execute_command(ALIAS, "TRAPEZOID_MOVE_COMMAND", [rotation_motor_units, movement_time_device_units], verbose=VERBOSE)
-if len(parsed_response) != 0:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the TRAPEZOID_MOVE_COMMAND")
-    exit(1)
-
-parsed_response = communication.execute_command(ALIAS, "GET_MAX_PID_ERROR_COMMAND", [], verbose=VERBOSE)
-if len(parsed_response) != 2:
-    print("ERROR: The device with alias", ALIAS, "did not respond correctly to the GET_MAX_PID_ERROR_COMMAND")
-    exit(1)
-
-print("The minimum and maximum PID error is:", parsed_response[0], parsed_response[1])
-
 log_fh.close()
+servomotor.close_serial_port()

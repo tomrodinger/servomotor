@@ -1,4 +1,4 @@
-from reportlab.platypus import Paragraph, Spacer, Image, Table
+from reportlab.platypus import Paragraph, Spacer, Image, Table, KeepTogether
 from reportlab.lib.units import mm
 from styles import create_link_style, create_click_icon, SECONDARY_COLOR, create_heading_style
 from utils import get_processed_image
@@ -7,15 +7,18 @@ from content import IconLink
 def add_open_source_section(story, normal_style):
     """Add the Open Source section to the datasheet"""
     
+    # Create elements list for keeping together
+    elements = []
+    
     # Add section heading
     heading_style = create_heading_style()
-    story.append(Paragraph('Open Source', heading_style))
-    story.append(Spacer(1, 5))
+    elements.append(Paragraph('Open Source', heading_style))
+    elements.append(Spacer(1, 5))
     
     # Add description text
-    description = "We believe in making the world better through technology. All software, firmware, and PCB design files are available here:"
-    story.append(Paragraph(description, normal_style))
-    story.append(Spacer(1, 5))
+    description = "We believe in making the world better through technology. Software, firmware, and PCB design files are available here:"
+    elements.append(Paragraph(description, normal_style))
+    elements.append(Spacer(1, 5))
     
     # Calculate content width
     page_width = 595.27  # A4 width in points
@@ -29,8 +32,8 @@ def add_open_source_section(story, normal_style):
         'https://github.com/tomrodinger/servomotor',
         content_width
     )
-    story.append(icon_link)
-    story.append(Spacer(1, 10))
+    elements.append(icon_link)
+    elements.append(Spacer(1, 8))  # Reduced spacing
     
     # Calculate image widths (50% and 40% of original size)
     base_width = 170 * mm * 0.3  # Original base width
@@ -45,6 +48,9 @@ def add_open_source_section(story, normal_style):
     logo_table = Table([[hw_logo, osi_logo]], colWidths=[hw_width + 10, osi_width + 10])
     logo_table.hAlign = 'CENTER'
     
-    # Add the table to the story
-    story.append(logo_table)
-    story.append(Spacer(1, 15))
+    # Add the table to elements
+    elements.append(logo_table)
+    
+    # Keep all elements together to prevent awkward page breaks
+    story.append(KeepTogether(elements))
+    story.append(Spacer(1, 8))  # Reduced final spacing

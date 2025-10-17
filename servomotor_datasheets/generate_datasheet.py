@@ -6,6 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Fram
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib import colors
+from datetime import datetime
 
 from styles import (
     create_title_style, create_subtitle_style, 
@@ -141,8 +142,8 @@ def generate_pdf():
     # Add footer text
     story.append(Spacer(1, 3))
     footer_style = create_footer_style()
-    story.append(Paragraph('(c) 2024 All specifications subject to change without notice.', footer_style))
-    story.append(Paragraph('For more information and technical support, please contact our sales team.', footer_style))
+    current_year = datetime.now().year
+    story.append(Paragraph(f'(c) {current_year} All specifications subject to change without notice.', footer_style))
     
     # Generate PDF
     try:

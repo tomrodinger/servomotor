@@ -4,6 +4,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A4
 from styles import create_heading_style, create_feature_style, PRIMARY_COLOR
+from utils import get_processed_image
 
 class CodeBox(Flowable):
     """A custom flowable for code blocks with border and background"""
@@ -89,8 +90,8 @@ def add_arduino_library_section(story, normal_style):
     install_steps = [
         '1. Open Arduino IDE',
         '2. Go to Sketch → Include Library → Manage Libraries',
-        '3. Search for "M17 Servomotor"',
-        '4. Click Install'
+        '3. Search for "Servomotor"',
+        '4. Find the library called "Servomotor by Gearotons" and click Install'
     ]
     
     feature_style = create_feature_style()
@@ -98,13 +99,31 @@ def add_arduino_library_section(story, normal_style):
         story.append(Paragraph(step, feature_style))
     story.append(Spacer(1, 5))
     
+    # Add installation figure
+    try:
+        # Calculate appropriate image width (about 80% of content width)
+        page_width, _ = A4
+        margin = 18 * mm
+        content_width = page_width - (2 * margin)
+        img_width = content_width * 0.8
+        
+        installation_img = get_processed_image('arduino_library_installation.png', img_width)
+        story.append(installation_img)
+        story.append(Spacer(1, 10))
+    except Exception as e:
+        # Hard failure if image cannot be loaded
+        print(f"ERROR: Could not load arduino_library_installation.png: {e}")
+        print("INSTRUCTIONS: Please ensure the file 'arduino_library_installation.png' exists in the current directory.")
+        print("This image is required for the Arduino Library Installation section of the datasheet.")
+        raise SystemExit(1)
+    
     # Alternative installation
     story.append(Paragraph('<b>Manual Installation</b>', normal_style))
     story.append(Spacer(1, 3))
     
     manual_text = """
-    Alternatively, download the library from GitHub and install manually:
-    https://github.com/tomrodinger/servomotor/tree/main/arduino_library
+    Alternatively, if you are an expert, you can grab the code for the Arduino library here:
+    https://github.com/tomrodinger/Servomotor_Arduino_Library
     """
     story.append(Paragraph(manual_text, normal_style))
     story.append(Spacer(1, 5))
@@ -139,49 +158,6 @@ def add_arduino_library_section(story, normal_style):
     elements = []
     elements.append(code_box)
     elements.append(Spacer(1, 5))
-    
-    # Hardware connections
-    elements.append(Paragraph('<b>Hardware Connections</b>', normal_style))
-    elements.append(Spacer(1, 3))
-    
-    connections = [
-        'Arduino TX → Motor RX (via level shifter if needed)',
-        'Arduino RX → Motor TX (via level shifter if needed)',
-        'Arduino GND → Motor GND',
-        'Motor Power → 12-48V DC power supply'
-    ]
-    
-    for connection in connections:
-        elements.append(Paragraph(connection, feature_style))
-    
-    elements.append(Spacer(1, 5))
-    
-    # Key features
-    elements.append(Paragraph('<b>Key Features</b>', normal_style))
-    elements.append(Spacer(1, 3))
-    
-    features = [
-        'Simple, intuitive API for motor control',
-        'Support for multiple motors on different serial ports',
-        'Built-in error checking and timeout handling',
-        'Compatible with Arduino Uno, Mega, Due, and other boards',
-        'Minimal memory footprint'
-    ]
-    
-    for feature in features:
-        elements.append(Paragraph(feature, feature_style))
-    
-    elements.append(Spacer(1, 5))
-    
-    # Documentation note
-    elements.append(Paragraph('<b>Additional Resources</b>', normal_style))
-    elements.append(Spacer(1, 3))
-    doc_text = """
-    For more examples and API reference, see the library documentation at:
-    https://github.com/tomrodinger/servomotor/wiki/Arduino-Library
-    """
-    elements.append(Paragraph(doc_text, normal_style))
-    elements.append(Spacer(1, 10))
     
     # Keep all elements together if possible
     story.append(KeepTogether(elements))

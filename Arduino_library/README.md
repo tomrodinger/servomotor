@@ -549,4 +549,4 @@ This library is released under the MIT License. See the LICENSE file for details
 
 ## Author
 
-Tom Rodinger (tom.rodinger@alumni.utoronto.ca)
+Tom Rodinger (tom@gearotons.com)

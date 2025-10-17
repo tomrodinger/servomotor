@@ -54,16 +54,27 @@ def add_introduction(story, style):
 
 def add_features(story, style):
     """Add key features section"""
-    story.append(Paragraph('Key Features', create_heading_style()))
+    # Create elements list for keeping together
+    elements = []
+    
+    # Add heading and features
+    elements.append(Paragraph('Key Features', create_heading_style()))
     features = read_features()
     feature_style = create_feature_style()
     for feature in features:
-        story.append(Paragraph(feature, feature_style))
+        elements.append(Paragraph(feature, feature_style))
+    
+    # Keep all elements together
+    story.append(KeepTogether(elements))
     story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_connection_diagram(story, style):
     """Add connection diagram section"""
-    story.append(Paragraph('Connection Diagram', create_heading_style()))
+    # Create elements list for keeping together
+    elements = []
+    
+    # Add heading
+    elements.append(Paragraph('Connection Diagram', create_heading_style()))
     
     # Calculate content width to match main.py
     page_width, _ = A4
@@ -73,7 +84,10 @@ def add_connection_diagram(story, style):
     # Add the connection diagram image at full width
     diagram_img = get_processed_image('connection_diagram.jpg', content_width)
     diagram_img.hAlign = 'CENTER'
-    story.append(diagram_img)
+    elements.append(diagram_img)
+    
+    # Keep all elements together
+    story.append(KeepTogether(elements))
     story.append(Spacer(1, 6))  # Reduced spacing
 
 def add_unit_system(story, style):
@@ -184,7 +198,35 @@ def add_getting_started_section(story, style):
     icon_link = IconLink(
         'click_here.png',
         'Click Here to Visit our Getting Started Guide',
-        'https://servo-tutorial.netlify.app/',
+        'https://tutorial.gearotons.com/',
+        content_width
+    )
+    story.append(icon_link)
+    story.append(Spacer(1, 6))  # Reduced spacing
+
+def add_feedback_section(story, style):
+    """Add feedback section"""
+    story.append(Paragraph('Send Us Feedback', create_heading_style()))
+    
+    story.append(Paragraph(
+        'If you find errors in this document or have questions, please let us know by going to: '
+        'tutorial.gearotons.com/feedback. We would really appreciate your suggestions on how '
+        'we can improve the product or documentation. Thanks very much!',
+        style
+    ))
+    
+    story.append(Spacer(1, 4))  # Reduced spacing
+    
+    # Calculate content width
+    page_width, _ = A4
+    margin = 20 * mm
+    content_width = page_width - (2 * margin)
+    
+    # Add custom icon link flowable
+    icon_link = IconLink(
+        'click_here.png',
+        'Visit our Feedback Page',
+        'https://tutorial.gearotons.com/feedback',
         content_width
     )
     story.append(icon_link)
@@ -193,6 +235,7 @@ def add_getting_started_section(story, style):
 def add_all_content(story, style):
     """Add all content sections"""
     add_introduction(story, style)
+    add_feedback_section(story, style)
     add_features(story, style)
     add_connection_diagram(story, style)
     add_unit_system(story, style)
