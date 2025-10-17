@@ -56,7 +56,7 @@
     type: full_product
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/pcb_picture_top.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a stepper motor form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a stepper motor form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V5/schematic/sch-M3-V5-24-01-24.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -72,7 +72,7 @@
     type: full_product
     web_page_template: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/light_template.html
     picture: https://raw.githubusercontent.com/tomrodinger/servomotor/main/Pictures/servomotor3/servomotor3.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a stepper motor form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a stepper motor form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/PCB/Servomotor3/V7/schematic/M3-V7-index-schTop.pdf
     user_manual: https://raw.githubusercontent.com/vladsomai/test_line_following_robot/main/Products/R2/V2/user-manual.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -102,7 +102,7 @@
     - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153944.jpg
     - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153945.jpg
     - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153946.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a Nema17 form factor
     schematic: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/PCB/Servomotor3/V11/schematic/V11-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.1_Dec_5_2024.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -114,11 +114,11 @@
       description: Firmware for the servomotor model M3
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.9.1.0_scc3_hwV11.firmware
       sha256: 69236b0e362e57d8a63f25a6fdcb3934c096c4e738471be43146689e24e82764
-  - version: 1.2
+  - version: '1.2'
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
     picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.2/schematic/1.2-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.1_Dec_5_2024.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -130,11 +130,11 @@
       description: Firmware for the servomotor model M3
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M3_fw0.11.0.0_scc3_hw1.2.firmware
       sha256: 01307afe2ed455a570d6dfdaf240b033c80e0eb4dbec9fdb2a3f93c1819222df
-  - version: 1.3
+  - version: '1.3'
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
     picture: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.3/schematic/1.3-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.1_Dec_5_2024.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -160,7 +160,7 @@
     picture: 
     - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
     - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.0/schematic/1.0-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_latest.pdf
     tutorial: https://tutorial.gearotons.com/
@@ -172,13 +172,13 @@
       description: Firmware for the servomotor model M17
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M17_fw0.13.0.0_scc3_hw1.0.firmware
       sha256: 0c6ddd1d88d84a304e057422fabfa612cdfebd2ee5ee2bee8ca8846a1b399bb8
-  - version: 1.3
+  - version: '1.3'
     type: full_product
     web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
     picture: 
     - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 family2.jpg
     - https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/Pictures/servomotor3/servomotor3 with a connector1.jpg
-    description: This product is a Servomotor with 3-in-1 integrated motor + motor driver + motion controller in a Nema17 form factor
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a Nema17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.3/schematic/1.3-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.2_Jul_12_2025.pdf
     tutorial: https://servo-tutorial.netlify.app/

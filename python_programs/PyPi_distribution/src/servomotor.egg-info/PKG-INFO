@@ -1,7 +1,7 @@
 Metadata-Version: 2.4
 Name: servomotor
-Version: 0.8.4
-Summary: A Python package for controlling the easy to use 3-in-1 integrated servomotors from Gearotons
+Version: 0.9.1
+Summary: A Python package for controlling M17 Servomotors, the 4-in-1 (motor + dirce + motion control + encoder) integrated servomotors from Gearotons
 Author-email: Tom Rodinger <tom@gearotons.com>
 License: MIT License
         

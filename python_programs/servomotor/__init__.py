@@ -4,6 +4,8 @@ Servomotor Control Module
 This package provides functionality for controlling servomotors
 from the company Gearotons.
 """
+__version__ = "0.9.1"
+
 
 from .communication import (
     print_protocol_version,

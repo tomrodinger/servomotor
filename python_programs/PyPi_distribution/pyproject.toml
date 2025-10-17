@@ -1,10 +1,10 @@
 [project]
 name = "servomotor"
-version = "0.8.4"
+dynamic = ["version"]
 authors = [
   { name="Tom Rodinger", email="tom@gearotons.com" },
 ]
-description = "A Python package for controlling the easy to use 3-in-1 integrated servomotors from Gearotons"
+description = "A Python package for controlling M17 Servomotors, the 4-in-1 (motor + dirce + motion control + encoder) integrated servomotors from Gearotons"
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -31,6 +31,9 @@ build-backend = "setuptools.build_meta"
 package-dir = {"" = "src"}
 include-package-data = true
 py-modules = ["terminal_formatting", "servomotor_command", "detect_and_set_alias_all_devices", "show_device_information_for_all_devices"]
+
+[tool.setuptools.dynamic]
+version = {attr = "servomotor.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

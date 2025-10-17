@@ -38,8 +38,44 @@ pushd "${ROOT_DIR}/PyPi_distribution" > /dev/null
 rm -rf dist
 "${PY}" -m build
 
-# Upload to TestPyPI (requires either ~/.pypirc with 'testpypi' or TWINE_USERNAME/TWINE_PASSWORD set)
-"${PY}" -m twine upload --repository testpypi dist/*
+# Interactive prompt for deployment target selection
+echo ""
+echo "Select deployment target:"
+echo "1) TestPyPI (test.pypi.org)"
+echo "2) PyPI (pypi.org) - PRODUCTION"
+echo ""
+read -p "Enter your choice (1 or 2): " choice
+
+case $choice in
+    1)
+        REPOSITORY="testpypi"
+        echo "Deploying to TestPyPI..."
+        ;;
+    2)
+        REPOSITORY="pypi"
+        # Get version from servomotor/__init__.py
+        VERSION=$(grep -o "__version__ = ['\"][^'\"]*['\"]" "${ROOT_DIR}/servomotor/__init__.py" | sed "s/__version__ = ['\"]//g" | sed "s/['\"]//g")
+        echo ""
+        echo "⚠️  WARNING: You are about to deploy to PRODUCTION PyPI!"
+        echo "This will make version ${VERSION} publicly available."
+        echo ""
+        read -p "Are you sure you want to proceed? (yes/no): " confirm
+        if [[ $confirm != "yes" ]]; then
+            echo "Deployment cancelled."
+            popd > /dev/null
+            exit 0
+        fi
+        echo "Deploying to production PyPI..."
+        ;;
+    *)
+        echo "Invalid choice. Deployment cancelled."
+        popd > /dev/null
+        exit 1
+        ;;
+esac
+
+# Upload to selected repository
+"${PY}" -m twine upload --repository "${REPOSITORY}" dist/*
 popd > /dev/null
 
-echo "Build and upload completed."
+echo "Build and upload to ${REPOSITORY} completed successfully!"

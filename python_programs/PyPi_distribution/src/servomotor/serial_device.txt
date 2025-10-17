@@ -1,1 +1,1 @@
-/dev/tty.usbserial-110
+/dev/tty.usbserial-120
