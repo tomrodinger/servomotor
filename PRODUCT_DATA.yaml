@@ -189,7 +189,7 @@
     description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a NEMA 17 form factor
     schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.3/schematic/1.3-index-schTop.pdf
     user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_v1.2_Jul_12_2025.pdf
-    tutorial: https://servo-tutorial.netlify.app/
+    tutorial: https://tutorial.gearotons.com/
     github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/1.3
     firmwares:
     - version: 0.13.0.0
