@@ -102,7 +102,8 @@ program_device() {
     fi
 
     # Flash the device
-    if ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all -w build/bootloader_with_product_info.bin 0x08000000 -g; then
+    if ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst -e all -w build/bootloader_with_product_info.bin 0x08000000 -g ; then
+    # if ../programmer_essentials/STM32_Programmer_CLI -c port=SWD mode=UR reset=HWrst freq=1000 -e all -w build/bootloader_with_product_info.bin 0x08000000 -g --verbosity 3; then
         print_large_message "Programming Success"
         return 0
     else

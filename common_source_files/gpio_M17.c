@@ -20,14 +20,14 @@ static void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting output (to set the overvoltage threshold) by PWM
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming) and button input
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming)
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming). Keep as SWD in bootloader; application firmware can repurpose for button.
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming). Keep as SWD in bootloader.
 #if SOFTWARE_COMPATIBILITY_CODE == 2 // this is the version with AT5833 chip and this pin is used for the ~INDEX line
             (MODER_DIGITAL_INPUT     << GPIO_MODER_MODE15_Pos);   // If AT5833 chip: ~INDEX line, to indicate that the motor is at microstep 0 (out of 64)
 #else 
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  // If GC6609 chip: UART communicatioin pin (keep high when not communicating)
-                                                                  // If A4988 chip: Stepper motor driver reset (reset low, normal operation high)
-                                                                  // V11RC4 and beyong use this pin as MS1 for setting the microstepping mode
+                                                                   // If A4988 chip: Stepper motor driver reset (reset low, normal operation high)
+                                                                   // V11RC4 and beyong use this pin as MS1 for setting the microstepping mode
 #endif
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
 //                    (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT3_Pos) | // also, make the RS485 receive pin open drain

@@ -20,8 +20,8 @@ static void portA_init(void)
             (MODER_ANALOG_INPUT       << GPIO_MODER_MODE10_Pos) | // Don't use. Might be connected tp PA12 internally
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE11_Pos) | // Overvoltage setting PWM output (to set the overvoltage threshold) by TIM1_CH4
             (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE12_Pos) | // RS485 Data enable (DE) output
-            (MODER_ANALOG_INPUT       << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming)
-            (MODER_DIGITAL_INPUT      << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming) and button input
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE13_Pos) | // SWDIO (for programming). Keep as SWD in bootloader.
+            (MODER_ALTERNATE_FUNCTION << GPIO_MODER_MODE14_Pos) | // SWCLK (for programming). Keep as SWD in bootloader; application firmware can repurpose for button.
             (MODER_DIGITAL_OUTPUT     << GPIO_MODER_MODE15_Pos);  //
 
 //    GPIOA->OTYPER = (OTYPER_OPEN_DRAIN << GPIO_OTYPER_OT1_Pos) | // make all the pins with analog components connected open drain
