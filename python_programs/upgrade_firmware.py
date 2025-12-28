@@ -407,14 +407,14 @@ while len(data) & 0x03 != 0:
 
 print("The firmware size after padding zeros to make the firmware size divisible by 4 is:", len(data))
 
-data_uint32 = []
-for item in struct.iter_unpack('<I', data):  # unpack as little endian unsigned 32-bit integers
-    data_uint32.append(item[0])
-
+#data_uint32 = []
+#for item in struct.iter_unpack('<I', data):  # unpack as little endian unsigned 32-bit integers
+#    data_uint32.append(item[0])
+#
 # we are finished manipulating, so now repack it back into bytes
-data2 = b''
-for item in data_uint32:
-    data2 = data2 + struct.pack('<I', item)
+#data2 = b''
+#for item in data_uint32:
+#    data2 = data2 + struct.pack('<I', item)
 
 firmware_size = (len(data) >> 2) - 1
 firmware_crc = binascii.crc32(data[4:])
