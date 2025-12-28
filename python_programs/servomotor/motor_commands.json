@@ -179,12 +179,12 @@
         "Input": null,
         "Output": [
             {
-                "Description": "u48: The current absolute time",
+                "Description": "u64: The current absolute time in microseconds",
                 "TooltipDisplayFormat": "%u",
                 "ParameterName": "currentTime",
                 "UnitConversion": {
                     "Type": "time",
-                    "InternalUnit": "time_steps",
+                    "InternalUnit": "microseconds",
                     "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
                 }
             }
@@ -197,9 +197,14 @@
         "Description": "Sends the master time to the motor so that it can sync its own clock (do this 10 times per second).",
         "Input": [
             {
-                "Description": "u48: The motor absolute time that the motor should sync to (in microseconds).",
+                "Description": "u32: The motor absolute time that the motor should sync to (in microseconds).",
                 "TooltipDisplayFormat": "%u",
-                "ParameterName": "masterTime"
+                "ParameterName": "masterTime",
+                "UnitConversion": {
+                    "Type": "time",
+                    "InternalUnit": "microseconds",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
             }
         ],
         "Output": [

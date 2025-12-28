@@ -687,7 +687,8 @@ def main():
     print(f"Seconds to timesteps:                 {time_factors['seconds']:,.6f}")
     print(f"Milliseconds to timesteps:            {time_factors['milliseconds']:,.6f}")
     print(f"Minutes to timesteps:                 {time_factors['minutes']:,.6f}")
-    
+    print(f"Microseconds to timesteps:            {time_factors['microseconds']:,.6f}")
+     
     print("\nVelocity Conversion Factors (includes 2^20 scaling):")
     print(f"Rotations/sec to counts_per_timestep: {velocity_factors['rotations_per_second']:,.6f}")
     print(f"RPM to counts_per_timestep:           {velocity_factors['rpm']:,.6f}")

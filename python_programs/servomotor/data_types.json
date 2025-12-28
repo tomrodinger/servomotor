@@ -27,15 +27,6 @@
         "description": "16-bit signed integer"
     },
     {
-        "data_type_id": 4,
-        "data_type": "i24",
-        "size": 3,
-        "min_value": -8388608,
-        "max_value": 8388607,
-        "is_integer": true,
-        "description": "24-bit signed integer"
-    },
-    {
         "data_type_id": 6,
         "data_type": "i32",
         "size": 4,
@@ -115,15 +106,6 @@
         "max_value": 65535,
         "is_integer": true,
         "description": "16-bit unsigned integer"
-    },
-    {
-        "data_type_id": 5,
-        "data_type": "u24",
-        "size": 3,
-        "min_value": 0,
-        "max_value": 16777215,
-        "is_integer": true,
-        "description": "24-bit unsigned integer"
     },
     {
         "data_type_id": 13,
