@@ -117,8 +117,8 @@ def generate_payload_structures(commands_data=None, data_types_data=None, **kwar
         # list_2d is handled specially - it needs the command name
         
         # Special types
-        'u24_version_number': 'uint32_t',
-        'u32_version_number': 'uint32_t',
+        'u24_version_number': 'VersionNumber24',
+        'u32_version_number': 'VersionNumber32',
         'u64_unique_id': 'uint64_t',
         'crc32': 'uint32_t'
     }

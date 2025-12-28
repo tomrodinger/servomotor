@@ -229,8 +229,8 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
         'firmware_page': ('uint8_t', 2058),
         
         # Special types
-        'u24_version_number': 'uint32_t',
-        'u32_version_number': 'uint32_t',
+        'u24_version_number': 'VersionNumber24',
+        'u32_version_number': 'VersionNumber32',
         'u64_unique_id': 'uint64_t',
         'crc32': 'uint32_t'
     }
@@ -627,8 +627,8 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
             'firmware_page': ('uint8_t', 2058),
             
             # Special types
-            'u24_version_number': 'uint32_t',
-            'u32_version_number': 'uint32_t',
+            'u24_version_number': 'VersionNumber24',
+            'u32_version_number': 'VersionNumber32',
             'u64_unique_id': 'uint64_t',
             'crc32': 'uint32_t'
         }
