@@ -99,6 +99,8 @@ def capture_hall_sensor_data_for_device(device_identifier, verbose_level, args, 
     motor.system_reset()
     time.sleep(1.5)
 
+    motor.set_max_allowable_position_deviation(2000000000)
+    
     motor.enable_mosfets()
     time.sleep(0.05)
 
