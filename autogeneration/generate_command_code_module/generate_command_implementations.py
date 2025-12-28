@@ -717,10 +717,17 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         # Call the raw method with the converted list
         raw_params = ["moveCount", "moveTypes", "convertedList"]
         raw_params_str = ", ".join(raw_params)
-        if by_unique_id:
-            method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+
+        if has_output:
+            if by_unique_id:
+                method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId, {raw_params_str});")
+            else:
+                method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
         else:
-            method_lines.append(f"    {func_name}Raw({raw_params_str});")
+            if by_unique_id:
+                method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
+            else:
+                method_lines.append(f"    {func_name}Raw({raw_params_str});")
     else:
         # Regular parameter conversion
         raw_params = []
@@ -761,7 +768,8 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
         
         # Call the raw method
         raw_params_str = ", ".join(raw_params)
-        if has_output and has_unit_conversion_output:
+        if has_output:
+            # Always capture the raw result when the wrapper returns a non-void type.
             if by_unique_id:
                 if raw_params_str:
                     method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId, {raw_params_str});")
@@ -769,49 +777,53 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                     method_lines.append(f"    auto rawResult = {func_name}Raw(uniqueId);")
             else:
                 method_lines.append(f"    auto rawResult = {func_name}Raw({raw_params_str});")
-            
-            # Convert the raw result to user units
-            if return_type == "float":
-                # Single value output
-                output_param = cmd.get('Output', [])[0]
-                unit_type = output_param.get('UnitConversion', {}).get('Type')
-                conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
-                unit_enum = f"m_{unit_type}Unit"
-                
-                # Check the original description to determine if it's a simple value or struct
-                desc = output_param.get('Description', '')
-                match = re.match(r'(\w+):\s*(.*)', desc)
-                type_str = match.group(1) if match else ''
-                
-                # If it's a simple type in our type_map, use rawResult directly
-                param_name = output_param.get('ParameterName')
-                primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i48', 'u48', 'i64', 'u64']
-                if type_str in primitive_types:
-                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
-                else:
-                    # Otherwise assume it's a struct with a field name matching the parameter name
-                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
-                
-                method_lines.append(f"    return converted;")
-            else:
-                # Multiple values in struct
-                method_lines.append(f"    {return_type} converted;")
-                for output_param in cmd.get('Output', []):
-                    if output_param.get('UnitConversion'):
-                        param_name = output_param.get('ParameterName')
-                        unit_type = output_param.get('UnitConversion', {}).get('Type')
-                        conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
-                        unit_enum = f"m_{unit_type}Unit"
-                        
-                        method_lines.append(f"    converted.{param_name} = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+
+            if has_unit_conversion_output:
+                # Convert the raw result to user units
+                if return_type == "float":
+                    # Single value output
+                    output_param = cmd.get('Output', [])[0]
+                    unit_type = output_param.get('UnitConversion', {}).get('Type')
+                    conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                    unit_enum = f"m_{unit_type}Unit"
+
+                    # Check the original description to determine if it's a simple value or struct
+                    desc = output_param.get('Description', '')
+                    match = re.match(r'(\w+):\s*(.*)', desc)
+                    type_str = match.group(1) if match else ''
+
+                    # If it's a simple type in our type_map, use rawResult directly
+                    param_name = output_param.get('ParameterName')
+                    primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i64', 'u64']
+                    if type_str in primitive_types:
+                        method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
                     else:
-                        # Copy non-converted fields directly
-                        param_name = output_param.get('ParameterName')
-                        method_lines.append(f"    converted.{param_name} = rawResult.{param_name};")
-                
-                method_lines.append(f"    return converted;")
+                        # Otherwise assume it's a struct with a field name matching the parameter name
+                        method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+
+                    method_lines.append(f"    return converted;")
+                else:
+                    # Multiple values in struct
+                    method_lines.append(f"    {return_type} converted;")
+                    for output_param in cmd.get('Output', []):
+                        if output_param.get('UnitConversion'):
+                            param_name = output_param.get('ParameterName')
+                            unit_type = output_param.get('UnitConversion', {}).get('Type')
+                            conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                            unit_enum = f"m_{unit_type}Unit"
+
+                            method_lines.append(f"    converted.{param_name} = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                        else:
+                            # Copy non-converted fields directly
+                            param_name = output_param.get('ParameterName')
+                            method_lines.append(f"    converted.{param_name} = rawResult.{param_name};")
+
+                    method_lines.append(f"    return converted;")
+            else:
+                # Output exists, but there is no output unit-conversion to apply.
+                method_lines.append(f"    return rawResult;")
         else:
-            # No return value to convert
+            # No output: just call Raw.
             if by_unique_id:
                 if raw_params_str:
                     method_lines.append(f"    {func_name}Raw(uniqueId, {raw_params_str});")
@@ -819,6 +831,42 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                     method_lines.append(f"    {func_name}Raw(uniqueId);")
             else:
                 method_lines.append(f"    {func_name}Raw({raw_params_str});")
+
+    # If we're in the mixed-conversion path and the command has output, we still need a return.
+    if has_mixed_conversion and has_output:
+        if has_unit_conversion_output:
+            # Convert the raw result to user units (rawResult is defined above)
+            if return_type == "float":
+                output_param = cmd.get('Output', [])[0]
+                unit_type = output_param.get('UnitConversion', {}).get('Type')
+                conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                unit_enum = f"m_{unit_type}Unit"
+
+                desc = output_param.get('Description', '')
+                match = re.match(r'(\w+):\s*(.*)', desc)
+                type_str = match.group(1) if match else ''
+                param_name = output_param.get('ParameterName')
+                primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i64', 'u64']
+                if type_str in primitive_types:
+                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                else:
+                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                method_lines.append(f"    return converted;")
+            else:
+                method_lines.append(f"    {return_type} converted;")
+                for output_param in cmd.get('Output', []):
+                    if output_param.get('UnitConversion'):
+                        param_name = output_param.get('ParameterName')
+                        unit_type = output_param.get('UnitConversion', {}).get('Type')
+                        conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
+                        unit_enum = f"m_{unit_type}Unit"
+                        method_lines.append(f"    converted.{param_name} = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                    else:
+                        param_name = output_param.get('ParameterName')
+                        method_lines.append(f"    converted.{param_name} = rawResult.{param_name};")
+                method_lines.append(f"    return converted;")
+        else:
+            method_lines.append(f"    return rawResult;")
     
     # Close the method
     method_lines.append("}")
