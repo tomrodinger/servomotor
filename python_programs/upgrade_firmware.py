@@ -361,7 +361,7 @@ def upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data,
 parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
 parser.add_argument('-p', '--port', help='serial port device', default=None)
 parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (only for new protocol)', default="255")
+parser.add_argument('-a', '--alias', help='alias of the device to communicate with, or a 16-character hex string for unique ID (only for new protocol)', default="255")
 parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new',
                     help='Protocol to use for resetting the device into bootloader mode (default: new)')
 parser.add_argument('--bootloader-protocol', choices=['old', 'new'], default='new',
