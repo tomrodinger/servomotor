@@ -102,7 +102,7 @@ for unique_id, device in new_device_dict.items():
 
         current_speed = 0.0
         while 1:
-            print(f"=== alias = {device.alias} speed = {current_speed} =============================================================================")
+            print(f"=== alias = {device.alias} speed = {current_speed} degrees per second = {current_speed * 60 / 360} RPM =================================")
             current_speed += SPEED_STEP
 
             temperature = motor.get_temperature()
