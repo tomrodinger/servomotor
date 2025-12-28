@@ -7,6 +7,7 @@ the payload and response structure declarations for Servomotor.h.
 
 import re
 
+from .maps import TYPE_MAP
 
 def format_command_name(command_string):
     """
@@ -90,38 +91,8 @@ def generate_payload_structures(commands_data=None, data_types_data=None, **kwar
     # Create a data type map for easy lookup
     data_type_map = {dt.get('data_type', ''): dt for dt in data_types_data}
     
-    # Create a comprehensive type map
-    # For array types, use a tuple of (base_type, array_size)
-    type_map = {
-        # Basic types
-        'i8': 'int8_t',
-        'u8': 'uint8_t',
-        'i16': 'int16_t',
-        'u16': 'uint16_t',
-        'i24': 'int32_t',
-        'u24': 'uint32_t',
-        'i32': 'int32_t',
-        'u32': 'uint32_t',
-        'i48': 'int64_t',
-        'u48': 'uint64_t',
-        'i64': 'int64_t',
-        'u64': 'uint64_t',
-        'float': 'float',
-        'double': 'double',
-        
-        # Array types
-        'buf10': ('uint8_t', 10),
-        'string8': ('char', 8),
-        'string_null_term': ('char', 32),
-        'firmware_page': ('uint8_t', 2058),
-        # list_2d is handled specially - it needs the command name
-        
-        # Special types
-        'u24_version_number': 'VersionNumber24',
-        'u32_version_number': 'VersionNumber32',
-        'u64_unique_id': 'uint64_t',
-        'crc32': 'uint32_t'
-    }
+    # Shared maps live in generate_command_code_module/maps.py
+    type_map = TYPE_MAP
     # First pass: identify commands with list_2d parameters to generate list type structures
     for cmd in commands_data:
         if not cmd or not isinstance(cmd, dict):

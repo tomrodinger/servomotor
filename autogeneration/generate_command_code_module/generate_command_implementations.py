@@ -7,6 +7,7 @@ the method implementations for the Servomotor class.
 
 import re
 
+from .maps import ENDIAN_CONVERSION_MAP, TYPE_MAP, UNIT_CONVERSION_MAP
 
 def format_command_name(command_string):
     """
@@ -204,59 +205,10 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
         
         return "\n".join(method_lines)
     
-    # Create a type map for parameter conversion
-    type_map = {
-        # Basic types
-        'i8': 'int8_t',
-        'u8': 'uint8_t',
-        'i16': 'int16_t',
-        'u16': 'uint16_t',
-        'i24': 'int32_t',
-        'u24': 'uint32_t',
-        'i32': 'int32_t',
-        'u32': 'uint32_t',
-        'i48': 'int64_t',
-        'u48': 'uint64_t',
-        'i64': 'int64_t',
-        'u64': 'uint64_t',
-        'float': 'float',
-        'double': 'double',
-        
-        # Array types
-        'buf10': ('uint8_t', 10),
-        'string8': ('char', 8),
-        'string_null_term': ('char', 32),
-        'firmware_page': ('uint8_t', 2058),
-        
-        # Special types
-        'u24_version_number': 'VersionNumber24',
-        'u32_version_number': 'VersionNumber32',
-        'u64_unique_id': 'uint64_t',
-        'crc32': 'uint32_t'
-    }
-    
-    # Map unit types to conversion function names
-    unit_conversion_map = {
-        'position': 'convertPosition',
-        'time': 'convertTime',
-        'velocity': 'convertVelocity',
-        'acceleration': 'convertAcceleration',
-        'temperature': 'convertTemperature',
-        'voltage': 'convertVoltage',
-        'current': 'convertCurrent'
-    }
-    
-    # Map endianness conversion functions based on type
-    endian_conversion_map = {
-        'int8_t': '',
-        'uint8_t': '',
-        'int16_t': 'htole16',
-        'uint16_t': 'htole16',
-        'int32_t': 'htole32',
-        'uint32_t': 'htole32',
-        'int64_t': 'htole64',
-        'uint64_t': 'htole64',
-    }
+    # Shared maps live in generate_command_code_module/maps.py
+    type_map = TYPE_MAP
+    unit_conversion_map = UNIT_CONVERSION_MAP
+    endian_conversion_map = ENDIAN_CONVERSION_MAP
     
     # Output implementations
     implementations = []
@@ -603,35 +555,7 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
     """
     # Make sure we have the type_map
     if type_map is None:
-        type_map = {
-            # Basic types
-            'i8': 'int8_t',
-            'u8': 'uint8_t',
-            'i16': 'int16_t',
-            'u16': 'uint16_t',
-            'i24': 'int32_t',
-            'u24': 'uint32_t',
-            'i32': 'int32_t',
-            'u32': 'uint32_t',
-            'i48': 'int64_t',
-            'u48': 'uint64_t',
-            'i64': 'int64_t',
-            'u64': 'uint64_t',
-            'float': 'float',
-            'double': 'double',
-            
-            # Array types
-            'buf10': ('uint8_t', 10),
-            'string8': ('char', 8),
-            'string_null_term': ('char', 32),
-            'firmware_page': ('uint8_t', 2058),
-            
-            # Special types
-            'u24_version_number': 'VersionNumber24',
-            'u32_version_number': 'VersionNumber32',
-            'u64_unique_id': 'uint64_t',
-            'crc32': 'uint32_t'
-        }
+        type_map = TYPE_MAP
     method_lines = []
     
     # Process input parameters
@@ -1079,22 +1003,7 @@ def generate_multi_response_method(cmd_str, func_name, return_type):
 
 def get_cpp_type_from_desc(desc, type_str):
     """Extract C++ type from type description."""
-    type_map = {
-        'i8': 'int8_t',
-        'u8': 'uint8_t',
-        'i16': 'int16_t',
-        'u16': 'uint16_t',
-        'i24': 'int32_t',
-        'u24': 'uint32_t',
-        'i32': 'int32_t',
-        'u32': 'uint32_t',
-        'i48': 'int64_t',
-        'u48': 'uint64_t',
-        'i64': 'int64_t',
-        'u64': 'uint64_t',
-        'float': 'float',
-        'double': 'double',
-    }
+    type_map = TYPE_MAP
     
     if type_str in type_map:
         return type_map[type_str]
