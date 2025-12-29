@@ -15,6 +15,53 @@
 static uint32_t crc32_value;
 static bool s_commSerialOpened = false;
 
+// If you want to potentially sppeed up CRC32 calculations, enable the table-based implementation by uncommenting out the line below.
+// If you are on an ESP32-based board, the table-based implementation may be significantly faster and the extra memory used (1KB) may be worth it.
+//#define TABLE_BASED_CRC32
+#ifdef TABLE_BASED_CRC32
+// Faster CRC32: table-driven implementation (same reflected polynomial as before).
+// This replaces the bit-at-a-time loop (8 iterations per byte) with one lookup
+// per byte.
+static uint32_t s_crc32_table[256];
+static bool s_crc32_table_ready = false;
+
+static void crc32_table_init(void)
+{
+    if (s_crc32_table_ready) {
+        return;
+    }
+    for (uint32_t i = 0; i < 256; i++) {
+        uint32_t c = i;
+        for (uint32_t j = 0; j < 8; j++) {
+            if (c & 1u) {
+                c = (c >> 1) ^ CRC32_POLYNOMIAL;
+            } else {
+                c = (c >> 1);
+            }
+        }
+        s_crc32_table[i] = c;
+    }
+    s_crc32_table_ready = true;
+}
+
+void crc32_init(void)
+{
+    crc32_table_init();
+    crc32_value = 0xFFFFFFFF;
+}
+
+uint32_t calculate_crc32_buffer_without_reinit(const void* data, size_t length)
+{
+    const uint8_t* d = (const uint8_t*)data;
+    for (size_t i = 0; i < length; i++) {
+        const uint8_t idx = (uint8_t)((crc32_value ^ d[i]) & 0xFFu);
+        crc32_value = (crc32_value >> 8) ^ s_crc32_table[idx];
+    }
+    return ~crc32_value;
+}
+
+#else
+
 void crc32_init(void)
 {
     crc32_value = 0xFFFFFFFF;
@@ -35,6 +82,8 @@ uint32_t calculate_crc32_buffer_without_reinit(const void* data, size_t length)
     }
     return ~crc32_value;
 }
+
+#endif
 
 uint32_t calculate_crc32(const uint8_t* data, size_t length)
 {
