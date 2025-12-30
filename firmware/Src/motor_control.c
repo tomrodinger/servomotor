@@ -482,7 +482,7 @@ uint16_t hall_data_buffer[3];
 #if defined(PRODUCT_NAME_M1)
 #define HALL_PEAK_FIND_THRESHOLD 200
 #else
-#define HALL_PEAK_FIND_THRESHOLD 2000
+#define HALL_PEAK_FIND_THRESHOLD 4000
 #endif
 uint8_t hall_rising_flag[3];
 uint16_t hall_local_maximum[3];
@@ -822,7 +822,7 @@ void compute_midlines_from_calibration_data(void)
             print_debug_string(buf);
         }
         minima_and_maxima_avg[j] /= N_POLES;
-        midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j] << 3) - HALL_SENSOR_SHIFT);
+        midline[j] = (uint16_t)(((int32_t)minima_and_maxima_avg[j]));
     }
 
     global_settings.hall1_midline = midline[0];
@@ -2891,6 +2891,7 @@ void TIM16_IRQHandler(void)
         }
     }
 
+    #ifndef PROGRAMMING_TEST_JIG_MODE
     // check that the hall position didn't change too much in one cycle. if it did then there is something very wrong.
     if ( (calibration_step == 0) && ((hall_position_delta < -MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD) || (hall_position_delta > MAX_HALL_POSITION_DELTA_FATAL_ERROR_THRESHOLD)) ) {
         if(hall_position_delta_violation == 0) {
@@ -2905,6 +2906,7 @@ void TIM16_IRQHandler(void)
             }
         }
     }
+    #endif
 
 #ifdef DO_DETAILED_PROFILING
     profiler_start_time(COMPUTE_VELOCITY_PROFILER);

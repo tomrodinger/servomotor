@@ -14,6 +14,9 @@
 #define HALL_POSITION_HYSTERESIS 100
 #define ONE_REVOLUTION_HALL_COUNTS (SENSOR_SEGMENT_RESOLUTION_DIV_2 * TOTAL_NUMBER_OF_SEGMENTS)
 #define ONE_CYCLE_HALL_COUNTS (SENSOR_SEGMENT_RESOLUTION * N_HALL_SENSORS)
+#define MAX_INT16 32767
+#define MIN_INT16 -32768
+#define MAX_UINT16 65535
 //#define DO_DETAILED_PROFILING // uncomment this of you want to do time profiling
 
 static const struct hall_weights_struct hall_weights = HALL_WEIGHTS_INITIALIZER;
@@ -44,7 +47,7 @@ void adjust_hall_sensor_readings(uint16_t hall_sensor_readings[3], int32_t adjus
     adjusted_hall_sensor_readings[2] = d2;
 }
 
-
+#define HALL_SENSOR_MIDDLE_VALUE (((1 << 12) * 4) >> 1) // mid-point value for 12-bit ADC with 4x oversampling
 get_sensor_position_return_t get_sensor_position(void)
 {
     uint16_t hall_sensor_readings[3];
@@ -60,11 +63,11 @@ get_sensor_position_return_t get_sensor_position(void)
     get_sensor_position_return_t hall_position_return_value = {0, 0};
 
     hall_sensor_readings[0] = ((ADC_buffer[HALL1_ADC_CYCLE_INDEX] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
+                                ADC_buffer[HALL1_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL1_ADC_CYCLE_INDEX + 24]));
     hall_sensor_readings[1] = ((ADC_buffer[HALL2_ADC_CYCLE_INDEX] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
+                                ADC_buffer[HALL2_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL2_ADC_CYCLE_INDEX + 24]));
     hall_sensor_readings[2] = ((ADC_buffer[HALL3_ADC_CYCLE_INDEX] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 8] +
-                                ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24]) << 3) - HALL_SENSOR_SHIFT;
+                                ADC_buffer[HALL3_ADC_CYCLE_INDEX + 16] + ADC_buffer[HALL3_ADC_CYCLE_INDEX + 24]));
 
     if(hall_sensor_statitics_active) {
         for(uint8_t h = 0; h < 3; h++) {
@@ -246,7 +249,7 @@ void hall_sensor_turn_on_and_reset_statistics(void)
 {
     TIM1->DIER &= ~TIM_DIER_UIE; // disable the update interrupt during this operation
     for(uint8_t h = 0; h < 3; h++) {
-        hall_sensor_statistics.min_value[h] = 0xFFFF;
+        hall_sensor_statistics.min_value[h] = MAX_UINT16;
         hall_sensor_statistics.max_value[h] = 0;
         hall_sensor_statistics.sum[h] = 0;
         hall_sensor_statistics.n = 0;

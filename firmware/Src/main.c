@@ -65,7 +65,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t major;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 13
+#define MINOR_FIRMWARE_VERSION 14
 #define BUGFIX_FIRMWARE_VERSION 0
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
@@ -73,6 +73,8 @@ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION,
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
 
 #define PING_PAYLOAD_SIZE 10
+
+#define DEFAULT_MIDLINE 34000 // Later it might be good to have this constant autodetermined and placed into hall_sensor_constants_M17.h
 
 extern volatile uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
 
@@ -1335,6 +1337,30 @@ int main(void)
     my_unique_id = get_unique_id();
 
     load_global_settings(); // load the settings from non-volatile memory into ram for faster access
+
+    if(global_settings.hall1_midline == 0xffff) {
+        global_settings.hall1_midline = DEFAULT_MIDLINE;
+    }
+    if(global_settings.hall2_midline == 0xffff) {
+        global_settings.hall2_midline = DEFAULT_MIDLINE;
+    }
+    if(global_settings.hall3_midline == 0xffff) {
+        global_settings.hall3_midline = DEFAULT_MIDLINE;
+    }
+    // The below adjustments to the midline are to handle the case where the calibration was done using an
+    // older firmware and now the new firmware is being used without recalibrating. Thw way that midlines
+    // and hall sensor readings are processed had been simplified in firmware version
+    if(global_settings.hall1_midline >= 23300) {
+        global_settings.hall1_midline = ((uint32_t)global_settings.hall1_midline + HALL_SENSOR_SHIFT) >> 3;
+    }
+    if(global_settings.hall2_midline >= 23300) {
+        global_settings.hall2_midline = ((uint32_t)global_settings.hall2_midline + HALL_SENSOR_SHIFT) >> 3;
+    }
+    if(global_settings.hall3_midline >= 23300) {
+        global_settings.hall3_midline = ((uint32_t)global_settings.hall3_midline + HALL_SENSOR_SHIFT) >> 3;
+    }
+    // end of adjustments to midlines because of firmware change
+
     if(global_settings.commutation_position_offset == 0xffffffff) {
         global_settings.commutation_position_offset = DEFAULT_COMMUTATION_POSITION_OFFSET;
     }
@@ -1412,7 +1438,7 @@ int main(void)
             print_fast_capture_data_result();
         }
 
-        #ifndef CERTIFICATION_TEST_MODE
+        #if !defined(CERTIFICATION_TEST_MODE) && !defined(PROGRAMMING_TEST_JIG_MODE)
         check_if_actual_vs_desired_position_deviated_too_much();
         #endif
 
