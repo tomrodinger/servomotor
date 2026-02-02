@@ -24,7 +24,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 };
 #define MAJOR_FIRMWARE_VERSION 1
 #define MINOR_FIRMWARE_VERSION 1
-#define BUGFIX_FIRMWARE_VERSION 1
+#define BUGFIX_FIRMWARE_VERSION 2
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -254,8 +254,8 @@ void process_packet(void)
             uint8_t test_mode;
             copy_input_parameters_and_check_size(&test_mode, payload, sizeof(test_mode), payload_size);
             rs485_done_with_this_packet();
-            if ((test_mode >= 12) && (test_mode < 12 + 60)) { // test modes 12 to 71 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
-                fatal_error(test_mode - 12);
+            if ((test_mode >= 14) && (test_mode < 14 + 60)) { // test modes 14 to 73 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
+                fatal_error(test_mode - 14);
             }
             else {
                 fatal_error(ERROR_INVALID_TEST_MODE);
