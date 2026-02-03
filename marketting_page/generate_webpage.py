@@ -207,8 +207,6 @@ def generate_marketing_component(image_dimensions):
     jsx_content = jsx_content.replace('__FEATURES_LI__', features_li)
     jsx_content = jsx_content.replace('__UNIT_TABLE__', unit_table)
     jsx_content = jsx_content.replace('__COMPANY_PARAGRAPHS__', company_paragraphs)
-    jsx_content = jsx_content.replace('__VERSION__', version)
-    jsx_content = jsx_content.replace('__DATE__', date)
     jsx_content = jsx_content.replace('__PYTHON_EXAMPLE__', python_example)
     jsx_content = jsx_content.replace('__ARDUINO_EXAMPLE__', arduino_example)
     

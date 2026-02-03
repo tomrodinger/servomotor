@@ -195,7 +195,7 @@ export default function Home() {
             </div>
             <p>You can also run this command:</p>
             <pre><code className="language-bash">{`pip3 install servomotor   # run this just once to install the library and programs
-servomotor_command.py -c`}</code></pre>
+servomotor_command -c`}</code></pre>
             <p>This will print out the information contained in the motor_commands.json file in a nicer way and give some usage information for sending commands to the motor from the command line.</p>
             <p>The commands are grouped by functionality including Basic Control, Motion Control, Configuration, Status & Monitoring, and Device Management.</p>
           </div>
@@ -415,9 +415,7 @@ servomotor_command.py -c`}</code></pre>
               width={__WIDTH_Gearotons_Logo__}
               height={__HEIGHT_Gearotons_Logo__}
             />
-            <p className={styles.versionInfo}>Version __VERSION__ - __DATE__</p>
-            <p className={styles.copyright}>© 2024 Gearotons. All specifications subject to change without notice.</p>
-            <p>For more information and technical support, please contact our sales team.</p>
+            <p className={styles.copyright}>© {new Date().getFullYear()} Gearotons</p>
           </div>
         </footer>
       </main>
