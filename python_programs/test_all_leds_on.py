@@ -46,7 +46,8 @@ while 1:
     time.sleep(1.5)
 
     # now lets turn on all the LEDs using an LED test mode
-    parsed_response = execute_command(communication.ALL_ALIAS, "TEST_MODE_COMMAND", [12], verbose=VERBOSE)
+    # test_mode 13 corresponds to LED bitmask 3 (green=1, red=2)
+    parsed_response = execute_command(communication.ALL_ALIAS, "TEST_MODE_COMMAND", [13], verbose=VERBOSE)
     if len(parsed_response) != 0:
         print("ERROR: The device with alias", communication.ALL_ALIAS, "did not respond correctly to the GO_TO_CLOSED_LOOP_COMMAND")
         exit(1)

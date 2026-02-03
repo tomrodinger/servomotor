@@ -8,14 +8,14 @@ It covers both invalid and valid (fatal error-triggering) scenarios, and ensures
 
 Test Scenarios:
 1. Invalid Test Mode Parameter:
-   - Sends a test_mode value >= 72 (e.g., 255), which is not supported by the firmware.
+   - Sends a test_mode value >= 74 (e.g., 255), which is not supported by the firmware.
    - Expects the device to enter the ERROR_INVALID_TEST_MODE (code 53) fatal error state.
    - The device responds with a FatalError exception containing the error code.
    - The test then calls get_status to confirm the fatal error code is set.
 
 2. Valid Test Mode Parameter (Triggers Fatal Error):
    - Randomly selects a fatal error code N in the range 0–59.
-   - Sends test_mode = N + 12, which, per firmware logic, triggers fatal_error(N).
+   - Sends test_mode = N + 14, which, per firmware logic, triggers fatal_error(N).
    - The device responds with a FatalError exception containing the error code.
    - The test then calls get_status to confirm the correct fatal error code is set.
 
@@ -29,9 +29,9 @@ Key Implementation Details:
 Firmware Mapping Reference:
 - test_mode == 0: disables test mode
 - test_mode 1–9: set_motor_test_mode
-- test_mode 10–11: set_led_test_mode
-- test_mode 12–71: triggers fatal_error(test_mode - 12), i.e., test_mode 12 triggers fatal_error(0), 13 triggers fatal_error(1), ..., 71 triggers fatal_error(59)
-- test_mode >= 72: triggers fatal_error(ERROR_INVALID_TEST_MODE)
+- test_mode 10–13: set_led_test_mode (LED bitmask 0..3)
+- test_mode 14–73: triggers fatal_error(test_mode - 14), i.e., test_mode 14 triggers fatal_error(0), 15 triggers fatal_error(1), ..., 73 triggers fatal_error(59)
+- test_mode >= 74: triggers fatal_error(ERROR_INVALID_TEST_MODE)
 
 This test ensures that the "Test mode" command is robustly implemented and that the device's fatal error handling is working as intended.
 """
@@ -49,7 +49,7 @@ GO_TO_BOOTLOADER_RESET_TIME = 0.07
 DONT_GO_TO_BOOTLOADER_RESET_TIME = 2.0
 ERROR_INVALID_TEST_MODE = 53
 BOOTLOADER_FLAG_BIT = 0x01
-MAX_FATAL_ERROR = 59  # test_mode 12–71 triggers fatal_error 0–59
+MAX_FATAL_ERROR = 59  # test_mode 14–73 triggers fatal_error 0–59
 
 def check_the_status(motor, go_to_bootloader, expect_fatal_error, verbose=2, expected_fatal_error_code=None):
     print("Calling get_status to check the status")
@@ -115,7 +115,7 @@ def detect_device_and_get_unique_id(motor, verbose=False):
 def test_invalid_test_mode(motor, go_to_bootloader, verbose):
     print("\n--- Test: Invalid Test Mode Parameter ---")
     try:
-        invalid_mode = 255  # >= 72 triggers ERROR_INVALID_TEST_MODE
+        invalid_mode = 255  # >= 74 triggers ERROR_INVALID_TEST_MODE
         print(f"Sending invalid test mode: {invalid_mode}")
         fatal_error_occurred = False
         try:
@@ -149,7 +149,7 @@ def test_random_fatal_test_mode(motor, go_to_bootloader, verbose):
     print("\n--- Test: Random Fatal Test Mode ---")
     try:
         fatal_error = random.randint(0, MAX_FATAL_ERROR)
-        test_mode_value = fatal_error + 12
+        test_mode_value = fatal_error + 14
         print(f"Sending test mode: {test_mode_value} (should trigger fatal_error {fatal_error})")
         fatal_error_occurred = False
         try:

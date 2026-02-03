@@ -1,20 +1,43 @@
 #!/usr/bin/env python3
 
 import sys
-import servomotor
 import time
-import os
-import random
 import math
 
+# Import servomotor library
+import servomotor
+
+# Cross-platform imports
+try:
+    # Detect if we're running on MicroPython
+    IS_MICROPYTHON = sys.implementation.name == 'micropython'
+except AttributeError:
+    IS_MICROPYTHON = False
+
+# Platform-specific imports
+if IS_MICROPYTHON:
+    # MicroPython imports
+    try:
+        import urandom as random
+    except ImportError:
+        import random
+    # MicroPython doesn't have os.path the same way
+    OUTPUT_LOG_ENABLED = False
+else:
+    # Standard Python imports
+    import os
+    import random
+    OUTPUT_LOG_ENABLED = True
+
+# Constants
 THROW_TIME = 0.09
-THROW_ANGLE = 14.3
+THROW_ANGLE1 = 14.0 # use for the juggling colourful ball, throw to the left at the demo from the point of view behind the booth
+THROW_ANGLE2 = 14.0 # use for the juggling colourful ball, throw right
 MAX_HOMING_TIME = 3
 WIND_UP_ANGLE = 25
 WIND_UP_ROTATIONS = WIND_UP_ANGLE / 360
 START_POSITION_ROTATIONS = 0.25
 WIND_UP_TIME = 0.3
-THROW_ROTATIONS = THROW_ANGLE / 360
 CATCH_START_ANGLE = 140
 PAUSE_AFTER_THROW_TIME = 0.1
 TO_CATCH_POSITION_TIME = 0.15
@@ -49,7 +72,6 @@ MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED = (MAX_ACCELERATION_MICROSTEPS
 THROW_ACCELERATION                                = int(MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED * (1 << 32) / (1 << 8))
 THROW_ACCELERATION = 100
 
-
 OUTPUT_LOG_FILE_DIRECTORY = "./logs/"
 OUTPUT_LOG_FILE_NAME = "ball_throwing_demo"
 
@@ -58,7 +80,7 @@ ALIAS = ord('X')
 N_PINGS_TO_TEST_COMMUNICATION = 10
 
 
-def do_a_throw(direction):
+def do_a_throw(direction, throw_angle):
     m.set_maximum_motor_current(THROW_MOSFET_CURRENT, THROW_MOSFET_CURRENT, verbose=VERBOSE) # set the MOSFET current
 
 #    time.sleep(0.3)
@@ -73,9 +95,10 @@ def do_a_throw(direction):
 
     time.sleep(0.5)
 
-    m.trapezoid_move((WIND_UP_ROTATIONS + THROW_ROTATIONS) * direction, THROW_TIME, verbose=VERBOSE) # throw the ball
+    throw_rotations = throw_angle / 360.0
+    m.trapezoid_move((WIND_UP_ROTATIONS + throw_rotations) * direction, THROW_TIME, verbose=VERBOSE) # throw the ball
     m.trapezoid_move(0, PAUSE_AFTER_THROW_TIME, verbose=VERBOSE) # pause for a short time without movement to wait for the ball to leave the arm
-    m.trapezoid_move(((CATCH_START_ANGLE - THROW_ANGLE) / 360) * direction, TO_CATCH_POSITION_TIME, verbose=VERBOSE) # move the motor very quickly to the catch position
+    m.trapezoid_move(((CATCH_START_ANGLE - throw_angle) / 360) * direction, TO_CATCH_POSITION_TIME, verbose=VERBOSE) # move the motor very quickly to the catch position
     while 1:   # wait for all these moves to finish, whish will be at the time when the arm is in the catch position
         if m.get_n_queued_items() == 0:
             break
@@ -97,7 +120,7 @@ def do_a_throw(direction):
             commanded, sensed, external = m.get_comprehensive_position(verbose=VERBOSE)
             expected_position_after_catch = (full_range / 2) * direction
             error_from_expected_position = abs(sensed - expected_position_after_catch)
-            print(f"Error from expected position: {error_from_expected_position}")
+#            print(f"Error from expected position: {error_from_expected_position}")
             if error_from_expected_position < 0.03:
                 print("CAUGHT IT")
                 break
@@ -120,38 +143,45 @@ def do_a_throw(direction):
         final_current = start_current * 3
         current_step = (final_current - start_current) / n_steps
         current_at_this_step = (i + 1) * current_step + start_current
-        print(f"Setting current to {current_at_this_step}")
+#        print(f"Setting current to {current_at_this_step}")
         m.set_maximum_motor_current(current_at_this_step, current_at_this_step, verbose=VERBOSE)   # let's make the motor super weak so it can no longer push the ball up against gravity
         time.sleep(0.01)
     #m.trapezoid_move(CATCH_ANGLE / 360, CATCH_TIME, verbose=VERBOSE) # we will move the motor as the ball is coming down to ease it into the catch
 
-# create the directory for saving the data logs if it does not already exist
-if not os.path.exists(OUTPUT_LOG_FILE_DIRECTORY):
-    try:
-        os.makedirs(OUTPUT_LOG_FILE_DIRECTORY)
-    except OSError as e:
-        print("Could not create directory for saving the log files: %s: %s" % (OUTPUT_LOG_FILE_DIRECTORY, e))
-        exit(1)
-output_log_file = OUTPUT_LOG_FILE_DIRECTORY + "/" + OUTPUT_LOG_FILE_NAME + ".log"
+# Create the directory for saving the data logs (only on standard Python)
+log_fh = None
+if OUTPUT_LOG_ENABLED and not IS_MICROPYTHON:
+    if not os.path.exists(OUTPUT_LOG_FILE_DIRECTORY):
+        try:
+            os.makedirs(OUTPUT_LOG_FILE_DIRECTORY)
+        except OSError as e:
+            print("Could not create directory for saving the log files: %s: %s" % (OUTPUT_LOG_FILE_DIRECTORY, e))
+            OUTPUT_LOG_ENABLED = False
+    
+    if OUTPUT_LOG_ENABLED:
+        output_log_file = OUTPUT_LOG_FILE_DIRECTORY + "/" + OUTPUT_LOG_FILE_NAME + ".log"
+        # open the log file for writing
+        try:
+            log_fh = open(output_log_file, "w")
+        except IOError as e:
+            print("Could not open the log file for writing: %s: %s" % (output_log_file, e))
+            OUTPUT_LOG_ENABLED = False
+            log_fh = None
 
-# open the log file for writing
-try:
-    log_fh = open(output_log_file, "w")
-except IOError as e:
-    print("Could not open the log file for writing: %s: %s" % (output_log_file, e))
-    exit(1)
+if IS_MICROPYTHON:
+    print("Running on MicroPython - file logging disabled")
 
 
 servomotor.open_serial_port()
 
-m = servomotor.M3(ALIAS, time_unit="seconds", position_unit="shaft_rotations", verbose=VERBOSE)
+m = servomotor.M3(ALIAS, time_unit="seconds", position_unit="shaft_rotations", current_unit="internal_current_units", velocity_unit="rotations_per_second", acceleration_unit= "rotations_per_second_squared", verbose=VERBOSE)
 
 try:
     # do a system reset to make sure we are in a known state
     parsed_response = m.system_reset(verbose=VERBOSE)
     if len(parsed_response) != 0:
         print("ERROR: The device with alias", ALIAS, "did not respond correctly to the SYSTEM_RESET_COMMAND")
-        exit(1)
+        raise SystemExit(1)
     time.sleep(0.5)
 
     # let's ping the device many times to make sure it is there and that communication is working flawlessly
@@ -167,12 +197,12 @@ try:
             break
     if not all_devices_responsed:
         print("ERROR: The device did not respond to the PING_COMMAND")
-        exit(1)
+        raise SystemExit(1)
     print("The device responded correctly to all the %d pings" % (N_PINGS_TO_TEST_COMMUNICATION))
 
 #    parsed_response = m.set_pid_constants(4000, 2, 1000000, verbose=VERBOSE) # set the PID constants
     parsed_response = m.enable_mosfets(verbose=VERBOSE)                      # enable MOSFETs
-    parsed_response = m.set_maximum_motor_current(50, 50, verbose=VERBOSE)   # let's make the motor very weak first, and then do homing
+    parsed_response = m.set_maximum_motor_current(50, 50, verbose=VERBOSE)   # set motor current for homing (needs to be strong enough to reach hard stops)
     parsed_response = m.set_pid_constants(3000, 2, 175000, verbose=VERBOSE)  # set the PID constants
     parsed_response = m.go_to_closed_loop(verbose=VERBOSE)                   # go to closed loop position control mode
     time.sleep(0.2)
@@ -215,17 +245,24 @@ try:
 except Exception as e:
     print("ERROR: There was an exception while trying to communicate with the device with alias", ALIAS)
     print("       The exception was:", e)
-    exit(0)
+    if IS_MICROPYTHON:
+        import sys
+        sys.print_exception(e)
+    else:
+        import traceback
+        traceback.print_exc()
+    raise SystemExit(0)
 
 while 1:
-    if do_a_throw(1) == -1:
-        break
-    if do_a_throw(-1) == -1:
-        break
+    print("Doing a throw to the right")
+    do_a_throw(1, THROW_ANGLE1)
+    print("Doing a throw to the left")
+    do_a_throw(-1, THROW_ANGLE2)
 
 m.system_reset(verbose=VERBOSE)
 
 time.sleep(0.2)
 
-log_fh.close()
+if log_fh is not None:
+    log_fh.close()
 servomotor.close_serial_port()

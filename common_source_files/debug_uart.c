@@ -18,8 +18,14 @@ void debug_uart_init(void)
     RCC->APBENR1 |= RCC_APBENR1_USART2EN_Msk; // enable the clock to the UART2 peripheral
 //    RCC->CCIPR |= 1 << RCC_CCIPR_USART2SEL_Pos; // select SYSCLK as the clock source
 
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M17)
     GPIOA->AFR[0] |= (1 << GPIO_AFRL_AFSEL2_Pos) | // for PA2, choose alternative function 1 (USART2_TX)
                      (1 << GPIO_AFRL_AFSEL3_Pos);  // for PA3, choose alternative function 1 (USART2_RX)
+#endif
+#if defined(PRODUCT_NAME_M23)
+    GPIOA->AFR[1] |= (1 << GPIO_AFRH_AFSEL14_Pos) | // for PA14, choose alternative function 1 (USART2_TX)
+                     (1 << GPIO_AFRH_AFSEL15_Pos);  // for PA15, choose alternative function 1 (USART2_RX)
+#endif
 
     USART2->BRR = 278; // set baud to 115200 @ 64MHz SYSCLK
     USART2->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE | USART_CR1_RXNEIE_RXFNEIE; // enable transmitter, receiver, and the receive interrupt

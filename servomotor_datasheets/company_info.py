@@ -11,7 +11,7 @@ def add_company_info(story, style):
 
     We are committed to breaking down the barriers that have traditionally separated students and hobbyists from professional-grade automation tools. By providing integrated solutions that eliminate complexity without sacrificing capability, we enable hands-on learning experiences that prepare young minds for a world where human creativity and machine precision work in harmony.
 
-    Our core belief is that every student should have the opportunity to experiment with the building blocks of modern automation—from robotics and CNC systems to scientific instruments. Through our educational partnerships and open-source approach, we're fostering a generation that doesn't just use technology, but truly understands and shapes it. Together, we're building the foundation for innovators who will define the AI-driven future.
+    Our core belief is that every student should have the opportunity to experiment with the building blocks of modern automation—from robotics and CNC systems to scientific instruments. Through our educational partnerships and open-source approach, we're fostering a generation that doesn't just use technology, but truly understands and shapes it. Together, we're building the foundation for innovators who will define the amazing future.
     """
     
     story.append(Paragraph(mission_content.strip(), style))

@@ -86,6 +86,8 @@ private:
                          const uint8_t* payload, uint16_t payloadSize);
     
     // Helper function to receive bytes with timeout checking
-    int8_t receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes, int32_t timeout_ms = 1000);
+    // If bytesLeftToRead is non-null, this decrements *bytesLeftToRead once per byte read.
+    int8_t receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes, int32_t *bytesLeftToRead,
+                        int32_t timeout_ms = 1000);
 };
 #endif // COMMUNICATION_H
