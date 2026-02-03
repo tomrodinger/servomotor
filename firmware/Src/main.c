@@ -66,7 +66,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 };
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 14
-#define BUGFIX_FIRMWARE_VERSION 0
+#define BUGFIX_FIRMWARE_VERSION 2
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -866,6 +866,8 @@ void process_packet(void)
     case TEST_MODE_COMMAND:
         {
             uint8_t test_mode;
+            uint8_t led_test_mode_active = 0;
+            uint8_t led_test_mode = 0;
             copy_input_parameters_and_check_size(&test_mode, payload, sizeof(test_mode), payload_size);
             rs485_done_with_this_packet();
             if (test_mode == 0) {
@@ -875,19 +877,25 @@ void process_packet(void)
             else if (test_mode < 10) {
                 set_motor_test_mode(test_mode);
             }
-            else if (test_mode < 10 + 2) {
-                set_led_test_mode(test_mode - 10);
+            else if (test_mode < 10 + 4) {
+                led_test_mode_active = 1;
+                // test modes 10..13 map to LED bitmasks 0..3 (green=bit0, red=bit1)
+                led_test_mode = test_mode - 10;
             }
-            else if (test_mode < 12 + 60) { // test modes 12 to 71 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
-                fatal_error(test_mode - 12);
+            else if (test_mode < 14 + 60) { // test modes 14 to 73 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
+                fatal_error(test_mode - 14);
             }
             else {
                 fatal_error(ERROR_INVALID_TEST_MODE);
             }
-            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
             char buf[100];
             sprintf(buf, "Setting the test mode to %hu\n", test_mode);
             print_debug_string(buf);
+            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+            rs485_wait_for_transmit_done(); // make sure that the no error packet is sent out before resetting the device
+            if (led_test_mode_active) {
+                set_led_test_mode(led_test_mode); // we will not exit from this function, so it is important to call this after achnowledging the transmission
+            }
         }
         break;
     case VIBRATE_COMMAND:
@@ -964,7 +972,7 @@ void process_packet(void)
             if(!is_broadcast) {
                 int64_t max_acceleration;
                 int64_t max_velocity;
-                int64_t currenbt_velocity;
+                int64_t current_velocity;
                 int32_t measured_velocity;
                 uint32_t n_time_steps;
                 int64_t debug_value1;
@@ -993,7 +1001,7 @@ void process_packet(void)
                 int32_t average_hall_position_delta;
                 uint8_t motor_pwm_voltage;
 
-                get_motor_control_debug_values(&max_acceleration, &max_velocity, &currenbt_velocity, &measured_velocity, &n_time_steps, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
+                get_motor_control_debug_values(&max_acceleration, &max_velocity, &current_velocity, &measured_velocity, &n_time_steps, &debug_value1, &debug_value2, &debug_value3, &debug_value4);
                 get_profiled_times(&all_motor_control_calulations_profiler_time, &all_motor_control_calulations_profiler_max_time,
                                     &get_sensor_position_profiler_time, &get_sensor_position_profiler_max_time,
                                     &compute_velocity_profiler_time, &compute_velocity_profiler_max_time,
@@ -1008,7 +1016,7 @@ void process_packet(void)
                     uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
                     int64_t max_acceleration;
                     int64_t max_velocity;
-                    int64_t currenbt_velocity;
+                    int64_t current_velocity;
                     int32_t measured_velocity;
                     uint32_t n_time_steps;
                     int64_t debug_value1;
@@ -1040,7 +1048,7 @@ void process_packet(void)
                 } get_debug_values_reply;
                 get_debug_values_reply.max_acceleration = max_acceleration;
                 get_debug_values_reply.max_velocity = max_velocity;
-                get_debug_values_reply.currenbt_velocity = currenbt_velocity;
+                get_debug_values_reply.current_velocity = current_velocity;
                 get_debug_values_reply.measured_velocity = measured_velocity;
                 get_debug_values_reply.n_time_steps = n_time_steps;
                 get_debug_values_reply.debug_value1 = debug_value1;

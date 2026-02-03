@@ -66,14 +66,14 @@ void adc_init(void)
                    (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     #endif
     #if defined(PRODUCT_NAME_M23)
-    ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
-                   (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+    ADC1->CHSELR = (4  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
+                   (2  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
                    (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-                   (8  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
-                   (6  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-                   (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-                   (4  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
-                   (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
+                   (5  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
+                   (1  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
+                   (0  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
+                   (6  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
+                   (3  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
     #endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
 
