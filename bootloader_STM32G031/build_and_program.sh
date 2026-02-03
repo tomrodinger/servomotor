@@ -15,7 +15,7 @@ print_large_message() {
 build_bootloader() {
     local product_name=$1
     local software_compatibility_code=$2
-    
+
     # Enable command echoing for build process
     set -x
     
@@ -53,13 +53,13 @@ build_bootloader() {
         ${COMMON_SOURCE_FILES_DIR}/gpio_M23.c"
 
     # Create build directory if it doesn't exist
-    mkdir -p ${BUILD_DIR}
+    mkdir -p "${BUILD_DIR}"
 
     # Build the project
-    if $GCC_DIR/arm-none-eabi-gcc -o ${BUILD_DIR}/"bootloader.elf" $OBJECT_FILES $C_FLAGS $LINKER_FLAGS &&
-       $GCC_DIR/arm-none-eabi-size ${BUILD_DIR}/bootloader.elf &&
-       $GCC_DIR/arm-none-eabi-objdump -h -S ${BUILD_DIR}/bootloader.elf > "${BUILD_DIR}/bootloader.list" &&
-       $GCC_DIR/arm-none-eabi-objcopy -O binary ${BUILD_DIR}/bootloader.elf "${BUILD_DIR}/bootloader.bin"; then
+    if "$GCC_DIR"/arm-none-eabi-gcc -o "${BUILD_DIR}/bootloader.elf" $OBJECT_FILES $C_FLAGS $LINKER_FLAGS &&
+       "$GCC_DIR"/arm-none-eabi-size "${BUILD_DIR}/bootloader.elf" &&
+       "$GCC_DIR"/arm-none-eabi-objdump -h -S "${BUILD_DIR}/bootloader.elf" > "${BUILD_DIR}/bootloader.list" &&
+       "$GCC_DIR"/arm-none-eabi-objcopy -O binary "${BUILD_DIR}/bootloader.elf" "${BUILD_DIR}/bootloader.bin"; then
         
         # Disable command echoing before printing message
         set +x
@@ -81,24 +81,34 @@ program_device() {
     local hardware_version=$4
 
     # Detect which platform (OS) is being used
-    platform='unknown'
+    platform_tool_prefix='unknown'
     unamestr=$(uname)
     case "$unamestr" in
-        Linux*) platform='linux' ;;
-        Darwin*) platform='mac' ;;
-        CYGWIN*|MINGW*) platform='windows' ;;
+        Linux*) platform_tool_prefix='toolchain_essentials_linux' ;;
+        Darwin*) platform_tool_prefix='toolchain_essentials_mac' ;;
+        CYGWIN*|MINGW*) platform_tool_prefix='toolchain_essentials_windows' ;;
     esac
 
+    if [ "$platform_tool_prefix" = 'unknown' ]; then
+        echo "Platform not supported."
+        exit 2
+    fi
+
     # Call generate_product_info with the appropriate arguments to get a bin file with product specific info
-    if [ "$platform" = linux ]; then
-    ../toolchain_essentials_linux/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
-    elif [ "$platform" = mac ]; then
-    ../toolchain_essentials_mac/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
-    elif [ "$platform" = windows ]; then
-    ../toolchain_essentials_windows/generate_product_info "$bin_file" build/bootloader_with_product_info.bin "$product_name" "$software_compatibility_code" "$hardware_version"
+    # Re-inject product info to ensure consistency, and AUTO-inject serial/unique ID.
+    # (If the selected .bin already contains the same product info, this is a no-op for those fields.)
+    if ../"$platform_tool_prefix"/generate_product_info \
+        "$bin_file" \
+        build/bootloader_with_product_info.bin \
+        SKIP \
+        SKIP \
+        SKIP \
+        AUTO \
+        AUTO ; then
+        echo "The serial number and the unique ID were successfully injected into the bootloader binary"
     else
-    echo "Platform not supported."
-    exit 2
+        echo "Failed to inject the serial number and the unique ID into the bootloader binary"
+        return 1
     fi
 
     # Flash the device
@@ -157,11 +167,31 @@ build_new_bootloader() {
     if build_bootloader "$product_name" "$sw_compat"; then
         # Create release filename with timestamp
         release_file="bootloader_releases/bootloader_${product_name}_hw${hw_version}_scc${sw_compat}_${timestamp}.bin"
-        
-        # Copy the built bootloader to releases directory
-        cp build/bootloader.bin "$release_file"
-        echo "Bootloader copied to: $release_file"
-        return 0
+
+        # Detect which platform (OS) is being used
+        platform_tool_prefix='unknown'
+        unamestr=$(uname)
+        case "$unamestr" in
+            Linux*) platform_tool_prefix='toolchain_essentials_linux' ;;
+            Darwin*) platform_tool_prefix='toolchain_essentials_mac' ;;
+            CYGWIN*|MINGW*) platform_tool_prefix='toolchain_essentials_windows' ;;
+        esac
+
+        if [ "$platform_tool_prefix" = 'unknown' ]; then
+            echo "Platform not supported."
+            exit 2
+        fi
+
+        # Call generate_product_info with the appropriate arguments to get a bin file with product specific info
+        # The resulting file will be saved directly to the release_file path
+        # Make sure that the exit code is 0 before declaring success with this command
+        if ../"$platform_tool_prefix"/generate_product_info build/bootloader.bin "$release_file" "$product_name" "$sw_compat" "$hw_version" 0xFFFFFFFF 0xFFFFFFFFFFFFFFFF ; then
+            echo "Product specific info was added into the bootloader binary and the file was release to $release_file"
+            return 0
+        else
+            echo "Failed to add product specific info into the bootloader binary"
+            return 1
+        fi
     else
         echo "Failed to build bootloader"
         return 1
