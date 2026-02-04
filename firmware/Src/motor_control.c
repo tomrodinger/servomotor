@@ -21,6 +21,7 @@
 #endif
 #ifdef PRODUCT_NAME_M23
 #include "commutation_table_M23.h"
+#include "current_streaming.h"
 #endif
 #include "goertzel_algorithm_constants.h"
 #include "error_handling.h"
@@ -2921,6 +2922,11 @@ void TIM16_IRQHandler(void)
     }
 
     profiler_end_time(ALL_MOTOR_CONTROL_CALULATIONS_PROFILER);
+
+#ifdef PRODUCT_NAME_M23
+    // Stream current telemetry if enabled (before clearing interrupt flag)
+    stream_current_sample();
+#endif
 
     TIM16->SR = 0; // clear the interrupt flag
 }

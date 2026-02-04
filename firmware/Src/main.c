@@ -37,6 +37,7 @@
 #endif
 #ifdef PRODUCT_NAME_M23
 #include "commutation_table_M23.h"
+#include "current_streaming.h"
 #endif
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
@@ -1236,6 +1237,18 @@ void process_debug_uart_commands(void)
         case 'V':
             vibrate(1);
             break;
+#ifdef PRODUCT_NAME_M23
+        case '5':
+            enable_high_speed_mode();
+            break;
+        case 's':
+            if (is_high_speed_mode_enabled()) {
+                toggle_current_streaming();
+            } else {
+                print_debug_string("Error: Press '5' first to enable 5Mbps mode\n");
+            }
+            break;
+#endif
         }
         command_debug_uart = 0;
     }
@@ -1375,6 +1388,10 @@ int main(void)
     set_commutation_position_offset(global_settings.commutation_position_offset);
 
     microsecond_clock_init();
+
+#ifdef PRODUCT_NAME_M23
+    current_streaming_init();
+#endif
 
 //    set_max_motor_current(700, 700); // DEBUG
 //    check_current_sensor_and_enable_mosfets(); // DEBUG
