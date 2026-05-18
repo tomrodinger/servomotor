@@ -9,6 +9,14 @@ from servomotor.communication import TimeoutError
 # Maximum allowed difference between expected and actual movement
 MAX_POSITION_TOLERANCE_PERCENT = 0.01
 
+# Settings for the simulated-hard-stop homing test. The test motor has no
+# physical end stop, so a hard stop is simulated by dropping the motor current
+# mid-homing until the motor is too weak to follow the motion profile; the
+# firmware then detects the resulting following error as a crash and stops.
+HARD_STOP_CURRENT_NORMAL = 200  # current at which the motor homes normally
+HARD_STOP_CURRENT_WEAK = 10     # current too weak to continue homing (experimentally determined)
+HARD_STOP_DROP_FRACTION = 0.25  # fraction of maxDuration to home normally before dropping the current
+
 def wait_for_moves_to_complete(motor):
     """Wait until all queued moves are complete"""
     while True:
@@ -99,6 +107,67 @@ def verify_homing_movement(motor, start_position, expected_direction, expected_c
     print("\nVerifying final position in all units:")
     verify_position_in_all_units(motor, end_position)
 
+def run_homing_with_simulated_hard_stop(motor, max_distance_counts, max_duration):
+    """Run a homing move and simulate hitting a hard stop partway through.
+
+    The test motor has no physical end stop. To exercise the firmware's crash
+    detection, homing is started at a normal motor current, and once the motor
+    is moving the current is dropped so low that the motor can no longer follow
+    the motion profile. The commanded position then runs ahead of the measured
+    position and the firmware stops homing, reporting a crash.
+
+    Returns (start_position_counts, elapsed_time_seconds).
+    """
+    motor.set_position_unit("encoder_counts")
+    motor.set_maximum_motor_current(HARD_STOP_CURRENT_NORMAL, HARD_STOP_CURRENT_NORMAL)
+    start_position = motor.get_position()
+
+    start_time = time.time()
+    motor.homing(maxDistance=max_distance_counts, maxDuration=max_duration)
+    # Let the motor home normally for part of the move, then make it too weak to continue.
+    time.sleep(max_duration * HARD_STOP_DROP_FRACTION)
+    motor.set_maximum_motor_current(HARD_STOP_CURRENT_WEAK, HARD_STOP_CURRENT_WEAK)
+    wait_for_moves_to_complete(motor)
+    elapsed_time = time.time() - start_time
+
+    # Restore a normal current so anything that runs afterwards is unaffected.
+    motor.set_maximum_motor_current(HARD_STOP_CURRENT_NORMAL, HARD_STOP_CURRENT_NORMAL)
+    return start_position, elapsed_time
+
+def verify_homing_hard_stop(motor, start_position, expected_direction, max_distance_counts, elapsed_time, max_duration):
+    """Verify that homing detected the simulated hard stop and stopped early."""
+    motor.set_position_unit("encoder_counts")
+    end_position = motor.get_position()
+    movement = end_position - start_position
+    print(f"Start position (counts):  {start_position}")
+    print(f"End position (counts):    {end_position}")
+    print(f"Total movement (counts):  {movement}")
+    print(f"Commanded max distance:   {max_distance_counts}")
+    print(f"Elapsed time:             {elapsed_time:.3f}s (maxDuration was {max_duration}s)")
+
+    # Direction must match the commanded direction.
+    if expected_direction > 0:
+        assert movement > 0, "Expected positive movement but got negative"
+    else:
+        assert movement < 0, "Expected negative movement but got positive"
+
+    # The motor must have genuinely been homing before the hard stop, i.e. it
+    # moved well beyond the firmware's crash-detection threshold (50000 counts).
+    assert abs(movement) > 100000, \
+        f"Expected real homing motion before the hard stop, but only moved {abs(movement)} counts"
+
+    # A hard stop must end homing before the full commanded distance is covered...
+    assert abs(movement) < abs(max_distance_counts) * 0.9, \
+        f"Expected homing to stop early, but it covered {abs(movement)} of {abs(max_distance_counts)} counts"
+
+    # ...and before the full maxDuration elapses.
+    assert elapsed_time < max_duration * 0.9, \
+        f"Expected homing to end early, but it ran {elapsed_time:.3f}s of the {max_duration}s maxDuration"
+
+    # The reported position must still be consistent across all units.
+    print("\nVerifying final position in all units:")
+    verify_position_in_all_units(motor, end_position)
+
 def test_homing(motorX): # Accept motor object as argument
     """Runs the homing tests. Assumes motor object is initialized and port is open."""
     print("\nResetting motor...")
@@ -112,6 +181,10 @@ def test_homing(motorX): # Accept motor object as argument
     motorX.go_to_closed_loop()
     time.sleep(0.5)  # Give time to enter closed loop mode
 
+    # ========================================================================
+    # Part 1: Homing that finishes by covering the full commanded distance
+    # (no hard stop). Verifies direction, distance accuracy and unit handling.
+    # ========================================================================
     # Test homing in shaft rotations (2 rotations)
     print("\nTesting homing in shaft rotations...")
     print("Homing with distance of +2 rotations...")
@@ -205,6 +278,24 @@ def test_homing(motorX): # Accept motor object as argument
     elapsed_time = time.time() - start_time
     print(f"Negative direction homing completed in {elapsed_time:.3f} seconds")
     verify_homing_movement(motorX, start_position, -1, -2 * 3276800)  # -2 rotations = -2 * 3,276,800 counts
+
+    # ========================================================================
+    # Part 2: Homing that finishes by a (simulated) hard stop, before the full
+    # commanded distance is reached. Verifies the firmware's crash detection.
+    # ========================================================================
+    print("\nTesting homing that ends on a simulated hard stop...")
+    HARD_STOP_DISTANCE = 2 * 3276800  # command 2 rotations; the simulated hard stop happens first
+    HARD_STOP_DURATION = 2
+
+    print("\nHoming +2 rotations into a simulated hard stop...")
+    start_position, elapsed_time = run_homing_with_simulated_hard_stop(motorX, HARD_STOP_DISTANCE, HARD_STOP_DURATION)
+    print(f"Homing stopped after {elapsed_time:.3f} seconds")
+    verify_homing_hard_stop(motorX, start_position, 1, HARD_STOP_DISTANCE, elapsed_time, HARD_STOP_DURATION)
+
+    print("\nHoming -2 rotations into a simulated hard stop...")
+    start_position, elapsed_time = run_homing_with_simulated_hard_stop(motorX, -HARD_STOP_DISTANCE, HARD_STOP_DURATION)
+    print(f"Homing stopped after {elapsed_time:.3f} seconds")
+    verify_homing_hard_stop(motorX, start_position, -1, -HARD_STOP_DISTANCE, elapsed_time, HARD_STOP_DURATION)
 
     print("\nTest complete!")
 

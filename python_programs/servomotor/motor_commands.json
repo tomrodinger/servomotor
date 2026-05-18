@@ -551,7 +551,7 @@
     {
         "CommandString": "Set maximum motor current",
         "CommandEnum": 28,
-        "Description": "Set the maximum motor current and maximum regeneration current. The values are stored in non-volatile memory and survive a reset.",
+        "Description": "Set the maximum motor current and maximum regeneration current. The values take effect immediately but are not saved to non-volatile memory, so they revert to the firmware default after a reset.",
         "Input": [
             {
                 "Description": "u16: The motor current. The units are some arbitrary units and not amps. A value of 150 or 200 is suitable.",
