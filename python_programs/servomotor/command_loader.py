@@ -1,5 +1,4 @@
-import json
-import os
+from .platform_utils import load_json_file
 
 # The data_types.json file has the data types as a list of dictionaries. Here is an example of some data types:
 #[
@@ -104,8 +103,7 @@ def load_data_types_and_commands(data_type_json_file, commands_json_file, verbos
     
     if verbose:
         print(f"Loading data types from {data_type_json_file}")
-    with open(data_type_json_file, 'r') as file:
-        data_types_list = json.load(file)
+    data_types_list = load_json_file(data_type_json_file)
     if verbose:
         print(f"Found {len(data_types_list)} data types")
     
@@ -128,8 +126,7 @@ def load_data_types_and_commands(data_type_json_file, commands_json_file, verbos
     # Load commands
     if verbose:
         print(f"\nLoading commands from {commands_json_file}")
-    with open(commands_json_file, 'r') as file:
-        commands = json.load(file)
+    commands = load_json_file(commands_json_file)
     if verbose:
         print(f"Found {len(commands)} commands in JSON")
 

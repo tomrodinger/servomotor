@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
-from enum import Enum
-import json
-import os
+from .platform_compat import Enum
+from .platform_utils import load_json_file, module_path
+
 from . import communication
 
 def load_units_from_json(motor_type="M3"):
     """Load available units from JSON file"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(current_dir, f'unit_conversions_{motor_type}.json')
-    with open(json_path, 'r') as f:
-        data = json.load(f)
+    data = load_json_file(module_path(f'unit_conversions_{motor_type}.json'))
     return data["units"]
 
 # Create Enum classes dynamically from JSON units
@@ -28,10 +25,7 @@ class UnitConverter:
     """Handles unit conversions based on JSON definitions"""
     def __init__(self, command_dict, motor_type="M3"):
         self.motor_type = motor_type
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(current_dir, 'motor_commands.json')
-        with open(json_path, 'r') as f:
-            self.command_definitions = json.load(f)
+        self.command_definitions = load_json_file(module_path('motor_commands.json'))
         self.converted_commands = command_dict
         self.conversion_factors = {}
         self._cache_conversion_factors()
@@ -39,13 +33,10 @@ class UnitConverter:
     def _load_conversion_factors_from_file(self, filename):
         """Load conversion factors from an external JSON file"""
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            filepath = os.path.join(current_dir, filename.format(motor_type=self.motor_type))
-            with open(filepath, 'r') as f:
-                data = json.load(f)
-                return data["conversion_factors"]
+            data = load_json_file(module_path(filename.format(motor_type=self.motor_type)))
+            return data["conversion_factors"]
         except Exception as e:
-            print(f"Error loading conversion factors from {filepath}: {e}")
+            print(f"Error loading conversion factors: {e}")
             return None
 
     def _cache_conversion_factors(self):
@@ -330,8 +321,12 @@ class AllMotors:
                     raise ValueError("Alias or unique_id must be a single character or an integer")
         else:
             raise ValueError("Alias or unique_id must be a single character such as X or an integer such as 123 or a hex string such as AABBCCDDEEFF0011")
-        if self.alias_or_unique_id < 0 or self.alias_or_unique_id > 0xFFFFFFFFFFFFFFFF:
-            raise ValueError("Alias or unique_id must be in the range from 0 to 0xFFFFFFFFFFFFFFFF")
+        # alias_or_unique_id may legitimately be None here (a deferred alias,
+        # set later via use_this_alias_or_unique_id() or the global -a alias);
+        # only range-check a real value -- comparing None to an int crashes.
+        if self.alias_or_unique_id is not None:
+            if self.alias_or_unique_id < 0 or self.alias_or_unique_id > 0xFFFFFFFFFFFFFFFF:
+                raise ValueError("Alias or unique_id must be in the range from 0 to 0xFFFFFFFFFFFFFFFF")
 
         if time_unit == None:
             time_unit = next(iter(TimeUnit)).value

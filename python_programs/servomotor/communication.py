@@ -1,16 +1,23 @@
 #!/usr/local/bin/python3
 
-from .vendor.serial.serialutil import to_bytes
-import shutil
-from . import serial_functions
-import textwrap
-import sys
-import os
 import struct
 
-# Import our terminal formatting module
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from terminal_formatting import format_error, format_info, format_warning, format_success, format_debug, STYLE
+from .platform_utils import (
+    calculate_crc32,
+    get_terminal_columns,
+    int_from_bytes,
+    int_to_bytes,
+    wrap_text,
+)
+from .serial_abstraction import open_serial_port as _open_serial_port
+from .terminal_format_wrapper import (
+    format_debug,
+    format_error,
+    format_info,
+    format_success,
+    format_warning,
+    STYLE,
+)
 
 # Protocol constants for packet format
 FIRST_BYTE_LSB_MASK = 0x01  # Mask for checking if LSB is set
@@ -288,11 +295,6 @@ def sniffer(crc32_enabled=True):
 def flush_receive_buffer():
     ser.reset_input_buffer()
 
-def calculate_crc32(data):
-    """Calculate CRC32 checksum for a byte array"""
-    import zlib
-    return zlib.crc32(data) & 0xffffffff
-
 def send_command(alias_or_unique_id, command_id, gathered_inputs, crc32_enabled=True, verbose=2):
     # Check if we're using extended addressing
     if alias_or_unique_id <= 255:
@@ -462,7 +464,7 @@ def set_data_types_and_command_data(new_data_types, new_registered_commands):
 
 def open_serial_port(timeout = 1.2):
     global ser
-    ser = serial_functions.open_serial_port(serial_port, 230400, timeout = timeout)
+    ser = _open_serial_port(serial_port, 230400, timeout=timeout)
 
 def close_serial_port():
     ser.close()
@@ -475,7 +477,7 @@ def input_or_response_to_string(data):
     return f"{data_type_str}: {data_description}"
 
 def print_wrapped_text(first_line_message, subsequent_lines_message, text, terminal_window_columns):
-    wrapped_text = textwrap.wrap(text, initial_indent = first_line_message, subsequent_indent = subsequent_lines_message, width = terminal_window_columns)
+    wrapped_text = wrap_text(text, initial_indent=first_line_message, subsequent_indent=subsequent_lines_message, width=terminal_window_columns)
     for line in wrapped_text:
         print(format_info(line))
 
@@ -532,7 +534,7 @@ def print_data_type_descriptions():
 
 def print_registered_commands():
     print(format_info("\nThese are the supported commands:\n"))
-    terminal_window_columns = shutil.get_terminal_size().columns
+    terminal_window_columns = get_terminal_columns()
     for item in registered_commands:
         command_id = item["CommandEnum"]
         print(format_info(f"{command_id:3d}: {item['CommandString']}"))
@@ -582,7 +584,7 @@ def list_2d_string_to_packed_bytes(input, verbose=2):
                 print(format_error("Error: the sub-sub-item in the list is not an integer"))
                 exit(1)
             try:
-                input_packed = input_packed + list_sub_item.to_bytes(4, byteorder="little", signed=is_signed)
+                input_packed = input_packed + int_to_bytes(list_sub_item, 4, signed=is_signed)
             except OverflowError:
                 print(format_error("Error: the integer value is too large to be represented in the given number of bytes"))
                 exit(1)
@@ -619,19 +621,19 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
             input_signed = True
         else:
             input_signed = False
-        input_packed = input_int.to_bytes(input_data_size, byteorder = "little", signed = input_signed)
+        input_packed = int_to_bytes(input_int, input_data_size, signed=input_signed)
         if verbose:
             print_data("The converted input is:", input_packed, verbose=verbose)
     else:
         if registered_data_types[data_type_id].data_type_str == "u8_alias":
             if isinstance(input, str):
-                input_packed = string_to_u8_alias(input).to_bytes(1, byteorder = "little")
+                input_packed = int_to_bytes(string_to_u8_alias(input), 1)
             else:
                 if input < 0 or input > 255:
                     print(format_error("Error: the input is not within the allowed range"))
                     print(format_error("The allowed range is: 0 to 255"))
                     exit(1)
-                input_packed = input.to_bytes(1, byteorder = "little")
+                input_packed = int_to_bytes(input, 1)
         elif registered_data_types[data_type_id].data_type_str == "list_2d":
             input_packed = list_2d_string_to_packed_bytes(input)
         elif registered_data_types[data_type_id].data_type_str == "buf10":
@@ -639,14 +641,14 @@ def convert_input_to_right_type(data_type_id, input, input_data_size, is_integer
         elif registered_data_types[data_type_id].data_type_str == "u64_unique_id":
             # first, check if this input is a string. if it is, then it must be 16 characters long and be a hexadecimal number
             if isinstance(input, str):
-                input_packed = string_to_u64_unique_id(input).to_bytes(8, byteorder = "little")
+                input_packed = int_to_bytes(string_to_u64_unique_id(input), 8)
             else:
                 # if is is not a string then it must be an integer and must fit into a 64-bit unsigned integer
                 if input < 0 or input > 0xFFFFFFFFFFFFFFFF:
                     print(format_error(f"Error: the input ({input}) is not within the allowed range"))
                     print(format_error("The allowed range is: 0 to 0xFFFFFFFFFFFFFFFF"))
                     exit(1)
-                input_packed = input.to_bytes(8, byteorder = "little")
+                input_packed = int_to_bytes(input, 8)
         elif registered_data_types[data_type_id].data_type_str == "firmware_page":
             input_packed = input
         else:
@@ -759,7 +761,7 @@ def interpret_single_response(command_id, response, verbose=2):
                     data_item_signed = True
                 else:
                     data_item_signed = False
-                from_bytes_result = int.from_bytes(data_item, byteorder = "little", signed = data_item_signed)
+                from_bytes_result = int_from_bytes(data_item, signed=data_item_signed)
                 parsed_response.append(from_bytes_result)
                 if verbose >= 1:
                     print(format_info(f"   ---> {from_bytes_result}"))
@@ -784,12 +786,12 @@ def interpret_single_response(command_id, response, verbose=2):
                     if verbose >= 1:
                         print(format_info(f"   ---> {data_item[3]}.{data_item[2]}.{data_item[1]}.{data_item[0]}"))
                 elif data_type_str == "u64_unique_id":
-                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    from_bytes_result = int_from_bytes(data_item)
                     parsed_response.append(from_bytes_result)
                     if verbose >= 1:
                         print(format_info(f"   ---> {from_bytes_result:016X}"))
                 elif data_type_str == "u8_alias":
-                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    from_bytes_result = int_from_bytes(data_item)
                     parsed_response.append(from_bytes_result)
                     if verbose >= 1:
                         if from_bytes_result >= 33 and from_bytes_result <= 126:
@@ -797,7 +799,7 @@ def interpret_single_response(command_id, response, verbose=2):
                         else:
                             print(format_info(f"   ---> the single byte integer {from_bytes_result} or 0x{from_bytes_result:02x} in hex"))
                 elif data_type_str == "crc32":
-                    from_bytes_result = int.from_bytes(data_item, byteorder = "little")
+                    from_bytes_result = int_from_bytes(data_item)
                     parsed_response.append(from_bytes_result)
                     if verbose >= 1:
                         print(format_info(f"   ---> 0x{from_bytes_result:08X}"))

@@ -8,7 +8,9 @@ Functions will be copied from existing implementations and minimally edited to w
 """
 
 import time
-from typing import List, Tuple
+
+from .platform_compat import List, Tuple
+
 import servomotor
 
 DONT_GO_TO_BOOTlOADER_RESET_TIME = 1.5
