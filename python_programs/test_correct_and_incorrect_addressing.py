@@ -96,16 +96,27 @@ def detect_device(motor, verbose=False):
     print(f"Detected device: alias={alias}, unique_id={unique_id:016X}")
     return alias, unique_id
 
-def set_alias_if_needed(motor, current_alias, unique_id, go_to_bootloader=False, verbose=False):
+def ensure_alias_is(motor, current_alias, target_alias, go_to_bootloader=False, verbose=False):
+    """Ensure the device is at target_alias.
+
+    If it is already there, do nothing. If it is unaliased (255), set it to
+    target_alias so this test can use target_alias as the "correct alias" in
+    the addressing scenarios. If it is at some other alias, fail loudly
+    rather than silently mutating an unexpected state.
+    """
+    if current_alias == target_alias:
+        print(f"Device alias is already target alias {target_alias}; no change needed.")
+        return target_alias
     if current_alias != 255:
-        print(f"Device alias is already {current_alias}, no need to change.")
-        return current_alias
-    # Set alias to 1 (or any valid alias 0-251)
-    new_alias = random.randint(0, 251)
-    print(f"Setting device alias from 255 to {new_alias}...")
+        raise AssertionError(
+            f"Detected alias {current_alias} != target alias {target_alias} (from -a). "
+            f"This test refuses to mutate a non-default alias. "
+            f"Run test_set_device_alias.py to restore the device to alias {target_alias} and retry."
+        )
+    print(f"Setting device alias from 255 to target alias {target_alias}...")
     motor.use_this_alias_or_unique_id(255)
-    ret = motor.set_device_alias(new_alias)
-    print(f"set_device_alias({new_alias}) returned: {ret}")
+    ret = motor.set_device_alias(target_alias)
+    print(f"set_device_alias({target_alias}) returned: {ret}")
     # Wait for flash write and device to restart, with correct timing for bootloader/app mode
     if go_to_bootloader:
         delay_time = GO_TO_BOOTLOADER_RESET_TIME + FLASH_WRITE_TIME
@@ -114,10 +125,10 @@ def set_alias_if_needed(motor, current_alias, unique_id, go_to_bootloader=False,
         delay_time = DONT_GO_TO_BOOTLOADER_RESET_TIME + FLASH_WRITE_TIME
         print(f"Sleeping for {delay_time:0.3f}s after setting alias (normal mode).")
     time.sleep(delay_time)
-    motor.use_this_alias_or_unique_id(new_alias)
+    motor.use_this_alias_or_unique_id(target_alias)
     # Call check_the_status to ensure device is in correct mode
-    check_the_status(motor, new_alias, go_to_bootloader, False, verbose=verbose)
-    return new_alias
+    check_the_status(motor, target_alias, go_to_bootloader, False, verbose=verbose)
+    return target_alias
 
 def pick_random_wrong_alias(correct_alias):
     while True:
@@ -143,7 +154,11 @@ def validate_product_info(info, expected_unique_id):
     assert isinstance(product_code, str), "productCode is not a string"
     assert len(product_code) == 8, f"productCode length is not 8: {product_code!r}"
     assert all(c in string.printable and c not in '\r\n\t\x0b\x0c' for c in product_code), f"productCode contains non-printable characters: {product_code!r}"
-    assert product_code.strip() == "M3"
+    # Accept any model identifier (M1, M2, M3, M17, M23, …) rather than
+    # hardcoding a specific one — the test motor varies by bench setup.
+    stripped_product_code = product_code.strip()
+    assert stripped_product_code, f"product_code is blank: {product_code!r}"
+    assert stripped_product_code.startswith("M"), f"product_code does not start with 'M': {product_code!r}"
 
     # firmware_compat: u8, should be 0-255
     assert isinstance(firmware_compat, int), "firmwareCompatibility is not int"
@@ -198,7 +213,11 @@ def try_get_status(motor, addressing_method, value, expect_success, verbose=Fals
             return False
         return True
     except Exception as e:
-        if "timeout" in str(e).lower():
+        # servomotor.communication.TimeoutError is sometimes raised without a
+        # message (see communication.py:365 `raise TimeoutError`), so checking
+        # only str(e) misses those — also match the exception class name.
+        err_text = (str(e) + " " + type(e).__name__).lower()
+        if "timeout" in err_text:
             if addressing_method == "unique_id":
                 value_str = f"{value:016X}"
             else:
@@ -213,13 +232,14 @@ def try_get_status(motor, addressing_method, value, expect_success, verbose=Fals
                 value_str = f"{value:016X}"
             else:
                 value_str = str(value)
-            print(f"{addressing_method}={value_str}: Unexpected exception: {e}")
+            print(f"{addressing_method}={value_str}: Unexpected exception ({type(e).__name__}): {e}")
             return False
 
 def main():
     parser = argparse.ArgumentParser(description="Test correct and incorrect addressing (alias and unique ID).")
     parser.add_argument('-p', '--port', type=str, required=True, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, default='X', help='Alias the device under test should be at; used as the "correct" alias in the addressing scenarios. The test leaves the device at this alias when it finishes (default: X).')
     parser.add_argument('--bootloader', action='store_true', help='Enter bootloader mode before running the test')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat the test (default: 1)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
@@ -227,6 +247,9 @@ def main():
 
     if args.verbose:
         args.verbose = 2
+
+    # Convert the -a argument (single char like 'X' or numeric string) to a byte value.
+    target_alias = ord(args.alias) if isinstance(args.alias, str) and len(args.alias) == 1 else int(args.alias)
 
     overall_passed = True
     repeat_results = []
@@ -244,8 +267,8 @@ def main():
             # Step 2: Detect device and get alias/unique_id
             alias, unique_id = detect_device(motor, verbose=args.verbose)
 
-            # Step 3: If alias is 255, set to 1
-            alias = set_alias_if_needed(motor, alias, unique_id, go_to_bootloader=args.bootloader, verbose=args.verbose)
+            # Step 3: Ensure the device is at target_alias (set from 255 if needed)
+            alias = ensure_alias_is(motor, alias, target_alias, go_to_bootloader=args.bootloader, verbose=args.verbose)
 
             # Step 4: Pick wrong alias and wrong unique ID at random
             wrong_alias = pick_random_wrong_alias(alias)

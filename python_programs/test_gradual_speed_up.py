@@ -3,7 +3,6 @@ import servomotor
 from servomotor import communication
 import time
 import argparse
-import zlib
 from collections import defaultdict
 import sys
 

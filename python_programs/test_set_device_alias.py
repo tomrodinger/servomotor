@@ -164,6 +164,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test the 'Set device alias' command.")
     parser.add_argument('-p', '--port', type=str, required=True, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, default='X', help='Home alias the device should be at; the test restores the device to this alias as its final step so subsequent tests in the suite can still address the motor (default: X). The random valid alias exercised by this test is always chosen != target_alias.')
     parser.add_argument('--bootloader', action='store_true', help='Enter bootloader mode before running the test')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat all tests (default: 1)')
@@ -171,6 +172,9 @@ if __name__ == "__main__":
 
     if args.verbose:
         args.verbose = 2
+
+    # Convert the -a argument (single char like 'X' or numeric string) to a byte value.
+    target_alias = ord(args.alias) if isinstance(args.alias, str) and len(args.alias) == 1 else int(args.alias)
     # Statistics: {test_case_name: {'pass': int, 'fail': int}}
     test_stats = {}
 
@@ -188,8 +192,10 @@ if __name__ == "__main__":
             reset_device(motor, 255, args.bootloader, args.verbose)
             all_passed = True
 
-            # (1) Test setting a random valid alias (0–251) first
+            # (1) Test setting a random valid alias (0–251, != target_alias) first
             random_valid_alias = random.randint(0, 251)
+            while random_valid_alias == target_alias:
+                random_valid_alias = random.randint(0, 251)
             test_name_valid = f"Random valid alias {random_valid_alias}"
             passed, current_alias = test_set_device_alias(motor, 255, random_valid_alias, False, args.verbose, args.bootloader, f"Test random valid alias {random_valid_alias}")
             if test_name_valid not in test_stats:
@@ -212,7 +218,7 @@ if __name__ == "__main__":
                     test_stats[test_name_invalid]['fail'] += 1
                 all_passed &= passed
 
-            # (3) Test alias removal (set to 255) last
+            # (3) Test alias removal (set to 255)
             test_name_removal = "Alias removal (set to 255)"
             passed, current_alias = test_set_device_alias(motor, current_alias, 255, False, args.verbose, args.bootloader, "Test alias removal (set to 255)")
             if test_name_removal not in test_stats:
@@ -221,6 +227,20 @@ if __name__ == "__main__":
                 test_stats[test_name_removal]['pass'] += 1
             else:
                 test_stats[test_name_removal]['fail'] += 1
+            all_passed &= passed
+
+            # (4) Restore alias to target_alias as the final step. Without
+            #     this, the device would be left at 255 and any later test
+            #     in the suite that addresses by alias would fail. The motor
+            #     is now at 255 (broadcast), so we set from 255 -> target_alias.
+            test_name_restore = f"Restore alias to target_alias={target_alias}"
+            passed, current_alias = test_set_device_alias(motor, current_alias, target_alias, False, args.verbose, args.bootloader, f"Restore alias to target_alias={target_alias}")
+            if test_name_restore not in test_stats:
+                test_stats[test_name_restore] = {'pass': 0, 'fail': 0}
+            if passed:
+                test_stats[test_name_restore]['pass'] += 1
+            else:
+                test_stats[test_name_restore]['fail'] += 1
             all_passed &= passed
 
             # Print per-repeat statistics

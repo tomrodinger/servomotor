@@ -137,31 +137,83 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test the 'Get product info' command.")
     parser.add_argument('-p', '--port', type=str, required=True, help='Serial port device name (e.g., /dev/ttyUSB0 or COM3)')
     parser.add_argument('-P', '--PORT', action='store_true', help='Show available ports and prompt for selection')
+    parser.add_argument('-a', '--alias', type=str, default='X', help='Alias the device under test is expected to be at (default: X). The test exercises the alias-addressing path of Get product info using this value and cross-checks it against unique-ID addressing.')
     parser.add_argument('--bootloader', action='store_true', help='Enter bootloader mode before running the test')
     parser.add_argument('--repeat', type=int, default=1, help='Number of times to repeat the test (default: 1)')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
 
+    # Convert the -a argument (string char like 'X' or numeric string) to a byte value.
+    target_alias = ord(args.alias) if isinstance(args.alias, str) and len(args.alias) == 1 else int(args.alias)
+
     servomotor.set_serial_port_from_args(args)
     servomotor.open_serial_port(timeout=1.5)
+    success = False
+    failure_message = ""
     try:
         # Step 1: Reset device (broadcast)
         motor_broadcast = M3(255, verbose=args.verbose)
         reset_device(motor_broadcast, 255, args.bootloader, args.verbose)
 
-        # Step 2: Detect device and get alias/unique_id
+        # Step 2: Detect device and get current alias / unique ID
         alias, unique_id = detect_device_and_get_alias(motor_broadcast, verbose=args.verbose)
 
-        # Step 3: Create M3 object and use extended addressing to talk to the device (by unique ID)
-        motor = M3(unique_id, verbose=args.verbose)
+        # Step 3: Ensure the device is at the expected target_alias.
+        #         If it is unaliased (255), set it to target_alias so this
+        #         test can exercise the alias-addressing path. If it is at
+        #         some other alias, fail loudly rather than mutating state.
+        if alias != target_alias:
+            if alias == 255:
+                print(f"Device is unaliased (255); setting it to target alias {target_alias} so alias addressing can be tested.")
+                motor_broadcast.use_this_alias_or_unique_id(255)
+                motor_broadcast.set_device_alias(target_alias, verbose=args.verbose)
+                # set_device_alias causes the device to reset; wait for it
+                # to come back up in application mode (or bootloader mode).
+                if args.bootloader:
+                    time.sleep(GO_TO_BOOTlOADER_RESET_TIME)
+                else:
+                    time.sleep(DONT_GO_TO_BOOTlOADER_RESET_TIME)
+                alias = target_alias
+            else:
+                raise AssertionError(
+                    f"Detected alias {alias} != target alias {target_alias} (from -a). "
+                    f"This test refuses to mutate a non-default alias. "
+                    f"Run test_set_device_alias.py to restore the device to alias {target_alias} and retry."
+                )
 
-        # Step 4: Run the test
-        test_get_product_info(motor, unique_id, repeat=args.repeat, verbose=args.verbose)
+        # Step 4: Address the device two ways and verify Get product info
+        #         returns the same data via both addressing modes.
+        motor_uid = M3(unique_id, verbose=args.verbose)
+        motor_alias = M3(target_alias, verbose=args.verbose)
 
-        print("\nPASSED")
-        sys.exit(0)
+        print("\nFetching product info via unique-ID addressing...")
+        info_uid = motor_uid.get_product_info(verbose=args.verbose)
+        print(f"  result: {info_uid}")
+        validate_product_info(info_uid, unique_id)
+
+        print(f"\nFetching product info via alias addressing (alias = {target_alias})...")
+        info_alias = motor_alias.get_product_info(verbose=args.verbose)
+        print(f"  result: {info_alias}")
+        validate_product_info(info_alias, unique_id)
+
+        if info_uid != info_alias:
+            raise AssertionError(f"Product info differs between addressing modes: uid={info_uid} alias={info_alias}")
+        print("Product info is identical via unique-ID and alias addressing.")
+
+        # Step 5: Consistency across repeated calls (uses unique-ID addressing).
+        test_get_product_info(motor_uid, unique_id, repeat=args.repeat, verbose=args.verbose)
+
+        success = True
     except Exception as e:
-        print(f"\nFAILED: {e}")
-        sys.exit(1)
+        failure_message = str(e)
     finally:
         servomotor.close_serial_port()
+
+    # Print verdict AFTER close_serial_port() has run so PASSED is the literal
+    # last line of stdout (run_all_tests.py grades on the last line).
+    if success:
+        print("\nPASSED")
+        sys.exit(0)
+    else:
+        print(f"\nFAILED: {failure_message}")
+        sys.exit(1)
