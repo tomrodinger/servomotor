@@ -35,13 +35,17 @@ uint8_t PI_controller(int32_t error)
 }
 
 
-int32_t time_sync(uint64_t time_from_master)
+int32_t time_sync(uint32_t time_from_master)
 {
-    uint64_t local_time = get_microsecond_time();
-	int32_t time_error = (int32_t)(time_from_master - local_time);
-	uint8_t new_clock_cal_value = PI_controller(time_error);
-	RCC->ICSCR = new_clock_cal_value << RCC_ICSCR_HSITRIM_Pos;
-	return time_error;
+    // Truncate the device's u64 clock to its low 32 bits before subtracting.
+    // See common_source_files/clock_calibration.c for the full rationale.
+    // (Note: the bootloader does not currently call this function — kept in
+    // sync with the application copy to prevent future confusion.)
+    uint32_t local_time = (uint32_t)get_microsecond_time();
+    int32_t time_error = (int32_t)(time_from_master - local_time);
+    uint8_t new_clock_cal_value = PI_controller(time_error);
+    RCC->ICSCR = new_clock_cal_value << RCC_ICSCR_HSITRIM_Pos;
+    return time_error;
 }
 
 uint16_t get_clock_calibration_value(void)

@@ -35,9 +35,15 @@ uint8_t PI_controller(int32_t error)
 }
 
 
-int32_t time_sync(uint64_t time_from_master)
+int32_t time_sync(uint32_t time_from_master)
 {
-    uint64_t local_time = get_microsecond_time();
+    // Truncate the device's u64 clock to its low 32 bits before subtracting.
+    // The master also only sends the low 32 bits (u32 absolute microseconds),
+    // so this is u32 modular subtraction. Cast (int32_t) interprets the
+    // wrapped result as a signed error in the [-2^31, +2^31) us range
+    // (≈ ±35 min) — correct across the u32 wrap (≈71 min) as long as the
+    // true drift is well inside that range and sync is performed regularly.
+    uint32_t local_time = (uint32_t)get_microsecond_time();
     int32_t time_error = (int32_t)(time_from_master - local_time);
     uint8_t new_clock_cal_value = PI_controller(time_error);
     RCC->ICSCR = new_clock_cal_value << RCC_ICSCR_HSITRIM_Pos;
