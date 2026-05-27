@@ -3,74 +3,32 @@
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 
-Last updated: 2026-05-27 (TODO #3 fully complete and double-verified:
-the PC-side refactor landed 2026-05-26 (CPython 63/63 in 13:34),
-the MicroPython sweep on ESP32-S3 landed 2026-05-27 with **45 / 53
-PASSED (84.9 %)** — all 8 remaining failures explained
-(4 MP perf gaps, 1 library precision bug, 1 test-design issue,
-2 fundamentally non-portable). A post-patch CPython re-run on
-2026-05-27 confirmed the MP-compat patches don't regress CPython:
-**62 / 63 PASSED in 13:03.92** — one transient flake in
-`test_fast_short_move_with_velocity.py` (`FatalError(18)` =
-ERROR_QUEUE_IS_FULL), confirmed flake via a standalone re-run that
-PASSED in 30.94 s with 389 moves. TODO #9 added for the
-precision/memory follow-ups that would lift the MP pass rate further).
+Last updated: 2026-05-28 (TODOs #1, #2, #3, #5 all committed and pushed-ready.
+Working tree is clean except for items deliberately left untracked. Firmware
+0.15.0.0 for M17 has been released and committed.)
 
-> **▶ NEXT TASK: tom is picking among (a) commit the MicroPython
-> shims + test patches and TODO #3 close-out, (b) start TODO #9 (MP
-> precision/memory fixes), (c) move on to TODO #6 cross-OS verification
-> (Windows / Linux), or (d) jump to TODO #1 change-pile review.** No
-> hard blocker on any of them; all are tom's-choice. The PC-side
-> refactor landed 2026-05-26; the MP sweep landed 2026-05-27; both
-> were re-verified 2026-05-27.
+> **▶ NEXT TASK: tom is choosing among the still-open TODOs:**
+> - **TODO #6** cross-OS verification (Windows / Linux) — uses the now-committed
+>   single-version library and the host-only suite as the cheap first probe
+> - **TODO #7** make the high-level M3 wrapper able to drive multimove + crc32
+>   (removes the `execute_command` workaround in `test_multimove.py` /
+>   `test_crc32_control.py`)
+> - **TODO #8** clear the T2-test gotchas (M3 time-unit conversion wrong,
+>   `test_mode(0)` firmware lockup, MOSFET-enable commutation-alignment
+>   transient — see [[m3-wrapper-time-unit-conversion-broken]] /
+>   [[led-test-mode-is-stuck-forever]] / [[enable-mosfets-commutation-transient]])
+> - **TODO #9** MicroPython quality-of-life (M3 int-precision sentinel bug,
+>   `test_get_temperature` heap-busting refactor, optional perf-gap test tolerances)
+> - **TODO #4** minor cleanups (low priority)
 >
-> **TODO #5 closeout (2026-05-26).** 48/48 per-command tests exist and
-> pass; full `run_all_tests.py -p /dev/cu.usbserial-120 -a X` ran
-> 63/63 PASSED in **13:33 wall-clock** (812 s of test runtime). Slowest
-> tests: `test_get_temperature.py` 154 s (thermal soak),
-> `test_communication_while_high_speed.py` 72 s,
-> `test_gradual_speed_up.py` 55 s, `test_random_speed_stress.py` 34 s,
-> `test_fast_short_move_with_velocity.py` 34 s,
-> `test_get_comprehensive_position.py` 31 s, `test_start_calibration.py`
-> 29 s, `test_move_with_acceleration.py` 27 s. The two specials ran
-> first as required: `test_firmware_upgrade.py` (17.3 s) →
-> `test_start_calibration.py` (28.7 s), leaving the bench on the latest
-> firmware and freshly calibrated for everything after.
+> No hard blocker on any of them; all are tom's choice.
 >
-> The two specials were written 2026-05-26:
->   * `test_firmware_upgrade.py` (cmd 23) — implements the page-by-page
->     transfer inline via `servomotor.execute_command` (no subprocess
->     delegation), alias-addressed, new protocol only. Three full
->     reflashes (latest → kept-older → latest) with `Get firmware
->     version` (cmd 25) after each. Wall-clock ~17 s on the bench M17.
->   * `test_start_calibration.py` (cmd 6) — polls `get_status` until
->     the calibrating bit (3) clears, kicks the device out of the
->     post-reboot bootloader window with `system_reset` + ~2 s delay
->     (calibration auto-reboots the MCU — see
->     [[calibration-auto-reboots]]), then verifies usability via
->     go_to_closed_loop + a small closed-loop move on target.
->     Wall-clock ~29 s on the bench M17 against firmware 0.15.0.0.
->
-> Both tests verified standalone on bench M17 (alias `X`,
-> `/dev/cu.usbserial-120`). `TEST_SUMMARY.md` row order fixed: firmware
-> upgrade first, start calibration second, everything else alphabetical
-> after.
->
-> **A bench false alarm to record (2026-05-26).** An earlier pass at
-> `test_start_calibration.py` polled `get_status` and asserted the
-> bootloader bit must NOT be set; that tripped after ~20 s and was
-> mis-attributed to a firmware 0.15.0.0 calibration regression. The
-> real cause is the auto-reboot: the calibrating-bit-clear poll lands
-> inside the bootloader's post-reset window and `get_status` returns
-> `0x0001` until a `system_reset` is issued. The fix is in the test;
-> firmware 0.15.0.0 calibrates correctly on the bench. See
-> [[calibration-auto-reboots]] and [[verify-before-declaring-done]].
->
-> While writing T3, a real firmware lockup was found and is now
-> tracked as a new bullet in TODO #8 below — `test_mode(0)` freezes
-> the firmware the same way LED test modes 10..13 do but worse
-> (no reply at all). Do NOT use `test_mode(0)` to clear a test mode
-> anywhere; use `system_reset()`.
+> **Session of 2026-05-27/28 summary.** TODO #1 fully committed across 7
+> commits (`63d4de1`–`d6759da`). TODO #2 / #3 / #5 work that had been
+> uncommitted-but-done was committed across 8 more commits
+> (`10eaded`–`c0b2451`), including the firmware 0.15.0.0 release
+> (`fd8b600`) and an updated `.gitignore` (`c0b2451`). 15 new commits
+> total on `main`; nothing pushed yet.
 
 ---
 
@@ -81,80 +39,58 @@ precision/memory follow-ups that would lift the MP pass rate further).
 3. Read the companion doc for the task being picked up (table below).
 4. Continue from the unchecked items under "To do", following "Suggested order".
 
-**Git state as of 2026-05-27:** branch `main`, synced with `origin/main`, last
-commit `66414cf` ("Add simulated hard-stop case to the homing test"). The
-working tree still has the original unreviewed change pile from TODO #1
-(~30 modified tracked files + many untracked) — that is **expected, not a
-mistake**. Do NOT blanket-revert it and do NOT run `git clean`. On top of
-that pile the following work is now also uncommitted:
-  - **TODO #2 host-only test suite (done 2026-05-19):** 6 new untracked
-    files in `python_programs/` — `host_test_framework.py`,
-    `test_host_*.py` (4), `run_host_tests.py` — plus edits to
-    `TEST_SUMMARY.md` and a one-line bug fix in `servomotor/M3.py`.
-  - **TODO #5 planning docs:** `python_programs/TEST_MODERNIZATION_PLAN.md`
-    is new and untracked; `WORK_CHECKLIST.md` (this file) is new and
-    untracked.
-  - **TODO #5 step-1 work (2026-05-20):** modified four previously-tracked
-    tests (`test_detect_devices.py`, `test_get_product_info.py`,
-    `test_set_device_alias.py`, `test_correct_and_incorrect_addressing.py`)
-    and `TEST_SUMMARY.md`.
-  - **TODO #5 T1 tests (2026-05-21/22):** 15 new untracked
-    `test_<command>.py` files in `python_programs/` (cmds 0, 1, 2, 3, 5,
-    11, 12, 13, 16, 17, 27, 28, 29, 34, 46) plus catalogue rows in
-    `TEST_SUMMARY.md`.
-  - **TODO #5 T2 tests (2026-05-25):** 10 new untracked
-    `test_<command>.py` files in `python_programs/` (cmds 8, 9, 15, 18,
-    24, 38, 39, 43, 44, 47), catalogue rows in `TEST_SUMMARY.md`, and the
-    matching matrix-row flips + Summary update in `TEST_MODERNIZATION_PLAN.md`.
-    Last full-suite run (53/54 PASSED in 713 s); the one failure was a
-    test-order interaction in `test_get_hall_sensor_position.py` that was
-    fixed in place (enable → settle → zero → read reorder) and re-verified
-    standalone under the reproduced failure condition (rotor left at a
-    non-zero physical angle by a prior test). The two work-around patterns
-    used by the T2 tests (`time_unit="timesteps"` identity passthrough for
-    cmds 9/10; enable → settle → zero ordering for cmds 13/15/44) are
-    tracked as TODO #8 so the work-arounds can be dropped once the
-    underlying wrapper / firmware UX issues are fixed.
-  - **TODO #5 T3 tests (2026-05-25):** 7 new untracked
-    `test_<command>.py` files in `python_programs/` (cmds 7 Capture
-    hall sensor data, 32 Control hall sensor statistics, 33 Get hall
-    sensor statistics, 35 Read multipurpose buffer, 40 Vibrate
-    (human-confirm), 41 Identify (human-confirm), 45 Get debug
-    values), catalogue rows in `TEST_SUMMARY.md`, and the matching
-    matrix-row flips + summary update in `TEST_MODERNIZATION_PLAN.md`.
-    Each test verified individually against the bench M17 (alias `X`).
-    A new firmware-lockup bullet was added to TODO #8 below
-    (`test_mode(0)` is a lockup path — `set_led_test_mode(0)` inline
-    before reply); the
-    [[led-test-mode-is-stuck-forever]] memory note was updated
-    to cover it. No full-suite re-run yet — pending after the two
-    specials land (per the
-    [[batch-suite-runs]] rule).
+**Git state as of 2026-05-28:** branch `main`, **15 commits ahead** of
+`origin/main`. Working tree is clean except for items deliberately left
+untracked (see "What is still untracked" below). Nothing has been pushed.
 
-  - **TODO #3 PC-side refactor (2026-05-26):** modified four library
-    files (`servomotor/communication.py`, `M3.py`, `command_loader.py`,
-    `device_detection.py`) plus `__init__.py` to be single-version
-    (zero `is_micropython()` branches outside the platform layer);
-    added new untracked `servomotor/platform_compat.py`; extended
-    `servomotor/platform_utils.py` (int_to_bytes, int_from_bytes,
-    wrap_text, module_path) and `servomotor/serial_abstraction.py`
-    (unified `open_serial_port`); renamed
-    `servomotor/communication_micropython.py` →
-    `communication_micropython.py.bak` (kept on disk per
-    [[dont-delete-prefer-bak]]).
-  - **TODO #3 MicroPython sweep (2026-05-27):** new untracked dir
-    `python_programs/micropython/` mirroring everything that was
-    deployed to the ESP32-S3 (argparse.py, string.py, ospath_shim.py,
-    mp_random_shim.py, mp_collections_shim.py, mp_runner.py,
-    mp_sweep.sh, chunk_size.txt, results_final.txt). Also six
-    modified test files (`test_get_product_specs.py`,
-    `test_multimove.py`, `test_capture_hall_sensor_data.py`,
-    `test_get_current_time.py`, `test_reset_time.py`,
-    `test_gradual_speed_up.py`) — all verified to keep CPython behavior
-    (62/63 PASSED in 13:03.92 against bench M17 with the only failure a
-    confirmed flake).
+Commits in this run (oldest → newest), all on `main`:
 
-None of the above has been pushed; the full pile is intentional WIP.
+| Hash | Subject (truncated) |
+| :-- | :-- |
+| `63d4de1` | Makefile G031 fix + ADC.c G031 shim + M23 ADC sequence |
+| `a6023cd` | M23 current_streaming/control + PWM + m23 PC tools; fw bump to 0.15.0.0 |
+| `60f2887` | `time_sync` uint64→uint32 bug fix (firmware + bootloader) |
+| `ef63e31` | motor_control.c M17 calibration tuning + per-product baseline tolerance |
+| `a8705b9` | Python bugfixes (detect_and_set_alias, magnetic_disk_machine_V2) |
+| `030d4d4` | Datasheets: M17-34 model + dimension drawings + datasheet v1.8 |
+| `d6759da` | Marketing typo fixes |
+| `10eaded` | TODO #3 — MicroPython library refactor (single-version library) |
+| `b5aec36` | TODO #2 — host-only test suite |
+| `3a44cee` | TODO #5 — test modernization (48 per-command tests + 5 modified) |
+| `c453786` | MicroPython hardware deployment (shims, mp_runner, deploy scripts) |
+| `4ffaab1` | Planning + design docs (this file, CHANGE_ANALYSIS, CLAUDE, MP designs) |
+| `9e7d353` | New tools (m23 capture, magnetic_disk_machine_V2, binary_diff, pwm_adc visualizer) |
+| `fd8b600` | Release firmware 0.15.0.0 for Servomotor M17 |
+| `c0b2451` | `.gitignore` for scratch / AI working notes (`.firmware` NOT ignored) |
+
+**What is still untracked** (intentional, per "leave for now" decisions):
+
+- `Drivers/CMSIS/Device/ST/STM32G4xx/`, `Drivers/STM32G4xx_HAL_Driver/`
+- `bootloader_STM32G431/`
+- `Mechanical/`, `Pictures/applications/`, `assembly_steps/`, `datasheets/`,
+  `pricing_calculations/`
+- Root-level `micropython/` (separate from the committed
+  `python_programs/micropython/`)
+- Older un-released `.firmware` binaries in `firmware/firmware_releases/`
+  (M17 0.14.x, M23 0.14.x, M3 0.14.2, M4 0.14.2). The current release is
+  `servomotor_M17_fw0.15.0.0_scc3_hw1.5.firmware`, which IS committed.
+
+**What is in `.gitignore`** (group A from the disposition pass, committed
+in `c0b2451`):
+
+- `bootloader_STM32G031/m23_capture_*.bin`, `binary_diff_report.txt`
+- `firmware/waveforms`, `python_programs/hall_sensor_data_no_avg/`,
+  `python_programs/suite_run_*.log`
+- `*.py.damaged`
+- `autogeneration/plans/`, `bootloader_STM32G031/plans/`, `firmware/plans/`
+  (AI working notes)
+- `firmware/.claude/` (per-tool local settings)
+- `marketting_page/AI_*.md`, `NEXTJS_*.md`, `AUTOGENERATOR_*.md` (AI handoff
+  scratch in marketting_page)
+
+Note: `firmware/firmware_releases/*.firmware` is **not** in `.gitignore` —
+released firmware binaries are tracked. See
+[[firmware-releases-tracked-in-git]] memory note.
 
 ---
 
@@ -168,38 +104,33 @@ None of the above has been pushed; the full pile is intentional WIP.
 | `python_programs/TEST_INVENTORY.md` | Test-suite landscape + gap analysis |
 | `python_programs/TEST_MODERNIZATION_PLAN.md` | Plan to test every important command + modernize the obsolete tests (TODO #5) |
 
-> ⚠️ **These files are untracked and can be lost.** The 5 planning docs in the
-> table above, the host-only test suite (`python_programs/host_test_framework.py`,
-> `test_host_*.py`, `run_host_tests.py`), the new MicroPython platform-layer
-> files (`servomotor/platform_detect.py`, `platform_utils.py`,
-> `serial_abstraction.py`, `terminal_format_wrapper.py`,
-> `communication_micropython.py`), and `firmware/Src/current_control.c/.h` are
-> all untracked. They survive `git restore` / `git checkout` but `git clean`
-> would delete them. **Strongly consider committing the 5 planning docs and the
-> host test suite** so this resumption guide and the safety net cannot be lost.
+> All five reference docs above are **committed** as of 2026-05-28 (commit
+> `4ffaab1`). The host-only test suite, MicroPython platform-layer files,
+> and `firmware/Src/current_control.c/.h` are also committed.
 
 ---
 
 ## Environment / hardware notes
 
-- Test motor: an **M17** (a QC reject — stiff shaft), firmware **0.14.2.1**,
-  now **calibrated** (an uncalibrated motor makes closed-loop control
-  malfunction; that caused earlier false homing crashes).
+- Test motor: an **M17** (a QC reject — stiff shaft), now running firmware
+  **0.15.0.0** (the just-released version — `test_firmware_upgrade.py` leaves
+  the bench on the latest), **calibrated** (an uncalibrated motor makes
+  closed-loop control malfunction; that caused earlier false homing crashes).
 - Assigned alias: **`X`** (byte value 88). It had no alias (255) originally.
+  Original test motor unique ID: `99856389A2B46555`.
 - **No external encoder available** (one was available previously). Tests that
   cross-check against an external encoder must skip that check cleanly until
   encoder hardware is back — see `TEST_MODERNIZATION_PLAN.md`.
-- Serial port observed: `/dev/cu.usbserial-120` (may change between sessions; use
-  `-P` to pick interactively).
+- Serial port observed: `/dev/cu.usbserial-120` (CPython direct path; may
+  change between sessions, use `-P` to pick interactively). For the
+  MicroPython bridge, the ESP32-S3 enumerates as `/dev/cu.usbmodem1201`.
 - If the motor does not respond at alias `X`: run
-  `python3 test_detect_devices.py -p <port>` to find it (reports unique ID and
-  current alias), then assign an alias with `set_device_alias` before running the
-  suite. The original test motor's unique ID is `99856389A2B46555`.
-- Run the full Python suite:
+  `python3 test_detect_devices.py -p <port>` to find it, then `set_device_alias`.
+- Run the full Python suite (~13:33 wall-clock on the bench M17, 63/63 PASSED
+  most recently as of 2026-05-27):
   `cd python_programs && python3 run_all_tests.py -p <port> -a X`
-  (~8 min; the 14 hardware tests passed 14/14 on 2026-05-19. The 4 host tests
-  are now catalogued too, so the runner picks up 18 — the host ones also pass
-  with no hardware: `cd python_programs && python3 run_host_tests.py`).
+- Hardware-free pre-commit check (~seconds):
+  `cd python_programs && python3 run_host_tests.py`
 - Firmware build: `cd firmware && make PRODUCT_NAME=M17` (M1/M2 builds fail for
   a pre-existing unrelated reason — missing autogenerated hall-sensor table).
 
@@ -413,11 +344,11 @@ MicroPython hardware run still pending.*
         wasn't actually used here).
 
 ### 4. Minor cleanups
-- [ ] Add `test_get_product_info.py` to `TEST_SUMMARY.md` (currently uncatalogued,
-      so `run_all_tests.py` silently skips it). *Subsumed by TODO #5's
-      catalogue-and-triage step — do it there.*
-- [ ] Remove build artifacts generated during verification from
-      `firmware/firmware_releases/` (the `fw0.14.3.0` files).
+- [x] Add `test_get_product_info.py` to `TEST_SUMMARY.md` — done as part of
+      TODO #5 catalogue-and-triage (commit `3a44cee`).
+- [ ] ~~Remove `fw0.14.3.0` verification rebuilds from `firmware/firmware_releases/`.~~
+      Obsolete — per [[firmware-releases-tracked-in-git]], `.firmware` files are
+      release artifacts; we keep them rather than deleting them.
 - [ ] `Arduino_library/` has heavy `.bak` / stray-binary clutter (low priority;
       Arduino library work is not planned soon).
 
@@ -571,11 +502,14 @@ catalogued + 3 uncatalogued); 36 are new. (12 + 36 = 48.)
       with `Get firmware version` (cmd 25) check after each. Wall-clock
       ~17 s on the bench M17. `test_start_calibration.py` (cmd 6)
       polls `get_status` for the calibrating bit to clear, then
-      verifies usability via `go_to_closed_loop` and a small
-      closed-loop move on target. Wall-clock ~30 s against firmware
-      0.14.2.1; reproducibly fails on firmware 0.15.0.0 (see the
-      "0.15.0.0 calibration regression" note in the NEXT TASK box
-      above and TODO #1 below).
+      kicks the device out of the post-reboot bootloader window with
+      `system_reset` + ~2 s wait (calibration auto-reboots — see
+      [[calibration-auto-reboots]]), then verifies usability via
+      `go_to_closed_loop` and a small closed-loop move on target.
+      Wall-clock ~29 s on the bench M17 against firmware 0.15.0.0
+      (the earlier "0.15.0.0 calibration regression" sighting was a
+      bench false alarm caused by polling inside the bootloader's
+      post-reset window).
 - [x] Build `test_firmware_upgrade.py` (command 23) — done 2026-05-26.
       See the bullet immediately above for what it does.
 - [x] Order `TEST_SUMMARY.md` rows so `test_firmware_upgrade.py` runs first,
