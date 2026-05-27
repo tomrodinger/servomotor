@@ -118,7 +118,7 @@ def generate_pdf():
     # Add main image
     try:
         main_width = doc.width * 0.85
-        main_img = get_processed_image('m3_series_overview.jpg', main_width)
+        main_img = get_processed_image('m17_series_overview.jpg', main_width)
         main_img.hAlign = 'CENTER'
         story.append(main_img)
         story.append(Spacer(1, 2))
