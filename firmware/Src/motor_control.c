@@ -22,6 +22,7 @@
 #ifdef PRODUCT_NAME_M23
 #include "commutation_table_M23.h"
 #include "current_streaming.h"
+#include "current_control.h"
 #endif
 #include "goertzel_algorithm_constants.h"
 #include "error_handling.h"
@@ -82,11 +83,12 @@
 
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2) || defined(PRODUCT_NAME_M17)
 #define EXPECTED_MOTOR_CURRENT_BASELINE 1152
+#define MOTOR_CURRENT_BASELINE_TOLERANCE 200
 #endif
 #if defined(PRODUCT_NAME_M23)
 #define EXPECTED_MOTOR_CURRENT_BASELINE 1970
+#define MOTOR_CURRENT_BASELINE_TOLERANCE 1970
 #endif
-#define MOTOR_CURRENT_BASELINE_TOLERANCE 200
 #define MIN_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
 #define MAX_MOTOR_CURRENT_BASELINE (EXPECTED_MOTOR_CURRENT_BASELINE + MOTOR_CURRENT_BASELINE_TOLERANCE)
 #define MAX_MOTOR_CURRENT 300 // make sure this number is less than (EXPECTED_MOTOR_CURRENT_BASELINE - MOTOR_CURRENT_BASELINE_TOLERANCE)
@@ -277,8 +279,8 @@ static uint16_t multipurpose_data_size = 0;
  */
 
 #define CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT 8
-#define CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 (384) // 1.5 turns * 256
-#define CALIBRATION_DATA_N_ITEMS ((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256) >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT)
+#define CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256 (358) // 1.4 turns * 256
+#define CALIBRATION_DATA_N_ITEMS (((TOTAL_NUMBER_OF_SEGMENTS / 3 * CALIBRATION_DATA_COLLECTION_N_TURNS_TIMES_256) >> CALIBRATION_DATA_COLLECTION_SHIFT_RIGHT) + 3)
 struct calibration_struct {
     uint16_t local_min_or_max;
     int32_t local_min_or_max_position;
@@ -472,7 +474,7 @@ uint16_t hall_data_buffer[3];
 #define CALIBRATION_TIME (get_update_frequency() * 2)
 #else
 #ifdef PRODUCT_NAME_M17
-#define CALIBRATION_TIME (get_update_frequency() * 4)
+#define CALIBRATION_TIME ((get_update_frequency() * 896) >> 8) // 896 here is 3.5 seconds * 256; we experimented here a bit to see what calibration time is good such as to make the motor not resonate (vibrate) too much when spinning
 #else
 #ifdef PRODUCT_NAME_M23
 #define CALIBRATION_TIME (get_update_frequency() * 4)
@@ -488,7 +490,7 @@ uint16_t hall_data_buffer[3];
 #if defined(PRODUCT_NAME_M1)
 #define HALL_PEAK_FIND_THRESHOLD 200
 #else
-#define HALL_PEAK_FIND_THRESHOLD 4000
+#define HALL_PEAK_FIND_THRESHOLD 2000
 #endif
 uint8_t hall_rising_flag[3];
 uint16_t hall_local_maximum[3];
@@ -2744,6 +2746,9 @@ void motor_phase_calculations(void)
     if(is_mosfets_enabled() == 0) {
         TIM1->CCR1 = PWM_PERIOD_TIM1 >> 1;
         TIM1->CCR2 = PWM_PERIOD_TIM1 >> 1;
+#ifdef M23_CURRENT_CONTROL
+        current_control_reset();
+#endif
         return;
     }
 
@@ -2771,7 +2776,44 @@ void motor_phase_calculations(void)
     phase1_int = phase1 - (MAX_PHASE_VALUE >> 1);
     phase2_int = phase2 - (MAX_PHASE_VALUE >> 1);
 
-    // Here we compensate for the supply voltage. The higher is the supply voltage, the lower we will set the PWM to to get the same resulting motor voltage.
+#ifdef M23_CURRENT_CONTROL
+    // Current regulation: motor_pwm_voltage is the desired current amplitude (ADC counts).
+    // Compute sinusoidal current references from commutation table, then use PI controllers.
+    // Clamp amplitude to prevent overflow: amplitude * (phase >> 8) must fit int32_t.
+    // phase >> 8 is at most ±32768, so amplitude up to 32767 is safe (product ≤ 1.07 billion).
+    int32_t current_amplitude = motor_pwm_voltage;
+    if (current_amplitude > MAX_MOTOR_CURRENT) current_amplitude = MAX_MOTOR_CURRENT;
+    if (current_amplitude < 0) current_amplitude = 0;
+
+    // i_ref = amplitude * sin(theta) / (MAX_PHASE_VALUE/2)
+    // phase_int >> 8 gives ±32768 range, multiply by amplitude, then >> 15 to normalize.
+    // Max product: 300 * 32768 = 9,830,400 — fits int32_t with large margin.
+    int32_t i_a_ref_32 = (current_amplitude * (phase1_int >> 8)) >> 15;
+    int32_t i_b_ref_32 = (current_amplitude * (phase2_int >> 8)) >> 15;
+
+    // Clamp to int16_t range for PI controller input
+    int16_t i_a_ref = (int16_t)(i_a_ref_32 > 32767 ? 32767 : (i_a_ref_32 < -32768 ? -32768 : i_a_ref_32));
+    int16_t i_b_ref = (int16_t)(i_b_ref_32 > 32767 ? 32767 : (i_b_ref_32 < -32768 ? -32768 : i_b_ref_32));
+
+    // Store i_a_ref for telemetry streaming
+    current_control_set_i_a_ref(i_a_ref);
+    current_control_set_i_b_ref(i_b_ref);
+
+    // Read actual phase currents (signed, relative to baseline)
+    int16_t i_a = get_phase_a_current();
+    int16_t i_b = get_phase_b_current();
+
+    // PI controllers: error = reference - measured
+    // Output is negated because on M23 hardware, lower CCR increases current
+    // (current sense polarity is inverted relative to PWM duty direction).
+    int16_t v_a = -current_pi_step(current_control_get_pi_a(), i_a_ref - i_a);
+    int16_t v_b = -current_pi_step(current_control_get_pi_b(), i_b_ref - i_b);
+
+    // Convert to PWM duty cycle (center at 512, clamped to 25%–75% by PI max output)
+    phase1_int = (int32_t)v_a + (PWM_PERIOD_TIM1 >> 1);
+    phase2_int = (int32_t)v_b + (PWM_PERIOD_TIM1 >> 1);
+#else
+    // Voltage mode (original): scale sin/cos by voltage amplitude, compensate for supply voltage
     int16_t supply_voltage = get_supply_voltage_ADC_value();
     motor_pwm_voltage = (motor_pwm_voltage << 12) / supply_voltage;
 
@@ -2790,6 +2832,7 @@ void motor_phase_calculations(void)
     if ((phase2_int < 0) || (phase2_int > PWM_PERIOD_TIM1)) {
         fatal_error(ERROR_PWM_TOO_HIGH); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
     }
+#endif
 
     TIM1->CCR1 = phase1_int;
     TIM1->CCR2 = phase2_int;
