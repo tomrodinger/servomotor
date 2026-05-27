@@ -12,6 +12,9 @@
 #include "current_streaming.h"
 #include "debug_uart.h"
 #include "ADC.h"
+#include "current_control.h"
+#include "error_handling.h"
+
 
 #ifdef PRODUCT_NAME_M23
 
@@ -197,11 +200,14 @@ void stream_current_sample(void)
     m23_telemetry_frame_t *frame = (m23_telemetry_frame_t *)&stream_buffer[fill_buffer][frame_index * TELEMETRY_FRAME_SIZE];
 
     // Fill frame data
-    frame->sync = TELEMETRY_SYNC_WORD;
-    frame->current_a = (int16_t)ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX];
-    frame->current_b = (int16_t)ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX];
+    frame->i_a_ref = current_control_get_i_a_ref();
+    frame->i_a_actual = get_phase_a_current();
+    frame->i_b_actual = get_phase_b_current();
     frame->pwm_a = (int16_t)TIM1->CCR1;
-    frame->pwm_b = (int16_t)TIM1->CCR2;
+
+    // Compute checksum: sum of all data bytes (first 8 bytes), truncated to uint8
+    uint8_t *p = (uint8_t *)frame;
+    frame->checksum = p[0] + p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7];
 
     frame_index++;
 
@@ -209,13 +215,13 @@ void stream_current_sample(void)
     if (frame_index >= FRAMES_PER_BUFFER) {
         frame_index = 0;
 
-        // If DMA is not busy, start transfer immediately
-        if (!dma_busy) {
-            active_buffer = fill_buffer;
-            fill_buffer = 1 - fill_buffer;  // Swap to other buffer
-            start_dma_transfer(active_buffer);
+        // If DMA is still busy then this is unexpected and we should throw a fatal error
+        if (dma_busy) {
+            fatal_error(ERROR_STREAMING_OVERFLOW);
         }
-        // else: DMA still busy, we'll overwrite this buffer (drop frames)
+        active_buffer = fill_buffer;
+        fill_buffer = 1 - fill_buffer;  // Swap to other buffer
+        start_dma_transfer(active_buffer);
     }
 }
 

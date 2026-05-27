@@ -20,7 +20,8 @@
 #endif
 
 #if defined (PRODUCT_NAME_M23)
-#define PWM_PERIOD_TIM1 1024 // this sets the frequency to be about 62.5 kHz @ input clock frequency of 64MHz (which is for the PWM to set the motor current and the overvoltage threshold)
+#define TIM1_CLOCK_FREQUENCY 128000000 // TIM1 clocked from PLLQCLK at 128 MHz
+#define PWM_PERIOD_TIM1 1024 // center-aligned mode: 128MHz / (2 * 1024) = 62.5 kHz PWM frequency
 #define PWM_PERIOD_TIM16 2048 // this sets the frequency to be about 31.25 kHz @ input clock frequency of 64MHz (which is for the motor control interrupt)
 #define OVERVOLTAGE_PROTECTION_SETTING1 290
 #define OVERVOLTAGE_PROTECTION_SETTING2 12

@@ -5,15 +5,15 @@
  * Streams motor current measurements at 5Mbps via USART2 (debug UART).
  * Uses double-buffer ping-pong DMA for efficient, non-blocking transmission.
  *
- * Frame format (10 bytes, little-endian):
- *   - uint16_t sync:      0xABCD sync word
- *   - int16_t  current_a: Phase A current (ADC counts, 0-4095)
- *   - int16_t  current_b: Phase B current (ADC counts, 0-4095)
- *   - int16_t  pwm_a:     Phase A PWM duty (TIM1->CCR1, 0-1024)
- *   - int16_t  pwm_b:     Phase B PWM duty (TIM1->CCR2, 0-1024)
+ * Frame format (9 bytes, little-endian):
+ *   - int16_t  i_a_ref:    Phase A desired current (from current control reference)
+ *   - int16_t  i_a_actual: Phase A measured current (signed, relative to baseline)
+ *   - int16_t  i_b_actual: Phase B measured current (signed, relative to baseline)
+ *   - int16_t  pwm_a:      Phase A PWM duty (TIM1->CCR1, 0-1024)
+ *   - uint8_t  checksum:   Sum of preceding 8 bytes, truncated to 8 bits
  *
  * One frame is sent per motor control loop iteration (~31.25 kHz).
- * Throughput: 10 bytes × 31,250 Hz = 3.125 Mbps (within 5Mbps capacity)
+ * Throughput: 9 bytes × 31,250 Hz = 2.8125 Mbps (within 5Mbps capacity)
  */
 
 #ifndef SRC_CURRENT_STREAMING_H_
@@ -23,22 +23,19 @@
 
 #ifdef PRODUCT_NAME_M23
 
-// Telemetry frame sync word
-#define TELEMETRY_SYNC_WORD 0xABCD
-
-// Frame structure (10 bytes)
+// Frame structure (9 bytes)
 typedef struct __attribute__((__packed__)) {
-    uint16_t sync;           // 0xABCD sync word (little-endian)
-    int16_t  current_a;      // Phase A current (ADC counts)
-    int16_t  current_b;      // Phase B current (ADC counts)
+    int16_t  i_a_ref;        // Phase A desired current (from current control reference)
+    int16_t  i_a_actual;     // Phase A measured current (signed, relative to baseline)
+    int16_t  i_b_actual;     // Phase B measured current (signed, relative to baseline)
     int16_t  pwm_a;          // Phase A PWM duty (TIM1->CCR1)
-    int16_t  pwm_b;          // Phase B PWM duty (TIM1->CCR2)
+    uint8_t  checksum;       // Sum of preceding 8 bytes, truncated to uint8
 } m23_telemetry_frame_t;
 
 // Buffer configuration
-#define TELEMETRY_FRAME_SIZE      sizeof(m23_telemetry_frame_t)  // 10 bytes
+#define TELEMETRY_FRAME_SIZE      sizeof(m23_telemetry_frame_t)  // 9 bytes
 #define FRAMES_PER_BUFFER         10
-#define STREAM_BUFFER_SIZE        (TELEMETRY_FRAME_SIZE * FRAMES_PER_BUFFER)  // 100 bytes
+#define STREAM_BUFFER_SIZE        (TELEMETRY_FRAME_SIZE * FRAMES_PER_BUFFER)  // 90 bytes
 
 /**
  * Initialize the current streaming system.

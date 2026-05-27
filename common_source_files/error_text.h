@@ -57,7 +57,8 @@ typedef enum {
     ERROR_BAD_ALIAS = 50,
     ERROR_COMMAND_SIZE_WRONG = 51,
     ERROR_INVALID_FLASH_PAGE = 52,
-    ERROR_INVALID_TEST_MODE = 53
+    ERROR_INVALID_TEST_MODE = 53,
+    ERROR_STREAMING_OVERFLOW = 54
 } error_code_t;
 
 #define ERROR_TEXT_INITIALIZER \
@@ -115,6 +116,7 @@ typedef enum {
     "command size wrong\0"                    /* ERROR_COMMAND_SIZE_WRONG */ \
     "invalid flash page\0"                    /* ERROR_INVALID_FLASH_PAGE */ \
     "invalid test mode\0"                     /* ERROR_INVALID_TEST_MODE */ \
+    "streaming overflow\0"                    /* ERROR_STREAMING_OVERFLOW */ \
     "\0"                                      /* this marks the end of the error messages */
 
 const char *get_error_text(uint16_t error_code);

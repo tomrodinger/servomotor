@@ -38,6 +38,7 @@
 #ifdef PRODUCT_NAME_M23
 #include "commutation_table_M23.h"
 #include "current_streaming.h"
+#include "current_control.h"
 #endif
 
 // Simulation-only printf function that compiles to nothing in firmware builds and optionally
@@ -66,8 +67,8 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t major;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 14
-#define BUGFIX_FIRMWARE_VERSION 2
+#define MINOR_FIRMWARE_VERSION 15
+#define BUGFIX_FIRMWARE_VERSION 0
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -378,8 +379,13 @@ void process_packet(void)
         break;
     case TIME_SYNC_COMMAND:
         {
-            uint64_t time_from_master;
-            copy_input_parameters_and_check_size(&time_from_master, payload, 6, payload_size);
+            // The master sends only the low 32 bits of its absolute-microsecond
+            // time (u32). The device's full internal clock is u64 — time_sync()
+            // does modular subtraction so the i32 error is correct across the
+            // u32 wrap (~71 min) as long as |actual drift| < 2^31 us (~35 min).
+            // Callers must sync regularly (the protocol says 10 Hz).
+            uint32_t time_from_master;
+            copy_input_parameters_and_check_size(&time_from_master, payload, sizeof(time_from_master), payload_size);
             rs485_done_with_this_packet();
             if(!is_broadcast) {
                 struct __attribute__((__packed__)) {
@@ -1391,6 +1397,7 @@ int main(void)
 
 #ifdef PRODUCT_NAME_M23
     current_streaming_init();
+    current_control_init();
 #endif
 
 //    set_max_motor_current(700, 700); // DEBUG

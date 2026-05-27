@@ -127,7 +127,7 @@ def run_stream_test(port: str, baud: int, duration: float, verbose: bool = False
                 total_frames = len(frames_collected)
                 print(f"[{elapsed:.1f}s] {total_frames} frames, "
                       f"{frames_since_last_print} frames/sec, "
-                      f"{parser.sync_errors} sync errors")
+                      f"{parser.checksum_errors} checksum errors")
                 frames_since_last_print = 0
                 last_print_time = current_time
 
@@ -154,8 +154,8 @@ def run_stream_test(port: str, baud: int, duration: float, verbose: bool = False
     print(f"  Total frames:    {total_frames}")
     print(f"  Frame rate:      {total_frames / elapsed:.1f} Hz")
     print(f"  Expected rate:   {SAMPLE_RATE_HZ} Hz")
-    print(f"  Sync errors:     {parser.sync_errors}")
-    print(f"  Discarded (sync): {parser.discarded_frames}")
+    print(f"  Checksum errors:     {parser.checksum_errors}")
+    print(f"  Discarded (pre-sync): {parser.discarded_frames}")
 
     if total_frames > 0:
         # Extract channel data

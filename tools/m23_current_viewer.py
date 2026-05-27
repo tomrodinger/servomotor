@@ -500,7 +500,7 @@ class M23CurrentViewer(QMainWindow):
         stats_layout.addWidget(self.frame_rate_label, row, 1)
         row += 1
 
-        stats_layout.addWidget(QLabel("Sync Err:"), row, 0)
+        stats_layout.addWidget(QLabel("Cksum Err:"), row, 0)
         self.sync_err_label = QLabel("0")
         self.sync_err_label.setAlignment(AlignRight)
         stats_layout.addWidget(self.sync_err_label, row, 1)
@@ -695,7 +695,7 @@ class M23CurrentViewer(QMainWindow):
         self._last_frame_count = self.total_frames
 
         # Sync errors
-        self.sync_err_label.setText(str(self.reader.parser.sync_errors))
+        self.sync_err_label.setText(str(self.reader.parser.checksum_errors))
 
     def closeEvent(self, event):
         """Handle window close."""
