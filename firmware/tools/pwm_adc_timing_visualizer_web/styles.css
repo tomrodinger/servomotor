@@ -1,0 +1,147 @@
+:root {
+  color-scheme: light;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  --bg: #f7f7fb;
+  --panel: #ffffff;
+  --border: #d7d7e0;
+  --text: #1d1d28;
+  --muted: #55566d;
+  --accent: #2c60f5;
+  --lane-bg: #f0f2ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+header,
+footer {
+  padding: 24px 40px;
+}
+
+header h1 {
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+main {
+  padding: 0 40px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+
+.field input,
+.field select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.field small {
+  color: var(--muted);
+}
+
+.field.checkbox {
+  justify-content: center;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.toolbar button {
+  padding: 8px 12px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.toolbar button:hover {
+  filter: brightness(0.95);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.viz-container {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.legend {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.legend .item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend .swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.guidance {
+  background: var(--lane-bg);
+  border-radius: 10px;
+  padding: 14px;
+  font-family: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.85rem;
+}

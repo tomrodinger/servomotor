@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PWM / ADC / TIM16 Timing Visualizer (M23)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>PWM / ADC / TIM16 Timing Visualizer (M23)</h1>
+      <p class="subtitle">
+        UI-driven timing model derived from RM0444 formulas (no firmware parsing).
+      </p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Configuration (UI Controlled)</h2>
+        <div class="grid">
+          <div class="field">
+            <label>ADC Clock Source (Hz)</label>
+            <select id="adcClockSource"></select>
+          </div>
+          <div class="field">
+            <label>ADC Prescaler (ADC_CCR_PRESC)</label>
+            <select id="adcPrescaler"></select>
+          </div>
+          <div class="field">
+            <label>ADC Sampling Time SMP1</label>
+            <select id="adcSmp1"></select>
+          </div>
+          <div class="field">
+            <label>ADC Sampling Time SMP2</label>
+            <select id="adcSmp2"></select>
+          </div>
+          <div class="field">
+            <label>SMP2 Channel (single channel)</label>
+            <input id="adcSmp2Channel" type="number" min="0" max="18" />
+          </div>
+          <div class="field">
+            <label>ADC Sequence (CHSELR order)</label>
+            <input id="adcSequence" type="text" />
+            <small>Comma-separated channels, e.g. 6,0,9,4,5,2,1,3</small>
+          </div>
+          <div class="field">
+            <label>TIM1 CH1 Duty Ratio (%)</label>
+            <input id="tim1Duty" type="number" min="0" max="100" step="0.1" />
+          </div>
+          <div class="field">
+            <label>DMA Circular Buffer Length</label>
+            <input id="dmaBufferLength" type="number" min="1" step="1" />
+          </div>
+          <div class="field">
+            <label>TIM16 ISR Duration (µs)</label>
+            <input id="tim16IsrUs" type="number" min="1" step="0.5" />
+          </div>
+          <div class="field">
+            <label>View Window (µs)</label>
+            <input id="windowUs" type="number" min="1" step="1" />
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input id="singlePeriod" type="checkbox" />
+              Single-period view (override window)
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Fixed Firmware Defaults (Read-only)</h2>
+        <div class="grid">
+          <div class="field">
+            <label>TIM1 Clock (Hz)</label>
+            <input id="tim1Clk" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM1 ARR</label>
+            <input id="tim1Arr" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM1 PSC</label>
+            <input id="tim1Psc" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM1 CCR3</label>
+            <input id="tim1Ccr3" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM16 Clock (Hz)</label>
+            <input id="tim16Clk" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM16 ARR</label>
+            <input id="tim16Arr" type="number" readonly />
+          </div>
+          <div class="field">
+            <label>TIM16 PSC</label>
+            <input id="tim16Psc" type="number" readonly />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Visualization</h2>
+        <div class="toolbar">
+          <button id="exportCsv">Export CSV</button>
+          <button id="exportSvg">Export SVG</button>
+          <button id="exportPng">Export PNG</button>
+          <span class="hint">Scroll to zoom, drag to pan</span>
+        </div>
+        <div class="viz-container">
+          <svg id="timeline" width="1200" height="520" aria-label="Timing plot"></svg>
+        </div>
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Firmware Guidance (Read-only)</h2>
+        <div class="guidance" id="guidance"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Implementation Notes & RM0444 Citations</h2>
+        <ul>
+          <li>Center-aligned TIM1 timing model: RM0444 Section 39.3.10, Figures 279–281.</li>
+          <li>TIM1 TRGO2 source via MMS2 = OC3REF: RM0444 Section 39.4.16, Table 126.</li>
+          <li>ADC EXTEN both-edge triggers: RM0444 Section 19.4.15, Table 95.</li>
+          <li>ADC conversion time formula: RM0444 Section 19.3.4 and Section 19.4.20.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>All timing values are computed from formulas and user-provided parameters.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
