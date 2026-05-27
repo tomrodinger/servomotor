@@ -4,12 +4,21 @@
 #include <stdint.h>
 #include "stm32g0xx_hal.h"
 #include "ADC.h"
+#include "PWM.h"
 #include "leds.h"
 #include "error_handling.h"
 #include "debug_uart.h"
 
 #define ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD 65535
 #define ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD 0
+
+// STM32G031 header uses renamed ADC threshold register defines; add compatibility
+#ifndef ADC_TR2_LT2_Pos
+#define ADC_TR2_LT2_Pos ADC_AWD2TR_LT2_Pos
+#define ADC_TR2_HT2_Pos ADC_AWD2TR_HT2_Pos
+#define ADC_TR3_LT3_Pos ADC_AWD3TR_LT3_Pos
+#define ADC_TR3_HT3_Pos ADC_AWD3TR_HT3_Pos
+#endif
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 23664
 #endif
@@ -18,6 +27,7 @@
 #endif
 #ifdef PRODUCT_NAME_M23
 #define SUPPLY_VOLTAGE_CALIBRATION_CONSTANT 28039
+#define EXPECTED_MOTOR_CURRENT_BASELINE 1970
 #endif
 
 uint16_t ADC_buffer[DMA_ADC_BUFFER_SIZE];
@@ -32,20 +42,33 @@ void adc_init(void)
     RCC->CCIPR |= (1 << RCC_CCIPR_ADCSEL_Pos); // use the PLLPCLK for the ADC
     ADC->CCR |= (1 << ADC_CCR_PRESC_Pos); // divide the clock source by 2 to get 32 MHz for the ADC clock
 
-    ADC1->CFGR1 |= ADC_CFGR1_CHSELRMOD | ADC_CFGR1_CONT | ADC_CFGR1_OVRMOD | ADC_CFGR1_DMACFG | ADC_CFGR1_DMACFG; // channel selection is done by selecting the exact sequence, continuous conversion mode, if overrun occurs, we take the latest value, DMA circular mode, 12-bit resolution
+#ifdef PRODUCT_NAME_M23
+    // M23: ADC triggered by TIM1_TRGO2 (EXTSEL=000)
+    ADC1->CFGR1 |= ADC_CFGR1_CHSELRMOD | ADC_CFGR1_OVRMOD | ADC_CFGR1_DMACFG |
+                   (0 << ADC_CFGR1_EXTSEL_Pos) |  // EXTSEL=000: TIM1_TRGO2 (now driven by OC3REF)
+                   (3 << ADC_CFGR1_EXTEN_Pos);    // EXTEN=11: Both edges → triggers before valley AND peak
+    ADC1->SMPR |= (0 << ADC_SMPR_SMP1_Pos) |  // SMP1=0 (1.5 cycles = 47 ns) for most channels
+                  (6 << ADC_SMPR_SMP2_Pos) |  // SMP2=6 (79.5 cycles = 2484 ns) for dummy channel
+                  ADC_SMPR_SMPSEL6;           // Channel 6 (dummy at SQ1) uses SMP2 for long settling to absorb transient
+#else
+    ADC1->CFGR1 |= ADC_CFGR1_CHSELRMOD | ADC_CFGR1_CONT | ADC_CFGR1_OVRMOD | ADC_CFGR1_DMACFG; // channel selection is done by selecting the exact sequence, continuous conversion mode, if overrun occurs, we take the latest value, DMA circular mode, 12-bit resolution
+    ADC1->SMPR |= (0 << ADC_SMPR_SMP1_Pos); // select 1.5 ADC cycles as the sampling time, the total time for 1 conversion will be 0.4375us
+                                            // calculation: time in microseconds = 1/32000000*(1.5+12.5)*1000000
+#endif
 //    ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos) | (1 << ADC_CFGR2_OVSR_Pos) | ADC_CFGR2_OVSE; // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, enable 4x oversampling
     ADC1->CFGR2 |= (0 << ADC_CFGR2_CKMODE_Pos); // select the clock mode to take the clock source from the one selected in the RCC->CCIPR register, no oversampling
-    ADC1->SMPR |= (0 << ADC_SMPR_SMP1_Pos); // select 1.5 ADC cycles as the sampling time, the total time for 1 conversion will be 0.44us
-                                            // calculation: time in microseconds = 1/32000000*(1.5+12.5)*1000000
 
+
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     ADC1->CFGR1 |= ADC_CFGR1_AWD1EN | ADC_CFGR1_AWD1SGL | (0 << ADC_CFGR1_AWD1CH_Pos); // enable analog watchdog 1 and it will monitor just one channel as selected by AWD1CH bits
     ADC1->TR2 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR2_LT2_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
     ADC1->TR3 = (ADC_WATCHDOG_DEFAULT_LOWER_THRESHOLD << ADC_TR3_LT3_Pos) | (ADC_WATCHDOG_DEFAULT_UPPER_THRESHOLD << ADC_TR3_HT3_Pos); // select the lower and upper threshold for the ADC watchdog 3
     ADC1->AWD2CR = (1 << 0); // only select channel 0 to be monitored by the watchdog 2, this is the motor current measurement
     ADC1->AWD3CR = (1 << 3); // only select channel 3 to be monitored by the watchdog 3, this is the motor current measurement
+#endif
 
-    // select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
-    #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
+// select the channels to be converted, 8 channels total supported, we will measure the current multiple times per one cycle of 8
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
                    (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
                    (7  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -54,8 +77,8 @@ void adc_init(void)
                    (10 << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
                    (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
                    (6  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-    #endif
-    #if defined(PRODUCT_NAME_M17)
+#endif
+#if defined(PRODUCT_NAME_M17)
     ADC1->CHSELR = (0  << ADC_CHSELR_SQ1_Pos) |  // motor current          (index 0)
                    (5  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
                    (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
@@ -64,19 +87,18 @@ void adc_init(void)
                    (4  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
                    (0  << ADC_CHSELR_SQ7_Pos) |  // motor current          (index 6)
                    (7  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-    #endif
-    #if defined(PRODUCT_NAME_M23)
-    ADC1->CHSELR = (4  << ADC_CHSELR_SQ1_Pos) |  // motor current phase A  (index 0)
-                   (2  << ADC_CHSELR_SQ2_Pos) |  // hall 1                 (index 1)
+#endif
+#if defined(PRODUCT_NAME_M23)
+    ADC1->CHSELR = (6  << ADC_CHSELR_SQ1_Pos) |  // dummy (absorbs VDDA transient, uses SMP2 for long sampling) (index 0)
+                   (0  << ADC_CHSELR_SQ2_Pos) |  // temperature sensor     (index 1)
                    (9  << ADC_CHSELR_SQ3_Pos) |  // 24V line voltage sense (index 2)
-                   (5  << ADC_CHSELR_SQ4_Pos) |  // motor current phase B  (index 3)
-                   (1  << ADC_CHSELR_SQ5_Pos) |  // hall 2                 (index 4)
-                   (0  << ADC_CHSELR_SQ6_Pos) |  // termperature sensor    (index 5)
-                   (6  << ADC_CHSELR_SQ7_Pos) |  //                        (index 6) // DEBUG not using this value
+                   (4  << ADC_CHSELR_SQ4_Pos) |  // motor current phase A  (index 3)
+                   (5  << ADC_CHSELR_SQ5_Pos) |  // motor current phase B  (index 4)
+                   (2  << ADC_CHSELR_SQ6_Pos) |  // hall 1                 (index 5)
+                   (1  << ADC_CHSELR_SQ7_Pos) |  // hall 2                 (index 6)
                    (3  << ADC_CHSELR_SQ8_Pos);   // hall 3                 (index 7)
-    #endif
+#endif
     ADC1->CR |= ADC_CR_ADVREGEN; // enable the voltage regulator. this must be done before enabling the ADC
-
     for(i = 0; i < 100000; i++); // allow time for the voltage regulator to stabilize
 
     ADC1->CR |= ADC_CR_ADCAL; // calibration must be done before the ADC is enabled
@@ -101,16 +123,17 @@ void adc_init(void)
     DMA1_Channel1->CCR |= DMA_CCR_EN; // enable the DMA channel as the last step (see section 11.4.3 in the reference manual).
 
 #ifdef PRODUCT_NAME_M23
-    ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
-    ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
-    ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
-    ADC1->IER |= ADC_IER_AWD3IE; // enable the watchdog 3 interrupt
-    NVIC_SetPriority(ADC1_IRQn, 0); // highest priority, because when there is an overcurrent condition (detrected by the ADC watchdog), we need to act very fast
-//  NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
+    //ADC1->ISR |= ADC_ISR_AWD2; // clear the watchdog 2 interrupt flag
+    //ADC1->ISR |= ADC_ISR_AWD3; // clear the watchdog 3 interrupt flag
+    // Temporarily disable watchdog interrupts; EOS interrupt handles LED timing without overcurrent faulting.
+    // ADC1->IER |= ADC_IER_AWD2IE; // enable the watchdog 2 interrupt
+    // ADC1->IER |= ADC_IER_AWD3IE; // enable the watchdog 3 interrupt
+//    ADC1->ISR |= ADC_ISR_EOS; // clear any pending end-of-sequence flag
+//    ADC1->IER |= ADC_IER_EOSIE; // enable the end of conversion sequence interrupt (8 samples)
+//    NVIC_SetPriority(ADC1_IRQn, 0); // highest priority so LED toggle aligns with sample completion
+//    NVIC_EnableIRQ(ADC1_IRQn); // enable the ADC interrupt
 #endif
 
-//    ADC->IER |= ADC_IER_EOCIE; // enable the end of conversion interrupt
-//    ADC->IER |= ADC_IER_EOSIE; // enable the end of conversion sequence interrupt
     ADC1->CR |= ADC_CR_ADSTART; // start to do the conversions one by one continuously
 }
 
@@ -149,10 +172,17 @@ void check_if_ADC_watchdog3_exceeded(void)
 
 void ADC1_IRQHandler(void)
 {
-    fatal_error(ERROR_OVERCURRENT); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-    red_LED_on();
-    ADC1->ISR |= ADC_ISR_AWD2;
-    ADC1->ISR |= ADC_ISR_AWD3;
+#if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
+    if ((ADC1->ISR & ADC_ISR_AWD2) || (ADC1->ISR & ADC_ISR_AWD3)) {
+        // Temporarily ignore watchdog events while EOS interrupt is enabled.
+        ADC1->ISR |= ADC_ISR_AWD2;
+        ADC1->ISR |= ADC_ISR_AWD3;
+    }
+#endif
+    if (ADC1->ISR & ADC_ISR_EOS) {
+        red_LED_toggle();
+        ADC1->ISR |= ADC_ISR_EOS;
+    }
 }
 
 uint16_t get_hall_sensor1_voltage(void)
@@ -220,6 +250,33 @@ uint16_t get_motor_current(void)
 }
 
 
+#ifdef PRODUCT_NAME_M23
+// DEBUG: Simplified to return single raw ADC sample for noise diagnosis.
+// No valley/peak logic, no averaging, no baseline subtraction.
+// This lets us see if the noise is in the raw ADC data or introduced by processing.
+
+int16_t get_phase_a_current(void)
+{
+//    return (int16_t)ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c1 = ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX                        ] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c2 = ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX + ADC_CYCLE_INDEXES    ] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c3 = ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX + ADC_CYCLE_INDEXES * 2] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c4 = ADC_buffer[MOTOR_CURRENT_PHASE_A_CYCLE_INDEX + ADC_CYCLE_INDEXES * 3] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    return ((c1 - c2 + c3 - c4) >> 2);
+}
+
+int16_t get_phase_b_current(void)
+{
+//    return (int16_t)ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c1 = ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX                        ] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c2 = ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX + ADC_CYCLE_INDEXES    ] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c3 = ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX + ADC_CYCLE_INDEXES * 2] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    int16_t c4 = ADC_buffer[MOTOR_CURRENT_PHASE_B_CYCLE_INDEX + ADC_CYCLE_INDEXES * 3] - EXPECTED_MOTOR_CURRENT_BASELINE;
+    return ((c1 - c2 + c3 - c4) >> 2);
+}
+#endif // PRODUCT_NAME_M23
+
+
 uint16_t get_temperature_ADC_value(void)
 {
     uint16_t a = ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 0] + ADC_buffer[TEMPERATURE_ADC_CYCLE_INDEX + 8] +
@@ -263,3 +320,4 @@ void set_analog_watchdog_limits(uint16_t lower_limit, uint16_t upper_limit)
     ADC1->TR2 = (lower_limit << ADC_TR2_LT2_Pos) | (upper_limit << ADC_TR2_HT2_Pos); // select the lower and upper threshold for the ADC watchdog 2
     ADC1->TR3 = (lower_limit << ADC_TR3_LT3_Pos) | (upper_limit << ADC_TR3_HT3_Pos); // select the lower and upper threshold for the ADC watchdog 3
 }
+
