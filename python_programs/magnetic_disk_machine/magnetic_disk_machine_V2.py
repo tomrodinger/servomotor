@@ -373,9 +373,11 @@ servomotor.set_serial_port_from_args(args)
 #servomotor.serial_port = "/dev/cu.usbserial-1120"
 servomotor.open_serial_port()
 
+motor255 = M3(255, verbose=args.verbose)
+
 # reset all motors
-parsed_response = servomotor.execute_command(255, "SYSTEM_RESET_COMMAND", [], verbose=VERBOSE)
-time.sleep(2.5)
+motor255.system_reset(verbose=args.verbose)
+time.sleep(1.0)
 
 # let's ping the device many times to make sure it is there and that communication is working flawlessly
 all_devices_responsed = True

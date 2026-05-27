@@ -154,7 +154,7 @@ def main() -> int:
         for device in devices:
             if hasattr(device, "reassigned_alias") and device.reassigned_alias is not None:
                 print(f"Reassigning the alias of the device with unique ID {device.unique_id:016X} from {device.alias} to {device.reassigned_alias}")
-                motor255.use_this_alias_or_device_id(device.unique_id)
+                motor255.use_this_alias_or_unique_id(device.unique_id)
                 response = motor255.set_device_alias(device.reassigned_alias)
                 print("Response:", response)
 
