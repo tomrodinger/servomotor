@@ -38,3 +38,26 @@ transformation_step2.png
 transformation_step3.png
 transformation_visualization.png
 venv
+
+# Bench capture scratch
+bootloader_STM32G031/m23_capture_*.bin
+bootloader_STM32G031/binary_diff_report.txt
+firmware/waveforms
+python_programs/hall_sensor_data_no_avg/
+python_programs/suite_run_*.log
+
+# Corrupted file backups
+*.py.damaged
+
+# AI working notes
+autogeneration/plans/
+bootloader_STM32G031/plans/
+firmware/plans/
+
+# Per-tool local settings
+firmware/.claude/
+
+# AI handoff scratch in marketting_page
+marketting_page/AI_*.md
+marketting_page/NEXTJS_*.md
+marketting_page/AUTOGENERATOR_*.md
