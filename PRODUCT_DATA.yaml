@@ -198,3 +198,25 @@
       description: Firmware for the servomotor model M17
       url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M17_fw0.13.0.0_scc3_hw1.3.firmware
       sha256: 0c6ddd1d88d84a304e057422fabfa612cdfebd2ee5ee2bee8ca8846a1b399bb8
+  - version: '1.5'
+    type: full_product
+    web_page_template: https://cdn.jsdelivr.net/gh/vladsomai/test_line_following_robot@main/Products/light_template.html
+    picture:
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153751.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153757.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153758.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153759.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153938.jpg
+    - https://raw.githubusercontent.com/tomrodinger/servomotor/refs/heads/main/Pictures/servomotor3/M17-48%20motor/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20250714153946.jpg
+    description: This product is a Servomotor with 4-in-1 integrated motor + motor driver + motion controller + encoder in a NEMA 17 form factor
+    schematic: https://raw.githubusercontent.com/tomrodinger/servomotor/main/PCB/Servomotor3/1.5/schematic/1.5-index-schTop.pdf
+    user_manual: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/servomotor_datasheets/servomotor_datasheet_latest.pdf
+    tutorial: https://tutorial.gearotons.com/
+    github: https://github.com/tomrodinger/servomotor/tree/main/PCB/Servomotor3/1.5
+    firmwares:
+    - version: 0.15.0.0
+      compatibility: 3
+      date: May 28, 2026
+      description: Firmware for the servomotor model M17
+      url: https://cdn.jsdelivr.net/gh/tomrodinger/servomotor@main/firmware/firmware_releases/servomotor_M17_fw0.15.0.0_scc3_hw1.5.firmware
+      sha256: 41bbb3b45794b14134808e21fe350d5cb500c8d5bde6c1458a88516a81019326
