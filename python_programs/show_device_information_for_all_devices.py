@@ -66,9 +66,6 @@ def main() -> int:
         # Now, lets run the Get Product Info command for all the detected devices one by one
         # Skip any where the alias is in the duplicate_alias_list, as communication withe such devices is not possible until the alias is reassigned so there is no conflict
         for device in devices:
-            if device.alias in duplicate_alias_list:
-                print(f"Skipping device with alias {device.alias} as it is in the duplicate alias list")
-                continue
             if device.alias == 255:
                 print(f"Skipping device with alias {device.alias} as it wont respond to this multicast alias")
                 continue
@@ -102,21 +99,20 @@ def main() -> int:
         # Let's print a report showing all the devices and their aliases and any potential reassignments. Let's print in table format where columns are separated by | characters
         # Include a header and make sure to print such that all the columns are aligned
         print("\nDevice report:")
-        print("Unique ID        |         Alias  | Product Code   | Firmware Compatibility Code | Hardware Version   | Serial Number | Firmware Version")
-        print("----------------------------------------------------------------------------------------------------------------------------------------")
+        print("Unique ID        |         Alias  | Product Code   | Firmware Compatibility Code | Hardware Version   | Serial Number | Firmware Version | Notes")
+        print("----------------------------------------------------------------------------------------------------------------------------------------------------------")
         for device in devices:
             alias_str = servomotor.get_human_readable_alias_or_unique_id(device.alias)
             if device.alias == 255:
                 print(f"{device.unique_id:016X} | {alias_str:14s} | *** Warning: No alias assigned: Cannot communicate until an alias is set ***")
-            elif device.alias in duplicate_alias_list:
-                print(f"{device.unique_id:016X} | {alias_str:14s} | *** Warning: Conflicting alias: Cannot communicate until a unique alias is set ***")
             else:
                 hardware_version_str = f"{device.hardware_version[2]}.{device.hardware_version[1]}.{device.hardware_version[0]}"
                 firmware_version_str = f"{device.firmware_version[3]}.{device.firmware_version[2]}.{device.firmware_version[1]}.{device.firmware_version[0]}"
-                print(f"{device.unique_id:016X} | {alias_str:14s} | {device.product_code:14s} | {device.firmware_compatibility_code:27d} | {hardware_version_str:18s} | {device.serial_number:13d} | {firmware_version_str:16s}")
-        print("----------------------------------------------------------------------------------------------------------------------------------------")
+                duplicate_note = " [duplicate alias]" if device.alias in duplicate_alias_list else ""
+                print(f"{device.unique_id:016X} | {alias_str:14s} | {device.product_code:14s} | {device.firmware_compatibility_code:27d} | {hardware_version_str:18s} | {device.serial_number:13d} | {firmware_version_str:16s}{duplicate_note}")
+        print("----------------------------------------------------------------------------------------------------------------------------------------------------------")
         print(f"A total of {len(devices)} devices were detected")
-        print("----------------------------------------------------------------------------------------------------------------------------------------\n")
+        print("----------------------------------------------------------------------------------------------------------------------------------------------------------\n")
         return 0
     finally:
         servomotor.close_serial_port()
