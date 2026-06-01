@@ -76,6 +76,10 @@ class ClosedLoopBurnInPhase(Phase):
                 except FatalError as exc:
                     fatal[uid] = int(exc.args[0]) if exc.args else 1
                     active.discard(uid)
+                except (RS485Timeout, Exception):
+                    # A single motor's comms hiccup must not abort the whole
+                    # phase; skip this move and retry it next round.
+                    next_due[uid] = now + quiet
             ctx.sleep(0.05)
 
         for uid in motors:
