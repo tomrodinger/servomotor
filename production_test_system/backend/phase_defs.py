@@ -379,7 +379,9 @@ PHASES: List[PhaseDef] = [
                   "float", 100000.0, help="Overall max PID error must stay below."),
         ],
         measured=[
-            MeasuredItem("max_pid_deviation", "Max PID deviation (per move)",
+            # Histogram the full per-move PID-deviation distribution (the
+            # evaluator also checks the overall max against the threshold).
+            MeasuredItem("pid_series", "PID deviation (per move)",
                          threshold_keys=["max_pid_deviation_threshold"]),
             MeasuredItem("no_fatal_error", "No fatal error", kind="categorical"),
         ],
