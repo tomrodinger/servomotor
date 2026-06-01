@@ -16,20 +16,45 @@ from typing import Any, Dict, List, Tuple
 from . import config
 from .database import Database
 from .state import BusState, COLOR_GREEN, COLOR_ORANGE
-from .transport import Transport
+from .transport import Transport, CommunicationError
 
 # Detection responses arrive after a random 0-1 s delay, so give the read a
 # generous window to collect them all.
 DETECT_TIMEOUT = 1.5
+# Detection is probabilistic: a single read may miss devices (random response
+# delays) or collide (CRC/framing error on the half-duplex bus).  So one
+# operator "pass" unions several collision-free reads (mirroring the library's
+# detect_devices_iteratively(n_detections=3)); collided reads are retried and
+# don't count toward the target.
+DETECT_CLEAN_READS = 3
+DETECT_MAX_ATTEMPTS = 10
 
 
 def run_detect_pass(transport: Transport, reset_before: bool = True) -> List[List[Any]]:
-    """Run one detection pass, returning a list of ``[unique_id, alias]``."""
-    if reset_before:
-        transport.transact(255, "System reset")
-        time.sleep(config.BOOTLOADER_EXIT_DELAY_S)
-        transport.flush_input()
-    return transport.transact(255, "Detect devices", timeout=DETECT_TIMEOUT)
+    """Run one detection pass, returning a list of ``[unique_id, alias]``.
+
+    Unions ``DETECT_CLEAN_READS`` collision-free reads (retrying collisions up
+    to ``DETECT_MAX_ATTEMPTS``).  The operator can queue more passes for very
+    crowded buses via the per-bus pending counter.
+    """
+    union = {}
+    clean = 0
+    for _ in range(DETECT_MAX_ATTEMPTS):
+        if clean >= DETECT_CLEAN_READS:
+            break
+        if reset_before:
+            transport.transact(255, "System reset")
+            time.sleep(config.BOOTLOADER_EXIT_DELAY_S)
+            transport.flush_input()
+        try:
+            results = transport.transact(255, "Detect devices", timeout=DETECT_TIMEOUT)
+        except CommunicationError:
+            transport.flush_input()
+            continue                       # collision: retry, doesn't count
+        clean += 1
+        for entry in results:
+            union[int(entry[0])] = int(entry[1]) if len(entry) > 1 else 255
+    return [[u, a] for u, a in union.items()]
 
 
 def classify_and_add(db: Database, bus: BusState,

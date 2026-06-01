@@ -198,6 +198,9 @@ class SerialTransport(Transport):
                     if address == ALL_ALIAS or multiple:
                         break
                     raise
+                # A CommunicationError (CRC/framing) propagates: on a detect it
+                # means responses collided on the half-duplex bus, and the caller
+                # retries the whole pass (see detection.run_detect_pass).
                 parsed_list.append(_c.interpret_single_response(command_id, raw, verbose=0))
                 if not multiple:
                     break
