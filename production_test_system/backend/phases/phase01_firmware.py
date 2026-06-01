@@ -21,9 +21,10 @@ class FirmwarePhase(Phase):
 
     def collect(self, ctx: CollectionContext) -> None:
         target = ctx.params.get("target_firmware_version", "0.15.0.0")
-        if ctx.transport.is_simulated:
-            ctx.log("Phase 1: simulated bus — skipping broadcast flash, "
-                    "reading versions only.")
+        flash_enabled = ctx.params.get("flash_enabled", True)
+        if ctx.transport.is_simulated or not flash_enabled:
+            ctx.log("Phase 1: %s — reading versions only (no flash)." %
+                    ("simulated bus" if ctx.transport.is_simulated else "flash disabled"))
         else:
             ctx.log("Phase 1: broadcast-flashing firmware %s to all motors." % target)
             try:

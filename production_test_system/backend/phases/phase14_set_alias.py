@@ -12,7 +12,7 @@ for the read-back.)
 from __future__ import annotations
 
 from .base import Phase, CollectionContext
-from ..detection import DETECT_TIMEOUT
+from .. import detection
 
 
 class SetAliasPhase(Phase):
@@ -35,9 +35,13 @@ class SetAliasPhase(Phase):
         ctx.sleep(reboot_delay)
         ctx.transport.flush_input()
 
+        # Read the alias back per unique ID via a robust (collision-tolerant)
+        # detection pass — once every device is 'X' the alias is no longer a
+        # unique address, so detection (which reports unique ID + alias) is the
+        # reliable way to verify it.
         alias_by_uid = {}
         try:
-            for entry in ctx.transport.transact(255, "Detect devices", timeout=DETECT_TIMEOUT):
+            for entry in detection.run_detect_pass(ctx.transport, reset_before=True):
                 alias_by_uid[int(entry[0])] = int(entry[1])
         except Exception as exc:
             ctx.log("Phase 14: alias read-back error: %s" % exc)

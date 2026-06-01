@@ -87,6 +87,9 @@ PHASES: List[PhaseDef] = [
         params=[
             Param("target_firmware_version", "Target firmware version", "str",
                   "0.15.0.0", help="Latest release; flashed to every motor."),
+            Param("flash_enabled", "Broadcast-flash before verifying", "bool", True,
+                  help="If off, the version is only read back and verified "
+                       "(no flashing). The broadcast-flash path is bench-pending."),
         ],
         criteria=[],   # pass = version equals target AND device responded
         measured=[
