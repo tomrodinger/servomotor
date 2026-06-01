@@ -1,0 +1,11 @@
+# Virtualenv (recreate with: python3 -m venv .venv)
+.venv/
+
+# Runtime data: SQLite DB, plots, settings — all live under data/.
+# The DB is the authoritative record; plots are regenerable; settings persist
+# locally per host. None of it belongs in git.
+data/
+
+# Python bytecode
+__pycache__/
+*.pyc

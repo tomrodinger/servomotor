@@ -1,0 +1,8 @@
+# Production test system backend dependencies.
+# Install into a venv:  python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+# (Versions below are what was validated on macOS / Python 3.8.)
+fastapi
+uvicorn[standard]
+pyserial
+matplotlib
+numpy
