@@ -13,7 +13,10 @@ from .base import Phase, CollectionContext
 from ..state import GRID_ORANGE
 from ..transport import TimeoutError as RS485Timeout, FatalError
 
-LED_ON_TEST_MODE = 10   # cmd 36 modes 10-13 drive the LEDs solid on
+# cmd 36 test modes 10..13 map to LED bitmasks 0..3 (green=bit0, red=bit1) in
+# the firmware (main.c set_led_test_mode).  Mode 13 = bitmask 3 = BOTH LEDs on
+# (mode 10 = bitmask 0 locks the motor with no LEDs lit).
+LED_ON_TEST_MODE = 13
 
 
 class LedTestPhase(Phase):
