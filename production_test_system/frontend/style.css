@@ -80,8 +80,8 @@ th { color: #51607d; font-weight: 600; }
 
 .png-group h4 { margin: 12px 0 6px; }
 .png-imgs { display: flex; flex-wrap: wrap; gap: 10px; }
-.png-imgs figure { margin: 0; width: 280px; }
-.png-imgs img { width: 280px; border: 1px solid #dde3ee; border-radius: 6px; }
+.png-imgs figure { margin: 0; width: 560px; }
+.png-imgs img { width: 560px; border: 1px solid #dde3ee; border-radius: 6px; }
 .png-imgs figcaption { font-family: ui-monospace, monospace; font-size: 11px; }
 
 .measured { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: center;

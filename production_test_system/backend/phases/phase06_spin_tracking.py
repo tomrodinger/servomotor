@@ -26,7 +26,7 @@ class SpinTrackingPhase(Phase):
         velocity = float(ctx.params.get("spin_velocity", 0.5))
         max_current = int(ctx.params.get("max_current", 200))
         move_time_s = rotations / velocity if velocity else 1.0
-        vel_internal = units.rot_per_s_to_internal(velocity)
+        move_steps = units.seconds_to_timesteps(move_time_s)
         poll_interval = max(0.0005, move_time_s / TARGET_SAMPLES_PER_DIR)
 
         for uid in ctx.calibrated_motors():
@@ -40,9 +40,16 @@ class SpinTrackingPhase(Phase):
                 client.enable_mosfets()
                 ctx.sleep(0.05)
                 client.zero_position()
+                # Use trapezoid (point-to-point) moves rather than
+                # move_with_velocity: a constant-velocity move faults with
+                # ERROR_RUN_OUT_OF_QUEUE_ITEMS the instant it ends (the motor is
+                # still moving when the queue empties), which killed the reverse
+                # leg.  A trapezoid move decelerates to a clean stop, so the
+                # queue empties with the shaft at rest.  Forward +rotations, then
+                # back -rotations to the start; both legs are sampled densely.
                 for direction, sign in ((0, 1), (1, -1)):
-                    client.move_with_velocity(sign * vel_internal,
-                                               units.seconds_to_timesteps(move_time_s))
+                    client.trapezoid_move(
+                        units.rotations_to_counts(sign * rotations), move_steps)
                     start = time.monotonic()
                     while time.monotonic() - start < move_time_s:
                         ctx.check_cancel()

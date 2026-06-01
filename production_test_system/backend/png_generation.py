@@ -57,7 +57,7 @@ def _position_plot(db: Database, uid: int, phase: int, plot_type: str,
     ax.legend()
     ax.grid(True, alpha=0.3)
     path = _path(plot_type, uid)
-    fig.tight_layout(); fig.savefig(path, dpi=90); plt.close(fig)
+    fig.tight_layout(); fig.savefig(path, dpi=180); plt.close(fig)
     return path
 
 
@@ -98,7 +98,7 @@ def plot_hall_waveform(db, settings, uid) -> Optional[str]:
     axes[0].set_title("Phase 8 hall waveform — %s (x = detected peaks/valleys)"
                       % uid_hex(uid))
     path = _path("hall_waveform", uid)
-    fig.tight_layout(); fig.savefig(path, dpi=90); plt.close(fig)
+    fig.tight_layout(); fig.savefig(path, dpi=180); plt.close(fig)
     return path
 
 
@@ -128,7 +128,7 @@ def plot_temperature(db, settings, uid) -> Optional[str]:
     ax.set_title("Phase 11 thermal — %s" % uid_hex(uid))
     ax.legend(); ax.grid(True, alpha=0.3)
     path = _path("temperature", uid)
-    fig.tight_layout(); fig.savefig(path, dpi=90); plt.close(fig)
+    fig.tight_layout(); fig.savefig(path, dpi=180); plt.close(fig)
     return path
 
 
@@ -147,7 +147,7 @@ def plot_pid_deviation(db, settings, uid) -> Optional[str]:
     ax.set_title("Phase 13 closed-loop PID deviation — %s" % uid_hex(uid))
     ax.grid(True, alpha=0.3)
     path = _path("pid_deviation", uid)
-    fig.tight_layout(); fig.savefig(path, dpi=90); plt.close(fig)
+    fig.tight_layout(); fig.savefig(path, dpi=180); plt.close(fig)
     return path
 
 
