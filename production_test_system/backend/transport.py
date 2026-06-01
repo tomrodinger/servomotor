@@ -194,14 +194,22 @@ class SerialTransport(Transport):
             while True:
                 try:
                     raw = self._read_one_response(crc32_enabled)
+                    parsed = _c.interpret_single_response(command_id, raw, verbose=0)
                 except TimeoutError:
                     if address == ALL_ALIAS or multiple:
                         break
                     raise
-                # A CommunicationError (CRC/framing) propagates: on a detect it
-                # means responses collided on the half-duplex bus, and the caller
-                # retries the whole pass (see detection.run_detect_pass).
-                parsed_list.append(_c.interpret_single_response(command_id, raw, verbose=0))
+                except CommunicationError:
+                    # Many devices answer a broadcast detect at once on the
+                    # half-duplex bus, so a CRC/framing collision is expected.
+                    # For a multi-response read, keep whatever decoded cleanly
+                    # before the collision (the caller unions across attempts);
+                    # for a single addressed command it is a real error.
+                    if multiple:
+                        self.flush_input()
+                        break
+                    raise
+                parsed_list.append(parsed)
                 if not multiple:
                     break
             return parsed_list

@@ -181,6 +181,7 @@ class BusWorker:
                 try:
                     transport.transact(255, "System reset")
                     ctx.sleep(config.BOOTLOADER_EXIT_DELAY_S)
+                    transport.flush_input()   # drain any late stragglers before reads
                 except CancelledError:
                     break
                 except Exception:

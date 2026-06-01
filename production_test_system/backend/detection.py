@@ -21,39 +21,41 @@ from .transport import Transport, CommunicationError
 # Detection responses arrive after a random 0-1 s delay, so give the read a
 # generous window to collect them all.
 DETECT_TIMEOUT = 1.5
-# Detection is probabilistic: a single read may miss devices (random response
-# delays) or collide (CRC/framing error on the half-duplex bus).  So one
-# operator "pass" unions several collision-free reads (mirroring the library's
-# detect_devices_iteratively(n_detections=3)); collided reads are retried and
-# don't count toward the target.
-DETECT_CLEAN_READS = 3
-DETECT_MAX_ATTEMPTS = 10
+# Detection is probabilistic: with ~48 devices answering at once a single read
+# usually collides (so it returns only a partial subset) and rarely captures
+# everyone.  So a pass keeps reading and unioning partial results until the set
+# stops growing for several reads in a row (converged), bounded by a max — this
+# mirrors the library's detect_devices_iteratively.  The operator can still
+# queue more passes for stubborn buses via the per-bus pending counter.
+DETECT_STABLE_READS = 3
+DETECT_MAX_ATTEMPTS = 15
 
 
 def run_detect_pass(transport: Transport, reset_before: bool = True) -> List[List[Any]]:
     """Run one detection pass, returning a list of ``[unique_id, alias]``.
 
-    Unions ``DETECT_CLEAN_READS`` collision-free reads (retrying collisions up
-    to ``DETECT_MAX_ATTEMPTS``).  The operator can queue more passes for very
-    crowded buses via the per-bus pending counter.
+    Unions partial reads across attempts until the discovered set stops growing
+    for ``DETECT_STABLE_READS`` consecutive reads (or ``DETECT_MAX_ATTEMPTS`` is
+    reached).
     """
     union = {}
-    clean = 0
+    stable = 0
     for _ in range(DETECT_MAX_ATTEMPTS):
-        if clean >= DETECT_CLEAN_READS:
-            break
         if reset_before:
             transport.transact(255, "System reset")
             time.sleep(config.BOOTLOADER_EXIT_DELAY_S)
-            transport.flush_input()
+        transport.flush_input()
+        before = len(union)
         try:
             results = transport.transact(255, "Detect devices", timeout=DETECT_TIMEOUT)
         except CommunicationError:
-            transport.flush_input()
-            continue                       # collision: retry, doesn't count
-        clean += 1
+            results = []
+        transport.flush_input()           # drain any late/colliding responses
         for entry in results:
             union[int(entry[0])] = int(entry[1]) if len(entry) > 1 else 255
+        stable = stable + 1 if len(union) == before else 0
+        if union and stable >= DETECT_STABLE_READS:
+            break
     return [[u, a] for u, a in union.items()]
 
 
