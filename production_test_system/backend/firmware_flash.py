@@ -7,23 +7,34 @@ bus are flashed in one shot.  The page encoding is the library's cmd 23
 ("Firmware upgrade", a ``firmware_page`` payload), so no encoding is duplicated.
 
 The constants and inter-page/post-reset delays below are copied verbatim from
-``upgrade_firmware.py`` (empirically determined there).  Because flashing is
-inherently hardware-timing-sensitive, **this path has not been validated on the
-bench from inside the test system** — verify it against a single unit during
-hardware bring-up before relying on it for a full rack.  Until then, the proven
-standalone ``upgrade_firmware.py`` remains the fallback.
+``upgrade_firmware.py`` (empirically determined there).
+
+Bench-validated on the rack: two buses flashed cleanly to 0.15.0.0 (48/48
+each).  A third bus was corrupted when all three flashed *concurrently* (some
+motors stuck in the bootloader) and fully recovered when re-flashed alone —
+hence the process-wide ``_FLASH_LOCK`` below that serializes flashing across
+buses.  The standalone ``upgrade_firmware.py`` remains a fallback for single
+units.
 """
 
 from __future__ import annotations
 
 import glob
 import os
+import threading
 import time
 import zlib
 from typing import Callable, Optional
 
 from . import config
 from .transport import Transport
+
+# Flashing is paced by fixed inter-page sleeps; running it on all three buses at
+# once jitters those sleeps (GIL + scheduler) enough to corrupt pages on a
+# slower adapter (observed on the bench: a concurrent flash bricked one bus into
+# the bootloader; flashing that bus alone recovered it).  So the broadcast flash
+# is serialized process-wide — only one bus flashes at a time.
+_FLASH_LOCK = threading.Lock()
 
 # --- constants copied from upgrade_firmware.py (do not change without re-deriving) ---
 FLASH_PAGE_SIZE = 2048
@@ -93,28 +104,32 @@ def flash_all_broadcast(transport: Transport, version: str,
             "no firmware image for version %s in %s" % (version, config.FIRMWARE_RELEASES_DIR))
     model_code, compat, firmware = _read_binary(path)
     image = _prepare_image(firmware)
-    _log("Flashing %s (%d bytes) to all motors on the bus." % (os.path.basename(path), len(image)))
 
-    transport.transact(255, "System reset")
-    time.sleep(WAIT_FOR_RESET_TIME)
+    # Serialize across buses: concurrent flashing jitters the page pacing and
+    # can corrupt a slower bus (see _FLASH_LOCK note).  Each bus still flashes
+    # all its motors at once via broadcast; only the buses are serialized.
+    with _FLASH_LOCK:
+        _log("Flashing %s (%d bytes) to all motors on the bus." % (os.path.basename(path), len(image)))
+        transport.transact(255, "System reset")
+        time.sleep(WAIT_FOR_RESET_TIME)
 
-    page_number = FIRST_FIRMWARE_PAGE_NUMBER
-    offset = 0
-    while offset < len(image):
-        if page_number > LAST_FIRMWARE_PAGE_NUMBER:
-            raise ValueError("firmware too big to fit in flash")
-        chunk = image[offset:offset + FLASH_PAGE_SIZE]
-        if len(chunk) < FLASH_PAGE_SIZE:
-            chunk = chunk + bytes(FLASH_PAGE_SIZE - len(chunk))
-        payload = (model_code
-                   + int(compat).to_bytes(FIRMWARE_COMPATIBILITY_CODE_LENGTH, "little")
-                   + int(page_number).to_bytes(FIRMWARE_PAGE_NUMBER_LENGTH, "little")
-                   + chunk)
-        transport.transact(255, "Firmware upgrade", [payload])
-        time.sleep(DELAY_AFTER_EACH_PAGE)   # broadcast: no ack, so pace the writes
-        offset += FLASH_PAGE_SIZE
-        page_number += 1
+        page_number = FIRST_FIRMWARE_PAGE_NUMBER
+        offset = 0
+        while offset < len(image):
+            if page_number > LAST_FIRMWARE_PAGE_NUMBER:
+                raise ValueError("firmware too big to fit in flash")
+            chunk = image[offset:offset + FLASH_PAGE_SIZE]
+            if len(chunk) < FLASH_PAGE_SIZE:
+                chunk = chunk + bytes(FLASH_PAGE_SIZE - len(chunk))
+            payload = (model_code
+                       + int(compat).to_bytes(FIRMWARE_COMPATIBILITY_CODE_LENGTH, "little")
+                       + int(page_number).to_bytes(FIRMWARE_PAGE_NUMBER_LENGTH, "little")
+                       + chunk)
+            transport.transact(255, "Firmware upgrade", [payload])
+            time.sleep(DELAY_AFTER_EACH_PAGE)   # broadcast: no ack, so pace the writes
+            offset += FLASH_PAGE_SIZE
+            page_number += 1
 
-    transport.transact(255, "System reset")
-    time.sleep(config.BOOTLOADER_EXIT_DELAY_S)
+        transport.transact(255, "System reset")
+        time.sleep(config.BOOTLOADER_EXIT_DELAY_S)
     _log("Firmware flash complete (%d pages)." % (page_number - FIRST_FIRMWARE_PAGE_NUMBER))
