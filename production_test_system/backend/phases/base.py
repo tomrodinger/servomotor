@@ -101,8 +101,22 @@ class CollectionContext:
         self._fw_versions[unique_id] = version
 
     def calibrated_motors(self) -> List[int]:
-        """Motors in this run that have calibration_done set (prerequisite)."""
-        return [uid for uid in self.motors if self.db.get_calibration_done(uid)]
+        """Motors in this run that have calibration_done set (prerequisite).
+
+        Logs/surfaces when motors are skipped for lacking calibration so the
+        operator isn't left wondering why a motion phase did nothing (it depends
+        on Phase 5 having run successfully).
+        """
+        ready = [uid for uid in self.motors if self.db.get_calibration_done(uid)]
+        skipped = len(self.motors) - len(ready)
+        if skipped:
+            msg = ("Phase %d: %d of %d motors are not calibrated and will be "
+                   "skipped — run Phase 5 (Calibration) first." %
+                   (self.phase_number, skipped, len(self.motors)))
+            self.log(msg)
+            self.state.update(
+                lambda _: setattr(self.state.bus(self.bus_id), "status_message", msg))
+        return ready
 
     def batched(self, motors: Optional[Iterable[int]] = None,
                 size: Optional[int] = None) -> Iterable[List[int]]:
