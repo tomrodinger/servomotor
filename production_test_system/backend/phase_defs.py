@@ -159,6 +159,10 @@ PHASES: List[PhaseDef] = [
                      "bus quiet for the hold time, then read status once. The "
                      "motor auto-reboots — never send system_reset here."),
         params=[
+            Param("start_stagger_s", "Delay between start-calibration sends",
+                  "float", 0.5, "s",
+                  "Pace the 8 start-calibration commands (one per this interval) "
+                  "to avoid command-buffer overflow during calibration."),
             Param("quiet_hold_s", "Bus-quiet hold time", "float", 30.0, "s",
                   "Bus stays completely silent during this window."),
         ],

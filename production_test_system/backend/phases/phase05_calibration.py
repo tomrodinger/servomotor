@@ -18,16 +18,21 @@ class CalibrationPhase(Phase):
 
     def collect(self, ctx: CollectionContext) -> None:
         hold = float(ctx.params.get("quiet_hold_s", 30.0))
+        stagger = float(ctx.params.get("start_stagger_s", 0.5))
         for batch in ctx.batched(ctx.motors, ctx.power_limit):
             ctx.check_cancel()
             ctx.wait_if_paused()
+            # Pace the start-calibration commands (one per `stagger` seconds) so
+            # the early motors are not hit by command traffic while they have
+            # already begun calibrating (avoids ERROR_COMMAND_OVERFLOW).
             for uid in batch:
                 ctx.mark_collecting(uid)
                 try:
                     ctx.client(uid).start_calibration()
                 except (RS485Timeout, FatalError, Exception):
                     pass
-            # Bus stays completely quiet for the hold (no polling at all).
+                ctx.sleep(stagger)
+            # Then keep the bus completely quiet for the hold (no polling).
             ctx.sleep(hold)
             for uid in batch:
                 flags, fatal = (None, None)

@@ -199,12 +199,13 @@ class SerialTransport(Transport):
                     if address == ALL_ALIAS or multiple:
                         break
                     raise
-                except CommunicationError:
+                except (CommunicationError, FatalError):
                     # Many devices answer a broadcast detect at once on the
-                    # half-duplex bus, so a CRC/framing collision is expected.
-                    # For a multi-response read, keep whatever decoded cleanly
-                    # before the collision (the caller unions across attempts);
-                    # for a single addressed command it is a real error.
+                    # half-duplex bus, so a CRC/framing collision is expected --
+                    # and collision garbage can even parse as a fatal-error
+                    # frame.  For a multi-response read, keep whatever decoded
+                    # cleanly before it (the caller unions across attempts); for
+                    # a single addressed command a FatalError is real, so re-raise.
                     if multiple:
                         self.flush_input()
                         break
