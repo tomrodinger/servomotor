@@ -190,17 +190,22 @@ The phases below are the **single source of truth** — each is self-contained: 
 
 #### Phase 9 — Current control
 - **Verifies**: current-control path (AT5833 / cmd 28) via closed-loop tracking error. **Power**: low. **Parallelism**: broadcast — all motors at once. **Prerequisite**: `calibration_done` set (closed loop needs calibration).
-- **Why this method**: an earlier version commanded a low current and checked the motor did *not* rotate. That failed in practice — even at very low (or zero) current the motor can still complete a slow one-rotation move — so it could not pass good units. Instead, this phase demands a move that is **deliberately too fast for a low current to achieve** and measures how far the closed-loop servo falls behind.
+- **Why this method**: an earlier version commanded a low current and checked the motor did *not* rotate. That failed in practice — even at very low (or zero) current the motor can still complete a slow move — so it could not pass good units. Instead, this phase demands a move with **high enough acceleration that a low current cannot deliver the torque to track it**, and measures how far the closed-loop servo falls behind. **Key insight (measured on the bench): the current limit constrains *acceleration/torque*, not steady speed** — at a moderate ~2 rot/s the motor reaches full speed at current 20 just as at 200, so the move time must be short enough to demand high acceleration (≈0.25 s here) for the current limit to show. Too short (≈0.1 s) hits the motor's back-EMF speed ceiling at *any* current and stops discriminating.
+- **Current units**: the current here is in the motor's **internal/arbitrary units (range ~0–390)**, exactly as sent on the wire by cmd 28 — *not* amps or milliamps. (The default library command tools send raw internal units too.)
 - Because the current is low, this is low-power and the commands are **broadcast to the whole bus at once**:
-  1. Broadcast **set maximum motor current** (cmd 28) to a low value (default **10**, in the motor's current units), **enable**, **go to closed loop** (cmd 17), and **zero**.
+  1. Broadcast **set maximum motor current** (cmd 28) to a low value (default **20** internal units), **enable**, **go to closed loop** (cmd 17), and **zero**.
   2. **Read the max PID error once per motor (cmd 39) to clear it** — cmd 39 is read-and-reset, so this first read discards any residual error from the setup.
-  3. Broadcast a **fast trapezoid move** (cmd 2) of **1.8 rotations in 0.5 s** (configurable). At the low current the motor cannot keep up, so the move actually takes much longer than 0.5 s.
+  3. Broadcast a **fast trapezoid move** (cmd 2) of **1.8 rotations in 0.25 s** (configurable). The low current cannot supply the torque to accelerate that hard, so the closed-loop position error grows large during the move.
   4. **Wait ~5 s** (configurable) for the (much slower than commanded) move to finish.
   5. **Read the max PID error again per motor** — this second read is the value of interest: the largest closed-loop position deviation accumulated during the move.
+  6. **Read `get_comprehensive_position` (cmd 37) per motor** and check the motor actually **reached the final commanded position**: |commanded − hall| must be **less than a tolerance (default 0.1 rotations)**. At the chosen current the servo *lags* during the fast move (large transient PID error, step 5) yet, given the full wait, still *arrives* at the target. A motor too weak to move at all (or that stalls) never reaches the target and fails this check — this guards against setting a current so low that the motor only buzzes without turning (≈10 on the bench stalls; ≈20 reaches).
 - The between-phase `system_reset` restores the normal current limit before later phases.
-- **Collected (Stage A)**: the max PID deviation (cmd 39 min/max) read after the move.
-- **Pass/fail (Stage B)**: the max PID deviation must fall **within a band** — **greater than a minimum AND less than a maximum**. Too small means the motor kept up despite the low current, i.e. the current limit is not actually limiting (current-control path fault); too large flags a different problem. (On the bench the deviation clustered tightly around **~5.9e6** at current 10 — defaults are placeholders to be tuned from the Phase 9 histogram.)
-- **Configurable parameters**: low current (default 10); move distance (default 1.8 rot) and commanded move time (default 0.5 s); wait time (default 5 s); min and max PID-deviation thresholds (the pass band).
+- **Collected (Stage A)**: the max PID deviation (cmd 39 min/max) read after the move, and the final commanded vs hall position (cmd 37).
+- **Pass/fail (Stage B)** — both must hold:
+  - the max PID deviation falls **within a band** (greater than a minimum AND less than a maximum). Too small means the motor kept up despite the low current, i.e. the current limit is not actually limiting (current-control path fault); too large flags a different problem.
+  - the final position error (|commanded − hall|) is **below the tolerance** — the motor reached the target.
+  (On the bench at current 20 / 0.25 s: good motors clustered ~8.3e4–3.1e6 max PID deviation, vs ~9e3 at full current — a clean ~13–35× separation; defaults band ~[4e4, 5e6], tunable from the Phase 9 histograms.)
+- **Configurable parameters**: low current (default 20, internal units); move distance (default 1.8 rot) and commanded move time (default 0.25 s); wait time (default 5 s); min and max PID-deviation thresholds (the pass band); final-position tolerance (default 0.1 rot).
 
 #### Phase 10 — Overvoltage protection
 - **Verifies**: overvoltage comparator + threshold PWM. **Power**: none (no motion). **Parallelism**: yes — 8 at once.

@@ -69,14 +69,21 @@ class CurrentControlPhase(Phase):
         broadcast("Trapezoid move", [move_counts, move_steps])
         ctx.sleep(wait_s)
 
-        # 5. Read the max PID deviation accumulated during the move.
+        # 5-6. Read the max PID deviation accumulated during the move, and the
+        # final commanded vs hall position (must have reached the target).
         for uid in motors:
             try:
-                mn, mx = ctx.client(uid).get_max_pid_error()
+                client = ctx.client(uid)
+                mn, mx = client.get_max_pid_error()
                 dev = max(abs(int(mn)), abs(int(mx)))
+                commanded, hall, _ = client.get_comprehensive_position()
+                pos_err = abs(units.counts_to_rotations(commanded - hall))
                 ctx.store(uid, scalar=float(dev),
                           observation={"max_pid_deviation": dev,
-                                       "min_pid": int(mn), "max_pid": int(mx)})
+                                       "min_pid": int(mn), "max_pid": int(mx),
+                                       "commanded_rot": units.counts_to_rotations(commanded),
+                                       "hall_rot": units.counts_to_rotations(hall),
+                                       "position_error": pos_err})
             except (RS485Timeout, FatalError, Exception):
                 ctx.store(uid, observation={"missing": True})
 

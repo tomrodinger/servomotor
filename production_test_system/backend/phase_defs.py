@@ -285,23 +285,33 @@ PHASES: List[PhaseDef] = [
                      "is not actually limiting; too large flags a different "
                      "fault."),
         params=[
-            Param("low_current", "Low motor current", "int", 10),
+            Param("low_current", "Low motor current (internal units, 0-390)", "int", 20,
+                  help="Raw internal current units (NOT amps/mA) — same value the "
+                       "firmware receives via cmd 28. Range 0-390."),
             Param("move_rotations", "Move distance", "float", 1.8, "rot"),
-            Param("move_time_s", "Commanded move time", "float", 0.5, "s",
-                  "Deliberately too fast for the low current to achieve."),
+            Param("move_time_s", "Commanded move time", "float", 0.25, "s",
+                  "Tuned so the low current limits the speed (PID error ~13x the "
+                  "high-current value) while the motor still reaches the target. "
+                  "Faster (e.g. 0.1 s) hits the motor's speed ceiling at any "
+                  "current and stops discriminating."),
             Param("wait_s", "Wait for the move", "float", 5.0, "s"),
         ],
         criteria=[
-            Param("pid_error_min", "Min max-PID deviation", "float", 2000000.0,
+            Param("pid_error_min", "Min max-PID deviation", "float", 40000.0,
                   help="Below this the motor kept up too well -> current limit "
-                       "not working. ~5.9e6 observed on the bench; tune from the "
-                       "histogram."),
-            Param("pid_error_max", "Max max-PID deviation", "float", 15000000.0,
+                       "not working (high current ~9e3 on the bench). Good motors "
+                       "ranged 8.3e4-3.1e6; tune from the histogram."),
+            Param("pid_error_max", "Max max-PID deviation", "float", 5000000.0,
                   help="Above this flags a different fault. Tune from the histogram."),
+            Param("position_tolerance_rot", "Final position tolerance", "float",
+                  0.1, "rot", "Max |commanded - hall| at the end; the motor must "
+                              "have reached the target."),
         ],
         measured=[
             MeasuredItem("max_pid_deviation", "Max PID deviation at low current",
                          threshold_keys=["pid_error_min", "pid_error_max"]),
+            MeasuredItem("position_error", "Final position error (commanded - hall)",
+                         unit="rot", threshold_keys=["position_tolerance_rot"]),
         ],
     ),
     PhaseDef(

@@ -28,8 +28,12 @@ from . import units
 from .transport import (Transport, FatalError, TimeoutError as RS485Timeout,
                         command_id_of, ALL_ALIAS)
 
-# Current below which a "good" motor is too weak to turn (Phase 9 relies on it).
-STALL_CURRENT = 50
+# Below this internal current the motor cannot overcome friction and won't move
+# at all (matches the bench: ~10 stalls, ~20 reaches the target).
+STALL_CURRENT = 12
+# At/above this current the servo tracks a fast move easily (small PID error);
+# below it the move is current-limited and the PID error is large.
+CURRENT_LIMIT_TRACK = 100
 
 
 @dataclass
@@ -256,20 +260,22 @@ class SimMotor:
         self._move_count += 1
         if self.profile.closedloop_fatal and self._move_count >= 3:
             self.fatal_error = 4
-        # PID-error model: with adequate current the servo keeps up (small
-        # error); underpowered (low max current) it lags and the error grows
-        # with the demanded speed.  A motor whose current limit is broken keeps
-        # up even at a low setting (small error) -> Phase 9 catches it.
+        # PID-error model: with adequate current the servo tracks the move
+        # (small error); below CURRENT_LIMIT_TRACK the fast move is current-
+        # limited and the PID error grows with the demanded speed.  A motor
+        # whose current limit is broken behaves like full current (small error)
+        # -> Phase 9 catches it.
         demanded_rps = abs(disp) / units.COUNTS_PER_ROTATION / max(dur_s, 0.05)
         eff_current = 200 if self.profile.current_limit_broken else self.max_current
-        noise = abs(self._rng.gauss(0, self.profile.pid_error_scale))
-        if eff_current >= STALL_CURRENT:
-            self._pid_max = int(noise)
+        small = abs(self._rng.gauss(0, 4000))   # well-tracked move
+        if eff_current >= CURRENT_LIMIT_TRACK:
+            self._pid_max = int(small)
         else:
-            # ~1.64e6 per rot/s reproduces the ~5.9e6 deviation observed on the
-            # bench for the Phase 9 move (1.8 rot in 0.5 s = 3.6 rot/s).
-            self._pid_max = int(demanded_rps * 1_640_000 + noise)
-        self._pid_min = -int(abs(self._rng.gauss(0, self.profile.pid_error_scale)))
+            # ~46k per rot/s reproduces the ~3.3e5 deviation observed on the
+            # bench for the Phase 9 move (1.8 rot in 0.25 s = 7.2 rot/s) at
+            # current 20.
+            self._pid_max = int(demanded_rps * 46000 + small)
+        self._pid_min = -int(abs(self._rng.gauss(0, 4000)))
         return []
 
     def _cmd_go_to_position(self, inputs):

@@ -166,16 +166,21 @@ def _eval_hall_waveform(row, params, crit) -> EvalResult:
 def _eval_current_control(row, params, crit) -> EvalResult:
     obs = _obs(row)
     dev = obs.get("max_pid_deviation")
+    pos_err = obs.get("position_error")
     metrics = {"max_pid_deviation": dev, "min_pid": obs.get("min_pid"),
-               "max_pid": obs.get("max_pid")}
+               "max_pid": obs.get("max_pid"), "position_error": pos_err}
     if dev is None:
         return metrics, MISSING, "max_pid_deviation"
     lo = float(crit["pid_error_min"])
     hi = float(crit["pid_error_max"])
-    # Pass only inside the band: too small => current limit not limiting; too
-    # large => a different fault.
+    # Band: too small => current limit not limiting; too large => other fault.
     if dev < lo or dev > hi:
         return metrics, FAIL, "max_pid_deviation"
+    # And the motor must actually have reached the final commanded position.
+    if pos_err is None:
+        return metrics, FAIL, "position_error"
+    if pos_err > float(crit["position_tolerance_rot"]):
+        return metrics, FAIL, "position_error"
     return metrics, PASS, None
 
 
