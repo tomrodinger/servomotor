@@ -99,13 +99,15 @@ def classify_and_add(db: Database, bus: BusState,
         alias = int(entry[1]) if len(entry) > 1 else 255
         in_set_before = unique_id in bus.test_set
         is_new = db.record_detection(unique_id)   # writes first_detected once
-        in_db_before = not is_new
         if in_set_before:
-            color = COLOR_GREEN
-        elif not in_db_before:
-            color = COLOR_GREEN
+            # Colour was decided when first added this session; preserve it so a
+            # second pass (run to catch motors missed to collisions) never flips
+            # an "already in DB" orange motor to green.
+            color = bus.test_set[unique_id]["color"]
+        elif is_new:
+            color = COLOR_GREEN     # brand-new motor (was not previously in DB)
         else:
-            color = COLOR_ORANGE
+            color = COLOR_ORANGE    # already in the DB before this session
         bus.add_to_set(unique_id, alias, color)
         decided.append((unique_id, color))
     return decided

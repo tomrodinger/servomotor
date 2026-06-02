@@ -48,9 +48,11 @@ class BusState:
 
     def add_to_set(self, unique_id: int, alias: int, color: str) -> None:
         if unique_id in self.test_set:
+            # The colour was decided when this motor was first added to the set
+            # this session and must NOT change on re-detection — re-detecting a
+            # motor across passes (needed to beat collisions) keeps its original
+            # colour (in particular an orange "already in DB" motor stays orange).
             self.test_set[unique_id]["alias"] = alias
-            # a motor already in the set stays green
-            self.test_set[unique_id]["color"] = COLOR_GREEN
         else:
             self.test_set[unique_id] = {
                 "alias": alias, "color": color, "order": self._next_order}
