@@ -19,7 +19,7 @@ nav button { border: 0; background: transparent; padding: 6px 11px; cursor: poin
 nav button.active { background: #f4f6fa; font-weight: 600; color: #1f2a44;
   box-shadow: 0 -2px 0 #3b6fd4 inset; }
 
-main { padding: 16px; max-width: 1200px; margin: 0 auto; }
+main { padding: 16px; max-width: 2400px; margin: 0 auto; }
 h2 { font-size: 19px; }
 .stage { font-size: 12px; font-weight: normal; color: #6b7689; margin-left: 8px; }
 .panel { background: #fff; border: 1px solid #dde3ee; border-radius: 8px;
@@ -79,10 +79,15 @@ th { color: #51607d; font-weight: 600; }
 .summary { margin-left: auto; font-size: 13px; }
 
 .png-group h4 { margin: 12px 0 6px; }
-.png-imgs { display: flex; flex-wrap: wrap; gap: 10px; }
-.png-imgs figure { margin: 0; width: 560px; }
-.png-imgs img { width: 560px; border: 1px solid #dde3ee; border-radius: 6px; }
-.png-imgs figcaption { font-family: ui-monospace, monospace; font-size: 11px; }
+/* One plot per row, spanning the full width of the panel/table. */
+.png-imgs { display: block; }
+.png-imgs figure { margin: 0 0 16px; width: 100%; }
+.png-imgs img { width: 100%; height: auto; border: 1px solid #dde3ee; border-radius: 6px; }
+.png-imgs figcaption { font-family: ui-monospace, monospace; font-size: 12px; }
+.progress-wrap { display: inline-flex; align-items: center; gap: 8px; }
+.progress-bar { width: 220px; height: 12px; background: #e0e6f0; border-radius: 6px;
+  overflow: hidden; }
+.progress-fill { height: 100%; background: #3b6fd4; width: 0%; transition: width .2s; }
 
 .measured { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: center;
   border-top: 1px solid #eef1f7; padding: 12px 0; }

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Set
 
@@ -269,10 +270,39 @@ def evaluate():
     return evaluation.evaluate_all(DB, SETTINGS)
 
 
+PNG_PROGRESS: Dict[str, Any] = {"running": False, "done": 0, "total": 0, "pngs": 0}
+_png_lock = threading.Lock()
+
+
 @app.post("/api/generate_pngs")
 def generate_pngs(body: Dict[str, Any] = Body(default={})):
+    """Start PNG generation in the background; poll /api/png_progress for status.
+    Returns immediately so the UI can show progress (the whole rack can take a
+    few minutes)."""
     scope = body.get("scope", "all")
-    return png_generation.generate_all(DB, SETTINGS, _scope_ids(scope))
+    with _png_lock:
+        if PNG_PROGRESS["running"]:
+            return {"started": False, **PNG_PROGRESS}
+        ids = _scope_ids(scope)
+        PNG_PROGRESS.update(running=True, done=0, total=len(ids), pngs=0)
+
+    def _work():
+        def prog(done, total):
+            PNG_PROGRESS["done"] = done
+            PNG_PROGRESS["total"] = total
+        try:
+            res = png_generation.generate_all(DB, SETTINGS, ids, progress=prog)
+            PNG_PROGRESS["pngs"] = res["pngs"]
+        finally:
+            PNG_PROGRESS["running"] = False
+
+    threading.Thread(target=_work, name="png-gen", daemon=True).start()
+    return {"started": True, "total": len(ids)}
+
+
+@app.get("/api/png_progress")
+def png_progress():
+    return dict(PNG_PROGRESS)
 
 
 # -- database / Tab 2 ---------------------------------------------------------

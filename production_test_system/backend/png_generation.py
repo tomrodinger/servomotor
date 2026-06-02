@@ -44,7 +44,7 @@ def _position_plot(db: Database, uid: int, phase: int, plot_type: str,
     for tag, commanded, hall_pos in samples:
         series.setdefault(tag, []).append(
             (units.counts_to_rotations(commanded), units.counts_to_rotations(hall_pos)))
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(11, 7))
     for tag, pts in series.items():
         if not pts:
             continue
@@ -78,7 +78,7 @@ def plot_hall_waveform(db, settings, uid) -> Optional[str]:
     threshold = int(settings.phase_criteria(8).get("peak_find_hysteresis", 8000))
     channels = hall.parse_capture(row["raw_blob"])
     extrema = {ch: hall.find_extrema(channels[ch], threshold) for ch in range(3)}
-    fig, axes = plt.subplots(4, 1, figsize=(9, 11), sharex=True)
+    fig, axes = plt.subplots(4, 1, figsize=(13, 15), sharex=True)
     colors = ["tab:blue", "tab:orange", "tab:green"]
     for ch in range(3):
         ax = axes[ch]
@@ -113,7 +113,7 @@ def plot_temperature(db, settings, uid) -> Optional[str]:
     times = [s[0] for s in series]
     temps = [s[1] for s in series]
     fit = thermal.linear_fit(times, temps)
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(11, 7))
     ax.plot(times, temps, ".", markersize=3, label="measured")
     if times:
         xs = [times[0], times[-1]]
@@ -140,7 +140,7 @@ def plot_pid_deviation(db, settings, uid) -> Optional[str]:
     if not series:
         return None
     per_move = [max(abs(mn), abs(mx)) for mn, mx in series]
-    fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(11, 7))
     ax.plot(per_move, ".", markersize=3)
     ax.set_xlabel("move number")
     ax.set_ylabel("max PID deviation")
@@ -169,13 +169,20 @@ def generate_for_motor(db: Database, settings: Settings, uid: int) -> List[str]:
 
 
 def generate_all(db: Database, settings: Settings,
-                 motor_ids: Optional[List[int]] = None) -> Dict[str, int]:
+                 motor_ids: Optional[List[int]] = None,
+                 progress=None) -> Dict[str, int]:
+    """Generate PNGs for every motor.  ``progress(done, total)`` is called after
+    each motor so callers can show a counter/progress bar (generation of the
+    whole rack can take a while)."""
     if motor_ids is None:
         motor_ids = db.all_motor_ids()
-    total = 0
-    for uid in motor_ids:
-        total += len(generate_for_motor(db, settings, uid))
-    return {"motors": len(motor_ids), "pngs": total}
+    total_motors = len(motor_ids)
+    pngs = 0
+    for i, uid in enumerate(motor_ids):
+        pngs += len(generate_for_motor(db, settings, uid))
+        if progress is not None:
+            progress(i + 1, total_motors)
+    return {"motors": total_motors, "pngs": pngs}
 
 
 def list_pngs_by_type(motor_ids: List[int]) -> Dict[str, List[Dict[str, str]]]:

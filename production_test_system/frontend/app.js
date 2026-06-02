@@ -29,6 +29,7 @@ const el = (tag, attrs = {}, ...kids) => {
   return e;
 };
 const $ = (id) => document.getElementById(id);
+const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleString() : "—";
 
 // ---- tabs -------------------------------------------------------------------
 function buildTabs() {
@@ -169,17 +170,24 @@ async function loadDevices() {
   const data = await api("GET", q);
   const table = $("device-table");
   table.querySelector("thead").innerHTML =
-    "<tr><th>Unique ID</th><th>Product</th><th>HW</th><th>Result</th><th>Failing phases</th><th></th></tr>";
+    "<tr><th>Unique ID</th><th>Bus</th><th>Product</th><th>HW</th><th>SCC</th>" +
+    "<th>Calib</th><th>Result</th><th>Failing phases</th><th>First seen</th>" +
+    "<th>Last seen</th><th></th></tr>";
   const tb = table.querySelector("tbody");
   tb.innerHTML = "";
   data.devices.forEach((d) => {
     const fails = d.failing.map((f) => `P${f.phase}${f.metric ? "·" + f.metric : ""}`).join(", ");
     const tr = el("tr", {},
       el("td", { html: `<code>${d.unique_id}</code>` }),
+      el("td", {}, d.bus || "—"),
       el("td", {}, d.product_type || "—"),
       el("td", {}, d.hw_version || "—"),
+      el("td", {}, d.scc != null ? String(d.scc) : "—"),
+      el("td", {}, d.calibration_done ? "✓" : "—"),
       el("td", { class: "result-" + d.result }, d.result),
       el("td", {}, fails || "—"),
+      el("td", {}, fmtDate(d.first_detected)),
+      el("td", {}, fmtDate(d.last_seen)),
       el("td", {}, el("button", { onclick: () => api("POST", "/api/db/identify/" + d.unique_id) }, "Identify")));
     tb.append(tr);
   });
@@ -187,10 +195,32 @@ async function loadDevices() {
     `total ${data.total} · pass ${data.pass} · fail ${data.fail} · yield ${data.yield.toFixed(1)}% · criteria v${data.criteria_version}`;
 }
 
-async function showPngs() {
+async function pollPngProgress() {
+  const elp = $("png-progress");
+  let p;
+  try { p = await api("GET", "/api/png_progress"); } catch (e) { return; }
+  if (p.running) {
+    const pct = p.total ? Math.round(100 * p.done / p.total) : 0;
+    elp.innerHTML =
+      `<span class="progress-wrap">generating ${p.done}/${p.total}` +
+      `<span class="progress-bar"><span class="progress-fill" style="width:${pct}%"></span></span></span>`;
+    setTimeout(pollPngProgress, 400);
+  } else {
+    elp.innerHTML = p.total
+      ? `<span class="note">generated ${p.pngs} PNG(s)</span>` : "";
+    if (p.total) loadPngs();   // auto-show the freshly generated plots
+  }
+}
+
+function togglePngs() {
   const panel = $("png-panel");
   if (!panel.hidden) { panel.hidden = true; return; }
   panel.hidden = false;
+  loadPngs();
+}
+
+async function loadPngs() {
+  $("png-panel").hidden = false;
   const scope = $("db-scope").value;
   const data = await api("GET", "/api/pngs?scope=" + scope);
   const host = $("png-groups");
@@ -399,10 +429,10 @@ function wireControls() {
     loadDevices();
   };
   $("gen-pngs").onclick = async () => {
-    const r = await api("POST", "/api/generate_pngs", { scope: $("db-scope").value });
-    alert(`Generated ${r.pngs} PNGs for ${r.motors} motors.`);
+    await api("POST", "/api/generate_pngs", { scope: $("db-scope").value });
+    pollPngProgress();
   };
-  $("show-pngs").onclick = showPngs;
+  $("show-pngs").onclick = togglePngs;
   $("db-scope").onchange = loadDevices;
   $("db-result").onchange = loadDevices;
   $("led-yes").onclick = async () => { await api("POST", "/api/led/confirm"); };
