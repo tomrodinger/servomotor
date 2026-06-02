@@ -165,13 +165,18 @@ def _eval_hall_waveform(row, params, crit) -> EvalResult:
 
 def _eval_current_control(row, params, crit) -> EvalResult:
     obs = _obs(row)
-    change = obs.get("hall_position_change")
-    metrics = {"hall_position_change": change}
-    if change is None:
-        return metrics, MISSING, "hall_position_change"
-    threshold = float(crit["no_rotation_threshold_rot"])
-    # inverted: pass if the motor did NOT rotate
-    return (metrics, PASS, None) if change < threshold else (metrics, FAIL, "hall_position_change")
+    dev = obs.get("max_pid_deviation")
+    metrics = {"max_pid_deviation": dev, "min_pid": obs.get("min_pid"),
+               "max_pid": obs.get("max_pid")}
+    if dev is None:
+        return metrics, MISSING, "max_pid_deviation"
+    lo = float(crit["pid_error_min"])
+    hi = float(crit["pid_error_max"])
+    # Pass only inside the band: too small => current limit not limiting; too
+    # large => a different fault.
+    if dev < lo or dev > hi:
+        return metrics, FAIL, "max_pid_deviation"
+    return metrics, PASS, None
 
 
 def _eval_overvoltage(row, params, crit) -> EvalResult:

@@ -276,20 +276,32 @@ PHASES: List[PhaseDef] = [
     PhaseDef(
         number=9, key="current_control", name="Current control",
         short="Current-control path (AT5833 / cmd 28)", power="low",
-        parallelism="8 at once", requires_calibration=True,
-        description=("Set a very low max current, command a one-rotation move, "
-                     "and confirm the motor is too weak to rotate (inverted "
-                     "pass/fail)."),
+        parallelism="broadcast, all at once", requires_calibration=True,
+        description=("Closed-loop, low current. Broadcast a low current limit, "
+                     "go to closed loop, then broadcast a fast move (1.8 rot in "
+                     "0.5 s) that the motor cannot keep up with at low current. "
+                     "After a 5 s wait, read the max PID deviation (cmd 39). It "
+                     "must fall within a band: too small means the current limit "
+                     "is not actually limiting; too large flags a different "
+                     "fault."),
         params=[
-            Param("low_current", "Low motor current", "int", 5),
+            Param("low_current", "Low motor current", "int", 10),
+            Param("move_rotations", "Move distance", "float", 1.8, "rot"),
+            Param("move_time_s", "Commanded move time", "float", 0.5, "s",
+                  "Deliberately too fast for the low current to achieve."),
+            Param("wait_s", "Wait for the move", "float", 5.0, "s"),
         ],
         criteria=[
-            Param("no_rotation_threshold_rot", "No-rotation threshold", "float",
-                  0.1, "rot", "Passes if the hall position moved LESS than this."),
+            Param("pid_error_min", "Min max-PID deviation", "float", 2000000.0,
+                  help="Below this the motor kept up too well -> current limit "
+                       "not working. ~5.9e6 observed on the bench; tune from the "
+                       "histogram."),
+            Param("pid_error_max", "Max max-PID deviation", "float", 15000000.0,
+                  help="Above this flags a different fault. Tune from the histogram."),
         ],
         measured=[
-            MeasuredItem("hall_position_change", "Hall position change", unit="rot",
-                         threshold_keys=["no_rotation_threshold_rot"]),
+            MeasuredItem("max_pid_deviation", "Max PID deviation at low current",
+                         threshold_keys=["pid_error_min", "pid_error_max"]),
         ],
     ),
     PhaseDef(

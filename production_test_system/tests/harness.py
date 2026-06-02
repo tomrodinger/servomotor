@@ -24,6 +24,7 @@ def fast_settings(settings: Settings) -> None:
     settings.set_phase_param(6, "spin_velocity", 3.0)
     settings.set_phase_param(7, "n_steps", 12)
     settings.set_phase_param(7, "settle_ms", 1)
+    settings.set_phase_param(9, "wait_s", 0.5)
     # Temperature is reported as an integer (deg C), so the test run must be
     # long enough to produce a measurable integer rise.  With good_profile()'s
     # 2.0 C/s slope, 4 s gives ~8 C (inside the realistic 5-20 C band).

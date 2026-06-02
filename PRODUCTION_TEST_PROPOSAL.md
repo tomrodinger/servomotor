@@ -189,13 +189,18 @@ The phases below are the **single source of truth** — each is self-contained: 
 - **Configurable parameters**: peak-find hysteresis (default 8000 = firmware 2000 × 64/16); extrema count range (default 68 … 71); saturation band (default 1000 … 64535); span minimum (default 40000); peak/valley max deviation from average (default 2000); max adjacent peak/valley deviation (default 2000); peak-spacing range (min … max, set from real captures).
 
 #### Phase 9 — Current control
-- **Verifies**: current-control path (AT5833 / cmd 28). **Power**: low. **Parallelism**: yes — 8 at once. **Prerequisite**: `calibration_done` set (a hall read decides whether the motor moved).
-- Set the **maximum motor current to a low value** via cmd 28 (default 5, in the motor's current units).
-- Enable MOSFETs, zero the position, then command a **one-rotation** move; read the hall sensor position (cmd 15) after the move settles.
-- This proves current control can be turned down far enough that the motor becomes too weak to spin — a direct functional check of the current-limiting path. The between-phase `system_reset` restores the normal current limit before later phases.
-- **Collected (Stage A)**: the hall position change after the one-rotation command at low current.
-- **Pass/fail (Stage B, inverted)**: passes if the motor did **NOT** rotate — hall position moved **less than** the no-rotation threshold (default 0.1 rotations). A motor that *does* reach the commanded rotation **fails** (current limit didn't weaken it).
-- **Configurable parameters**: low current (default 5); no-rotation threshold (default 0.1 rot).
+- **Verifies**: current-control path (AT5833 / cmd 28) via closed-loop tracking error. **Power**: low. **Parallelism**: broadcast — all motors at once. **Prerequisite**: `calibration_done` set (closed loop needs calibration).
+- **Why this method**: an earlier version commanded a low current and checked the motor did *not* rotate. That failed in practice — even at very low (or zero) current the motor can still complete a slow one-rotation move — so it could not pass good units. Instead, this phase demands a move that is **deliberately too fast for a low current to achieve** and measures how far the closed-loop servo falls behind.
+- Because the current is low, this is low-power and the commands are **broadcast to the whole bus at once**:
+  1. Broadcast **set maximum motor current** (cmd 28) to a low value (default **10**, in the motor's current units), **enable**, **go to closed loop** (cmd 17), and **zero**.
+  2. **Read the max PID error once per motor (cmd 39) to clear it** — cmd 39 is read-and-reset, so this first read discards any residual error from the setup.
+  3. Broadcast a **fast trapezoid move** (cmd 2) of **1.8 rotations in 0.5 s** (configurable). At the low current the motor cannot keep up, so the move actually takes much longer than 0.5 s.
+  4. **Wait ~5 s** (configurable) for the (much slower than commanded) move to finish.
+  5. **Read the max PID error again per motor** — this second read is the value of interest: the largest closed-loop position deviation accumulated during the move.
+- The between-phase `system_reset` restores the normal current limit before later phases.
+- **Collected (Stage A)**: the max PID deviation (cmd 39 min/max) read after the move.
+- **Pass/fail (Stage B)**: the max PID deviation must fall **within a band** — **greater than a minimum AND less than a maximum**. Too small means the motor kept up despite the low current, i.e. the current limit is not actually limiting (current-control path fault); too large flags a different problem. (On the bench the deviation clustered tightly around **~5.9e6** at current 10 — defaults are placeholders to be tuned from the Phase 9 histogram.)
+- **Configurable parameters**: low current (default 10); move distance (default 1.8 rot) and commanded move time (default 0.5 s); wait time (default 5 s); min and max PID-deviation thresholds (the pass band).
 
 #### Phase 10 — Overvoltage protection
 - **Verifies**: overvoltage comparator + threshold PWM. **Power**: none (no motion). **Parallelism**: yes — 8 at once.

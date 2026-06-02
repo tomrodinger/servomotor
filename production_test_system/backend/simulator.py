@@ -249,14 +249,27 @@ class SimMotor:
 
     def _cmd_trapezoid_move(self, inputs):
         disp = int(inputs[0]); dur = int(inputs[1])
+        dur_s = dur / units.TIMESTEPS_PER_SECOND
         target = self._commanded_counts() + disp
-        self._start_linear_move(target, dur / units.TIMESTEPS_PER_SECOND)
+        self._start_linear_move(target, dur_s)
         # closed-loop burn-in fatal injection (deterministic: a few moves in)
         self._move_count += 1
         if self.profile.closedloop_fatal and self._move_count >= 3:
             self.fatal_error = 4
+        # PID-error model: with adequate current the servo keeps up (small
+        # error); underpowered (low max current) it lags and the error grows
+        # with the demanded speed.  A motor whose current limit is broken keeps
+        # up even at a low setting (small error) -> Phase 9 catches it.
+        demanded_rps = abs(disp) / units.COUNTS_PER_ROTATION / max(dur_s, 0.05)
+        eff_current = 200 if self.profile.current_limit_broken else self.max_current
+        noise = abs(self._rng.gauss(0, self.profile.pid_error_scale))
+        if eff_current >= STALL_CURRENT:
+            self._pid_max = int(noise)
+        else:
+            # ~1.64e6 per rot/s reproduces the ~5.9e6 deviation observed on the
+            # bench for the Phase 9 move (1.8 rot in 0.5 s = 3.6 rot/s).
+            self._pid_max = int(demanded_rps * 1_640_000 + noise)
         self._pid_min = -int(abs(self._rng.gauss(0, self.profile.pid_error_scale)))
-        self._pid_max = int(abs(self._rng.gauss(0, self.profile.pid_error_scale)))
         return []
 
     def _cmd_go_to_position(self, inputs):
