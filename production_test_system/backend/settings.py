@@ -101,8 +101,9 @@ class Settings:
         return self._data["run_scope"]
 
     def set_run_scope(self, scope: str) -> None:
-        if scope not in ("all", "incomplete"):
-            raise ValueError("run_scope must be 'all' or 'incomplete'")
+        if scope not in ("all", "incomplete", "incomplete_or_failed"):
+            raise ValueError(
+                "run_scope must be 'all', 'incomplete' or 'incomplete_or_failed'")
         with _lock:
             self._data["run_scope"] = scope
             self.save()
