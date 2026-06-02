@@ -170,7 +170,10 @@ def _eval_current_control(row, params, crit) -> EvalResult:
     metrics = {"max_pid_deviation": dev, "min_pid": obs.get("min_pid"),
                "max_pid": obs.get("max_pid"), "position_error": pos_err}
     if dev is None:
-        return metrics, MISSING, "max_pid_deviation"
+        # No reading was collected (the motor did not respond during the read
+        # phase) — report that, not a band failure, so widening the band is not
+        # mistaken for a fix.
+        return metrics, MISSING, "no_reading"
     lo = float(crit["pid_error_min"])
     hi = float(crit["pid_error_max"])
     # Band: too small => current limit not limiting; too large => other fault.
