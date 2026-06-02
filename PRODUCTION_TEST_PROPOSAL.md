@@ -497,7 +497,164 @@ Most phases work with the current firmware (0.15.0.0). One phase needs new firmw
 
 ## Decisions (resolved)
 
-1. **Firmware**: always flash the latest release (currently 0.15.0.0).
+1. **Firmware**: always flash the latest release (currently 0.15.1.0).
 2. **Slot tracking**: not recorded — the unique ID is the sole identifier. The rack grid is a live view only.
 3. **Collect then evaluate**: the rack only collects data (system-reset between every phase, never stop early). Pass/fail is computed separately in Stage B by applying criteria to the stored data, and can be re-run whenever criteria change. Failures can be cleared by re-evaluation or an operator override.
 4. **Authentication**: none — open on the local network.
+
+---
+
+## Implementation Notes & Hardware Gotchas (learned during bring-up)
+
+These are concrete problems hit while building and bringing up the system on
+the real 144-motor rack, with the fix that worked. **A reimplementation from
+this spec must handle every one of these or it will exhibit the same bug.**
+They are not optional polish — each was an observed failure on hardware.
+
+### Transport / library reuse
+
+1. **The `servomotor` Python library is single-bus.** It keeps the serial port
+   and the active address in *module globals* (`communication.ser`,
+   `serial_port`, `global_alias_or_unique_id`). You **cannot** drive three buses
+   in parallel through it. Build one transport object per bus that owns its own
+   `serial.Serial` and **reuses only the library's stateless pieces** —
+   `gather_inputs` (input encoder), `interpret_single_response` (decoder),
+   `calculate_crc32`, and the `registered_commands` table. Do **not** reuse
+   `open_serial_port`/`send_command` (they touch the globals). Do not duplicate
+   the command/encoding tables.
+
+2. **`upgrade_firmware.py` cannot be imported** — it is a script with top-level
+   `argparse` that runs on import. Re-derive its flashing constants/logic rather
+   than importing it.
+
+### Detection (broadcast `detect_devices`, cmd 20)
+
+3. **Detection collides and is probabilistic.** With ~48 devices answering one
+   broadcast detect (each after a random 0–1 s delay), a single read *usually*
+   collides (CRC/framing error) and returns only a partial subset; it rarely
+   captures everyone. Requiring a single "clean" read returns almost nothing on
+   a full bus. **Fix:** a detect pass must **union partial reads across several
+   attempts until the discovered set stops growing** (convergence), keeping the
+   cleanly-decoded prefix of a collided read. The transport must **tolerate
+   `CommunicationError` *and* `FatalError` during a multi-response read** (a
+   collision can even produce bytes that decode as a fatal-error frame) — for a
+   multi-response read these mean "stop this read, keep what you have"; for a
+   single addressed command they are real errors. Expose a per-bus "Detect"
+   button the operator can click several times; ~2 passes typically find all.
+
+4. **Flush before addressed reads that follow detection.** Detect responses
+   arrive up to ~1 s *after* the request, so stragglers linger in the serial
+   input buffer and desync the *next* addressed read (you read a leftover detect
+   frame instead of your reply → cascade of timeouts/CRC errors on unrelated
+   motors). **Fix:** `reset_input_buffer()` (and a short settle) before the first
+   addressed read after a detect, and at the start of each phase.
+
+5. **The new-vs-known colour must be decided once per session and stay sticky.**
+   Orange = "this ID was already in the DB before this session" (prior run,
+   post-Clear, or a duplicate "unique" ID). Decide the colour when a motor is
+   first added to the test set this session (green = brand-new/not in DB; orange
+   = already in DB) and **never recompute it on later passes**. The naive bug:
+   re-deciding each pass and forcing green for "already in the set" flips an
+   orange motor to green on the *second* detection pass — exactly the pass you
+   run to beat collisions — losing the signal. Clear/Clear All resets it.
+
+### Firmware flashing (Phase 1, broadcast cmd 23)
+
+6. **Do NOT flash the three buses concurrently.** Flashing is paced by fixed
+   inter-page sleeps; running it on all three buses at once jitters those sleeps
+   enough to corrupt pages on one bus and leave its motors **stuck in the
+   bootloader** (they answer `detect` but not normal commands). **Fix:** a
+   process-wide lock so only one bus flashes at a time (each bus still flashes
+   all its motors at once via broadcast). Re-flashing a corrupted bus *alone*
+   fully recovers it.
+
+### Calibration (Phase 5, cmd 6)
+
+7. **Stagger the `start_calibration` sends; do not fire all 8 back-to-back.**
+   Sending `start_calibration` to 8 motors in rapid succession makes the
+   *earlier* motors — already calibrating — see the later commands as bus
+   traffic, overflowing their command buffer (`ERROR_COMMAND_OVERFLOW`, ~30% of
+   motors). **Fix:** send one `start_calibration` every ~0.5 s across the batch,
+   then keep the bus **completely silent** for the hold (no polling). Still do
+   **not** send `system_reset` afterwards — calibration auto-reboots; read
+   status once after the quiet hold.
+
+### Motion phases
+
+8. **`move_with_velocity` (cmd 26) faults when its move ends.** A constant-
+   velocity move raises `ERROR_RUN_OUT_OF_QUEUE_ITEMS` the instant its time
+   expires, because the shaft is still moving when the move queue empties. In
+   Phase 6 this faulted the motor at the end of the forward leg, so the **reverse
+   leg never ran** (only one direction was recorded). **Fix:** use
+   `trapezoid_move` (cmd 2) for the forward and reverse legs — it decelerates to
+   a clean stop, so the queue empties with the shaft at rest. (Still continuous,
+   densely-sampled motion in both directions.)
+
+9. **Collection must never abort the whole phase on one motor's error.** A
+   single RS485 timeout inside Phase 13's move scheduler propagated out and
+   aborted the phase for the *entire bus* before the per-motor store, losing all
+   48 motors' data. **Fix:** wrap every per-motor hardware call so a timeout/
+   fatal on one motor skips just that motor (or that move) and the phase
+   continues — "collection never stops on a bad reading" applies to *exceptions*,
+   not just out-of-range values.
+
+### Phase 14 — alias read-back
+
+10. **There is no "get alias by unique ID" command.** `get_product_info`
+    (cmd 22) does **not** return the alias. The only way to read back the actual
+    alias value is `detect_devices` (cmd 20), which reports unique ID + alias.
+    So the read-back is a broadcast detect (collision-prone, see #3).
+
+11. **Verify the alias with a *bounded* detect-until-complete.** A single detect
+    read-back occasionally misses a straggler and records it as `alias=missing`
+    → a false failure even though the alias is correctly set. **Fix:** since the
+    expected set is known (the test set), union detect passes until every
+    expected motor is found — but **hard-bound the loop** (e.g. 6 passes) so a
+    genuinely faulty/removed motor that never answers cannot loop forever; after
+    the bound it is correctly recorded as missing/failed. Log which motors
+    stayed missing so a real fault is visible, not mistaken for a hang.
+
+### Phase 15 — LED test
+
+12. **Use cmd 36 test mode 13, not 10.** The firmware maps test modes 10–13 to
+    LED bitmasks 0–3 (green = bit 0, red = bit 1). **Mode 13 = bitmask 3 = both
+    LEDs on**; mode 10 = bitmask 0 locks the motor (`while(1)`) with **no LEDs
+    lit**. The phase locks every motor until a power cycle, so it must be last,
+    and the removal-and-ping reconciliation must power-cycle *before* pinging.
+
+### Phase 10 — overvoltage (firmware ≥ 0.15.1.0)
+
+13. **Test modes are 74 (22 V threshold) and 75 (26 V), and a trip is a fatal
+    error.** Enter mode 74 → a 24 V rack must trip → the firmware raises
+    `ERROR_OVERVOLTAGE` (fatal code 14), read via `get_status` (cmd 16). Then
+    `system_reset` to clear it, enter mode 75 → must NOT trip, read status,
+    reset. The firmware *acks* the cmd 36, then the comparator trips
+    asynchronously — so the test-mode command returns success; read the trip
+    from status after a short settle. Pass iff 22 V tripped AND 26 V did not.
+    The 22 V/26 V values are fixed in firmware — there are no editable setpoints.
+
+### Prerequisites, units, and general
+
+14. **Motion phases (6–9, 11–13) require `calibration_done`.** If you enable one
+    of them without Phase 5 having succeeded, every motor is skipped. Make this
+    **visible** (log/UI message naming how many were skipped and to run Phase 5
+    first) — a silent no-op looks like the system is broken.
+
+15. **`system_reset` (cmd 27) needs a 1 s bootloader-exit delay** before the next
+    command, everywhere it is used. Setting the alias (cmd 21) also auto-reboots.
+
+16. **Temperature (cmd 42) is an integer °C.** Sub-degree rises round to 0, so
+    the thermal criteria only make sense over a realistic run duration (the
+    default rise band 5–20 °C assumes a ~2-minute run); do not validate thermal
+    pass/fail with very short test durations.
+
+17. **Run scopes.** Besides "all" and "only incomplete data", provide
+    **"incomplete data or a failure"** so an operator can re-run just the motors
+    that failed (e.g. one P14 fail) without re-running the rack. A phase like 14
+    that broadcasts/detects the whole bus must still **record results only for
+    the motors in the run scope**.
+
+18. **PNG generation is slow for a full rack** (hundreds of plots). Run it in a
+    **background thread with a progress counter/bar** the UI polls, rather than a
+    blocking call with no feedback. PNGs are disposable derived artifacts (named
+    by unique ID + plot type) and must be regenerable from the DB at any time.
