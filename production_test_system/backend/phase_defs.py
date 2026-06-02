@@ -305,8 +305,8 @@ PHASES: List[PhaseDef] = [
         params=[
             Param("settle_s", "Settle time before reading status", "float", 0.5, "s",
                   "Time after entering a test mode before reading the trip."),
-            Param("setpoint_low", "Low OV setpoint (should trip)", "float", 22.0, "V"),
-            Param("setpoint_high", "High OV setpoint (should not trip)", "float", 26.0, "V"),
+            # The 22 V / 26 V thresholds are fixed in the firmware test modes
+            # (74 / 75); there are no editable setpoints here.
         ],
         criteria=[],
         measured=[
