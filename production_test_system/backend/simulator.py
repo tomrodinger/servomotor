@@ -36,7 +36,7 @@ STALL_CURRENT = 50
 class MotorProfile:
     """Knobs that make a simulated motor pass or fail specific phases."""
     # Identity / firmware
-    firmware_version: str = "0.15.0.0"
+    firmware_version: str = "0.15.1.0"
     product_type: str = "M17"
     scc: int = 3
     hw_version: str = "1.5"
@@ -63,6 +63,10 @@ class MotorProfile:
     openloop_skips: bool = False      # trips the deviation limit -> fatal
     closedloop_fatal: bool = False
     pid_error_scale: float = 20000.0  # typical max PID error magnitude
+    # Overvoltage (Phase 10): a good motor trips at the 22 V threshold (mode 74)
+    # and does NOT trip at 26 V (mode 75) on a 24 V rack.
+    ov_no_trip_low: bool = False      # faulty: fails to trip at 22 V
+    ov_false_trip_high: bool = False  # faulty: trips even at 26 V
     # LED (Phase 15) is decided by the human, not the device.
 
 
@@ -297,6 +301,14 @@ class SimMotor:
         mode = int(inputs[0]) if inputs else 0
         if 10 <= mode <= 13:
             self._led_locked = True
+        elif mode == 74:      # OV threshold 22 V: trips on a 24 V rack
+            if not self.profile.ov_no_trip_low:
+                self.fatal_error = 14      # ERROR_OVERVOLTAGE
+        elif mode == 75:      # OV threshold 26 V: should NOT trip on 24 V
+            if self.profile.ov_false_trip_high:
+                self.fatal_error = 14
+        # The firmware acks the command, then the comparator trips asynchronously,
+        # so we still return a success ack here.
         return []
 
     def _cmd_capture_hall_sensor_data(self, inputs):

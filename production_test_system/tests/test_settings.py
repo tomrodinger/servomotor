@@ -10,11 +10,11 @@ def _tmp():
     return os.path.join(tempfile.mkdtemp(), "settings.json")
 
 
-def test_defaults_and_phase10_disabled():
+def test_default_phases_enabled():
     s = Settings(_tmp())
     assert s.phase_enabled(1)
-    assert not s.phase_enabled(10)            # firmware-dependency phase
-    assert 10 not in s.enabled_phase_numbers()
+    assert s.phase_enabled(10)                # OV firmware dep resolved in 0.15.1.0
+    assert 10 in s.enabled_phase_numbers()
 
 
 def test_port_uniqueness_and_ready():

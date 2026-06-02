@@ -18,7 +18,7 @@ def test_phases_and_settings():
     phases = client.get("/api/phases").json()["phases"]
     assert len(phases) == 15
     settings = client.get("/api/settings").json()
-    assert settings["phases"]["10"]["enabled"] is False
+    assert settings["phases"]["10"]["enabled"] is True
 
 
 def test_ports_and_assignment():

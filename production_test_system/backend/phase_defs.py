@@ -86,7 +86,8 @@ PHASES: List[PhaseDef] = [
             "firmware version back from each device individually."),
         params=[
             Param("target_firmware_version", "Target firmware version", "str",
-                  "0.15.0.0", help="Latest release; flashed to every motor."),
+                  "0.15.1.0", help="Latest release; flashed to every motor. "
+                                   "0.15.1.0 adds the Phase 10 OV test modes."),
             Param("flash_enabled", "Broadcast-flash before verifying", "bool", True,
                   help="If off, the version is only read back and verified "
                        "(no flashing). The broadcast-flash path is bench-pending."),
@@ -294,13 +295,16 @@ PHASES: List[PhaseDef] = [
     PhaseDef(
         number=10, key="overvoltage", name="Overvoltage protection",
         short="Overvoltage comparator + threshold PWM", power="none",
-        parallelism="8 at once", enabled_default=False,
-        firmware_dependency=("Needs two new firmware test modes (22 V and 26 V) "
-                             "that do not yet exist. Leave disabled until added."),
-        description=("Enter the 22 V test mode (should trip on a 24 V supply), "
-                     "reset, enter the 26 V mode (should not trip), reset. "
-                     "Requires new firmware test modes."),
+        parallelism="8 at once", enabled_default=True,
+        firmware_dependency=("Requires firmware >= 0.15.1.0 (cmd 36 test modes "
+                             "74 = 22 V and 75 = 26 V). Resolved in 0.15.1.0."),
+        description=("Enter the 22 V test mode (cmd 36 mode 74 — should trip on a "
+                     "24 V supply), reset, enter the 26 V mode (mode 75 — should "
+                     "not trip), reset. A trip is reported as fatal code "
+                     "ERROR_OVERVOLTAGE in the status word."),
         params=[
+            Param("settle_s", "Settle time before reading status", "float", 0.5, "s",
+                  "Time after entering a test mode before reading the trip."),
             Param("setpoint_low", "Low OV setpoint (should trip)", "float", 22.0, "V"),
             Param("setpoint_high", "High OV setpoint (should not trip)", "float", 26.0, "V"),
         ],

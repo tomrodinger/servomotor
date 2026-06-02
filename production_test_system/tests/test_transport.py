@@ -21,7 +21,7 @@ def test_detection_returns_all():
 def test_identity_and_firmware():
     t = _rack().transport_for("A")
     c = MotorClient(t, 0x1122334455667788)
-    assert c.get_firmware_version() == "0.15.0.0"
+    assert c.get_firmware_version() == "0.15.1.0"
     info = c.get_product_info()
     assert info["product_type"] == "M17" and info["hw_version"] == "1.5" and info["scc"] == 3
     assert c.ping(b"0123456789") == b"0123456789"
