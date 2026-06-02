@@ -68,7 +68,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 };
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 15
-#define BUGFIX_FIRMWARE_VERSION 0
+#define BUGFIX_FIRMWARE_VERSION 1
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -891,6 +891,12 @@ void process_packet(void)
             }
             else if (test_mode < 14 + 60) { // test modes 14 to 73 are for triggering fatal errors 0 to 59, for testing if fatal errors are working correctly
                 fatal_error(test_mode - 14);
+            }
+            else if (test_mode == 74) { // production overvoltage test: set the OV threshold to 22 V (must trip on a 24 V rack)
+                set_overvoltage_threshold(OVERVOLTAGE_TEST_LOW_VOLTAGE);
+            }
+            else if (test_mode == 75) { // production overvoltage test: set the OV threshold to 26 V (must NOT trip on a 24 V rack)
+                set_overvoltage_threshold(OVERVOLTAGE_TEST_HIGH_VOLTAGE);
             }
             else {
                 fatal_error(ERROR_INVALID_TEST_MODE);
