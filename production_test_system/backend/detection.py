@@ -59,14 +59,22 @@ def run_detect_pass(transport: Transport, reset_before: bool = True) -> List[Lis
     return [[u, a] for u, a in union.items()]
 
 
-def detect_aliases(transport: Transport, expected_ids, max_passes: int = 6):
+# Hard cap on alias read-back passes (Phase 14).  Bounds the work so a faulty
+# or removed motor that never answers can never cause an infinite loop — after
+# this many passes the read-back gives up and that motor is reported missing.
+ALIAS_READBACK_PASSES = 6
+
+
+def detect_aliases(transport: Transport, expected_ids,
+                   max_passes: int = ALIAS_READBACK_PASSES):
     """Read back (unique_id -> alias) for a known set of motors.
 
-    Unions detection passes until every ``expected_ids`` motor has been seen (or
-    ``max_passes`` is reached).  Used by Phase 14 to verify the factory alias:
-    detection is probabilistic, so a single pass can miss a straggler and
-    falsely report it as absent — looping until the known set is complete avoids
-    that.  Genuinely-absent motors are simply not in the returned dict.
+    Unions detection passes until every ``expected_ids`` motor has been seen
+    (early exit) **or** ``max_passes`` is reached (hard bound — never loops
+    forever).  Detection is probabilistic, so a single pass can miss a straggler
+    and falsely report it absent; looping a few times avoids that false-fail.  A
+    genuinely-absent/faulty motor simply isn't in the returned dict after the
+    bound, and Phase 14 then records it as a (correct) failure.
     """
     expected = set(int(u) for u in expected_ids)
     found = {}

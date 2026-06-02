@@ -46,6 +46,17 @@ class SetAliasPhase(Phase):
         except Exception as exc:
             ctx.log("Phase 14: alias read-back error: %s" % exc)
 
+        # Any motor still absent after the bounded read-back genuinely did not
+        # respond (faulty / removed); record it as missing (a fail) and say so,
+        # so it is not mistaken for the run hanging.
+        still_missing = [uid for uid in ctx.motors if uid not in alias_by_uid]
+        if still_missing:
+            from ..database import uid_hex
+            ctx.log("Phase 14: %d motor(s) did not respond to alias read-back "
+                    "after %d passes (recorded as failed): %s" %
+                    (len(still_missing), detection.ALIAS_READBACK_PASSES,
+                     ", ".join(uid_hex(u) for u in still_missing[:10])))
+
         for uid in ctx.motors:
             raw = alias_by_uid.get(uid)
             if raw is None:

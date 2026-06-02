@@ -51,6 +51,20 @@ def test_detection_retries_through_collisions():
     assert len(found) == 5          # collisions retried; full set still found
 
 
+def test_detect_aliases_bounded_when_a_motor_is_absent():
+    # A motor that never responds must not cause an infinite loop: detect_aliases
+    # is hard-bounded by max_passes and simply omits the absent motor.
+    from backend import config
+    config.BOOTLOADER_EXIT_DELAY_S = 0.01
+    rack = RackSimulator()
+    rack.add_motor("A", SimMotor(0x1))
+    rack.add_motor("A", SimMotor(0x2))
+    t = rack.transport_for("A")
+    found = detection.detect_aliases(t, [0x1, 0x2, 0xDEADBEEF], max_passes=3)
+    assert 0x1 in found and 0x2 in found      # present motors read back
+    assert 0xDEADBEEF not in found            # absent motor omitted, no hang
+
+
 def test_detection_gives_up_after_max_attempts():
     rack = RackSimulator()
     rack.add_motor("A", SimMotor(0x1))
