@@ -204,10 +204,21 @@ def _eval_thermal(row, params, crit) -> EvalResult:
     baseline = _obs(row).get("baseline")
     series = [list(s) for s in blobs.unpack_temperature_series(row["raw_blob"])]
     res = thermal.analyze(baseline, series)
+    actual_duration = series[-1][0] if series else 0.0
     metrics = {
         "temp_rise": res["temp_rise"], "fit_slope": res["fit_slope"],
         "fit_start_temp": res["fit_start_temp"], "fit_r": res["fit_r"],
+        "run_duration": actual_duration,
     }
+    # If the temperature log stopped well short of the configured duration the
+    # motor stopped responding/spinning mid-run (a real failure) and the
+    # slope/rise computed over the truncated series are misleading — report the
+    # truncation, not a bogus slope.  (Thermal curves flatten over time, so a
+    # short series inflates the linear-fit slope.)
+    configured = float(params.get("duration_s", 0) or 0)
+    shortfall = configured - actual_duration
+    if configured and shortfall > max(3.0, 0.2 * configured):
+        return metrics, FAIL, "incomplete_run"
     rise = res["temp_rise"]
     if rise is None or not (float(crit["rise_min"]) <= rise <= float(crit["rise_max"])):
         return metrics, FAIL, "temp_rise"
