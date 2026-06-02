@@ -273,7 +273,7 @@ function buildMeasured(p, item, ps) {
       onchange: (e) => sendPhaseUpdate(p.number, "criteria", tk, coerce(cdef.type, e.target.value), true) });
     crit.append(el("label", {}, cdef.label + " ", inp));
   });
-  if (!item.threshold_keys.length)
+  if (!item.threshold_keys.length && item.kind !== "categorical")
     crit.append(el("div", { class: "note" }, "categorical — counts shown in the Database tab"));
   row.append(crit);
 
@@ -282,7 +282,8 @@ function buildMeasured(p, item, ps) {
       "data-phase": p.number, "data-metric": item.key });
     row.append(canvas);
   } else {
-    row.append(el("div", { class: "cat-summary", "data-cat": p.number + ":" + item.key }, ""));
+    row.append(el("div", { class: "cat-summary", "data-phase": p.number,
+      "data-metric": item.key }, "loading…"));
   }
   return row;
 }
@@ -309,6 +310,34 @@ async function refreshPhaseHistograms(number) {
       drawHistogram(cv, data.values, Object.values(data.thresholds));
     } catch (e) { /* ignore */ }
   }
+  // categorical / boolean items: render a count summary instead of a histogram
+  const cats = document.querySelectorAll(`#tab-phase-${number} .cat-summary[data-metric]`);
+  for (const div of cats) {
+    const metric = div.getAttribute("data-metric");
+    try {
+      const data = await api("GET", `/api/histogram/${number}/${metric}?scope=${scope}`);
+      renderCategorical(div, data.counts || {});
+    } catch (e) { /* ignore */ }
+  }
+}
+
+function renderCategorical(div, counts) {
+  div.innerHTML = "";
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((s, [, c]) => s + c, 0);
+  if (!total) {
+    div.append(el("span", { class: "note" }, "no evaluated data (run evaluation first)"));
+    return;
+  }
+  const max = Math.max(...entries.map(([, c]) => c));
+  div.append(el("div", { class: "note" }, `${total} device(s) in filtered set`));
+  entries.forEach(([value, count]) => {
+    const bar = el("div", { class: "catbar" },
+      el("span", { class: "catlabel" }, value),
+      el("span", { class: "catfill", style: `width:${Math.round(100 * count / max)}%` }),
+      el("span", { class: "catcount" }, String(count)));
+    div.append(bar);
+  });
 }
 
 function drawHistogram(canvas, values, thresholds) {

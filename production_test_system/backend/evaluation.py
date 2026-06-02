@@ -337,3 +337,22 @@ def gather_metric(db: Database, motor_ids: List[int], phase: int,
         elif isinstance(val, (int, float)) and not isinstance(val, bool):
             values.append(val)
     return values
+
+
+def gather_categorical(db: Database, motor_ids: List[int], phase: int,
+                       metric_key: str) -> Dict[str, int]:
+    """Count occurrences of each value of a categorical/boolean metric across
+    motors (latest eval row), for the phase-tab count summary.  ``None`` (a
+    missing observation) is bucketed as ``"(none)"``."""
+    counts: Dict[str, int] = {}
+    for uid in motor_ids:
+        ev = db.latest_phase_eval(uid, phase)
+        if not ev or not isinstance(ev.get("derived_metrics"), dict):
+            continue
+        metrics = ev["derived_metrics"]
+        if metric_key not in metrics:
+            continue
+        val = metrics[metric_key]
+        key = "(none)" if val is None else str(val)
+        counts[key] = counts.get(key, 0) + 1
+    return counts

@@ -332,19 +332,23 @@ def identify(uid_hex_str: str):
 def histogram(phase: int, metric: str, scope: str = "test_set"):
     motor_ids = _scope_ids(scope)
     values = evaluation.gather_metric(DB, motor_ids, phase, metric)
+    counts = evaluation.gather_categorical(DB, motor_ids, phase, metric)
     pdef = phase_defs.PHASES_BY_NUMBER.get(phase)
     thresholds: Dict[str, float] = {}
     unit = None
+    kind = "histogram"
     if pdef:
         crit = SETTINGS.phase_criteria(phase)
         for item in pdef.measured:
             if item.key == metric:
                 unit = item.unit
+                kind = item.kind
                 for tk in item.threshold_keys:
                     if tk in crit:
                         thresholds[tk] = crit[tk]
-    return {"phase": phase, "metric": metric, "values": values,
-            "thresholds": thresholds, "unit": unit, "n": len(values)}
+    return {"phase": phase, "metric": metric, "kind": kind, "values": values,
+            "counts": counts, "thresholds": thresholds, "unit": unit,
+            "n": len(values), "n_categorical": sum(counts.values())}
 
 
 @app.get("/api/pngs")

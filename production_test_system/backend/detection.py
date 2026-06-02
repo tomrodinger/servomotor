@@ -59,6 +59,25 @@ def run_detect_pass(transport: Transport, reset_before: bool = True) -> List[Lis
     return [[u, a] for u, a in union.items()]
 
 
+def detect_aliases(transport: Transport, expected_ids, max_passes: int = 6):
+    """Read back (unique_id -> alias) for a known set of motors.
+
+    Unions detection passes until every ``expected_ids`` motor has been seen (or
+    ``max_passes`` is reached).  Used by Phase 14 to verify the factory alias:
+    detection is probabilistic, so a single pass can miss a straggler and
+    falsely report it as absent — looping until the known set is complete avoids
+    that.  Genuinely-absent motors are simply not in the returned dict.
+    """
+    expected = set(int(u) for u in expected_ids)
+    found = {}
+    for _ in range(max_passes):
+        for entry in run_detect_pass(transport, reset_before=True):
+            found[int(entry[0])] = int(entry[1]) if len(entry) > 1 else 255
+        if expected <= set(found):
+            break
+    return found
+
+
 def classify_and_add(db: Database, bus: BusState,
                      results: List[List[Any]]) -> List[Tuple[int, str]]:
     """Union ``results`` into ``bus``'s test set, colouring each motor.

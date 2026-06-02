@@ -35,14 +35,14 @@ class SetAliasPhase(Phase):
         ctx.sleep(reboot_delay)
         ctx.transport.flush_input()
 
-        # Read the alias back per unique ID via a robust (collision-tolerant)
-        # detection pass — once every device is 'X' the alias is no longer a
-        # unique address, so detection (which reports unique ID + alias) is the
-        # reliable way to verify it.
+        # Read the alias back per unique ID.  Once every device is 'X' the alias
+        # is no longer a unique address, so detection (which reports unique ID +
+        # alias) is the way to verify it.  Detection is probabilistic, so keep
+        # unioning passes until every motor in the test set is accounted for —
+        # otherwise a missed straggler is falsely recorded as a failed alias.
         alias_by_uid = {}
         try:
-            for entry in detection.run_detect_pass(ctx.transport, reset_before=True):
-                alias_by_uid[int(entry[0])] = int(entry[1])
+            alias_by_uid = detection.detect_aliases(ctx.transport, ctx.motors)
         except Exception as exc:
             ctx.log("Phase 14: alias read-back error: %s" % exc)
 

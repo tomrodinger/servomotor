@@ -88,7 +88,12 @@ th { color: #51607d; font-weight: 600; }
   border-top: 1px solid #eef1f7; padding: 12px 0; }
 .measured .crit label { display: block; margin-bottom: 6px; }
 .hist { width: 100%; }
-.cat-summary { font-family: ui-monospace, monospace; font-size: 12px; }
+.cat-summary { font-family: ui-monospace, monospace; font-size: 12px; width: 100%; }
+.catbar { display: grid; grid-template-columns: 160px 1fr 40px; align-items: center;
+  gap: 8px; margin: 3px 0; }
+.catlabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catfill { background: #7aa5e8; height: 16px; border-radius: 3px; min-width: 2px; }
+.catcount { text-align: right; }
 
 .modal { position: fixed; inset: 0; background: rgba(15,22,38,.55);
   display: flex; align-items: center; justify-content: center; }
