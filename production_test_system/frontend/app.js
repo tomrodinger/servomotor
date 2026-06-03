@@ -370,44 +370,66 @@ function renderCategorical(div, counts) {
   });
 }
 
+const fmtNum = (v) => (v == null || isNaN(v)) ? ""
+  : v.toLocaleString(undefined, { maximumSignificantDigits: 4 });
+
 function drawHistogram(canvas, values, thresholds) {
+  // Render at the device's pixel resolution so the canvas isn't a small backing
+  // store stretched (blurry) to the wide column on a HiDPI/4K display.
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 600;
+  const cssH = canvas.clientHeight || 230;
+  canvas.width = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
   const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height, pad = 24;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);   // draw in CSS-pixel coordinates, crisp
+  const W = cssW, H = cssH, padX = 32, padTop = 18, padBot = 22;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = "#8a93a6"; ctx.font = "11px sans-serif";
-  if (!values.length) { ctx.fillText("no evaluated data (run evaluation first)", pad, H / 2); return; }
-  let lo = Math.min(...values, ...thresholds);
-  let hi = Math.max(...values, ...thresholds);
+  ctx.textAlign = "left";
+  if (!values.length) {
+    ctx.fillStyle = "#8a93a6"; ctx.font = "12px sans-serif";
+    ctx.fillText("no evaluated data (run evaluation first)", padX, H / 2);
+    return;
+  }
+  const thr = thresholds.filter((t) => t != null && !isNaN(t));
+  let lo = Math.min(...values, ...thr);
+  let hi = Math.max(...values, ...thr);
   if (lo === hi) { lo -= 1; hi += 1; }
-  const span = hi - lo;
-  const nbins = 24;
+  const span = hi - lo, nbins = 24;
   const bins = new Array(nbins).fill(0);
   values.forEach((v) => {
     let b = Math.floor(((v - lo) / span) * nbins);
     if (b >= nbins) b = nbins - 1; if (b < 0) b = 0;
     bins[b]++;
   });
-  const maxc = Math.max(...bins);
-  const x = (v) => pad + ((v - lo) / span) * (W - 2 * pad);
-  // bars
-  ctx.fillStyle = "#7aa5e8";
-  const bw = (W - 2 * pad) / nbins;
+  const maxc = Math.max(...bins, 1);
+  const plotH = H - padTop - padBot;
+  const bw = (W - 2 * padX) / nbins;
+  const x = (v) => padX + ((v - lo) / span) * (W - 2 * padX);
+  // bars — a non-zero bin gets a minimum visible height and its count printed
+  // above it, so a single count is obvious and distinct from an empty bin.
   bins.forEach((c, i) => {
-    const h = maxc ? (c / maxc) * (H - 2 * pad) : 0;
-    ctx.fillRect(pad + i * bw, H - pad - h, bw - 1, h);
+    if (!c) return;
+    const h = Math.max(3, (c / maxc) * plotH);
+    const bx = padX + i * bw, by = H - padBot - h;
+    ctx.fillStyle = "#7aa5e8";
+    ctx.fillRect(bx, by, Math.max(1, bw - 1), h);
+    ctx.fillStyle = "#2c3a57"; ctx.font = "9px sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(String(c), bx + bw / 2, by - 2);
+    ctx.textAlign = "left";
   });
-  // axes baseline
+  // baseline + range labels
   ctx.strokeStyle = "#c8d0de"; ctx.beginPath();
-  ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.stroke();
-  ctx.fillStyle = "#51607d";
-  ctx.fillText(lo.toPrecision(4), pad, H - 8);
-  ctx.fillText(hi.toPrecision(4), W - pad - 40, H - 8);
+  ctx.moveTo(padX, H - padBot); ctx.lineTo(W - padX, H - padBot); ctx.stroke();
+  ctx.fillStyle = "#51607d"; ctx.font = "10px sans-serif";
+  ctx.fillText(fmtNum(lo), padX, H - 7);
+  ctx.textAlign = "right"; ctx.fillText(fmtNum(hi), W - padX, H - 7); ctx.textAlign = "left";
   // threshold lines
   ctx.strokeStyle = "#c0392b"; ctx.lineWidth = 2;
-  thresholds.forEach((t) => {
+  thr.forEach((t) => {
     const tx = x(t);
-    ctx.beginPath(); ctx.moveTo(tx, pad - 6); ctx.lineTo(tx, H - pad); ctx.stroke();
-    ctx.fillStyle = "#c0392b"; ctx.fillText(String(t), tx + 2, pad);
+    ctx.beginPath(); ctx.moveTo(tx, padTop - 6); ctx.lineTo(tx, H - padBot); ctx.stroke();
+    ctx.fillStyle = "#c0392b"; ctx.font = "10px sans-serif"; ctx.fillText(fmtNum(t), tx + 2, padTop);
   });
   ctx.lineWidth = 1;
 }
