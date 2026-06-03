@@ -25,12 +25,10 @@ def fast_settings(settings: Settings) -> None:
     settings.set_phase_param(7, "n_steps", 12)
     settings.set_phase_param(7, "settle_ms", 1)
     settings.set_phase_param(9, "wait_s", 0.5)
-    # Temperature is reported as an integer (deg C), so the test run must be
-    # long enough to produce a measurable integer rise.  With good_profile()'s
-    # 2.0 C/s slope, 4 s gives ~8 C (inside the realistic 5-20 C band).
-    settings.set_phase_param(11, "duration_s", 4.0)
-    settings.update_phase(11, criteria={"slope_min": 0.0, "slope_max": 10.0,
-                                        "r_value_min": 0.5})
+    # Phase 11 runs until overtemp (sim cutoff 80 C) or this max time. With
+    # good_profile()'s 2.0 C/s slope from 25 C, 8 s reaches ~41 C (stays
+    # functional -> pass); higher slopes reach the 80 C cutoff in time.
+    settings.set_phase_param(11, "max_time_s", 8.0)
     # Phase 12 picks 8 random motors per round and spends 0.3 s setting up each
     # new one, so the window must be long enough for every motor to be selected
     # at least once.

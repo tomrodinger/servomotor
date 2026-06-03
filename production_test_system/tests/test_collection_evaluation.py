@@ -18,7 +18,11 @@ FAULTS = {
     "weak_curr_broken": (0x18, good_profile(current_limit_broken=True), 9),
     "ov_no_trip_low": (0x1C, good_profile(ov_no_trip_low=True), 10),
     "ov_false_trip_high": (0x1D, good_profile(ov_false_trip_high=True), 10),
-    "thermal_hot": (0x19, good_profile(thermal_slope=8.0), 11),
+    # Phase 11: reaching the overtemp cutoff is the expected good result (pass);
+    # a thermal-paste defect trips a deviation fatal mid-run (fail).
+    "thermal_overtemp": (0x19, good_profile(thermal_slope=10.0), None),
+    "thermal_paste_defect": (0x1E, good_profile(thermal_paste_defect=True,
+                                                thermal_slope=8.0), 11),
     "openloop_fatal": (0x1A, good_profile(openloop_skips=True), 12),
     "closedloop_fatal": (0x1B, good_profile(closedloop_fatal=True), 13),
 }

@@ -34,6 +34,8 @@ STALL_CURRENT = 12
 # At/above this current the servo tracks a fast move easily (small PID error);
 # below it the move is current-limited and the PID error is large.
 CURRENT_LIMIT_TRACK = 100
+# Firmware overtemperature cutoff (~80 C) -> fatal ERROR_OVERHEAT (Phase 11).
+OVERHEAT_TEMP_C = 80
 
 
 @dataclass
@@ -61,8 +63,11 @@ class MotorProfile:
     extra_hall_noise: int = 0
     # Current control (Phase 9): if True the motor turns even at low current
     current_limit_broken: bool = False
-    # Thermal (Phase 11): degrees C rise per second under load
+    # Thermal (Phase 11): degrees C rise per second under load. A good motor
+    # heats until the overtemperature cutoff (OVERHEAT_TEMP_C -> fatal 40).
     thermal_slope: float = 0.08
+    thermal_paste_defect: bool = False   # driver cuts out mid-run -> deviation trip
+    paste_defect_temp: float = 50.0      # temperature at which the cut-out occurs
     # Burn-in (Phases 12/13)
     openloop_skips: bool = False      # trips the deviation limit -> fatal
     closedloop_fatal: bool = False
@@ -200,7 +205,18 @@ class SimMotor:
 
     def _cmd_get_temperature(self, _):
         self._update_temp()
-        return [int(round(self._temp))]
+        temp = int(round(self._temp))
+        # Fault on the way up: a thermal-paste defect cuts out (deviation trip)
+        # before the overtemp cutoff; otherwise the overtemperature cutoff fires.
+        # The fault is latched here and raised on the NEXT command; this call
+        # still returns the temperature that triggered it.
+        if not self.fatal_error:
+            if (self.profile.thermal_paste_defect
+                    and temp >= self.profile.paste_defect_temp):
+                self.fatal_error = 45      # ERROR_POSITION_DEVIATION_TOO_LARGE
+            elif temp >= OVERHEAT_TEMP_C:
+                self.fatal_error = 40      # ERROR_OVERHEAT
+        return [temp]
 
     def _cmd_ping(self, inputs):
         if self.profile.ping_drop_rate and self._rng.random() < self.profile.ping_drop_rate:

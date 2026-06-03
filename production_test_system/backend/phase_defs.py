@@ -340,17 +340,32 @@ PHASES: List[PhaseDef] = [
         number=11, key="thermal", name="Thermal",
         short="Thermistor / thermal behaviour under load", power="full",
         parallelism="8 per section", requires_calibration=True,
-        description=("Take a fresh baseline temperature, run the motor at full "
-                     "power while logging temperature (cmd 42) every second for "
-                     "the configured duration. Full series stored as a blob."),
+        description=("Run the motor at full power until it reaches its "
+                     "overtemperature cutoff (a fatal error) or a max time "
+                     "limit, logging temperature (cmd 42) every second. A tight "
+                     "deviation limit (cmd 44) is set first so a driver IC that "
+                     "overheats and cuts out (e.g. missing thermal paste) trips "
+                     "a fatal error. Passes if the motor reaches the overtemp "
+                     "cutoff hot enough, OR stays functional the whole time; "
+                     "fails on any other fatal error."),
         params=[
-            Param("duration_s", "Thermal run duration", "float", 120.0, "s"),
+            Param("max_time_s", "Max run time", "float", 1200.0, "s",
+                  "Default 20 minutes. The motor is allowed to run up to this "
+                  "long; it should normally reach the overtemp cutoff first."),
             Param("max_current", "Motor current", "int", 200),
             Param("spin_velocity", "Spin velocity", "float", 1.0, "rot/s"),
+            Param("deviation_tolerance_rot", "Deviation tolerance (cmd 44)",
+                  "float", 0.01, "rot",
+                  "Set before spinning; a brief stall (driver cut-out) trips it."),
         ],
         criteria=[
+            Param("overtemp_threshold", "Overtemperature threshold", "float", 79.0,
+                  "°C", "On an overtemp cutoff the last temperature must exceed "
+                        "this to pass."),
+            # The fit metrics below are diagnostic histograms (with reference
+            # threshold lines); the pass/fail is the overtemp/fatal outcome.
             Param("rise_min", "Temperature rise min", "float", 5.0, "°C"),
-            Param("rise_max", "Temperature rise max", "float", 20.0, "°C"),
+            Param("rise_max", "Temperature rise max", "float", 60.0, "°C"),
             Param("start_temp_min", "Best-fit start temp min", "float", 10.0, "°C"),
             Param("start_temp_max", "Best-fit start temp max", "float", 45.0, "°C"),
             Param("slope_min", "Best-fit slope min", "float", 0.0, "°C/s"),
@@ -358,6 +373,10 @@ PHASES: List[PhaseDef] = [
             Param("r_value_min", "Best-fit R minimum", "float", 0.9),
         ],
         measured=[
+            MeasuredItem("max_temperature", "Max temperature reached", unit="°C",
+                         threshold_keys=["overtemp_threshold"]),
+            MeasuredItem("outcome", "Outcome (overtemp / other fatal / functional)",
+                         kind="categorical"),
             MeasuredItem("temp_rise", "Temperature rise", unit="°C",
                          threshold_keys=["rise_min", "rise_max"]),
             MeasuredItem("fit_start_temp", "Best-fit start temperature", unit="°C",

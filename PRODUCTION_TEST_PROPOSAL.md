@@ -222,18 +222,18 @@ The phases below are the **single source of truth** — each is self-contained: 
 - **Pass/fail (Stage B)**: the 22 V setting tripped **AND** the 26 V setting did not trip. Either wrong → fail.
 - **Configurable parameters**: the two threshold setpoints (default 22 V and 26 V) if the firmware test modes expose them; otherwise none.
 
-#### Phase 11 — Thermal
-- **Verifies**: thermistor / thermal behaviour under load. **Power**: full. **Parallelism**: 8 per section at a time.
-- **Take a fresh baseline at the start of this phase** (read temperature before running the motor) — Phase 11 does not rely on the Phase 3 baseline.
-- Run the motor at full power (8 per section at a time) while **logging temperature (cmd 42) every 1 second** for a configured duration.
-- **Collected (Stage A)**: the fresh baseline temperature and the **full per-second temperature series**, stored as a binary blob.
-- **Derived in post-processing**: the temperature rise (final − fresh baseline); the best-fit **slope**, **start temperature** (intercept at t = 0) and **R value**; the temperature-vs-time PNG plot.
-- **Pass/fail (Stage B)** — all four must hold (all ranges configurable):
-  - temperature rise within range (**default 5–20 °C**);
-  - best-fit **start temperature** within a configurable range;
-  - best-fit **slope** within a configurable range;
-  - best-fit **R value** greater than a configurable threshold (a poor fit indicates erratic temperature behaviour).
-- **Configurable parameters**: thermal phase duration; rise range (default 5–20 °C); start-temperature range; slope range; R-value minimum.
+#### Phase 11 — Thermal (run to overtemperature)
+- **Verifies**: thermistor + thermal behaviour under sustained load, and the driver IC's thermal path. **Power**: full. **Parallelism**: 8 per section at a time.
+- **Take a fresh baseline at the start** (read temperature before running) — does not rely on the Phase 3 baseline.
+- **Set the max allowable position deviation tight (cmd 44, default 0.01 rot) before the first rotation.** This catches a specific defect: a driver IC with insufficient thermal paste overheats and momentarily cuts out, the rotation stalls, and the deviation limit trips a fatal error.
+- Run the motor at full power while **logging temperature (cmd 42) every 1 second**, **until the motor reaches its overtemperature cutoff (a fatal error) or a configurable maximum time** (default **20 minutes**). The expected good behaviour is that a healthy motor heats up and hits the firmware's overtemperature cutoff (`ERROR_OVERHEAT`).
+- **Collected (Stage A)**: the fresh baseline, the **full per-second temperature series** (binary blob), the **max temperature reached**, the **last temperature**, and the **fatal-error code** (if any) plus whether the run reached the time limit.
+- **Derived in post-processing**: the **max temperature**; the **outcome** (overtemp cutoff / other fatal / stayed functional); plus the diagnostic temperature rise, best-fit slope / start temperature / R value, and the temperature-vs-time PNG plot.
+- **Pass/fail (Stage B)**:
+  - **Pass** if the motor reached the **overtemperature cutoff** (`ERROR_OVERHEAT`) **and** the last temperature is above the overtemp threshold (**default 79 °C**) — the normal, healthy result; **or** if it never reached the cutoff and **stayed fully functional for the whole max time**.
+  - **Fail** if the motor tripped **any other fatal error** (e.g. the deviation trip from a driver cut-out — the thermal-paste defect), if it hit the overtemp cutoff without actually being hot, or if it stopped responding mid-run without a fatal.
+- **Shown on the phase tab**: a histogram of the **max temperature reached** (with the overtemp threshold line), plus the four diagnostic fit histograms (rise / start / slope / R), and a **count summary of the outcome** (how many reached the overtemp cutoff, how many tripped another fatal, how many stayed functional).
+- **Configurable parameters**: max run time (default 20 min); overtemp threshold (default 79 °C); deviation tolerance (default 0.01 rot); motor current; spin velocity. (The fit-metric ranges remain as reference lines on the diagnostic histograms.)
 
 #### Phase 12 — Open-loop burn-in
 - **Verifies**: full motion chain under sustained load. **Power**: full. **Parallelism**: random 8 per section at any instant. **Duration**: configurable, default 3.5 h.

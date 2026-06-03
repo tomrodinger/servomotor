@@ -198,39 +198,55 @@ def _eval_overvoltage(row, params, crit) -> EvalResult:
     return (metrics, PASS, None) if ok else (metrics, FAIL, "tripped_low")
 
 
+ERROR_OVERHEAT = 40   # firmware fatal code for the overtemperature cutoff
+
+
 def _eval_thermal(row, params, crit) -> EvalResult:
-    if not row or not row.get("raw_blob"):
-        return {}, MISSING, "temp_rise"
-    baseline = _obs(row).get("baseline")
-    series = [list(s) for s in blobs.unpack_temperature_series(row["raw_blob"])]
+    obs = _obs(row)
+    baseline = obs.get("baseline")
+    series = [list(s) for s in blobs.unpack_temperature_series(row["raw_blob"])] \
+        if row and row.get("raw_blob") else []
     res = thermal.analyze(baseline, series)
-    actual_duration = series[-1][0] if series else 0.0
+    fatal_code = obs.get("fatal_code")
+    max_temperature = obs.get("max_temp")
+    if max_temperature is None and series:
+        max_temperature = max(t for _, t in series)
+    last_temp = obs.get("last_temp")
+    ran_full = bool(obs.get("ran_full"))
+
+    # Classify the run outcome.
+    if fatal_code == ERROR_OVERHEAT:
+        outcome = "overtemp"
+    elif fatal_code:
+        outcome = "other_fatal"
+    elif ran_full:
+        outcome = "functional"
+    else:
+        outcome = "incomplete"   # stopped responding without a fatal
+
     metrics = {
+        "max_temperature": max_temperature,
+        "outcome": outcome,
+        "fatal_code": fatal_code,
+        "last_temp": last_temp,
+        # diagnostic fit metrics (histograms only; not pass/fail gates here)
         "temp_rise": res["temp_rise"], "fit_slope": res["fit_slope"],
         "fit_start_temp": res["fit_start_temp"], "fit_r": res["fit_r"],
-        "run_duration": actual_duration,
     }
-    # If the temperature log stopped well short of the configured duration the
-    # motor stopped responding/spinning mid-run (a real failure) and the
-    # slope/rise computed over the truncated series are misleading — report the
-    # truncation, not a bogus slope.  (Thermal curves flatten over time, so a
-    # short series inflates the linear-fit slope.)
-    configured = float(params.get("duration_s", 0) or 0)
-    shortfall = configured - actual_duration
-    if configured and shortfall > max(3.0, 0.2 * configured):
-        return metrics, FAIL, "incomplete_run"
-    rise = res["temp_rise"]
-    if rise is None or not (float(crit["rise_min"]) <= rise <= float(crit["rise_max"])):
-        return metrics, FAIL, "temp_rise"
-    st = res["fit_start_temp"]
-    if st is None or not (float(crit["start_temp_min"]) <= st <= float(crit["start_temp_max"])):
-        return metrics, FAIL, "fit_start_temp"
-    sl = res["fit_slope"]
-    if sl is None or not (float(crit["slope_min"]) <= sl <= float(crit["slope_max"])):
-        return metrics, FAIL, "fit_slope"
-    if res["fit_r"] is None or res["fit_r"] < float(crit["r_value_min"]):
-        return metrics, FAIL, "fit_r"
-    return metrics, PASS, None
+    if not series and fatal_code is None:
+        return metrics, MISSING, "no_reading"
+
+    threshold = float(crit["overtemp_threshold"])
+    if outcome == "overtemp":
+        # Expected good result — but the temperature must corroborate the cutoff.
+        if last_temp is not None and last_temp > threshold:
+            return metrics, PASS, None
+        return metrics, FAIL, "max_temperature"
+    if outcome == "functional":
+        return metrics, PASS, None
+    if outcome == "other_fatal":
+        return metrics, FAIL, "outcome"          # e.g. a deviation trip
+    return metrics, FAIL, "incomplete_run"        # stopped without a fatal
 
 
 def _eval_openloop_burnin(row, params, crit) -> EvalResult:

@@ -1,6 +1,10 @@
-"""A thermal run that stops well short of the configured duration must FAIL
-(the motor stopped mid-run — something is wrong and must be investigated),
-not be mislabeled as a slope problem or pass."""
+"""Phase 11 pass/fail: run-to-overtemperature logic.
+
+PASS: reaches the overtemp cutoff hot enough, OR stays functional the whole run.
+FAIL: any other fatal (e.g. a deviation trip from a driver cut-out / missing
+thermal paste), an overtemp cutoff that isn't actually hot, or stopping mid-run
+without a fatal.
+"""
 
 import os
 import tempfile
@@ -9,46 +13,70 @@ from backend.database import Database
 from backend.settings import Settings
 from backend import blobs, evaluation as ev
 
+OVERHEAT = 40
+DEVIATION = 45
 
-def _setup(duration_s=180.0):
+
+def _setup(max_time_s=1200.0):
     d = tempfile.mkdtemp()
     db = Database(os.path.join(d, "t.sqlite3"))
     settings = Settings(os.path.join(d, "s.json"))
-    settings.set_phase_param(11, "duration_s", duration_s)
-    # keep the realistic criteria; a full run below is built to satisfy them
+    settings.set_phase_param(11, "max_time_s", max_time_s)
     return db, settings
 
 
-def _series(n):
-    # gentle linear rise: 25 C + 0.05 C/s, one sample per second 0..n-1
-    return [(float(i), 25.0 + 0.05 * i) for i in range(n)]
-
-
-def test_incomplete_thermal_run_fails():
-    db, settings = _setup(duration_s=180.0)
-    uid = 0xABCDEF01
+def _store(db, uid, series, **obs):
     db.record_detection(uid)
-    # only 110 s of a 180 s run (the C94F... case)
+    obs.setdefault("baseline", series[0][1] if series else 25)
     db.insert_phase_data(uid, 11,
-                         raw_blob=blobs.pack_temperature_series(_series(110)),
-                         observation={"baseline": 25})
-    metrics, result, failing = ev.evaluate_phase(db, settings, uid, 11)
-    assert result == ev.FAIL
-    assert failing == "incomplete_run"
-    assert metrics["run_duration"] < 180
-
-    # and it must count as an overall failure for the motor
-    ev.evaluate_motor(db, settings, uid, [11])
-    assert ev.overall_result(db, settings, uid)["result"] == ev.FAIL
+                         raw_blob=blobs.pack_temperature_series(series) if series else None,
+                         observation=obs)
 
 
-def test_complete_thermal_run_not_flagged_incomplete():
-    db, settings = _setup(duration_s=180.0)
-    uid = 0xABCDEF02
-    db.record_detection(uid)
-    db.insert_phase_data(uid, 11,
-                         raw_blob=blobs.pack_temperature_series(_series(180)),
-                         observation={"baseline": 25})
-    metrics, result, failing = ev.evaluate_phase(db, settings, uid, 11)
-    assert failing != "incomplete_run"
-    assert result == ev.PASS
+def _ramp(n, start=25.0, slope=1.0):
+    return [(float(i), start + slope * i) for i in range(n)]
+
+
+def test_overtemp_hot_passes():
+    db, settings = _setup()
+    uid = 0x1
+    _store(db, uid, _ramp(60, slope=1.0), fatal_code=OVERHEAT, max_temp=84,
+           last_temp=84, ran_full=False)
+    m, r, f = ev.evaluate_phase(db, settings, uid, 11)
+    assert r == ev.PASS and m["outcome"] == "overtemp" and m["max_temperature"] == 84
+
+
+def test_overtemp_but_not_hot_fails():
+    db, settings = _setup()
+    uid = 0x2
+    _store(db, uid, _ramp(20), fatal_code=OVERHEAT, max_temp=60, last_temp=60,
+           ran_full=False)
+    m, r, f = ev.evaluate_phase(db, settings, uid, 11)
+    assert r == ev.FAIL and f == "max_temperature"
+
+
+def test_other_fatal_fails():
+    db, settings = _setup()
+    uid = 0x3
+    _store(db, uid, _ramp(20), fatal_code=DEVIATION, max_temp=48, last_temp=48,
+           ran_full=False)
+    m, r, f = ev.evaluate_phase(db, settings, uid, 11)
+    assert r == ev.FAIL and m["outcome"] == "other_fatal"
+
+
+def test_functional_whole_time_passes():
+    db, settings = _setup(max_time_s=120.0)
+    uid = 0x4
+    _store(db, uid, _ramp(120, slope=0.1), fatal_code=None, max_temp=37,
+           last_temp=37, ran_full=True)
+    m, r, f = ev.evaluate_phase(db, settings, uid, 11)
+    assert r == ev.PASS and m["outcome"] == "functional"
+
+
+def test_stopped_without_fatal_fails():
+    db, settings = _setup(max_time_s=120.0)
+    uid = 0x5
+    _store(db, uid, _ramp(40), fatal_code=None, max_temp=65, last_temp=65,
+           ran_full=False)   # stopped responding, no fatal recorded
+    m, r, f = ev.evaluate_phase(db, settings, uid, 11)
+    assert r == ev.FAIL and f == "incomplete_run" and m["outcome"] == "incomplete"

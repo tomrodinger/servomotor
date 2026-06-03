@@ -85,9 +85,12 @@ th { color: #51607d; font-weight: 600; }
 .png-imgs img { width: 100%; height: auto; border: 1px solid #dde3ee; border-radius: 6px; }
 .png-imgs figcaption { font-family: ui-monospace, monospace; font-size: 12px; }
 .progress-wrap { display: inline-flex; align-items: center; gap: 8px; }
-.progress-bar { width: 220px; height: 12px; background: #e0e6f0; border-radius: 6px;
-  overflow: hidden; }
-.progress-fill { height: 100%; background: #3b6fd4; width: 0%; transition: width .2s; }
+/* These were <span>s (inline) so width/height were ignored and the bar/fill
+   never showed — make them block-level boxes. */
+.progress-bar { display: inline-block; vertical-align: middle; width: 220px;
+  height: 12px; background: #e0e6f0; border-radius: 6px; overflow: hidden; }
+.progress-fill { display: block; height: 100%; background: #3b6fd4; width: 0%;
+  transition: width .2s; }
 
 .measured { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: center;
   border-top: 1px solid #eef1f7; padding: 12px 0; }
