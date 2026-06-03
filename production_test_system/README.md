@@ -90,14 +90,25 @@ data/                 (gitignored) SQLite DB, plots, settings.json
 * **Phase 8** peak-finder mirrors firmware `handle_calibration_logic`; the
   raw `HALL_PEAK_FIND_THRESHOLD = 2000` becomes **8000** here (captured data is
   4× = 64/16).
-* **Phase 10 (overvoltage)** needs two new firmware test modes (22 V / 26 V) that
-  do not yet exist — it is **disabled by default**.
-* **Phase 15 (LED test)** locks the motor until a power cycle, so it runs **last**.
+* **Phase 10 (overvoltage)** uses firmware test modes 74 (22 V) / 75 (26 V),
+  added in **fw 0.15.1.0**; a trip is reported as fatal `ERROR_OVERVOLTAGE` (14).
+  Enabled by default.
+* **Phase 11 (thermal)** runs to the overtemperature cutoff (`ERROR_OVERHEAT`,
+  fatal 40) or a max time, and arms a tight deviation limit after spin-up to
+  catch a driver cut-out. **Phase 9** uses a low-current closed-loop move and a
+  PID-deviation band (current is in internal units, 0–390). See the per-phase
+  sections in `../PRODUCTION_TEST_PROPOSAL.md`.
+* **Phase 15 (LED test)** uses cmd 36 mode **13** (both LEDs) and locks the motor
+  until a power cycle, so it runs **last**.
 * The default thresholds are placeholders to be tuned from real captures via the
-  Tab 2 histograms.
+  Tab 2 / per-phase histograms.
+* **Bring-up lessons** (collision-tolerant detection, serialized firmware flash,
+  staggered calibration, trapezoid spins, etc.) are documented in the
+  "Implementation Notes & Hardware Gotchas" section of the proposal.
 
 ### Phase 1 firmware flashing
-Phase 1 currently reads back and verifies the firmware version (the testable
-part).  The broadcast flash over the RS485 bootloader is stubbed
-(`firmware_flash.py` is invoked only on real hardware) and needs validation on
-the bench once the rack is wired.
+Phase 1 broadcast-flashes the target release (default **0.15.1.0**) then reads
+the version back. Flashing is **serialized across buses** (`_FLASH_LOCK` in
+`firmware_flash.py`) — flashing all three at once corrupted a bus on the bench.
+Validated on the rack (buses flashed 48/48 cleanly). Toggle off via the Phase 1
+`flash_enabled` param to verify versions only.
