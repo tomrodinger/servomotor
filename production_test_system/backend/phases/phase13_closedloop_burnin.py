@@ -36,7 +36,6 @@ class ClosedLoopBurnInPhase(Phase):
         in_progress = {uid: False for uid in motors}
         next_due = {}
 
-        now0 = time.monotonic()
         for uid in motors:
             ctx.mark_collecting(uid)
             try:
@@ -46,8 +45,21 @@ class ClosedLoopBurnInPhase(Phase):
                 c.zero_position()
             except (RS485Timeout, FatalError, Exception):
                 pass
-            next_due[uid] = now0 + rng.uniform(0.0, 1.0)   # staggered start
 
+        # Let the servo stabilize after entering closed loop, then read-and-clear
+        # the max PID error once (cmd 39 resets on read) so the activation
+        # transient is discarded and not recorded as the first (spuriously high)
+        # data point.
+        ctx.sleep(0.3)
+        for uid in motors:
+            try:
+                ctx.client(uid).get_max_pid_error()
+            except (RS485Timeout, FatalError, Exception):
+                pass
+
+        now0 = time.monotonic()
+        for uid in motors:
+            next_due[uid] = now0 + rng.uniform(0.0, 1.0)   # staggered start
         end = now0 + duration
         active = set(motors)
         while time.monotonic() < end and active:
