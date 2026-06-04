@@ -119,6 +119,36 @@ function renderDetect(snap) {
     host.append(col);
   });
 }
+// Human-readable status for the per-phase cell tooltips.
+const GRID_STATUS_LABEL = {
+  gray: "no data", yellow: "under test",
+  blue: "collected — pending evaluation", green: "passed", red: "failed",
+};
+// Phase number -> short name, built from the loaded phase definitions.
+function phaseName(n) {
+  const p = phaseDefs.find((d) => d.number === n);
+  return p ? p.name : "";
+}
+
+// One motor = a 3x5 grid of 15 phase cells (P1..P15). Each cell is coloured by
+// that phase's live status: grey=no data, yellow=under test, blue=collected
+// (pending evaluation), green=passed, red=failed.
+function renderMotorCell(m) {
+  const cell = el("div", { class: "motor-cell" });
+  const grid = el("div", { class: "phase-grid" });
+  (m.phase_grid || []).forEach((status, i) => {
+    const phase = i + 1;
+    const label = GRID_STATUS_LABEL[status] || status;
+    grid.append(el("div", {
+      class: "pcell " + status,
+      title: `P${phase} ${phaseName(phase)} — ${label}`,
+    }, String(phase)));
+  });
+  cell.append(grid);
+  cell.append(el("div", { class: "motor-id", title: m.unique_id }, m.unique_id));
+  return cell;
+}
+
 function renderRack(snap) {
   const host = $("rack");
   host.innerHTML = "";
@@ -129,10 +159,8 @@ function renderRack(snap) {
     if (b.running) title += ` — running${b.current_phase ? " phase " + b.current_phase : ""}`;
     if (b.paused) title += " (paused)";
     wrap.append(el("h4", {}, title));
-    const grid = el("div", { class: "grid" });
-    b.motors.forEach((m) => {
-      grid.append(el("div", { class: "cell " + m.grid_status, title: m.unique_id }));
-    });
+    const grid = el("div", { class: "rack-motors" });
+    b.motors.forEach((m) => grid.append(renderMotorCell(m)));
     wrap.append(grid);
     host.append(wrap);
   });
@@ -456,8 +484,10 @@ function wireControls() {
   $("stop").onclick = () => api("POST", "/api/run/stop");
   $("system-reset").onclick = () => api("POST", "/api/system_reset");
   $("run-eval").onclick = async () => {
-    const r = await api("POST", "/api/evaluate");
-    alert(`Evaluated ${r.motors} motors: ${r.pass} pass / ${r.fail} fail (criteria v${r.criteria_version})`);
+    const r = await api("POST", "/api/evaluate", { scope: $("db-scope").value });
+    const scopeLabel = r.scope === "test_set" ? "test set" : "whole database";
+    alert(`Evaluated ${r.motors} motors (${scopeLabel}): ` +
+          `${r.pass} pass / ${r.fail} fail (criteria v${r.criteria_version})`);
     loadDevices();
   };
   $("gen-pngs").onclick = async () => {

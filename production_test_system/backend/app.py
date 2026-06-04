@@ -266,8 +266,9 @@ def led_check_removed():
 
 # -- Stage B ------------------------------------------------------------------
 @app.post("/api/evaluate")
-def evaluate():
-    return evaluation.evaluate_all(DB, SETTINGS)
+def evaluate(body: Dict[str, Any] = Body(default={})):
+    # Evaluate the motors picked by the Tab-2 Scope selector, then refresh the grid.
+    return RUNNER.evaluate(body.get("scope", "all"))
 
 
 PNG_PROGRESS: Dict[str, Any] = {"running": False, "done": 0, "total": 0, "pngs": 0}

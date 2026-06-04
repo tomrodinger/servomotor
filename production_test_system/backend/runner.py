@@ -10,14 +10,14 @@ commands and performs the no-hardware LED bookkeeping.
 from __future__ import annotations
 
 import threading
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from . import config
 from .bus_worker import BusWorker
 from .database import Database
 from .detection import DETECT_TIMEOUT
 from .settings import Settings
-from .state import AppState, GRID_BLUE
+from .state import AppState, phase_grid_from_db
 from .transport_factory import TransportFactory, serial_factory
 
 LED_PHASE = 15
@@ -114,7 +114,7 @@ class Runner:
                 self.db.insert_phase_data(uid, LED_PHASE,
                                           observation={"leds_lit": True})
         self._clear_led_prompt()
-        self._mark_grid_blue_for_test_sets()
+        self._grade_led()
 
     def led_check_removed(self) -> None:
         """Ping every test-set motor; record present=pass, missing=fail.
@@ -160,15 +160,54 @@ class Runner:
             state.led_prompt = {"pending": False, "checked_removed": True,
                                 "missing": sorted(missing)}
         self.state.update(_set)
-        self._mark_grid_blue_for_test_sets()
+        self._grade_led()
         return sorted(missing)
 
     def _clear_led_prompt(self) -> None:
         self.state.update(lambda s: setattr(s, "led_prompt", None))
 
-    def _mark_grid_blue_for_test_sets(self) -> None:
+    def _grade_led(self) -> None:
+        """The LED (Phase 15) observation has just been recorded for every
+        test-set motor — evaluate that phase per motor and colour the cell
+        green/red right away (the LED test has no Stage-A ``store`` step)."""
+        from . import evaluation
+        for bus in self.state.buses.values():
+            for uid in list(bus.test_set.keys()):
+                try:
+                    evaluation.evaluate_motor(self.db, self.settings, uid,
+                                              [LED_PHASE])
+                except Exception:
+                    pass
         def _do(_):
             for bus in self.state.buses.values():
                 for uid in bus.test_set:
-                    bus.grid_status[uid] = GRID_BLUE
+                    bus.set_phase(uid, LED_PHASE,
+                                  phase_grid_from_db(self.db, uid)[LED_PHASE])
+        self.state.update(_do)
+
+    # -- Stage-B evaluation -------------------------------------------------
+    def evaluate(self, scope: str = "all") -> Dict[str, Any]:
+        """Run Evaluation (Tab 2) over the motors picked by the Tab-2 Scope
+        selector — ``"test_set"`` (only currently-detected motors) or ``"all"``
+        (every motor in the database) — then refresh the live rack grid."""
+        from . import evaluation
+        if scope == "test_set":
+            ids = list(dict.fromkeys(
+                uid for bus in self.state.buses.values() for uid in bus.test_set))
+        else:
+            ids = self.db.all_motor_ids()
+        summary = evaluation.evaluate_motors(self.db, self.settings, ids)
+        summary["scope"] = scope
+        self.refresh_grid_from_db()
+        return summary
+
+    # -- grid refresh (after Stage-B evaluation) ----------------------------
+    def refresh_grid_from_db(self) -> None:
+        """Recompute every test-set motor's phase grid from the database and
+        push it to the browser.  Called after an evaluation run so the cells
+        flip to green/red."""
+        def _do(_):
+            for bus in self.state.buses.values():
+                for uid in list(bus.test_set.keys()):
+                    bus.phase_status[uid] = phase_grid_from_db(self.db, uid)
         self.state.update(_do)

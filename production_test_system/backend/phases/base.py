@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional
 from .. import config
 from ..database import Database
 from ..motor_client import MotorClient
-from ..state import AppState, GRID_BLUE, GRID_YELLOW, GRID_ORANGE
+from ..state import AppState, GRID_BLUE, GRID_YELLOW
 from ..transport import Transport
 
 
@@ -86,9 +86,11 @@ class CollectionContext:
             self._log_fn("[Bus %s] %s" % (self.bus_id, message))
 
     def set_grid(self, unique_id: int, status: str) -> None:
+        """Set this motor's cell for the *current* phase to ``status``."""
         bus = self.state.bus(self.bus_id)
+        phase = self.phase_number
         def _do(_):
-            bus.grid_status[unique_id] = status
+            bus.set_phase(unique_id, phase, status)
         self.state.update(_do)
 
     def mark_collecting(self, unique_id: int) -> None:
@@ -129,13 +131,32 @@ class CollectionContext:
               scalar: Optional[float] = None,
               observation: Optional[Dict[str, Any]] = None,
               detail: Optional[str] = None, grid: str = GRID_BLUE) -> int:
-        """Write one Stage-A phase_data row and update the rack grid."""
+        """Write one Stage-A phase_data row, immediately evaluate just this
+        (motor, phase), and colour the rack cell green/red.
+
+        The per-phase evaluation runs the instant a motor finishes a test, so the
+        operator sees pass/fail live without waiting for the Tab-2 batch run.  If
+        evaluation can't run for any reason the cell falls back to ``grid``
+        (blue = collected, pending evaluation)."""
         data_id = self.db.insert_phase_data(
             unique_id, self.phase_number,
             firmware_version=self.firmware_version(unique_id),
             raw_blob=raw_blob, scalar=scalar, observation=observation, detail=detail)
-        self.set_grid(unique_id, grid)
+        self.set_grid(unique_id, self._evaluate_now(unique_id, fallback=grid))
         return data_id
+
+    def _evaluate_now(self, unique_id: int, fallback: str) -> str:
+        """Evaluate the current phase for one motor and return its grid colour."""
+        from .. import evaluation              # lazy: avoids an import cycle
+        from ..state import phase_grid_from_db
+        try:
+            evaluation.evaluate_motor(self.db, self.settings, unique_id,
+                                      [self.phase_number])
+            return phase_grid_from_db(self.db, unique_id)[self.phase_number]
+        except Exception as exc:               # never let grading abort a run
+            self.log("phase %d auto-evaluation failed for %016X: %s"
+                     % (self.phase_number, unique_id, exc))
+            return fallback
 
     def reset_motor(self, unique_id: int) -> None:
         """system_reset one motor + the mandatory 1 s bootloader-exit delay."""

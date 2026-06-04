@@ -53,11 +53,14 @@
 
       <div class="panel">
         <h3>Rack — live collection status</h3>
+        <p class="note">Each motor shows 15 cells (P1–P15, 3×5). Cell colour =
+          that phase's live status.</p>
         <div class="legend">
           <span class="chip gray">no data</span>
-          <span class="chip yellow">collecting</span>
-          <span class="chip blue">collected</span>
-          <span class="chip orange">awaiting confirm</span>
+          <span class="chip yellow">under test</span>
+          <span class="chip blue">collected — pending evaluation</span>
+          <span class="chip green">passed</span>
+          <span class="chip red">failed</span>
         </div>
         <div id="rack"></div>
       </div>
@@ -92,6 +95,8 @@
           </label>
           <span id="db-summary" class="summary"></span>
         </div>
+        <p class="note">“Run Evaluation”, the table, and the plots all use the
+          <em>Scope</em> selector above (test set, or the whole database).</p>
       </div>
       <div class="panel">
         <table id="device-table"><thead></thead><tbody></tbody></table>

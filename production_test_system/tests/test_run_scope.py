@@ -49,6 +49,30 @@ def test_incomplete_or_failed_scope():
     assert worker._motors_for_run() == []
 
 
+def test_evaluate_honours_db_scope():
+    """Runner.evaluate(scope) grades the test set or the whole database."""
+    from backend.runner import Runner
+    db, settings, state, _ = _setup()           # only phase 14 enabled
+    runner = Runner(db, settings, state, transport_factory=lambda b, p: None)
+    in_set, db_only = 0x1, 0x2
+    db.record_detection(in_set); state.bus("A").add_to_set(in_set, 88, "green")
+    db.insert_phase_data(in_set, 14, observation={"alias": "X"})
+    # db_only is recorded in the database but NOT added to the live test set
+    db.record_detection(db_only)
+    db.insert_phase_data(db_only, 14, observation={"alias": "X"})
+
+    # scope = test_set -> only the detected motor is evaluated
+    summary = runner.evaluate("test_set")
+    assert summary["motors"] == 1 and summary["scope"] == "test_set"
+    assert db.latest_phase_eval(in_set, 14) is not None
+    assert db.latest_phase_eval(db_only, 14) is None     # not in the test set
+
+    # scope = all -> every motor in the database is evaluated
+    summary = runner.evaluate("all")
+    assert summary["motors"] == 2 and summary["scope"] == "all"
+    assert db.latest_phase_eval(db_only, 14) is not None
+
+
 def test_incomplete_scope_includes_missing_data():
     db, settings, state, worker = _setup()
     uid = 0x3
