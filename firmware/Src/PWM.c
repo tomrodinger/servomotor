@@ -5,13 +5,22 @@
 #include "motor_control.h"
 
 
+// Drive the overvoltage-threshold PWM (TIM1_CH4, on PA11 for M17) so that the comparator reference
+// corresponds to the given supply voltage in volts. OVERVOLTAGE_PROTECTION_SETTING1/SETTING2 are the
+// per-product calibration constants relating threshold voltage to the TIM1->CCR4 compare value.
+void set_overvoltage_threshold(uint16_t voltage)
+{
+    TIM1->CCR4 = (OVERVOLTAGE_PROTECTION_SETTING1 * voltage) / OVERVOLTAGE_PROTECTION_SETTING2;
+}
+
+
 void pwm_init(void)
 {
     RCC->APBENR2 |= RCC_APBENR2_TIM1EN; // enable the clock to TIM1
 #ifdef PRODUCT_NAME_M23
 //    RCC->CCIPR |= RCC_CCIPR_TIM1SEL; // select PLLQCLK (128 MHz) as TIM1 clock source
 #endif
-    TIM1->CCR4 = (OVERVOLTAGE_PROTECTION_SETTING1 * OVERVOLTAGE_PROTECTION_SETTING) / OVERVOLTAGE_PROTECTION_SETTING2;
+    set_overvoltage_threshold(OVERVOLTAGE_PROTECTION_SETTING); // set the default overvoltage threshold
 #if defined(PRODUCT_NAME_M1) || defined(PRODUCT_NAME_M2)
     TIM1->CCR1 = 65535; // set all PWMs high at first (as a workaround to a problem with the MOSFET gate driver that causes high side and low side MOSFETS to turn on at the same time at the instant that the switch disable line goes high)
     TIM1->CCR2 = 65535;

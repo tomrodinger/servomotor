@@ -30,7 +30,15 @@
 
 #define PWM_PERIOD_MICROSECONDS (PWM_PERIOD_TIM16 * 1000000 / PWM_CLOCK_FREQUENCY)
 #define PWM_FREQUENCY (PWM_CLOCK_FREQUENCY / PWM_PERIOD_TIM16)
+
+// Fixed overvoltage-protection thresholds used by the production test modes (see TEST_MODE_COMMAND
+// in main.c). With the production rack on a 24 V supply, the 22 V threshold must trip overvoltage
+// protection and the 26 V threshold must not.
+#define OVERVOLTAGE_TEST_LOW_VOLTAGE  22 // should trip on a 24 V rack
+#define OVERVOLTAGE_TEST_HIGH_VOLTAGE 26 // should NOT trip on a 24 V rack
+
 void pwm_init(void);
+void set_overvoltage_threshold(uint16_t voltage); // drive the OV-threshold PWM (TIM1_CH4 / PA11) to the given voltage
 
 
 #endif /* SRC_PWM_H_ */

@@ -1,0 +1,112 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+  color: #1c2330; background: #f4f6fa; font-size: 14px;
+}
+header {
+  display: flex; align-items: center; gap: 16px;
+  background: #1f2a44; color: #fff; padding: 10px 18px;
+}
+header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+.conn { margin-left: auto; font-size: 12px; padding: 3px 9px; border-radius: 10px;
+  background: #c0392b; }
+.conn.ok { background: #27ae60; }
+
+nav { display: flex; flex-wrap: wrap; gap: 2px; background: #e6eaf2; padding: 6px 10px;
+  border-bottom: 1px solid #cdd5e2; }
+nav button { border: 0; background: transparent; padding: 6px 11px; cursor: pointer;
+  border-radius: 6px 6px 0 0; font-size: 13px; color: #41506b; }
+nav button.active { background: #f4f6fa; font-weight: 600; color: #1f2a44;
+  box-shadow: 0 -2px 0 #3b6fd4 inset; }
+
+main { padding: 16px; max-width: 2400px; margin: 0 auto; }
+h2 { font-size: 19px; }
+.stage { font-size: 12px; font-weight: normal; color: #6b7689; margin-left: 8px; }
+.panel { background: #fff; border: 1px solid #dde3ee; border-radius: 8px;
+  padding: 14px 16px; margin-bottom: 14px; }
+.panel h3 { margin: 0 0 10px; font-size: 14px; color: #2c3a57; }
+
+button { font-size: 13px; padding: 6px 12px; border: 1px solid #b9c3d6;
+  background: #fff; border-radius: 6px; cursor: pointer; }
+button:hover { background: #eef2f9; }
+button.primary { background: #3b6fd4; color: #fff; border-color: #3b6fd4; }
+button.primary:hover { background: #2f5bb5; }
+button.danger { color: #c0392b; border-color: #e3b4ad; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+label { font-size: 13px; }
+select, input[type=text], input[type=number] {
+  font-size: 13px; padding: 5px 7px; border: 1px solid #b9c3d6; border-radius: 6px; }
+
+.ports { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+.ports .bus { display: flex; flex-direction: column; gap: 4px; }
+#ports-status { margin-left: 10px; font-size: 12px; }
+
+.detect-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.detect-col { border: 1px solid #e2e7f0; border-radius: 8px; padding: 10px; }
+.detect-col h4 { margin: 0 0 8px; }
+.detect-col .count { font-weight: 600; }
+.pending { display: inline-block; min-width: 20px; text-align: center;
+  background: #3b6fd4; color: #fff; border-radius: 10px; padding: 0 7px; }
+.motor-list { max-height: 220px; overflow: auto; margin-top: 8px; font-family: ui-monospace, monospace;
+  font-size: 12px; }
+.motor-list .m { padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; }
+.m.green { background: #d6f5dd; }
+.m.orange { background: #ffe6c7; }
+
+.legend { margin-bottom: 8px; }
+.chip { display: inline-block; padding: 2px 9px; border-radius: 10px; margin-right: 6px;
+  font-size: 12px; }
+.chip.gray { background: #d7dbe3; } .chip.yellow { background: #f2e07a; }
+.chip.blue { background: #a9c9f5; } .chip.orange { background: #ffc98a; }
+
+#rack { display: flex; flex-direction: column; gap: 12px; }
+.rack-bus h4 { margin: 0 0 4px; }
+.grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
+.cell { aspect-ratio: 1; border-radius: 3px; background: #d7dbe3; min-height: 14px;
+  cursor: default; }
+.cell.gray { background: #d7dbe3; } .cell.yellow { background: #f2e07a; }
+.cell.blue { background: #a9c9f5; } .cell.orange { background: #ffc98a; }
+
+#log { background: #0f1626; color: #cfe3ff; padding: 10px; border-radius: 6px;
+  max-height: 200px; overflow: auto; font-size: 12px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6eaf2; }
+th { color: #51607d; font-weight: 600; }
+.result-pass { color: #1e8e4a; font-weight: 600; }
+.result-fail { color: #c0392b; font-weight: 600; }
+.result-missing { color: #b5851a; }
+.summary { margin-left: auto; font-size: 13px; }
+
+.png-group h4 { margin: 12px 0 6px; }
+/* One plot per row, spanning the full width of the panel/table. */
+.png-imgs { display: block; }
+.png-imgs figure { margin: 0 0 16px; width: 100%; }
+.png-imgs img { width: 100%; height: auto; border: 1px solid #dde3ee; border-radius: 6px; }
+.png-imgs figcaption { font-family: ui-monospace, monospace; font-size: 12px; }
+.progress-wrap { display: inline-flex; align-items: center; gap: 8px; }
+/* These were <span>s (inline) so width/height were ignored and the bar/fill
+   never showed — make them block-level boxes. */
+.progress-bar { display: inline-block; vertical-align: middle; width: 220px;
+  height: 12px; background: #e0e6f0; border-radius: 6px; overflow: hidden; }
+.progress-fill { display: block; height: 100%; background: #3b6fd4; width: 0%;
+  transition: width .2s; }
+
+.measured { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: center;
+  border-top: 1px solid #eef1f7; padding: 12px 0; }
+.measured .crit label { display: block; margin-bottom: 6px; }
+.hist { width: 100%; height: 230px; display: block; }
+.cat-summary { font-family: ui-monospace, monospace; font-size: 12px; width: 100%; }
+.catbar { display: grid; grid-template-columns: 160px 1fr 40px; align-items: center;
+  gap: 8px; margin: 3px 0; }
+.catlabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catfill { background: #7aa5e8; height: 16px; border-radius: 3px; min-width: 2px; }
+.catcount { text-align: right; }
+
+.modal { position: fixed; inset: 0; background: rgba(15,22,38,.55);
+  display: flex; align-items: center; justify-content: center; }
+/* The author display rule above would otherwise override the `hidden`
+   attribute, so re-assert it for any element that uses both. */
+[hidden] { display: none !important; }
+.modal-box { background: #fff; border-radius: 10px; padding: 22px; max-width: 520px; }
+.note { color: #6b7689; font-size: 12px; }

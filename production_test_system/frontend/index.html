@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servomotor Production Test System</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>Servomotor Production Test System</h1>
+    <span id="conn" class="conn">connecting…</span>
+  </header>
+
+  <nav id="tabs"></nav>
+
+  <main>
+    <!-- Tab 1: Detect & Collect -->
+    <section id="tab-collect" class="tab">
+      <h2>Detect &amp; Collect <span class="stage">Stage A — collection only</span></h2>
+
+      <div class="panel">
+        <h3>Serial port assignment</h3>
+        <div id="ports" class="ports"></div>
+        <button id="refresh-ports">Refresh ports</button>
+        <span id="ports-status"></span>
+      </div>
+
+      <div class="panel">
+        <h3>Detection</h3>
+        <div id="detect-cols" class="detect-cols"></div>
+        <button id="clear-all">Clear All</button>
+      </div>
+
+      <div class="panel">
+        <h3>Run</h3>
+        <label>Run scope:
+          <select id="run-scope">
+            <option value="all">all devices in test set</option>
+            <option value="incomplete">only devices with incomplete data</option>
+            <option value="incomplete_or_failed">only devices with incomplete data or a failure</option>
+          </select>
+        </label>
+        <div class="controls">
+          <button id="start-all" class="primary">Start All</button>
+          <button id="pause">Pause</button>
+          <button id="resume">Resume</button>
+          <button id="cancel" class="danger">Cancel</button>
+          <button id="stop" class="danger">Stop</button>
+          <button id="system-reset">System Reset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Rack — live collection status</h3>
+        <div class="legend">
+          <span class="chip gray">no data</span>
+          <span class="chip yellow">collecting</span>
+          <span class="chip blue">collected</span>
+          <span class="chip orange">awaiting confirm</span>
+        </div>
+        <div id="rack"></div>
+      </div>
+
+      <div id="log-panel" class="panel">
+        <h3>Activity log</h3>
+        <pre id="log"></pre>
+      </div>
+    </section>
+
+    <!-- Tab 2: Database -->
+    <section id="tab-database" class="tab" hidden>
+      <h2>Database <span class="stage">Stage B — post-processing</span></h2>
+      <div class="panel">
+        <div class="controls">
+          <button id="run-eval" class="primary">Run Evaluation</button>
+          <button id="gen-pngs">Generate PNGs</button>
+          <span id="png-progress"></span>
+          <button id="show-pngs">Show / Hide PNGs</button>
+          <label>Scope:
+            <select id="db-scope">
+              <option value="test_set">only devices in the test set</option>
+              <option value="all">all devices in the database</option>
+            </select>
+          </label>
+          <label>Result:
+            <select id="db-result">
+              <option value="">all</option>
+              <option value="pass">pass</option>
+              <option value="fail">fail</option>
+            </select>
+          </label>
+          <span id="db-summary" class="summary"></span>
+        </div>
+      </div>
+      <div class="panel">
+        <table id="device-table"><thead></thead><tbody></tbody></table>
+      </div>
+      <div id="png-panel" class="panel" hidden>
+        <h3>Plots (grouped by type)</h3>
+        <div id="png-groups"></div>
+      </div>
+    </section>
+
+    <!-- Per-phase tabs injected here -->
+    <div id="phase-tabs"></div>
+  </main>
+
+  <!-- LED-test popup -->
+  <div id="led-modal" class="modal" hidden>
+    <div class="modal-box">
+      <h3 id="led-question">Did all motors pass the LED test (all LEDs lit)?</h3>
+      <div id="led-body"></div>
+      <div class="controls">
+        <button id="led-yes" class="primary">Yes — all passed</button>
+        <button id="led-no" class="danger">No — some failed</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
