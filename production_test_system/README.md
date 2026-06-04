@@ -42,6 +42,14 @@ python -m pytest
 * **Database** (`database.py`): SQLite in WAL mode — `motors`, `phase_data`
   (raw, never overwritten), `phase_eval` (derived + pass/fail).  Keyed on the
   8-byte hardware unique ID; `first_detected` is written once.
+* **Untested-vs-tested colouring** (`detection.py`): each detected motor in the
+  test set is shown **green** when no test work has been recorded for it yet, and
+  **orange** (`⚠ already tested`) once it has any `phase_data` or `phase_eval` row
+  (`Database.has_any_test_data`).  Plain detection does *not* turn a motor orange —
+  re-running detection any number of times leaves a fresh motor green, so the
+  operator can spot which motors on a freshly loaded rack still need testing.  The
+  colour is decided once per session and preserved across detection passes (run to
+  beat RS485 collisions) so a re-detect never flips a colour mid-session.
 * **Settings** (`settings.py`): one JSON file, **atomic writes**
   (temp → fsync → `os.replace`), reloaded at startup.
 * **Library reuse**: the existing `servomotor` control library
@@ -65,7 +73,7 @@ backend/
   settings.py         atomic JSON settings
   database.py         SQLite WAL storage
   state.py            live, in-memory state for the WebSocket
-  detection.py        detect passes + new/known colour logic
+  detection.py        detect passes + untested(green)/tested(orange) colour logic
   bus_worker.py       one worker thread per bus (jobs: detect / run / reset)
   runner.py           coordinator + LED-test reconciliation
   phase_defs.py       phase metadata, params, criteria, measured items

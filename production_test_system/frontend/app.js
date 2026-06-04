@@ -106,7 +106,7 @@ function renderDetect(snap) {
     const list = el("div", { class: "motor-list" });
     b.motors.forEach((m) => {
       list.append(el("div", { class: "m " + m.color },
-        m.unique_id + (m.color === "orange" ? "  ⚠ in DB, not in set" : "")));
+        m.unique_id + (m.color === "orange" ? "  ⚠ already tested" : "")));
     });
     col.append(list);
     host.append(col);

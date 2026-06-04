@@ -20,9 +20,9 @@ from typing import Any, Callable, Dict, List, Optional
 from . import config
 from .database import uid_hex
 
-# Test-set colours (new-vs-known coding).
-COLOR_GREEN = "green"     # new motor, or already in this session's set
-COLOR_ORANGE = "orange"   # in DB but not in this session's set (or duplicate ID)
+# Test-set colours (untested-vs-tested coding).
+COLOR_GREEN = "green"     # detected, no tests performed on it yet
+COLOR_ORANGE = "orange"   # already has test results recorded in the DB
 
 # Rack-grid collection-status colours.
 GRID_GRAY = "gray"        # no data collected yet

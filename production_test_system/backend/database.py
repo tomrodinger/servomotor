@@ -134,6 +134,20 @@ class Database:
                                      (_u(unique_id),))
             return cur.fetchone() is not None
 
+    def has_any_test_data(self, unique_id: int) -> bool:
+        """True if any test work (collected phase data or an evaluation) has been
+        recorded for this motor.  Plain detection does NOT count — a motor that has
+        only ever been detected (no phase has run on it) returns False."""
+        key = _u(unique_id)
+        with self._lock:
+            cur = self._conn.execute(
+                "SELECT 1 FROM phase_data WHERE unique_id=? LIMIT 1", (key,))
+            if cur.fetchone() is not None:
+                return True
+            cur = self._conn.execute(
+                "SELECT 1 FROM phase_eval WHERE unique_id=? LIMIT 1", (key,))
+            return cur.fetchone() is not None
+
     def update_identity(self, unique_id: int, product_type: str,
                         hw_version: str, scc: int) -> None:
         with self._lock:
