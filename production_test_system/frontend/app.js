@@ -44,8 +44,15 @@ function buildTabs() {
   const host = $("phase-tabs");
   host.innerHTML = "";
   phaseDefs.forEach((p) => host.append(buildPhaseTab(p)));
+  // colour each phase tab by whether its test is enabled (green) or not (grey)
+  phaseDefs.forEach((p) => setTabEnabledColour(p.number, settings.phases[String(p.number)].enabled));
   const initial = (location.hash || "").replace(/^#/, "");
   showTab(document.getElementById("navbtn-" + initial) ? initial : "collect");
+}
+// Tint a phase's tab button green when its test is enabled, grey when disabled.
+function setTabEnabledColour(number, enabled) {
+  const btn = $("navbtn-phase-" + number);
+  if (btn) btn.classList.toggle("phase-enabled", !!enabled);
 }
 function showTab(id) {
   if (!$("navbtn-" + id)) return;
@@ -254,8 +261,11 @@ function buildPhaseTab(p) {
 
   // enable toggle
   const enableWrap = el("label", {},
-    el("input", { type: "checkbox", onchange: (e) =>
-      api("POST", "/api/phases/" + p.number, { enabled: e.target.checked }) }),
+    el("input", { type: "checkbox", onchange: (e) => {
+      api("POST", "/api/phases/" + p.number, { enabled: e.target.checked });
+      settings.phases[String(p.number)].enabled = e.target.checked;
+      setTabEnabledColour(p.number, e.target.checked);  // recolour the tab live
+    } }),
     " Phase enabled");
   enableWrap.querySelector("input").checked = ps.enabled;
   sec.append(el("div", { class: "panel" }, el("h3", {}, "Configuration"), enableWrap,

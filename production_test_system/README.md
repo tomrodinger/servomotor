@@ -50,6 +50,14 @@ python -m pytest
   operator can spot which motors on a freshly loaded rack still need testing.  The
   colour is decided once per session and preserved across detection passes (run to
   beat RS485 collisions) so a re-detect never flips a colour mid-session.
+* **Enabled-phase tab colouring** (`frontend/app.js`, `style.css`): each
+  per-phase tab (P1…P15) is tinted **light green** when that phase's
+  *Phase enabled* checkbox is checked, and left the default **grey** when it is
+  disabled — so the operator can scan the tab strip and see which tests will run
+  without opening each tab.  The colour is applied from `settings.phases[N].enabled`
+  when the tabs are built and toggled live (`setTabEnabledColour`) the moment the
+  checkbox changes; the green survives the active-tab highlight (the blue underline
+  still marks the selected tab).
 * **Settings** (`settings.py`): one JSON file, **atomic writes**
   (temp → fsync → `os.replace`), reloaded at startup.
 * **Library reuse**: the existing `servomotor` control library
