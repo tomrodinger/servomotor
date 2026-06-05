@@ -25,6 +25,17 @@ nav button.active { background: #f4f6fa; font-weight: 600; color: #1f2a44;
 nav button.phase-enabled { background: #d6f5dd; color: #245c36; }
 nav button.phase-enabled.active { background: #c2efce; color: #14361f; }
 
+/* "Phase enables" card (Tab 1): two-state toggle buttons, one per phase, laid
+   out side by side and wrapping to further rows. Colours match the phase tabs:
+   green = enabled, grey = disabled. */
+.phase-enables { display: flex; flex-wrap: wrap; gap: 8px; }
+.phase-enables .phase-toggle {
+  padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: #e6eaf2; color: #41506b; border: 1px solid #cdd5e2; }
+.phase-enables .phase-toggle:hover { filter: brightness(0.97); }
+.phase-enables .phase-toggle.on {
+  background: #d6f5dd; color: #245c36; border-color: #aee0bb; }
+
 main { padding: 16px; max-width: 2400px; margin: 0 auto; }
 h2 { font-size: 19px; }
 .stage { font-size: 12px; font-weight: normal; color: #6b7689; margin-left: 8px; }

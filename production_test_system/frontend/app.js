@@ -46,6 +46,7 @@ function buildTabs() {
   phaseDefs.forEach((p) => host.append(buildPhaseTab(p)));
   // colour each phase tab by whether its test is enabled (green) or not (grey)
   phaseDefs.forEach((p) => setTabEnabledColour(p.number, settings.phases[String(p.number)].enabled));
+  renderPhaseEnables();
   const initial = (location.hash || "").replace(/^#/, "");
   showTab(document.getElementById("navbtn-" + initial) ? initial : "collect");
 }
@@ -53,6 +54,40 @@ function buildTabs() {
 function setTabEnabledColour(number, enabled) {
   const btn = $("navbtn-phase-" + number);
   if (btn) btn.classList.toggle("phase-enabled", !!enabled);
+}
+
+// ---- Tab 1: phase enable/disable selectors ----------------------------------
+// One two-state toggle button per phase (P1–P15), laid out side by side and
+// wrapping as needed. Green = enabled, grey = disabled — matching the colour
+// of the phase's tab. Replaces the per-tab "Phase enabled" checkbox.
+function renderPhaseEnables() {
+  const host = $("phase-enables");
+  if (!host) return;
+  host.innerHTML = "";
+  phaseDefs.forEach((p) => {
+    const enabled = settings.phases[String(p.number)].enabled;
+    const btn = el("button", {
+      id: "phase-enable-" + p.number,
+      class: "phase-toggle" + (enabled ? " on" : ""),
+      onclick: () => togglePhaseEnabled(p.number),
+    }, `P${p.number} ${p.name}`);
+    host.append(btn);
+  });
+}
+function togglePhaseEnabled(number) {
+  setPhaseEnabled(number, !settings.phases[String(number)].enabled);
+}
+function setPhaseEnabled(number, enabled) {
+  if (settings.phases[String(number)].enabled === enabled) return;  // no-op
+  settings.phases[String(number)].enabled = enabled;
+  api("POST", "/api/phases/" + number, { enabled });
+  setTabEnabledColour(number, enabled);  // recolour the phase tab live
+  const btn = $("phase-enable-" + number);
+  if (btn) btn.classList.toggle("on", enabled);  // recolour the selector button
+}
+// "Select All" / "Select None" buttons in the Phase enables card.
+function setAllPhasesEnabled(enabled) {
+  phaseDefs.forEach((p) => setPhaseEnabled(p.number, enabled));
 }
 function showTab(id) {
   if (!$("navbtn-" + id)) return;
@@ -342,16 +377,9 @@ function buildPhaseTab(p) {
 
   const ps = settings.phases[String(p.number)];
 
-  // enable toggle
-  const enableWrap = el("label", {},
-    el("input", { type: "checkbox", onchange: (e) => {
-      api("POST", "/api/phases/" + p.number, { enabled: e.target.checked });
-      settings.phases[String(p.number)].enabled = e.target.checked;
-      setTabEnabledColour(p.number, e.target.checked);  // recolour the tab live
-    } }),
-    " Phase enabled");
-  enableWrap.querySelector("input").checked = ps.enabled;
-  sec.append(el("div", { class: "panel" }, el("h3", {}, "Configuration"), enableWrap,
+  // The enable/disable toggle now lives in the "Phase enables" card on the
+  // first tab (see renderPhaseEnables); the per-tab checkbox was removed.
+  sec.append(el("div", { class: "panel" }, el("h3", {}, "Configuration"),
     buildParamInputs(p, "params", p.params, ps.params)));
 
   // measured items: criterion + histogram
@@ -530,6 +558,8 @@ function drawHistogram(canvas, values, thresholds) {
 // ---- wire static controls ---------------------------------------------------
 function wireControls() {
   $("refresh-ports").onclick = loadPorts;
+  $("phase-select-all").onclick = () => setAllPhasesEnabled(true);
+  $("phase-select-none").onclick = () => setAllPhasesEnabled(false);
   $("clear-all").onclick = () => api("POST", "/api/clear_all");
   $("run-scope").onchange = (e) => api("POST", "/api/settings/run_scope", { scope: e.target.value });
   $("start-all").onclick = () => api("POST", "/api/run/start_all");

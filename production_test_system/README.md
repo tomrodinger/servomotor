@@ -88,13 +88,21 @@ cause can be pinned without a restart.
   The Phase 15 LED test holds its cell yellow while it awaits the human yes/no,
   then goes straight to green/red once the observation is graded
   (`Runner._grade_led`).
+* **Phase enables card** (`frontend/app.js`, `index.html`, `style.css`): all
+  enable/disable controls live in one **Phase enables** card on Tab 1 (between
+  *Detection* and *Run*) rather than a checkbox inside each phase tab.  The card
+  holds 15 two-state toggle buttons (P1…P15, same label as the tabs) that wrap
+  across rows; **green = enabled**, **grey = disabled**.  Below them, **Select
+  All** / **Select None** flip every phase at once.  Each toggle calls
+  `setPhaseEnabled`, which persists via `POST /api/phases/N`, updates
+  `settings.phases[N].enabled`, and recolours both the button and the phase tab.
 * **Enabled-phase tab colouring** (`frontend/app.js`, `style.css`): each
-  per-phase tab (P1…P15) is tinted **light green** when that phase's
-  *Phase enabled* checkbox is checked, and left the default **grey** when it is
-  disabled — so the operator can scan the tab strip and see which tests will run
-  without opening each tab.  The colour is applied from `settings.phases[N].enabled`
-  when the tabs are built and toggled live (`setTabEnabledColour`) the moment the
-  checkbox changes; the green survives the active-tab highlight (the blue underline
+  per-phase tab (P1…P15) is tinted **light green** when that phase is enabled,
+  and left the default **grey** when it is disabled — so the operator can scan
+  the tab strip and see which tests will run without opening each tab.  The
+  colour is applied from `settings.phases[N].enabled` when the tabs are built and
+  toggled live (`setTabEnabledColour`) the moment a phase is toggled in the Phase
+  enables card; the green survives the active-tab highlight (the blue underline
   still marks the selected tab).
 * **Device identification — Database tab** (`frontend/app.js`, `runner.py`):
   each device row has two *locate-it-in-the-rack* buttons.  **Flash Green**

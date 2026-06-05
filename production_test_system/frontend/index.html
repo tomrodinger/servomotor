@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Servomotor Production Test System</title>
-  <link rel="stylesheet" href="/style.css?v=2">
+  <link rel="stylesheet" href="/style.css?v=5">
 </head>
 <body>
   <header>
@@ -30,6 +30,17 @@
         <h3>Detection</h3>
         <div id="detect-cols" class="detect-cols"></div>
         <button id="clear-all">Clear All</button>
+      </div>
+
+      <div class="panel">
+        <h3>Phase enables</h3>
+        <p class="note">Click a phase to enable (green) or disable (grey) it. The
+          matching phase tab takes the same colour.</p>
+        <div id="phase-enables" class="phase-enables"></div>
+        <div class="controls" style="margin-top:10px">
+          <button id="phase-select-all">Select All</button>
+          <button id="phase-select-none">Select None</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -123,6 +134,6 @@
     </div>
   </div>
 
-  <script src="/app.js?v=2"></script>
+  <script src="/app.js?v=5"></script>
 </body>
 </html>
