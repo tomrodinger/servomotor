@@ -73,6 +73,25 @@ def test_cleared_then_redetected_untested_is_green():
     assert bus.test_set[uid]["color"] == detection.COLOR_GREEN
 
 
+def test_missing_only_eval_rows_stay_green():
+    """The auto-evaluation pass writes a ``result='missing'`` eval row for every
+    enabled phase even on a never-tested motor.  Those rows must NOT make the
+    motor orange — only real collected data / a real (non-missing) verdict does.
+    This is the operator's bug: a rack of fresh motors all showed orange because
+    a prior session's evaluation had stamped 'missing' rows on every one."""
+    db = _db()
+    bus = BusState("A")
+    uid = 0xABCD
+    db.record_detection(uid)
+    for ph in (1, 2, 3):             # evaluation ran but found nothing to evaluate
+        db.insert_phase_eval(uid, ph, criteria_version=1,
+                             derived_metrics=None, result="missing")
+
+    assert not db.has_any_test_data(uid)
+    detection.classify_and_add(db, bus, [[uid, 88]])
+    assert bus.test_set[uid]["color"] == detection.COLOR_GREEN
+
+
 def test_cleared_then_redetected_after_testing_is_orange():
     db = _db()
     bus = BusState("A")

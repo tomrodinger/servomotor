@@ -135,9 +135,14 @@ class Database:
             return cur.fetchone() is not None
 
     def has_any_test_data(self, unique_id: int) -> bool:
-        """True if any test work (collected phase data or an evaluation) has been
-        recorded for this motor.  Plain detection does NOT count — a motor that has
-        only ever been detected (no phase has run on it) returns False."""
+        """True if real test work (collected phase data or a non-``missing``
+        evaluation) has been recorded for this motor.  Plain detection does NOT
+        count — a motor that has only ever been detected returns False.
+
+        A ``phase_eval`` row whose ``result`` is ``'missing'`` also does NOT
+        count: the auto-evaluation pass writes such a row for every *enabled*
+        phase even on a motor that has never been tested (it had no data to
+        evaluate), so counting it would falsely mark fresh motors as "tested"."""
         key = _u(unique_id)
         with self._lock:
             cur = self._conn.execute(
@@ -145,7 +150,8 @@ class Database:
             if cur.fetchone() is not None:
                 return True
             cur = self._conn.execute(
-                "SELECT 1 FROM phase_eval WHERE unique_id=? LIMIT 1", (key,))
+                "SELECT 1 FROM phase_eval WHERE unique_id=? AND result!='missing' "
+                "LIMIT 1", (key,))
             return cur.fetchone() is not None
 
     def update_identity(self, unique_id: int, product_type: str,
