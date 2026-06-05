@@ -10,6 +10,7 @@ commands and performs the no-hardware LED bookkeeping.
 from __future__ import annotations
 
 import threading
+import time
 from typing import Any, Callable, Dict, List, Optional
 
 from . import config
@@ -21,6 +22,13 @@ from .state import AppState, phase_grid_from_db
 from .transport_factory import TransportFactory, serial_factory
 
 LED_PHASE = 15
+
+# "Flash green" locate-in-rack behaviour.  The Identify command (cmd 41) makes
+# the firmware flash its green LED for ~2.4 s on its own, so we re-trigger it a
+# little faster than that to get continuous flashing, and stop after a generous
+# cap so a forgotten flash never ties up a bus forever.
+FLASH_PERIOD_S = 2.0
+FLASH_MAX_S = 300.0   # 5-minute safety auto-stop (also cancellable from the UI)
 
 
 class Runner:
@@ -37,6 +45,18 @@ class Runner:
             for bus in config.BUS_IDS}
         for w in self.workers.values():
             w.start()
+        # Per-bus "identify" coordination.  One coordinator loop per bus services
+        # *all* locate requests on that bus so any number of devices can flash at
+        # once (they share the single RS485 line): ``_flashing`` is the set of
+        # unique_ids to keep green-flashing, ``_pending_solid`` the ids to lock
+        # solid (test mode 13) once.  ``_flash_wake`` nudges a sleeping loop when
+        # the sets change; ``_flash_active`` says whether a loop is already up.
+        self._flash_lock = threading.Lock()
+        self._flashing: Dict[str, set] = {b: set() for b in config.BUS_IDS}
+        self._pending_solid: Dict[str, set] = {b: set() for b in config.BUS_IDS}
+        self._flash_active: Dict[str, bool] = {b: False for b in config.BUS_IDS}
+        self._flash_wake: Dict[str, threading.Event] = {
+            b: threading.Event() for b in config.BUS_IDS}
 
     # -- detection / test set ----------------------------------------------
     def detect(self, bus_id: str) -> None:
@@ -88,23 +108,95 @@ class Runner:
                 return bus_id
         return None
 
-    def identify(self, unique_id: int) -> bool:
-        """Flash a device's LEDs (cmd 41) so it can be located in the rack."""
+    def identify_flash_start(self, unique_id: int) -> bool:
+        """Start flashing a device's green LED (cmd 41, re-triggered) so it can
+        be located in the rack.  Any number of devices on a bus can flash at the
+        same time.  Runs until cancelled (``identify_flash_stop``), a global
+        Cancel, or the ``FLASH_MAX_S`` safety cap; the motor stays responsive."""
         bus_id = self.find_bus(unique_id)
         if bus_id is None:
             return False
-        worker = self.workers[bus_id]
-
-        def _job():
-            from .motor_client import MotorClient
-            transport = worker._open_transport()
-            try:
-                MotorClient(transport, unique_id).identify()
-            finally:
-                if not transport.is_simulated:
-                    transport.close()
-        worker._jobs.put(_job)
+        with self._flash_lock:
+            self._flashing[bus_id].add(unique_id)
+            self._ensure_identify_loop(bus_id)
         return True
+
+    def identify_flash_stop(self, unique_id: int) -> bool:
+        """Stop flashing a device (a no-op if it wasn't flashing)."""
+        with self._flash_lock:
+            for bus_id in config.BUS_IDS:
+                self._flashing[bus_id].discard(unique_id)
+                self._flash_wake[bus_id].set()
+        return True
+
+    def identify_solid(self, unique_id: int) -> bool:
+        """Light a device's LEDs solid green+red (test mode 13) so it is
+        unmistakable in the rack.  This *locks up* the motor (see
+        :meth:`MotorClient.leds_solid`) — it must be power-cycled afterwards.
+        Works while other devices on the same bus are green-flashing."""
+        bus_id = self.find_bus(unique_id)
+        if bus_id is None:
+            return False
+        with self._flash_lock:
+            self._flashing[bus_id].discard(unique_id)   # stop flashing it
+            self._pending_solid[bus_id].add(unique_id)
+            self._ensure_identify_loop(bus_id)
+        return True
+
+    def _ensure_identify_loop(self, bus_id: str) -> None:
+        """Ensure a coordinator loop is running for ``bus_id``.  MUST be called
+        while holding ``self._flash_lock``."""
+        self._flash_wake[bus_id].set()
+        if not self._flash_active[bus_id]:
+            self._flash_active[bus_id] = True
+            worker = self.workers[bus_id]
+            worker._jobs.put(lambda: self._identify_loop(bus_id, worker))
+
+    def _identify_loop(self, bus_id: str, worker: BusWorker) -> None:
+        """Service every locate request on one bus from a single thread: each
+        pass re-triggers Identify for all flashing devices and sends test mode 13
+        to any newly-requested solid ones, then sleeps a little under the
+        firmware's flash duration so the flashing looks continuous."""
+        from .motor_client import MotorClient
+        wake = self._flash_wake[bus_id]
+        transport = None
+        try:
+            transport = worker._open_transport()
+            deadline = time.monotonic() + FLASH_MAX_S
+            while True:
+                cancelled = worker._cancel.is_set()
+                expired = time.monotonic() >= deadline
+                with self._flash_lock:
+                    wake.clear()
+                    if cancelled or expired:
+                        self._flashing[bus_id].clear()
+                        self._pending_solid[bus_id].clear()
+                    solids = list(self._pending_solid[bus_id])
+                    self._pending_solid[bus_id].clear()
+                    for uid in solids:
+                        self._flashing[bus_id].discard(uid)
+                    flashes = list(self._flashing[bus_id])
+                    if not flashes and not solids:
+                        self._flash_active[bus_id] = False
+                        break
+                for uid in solids:
+                    try:
+                        MotorClient(transport, uid).leds_solid()
+                    except Exception:
+                        pass
+                for uid in flashes:
+                    try:
+                        MotorClient(transport, uid).identify()
+                    except Exception:
+                        pass
+                wake.wait(FLASH_PERIOD_S)
+        except Exception:
+            with self._flash_lock:           # relinquish so a later start can retry
+                self._flash_active[bus_id] = False
+            raise
+        finally:
+            if transport is not None and not transport.is_simulated:
+                transport.close()
 
     # -- LED test (Phase 15) reconciliation --------------------------------
     def led_confirm_all_pass(self) -> None:

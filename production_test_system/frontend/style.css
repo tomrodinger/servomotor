@@ -38,6 +38,10 @@ button:hover { background: #eef2f9; }
 button.primary { background: #3b6fd4; color: #fff; border-color: #3b6fd4; }
 button.primary:hover { background: #2f5bb5; }
 button.danger { color: #c0392b; border-color: #e3b4ad; }
+button:disabled { color: #97a0b2; background: #f2f4f8; border-color: #d3d9e4;
+  cursor: default; }
+button:disabled:hover { background: #f2f4f8; }
+.id-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 label { font-size: 13px; }
 select, input[type=text], input[type=number] {

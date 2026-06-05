@@ -143,6 +143,15 @@ class MotorClient:
     def test_mode(self, mode: int) -> None:
         self._send("Test mode", [int(mode)])
 
+    def leds_solid(self) -> None:
+        """Hold both LEDs (green+red) steadily on via test mode 13.
+
+        WARNING: the firmware's LED test modes (10-13) acknowledge the command
+        and then ``while(1)`` with interrupts disabled — the motor stays lit but
+        is locked up and stops answering the bus.  Recovery requires a physical
+        power cycle (a System reset will NOT bring it back)."""
+        self._send("Test mode", [13])
+
     def set_alias(self, alias: int) -> None:
         self._send("Set device alias", [int(alias)])
 

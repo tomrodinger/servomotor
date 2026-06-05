@@ -74,6 +74,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Servomotor Production Test System", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def revalidate_frontend(request, call_next):
+    """Force browsers to revalidate the static frontend on every load.
+
+    StaticFiles only sends ETag/Last-Modified, so a plain reload may reuse a
+    stale ``app.js``/``style.css`` from cache without checking the server.
+    ``no-cache`` keeps the cache but requires a revalidation, so a single normal
+    reload always picks up a changed file (304 when unchanged, 200 when not)."""
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith((".html", ".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 def _broadcast_from_thread() -> None:
     if _loop is None:
         return
@@ -398,9 +413,21 @@ def clear_failure(uid_hex_str: str, phase: int, body: Dict[str, Any] = Body(...)
     return {"ok": ok}
 
 
-@app.post("/api/db/identify/{uid_hex_str}")
-def identify(uid_hex_str: str):
-    ok = RUNNER.identify(uid_from_hex(uid_hex_str))
+@app.post("/api/db/identify/flash/start/{uid_hex_str}")
+def identify_flash_start(uid_hex_str: str):
+    ok = RUNNER.identify_flash_start(uid_from_hex(uid_hex_str))
+    return {"ok": ok}
+
+
+@app.post("/api/db/identify/flash/stop/{uid_hex_str}")
+def identify_flash_stop(uid_hex_str: str):
+    ok = RUNNER.identify_flash_stop(uid_from_hex(uid_hex_str))
+    return {"ok": ok}
+
+
+@app.post("/api/db/identify/solid/{uid_hex_str}")
+def identify_solid(uid_hex_str: str):
+    ok = RUNNER.identify_solid(uid_from_hex(uid_hex_str))
     return {"ok": ok}
 
 

@@ -223,11 +223,66 @@ async function loadDevices() {
       el("td", {}, fails || "—"),
       el("td", {}, fmtDate(d.first_detected)),
       el("td", {}, fmtDate(d.last_seen)),
-      el("td", {}, el("button", { onclick: () => api("POST", "/api/db/identify/" + d.unique_id) }, "Identify")));
+      el("td", {}, identifyButtons(d.unique_id)));
     tb.append(tr);
   });
   $("db-summary").textContent =
     `total ${data.total} · pass ${data.pass} · fail ${data.fail} · yield ${data.yield.toFixed(1)}% · criteria v${data.criteria_version}`;
+}
+
+// Two per-device locate buttons for the Database tab:
+//  • "Flash Green" toggles a long, cancellable green flash (re-triggered cmd 41).
+//  • "Red and Green Solid" lights both LEDs solid via test mode 13 — which LOCKS
+//    the motor, so afterwards both buttons disable and it says to power-cycle.
+function identifyButtons(uid) {
+  const wrap = el("div", { class: "id-buttons" });
+  const flashBtn = el("button", {}, "Flash Green");
+  const solidBtn = el("button", {}, "Red and Green Solid");
+  let flashing = false;
+  let armTimer = null;   // set while the solid button is in its 3 s undo window
+  flashBtn.onclick = async () => {
+    try {
+      if (!flashing) {
+        await api("POST", "/api/db/identify/flash/start/" + uid);
+        flashing = true;
+        flashBtn.textContent = "Cancel Green Flashing";
+      } else {
+        await api("POST", "/api/db/identify/flash/stop/" + uid);
+        flashing = false;
+        flashBtn.textContent = "Flash Green";
+      }
+    } catch (e) { alert(e.message); }
+  };
+  // The solid LEDs command locks up the motor (power-cycle to recover), so the
+  // button arms instead of firing immediately: first click shows a 3 s "Undo"
+  // affordance; clicking again within that window cancels and nothing is sent.
+  solidBtn.onclick = () => {
+    if (armTimer !== null) {           // within the undo window → cancel, restore
+      clearTimeout(armTimer);
+      armTimer = null;
+      solidBtn.classList.remove("danger");
+      solidBtn.textContent = "Red and Green Solid";
+      return;
+    }
+    solidBtn.classList.add("danger");
+    solidBtn.textContent = "Lockup Imminent! Undo";
+    armTimer = setTimeout(async () => {
+      armTimer = null;
+      solidBtn.classList.remove("danger");
+      try {
+        await api("POST", "/api/db/identify/solid/" + uid);
+        flashing = false;
+        flashBtn.disabled = true;
+        solidBtn.disabled = true;
+        solidBtn.textContent = "You must Power Cycle the Device";
+      } catch (e) {
+        solidBtn.textContent = "Red and Green Solid";
+        alert(e.message);
+      }
+    }, 3000);
+  };
+  wrap.append(flashBtn, solidBtn);
+  return wrap;
 }
 
 async function pollPngProgress() {

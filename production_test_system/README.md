@@ -96,6 +96,19 @@ cause can be pinned without a restart.
   when the tabs are built and toggled live (`setTabEnabledColour`) the moment the
   checkbox changes; the green survives the active-tab highlight (the blue underline
   still marks the selected tab).
+* **Device identification — Database tab** (`frontend/app.js`, `runner.py`):
+  each device row has two *locate-it-in-the-rack* buttons.  **Flash Green**
+  re-triggers the Identify command (cmd 41) so the green LED flashes continuously
+  until cancelled (the button toggles to *Cancel Green Flashing*); a single
+  per-bus coordinator loop (`Runner._identify_loop`) services every flashing
+  device on that bus, so **any number flash at once** over the shared RS485 line
+  (the bus's worker is busy while flashing — Detect/Run on it wait until the
+  flashes are cancelled or the cap elapses).  **Red and Green Solid** sends test
+  mode 13 (both LEDs solid) which is the most visible but **locks up the motor**
+  (recover only by power-cycling), so it arms with a 3 s *Lockup Imminent! Undo*
+  window before firing, then disables both buttons (*You must Power Cycle the
+  Device*).  Solid works while other devices on the same bus keep flashing.  A
+  5-minute safety cap and the global **Cancel** both stop flashing.
 * **Settings** (`settings.py`): one JSON file, **atomic writes**
   (temp → fsync → `os.replace`), reloaded at startup.
 * **Library reuse**: the existing `servomotor` control library
@@ -121,7 +134,7 @@ backend/
   state.py            live, in-memory state for the WebSocket
   detection.py        detect passes + untested(green)/tested(orange) colour logic
   bus_worker.py       one worker thread per bus (jobs: detect / run / reset)
-  runner.py           coordinator + LED-test reconciliation
+  runner.py           coordinator + LED-test reconciliation + identify (flash/solid)
   phase_defs.py       phase metadata, params, criteria, measured items
   phases/             phase01..phase15 — Stage A collectors
   analysis/           hall peak-finder + thermal best-fit (pure functions)
@@ -129,7 +142,7 @@ backend/
   png_generation.py   Stage B plot rendering
   blobs.py            binary (de)serialization for large arrays
   demo.py             optional simulated rack for --sim
-  app.py              FastAPI app: REST + WebSocket + static frontend
+  app.py              FastAPI app: REST + WebSocket + static frontend (no-cache)
 frontend/             plain HTML/JS/CSS (no build step)
 tests/                pytest suite + simulator harness
 data/                 (gitignored) SQLite DB, plots, settings.json
