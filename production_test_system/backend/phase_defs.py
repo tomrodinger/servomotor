@@ -219,7 +219,7 @@ PHASES: List[PhaseDef] = [
     PhaseDef(
         number=8, key="hall_waveform", name="Hall waveform & peak analysis",
         short="Hall signal quality + 50-magnet disk", power="default",
-        parallelism="one motor at a time", requires_calibration=True,
+        parallelism="one motor at a time", requires_calibration=False,
         description=("Capture raw 3-channel hall waveform (capture type 1, 4000 "
                      "points, bitmask 7, sum 64 / div 16) while spinning 1.4 "
                      "rotations. Peak/valley analysis is done in post-processing."),

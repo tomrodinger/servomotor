@@ -27,15 +27,40 @@ class HallWaveformPhase(Phase):
         rotations = float(p.get("spin_rotations", 1.4))
         # spin slowly enough that the capture spans ~1.4 rotations
         spin_time_s = 9.0
+        NO_DEVIATION_LIMIT = 2_000_000_000   # "effectively infinite" (per capture_hall_sensor_data.py)
 
-        for uid in ctx.calibrated_motors():
+        # Disable the position-deviation guard on EVERY motor immediately, as a
+        # broadcast — this runs right after the framework's per-phase system
+        # reset, so it lands before any motor has had time to accumulate a trip.
+        # Why it must be up front and bus-wide (not just per motor in the loop):
+        # this phase captures one motor at a time, so the motors still waiting
+        # their turn sit idle for a long time after the reset.  These motors may
+        # be uncalibrated (Phase 8 no longer requires calibration) or have the
+        # very defective hall sensors we are here to test; line noise can then
+        # register spurious encoder counts that creep toward ~2 rotations and
+        # trip a fatal ERROR_POSITION_DEVIATION_TOO_LARGE *before* we ever reach
+        # them to capture.  Broadcasting the limit-off up front prevents that.
+        try:
+            ctx.transport.transact(255, "Set max allowable position deviation",
+                                   [NO_DEVIATION_LIMIT])
+        except Exception:
+            pass
+
+        # Open-loop capture — no calibration / closed loop is used (this mirrors
+        # capture_hall_sensor_data.py, which runs on *uncalibrated* motors to
+        # gather the very data calibration is later derived from).  So iterate
+        # every detected motor, not just the calibrated ones.
+        for uid in ctx.motors:
             ctx.check_cancel()
             ctx.wait_if_paused()
             ctx.mark_collecting(uid)
             client = ctx.client(uid)
             raw = b""
             try:
-                client.set_max_allowable_position_deviation(2_000_000_000)
+                # Re-assert the limit-off per motor (the broadcast above has no
+                # ACK/retry, so a single motor could miss it to a bus collision)
+                # right before enabling the MOSFETs and moving.
+                client.set_max_allowable_position_deviation(NO_DEVIATION_LIMIT)
                 client.enable_mosfets()
                 ctx.sleep(0.05)
                 client.trapezoid_move(units.rotations_to_counts(rotations),
