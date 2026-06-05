@@ -17,9 +17,10 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Set
 
 from fastapi import FastAPI, Body, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, phase_defs, evaluation, png_generation
+from . import config, phase_defs, evaluation, png_generation, diagnostics
 from .database import Database, uid_hex, uid_from_hex
 from .settings import Settings
 from .state import AppState
@@ -36,6 +37,7 @@ LOGS: List[str] = []
 def _log(msg: str) -> None:
     LOGS.append(msg)
     del LOGS[:-500]   # keep the last 500 lines
+    diagnostics.log_line(msg)   # also persist to data/diagnostics.log (survives restart)
 
 
 if SIMULATE:
@@ -90,6 +92,21 @@ def _enqueue(snapshot: Dict[str, Any]) -> None:
 STATE.add_listener(_broadcast_from_thread)
 
 
+# -- diagnostics (always on; see diagnostics.py + DEBUGGING.md) ----------------
+def _vitals() -> str:
+    parts = []
+    for bid, b in STATE.buses.items():
+        parts.append("%s[run=%s ph=%s pend=%s det=%s n=%d]" % (
+            bid, b.running, b.current_phase, b.pending_detections,
+            b.detecting, len(b.test_set)))
+    return " ".join(parts)
+
+
+diagnostics.install_faulthandler()              # SIGUSR1 -> all-thread stack dump
+diagnostics.start_watchdog(_vitals)             # periodic vitals + auto-dump on livelock
+_log("server started (pid=%d simulate=%s)" % (os.getpid(), SIMULATE))
+
+
 # -- helpers ------------------------------------------------------------------
 def _test_set_ids() -> List[int]:
     ids: List[int] = []
@@ -132,6 +149,35 @@ def get_state():
 @app.get("/api/logs")
 def get_logs():
     return {"logs": LOGS[-200:]}
+
+
+# -- debug / diagnostics (see DEBUGGING.md) -----------------------------------
+@app.get("/api/debug/stacks", response_class=PlainTextResponse)
+def debug_stacks():
+    """Dump every thread's Python stack.  Use this FIRST if the UI/detection is
+    wedged or CPU is pegged: it pinpoints exactly what each bus worker is doing.
+    Also written to data/diagnostics.log for the record."""
+    text = diagnostics.dump_all_stacks()
+    diagnostics.log_line("STACKS requested via /api/debug/stacks:\n" + text)
+    return text
+
+
+@app.get("/api/debug/vitals")
+def debug_vitals():
+    """Quick machine-readable health snapshot: per-bus run flags + thread count."""
+    return {"pid": os.getpid(), "threads": threading.active_count(),
+            "vitals": _vitals(), "simulate": SIMULATE,
+            "diagnostics_log": diagnostics.DIAG_LOG_PATH}
+
+
+@app.get("/api/debug/log", response_class=PlainTextResponse)
+def debug_log(lines: int = 200):
+    """Tail the durable diagnostics log (worker lifecycle, vitals, stack dumps)."""
+    try:
+        with open(diagnostics.DIAG_LOG_PATH, "r") as fp:
+            return "".join(fp.readlines()[-max(1, lines):])
+    except FileNotFoundError:
+        return "(no diagnostics log yet)"
 
 
 # -- serial ports -------------------------------------------------------------

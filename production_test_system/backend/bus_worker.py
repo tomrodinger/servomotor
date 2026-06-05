@@ -63,7 +63,9 @@ class BusWorker:
             except CancelledError:
                 self.log("[Bus %s] operation cancelled" % self.bus_id)
             except Exception as exc:    # never let a worker thread die
-                self.log("[Bus %s] error: %s" % (self.bus_id, exc))
+                import traceback as _tb
+                self.log("[Bus %s] error: %s\n%s"
+                         % (self.bus_id, exc, _tb.format_exc()))
             finally:
                 self._cancel.clear()
                 self._jobs.task_done()

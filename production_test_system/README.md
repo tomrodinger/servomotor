@@ -24,6 +24,15 @@ To run the tests:
 python -m pytest
 ```
 
+## Troubleshooting
+
+If the system **wedges** — UI/detection stuck, a bus stuck `running`, "1
+detection queued" that never clears, or high CPU — see **[`DEBUGGING.md`](DEBUGGING.md)**.
+Short version: hit **`GET /api/debug/stacks`** first (it shows exactly what each
+bus worker is doing), and check the durable log at `data/diagnostics.log`. These
+always-on diagnostics (`backend/diagnostics.py`) capture the evidence so the
+cause can be pinned without a restart.
+
 ## Design (how it maps to the spec)
 
 * **One async worker thread per RS485 bus** (`bus_worker.py`), coordinated by
