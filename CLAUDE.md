@@ -46,7 +46,7 @@ All tests support `-p PORT`, `-P` (interactive), `--verbose`, and many support `
 ### Firmware Upgrade
 ```bash
 cd python_programs
-python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.14.2.0_scc3_hw1.5.firmware
+python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.15.2.0_scc3_hw1.5.firmware
 ```
 
 ## Architecture
@@ -111,7 +111,7 @@ servomotor.close_serial_port()
 Firmware version in `firmware/Src/main.c`:
 ```c
 #define MAJOR_FIRMWARE_VERSION    0
-#define MINOR_FIRMWARE_VERSION    14
+#define MINOR_FIRMWARE_VERSION    15
 #define BUGFIX_FIRMWARE_VERSION   2
 #define DEVELOPMENT_FIRMWARE_VERSION 0
 ```
@@ -122,4 +122,4 @@ M17 1.5 3
 M23 0.10 1
 ```
 
-Output naming: `servomotor_M17_fw0.14.2.0_scc3_hw1.5.firmware`
+Output naming: `servomotor_M17_fw0.15.2.0_scc3_hw1.5.firmware`

@@ -170,7 +170,13 @@ data/                 (gitignored) SQLite DB, plots, settings.json
   Enabled by default.
 * **Phase 11 (thermal)** runs to the overtemperature cutoff (`ERROR_OVERHEAT`,
   fatal 40) or a max time, and arms a tight deviation limit after spin-up to
-  catch a driver cut-out. **Phase 9** uses a low-current closed-loop move and a
+  catch a driver cut-out. It first broadcasts firmware test mode **76**
+  (added in **fw 0.15.2.0**), which raises the overtemperature cutoff from
+  ~80 °C to **~90 °C** so the driver IC is confirmed to have thermal margin under
+  load; the firmware restores the default cutoff at the next system reset. The
+  pass check requires the last temperature to exceed `overtemp_threshold`
+  (default **85 °C**) to corroborate the raised cutoff. **Phase 9** uses a
+  low-current closed-loop move and a
   PID-deviation band (current is in internal units, 0–390). See the per-phase
   sections in `../PRODUCTION_TEST_PROPOSAL.md`.
 * **Phase 15 (LED test)** uses cmd 36 mode **13** (both LEDs) and locks the motor
@@ -182,7 +188,7 @@ data/                 (gitignored) SQLite DB, plots, settings.json
   "Implementation Notes & Hardware Gotchas" section of the proposal.
 
 ### Phase 1 firmware flashing
-Phase 1 broadcast-flashes the target release (default **0.15.1.0**) then reads
+Phase 1 broadcast-flashes the target release (default **0.15.2.0**) then reads
 the version back. Flashing is **serialized across buses** (`_FLASH_LOCK` in
 `firmware_flash.py`) — flashing all three at once corrupted a bus on the bench.
 Validated on the rack (buses flashed 48/48 cleanly). Toggle off via the Phase 1

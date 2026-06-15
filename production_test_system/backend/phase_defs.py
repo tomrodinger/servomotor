@@ -342,12 +342,16 @@ PHASES: List[PhaseDef] = [
         parallelism="8 per section", requires_calibration=True,
         description=("Run the motor at full power until it reaches its "
                      "overtemperature cutoff (a fatal error) or a max time "
-                     "limit, logging temperature (cmd 42) every second. A tight "
-                     "deviation limit (cmd 44) is set first so a driver IC that "
-                     "overheats and cuts out (e.g. missing thermal paste) trips "
-                     "a fatal error. Passes if the motor reaches the overtemp "
-                     "cutoff hot enough, OR stays functional the whole time; "
-                     "fails on any other fatal error."),
+                     "limit, logging temperature (cmd 42) every second. First "
+                     "broadcasts firmware test mode 76, which raises the "
+                     "overtemperature cutoff from ~80 °C to ~90 °C so the "
+                     "driver IC is confirmed to have thermal margin under load "
+                     "(the firmware restores the default cutoff at the next "
+                     "system reset). A tight deviation limit (cmd 44) is also set "
+                     "so a driver IC that overheats and cuts out (e.g. missing "
+                     "thermal paste) trips a fatal error. Passes if the motor "
+                     "reaches the overtemp cutoff hot enough, OR stays functional "
+                     "the whole time; fails on any other fatal error."),
         params=[
             Param("max_time_s", "Max run time", "float", 1200.0, "s",
                   "Default 20 minutes. The motor is allowed to run up to this "
@@ -359,9 +363,10 @@ PHASES: List[PhaseDef] = [
                   "Set before spinning; a brief stall (driver cut-out) trips it."),
         ],
         criteria=[
-            Param("overtemp_threshold", "Overtemperature threshold", "float", 79.0,
+            Param("overtemp_threshold", "Overtemperature threshold", "float", 85.0,
                   "°C", "On an overtemp cutoff the last temperature must exceed "
-                        "this to pass."),
+                        "this to pass. Set just below the ~90 °C raised cutoff "
+                        "(test mode 76) to confirm the motor reached it."),
             # The fit metrics below are diagnostic histograms (with reference
             # threshold lines); the pass/fail is the overtemp/fatal outcome.
             Param("rise_min", "Temperature rise min", "float", 5.0, "°C"),

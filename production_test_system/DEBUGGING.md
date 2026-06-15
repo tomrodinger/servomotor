@@ -60,6 +60,12 @@ the evidence. Grab steps 1–3 first, then restart to recover.
   (≥1.5 cores for ~3 min — the livelock fingerprint), auto-dumps all stacks to
   the durable log. A false trigger (e.g. a long PNG-generation burst) only costs
   one extra dump in the log; it never interferes with a run.
+  **Limitation:** the auto-dump triggers on CPU only, so it **misses a zero-CPU
+  deadlock** — a worker blocked in a syscall (the 2026-06-05 wedge below sat at
+  `cpu_cores=0.01`). A "stuck" trigger (a bus `run=True` with an unchanged phase
+  and no DB write for N minutes) would catch that class; until it exists, grab
+  `GET /api/debug/stacks` manually the moment a bus stalls. The `VITALS` lines
+  still record the stall even with no auto-dump.
 - **`SIGUSR1` faulthandler** — `kill -USR1 <pid>` dumps all stacks to
   `data/faulthandler.log`. Works while a thread is spinning in a C extension
   (sqlite3) and needs no debugger, so it bypasses the SIP restriction.
@@ -67,21 +73,47 @@ the evidence. Grab steps 1–3 first, then restart to recover.
 All of this is observational only — it never kills threads, cancels work, or
 touches the RS485 bus.
 
-## Note on the original incident (root cause still unknown)
+## Incident 2026-06-05 — Phase 11, Bus B wedge (root cause CONFIRMED)
+
+A Phase 11 (thermal) run wedged on **Bus B**: 8 motors stuck "collecting"
+(yellow), bus idle, adapter LEDs dark. Reconstructed from the durable
+`data/diagnostics.log` `VITALS` trail (no live stacks — the process had already
+exited, and the watchdog never auto-dumped because CPU was ~0):
+
+- Buses A and C finished Phase 11 cleanly (`run` flipped to `False` at 15:36 /
+  15:38); Bus B stayed `run=True ph=11` from ~15:35 until the process died at
+  16:00, **`cpu_cores=0.01` the whole time**, `threads=6` constant → a **zero-CPU
+  blocked syscall**, not a spin.
+- **No exception/error line was ever logged** during the run → not a
+  `SerialException` disconnect (`bus_worker` would have logged "phase N error
+  (continuing)") — a *silent* block.
+
+**Root cause:** `SerialTransport.__init__` opens the port with a read `timeout`
+but **no `write_timeout`** (pyserial default `None` = block forever). Reads are
+bounded; `self._ser.write()` (`transport.py`) is the only unbounded blocking
+call. When Bus B's USB-RS485 adapter stopped draining its TX buffer (adapter
+hang / USB re-enumeration), the per-second `Get temperature` write parked the
+worker thread permanently. The motors were fine (they overheated → fatal, and
+still answer the bus). This is exactly the disconnect-intolerance the fix below
+targets (item 1). Full evidence preserved at
+`data/incidents/diagnostics_2026-06-05_phase11_busB_wedge.log`.
+
+## Note on the original (2025) incident — root cause still unknown
 
 The trigger was **not** reproducible by yanking the adapters during Phase 9
-(Phase 9 is ~5 s; the operator does not unplug mid-test). The symptoms were:
-three bus workers pegged at 100% CPU spinning in **SQLite reads** (no DB writes,
-no serial I/O), state frozen at `running / phase 9`, holding stale serial fds
-from before a USB re-enumeration, with a detection queued behind the stuck run.
-If it recurs, `GET /api/debug/stacks` will show the exact loop immediately —
-paste that output to pin the root cause.
+(Phase 9 is ~5 s; the operator does not unplug mid-test). The symptoms were
+*different* from the 2026-06-05 wedge above: three bus workers pegged at 100% CPU
+spinning in **SQLite reads** (no DB writes, no serial I/O), state frozen at
+`running / phase 9`, holding stale serial fds from before a USB re-enumeration,
+with a detection queued behind the stuck run. If it recurs, `GET /api/debug/stacks`
+will show the exact loop immediately — paste that output to pin the root cause.
 
-## The fix (deferred — implement once a stack dump pins the loop)
+## The fix (deferred — item 1 now confirmed by the 2026-06-05 wedge)
 
-Only diagnostics were added so far. Once `/api/debug/stacks` (or the watchdog
-auto-dump) shows the exact spinning line, fix the **disconnect intolerance** that
-let a dead/changed USB adapter wedge a run. The hardening, roughly in order:
+Only diagnostics were added so far. The 2026-06-05 incident confirms the
+**disconnect intolerance** below is real (item 1, the missing `write_timeout`,
+was the exact root cause); the 2025 livelock may need items 2–4 as well. The
+hardening, roughly in order:
 
 1. **Detect the disconnect.** Open the serial port with a `write_timeout` (it is
    currently `None` in `transport.py:SerialTransport.__init__` → a `write()` to a

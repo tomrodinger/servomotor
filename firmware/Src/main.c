@@ -68,7 +68,7 @@ struct __attribute__((__packed__)) firmware_version_struct {
 };
 #define MAJOR_FIRMWARE_VERSION 0
 #define MINOR_FIRMWARE_VERSION 15
-#define BUGFIX_FIRMWARE_VERSION 1
+#define BUGFIX_FIRMWARE_VERSION 2
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -897,6 +897,9 @@ void process_packet(void)
             }
             else if (test_mode == 75) { // production overvoltage test: set the OV threshold to 26 V (must NOT trip on a 24 V rack)
                 set_overvoltage_threshold(OVERVOLTAGE_TEST_HIGH_VOLTAGE);
+            }
+            else if (test_mode == 76) { // production thermal test: raise the overtemperature cutoff to ~90 C (default is ~80 C) to verify driver-IC thermal margin
+                set_overtemperature_test_mode(1);
             }
             else {
                 fatal_error(ERROR_INVALID_TEST_MODE);
