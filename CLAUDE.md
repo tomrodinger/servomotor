@@ -49,6 +49,39 @@ cd python_programs
 python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.15.2.0_scc3_hw1.5.firmware
 ```
 
+### Publishing the `servomotor` Python library to PyPI
+Releases go out via GitHub Actions trusted publishing (OIDC, no stored token), triggered by a
+**python-specific** git tag `pylib-v*` (plain `v*` is reserved for firmware/bootloader versioning in
+this monorepo). Workflow: `.github/workflows/publish-python.yml`.
+
+```bash
+# 1. Bump the single source of truth for the version:
+#    python_programs/servomotor/__init__.py  ->  __version__ = "0.11.0"
+# 2. Commit, then tag and push:
+git commit -am "servomotor 0.11.0"
+git tag pylib-v0.11.0 && git push --tags        # -> builds + publishes to PyPI
+```
+- The tag is only the trigger; PyPI rejects re-used versions, so `__version__` must be bumped first.
+- Build staging (copy `servomotor` + standalone/CLI modules into `PyPi_distribution/src`, strip
+  cruft) lives in **`python_programs/PyPi_distribution/prepare_src.sh`**, called by BOTH the workflow
+  and the manual fallback script — edit staging logic there only, so the two can't drift.
+- **Manual fallback / TestPyPI:** `cd python_programs && ./build_and_submit_to_PyPi.sh` (prompts for
+  TestPyPI vs PyPI). Or dry-run the workflow: Actions → "Publish Python library to PyPI" →
+  Run workflow → `target: testpypi`.
+- One-time PyPI setup (already done): a trusted publisher on the `servomotor` project with workflow
+  `publish-python.yml` and environment `pypi`, plus matching GitHub environments `pypi`/`testpypi`.
+
+### Running the hardware test suite
+```bash
+cd python_programs
+python3 run_all_tests.py -p /dev/cu.usbserial-210 -a X   # alias 'X' == byte 88
+```
+`run_all_tests.py` runs every non-obsolete `servomotor`-module test listed in `TEST_SUMMARY.md`. To
+test the **PyPI-published** library instead of the local `servomotor/` source (which otherwise shadows
+the installed package because it sits next to the tests), run from a directory that does NOT contain a
+`servomotor/` dir, with `servomotor` pip-installed in the active venv, and a `firmware/` symlink so the
+firmware-upgrade test's `../firmware/firmware_releases` path resolves.
+
 ## Architecture
 
 ### Command Flow
