@@ -92,3 +92,7 @@ jobs:
         with:
           packages-dir: python_programs/PyPi_distribution/dist
           repository-url: https://test.pypi.org/legacy/
+          # TestPyPI is a throwaway index where versions are frequently already
+          # present; treat an existing version as success so the dry-run still
+          # validates OIDC auth + build + upload handshake without a version bump.
+          skip-existing: true
