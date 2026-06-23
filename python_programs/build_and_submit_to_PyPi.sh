@@ -63,27 +63,11 @@ if [ "${REPOSITORY}" = "pypi" ]; then
 fi
 echo "Deploying ${VERSION} to ${REPOSITORY}..."
 
-# --- Ensure src layout exists and is fresh -----------------------------------------------
-mkdir -p "${ROOT_DIR}/PyPi_distribution/src"
-rm -rf "${ROOT_DIR}/PyPi_distribution/src/servomotor"
-cp -R "${ROOT_DIR}/servomotor" "${ROOT_DIR}/PyPi_distribution/src/"
-
-# Strip editor/backup/compiled cruft so it can never leak into a release artifact,
-# regardless of what is lying around in the working tree (e.g. M3.py.bak, *.old,
-# motor_commands.json.backup, __pycache__). The real sources + *.json data stay.
-find "${ROOT_DIR}/PyPi_distribution/src/servomotor" \
-  \( -name '*.bak' -o -name '*.bak2' -o -name '*.old' -o -name '*.working' \
-     -o -name '*.backup' -o -name '*.pyc' -o -name '__pycache__' \) \
-  -exec rm -rf {} + 2>/dev/null || true
-
-# Include standalone module and CLI modules into the distribution tree
-# - terminal_formatting.py as a top-level module (declared in pyproject's py-modules)
-cp -f "${ROOT_DIR}/terminal_formatting.py" "${ROOT_DIR}/PyPi_distribution/src/"
-
-# - CLI modules (declared in [project.scripts] and py-modules)
-cp -f "${ROOT_DIR}/servomotor_command.py" "${ROOT_DIR}/PyPi_distribution/src/"
-cp -f "${ROOT_DIR}/detect_and_set_alias_all_devices.py" "${ROOT_DIR}/PyPi_distribution/src/"
-cp -f "${ROOT_DIR}/show_device_information_for_all_devices.py" "${ROOT_DIR}/PyPi_distribution/src/"
+# --- Stage the src/ layout (shared with the GitHub Actions publish workflow) -------------
+# prepare_src.sh is the single source of truth for build staging (copy + strip cruft +
+# pull in the standalone/CLI modules) so this script and .github/workflows/publish-python.yml
+# can never drift. See that script for details.
+bash "${ROOT_DIR}/PyPi_distribution/prepare_src.sh"
 
 # Create an isolated virtual environment for build tooling (avoids PEP 668 issues)
 if [ ! -d "${VENV_DIR}" ]; then
