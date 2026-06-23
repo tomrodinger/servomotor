@@ -134,10 +134,21 @@ static int64_t debug_value4 = 0;
 //} position_union;
 //static position_union current_position = {0};
 
+// The "position" represented by an int96_t is its upper 64 bits: the mid word (low 32 bits) and
+// the high word (high 32 bits) together. The low word holds sub-step fractional resolution. The
+// anonymous union lets that 64-bit position be read/written directly as `.position` instead of
+// type-punning &mid through pointer casts (which violates strict aliasing and may be miscompiled).
+// Union member access for type-punning is well-defined in GCC and compiles to the same loads/
+// stores, so this is zero-cost. Layout is unchanged: low@0, mid@4, high@8 (position spans @4..@11).
 typedef struct {
     uint32_t low;
-    uint32_t mid;
-    int32_t high;
+    union {
+        struct {
+            uint32_t mid;
+            int32_t high;
+        };
+        int64_t position;
+    };
 } int96_t;
 static int96_t current_position_i96 = {0};
 static int64_t hall_position_i64 = 0;
@@ -399,7 +410,7 @@ void add_int96(int96_t *a_i96, int64_t *b_i64, int96_t *result) {
 
 int test_i96(void)
 {
-    int96_t num1 = {0xFFFFFFFF, 0xFFFFFFFF, 0x00000001}; // -1, -1, 1
+    int96_t num1 = {0xFFFFFFFF, {{0xFFFFFFFF, 0x00000001}}}; // low, mid, high = -1, -1, 1
     int64_t num2 = (int64_t)1 << 32;
     int96_t result;
     add_int96(&num1, &num2, &result);
@@ -1117,8 +1128,7 @@ void process_go_to_closed_loop_data(void)
 
 //      hall_position = current_position.i32[1]; // this is so that the motor does not move when we go into closed loop mode
         __disable_irq();
-        ((int32_t*)&hall_position_i64)[0] = current_position_i96.mid; // this is so that the motor does not move when we go into closed loop mode
-        ((int32_t*)&hall_position_i64)[1] = current_position_i96.high;
+        hall_position_i64 = current_position_i96.position; // this is so that the motor does not move when we go into closed loop mode
         __enable_irq();
         go_to_closed_loop_step = 0;
         motor_busy = 0;
@@ -1397,9 +1407,7 @@ void handle_homing_logic(void)
 //  int32_t position_error;
 //  position_error = abs(current_position.i32[1] - hall_position);
     int64_t current_position_i64;
-//  ((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
-//  ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
-    current_position_i64 = *((int64_t*)&current_position_i96.mid);
+    current_position_i64 = current_position_i96.position;
     int64_t position_error = llabs(current_position_i64 - hall_position_i64);
 
     if(position_error > HOMING_MAX_POSITION_ERROR) {
@@ -1414,8 +1422,7 @@ void handle_homing_logic(void)
 //          current_position.i32[1] += HOMING_MAX_POSITION_ERROR;
             current_position_i64 += HOMING_MAX_POSITION_ERROR;
         }
-        current_position_i96.mid = ((int32_t*)&current_position_i64)[0];
-        current_position_i96.high = ((int32_t*)&current_position_i64)[1];
+        current_position_i96.position = current_position_i64;
         position_after_last_queue_item_i96 = current_position_i96;
     }
 
@@ -1453,9 +1460,7 @@ void print_position(void)
 //  char buf[100];
 //  sprintf(buf, "current_position: " _PRId32 "   hall_position: " _PRId32 "\n", current_position.i32[1], hall_position);
 //  print_debug_string(buf);
-    int64_t current_position_i64;
-    ((int64_t*)&current_position_i64)[0] = current_position_i96.mid;
-    ((int64_t*)&current_position_i64)[1] = current_position_i96.high;
+    int64_t current_position_i64 = current_position_i96.position;
     print_int64("current_position_i96 (the upper 64 bits):", current_position_i64);
     print_int64("hall_position_i64:", hall_position_i64);
 }
@@ -1730,9 +1735,7 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 //          print_debug_string(buf);
             int64_t position_change_due_to_queue_item = velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
             add_int96(&position_after_last_queue_item_i96, &position_change_due_to_queue_item, &predicted_final_position_i96);
-            int64_t predicted_final_position_i64;
-            ((int32_t*)&predicted_final_position_i64)[0] = predicted_final_position_i96.mid;
-            ((int32_t*)&predicted_final_position_i64)[1] = predicted_final_position_i96.high;
+            int64_t predicted_final_position_i64 = predicted_final_position_i96.position;
 //          if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
             if((predicted_final_position_i64 < position_lower_safety_limit_i64) || (predicted_final_position_i64 > position_upper_safety_limit_i64)) {
                 fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
@@ -1751,9 +1754,7 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 //                  int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
                     int96_t absolute_position_at_turn_point_i96;
                     add_int96(&position_after_last_queue_item_i96, &relative_position_at_turn_point, &absolute_position_at_turn_point_i96);
-                    int64_t absolute_position_at_turn_point_i64;
-                    ((int32_t*)&absolute_position_at_turn_point_i64)[0] = absolute_position_at_turn_point_i96.mid;
-                    ((int32_t*)&absolute_position_at_turn_point_i64)[1] = absolute_position_at_turn_point_i96.high;
+                    int64_t absolute_position_at_turn_point_i64 = absolute_position_at_turn_point_i96.position;
 //                  if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
                     if((absolute_position_at_turn_point_i64 < position_lower_safety_limit_i64) || (absolute_position_at_turn_point_i64 > position_upper_safety_limit_i64)) {
                         fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
@@ -1778,9 +1779,7 @@ void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t move
 //          print_debug_string(buf);
             int64_t position_change_due_to_queue_item = movement_queue[queue_write_position].velocity * n_time_steps;
             add_int96(&position_after_last_queue_item_i96, &position_change_due_to_queue_item, &predicted_final_position_i96);
-            int64_t predicted_final_position_i64;
-            ((int32_t*)&predicted_final_position_i64)[0] = predicted_final_position_i96.mid;
-            ((int32_t*)&predicted_final_position_i64)[1] = predicted_final_position_i96.high;
+            int64_t predicted_final_position_i64 = predicted_final_position_i96.position;
             if((predicted_final_position_i64 < position_lower_safety_limit_i64) || (predicted_final_position_i64 > position_upper_safety_limit_i64)) {
                 fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
             }
@@ -1835,9 +1834,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 //      print_debug_string(buf);
         int64_t position_change_due_to_queue_item = velocity_after_last_queue_item * n_time_steps + movement_queue[queue_write_position].acceleration * (((uint64_t)n_time_steps * (n_time_steps + 1)) >> 1);
         add_int96(&position_after_last_queue_item_i96, &position_change_due_to_queue_item, &predicted_final_position_i96);
-        int64_t predicted_final_position_i64;
-        ((int32_t*)&predicted_final_position_i64)[0] = predicted_final_position_i96.mid;
-        ((int32_t*)&predicted_final_position_i64)[1] = predicted_final_position_i96.high;
+        int64_t predicted_final_position_i64 = predicted_final_position_i96.position;
 //      if((((int32_t*)&predicted_final_position)[1] < position_lower_safety_limit) || (((int32_t*)&predicted_final_position)[1] > position_upper_safety_limit)) {
         if((predicted_final_position_i64 < position_lower_safety_limit_i64) || (predicted_final_position_i64 > position_upper_safety_limit_i64)) {
             fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
@@ -1856,9 +1853,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 //              int64_t absolute_position_at_turn_point = position_after_last_queue_item + relative_position_at_turn_point;
                 int96_t absolute_position_at_turn_point_i96;
                 add_int96(&position_after_last_queue_item_i96, &relative_position_at_turn_point, &absolute_position_at_turn_point_i96);
-                int64_t absolute_position_at_turn_point_i64;
-                ((int32_t*)&absolute_position_at_turn_point_i64)[0] = absolute_position_at_turn_point_i96.mid;
-                ((int32_t*)&absolute_position_at_turn_point_i64)[1] = absolute_position_at_turn_point_i96.high;
+                int64_t absolute_position_at_turn_point_i64 = absolute_position_at_turn_point_i96.position;
 //              if((((int32_t*)&absolute_position_at_turn_point)[1] < position_lower_safety_limit) || (((int32_t*)&absolute_position_at_turn_point)[1] > position_upper_safety_limit)) {
                 if((absolute_position_at_turn_point_i64 < position_lower_safety_limit_i64) || (absolute_position_at_turn_point_i64 > position_upper_safety_limit_i64)) {
                     fatal_error(ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
@@ -1883,9 +1878,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 //      print_debug_string(buf);
         int64_t position_change_due_to_queue_item = movement_queue_queue_write_position_velocity * n_time_steps;
         add_int96(&position_after_last_queue_item_i96, &position_change_due_to_queue_item, &predicted_final_position_i96);
-        int64_t predicted_final_position_i64;
-        ((int32_t*)&predicted_final_position_i64)[0] = predicted_final_position_i96.mid;
-        ((int32_t*)&predicted_final_position_i64)[1] = predicted_final_position_i96.high;
+        int64_t predicted_final_position_i64 = predicted_final_position_i96.position;
         if((predicted_final_position_i64 < position_lower_safety_limit_i64) || (predicted_final_position_i64 > position_upper_safety_limit_i64)) {
             fatal_error(ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
         }
@@ -1897,9 +1890,7 @@ void add_to_queue_test(int32_t parameter, uint32_t n_time_steps, movement_type_t
 
     results->predicted_final_velocity = ((int32_t*)&predicted_final_velocity)[1];
 //  results->predicted_final_position = ((int32_t*)&predicted_final_position)[1];
-    int64_t predicted_final_position_i64;
-    ((int32_t*)&predicted_final_position_i64)[0] = predicted_final_position_i96.mid;
-    ((int32_t*)&predicted_final_position_i64)[1] = predicted_final_position_i96.high;
+    int64_t predicted_final_position_i64 = predicted_final_position_i96.position;
     results->predicted_final_position = predicted_final_position_i64;
     results->time_step_at_turn_point = (time_step_at_turn_point_shifted >> TURN_POINT_CALCULATION_SHIFT);
     results->relative_position_at_turn_point = ((int32_t*)&relative_position_at_turn_point)[1];
@@ -1944,9 +1935,7 @@ void add_go_to_position_to_queue(int64_t absolute_position, uint32_t move_time)
 
 //  int32_t total_displacement = absolute_position - ((int32_t*)&position_after_last_queue_item)[1];
     int64_t position_after_last_queue_item_i64;
-//  ((int32_t*)&position_after_last_queue_item_i64)[0] = position_after_last_queue_item_i96.mid;
-//  ((int32_t*)&position_after_last_queue_item_i64)[1] = position_after_last_queue_item_i96.high;
-    position_after_last_queue_item_i64 = *((int64_t *)&position_after_last_queue_item_i96.mid);
+    position_after_last_queue_item_i64 = position_after_last_queue_item_i96.position;
     int64_t total_displacement = absolute_position - position_after_last_queue_item_i64;
     // let's make sure that the total displacement is within the limits of a 32 bit signed integer
     if((total_displacement > INT32_MAX) || (total_displacement < INT32_MIN)) {
@@ -2397,9 +2386,7 @@ void motor_movement_calculations(void)
     moving = handle_queued_movements();
 
 //  if( (current_position.i32[1] > position_upper_safety_limit) || (current_position.i32[1] < position_lower_safety_limit) ) {
-    int64_t current_position_i64;
-    ((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
-    ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+    int64_t current_position_i64 = current_position_i96.position;
     if( (current_position_i64 > position_upper_safety_limit_i64) || (current_position_i64 < position_lower_safety_limit_i64) ) {
         fatal_error(ERROR_SAFETY_LIMIT_EXCEEDED); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
     }
@@ -2432,9 +2419,7 @@ void motor_movement_calculations(void)
         commutation_position = sensor_position + commutation_position_offset;
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
-            int64_t current_position_i64;
-            ((int32_t*)&current_position_i64)[0] = current_position_i96.mid;
-            ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+            int64_t current_position_i64 = current_position_i96.position;
             motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
             int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
             back_emf_voltage = 0;
@@ -2485,9 +2470,7 @@ void motor_movement_calculations(void)
         commutation_position = sensor_position + commutation_position_offset;
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
-            int64_t current_position_i64;
-            ((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
-            ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+            int64_t current_position_i64 = current_position_i96.position;
             desired_motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
             if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
                 commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
@@ -2546,9 +2529,7 @@ void motor_movement_calculations(void)
         commutation_position = sensor_position + commutation_position_offset;
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
-            int64_t current_position_i64;
-            ((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
-            ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+            int64_t current_position_i64 = current_position_i96.position;
             motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
             int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
 //          back_emf_voltage = 0; // DEBUG
@@ -2980,8 +2961,7 @@ void check_if_actual_vs_desired_position_deviated_too_much(void)
     int64_t current_position_i64;
     int64_t current_hall_position_i64;
     __disable_irq();
-    ((uint32_t*)&current_position_i64)[0] = current_position_i96.mid;
-    ((int32_t*)&current_position_i64)[1] = current_position_i96.high;
+    current_position_i64 = current_position_i96.position;
     current_hall_position_i64 = hall_position_i64;
     __enable_irq();
     int64_t position_deviation = current_position_i64 - current_hall_position_i64;
@@ -3177,9 +3157,7 @@ void emergency_stop(void)
 
 int64_t get_motor_position_without_disable_enable_irq(void)
 {
-    int64_t motor_position;
-    ((int32_t*)&motor_position)[0] = current_position_i96.mid;
-    ((int32_t*)&motor_position)[1] = current_position_i96.high;
+    int64_t motor_position = current_position_i96.position;
     return motor_position;
 }
 
