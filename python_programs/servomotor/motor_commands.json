@@ -764,7 +764,7 @@
     {
         "CommandString": "Test mode",
         "CommandEnum": 36,
-        "Description": "Set or trigger a certain test mode. This is a bit undocumented at the moment. Don't use this unless you are a developer working on test cases. Notable modes: 0 = clear all test modes; 1-9 = motor test modes; 10-13 = LED test modes (locks up the device); 14-73 = trigger fatal errors 0-59; 74 = set the overvoltage-protection threshold to 22 V (production test, should trip on a 24 V supply); 75 = set the overvoltage-protection threshold to 26 V (production test, should not trip on a 24 V supply). A system reset restores the default overvoltage threshold.",
+        "Description": "Set or trigger a certain test mode. This is a bit undocumented at the moment. Don't use this unless you are a developer working on test cases. Notable modes: 0 = clear all test modes; 1-9 = motor test modes; 10-13 = LED test modes (locks up the device); 14-73 = trigger fatal errors 0-59; 74 = set the overvoltage-protection threshold to 22 V (production test, should trip on a 24 V supply); 75 = set the overvoltage-protection threshold to 26 V (production test, should not trip on a 24 V supply); 76 = raise the overtemperature cutoff to about 90 degrees C (production thermal-margin test, the default cutoff is about 80 degrees C). A system reset restores the default overvoltage and overtemperature thresholds.",
         "Input": [
             {
                 "Description": "u8: The test mode to use or trigger",

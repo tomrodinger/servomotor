@@ -18,6 +18,23 @@ nav button { border: 0; background: transparent; padding: 6px 11px; cursor: poin
   border-radius: 6px 6px 0 0; font-size: 13px; color: #41506b; }
 nav button.active { background: #f4f6fa; font-weight: 600; color: #1f2a44;
   box-shadow: 0 -2px 0 #3b6fd4 inset; }
+/* Phase tabs whose "Phase enabled" checkbox is checked get a light-green tab
+   background, so enabled vs disabled tests are visible at a glance without
+   opening each tab. The .active rule below keeps the blue underline indicator
+   and wins on specificity so an enabled tab stays green while selected. */
+nav button.phase-enabled { background: #d6f5dd; color: #245c36; }
+nav button.phase-enabled.active { background: #c2efce; color: #14361f; }
+
+/* "Phase enables" card (Tab 1): two-state toggle buttons, one per phase, laid
+   out side by side and wrapping to further rows. Colours match the phase tabs:
+   green = enabled, grey = disabled. */
+.phase-enables { display: flex; flex-wrap: wrap; gap: 8px; }
+.phase-enables .phase-toggle {
+  padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  background: #e6eaf2; color: #41506b; border: 1px solid #cdd5e2; }
+.phase-enables .phase-toggle:hover { filter: brightness(0.97); }
+.phase-enables .phase-toggle.on {
+  background: #d6f5dd; color: #245c36; border-color: #aee0bb; }
 
 main { padding: 16px; max-width: 2400px; margin: 0 auto; }
 h2 { font-size: 19px; }
@@ -32,6 +49,10 @@ button:hover { background: #eef2f9; }
 button.primary { background: #3b6fd4; color: #fff; border-color: #3b6fd4; }
 button.primary:hover { background: #2f5bb5; }
 button.danger { color: #c0392b; border-color: #e3b4ad; }
+button:disabled { color: #97a0b2; background: #f2f4f8; border-color: #d3d9e4;
+  cursor: default; }
+button:disabled:hover { background: #f2f4f8; }
+.id-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 label { font-size: 13px; }
 select, input[type=text], input[type=number] {
@@ -58,14 +79,29 @@ select, input[type=text], input[type=number] {
   font-size: 12px; }
 .chip.gray { background: #d7dbe3; } .chip.yellow { background: #f2e07a; }
 .chip.blue { background: #a9c9f5; } .chip.orange { background: #ffc98a; }
+.chip.green { background: #9bdfae; } .chip.red { background: #f0a9a2; }
 
-#rack { display: flex; flex-direction: column; gap: 12px; }
-.rack-bus h4 { margin: 0 0 4px; }
-.grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; }
-.cell { aspect-ratio: 1; border-radius: 3px; background: #d7dbe3; min-height: 14px;
-  cursor: default; }
-.cell.gray { background: #d7dbe3; } .cell.yellow { background: #f2e07a; }
-.cell.blue { background: #a9c9f5; } .cell.orange { background: #ffc98a; }
+#rack { display: flex; flex-direction: column; gap: 14px; }
+.rack-bus h4 { margin: 0 0 6px; }
+/* One tile per motor; tiles wrap to fill the panel width. */
+.rack-motors { display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.motor-cell { border: 1px solid #e2e7f0; border-radius: 6px; padding: 4px;
+  background: #fbfcfe; }
+/* 5 columns x 3 rows = the 15 phases P1..P15. */
+.phase-grid { display: grid; grid-template-columns: repeat(5, 1fr);
+  grid-auto-rows: 1fr; gap: 2px; }
+.pcell { aspect-ratio: 1; border-radius: 3px; background: #d7dbe3;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #56607a; cursor: default; user-select: none; }
+.pcell.gray { background: #d7dbe3; color: #8a93a6; }
+.pcell.yellow { background: #f2e07a; }
+.pcell.blue { background: #a9c9f5; }
+.pcell.green { background: #58c47c; color: #0c3a1d; }
+.pcell.red { background: #e2685c; color: #3a0c0c; }
+.motor-id { margin-top: 3px; font-family: ui-monospace, monospace; font-size: 10px;
+  color: #6b7488; text-align: center; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
 
 #log { background: #0f1626; color: #cfe3ff; padding: 10px; border-radius: 6px;
   max-height: 200px; overflow: auto; font-size: 12px; }

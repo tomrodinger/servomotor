@@ -225,15 +225,16 @@ The phases below are the **single source of truth** — each is self-contained: 
 #### Phase 11 — Thermal (run to overtemperature)
 - **Verifies**: thermistor + thermal behaviour under sustained load, and the driver IC's thermal path. **Power**: full. **Parallelism**: 8 per section at a time.
 - **Take a fresh baseline at the start** (read temperature before running) — does not rely on the Phase 3 baseline.
+- **Broadcast firmware test mode 76 first (added in fw 0.15.2.0).** This raises the overtemperature cutoff from ~80 °C to **~90 °C** for the duration of the phase, so the driver IC is confirmed to have thermal margin under load before `ERROR_OVERHEAT` fires. The firmware restores the default cutoff at the next system reset (which the worker runs before the following phase), so the raised cutoff is scoped to this phase. **Motors must be running fw ≥ 0.15.2.0** — older firmware rejects mode 76 with `ERROR_INVALID_TEST_MODE` (53); Phase 1 flashes the new firmware first in a normal run.
 - **Set the max allowable position deviation tight (cmd 44, default 0.01 rot) before the first rotation.** This catches a specific defect: a driver IC with insufficient thermal paste overheats and momentarily cuts out, the rotation stalls, and the deviation limit trips a fatal error.
-- Run the motor at full power while **logging temperature (cmd 42) every 1 second**, **until the motor reaches its overtemperature cutoff (a fatal error) or a configurable maximum time** (default **20 minutes**). The expected good behaviour is that a healthy motor heats up and hits the firmware's overtemperature cutoff (`ERROR_OVERHEAT`).
+- Run the motor at full power while **logging temperature (cmd 42) every 1 second**, **until the motor reaches its overtemperature cutoff (a fatal error) or a configurable maximum time** (default **20 minutes**). The expected good behaviour is that a healthy motor heats up and hits the firmware's (raised, ~90 °C) overtemperature cutoff (`ERROR_OVERHEAT`).
 - **Collected (Stage A)**: the fresh baseline, the **full per-second temperature series** (binary blob), the **max temperature reached**, the **last temperature**, and the **fatal-error code** (if any) plus whether the run reached the time limit.
 - **Derived in post-processing**: the **max temperature**; the **outcome** (overtemp cutoff / other fatal / stayed functional); plus the diagnostic temperature rise, best-fit slope / start temperature / R value, and the temperature-vs-time PNG plot.
 - **Pass/fail (Stage B)**:
-  - **Pass** if the motor reached the **overtemperature cutoff** (`ERROR_OVERHEAT`) **and** the last temperature is above the overtemp threshold (**default 79 °C**) — the normal, healthy result; **or** if it never reached the cutoff and **stayed fully functional for the whole max time**.
+  - **Pass** if the motor reached the **overtemperature cutoff** (`ERROR_OVERHEAT`) **and** the last temperature is above the overtemp threshold (**default 85 °C**, set just below the ~90 °C raised cutoff to confirm the motor reached it) — the normal, healthy result; **or** if it never reached the cutoff and **stayed fully functional for the whole max time**.
   - **Fail** if the motor tripped **any other fatal error** (e.g. the deviation trip from a driver cut-out — the thermal-paste defect), if it hit the overtemp cutoff without actually being hot, or if it stopped responding mid-run without a fatal.
 - **Shown on the phase tab**: a histogram of the **max temperature reached** (with the overtemp threshold line), plus the four diagnostic fit histograms (rise / start / slope / R), and a **count summary of the outcome** (how many reached the overtemp cutoff, how many tripped another fatal, how many stayed functional).
-- **Configurable parameters**: max run time (default 20 min); overtemp threshold (default 79 °C); deviation tolerance (default 0.01 rot); motor current; spin velocity. (The fit-metric ranges remain as reference lines on the diagnostic histograms.)
+- **Configurable parameters**: max run time (default 20 min); overtemp threshold (default 85 °C); deviation tolerance (default 0.01 rot); motor current; spin velocity. (The fit-metric ranges remain as reference lines on the diagnostic histograms.)
 
 #### Phase 12 — Open-loop burn-in
 - **Verifies**: full motion chain under sustained load. **Power**: full. **Parallelism**: random 8 per section at any instant. **Duration**: configurable, default 3.5 h.
@@ -507,7 +508,7 @@ Most phases work with the current firmware (0.15.0.0). One phase needs new firmw
 
 ## Decisions (resolved)
 
-1. **Firmware**: always flash the latest release (currently 0.15.1.0).
+1. **Firmware**: always flash the latest release (currently 0.15.2.0).
 2. **Slot tracking**: not recorded — the unique ID is the sole identifier. The rack grid is a live view only.
 3. **Collect then evaluate**: the rack only collects data (system-reset between every phase, never stop early). Pass/fail is computed separately in Stage B by applying criteria to the stored data, and can be re-run whenever criteria change. Failures can be cleared by re-evaluation or an operator override.
 4. **Authentication**: none — open on the local network.

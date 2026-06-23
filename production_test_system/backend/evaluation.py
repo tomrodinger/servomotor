@@ -314,11 +314,27 @@ def evaluate_phase(db: Database, settings: Settings, unique_id: int,
     return _EVALUATORS[phase](row, params, crit)
 
 
+def _phases_to_evaluate(db: Database, settings: Settings,
+                        unique_id: int) -> List[int]:
+    """Phases worth grading for one motor: every enabled phase (so a missing
+    enabled phase is recorded as a failure) **plus** any phase that already has
+    collected data — even if that phase is currently disabled.  The latter is
+    what lets a disabled phase's leftover data still flip its rack cell from
+    blue (collected) to green/red instead of being stuck "pending" forever."""
+    enabled = set(settings.enabled_phase_numbers())
+    with_data = {ph for ph in phase_defs.PHASES_BY_NUMBER
+                 if db.has_phase_data(unique_id, ph)}
+    return sorted(enabled | with_data)
+
+
 def evaluate_motor(db: Database, settings: Settings, unique_id: int,
                    phases: Optional[List[int]] = None) -> Dict[int, str]:
-    """Evaluate the given (or all enabled) phases for one motor; write eval rows."""
+    """Evaluate the given phases for one motor; write eval rows.
+
+    When ``phases`` is None, evaluates every enabled phase plus every phase that
+    has collected data (see :func:`_phases_to_evaluate`)."""
     if phases is None:
-        phases = settings.enabled_phase_numbers()
+        phases = _phases_to_evaluate(db, settings, unique_id)
     cv = settings.criteria_version
     results: Dict[int, str] = {}
     for ph in phases:
@@ -330,17 +346,50 @@ def evaluate_motor(db: Database, settings: Settings, unique_id: int,
     return results
 
 
-def evaluate_all(db: Database, settings: Settings) -> Dict[str, int]:
-    """Re-evaluate every motor in the DB; returns a small summary."""
-    phases = settings.enabled_phase_numbers()
-    motors = db.all_motor_ids()
+def evaluate_motors(db: Database, settings: Settings,
+                    motor_ids: List[int]) -> Dict[str, int]:
+    """Re-evaluate a specific set of motors; returns a small summary."""
+    motor_ids = list(motor_ids)
     n_pass = 0
-    for uid in motors:
-        evaluate_motor(db, settings, uid, phases)
+    for uid in motor_ids:
+        evaluate_motor(db, settings, uid)
         if overall_result(db, settings, uid)["result"] == PASS:
             n_pass += 1
-    return {"motors": len(motors), "pass": n_pass, "fail": len(motors) - n_pass,
+    return {"motors": len(motor_ids), "pass": n_pass,
+            "fail": len(motor_ids) - n_pass,
             "criteria_version": settings.criteria_version}
+
+
+def evaluate_all(db: Database, settings: Settings) -> Dict[str, int]:
+    """Re-evaluate every motor in the DB; returns a small summary."""
+    return evaluate_motors(db, settings, db.all_motor_ids())
+
+
+def needs_rerun(db: Database, settings: Settings, unique_id: int,
+                include_failures: bool) -> bool:
+    """Run-scope predicate (shared by collection and evaluation): True if any
+    enabled phase is missing collected data (incomplete) or, when
+    ``include_failures``, has a non-cleared failing/missing latest eval."""
+    for ph in settings.enabled_phase_numbers():
+        if not db.has_phase_data(unique_id, ph):
+            return True
+        if include_failures:
+            ev = db.latest_phase_eval(unique_id, ph)
+            if ev and not ev.get("cleared") and ev["result"] in ("fail", "missing"):
+                return True
+    return False
+
+
+def select_by_run_scope(db: Database, settings: Settings,
+                        motor_ids: List[int]) -> List[int]:
+    """Filter ``motor_ids`` by the configured run scope (all / incomplete /
+    incomplete_or_failed) — the same selection used to choose what to collect."""
+    scope = settings.run_scope
+    if scope not in ("incomplete", "incomplete_or_failed"):
+        return list(motor_ids)
+    include_failures = (scope == "incomplete_or_failed")
+    return [uid for uid in motor_ids
+            if needs_rerun(db, settings, uid, include_failures)]
 
 
 def overall_result(db: Database, settings: Settings, unique_id: int) -> Dict[str, Any]:

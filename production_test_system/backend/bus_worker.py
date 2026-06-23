@@ -63,7 +63,9 @@ class BusWorker:
             except CancelledError:
                 self.log("[Bus %s] operation cancelled" % self.bus_id)
             except Exception as exc:    # never let a worker thread die
-                self.log("[Bus %s] error: %s" % (self.bus_id, exc))
+                import traceback as _tb
+                self.log("[Bus %s] error: %s\n%s"
+                         % (self.bus_id, exc, _tb.format_exc()))
             finally:
                 self._cancel.clear()
                 self._jobs.task_done()
@@ -148,29 +150,10 @@ class BusWorker:
                 transport.close()
 
     def _motors_for_run(self) -> List[int]:
+        from . import evaluation
         bus = self.state.bus(self.bus_id)
         motors = list(bus.test_set.keys())
-        scope = self.settings.run_scope
-        if scope in ("incomplete", "incomplete_or_failed"):
-            enabled = self.settings.enabled_phase_numbers()
-            include_failures = (scope == "incomplete_or_failed")
-            motors = [uid for uid in motors
-                      if self._needs_rerun(uid, enabled, include_failures)]
-        return motors
-
-    def _needs_rerun(self, uid: int, enabled: List[int],
-                     include_failures: bool) -> bool:
-        """True if any enabled phase is missing collected data (incomplete) or,
-        when ``include_failures``, has a failing/missing latest eval that has not
-        been cleared."""
-        for ph in enabled:
-            if not self.db.has_phase_data(uid, ph):
-                return True
-            if include_failures:
-                ev = self.db.latest_phase_eval(uid, ph)
-                if ev and not ev.get("cleared") and ev["result"] in ("fail", "missing"):
-                    return True
-        return False
+        return evaluation.select_by_run_scope(self.db, self.settings, motors)
 
     def _run_sequence(self, only_phase: Optional[int] = None) -> None:
         motors = self._motors_for_run()

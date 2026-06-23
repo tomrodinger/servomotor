@@ -2,7 +2,11 @@
 
 Run the motor at full power until it reaches its overtemperature cutoff (a
 fatal error from the firmware) or until a maximum time limit, logging
-temperature (cmd 42) every second.  Before the first rotation the max allowable
+temperature (cmd 42) every second.  The phase first broadcasts firmware test
+mode 76, which raises the overtemperature cutoff from ~80 C to ~90 C so the
+driver IC is confirmed to have thermal margin under load (the firmware restores
+the default cutoff at the next system reset, which the worker runs before the
+next phase).  Before the first rotation the max allowable
 position deviation is set tight (cmd 44, default 0.01 rot): if the driver IC
 overheats and momentarily cuts out (rotation stops) — e.g. from missing thermal
 paste — the deviation trips a fatal error, which Stage B treats as a failure
@@ -27,6 +31,13 @@ from ..transport import TimeoutError as RS485Timeout, FatalError
 # A real driver cut-out happens later (when hot) and still trips it.
 DEVIATION_ARM_DELAY_S = 2.0
 
+# Firmware "Test mode" (cmd 36) sub-mode that raises the overtemperature cutoff
+# from the default of ~80 C to ~90 C, so the driver IC is verified to have
+# thermal margin under load before the ERROR_OVERHEAT fatal error fires. The
+# firmware restores the default cutoff on the system reset run before the next
+# phase, so the raised cutoff is scoped to this phase only.
+OVERTEMPERATURE_TEST_MODE = 76
+
 
 class ThermalPhase(Phase):
     number = 11
@@ -38,6 +49,18 @@ class ThermalPhase(Phase):
         dev_tol_rot = float(ctx.params.get("deviation_tolerance_rot", 0.01))
         vel_internal = units.rot_per_s_to_internal(velocity)
         dev_counts = units.rotations_to_counts(dev_tol_rot)
+
+        # Raise the overtemperature cutoff to ~90 C bus-wide for this phase so the
+        # driver IC is verified to have thermal margin before ERROR_OVERHEAT fires
+        # (default cutoff is ~80 C). Broadcast (address 255) reaches every device
+        # at once; the firmware restores the default cutoff on the System reset the
+        # worker runs before the next phase.
+        try:
+            ctx.transport.transact(255, "Test mode", [OVERTEMPERATURE_TEST_MODE])
+            ctx.log("Phase 11: raised overtemperature cutoff to ~90 C "
+                    "(broadcast test mode %d)" % OVERTEMPERATURE_TEST_MODE)
+        except Exception as exc:
+            ctx.log("Phase 11: broadcast of overtemperature test mode failed: %s" % exc)
 
         for batch in ctx.batched(ctx.calibrated_motors(), ctx.power_limit):
             ctx.check_cancel()

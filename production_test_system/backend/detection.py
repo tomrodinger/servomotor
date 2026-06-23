@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Tuple
 
 from . import config
 from .database import Database
-from .state import BusState, COLOR_GREEN, COLOR_ORANGE
+from .state import BusState, COLOR_GREEN, COLOR_ORANGE, phase_grid_from_db
 from .transport import Transport, CommunicationError
 
 # Detection responses arrive after a random 0-1 s delay, so give the read a
@@ -98,16 +98,20 @@ def classify_and_add(db: Database, bus: BusState,
         unique_id = int(entry[0])
         alias = int(entry[1]) if len(entry) > 1 else 255
         in_set_before = unique_id in bus.test_set
-        is_new = db.record_detection(unique_id)   # writes first_detected once
+        db.record_detection(unique_id)   # writes first_detected once; refreshes last_seen
         if in_set_before:
             # Colour was decided when first added this session; preserve it so a
             # second pass (run to catch motors missed to collisions) never flips
-            # an "already in DB" orange motor to green.
+            # an already-tested orange motor to green.  The live phase grid is
+            # preserved too.
             color = bus.test_set[unique_id]["color"]
-        elif is_new:
-            color = COLOR_GREEN     # brand-new motor (was not previously in DB)
+            bus.add_to_set(unique_id, alias, color)
         else:
-            color = COLOR_ORANGE    # already in the DB before this session
-        bus.add_to_set(unique_id, alias, color)
+            color = (COLOR_ORANGE if db.has_any_test_data(unique_id)
+                     else COLOR_GREEN)
+            # Seed the per-phase grid from whatever is already in the database so
+            # a freshly-detected motor immediately shows its prior pass/fail.
+            bus.add_to_set(unique_id, alias, color,
+                           phase_status=phase_grid_from_db(db, unique_id))
         decided.append((unique_id, color))
     return decided

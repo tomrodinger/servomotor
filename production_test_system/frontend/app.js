@@ -44,8 +44,50 @@ function buildTabs() {
   const host = $("phase-tabs");
   host.innerHTML = "";
   phaseDefs.forEach((p) => host.append(buildPhaseTab(p)));
+  // colour each phase tab by whether its test is enabled (green) or not (grey)
+  phaseDefs.forEach((p) => setTabEnabledColour(p.number, settings.phases[String(p.number)].enabled));
+  renderPhaseEnables();
   const initial = (location.hash || "").replace(/^#/, "");
   showTab(document.getElementById("navbtn-" + initial) ? initial : "collect");
+}
+// Tint a phase's tab button green when its test is enabled, grey when disabled.
+function setTabEnabledColour(number, enabled) {
+  const btn = $("navbtn-phase-" + number);
+  if (btn) btn.classList.toggle("phase-enabled", !!enabled);
+}
+
+// ---- Tab 1: phase enable/disable selectors ----------------------------------
+// One two-state toggle button per phase (P1–P15), laid out side by side and
+// wrapping as needed. Green = enabled, grey = disabled — matching the colour
+// of the phase's tab. Replaces the per-tab "Phase enabled" checkbox.
+function renderPhaseEnables() {
+  const host = $("phase-enables");
+  if (!host) return;
+  host.innerHTML = "";
+  phaseDefs.forEach((p) => {
+    const enabled = settings.phases[String(p.number)].enabled;
+    const btn = el("button", {
+      id: "phase-enable-" + p.number,
+      class: "phase-toggle" + (enabled ? " on" : ""),
+      onclick: () => togglePhaseEnabled(p.number),
+    }, `P${p.number} ${p.name}`);
+    host.append(btn);
+  });
+}
+function togglePhaseEnabled(number) {
+  setPhaseEnabled(number, !settings.phases[String(number)].enabled);
+}
+function setPhaseEnabled(number, enabled) {
+  if (settings.phases[String(number)].enabled === enabled) return;  // no-op
+  settings.phases[String(number)].enabled = enabled;
+  api("POST", "/api/phases/" + number, { enabled });
+  setTabEnabledColour(number, enabled);  // recolour the phase tab live
+  const btn = $("phase-enable-" + number);
+  if (btn) btn.classList.toggle("on", enabled);  // recolour the selector button
+}
+// "Select All" / "Select None" buttons in the Phase enables card.
+function setAllPhasesEnabled(enabled) {
+  phaseDefs.forEach((p) => setPhaseEnabled(p.number, enabled));
 }
 function showTab(id) {
   if (!$("navbtn-" + id)) return;
@@ -106,12 +148,42 @@ function renderDetect(snap) {
     const list = el("div", { class: "motor-list" });
     b.motors.forEach((m) => {
       list.append(el("div", { class: "m " + m.color },
-        m.unique_id + (m.color === "orange" ? "  ⚠ in DB, not in set" : "")));
+        m.unique_id + (m.color === "orange" ? "  ⚠ already tested" : "")));
     });
     col.append(list);
     host.append(col);
   });
 }
+// Human-readable status for the per-phase cell tooltips.
+const GRID_STATUS_LABEL = {
+  gray: "no data", yellow: "under test",
+  blue: "collected — pending evaluation", green: "passed", red: "failed",
+};
+// Phase number -> short name, built from the loaded phase definitions.
+function phaseName(n) {
+  const p = phaseDefs.find((d) => d.number === n);
+  return p ? p.name : "";
+}
+
+// One motor = a 3x5 grid of 15 phase cells (P1..P15). Each cell is coloured by
+// that phase's live status: grey=no data, yellow=under test, blue=collected
+// (pending evaluation), green=passed, red=failed.
+function renderMotorCell(m) {
+  const cell = el("div", { class: "motor-cell" });
+  const grid = el("div", { class: "phase-grid" });
+  (m.phase_grid || []).forEach((status, i) => {
+    const phase = i + 1;
+    const label = GRID_STATUS_LABEL[status] || status;
+    grid.append(el("div", {
+      class: "pcell " + status,
+      title: `P${phase} ${phaseName(phase)} — ${label}`,
+    }, String(phase)));
+  });
+  cell.append(grid);
+  cell.append(el("div", { class: "motor-id", title: m.unique_id }, m.unique_id));
+  return cell;
+}
+
 function renderRack(snap) {
   const host = $("rack");
   host.innerHTML = "";
@@ -122,10 +194,8 @@ function renderRack(snap) {
     if (b.running) title += ` — running${b.current_phase ? " phase " + b.current_phase : ""}`;
     if (b.paused) title += " (paused)";
     wrap.append(el("h4", {}, title));
-    const grid = el("div", { class: "grid" });
-    b.motors.forEach((m) => {
-      grid.append(el("div", { class: "cell " + m.grid_status, title: m.unique_id }));
-    });
+    const grid = el("div", { class: "rack-motors" });
+    b.motors.forEach((m) => grid.append(renderMotorCell(m)));
     wrap.append(grid);
     host.append(wrap);
   });
@@ -188,11 +258,66 @@ async function loadDevices() {
       el("td", {}, fails || "—"),
       el("td", {}, fmtDate(d.first_detected)),
       el("td", {}, fmtDate(d.last_seen)),
-      el("td", {}, el("button", { onclick: () => api("POST", "/api/db/identify/" + d.unique_id) }, "Identify")));
+      el("td", {}, identifyButtons(d.unique_id)));
     tb.append(tr);
   });
   $("db-summary").textContent =
     `total ${data.total} · pass ${data.pass} · fail ${data.fail} · yield ${data.yield.toFixed(1)}% · criteria v${data.criteria_version}`;
+}
+
+// Two per-device locate buttons for the Database tab:
+//  • "Flash Green" toggles a long, cancellable green flash (re-triggered cmd 41).
+//  • "Red and Green Solid" lights both LEDs solid via test mode 13 — which LOCKS
+//    the motor, so afterwards both buttons disable and it says to power-cycle.
+function identifyButtons(uid) {
+  const wrap = el("div", { class: "id-buttons" });
+  const flashBtn = el("button", {}, "Flash Green");
+  const solidBtn = el("button", {}, "Red and Green Solid");
+  let flashing = false;
+  let armTimer = null;   // set while the solid button is in its 3 s undo window
+  flashBtn.onclick = async () => {
+    try {
+      if (!flashing) {
+        await api("POST", "/api/db/identify/flash/start/" + uid);
+        flashing = true;
+        flashBtn.textContent = "Cancel Green Flashing";
+      } else {
+        await api("POST", "/api/db/identify/flash/stop/" + uid);
+        flashing = false;
+        flashBtn.textContent = "Flash Green";
+      }
+    } catch (e) { alert(e.message); }
+  };
+  // The solid LEDs command locks up the motor (power-cycle to recover), so the
+  // button arms instead of firing immediately: first click shows a 3 s "Undo"
+  // affordance; clicking again within that window cancels and nothing is sent.
+  solidBtn.onclick = () => {
+    if (armTimer !== null) {           // within the undo window → cancel, restore
+      clearTimeout(armTimer);
+      armTimer = null;
+      solidBtn.classList.remove("danger");
+      solidBtn.textContent = "Red and Green Solid";
+      return;
+    }
+    solidBtn.classList.add("danger");
+    solidBtn.textContent = "Lockup Imminent! Undo";
+    armTimer = setTimeout(async () => {
+      armTimer = null;
+      solidBtn.classList.remove("danger");
+      try {
+        await api("POST", "/api/db/identify/solid/" + uid);
+        flashing = false;
+        flashBtn.disabled = true;
+        solidBtn.disabled = true;
+        solidBtn.textContent = "You must Power Cycle the Device";
+      } catch (e) {
+        solidBtn.textContent = "Red and Green Solid";
+        alert(e.message);
+      }
+    }, 3000);
+  };
+  wrap.append(flashBtn, solidBtn);
+  return wrap;
 }
 
 async function pollPngProgress() {
@@ -252,13 +377,9 @@ function buildPhaseTab(p) {
 
   const ps = settings.phases[String(p.number)];
 
-  // enable toggle
-  const enableWrap = el("label", {},
-    el("input", { type: "checkbox", onchange: (e) =>
-      api("POST", "/api/phases/" + p.number, { enabled: e.target.checked }) }),
-    " Phase enabled");
-  enableWrap.querySelector("input").checked = ps.enabled;
-  sec.append(el("div", { class: "panel" }, el("h3", {}, "Configuration"), enableWrap,
+  // The enable/disable toggle now lives in the "Phase enables" card on the
+  // first tab (see renderPhaseEnables); the per-tab checkbox was removed.
+  sec.append(el("div", { class: "panel" }, el("h3", {}, "Configuration"),
     buildParamInputs(p, "params", p.params, ps.params)));
 
   // measured items: criterion + histogram
@@ -437,6 +558,8 @@ function drawHistogram(canvas, values, thresholds) {
 // ---- wire static controls ---------------------------------------------------
 function wireControls() {
   $("refresh-ports").onclick = loadPorts;
+  $("phase-select-all").onclick = () => setAllPhasesEnabled(true);
+  $("phase-select-none").onclick = () => setAllPhasesEnabled(false);
   $("clear-all").onclick = () => api("POST", "/api/clear_all");
   $("run-scope").onchange = (e) => api("POST", "/api/settings/run_scope", { scope: e.target.value });
   $("start-all").onclick = () => api("POST", "/api/run/start_all");
@@ -446,8 +569,10 @@ function wireControls() {
   $("stop").onclick = () => api("POST", "/api/run/stop");
   $("system-reset").onclick = () => api("POST", "/api/system_reset");
   $("run-eval").onclick = async () => {
-    const r = await api("POST", "/api/evaluate");
-    alert(`Evaluated ${r.motors} motors: ${r.pass} pass / ${r.fail} fail (criteria v${r.criteria_version})`);
+    const r = await api("POST", "/api/evaluate", { scope: $("db-scope").value });
+    const scopeLabel = r.scope === "test_set" ? "test set" : "whole database";
+    alert(`Evaluated ${r.motors} motors (${scopeLabel}): ` +
+          `${r.pass} pass / ${r.fail} fail (criteria v${r.criteria_version})`);
     loadDevices();
   };
   $("gen-pngs").onclick = async () => {

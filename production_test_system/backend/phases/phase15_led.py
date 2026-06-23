@@ -10,7 +10,7 @@ removal-and-ping reconciliation), not during this collect step.
 from __future__ import annotations
 
 from .base import Phase, CollectionContext
-from ..state import GRID_ORANGE
+from ..state import GRID_YELLOW
 from ..transport import TimeoutError as RS485Timeout, FatalError
 
 # cmd 36 test modes 10..13 map to LED bitmasks 0..3 (green=bit0, red=bit1) in
@@ -31,7 +31,7 @@ class LedTestPhase(Phase):
                 # Some firmwares stop responding the instant they lock; that is
                 # expected, not an error.
                 pass
-            ctx.set_grid(uid, GRID_ORANGE)   # awaiting human confirmation
+            ctx.set_grid(uid, GRID_YELLOW)   # under test — awaiting human confirmation
 
         # Raise the global human-confirmation prompt (idempotent across buses).
         def _set(state):

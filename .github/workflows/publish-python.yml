@@ -1,0 +1,94 @@
+name: Publish Python library to PyPI
+
+# Builds and publishes the `servomotor` Python library to PyPI using PyPI
+# Trusted Publishing (OIDC) — no API token stored in the repo.
+#
+# This repo is a MONOREPO (firmware, bootloaders, mechanical, micropython, ...),
+# so the trigger is a PYTHON-SPECIFIC tag `pylib-v*` (NOT a plain `v*`, which would
+# collide with firmware/bootloader versioning). The package itself builds from
+# python_programs/PyPi_distribution/.
+#
+# Version source of truth: python_programs/servomotor/__init__.py `__version__`
+# (pyproject.toml reads it via [tool.setuptools.dynamic]). The git tag is only the
+# release trigger — bump `__version__` to match before tagging.
+#
+# ── ONE-TIME SETUP (Tom, on pypi.org — needs PyPI login) ─────────────────────────
+# The `servomotor` project already exists, so add a *publisher* (not a "pending"
+# publisher) under:  pypi.org → servomotor project → Settings → Publishing →
+# "Add a new publisher" (GitHub Actions):
+#     Owner:        tomrodinger
+#     Repository:   servomotor
+#     Workflow:     publish-python.yml
+#     Environment:  pypi
+# Also create a GitHub environment named `pypi` (repo Settings → Environments).
+# (Optional, for the TestPyPI dry-run path below: repeat on test.pypi.org and create
+#  a GitHub environment `testpypi` with a matching publisher there.)
+#
+# ── RELEASE FLOW ─────────────────────────────────────────────────────────────────
+#   edit python_programs/servomotor/__init__.py __version__ -> 0.11.0
+#   git commit -am "servomotor 0.11.0"
+#   git tag pylib-v0.11.0 && git push --tags
+#
+# The manual script python_programs/build_and_submit_to_PyPi.sh remains the
+# fallback (and shares prepare_src.sh with this workflow, so staging can't drift).
+
+on:
+  push:
+    tags: ["pylib-v*"]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Index to publish to"
+        type: choice
+        default: pypi
+        options:
+          - pypi
+          - testpypi
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    # Pick the GitHub environment matching the chosen index. Tag pushes always go
+    # to pypi. A manual run can target testpypi for a dry run.
+    environment: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi') && 'testpypi' || 'pypi' }}
+    permissions:
+      id-token: write        # required for trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Stage the src/ layout (shared with the manual deploy script)
+        run: bash python_programs/PyPi_distribution/prepare_src.sh
+
+      - name: Build sdist + wheel
+        working-directory: python_programs/PyPi_distribution
+        run: |
+          python -m pip install --upgrade build
+          rm -rf dist
+          python -m build
+
+      - name: Verify the build (twine check)
+        working-directory: python_programs/PyPi_distribution
+        run: |
+          python -m pip install --upgrade twine
+          twine check dist/*
+
+      - name: Publish to PyPI (trusted publishing)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python_programs/PyPi_distribution/dist
+
+      - name: Publish to TestPyPI (trusted publishing, manual dry-run)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: python_programs/PyPi_distribution/dist
+          repository-url: https://test.pypi.org/legacy/

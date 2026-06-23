@@ -17,9 +17,10 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Set
 
 from fastapi import FastAPI, Body, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import config, phase_defs, evaluation, png_generation
+from . import config, phase_defs, evaluation, png_generation, diagnostics
 from .database import Database, uid_hex, uid_from_hex
 from .settings import Settings
 from .state import AppState
@@ -36,6 +37,7 @@ LOGS: List[str] = []
 def _log(msg: str) -> None:
     LOGS.append(msg)
     del LOGS[:-500]   # keep the last 500 lines
+    diagnostics.log_line(msg)   # also persist to data/diagnostics.log (survives restart)
 
 
 if SIMULATE:
@@ -72,6 +74,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Servomotor Production Test System", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def revalidate_frontend(request, call_next):
+    """Force browsers to revalidate the static frontend on every load.
+
+    StaticFiles only sends ETag/Last-Modified, so a plain reload may reuse a
+    stale ``app.js``/``style.css`` from cache without checking the server.
+    ``no-cache`` keeps the cache but requires a revalidation, so a single normal
+    reload always picks up a changed file (304 when unchanged, 200 when not)."""
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith((".html", ".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 def _broadcast_from_thread() -> None:
     if _loop is None:
         return
@@ -88,6 +105,21 @@ def _enqueue(snapshot: Dict[str, Any]) -> None:
 
 
 STATE.add_listener(_broadcast_from_thread)
+
+
+# -- diagnostics (always on; see diagnostics.py + DEBUGGING.md) ----------------
+def _vitals() -> str:
+    parts = []
+    for bid, b in STATE.buses.items():
+        parts.append("%s[run=%s ph=%s pend=%s det=%s n=%d]" % (
+            bid, b.running, b.current_phase, b.pending_detections,
+            b.detecting, len(b.test_set)))
+    return " ".join(parts)
+
+
+diagnostics.install_faulthandler()              # SIGUSR1 -> all-thread stack dump
+diagnostics.start_watchdog(_vitals)             # periodic vitals + auto-dump on livelock
+_log("server started (pid=%d simulate=%s)" % (os.getpid(), SIMULATE))
 
 
 # -- helpers ------------------------------------------------------------------
@@ -132,6 +164,35 @@ def get_state():
 @app.get("/api/logs")
 def get_logs():
     return {"logs": LOGS[-200:]}
+
+
+# -- debug / diagnostics (see DEBUGGING.md) -----------------------------------
+@app.get("/api/debug/stacks", response_class=PlainTextResponse)
+def debug_stacks():
+    """Dump every thread's Python stack.  Use this FIRST if the UI/detection is
+    wedged or CPU is pegged: it pinpoints exactly what each bus worker is doing.
+    Also written to data/diagnostics.log for the record."""
+    text = diagnostics.dump_all_stacks()
+    diagnostics.log_line("STACKS requested via /api/debug/stacks:\n" + text)
+    return text
+
+
+@app.get("/api/debug/vitals")
+def debug_vitals():
+    """Quick machine-readable health snapshot: per-bus run flags + thread count."""
+    return {"pid": os.getpid(), "threads": threading.active_count(),
+            "vitals": _vitals(), "simulate": SIMULATE,
+            "diagnostics_log": diagnostics.DIAG_LOG_PATH}
+
+
+@app.get("/api/debug/log", response_class=PlainTextResponse)
+def debug_log(lines: int = 200):
+    """Tail the durable diagnostics log (worker lifecycle, vitals, stack dumps)."""
+    try:
+        with open(diagnostics.DIAG_LOG_PATH, "r") as fp:
+            return "".join(fp.readlines()[-max(1, lines):])
+    except FileNotFoundError:
+        return "(no diagnostics log yet)"
 
 
 # -- serial ports -------------------------------------------------------------
@@ -266,8 +327,9 @@ def led_check_removed():
 
 # -- Stage B ------------------------------------------------------------------
 @app.post("/api/evaluate")
-def evaluate():
-    return evaluation.evaluate_all(DB, SETTINGS)
+def evaluate(body: Dict[str, Any] = Body(default={})):
+    # Evaluate the motors picked by the Tab-2 Scope selector, then refresh the grid.
+    return RUNNER.evaluate(body.get("scope", "all"))
 
 
 PNG_PROGRESS: Dict[str, Any] = {"running": False, "done": 0, "total": 0, "pngs": 0}
@@ -351,9 +413,21 @@ def clear_failure(uid_hex_str: str, phase: int, body: Dict[str, Any] = Body(...)
     return {"ok": ok}
 
 
-@app.post("/api/db/identify/{uid_hex_str}")
-def identify(uid_hex_str: str):
-    ok = RUNNER.identify(uid_from_hex(uid_hex_str))
+@app.post("/api/db/identify/flash/start/{uid_hex_str}")
+def identify_flash_start(uid_hex_str: str):
+    ok = RUNNER.identify_flash_start(uid_from_hex(uid_hex_str))
+    return {"ok": ok}
+
+
+@app.post("/api/db/identify/flash/stop/{uid_hex_str}")
+def identify_flash_stop(uid_hex_str: str):
+    ok = RUNNER.identify_flash_stop(uid_from_hex(uid_hex_str))
+    return {"ok": ok}
+
+
+@app.post("/api/db/identify/solid/{uid_hex_str}")
+def identify_solid(uid_hex_str: str):
+    ok = RUNNER.identify_solid(uid_from_hex(uid_hex_str))
     return {"ok": ok}
 
 
