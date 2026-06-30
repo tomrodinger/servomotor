@@ -2,7 +2,7 @@
     {
         "CommandString": "Disable MOSFETs",
         "CommandEnum": 0,
-        "Description": "Disables the MOSFETS (note that MOSFETs are disabled after initial power on).",
+        "Description": "Disable the MOSFETs (note that the MOSFETs are disabled by default after initial power-on).",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -10,7 +10,7 @@
     {
         "CommandString": "Enable MOSFETs",
         "CommandEnum": 1,
-        "Description": "Enables the MOSFETS.",
+        "Description": "Enable the MOSFETs.",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -18,7 +18,7 @@
     {
         "CommandString": "Trapezoid move",
         "CommandEnum": 2,
-        "Description": "Move immediately to the given position using the currently set speed (the speed is set by a separate command)",
+        "Description": "Move immediately to the given position using the currently set speed (the speed is set by a separate command).",
         "Input": [
             {
                 "Description": "i32: The displacement to travel. Can be positive or negative.",
@@ -47,7 +47,7 @@
     {
         "CommandString": "Set maximum velocity",
         "CommandEnum": 3,
-        "Description": "Sets maximum velocity (this is not used at this time)",
+        "Description": "Set the maximum velocity (this is not used at this time).",
         "Input": [
             {
                 "Description": "u32: Maximum velocity.",
@@ -66,7 +66,7 @@
     {
         "CommandString": "Go to position",
         "CommandEnum": 4,
-        "Description": "Move to this new given position in the amount of time specified. Acceleration and deceleration will be applied to make the move smooth.",
+        "Description": "Move to the given position over the specified amount of time. Acceleration and deceleration are applied to make the move smooth.",
         "Input": [
             {
                 "Description": "i32: New absolute position value.",
@@ -95,7 +95,7 @@
     {
         "CommandString": "Set maximum acceleration",
         "CommandEnum": 5,
-        "Description": "Sets max acceleration",
+        "Description": "Set the maximum acceleration.",
         "Input": [
             {
                 "Description": "u32: The maximum acceleration.",
@@ -114,7 +114,7 @@
     {
         "CommandString": "Start calibration",
         "CommandEnum": 6,
-        "Description": "Starts a calibration, which will determine the average values of the hall sensors and will determine if they are working correctly",
+        "Description": "Start a calibration, which determines the average values of the hall sensors and whether they are working correctly.",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Configuration"
@@ -122,7 +122,7 @@
     {
         "CommandString": "Capture hall sensor data",
         "CommandEnum": 7,
-        "Description": "Start sending hall sensor data (work in progress; don't send this command)",
+        "Description": "Start sending hall sensor data (work in progress; do not send this command).",
         "Input": [
             {
                 "Description": "u8: Indicates the type of data to capture. Currently 1 to 3 are valid.",
@@ -167,7 +167,7 @@
     {
         "CommandString": "Reset time",
         "CommandEnum": 8,
-        "Description": "Resets the absolute time to zero (call this first before issuing any movement commands)",
+        "Description": "Reset the absolute time to zero (call this first, before issuing any movement commands).",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -175,7 +175,7 @@
     {
         "CommandString": "Get current time",
         "CommandEnum": 9,
-        "Description": "Gets the current absolute time",
+        "Description": "Get the current absolute time.",
         "Input": null,
         "Output": [
             {
@@ -194,7 +194,7 @@
     {
         "CommandString": "Time sync",
         "CommandEnum": 10,
-        "Description": "Sends the master time to the motor so that it can sync its own clock (do this 10 times per second).",
+        "Description": "Send the master time to the motor so that it can synchronize its own clock (do this 10 times per second).",
         "Input": [
             {
                 "Description": "u32: The motor absolute time that the motor should sync to (in microseconds).",
@@ -224,7 +224,7 @@
     {
         "CommandString": "Get n queued items",
         "CommandEnum": 11,
-        "Description": "Get the number of items currently in the movement queue (if this gets too large, don't queue any more movement commands)",
+        "Description": "Get the number of items currently in the movement queue (if this gets too large, do not queue any more movement commands).",
         "Input": null,
         "Output": [
             {
@@ -238,7 +238,7 @@
     {
         "CommandString": "Emergency stop",
         "CommandEnum": 12,
-        "Description": "Emergency stop (stop all movement, disable MOSFETS, clear the queue)",
+        "Description": "Perform an emergency stop (stop all movement, disable the MOSFETs, and clear the queue).",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -246,7 +246,7 @@
     {
         "CommandString": "Zero position",
         "CommandEnum": 13,
-        "Description": "Make the current position the position zero (origin)",
+        "Description": "Make the current position the zero position (the origin).",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -254,7 +254,7 @@
     {
         "CommandString": "Homing",
         "CommandEnum": 14,
-        "Description": "Homing (or in other words, move until a crash and then stop immediately)",
+        "Description": "Home the motor (in other words, move until a crash and then stop immediately).",
         "Input": [
             {
                 "Description": "i32: The maximum distance to move (if a crash does not occur). This can be positive or negative. the sign determines the direction of movement.",
@@ -283,7 +283,7 @@
     {
         "CommandString": "Get hall sensor position",
         "CommandEnum": 15,
-        "Description": "Get the position as measured by the hall sensors (this should be the actual position of the motor and if everything is ok then it will be about the same as the desired position)",
+        "Description": "Get the position as measured by the hall sensors (this should be the actual position of the motor; if everything is OK, it will be about the same as the desired position).",
         "Input": null,
         "Output": [
             {
@@ -302,7 +302,7 @@
     {
         "CommandString": "Get status",
         "CommandEnum": 16,
-        "Description": "Gets the status of the motor",
+        "Description": "Get the status of the motor.",
         "Input": null,
         "Output": [
             {
@@ -339,7 +339,7 @@
     {
         "CommandString": "Go to closed loop",
         "CommandEnum": 17,
-        "Description": "Go to closed loop position control mode",
+        "Description": "Go to closed-loop position control mode.",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Motion Control"
@@ -347,7 +347,7 @@
     {
         "CommandString": "Get product specs",
         "CommandEnum": 18,
-        "Description": "Get the update frequency (reciprocal of the time step)",
+        "Description": "Get the update frequency (the reciprocal of the time step).",
         "Input": null,
         "Output": [
             {
@@ -366,7 +366,7 @@
     {
         "CommandString": "Move with acceleration",
         "CommandEnum": 19,
-        "Description": "Rotates the motor with the specified acceleration",
+        "Description": "Rotate the motor with the specified acceleration.",
         "Input": [
             {
                 "Description": "i32: The acceleration (the unit is microsteps per time step per time step * 2^24).",
@@ -395,7 +395,7 @@
     {
         "CommandString": "Detect devices",
         "CommandEnum": 20,
-        "Description": "Detect all of the devices that are connected on the RS485 interface. Devices will identify themselves at a random time within one seconde. Chance of collision is possible but unlikely. You can repeat this if you suspect a collision (like if you have devices connected but they were not discovered within one to two seconds).",
+        "Description": "Detect all of the devices connected on the RS485 interface. Devices identify themselves at a random time within one second. A collision is possible but unlikely. You can repeat this if you suspect a collision (for example, if you have devices connected but they were not discovered within one to two seconds).",
         "Input": null,
         "Output": [
             {
@@ -415,7 +415,7 @@
     {
         "CommandString": "Set device alias",
         "CommandEnum": 21,
-        "Description": "Sets device alias",
+        "Description": "Set the device alias.",
         "Input": [
             {
                 "Description": "u8_alias: The alias (which is a one byte ID) ranging from 0 to 251. It cannot be 252 to 254 because those are reserved. You can set it to 255, which will remove the alias.",
@@ -429,7 +429,7 @@
     {
         "CommandString": "Get product info",
         "CommandEnum": 22,
-        "Description": "Get product information",
+        "Description": "Get the product information.",
         "Input": null,
         "Output": [
             {
@@ -468,7 +468,7 @@
     {
         "CommandString": "Firmware upgrade",
         "CommandEnum": 23,
-        "Description": "This command will upgrade the flash memory of the servo motor. Before issuing a firmware upgrade command, you must do some calculations as shown in the examples.",
+        "Description": "Upgrade the flash memory of the servomotor. Before issuing a firmware upgrade command, you must perform some calculations, as shown in the examples.",
         "Input": [
             {
                 "Description": "firmware_page: The data to upgrade one page of flash memory. Contents includes the product model code (8 bytes), firmware compatibility code (1 byte), page number (1 byte), and the page data itself (2048 bytes).",
@@ -495,7 +495,7 @@
     {
         "CommandString": "Get firmware version",
         "CommandEnum": 25,
-        "Description": "Get the firmware version or the bootloader version depending on what mode we are in. This command also returns the status bits, where the least significan bit teels us if we are currently in the bootloader (=1) or the main firmware (=0)",
+        "Description": "Get the firmware version or the bootloader version, depending on which mode the device is in. This command also returns the status bits, where the least significant bit tells you whether the device is currently in the bootloader (=1) or the main firmware (=0).",
         "Input": null,
         "Output": [
             {
@@ -514,7 +514,7 @@
     {
         "CommandString": "Move with velocity",
         "CommandEnum": 26,
-        "Description": "Rotates the motor with the specified velocity.",
+        "Description": "Rotate the motor with the specified velocity.",
         "Input": [
             {
                 "Description": "i32: The velocity (the unit is microsteps per time step * 2^20).",
@@ -543,7 +543,7 @@
     {
         "CommandString": "System reset",
         "CommandEnum": 27,
-        "Description": "System reset / go to the bootloader. The motor will reset immediately and will enter the bootloader. If there is no command sent within a short time, the motor will exit the bootloader and run the application from the beginning.",
+        "Description": "Reset the system and enter the bootloader. The motor resets immediately and enters the bootloader. If no command is sent within a short time, the motor exits the bootloader and runs the application from the beginning.",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Basic Control"
@@ -580,7 +580,7 @@
     {
         "CommandString": "Multimove",
         "CommandEnum": 29,
-        "Description": "The multimove command allows you to compose multiple moves one after another. Please note that when the queue becomes empty after all the moves are executed and the motor is not at a standstill then a fatal error will be triggered.",
+        "Description": "Compose multiple moves to be executed one after another. Note that if the queue becomes empty after all the moves are executed and the motor is not at a standstill, a fatal error is triggered.",
         "Input": [
             {
                 "Description": "u8: Specify how many moves are being communicated in this one shot.",
@@ -609,7 +609,7 @@
     {
         "CommandString": "Set safety limits",
         "CommandEnum": 30,
-        "Description": "Set safety limits (to prevent motion from exceeding set bounds)",
+        "Description": "Set the safety limits (to prevent motion from exceeding the set bounds).",
         "Input": [
             {
                 "Description": "i64: The lower limit in microsteps.",
@@ -638,7 +638,7 @@
     {
         "CommandString": "Ping",
         "CommandEnum": 31,
-        "Description": "Send a payload containing any data and the device will respond with the same data back",
+        "Description": "Send a payload containing any data, and the device responds with the same data.",
         "Input": [
             {
                 "Description": "buf10: Any binary data payload to send to the device.",
@@ -658,7 +658,7 @@
     {
         "CommandString": "Control hall sensor statistics",
         "CommandEnum": 32,
-        "Description": "Turn on or off the gathering of statistics for the hall sensors and reset the statistics",
+        "Description": "Turn the gathering of hall sensor statistics on or off, and reset the statistics.",
         "Input": [
             {
                 "Description": "u8: 0 = turn off statistics gathering, 1 = reset statistics and turn on gathering.",
@@ -672,7 +672,7 @@
     {
         "CommandString": "Get hall sensor statistics",
         "CommandEnum": 33,
-        "Description": "Read back the statistics gathered from the hall sensors. Useful for checking the hall sensor health and noise in the system.",
+        "Description": "Read back the statistics gathered from the hall sensors. This is useful for checking the hall sensor health and the noise in the system.",
         "Input": null,
         "Output": [
             {
@@ -731,7 +731,7 @@
     {
         "CommandString": "Get position",
         "CommandEnum": 34,
-        "Description": "Get the current desired position (which may differ a bit from the actual position as measured by the hall sensors)",
+        "Description": "Get the current desired position (which may differ slightly from the actual position as measured by the hall sensors).",
         "Input": null,
         "Output": [
             {
@@ -750,7 +750,7 @@
     {
         "CommandString": "Read multipurpose buffer",
         "CommandEnum": 35,
-        "Description": "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, going to closed loop mode, and when capturing hall sensor data)",
+        "Description": "Read whatever is in the multipurpose buffer (the buffer is used for data generated during calibration, when going to closed-loop mode, and when capturing hall sensor data).",
         "Input": null,
         "Output": [
             {
@@ -764,7 +764,7 @@
     {
         "CommandString": "Test mode",
         "CommandEnum": 36,
-        "Description": "Set or trigger a certain test mode. This is a bit undocumented at the moment. Don't use this unless you are a developer working on test cases. Notable modes: 0 = clear all test modes; 1-9 = motor test modes; 10-13 = LED test modes (locks up the device); 14-73 = trigger fatal errors 0-59; 74 = set the overvoltage-protection threshold to 22 V (production test, should trip on a 24 V supply); 75 = set the overvoltage-protection threshold to 26 V (production test, should not trip on a 24 V supply); 76 = raise the overtemperature cutoff to about 90 degrees C (production thermal-margin test, the default cutoff is about 80 degrees C). A system reset restores the default overvoltage and overtemperature thresholds.",
+        "Description": "Set or trigger a particular test mode. This is somewhat undocumented at the moment. Do not use this unless you are a developer working on test cases. Notable modes: 0 = clear all test modes; 1-9 = motor test modes; 10-13 = LED test modes (lock up the device); 14-73 = trigger fatal errors 0-59; 74 = set the overvoltage-protection threshold to 22 V (production test; should trip on a 24 V supply); 75 = set the overvoltage-protection threshold to 26 V (production test; should not trip on a 24 V supply); 76 = raise the overtemperature cutoff to about 90 degrees C (production thermal-margin test; the default cutoff is about 80 degrees C). A system reset restores the default overvoltage and overtemperature thresholds.",
         "Input": [
             {
                 "Description": "u8: The test mode to use or trigger",
@@ -778,7 +778,7 @@
     {
         "CommandString": "Get comprehensive position",
         "CommandEnum": 37,
-        "Description": "Get the desired motor position, hall sensor position, and external encoder position all in one shot",
+        "Description": "Get the desired motor position, the hall sensor position, and the external encoder position all in one shot.",
         "Input": null,
         "Output": [
             {
@@ -836,7 +836,7 @@
     {
         "CommandString": "Get max PID error",
         "CommandEnum": 39,
-        "Description": "Get the minimum and maximum error value ovserved in the PID control loop since the last read.",
+        "Description": "Get the minimum and maximum error values observed in the PID control loop since the last read.",
         "Input": null,
         "Output": [
             {
@@ -865,7 +865,7 @@
     {
         "CommandString": "Vibrate",
         "CommandEnum": 40,
-        "Description": "Cause the motor to start to vary the voltage quickly and therefore to vibrate (or stop).",
+        "Description": "Cause the motor to vary the voltage quickly and therefore vibrate (or stop vibrating).",
         "Input": [
             {
                 "Description": "u8: Vibration level (0 = turn off, 1 = turn on).",
@@ -879,7 +879,7 @@
     {
         "CommandString": "Identify",
         "CommandEnum": 41,
-        "Description": "Identify your motor by sending this command. The motor's green LED will flash rapidly for 3 seconds.",
+        "Description": "Identify your motor by sending this command. The motor's green LED flashes rapidly for 3 seconds.",
         "Input": null,
         "Output": "success_response",
         "CommandGroup": "Device Management"
@@ -906,7 +906,7 @@
     {
         "CommandString": "Set PID constants",
         "CommandEnum": 43,
-        "Description": "Set PID constants for the control loop that will try to maintain the motion trajectory.",
+        "Description": "Set the PID constants for the control loop that tries to maintain the motion trajectory.",
         "Input": [
             {
                 "Description": "u32: The proportional term constant (P)",
@@ -930,7 +930,7 @@
     {
         "CommandString": "Set max allowable position deviation",
         "CommandEnum": 44,
-        "Description": "Set the amount of microsteps that the actual motor position (as measured by the hall sensors) is allowed to deviate from the desired position. Throw a fatal error if this is exceeded.",
+        "Description": "Set the number of microsteps that the actual motor position (as measured by the hall sensors) is allowed to deviate from the desired position. A fatal error is thrown if this is exceeded.",
         "Input": [
             {
                 "Description": "i64: The new maximum allowable position deviation setting",
@@ -949,7 +949,7 @@
     {
         "CommandString": "Get debug values",
         "CommandEnum": 45,
-        "Description": "Get debug values including motor control parameters, profiler times, hall sensor data, and other diagnostic information.",
+        "Description": "Get debug values, including motor control parameters, profiler times, hall sensor data, and other diagnostic information.",
         "Input": null,
         "Output": [
             {
@@ -1108,7 +1108,7 @@
     {
         "CommandString": "CRC32 control",
         "CommandEnum": 46,
-        "Description": "Enable or disable CRC32 checking for commands",
+        "Description": "Enable or disable CRC32 checking for commands.",
         "Input": [
             {
                 "Description": "u8: Control value (1 to enable, 0 to disable CRC32 checking)",
@@ -1122,7 +1122,7 @@
     {
         "CommandString": "Get communication statistics",
         "CommandEnum": 47,
-        "Description": "Get and optionally reset the CRC32 error counter",
+        "Description": "Get and optionally reset the CRC32 error counter.",
         "Input": [
             {
                 "Description": "u8: Reset flag (1 to reset the counter after reading, 0 to just read)",

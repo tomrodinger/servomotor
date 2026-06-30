@@ -54,8 +54,11 @@ def add_mechanical_specs(story, style):
     ]
 
     content_width = get_content_width()
-    col_width = content_width / 5  # Equal width for 5 columns
-    table = Table(data, colWidths=[col_width] * 5)
+    # Wider first column so "Dimensions (LxW)" fits without overflowing into
+    # the value column (matches the Technical Specifications table below)
+    first_col_width = content_width * 0.24
+    other_col_width = (content_width - first_col_width) / 4
+    table = Table(data, colWidths=[first_col_width] + [other_col_width] * 4)
     table.setStyle(create_table_style())
     elements.append(table)
     elements.append(Spacer(1, 4))  # Reduced spacing after table
