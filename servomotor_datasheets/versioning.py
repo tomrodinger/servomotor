@@ -1,5 +1,6 @@
 from reportlab.platypus import Paragraph, Spacer
 from styles import create_heading_style
+from i18n import tr
 
 def get_latest_version():
     """Get the latest version information from versions.txt"""
@@ -27,7 +28,7 @@ def add_version_info(story, style):
     story.append(Spacer(1, 15))
     
     version, date = get_latest_version()
-    version_text = f"Datasheet Version: {version} Release Date: {date}"
+    version_text = tr("Datasheet Version: {version} Release Date: {date}").format(version=version, date=date)
     
     story.append(Paragraph(version_text, style))
     story.append(Spacer(1, 15))

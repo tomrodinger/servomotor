@@ -1,9 +1,10 @@
 from reportlab.platypus import Paragraph, Spacer, PageBreak
 from styles import create_heading_style
+from i18n import tr
 
 def add_company_info(story, style):
     """Add company mission section"""
-    story.append(Paragraph('Our Mission', create_heading_style()))
+    story.append(Paragraph(tr('Our Mission'), create_heading_style()))
     story.append(Spacer(1, 8))
     
     mission_content = """
@@ -14,5 +15,5 @@ def add_company_info(story, style):
     Our core belief is that every student should have the opportunity to experiment with the building blocks of modern automation—from robotics and CNC systems to scientific instruments. Through our educational partnerships and open-source approach, we're fostering a generation that doesn't just use technology, but truly understands and shapes it. Together, we're building the foundation for innovators who will define the amazing future.
     """
     
-    story.append(Paragraph(mission_content.strip(), style))
+    story.append(Paragraph(tr(mission_content), style))
     story.append(Spacer(1, 15))

@@ -1,6 +1,7 @@
 from PIL import Image as PILImage
 from reportlab.platypus import Image, Table, TableStyle
 from styles import PRIMARY_COLOR
+from i18n import tr
 import os
 
 def get_image_size(image_path, target_width):
@@ -22,14 +23,14 @@ def create_image_table(detail_img, tech_img, img_width):
     return image_table
 
 def read_file_content(filename):
-    """Read content from a file"""
-    with open(filename, 'r') as file:
-        return file.read()
+    """Read content from a file, translated to the current language"""
+    with open(filename, 'r', encoding='utf-8') as file:
+        return tr(file.read())
 
 def read_features():
-    """Read features from features.txt"""
-    with open('features.txt', 'r') as file:
-        return [line.strip() for line in file.readlines() if line.strip()]
+    """Read features from features.txt, each translated to the current language"""
+    with open('features.txt', 'r', encoding='utf-8') as file:
+        return [tr(line) for line in file.readlines() if line.strip()]
 
 def load_json_file(filename):
     """Load and parse a JSON file"""

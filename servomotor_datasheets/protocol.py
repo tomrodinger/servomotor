@@ -9,6 +9,7 @@ from styles import (
 )
 from utils import load_json_file
 from content import IconLink
+from i18n import tr
 
 class CodeBox(Flowable):
     """A custom flowable for code blocks with border and background"""
@@ -47,12 +48,12 @@ class CodeBox(Flowable):
 def add_protocol_overview(story, style):
     """Add protocol overview section"""
     elements = []
-    elements.append(Paragraph('Communication Protocol Overview', create_heading_style()))
-    
+    elements.append(Paragraph(tr('Communication Protocol Overview'), create_heading_style()))
+
     # Read overview text from file
-    with open('communication.txt', 'r') as f:
-        overview_text = f.read()
-    
+    with open('communication.txt', 'r', encoding='utf-8') as f:
+        overview_text = tr(f.read())
+
     elements.append(Paragraph(overview_text, style))
     elements.append(Spacer(1, 10))
     
@@ -85,15 +86,16 @@ def create_command_table(title, commands, content_width):
     elements = []
     
     # Add title
-    elements.append(Paragraph(title, create_group_heading_style()))
+    elements.append(Paragraph(tr(title), create_group_heading_style()))
     elements.append(Spacer(1, 4))
-    
-    # Create table data
-    data = [['Command', 'Description']]
+
+    # Create table data. Command names stay in English (they match the
+    # Python/Arduino API and motor_commands.json); descriptions are translated.
+    data = [[tr('Command'), tr('Description')]]
     for cmd in commands:
         data.append([
             create_command_cell(cmd['CommandString']),
-            create_description_cell(cmd['Description'])
+            create_description_cell(tr(cmd['Description']))
         ])
     
     # Create table with adjusted column widths
@@ -117,7 +119,7 @@ def create_command_table(title, commands, content_width):
 
 def add_command_reference(story, style):
     """Add command reference section"""
-    story.append(Paragraph('Command Reference Summary', create_heading_style()))
+    story.append(Paragraph(tr('Command Reference Summary'), create_heading_style()))
     story.append(Spacer(1, 4))
     
     # Calculate content width
@@ -126,7 +128,7 @@ def add_command_reference(story, style):
     content_width = page_width - (2 * margin)
     
     # Add descriptive text about the command reference
-    description_text = """For the up to date source of truth for all available commands, you can look at this document."""
+    description_text = tr("""For the up to date source of truth for all available commands, you can look at this document.""")
     story.append(Paragraph(description_text, style))
     story.append(Spacer(1, 4))
     
@@ -150,7 +152,7 @@ def add_command_reference(story, style):
     story.append(Spacer(1, 6))
     
     # Add text about running command
-    command_text = """You can also run this command:"""
+    command_text = tr("""You can also run this command:""")
     story.append(Paragraph(command_text, style))
     story.append(Spacer(1, 4))
     
@@ -164,7 +166,7 @@ servomotor_command -c"""
     story.append(Spacer(1, 4))
     
     # Add explanation text
-    explanation_text = """This will print out the information contained in the motor_commands.json file in a nicer way and give some usage information for sending commands to the motor from the command line."""
+    explanation_text = tr("""This will print out the information contained in the motor_commands.json file in a nicer way and give some usage information for sending commands to the motor from the command line.""")
     story.append(Paragraph(explanation_text, style))
     story.append(Spacer(1, 8))
     

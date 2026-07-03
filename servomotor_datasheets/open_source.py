@@ -3,6 +3,7 @@ from reportlab.lib.units import mm
 from styles import create_link_style, create_click_icon, SECONDARY_COLOR, create_heading_style
 from utils import get_processed_image
 from content import IconLink
+from i18n import tr
 
 def add_open_source_section(story, normal_style):
     """Add the Open Source section to the datasheet"""
@@ -12,11 +13,11 @@ def add_open_source_section(story, normal_style):
     
     # Add section heading
     heading_style = create_heading_style()
-    elements.append(Paragraph('Open Source', heading_style))
+    elements.append(Paragraph(tr('Open Source'), heading_style))
     elements.append(Spacer(1, 5))
-    
+
     # Add description text
-    description = "We believe in making the world better through technology. Software, firmware, and PCB design files are available here:"
+    description = tr("We believe in making the world better through technology. Software, firmware, and PCB design files are available here:")
     elements.append(Paragraph(description, normal_style))
     elements.append(Spacer(1, 5))
     

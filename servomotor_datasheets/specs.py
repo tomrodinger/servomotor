@@ -1,8 +1,11 @@
 from reportlab.platypus import Paragraph, Spacer, Table, KeepTogether, PageBreak, Image
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from styles import create_heading_style, create_table_style, create_subtitle_style
 from utils import create_data_table, get_image_size
+from i18n import tr
 
 def get_content_width():
     """Calculate content width to match main.py"""
@@ -10,20 +13,33 @@ def get_content_width():
     margin = 20 * mm
     return page_width - (2 * margin)
 
+def label_cell(text):
+    """Wrap a (translated) table label in a Paragraph so long words wrap
+    inside the cell instead of overflowing into the next column"""
+    style = ParagraphStyle('SpecLabel', fontSize=12, leading=14)
+    return Paragraph(tr(text), style)
+
+def header_cell(text):
+    """Like label_cell, but for cells in the green header row: a Paragraph
+    ignores the table style's TEXTCOLOR, so set the white text color here"""
+    style = ParagraphStyle('SpecHeader', fontSize=12, leading=14,
+                           textColor=colors.whitesmoke)
+    return Paragraph(tr(text), style)
+
 def add_technical_specs(story, style):
     """Add technical specifications section"""
     # Create elements to keep together
     elements = []
-    elements.append(Paragraph('Technical Specifications', create_heading_style()))
+    elements.append(Paragraph(tr('Technical Specifications'), create_heading_style()))
     elements.append(Spacer(1, 6))  # Reduced spacing
-    
+
     data = [
-        ['Parameter', 'M17-60', 'M17-48', 'M17-40', 'M17-34'],
-        ['Operating Voltage', '12-24V', '12-24V', '12-24V', '12-24V'],
-        ['Rated Torque', '0.65 N.m', '0.55 N.m', '0.42 N.m', '0.28 N.m'],
-        ['Maximum Speed', '560 RPM', '560 RPM', '560 RPM', '560 RPM'],
-        ['Maximum Current', '1.1A', '1.1A', '1.1A', '1.0A'],
-        ['Rated Power', '26.4W', '26.4W', '26.4W', '24.0W']
+        [header_cell('Parameter'), 'M17-60', 'M17-48', 'M17-40', 'M17-34'],
+        [label_cell('Operating Voltage'), '12-24V', '12-24V', '12-24V', '12-24V'],
+        [label_cell('Rated Torque'), '0.65 N.m', '0.55 N.m', '0.42 N.m', '0.28 N.m'],
+        [label_cell('Maximum Speed'), '560 RPM', '560 RPM', '560 RPM', '560 RPM'],
+        [label_cell('Maximum Current'), '1.1A', '1.1A', '1.1A', '1.0A'],
+        [label_cell('Rated Power'), '26.4W', '26.4W', '26.4W', '24.0W']
     ]
 
     content_width = get_content_width()
@@ -41,16 +57,16 @@ def add_mechanical_specs(story, style):
     """Add mechanical specifications section"""
     # Create elements to keep together
     elements = []
-    elements.append(Paragraph('Mechanical Specifications', create_heading_style()))
+    elements.append(Paragraph(tr('Mechanical Specifications'), create_heading_style()))
     elements.append(Spacer(1, 2))  # Minimal spacing after heading
-    
+
     data = [
-        ['Parameter', 'M17-60', 'M17-48', 'M17-40', 'M17-34'],
-        ['Dimensions (LxW)', '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm'],
-        ['Height', '59.7 mm', '48.7 mm', '40.1 mm', '33.5 mm'],
-        ['Shaft Length', '20.6 mm', '20.6 mm', '20.6 mm', '20.6 mm'],
-        ['Weight', '470g', '360g', '285g', '210g'],
-        ['Protection Class', 'IP20', 'IP20', 'IP20', 'IP20']
+        [header_cell('Parameter'), 'M17-60', 'M17-48', 'M17-40', 'M17-34'],
+        [label_cell('Dimensions (LxW)'), '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm', '42.2x42.2 mm'],
+        [label_cell('Height'), '59.7 mm', '48.7 mm', '40.1 mm', '33.5 mm'],
+        [label_cell('Shaft Length'), '20.6 mm', '20.6 mm', '20.6 mm', '20.6 mm'],
+        [label_cell('Weight'), '470g', '360g', '285g', '210g'],
+        [label_cell('Protection Class'), 'IP20', 'IP20', 'IP20', 'IP20']
     ]
 
     content_width = get_content_width()
@@ -86,15 +102,15 @@ def add_operating_conditions(story, style):
     """Add operating conditions section"""
     # Create elements to keep together
     elements = []
-    elements.append(Paragraph('Operating Conditions', create_heading_style()))
+    elements.append(Paragraph(tr('Operating Conditions'), create_heading_style()))
     elements.append(Spacer(1, 6))
-    
+
     data = [
-        ['Parameter', 'Specification'],
-        ['Operating Temperature', '0C to +80C'],
-        ['Storage Temperature', '-20C to +60C'],
-        ['Humidity Range', '20% to 80% RH (non-condensing)'],
-        ['Installation Environment', 'Indoor use only']
+        [header_cell('Parameter'), header_cell('Specification')],
+        [label_cell('Operating Temperature'), label_cell('0C to +80C')],
+        [label_cell('Storage Temperature'), label_cell('-20C to +60C')],
+        [label_cell('Humidity Range'), label_cell('20% to 80% RH (non-condensing)')],
+        [label_cell('Installation Environment'), label_cell('Indoor use only')]
     ]
     
     content_width = get_content_width()

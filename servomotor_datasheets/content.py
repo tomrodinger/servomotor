@@ -6,6 +6,7 @@ from styles import (
     SECONDARY_COLOR
 )
 from utils import read_file_content, read_features, load_json_file, get_processed_image
+from i18n import tr
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -47,7 +48,7 @@ class IconLink(Flowable):
 
 def add_introduction(story, style):
     """Add introduction section"""
-    story.append(Paragraph('Introduction', create_heading_style()))
+    story.append(Paragraph(tr('Introduction'), create_heading_style()))
     intro_text = read_file_content('introduction.txt')
     story.append(Paragraph(intro_text, style))
     story.append(Spacer(1, 6))  # Reduced spacing
@@ -58,7 +59,7 @@ def add_features(story, style):
     elements = []
     
     # Add heading and features
-    elements.append(Paragraph('Key Features', create_heading_style()))
+    elements.append(Paragraph(tr('Key Features'), create_heading_style()))
     features = read_features()
     feature_style = create_feature_style()
     for feature in features:
@@ -74,7 +75,7 @@ def add_connection_diagram(story, style):
     elements = []
     
     # Add heading
-    elements.append(Paragraph('Connection Diagram', create_heading_style()))
+    elements.append(Paragraph(tr('Connection Diagram'), create_heading_style()))
     
     # Calculate content width to match main.py
     page_width, _ = A4
@@ -96,15 +97,15 @@ def add_unit_system(story, style):
     elements = []
     
     # Add heading and description
-    elements.append(Paragraph('Unit System', create_heading_style()))
+    elements.append(Paragraph(tr('Unit System'), create_heading_style()))
     elements.append(Spacer(1, 4))  # Reduced spacing
-    
-    elements.append(Paragraph(
+
+    elements.append(Paragraph(tr(
         'The M17 Series Servomotors have certain internal units so that they can perform the calculations '
         'associated with motion efficiently (using integer math). It is the responsibility of the controlling '
         'software to support multiple units of measurement for various quantities. Our Python and Arduino libraries handle '
         'unit conversions automatically, allowing you to work with your preferred units. Below are the supported '
-        'units for each quantity:', style))
+        'units for each quantity:'), style))
     elements.append(Spacer(1, 4))  # Reduced spacing
     
     # Calculate content width to match main.py
@@ -125,12 +126,14 @@ def add_unit_system(story, style):
     )
     
     # Create table data with Paragraph objects for wrapping
-    table_data = [['Quantity', 'Available Units']]  # Header row
-    
+    table_data = [[tr('Quantity'), tr('Available Units')]]  # Header row
+
     # Add each quantity and its units
+    # Unit names themselves stay in English: they are the literal strings the
+    # Python/Arduino APIs accept (e.g. position_unit="degrees")
     for quantity, unit_list in units.items():
         # Format quantity name
-        quantity_name = quantity.replace('_', ' ').title()
+        quantity_name = tr(quantity.replace('_', ' ').title())
         # Format unit list with line breaks for better readability
         unit_text = ', '.join(unit.replace('_', ' ') for unit in unit_list)
         # Wrap both columns in Paragraph objects
@@ -167,20 +170,20 @@ def add_unit_system(story, style):
 
 def add_getting_started_section(story, style):
     """Add getting started guide section"""
-    story.append(Paragraph('Getting Started Guide', create_heading_style()))
-    
-    story.append(Paragraph(
+    story.append(Paragraph(tr('Getting Started Guide'), create_heading_style()))
+
+    story.append(Paragraph(tr(
         'To help you get started with your M17 Series Servomotor, we provide a comprehensive online guide '
-        'that covers everything from initial setup to advanced protocol implementations. This guide includes:',
+        'that covers everything from initial setup to advanced protocol implementations. This guide includes:'),
         style
     ))
-    
+
     guide_features = [
-        'Step-by-step setup instructions',
-        'Detailed communication protocol documentation',
-        'Programming examples and code snippets',
-        'Description of error codes',
-        'Troubleshooting tips and best practices'
+        tr('Step-by-step setup instructions'),
+        tr('Detailed communication protocol documentation'),
+        tr('Programming examples and code snippets'),
+        tr('Description of error codes'),
+        tr('Troubleshooting tips and best practices')
     ]
     
     feature_style = create_feature_style()
@@ -197,7 +200,7 @@ def add_getting_started_section(story, style):
     # Add custom icon link flowable
     icon_link = IconLink(
         'click_here.png',
-        'Click Here to Visit our Getting Started Guide: tutorial.gearotons.com',
+        tr('Click Here to Visit our Getting Started Guide: tutorial.gearotons.com'),
         'https://tutorial.gearotons.com/',
         content_width
     )
@@ -206,12 +209,12 @@ def add_getting_started_section(story, style):
 
 def add_feedback_section(story, style):
     """Add feedback section"""
-    story.append(Paragraph('Send Us Feedback', create_heading_style()))
-    
-    story.append(Paragraph(
+    story.append(Paragraph(tr('Send Us Feedback'), create_heading_style()))
+
+    story.append(Paragraph(tr(
         'If you find errors in this document or have questions, please let us know by going to: '
         'tutorial.gearotons.com/feedback. We would really appreciate your suggestions on how '
-        'we can improve the product or documentation. Thanks very much!',
+        'we can improve the product or documentation. Thanks very much!'),
         style
     ))
     
@@ -225,7 +228,7 @@ def add_feedback_section(story, style):
     # Add custom icon link flowable
     icon_link = IconLink(
         'click_here.png',
-        'Visit our Feedback Page',
+        tr('Visit our Feedback Page'),
         'https://tutorial.gearotons.com/feedback',
         content_width
     )

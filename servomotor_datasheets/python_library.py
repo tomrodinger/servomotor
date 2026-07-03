@@ -4,6 +4,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A4
 from styles import create_heading_style, create_feature_style, PRIMARY_COLOR
+from i18n import tr
 
 class CodeBox(Flowable):
     """A custom flowable for code blocks with border and background"""
@@ -64,25 +65,25 @@ def add_python_library_section(story, normal_style):
     """Add Python Library section to the datasheet"""
     
     # Add section heading
-    story.append(Paragraph('Python Library', create_heading_style()))
+    story.append(Paragraph(tr('Python Library'), create_heading_style()))
     story.append(Spacer(1, 5))
-    
+
     # Add introduction
-    intro_text = """
-    Our Python library provides a comprehensive interface for controlling M17 Series Servomotors. 
-    The library handles all low-level communication protocols and unit conversions, making it easy 
+    intro_text = tr("""
+    Our Python library provides a comprehensive interface for controlling M17 Series Servomotors.
+    The library handles all low-level communication protocols and unit conversions, making it easy
     to integrate servomotor control into your Python projects.
-    """
+    """)
     story.append(Paragraph(intro_text, normal_style))
     story.append(Spacer(1, 5))
-    
+
     # Installation instructions
-    story.append(Paragraph('<b>Installation</b>', normal_style))
+    story.append(Paragraph(f"<b>{tr('Installation')}</b>", normal_style))
     story.append(Spacer(1, 3))
-    
-    install_text = """
+
+    install_text = tr("""
     Install the servomotor library using pip:
-    """
+    """)
     story.append(Paragraph(install_text, normal_style))
     story.append(Spacer(1, 3))
     
@@ -98,13 +99,13 @@ def add_python_library_section(story, normal_style):
     story.append(Spacer(1, 5))
     
     # Example code section
-    story.append(Paragraph('<b>Example: Basic Motor Control</b>', normal_style))
+    story.append(Paragraph(f"<b>{tr('Example: Basic Motor Control')}</b>", normal_style))
     story.append(Spacer(1, 3))
-    
-    example_text = """
+
+    example_text = tr("""
     The following example demonstrates how to connect to a servomotor, enable the mosfets,
     and perform a trapezoid move:
-    """
+    """)
     story.append(Paragraph(example_text, normal_style))
     story.append(Spacer(1, 3))
     
@@ -130,15 +131,15 @@ def add_python_library_section(story, normal_style):
     elements.append(Spacer(1, 5))
     
     # Add features
-    elements.append(Paragraph('<b>Key Features</b>', normal_style))
+    elements.append(Paragraph(f"<b>{tr('Key Features')}</b>", normal_style))
     elements.append(Spacer(1, 3))
-    
+
     features = [
-        'Support for all motor commands',
-        'Automatic unit conversion for time, position, velocity, acceleration, current, voltage, and temperature',
-        'Error handling and status monitoring',
-        'Support for multiple motors on the same bus',
-        'Get up and running in just a few lines of code'
+        tr('Support for all motor commands'),
+        tr('Automatic unit conversion for time, position, velocity, acceleration, current, voltage, and temperature'),
+        tr('Error handling and status monitoring'),
+        tr('Support for multiple motors on the same bus'),
+        tr('Get up and running in just a few lines of code')
     ]
     
     feature_style = create_feature_style()
@@ -148,12 +149,12 @@ def add_python_library_section(story, normal_style):
     elements.append(Spacer(1, 5))
     
     # Documentation link
-    elements.append(Paragraph('<b>Documentation</b>', normal_style))
+    elements.append(Paragraph(f"<b>{tr('Documentation')}</b>", normal_style))
     elements.append(Spacer(1, 3))
-    doc_text = """
+    doc_text = tr("""
     For complete API documentation and more examples, visit:
     https://github.com/tomrodinger/servomotor/tree/main/python_programs
-    """
+    """)
     elements.append(Paragraph(doc_text, normal_style))
     elements.append(Spacer(1, 10))
     

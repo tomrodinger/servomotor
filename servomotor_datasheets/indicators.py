@@ -1,19 +1,20 @@
 from reportlab.platypus import Paragraph, Spacer
 from styles import create_heading_style
+from i18n import tr
 
 def add_indicators_section(story, style):
     """Add the Indicator LEDs and Buttons section"""
-    story.append(Paragraph('Indicator LEDs and Buttons', create_heading_style()))
+    story.append(Paragraph(tr('Indicator LEDs and Buttons'), create_heading_style()))
     story.append(Spacer(1, 8))
-    
-    led_description = (
+
+    led_description = tr(
         "The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat "
         "and quickly to indicate that the bootloader is running rather than the application. The red LED will "
         "light up briefly to show communication on the bus and will indicate fatal error codes by flashing a "
         "certain number of times."
     )
-    
-    button_description = (
+
+    button_description = tr(
         "The servomotor has two buttons labelled \"Reset\" and \"Test\". The Reset button will reset the internal "
         "microcontroller and all state will go back to default values. The Test button will cause the motor to spin. "
         "Press briefly to let it spin one way and press for more than 0.3 seconds and release to let it spin the other "

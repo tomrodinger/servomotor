@@ -5,6 +5,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.pagesizes import A4
 from styles import create_heading_style, create_feature_style, PRIMARY_COLOR
 from utils import get_processed_image
+from i18n import tr
 
 class CodeBox(Flowable):
     """A custom flowable for code blocks with border and background"""
@@ -65,33 +66,33 @@ def add_arduino_library_section(story, normal_style):
     """Add Arduino Library section to the datasheet"""
     
     # Add section heading
-    story.append(Paragraph('Arduino Library', create_heading_style()))
+    story.append(Paragraph(tr('Arduino Library'), create_heading_style()))
     story.append(Spacer(1, 5))
-    
+
     # Add introduction
-    intro_text = """
-    The Arduino library for M17 Series Servomotors provides an easy-to-use interface for 
-    controlling motors from Arduino boards. The library supports hardware serial communication 
+    intro_text = tr("""
+    The Arduino library for M17 Series Servomotors provides an easy-to-use interface for
+    controlling motors from Arduino boards. The library supports hardware serial communication
     and includes all essential motor control functions.
-    """
+    """)
     story.append(Paragraph(intro_text, normal_style))
     story.append(Spacer(1, 5))
-    
+
     # Installation instructions
-    story.append(Paragraph('<b>Installation</b>', normal_style))
+    story.append(Paragraph(f"<b>{tr('Installation')}</b>", normal_style))
     story.append(Spacer(1, 3))
-    
-    install_text = """
+
+    install_text = tr("""
     Install the library through the Arduino Library Manager:
-    """
+    """)
     story.append(Paragraph(install_text, normal_style))
     story.append(Spacer(1, 3))
-    
+
     install_steps = [
-        '1. Open Arduino IDE',
-        '2. Go to Sketch → Include Library → Manage Libraries',
-        '3. Search for "Servomotor"',
-        '4. Find the library called "Servomotor by Gearotons" and click Install'
+        tr('1. Open Arduino IDE'),
+        tr('2. Go to Sketch → Include Library → Manage Libraries'),
+        tr('3. Search for "Servomotor"'),
+        tr('4. Find the library called "Servomotor by Gearotons" and click Install')
     ]
     
     feature_style = create_feature_style()
@@ -118,23 +119,23 @@ def add_arduino_library_section(story, normal_style):
         raise SystemExit(1)
     
     # Alternative installation
-    story.append(Paragraph('<b>Manual Installation</b>', normal_style))
+    story.append(Paragraph(f"<b>{tr('Manual Installation')}</b>", normal_style))
     story.append(Spacer(1, 3))
-    
-    manual_text = """
+
+    manual_text = tr("""
     Alternatively, if you are an expert, you can grab the code for the Arduino library here:
     https://github.com/tomrodinger/Servomotor_Arduino_Library
-    """
+    """)
     story.append(Paragraph(manual_text, normal_style))
     story.append(Spacer(1, 5))
-    
+
     # Example code section
-    story.append(Paragraph('<b>Example: Basic Motor Control</b>', normal_style))
+    story.append(Paragraph(f"<b>{tr('Example: Basic Motor Control')}</b>", normal_style))
     story.append(Spacer(1, 3))
-    
-    example_text = """
+
+    example_text = tr("""
     This example shows how to initialize a motor, enable mosfets, and perform a trapezoid move:
-    """
+    """)
     story.append(Paragraph(example_text, normal_style))
     story.append(Spacer(1, 3))
     

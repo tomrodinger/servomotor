@@ -22,7 +22,10 @@ from open_source import add_open_source_section
 from indicators import add_indicators_section
 from python_library import add_python_library_section
 from arduino_library import add_arduino_library_section
+import i18n
+from i18n import tr
 
+import argparse
 import shutil
 
 def firstPage(canvas, doc):
@@ -51,13 +54,20 @@ def laterPages(canvas, doc):
     page_num_y = 5*mm  # Reduced from 7mm
     canvas.drawString(page_num_x, page_num_y, str(doc.page))
 
-def generate_pdf():
-    """Generate the complete servomotor datasheet PDF"""
-    # Get version info for filename
+def generate_pdf(lang='en'):
+    """Generate the complete servomotor datasheet PDF for one language.
+
+    Returns the number of missing translations (0 when complete)."""
+    i18n.set_language(lang)
+
+    # Get version info for filename. Filenames must stay at 25 characters or
+    # less, e.g. 'datasheet_v1.9_de.pdf' / 'datasheet_latest_de.pdf'
     version, date = get_latest_version()
-    date = date.replace(".", "").replace(",", "").replace(" ", "_")
-    output_filename = f'servomotor_datasheet_v{version}_{date}.pdf'
-    
+    output_filename = f'datasheet_v{version}_{lang}.pdf'
+    latest_filename = f'datasheet_latest_{lang}.pdf'
+    for name in (output_filename, latest_filename):
+        assert len(name) <= 25, f"Output filename '{name}' exceeds 25 characters"
+
     # Define page properties
     page_width, page_height = A4
     margin = 18*mm
@@ -99,7 +109,7 @@ def generate_pdf():
     normal_style = create_normal_style()
     
     # Add title
-    story.append(Paragraph('M17 Series Servomotors - DATASHEET', title_style))
+    story.append(Paragraph(tr('M17 Series Servomotors - DATASHEET'), title_style))
     story.append(Spacer(1, 3))
     
     # Add logo
@@ -110,9 +120,9 @@ def generate_pdf():
     story.append(Spacer(1, 2))
     
     # Add subtitles
-    story.append(Paragraph('Affordable and Simple All-in-One Motion Control', subtitle_style))
+    story.append(Paragraph(tr('Affordable and Simple All-in-One Motion Control'), subtitle_style))
     story.append(Spacer(1, -3))
-    story.append(Paragraph('From Education to Innovation', subtitle_style))
+    story.append(Paragraph(tr('From Education to Innovation'), subtitle_style))
     story.append(Spacer(1, 3))
     
     # Add main image
@@ -143,17 +153,43 @@ def generate_pdf():
     story.append(Spacer(1, 3))
     footer_style = create_footer_style()
     current_year = datetime.now().year
-    story.append(Paragraph(f'(c) {current_year} All specifications subject to change without notice.', footer_style))
-    
+    footer_text = tr('(c) {year} All specifications subject to change without notice.').format(year=current_year)
+    story.append(Paragraph(footer_text, footer_style))
+
     # Generate PDF
     try:
         doc.build(story)
         # Copy to latest
-        shutil.copy(output_filename, 'servomotor_datasheet_latest.pdf')
+        shutil.copy(output_filename, latest_filename)
         print("Success: Datasheet generated successfully.")
-        print(f"Generated files: {output_filename}, servomotor_datasheet_latest.pdf")
+        print(f"Generated files: {output_filename}, {latest_filename}")
     except Exception as e:
         print(f"Error generating datasheet: {e}")
+        return 1
+
+    # Report any strings that fell back to English (writes
+    # translations/missing_<lang>.json listing exactly what to translate)
+    return i18n.report_missing()
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate the servomotor datasheet PDF(s)')
+    parser.add_argument('--lang', choices=i18n.LANGUAGES, default=None,
+                        help='generate a single language (default: en)')
+    parser.add_argument('--all', action='store_true',
+                        help='generate all languages: ' + ', '.join(i18n.LANGUAGES))
+    args = parser.parse_args()
+
+    languages = i18n.LANGUAGES if args.all else [args.lang or 'en']
+    total_missing = 0
+    for lang in languages:
+        print(f"\n=== Generating '{lang}' datasheet ===")
+        total_missing += generate_pdf(lang)
+
+    if total_missing:
+        print(f"\nWARNING: {total_missing} missing translation(s) in total. "
+              "Translate the entries in translations/missing_*.json, merge them into "
+              "translations/<lang>.json, and regenerate.")
+    return 1 if total_missing else 0
 
 if __name__ == '__main__':
-    generate_pdf()
+    raise SystemExit(main())

@@ -1,4 +1,4 @@
-// Minimal Arduino example: Trapezoid move using built‑in unit conversions
+// Minimal Arduino example: Trapezoid move using built-in unit conversions
 // Goal: spin the motor exactly 1 rotation in 1 second, then stop.
 // Sequence:
 //  enable MOSFETs -> trapezoidMove(1.0 rotations, 1.0 seconds) -> wait 1.1s -> disable MOSFETs.
