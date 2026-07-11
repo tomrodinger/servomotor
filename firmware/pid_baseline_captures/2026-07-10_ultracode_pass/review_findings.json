@@ -1,0 +1,406 @@
+{
+ "confirmed": [
+  {
+   "file": "firmware/Src/motor_control.c",
+   "line": 2170,
+   "title": "M17: pid_output_limit clamps commutation lead angle below 90 deg when max PWM voltage < 64, reducing torque vs old firmware",
+   "detail": "pid_output_limit = new_max_motor_pwm_voltage << 8, and the anti-windup block (lines 2356-2371) hard-clamps the returned output to +/-pid_output_limit. The M17 caller (lines 2589-2599) uses the raw output as the commutation lead angle up to HALL_TO_POSITION_90_DEGREE_OFFSET = (64*1024)>>2 = 16384 counts, THEN derives voltage as output>>8. The comment's claim 'beyond this output, neither the commutation angle nor the PWM voltage can increase any further (M17 semantics)' is only true for max_pwm >= 64 (64<<8 = 16384). Failure scenario: user sends Set-max-motor-current with value 32 (legal range 0..390, checked at line 3370) for a torque-limited move; pid_output_limit = 8192, so under load the lead angle saturates at 8192 counts = 45 deg instead of 90 deg -> torque proportional to sin(angle) drops to 71% of old firmware at identical PWM voltage (38% at max_pwm=16, i.e. 22.5 deg). Loads that moved under fw 0.15.2 at low current limits now stall or trip the position-deviation fatal error. Fix: clamp output at max(pid_output_limit, HALL_TO_POSITION_90_DEGREE_OFFSET) on M17, or use the true saturation point max_pwm<<8 only when it exceeds 16384. Verified against Src/commutation_table_M17.h (N_COMMUTATION_STEPS=64, N_COMMUTATION_SUB_STEPS=1024) and MAX_PWM_VOLTAGE_AT_ZERO_VELOCITY=390 (motor_control.c:57).",
+   "severity": "major",
+   "lens": "pid-math",
+   "votes": [
+    "Code trace confirms every element: on M17 the new anti-windup clamp caps PID output at max_pwm<<8 (motor_control.c:2170, 2356-2371) while the caller (2590-2599) uses raw output as commutation lead ang",
+    "Defect is INTRODUCED by the uncommitted diff: pid_output_limit and the hard output clamp to \u00b1(max_pwm<<8) do not exist at git HEAD (git show HEAD:firmware/Src/motor_control.c has no pid_output_limit; ",
+    "Reachable in realistic operation. Set-maximum-motor-current is a public RS485 command (valid 0..390 on M17) and sub-64 values are already used throughout this repo: example_homing.py uses 50 (document"
+   ]
+  },
+  {
+   "file": "firmware/Src/motor_control.c",
+   "line": 2202,
+   "title": "recompute_pid_parameters_and_set_pwm_voltage zeroes previous_error, producing an avoidable one-tick derivative kick on every Set-PID-constants / Set-max-motor-current during motion",
+   "detail": "previous_error = 0 in the critical section means the next TIM16 tick computes error_change = error - 0, i.e. the full current position error (clamped to max_error_change) instead of ~0. Measured with extracted firmware code at M17 defaults (p=2000,i=5,d=175000,V=200): motor holding steady error 3000 counts, then recompute() with UNCHANGED constants -> output jumps from 10261 to 11868 (+1607 counts = 3.1% of full 51200 authority, 15.7% of the running output), decaying over ~1 ms; worst case is max_error_change*deriv_scaled>>11 = 599*5468>>11 = +/-1599 regardless of gains. The reset is unnecessary for overflow safety: previous_error is always a previously-clamped value in +/-2^29, so (error - previous_error) fits in int32 for ANY new constants; only the low_pass_filtered_error_change reset (line 2201) is needed (stale lpf meeting a larger derivative constant). Fix: delete line 2202 (or set previous_error to the entry-clamped current error is not possible here; simply keeping it is safe). Scenario: host adjusts torque limit (set_max_motor_current, line 3377) while the motor tracks a trajectory under load -> visible/audible jerk each command.",
+   "severity": "minor",
+   "lens": "pid-math",
+   "votes": [
+    "Reproduced by code trace and extracted-code simulation: zeroing previous_error at motor_control.c:2202 makes the next tick's error_change equal the full current error (clamped to max_error_change=599 ",
+    "Introduced by the uncommitted diff: at git HEAD, recompute_pid_parameters_and_set_pwm_voltage never modified previous_error (HEAD grep shows resets only at lines 3085/3483 in other functions); the `pr",
+    "Reachable in realistic operation: both SET_MAXIMUM_MOTOR_CURRENT (main.c:630) and SET_PID_CONSTANTS (main.c:960) handlers are completely ungated \u2014 no motion/enable-state check \u2014 so any host command mi"
+   ]
+  },
+  {
+   "file": "c_test_programs/test_pid_overflow.sh",
+   "line": 66,
+   "title": "Overflow test only exercises M17 parameters (PID_SHIFT_RIGHT=11) by default, but firmware comments cite it as exhaustive proof for all products",
+   "detail": "The harness hard-defaults PID_SHIFT_RIGHT=11 (test_pid_overflow.c:44) and the script only passes optional EXTRA_PID_CFLAGS; nothing ever runs the shift=14 (M23) or shift=18 (M1/M2) configurations, and PRODUCT_NAME_M2's 'error >>= 3' path is never compiled. Meanwhile motor_control.c:2126-2129 claims the bounds are 'verified exhaustively by c_test_programs/test_pid_overflow.sh' for 'ANY combination'. I re-derived the shift=14/18 bounds by hand and they do hold (the 800e6 authority cap is shift-independent; back-calc worst case |excess*2^18| <= ~1.8e9), so this is a coverage/false-confidence gap, not a live overflow: a future edit safe at shift 11 but unsafe at 18 would pass the suite. Fix: loop the script over -DPID_SHIFT_RIGHT=11/14/18 (and -DPRODUCT_NAME_M2 for the >>3 path). Verified the harness itself works: --quick run on this machine = 155,620,000 ticks, 0 invariant failures, UBSan clean.",
+   "severity": "minor",
+   "lens": "pid-math",
+   "votes": [
+    "Code trace confirms every element: the harness hard-defaults PID_SHIFT_RIGHT=11 (test_pid_overflow.c:44), the script never passes per-product flags and its grep extraction only pulls PID_* clamp defin",
+    "Introduced by the uncommitted diff, not pre-existing. c_test_programs/test_pid_overflow.sh and test_pid_overflow.c are untracked new files (git status: ??), and the overclaiming comment in firmware/Sr",
+    "All claims verified: the harness (test_pid_overflow.c:43-44) defaults PID_SHIFT_RIGHT=11 and the script never runs shift=14 (M23) or shift=18 (M1/M2) or the M2-only 'error >>= 3' path, while motor_con"
+   ]
+  },
+  {
+   "file": "c_test_programs/test_PID_controller.c",
+   "line": 127,
+   "title": "Stale extern prototype 'int32_t PID_controller(int32_t error)' now mismatches the new int64_t signature (UB if linked)",
+   "detail": "The diff changes PID_controller's parameter from int32_t to int64_t but leaves the local prototype in the legacy harness test_PID_controller.c untouched; build_script.sh lines 5-6 link this file directly against ../firmware/Src/motor_control.c, which is undefined behavior across translation units (caller passes 32-bit, callee reads 64-bit -> garbage upper half of the error). Mitigating: those build_script.sh lines use -DPRODUCT_NAME_M3/M4, which motor_control.h does not define constants for, so the build already fails before linking - the harness is pre-existing dead code and cannot currently produce wrong results. Reported so the stale prototype gets updated (or the file moved to .bak per repo convention) rather than silently corrupting results if anyone revives the M3/M4 build.",
+   "severity": "minor",
+   "lens": "pid-math",
+   "votes": [
+    "Verified by trace and build attempt: the diff changes PID_controller to int64_t (firmware/Src/motor_control.c:2268) while c_test_programs/test_PID_controller.c:127 keeps the old int32_t prototype with",
+    "Introduced by the diff, not pre-existing: at HEAD both the definition (motor_control.c) and the local prototype (test_PID_controller.c:127) were int32_t and matched; the uncommitted diff changes the d",
+    "Unreachable: the legacy harness cannot be built at all. Running build_script.sh's exact gcc command for test_PID_controller.c with -DPRODUCT_NAME_M3 fails at compile time with undeclared identifiers b"
+   ]
+  },
+  {
+   "file": "firmware/Src/motor_control.c",
+   "line": 2183,
+   "title": "Integral gain silently capped ~50-500x below commanded value when P is zero or very small",
+   "detail": "The new ki cap (lines 2181-2187) computes ki_max = (INT32_MAX - new_max_integral_term) / new_max_error. When pid_p == 0, new_max_error stays at the full authority (line 2164-2167), so ki_max collapses. Concrete scenario: M17, max PWM voltage 200 -> authority = 200<<19 = 104.8e6; user sends Set PID constants with p=0, i=1000 (pure-integral tuning experiment): ki_max = (2147.4e6 - 26.2e6)/104.8e6 = 20, so integral_constant_pid becomes 20 instead of 1000 with no error or indication -- the motor integrates 50x slower than commanded (worse at higher voltage settings). The old code used the commanded ki directly (though it could overflow, which is what this cap prevents). A tighter error clamp applied only to the integral accumulation path would preserve the commanded gain instead of silently rewriting it; at minimum the cap deserves a fault/flag so tuning tools are not misled.",
+   "severity": "minor",
+   "lens": "isr-concurrency",
+   "votes": [
+    "Code trace reproduces the failure exactly. New uncommitted cap at motor_control.c:2181-2187: with p=0 the p64!=0 guard (line 2165) leaves new_max_error at full authority. M17 (PID_SHIFT_RIGHT=11 + FUD",
+    "The ki cap is introduced by the uncommitted diff: at HEAD, integral_constant_pid = pid_i with no cap. The new code's ki_max = (INT32_MAX - max_integral_term)/max_error indeed collapses when pid_p==0 b",
+    "Reachable: \"Set PID constants\" is a documented RS485 command (main.c:971) accepting arbitrary u32 gains with no validation against this cap; p=0 with large i is a single legal command. Math verified: "
+   ]
+  },
+  {
+   "file": "c_test_programs/Makefile",
+   "line": 9,
+   "title": "PREEXISTING: servo_simulator does not compile at all (with or without this diff) -- -DPRODUCT_NAME_M3 is not a valid product for the firmware sources",
+   "detail": "The MOTOR_SIMULATION build compiles firmware/Src/*.c with -DPRODUCT_NAME_M3, but common_source_files/gpio.h:34 #errors for anything but M1/M2/M17/M23, and motor_control.c only includes commutation_table_{M1,M2,M17,M23}.h, so N_COMMUTATION_STEPS / DEFAULT_MAX_MOTOR_PWM_VOLTAGE / PID_SHIFT_RIGHT are all undefined ('make' in c_test_programs fails at the first file, AT5833.c; motor_control.c alone produces 22 errors). Verified identical failure against git HEAD's motor_control.c, so this diff did not cause it, but it means: (a) the documented 'cd c_test_programs && make' flow in CLAUDE.md is broken, (b) the new PID code has never been compiled under MOTOR_SIMULATION, and (c) build_script.sh (M3/M4 targets) is equally dead. The PID work was instead validated via the standalone pid_algorithm_sim.c and the extraction-based test_pid_overflow.sh/test_pid_differential.sh, which do pass.",
+   "severity": "major",
+   "lens": "cross-product",
+   "votes": [
+    "Reproduced exactly: 'make' in c_test_programs fails on the first firmware file (AT5833.c) at common_source_files/gpio.h:34 #error because Makefile:9 passes -DPRODUCT_NAME_M3, which gpio.h rejects (onl",
+    "The failure is real (make in c_test_programs dies at AT5833.c on gpio.h:34's #error because -DPRODUCT_NAME_M3 is not an accepted product) but it is entirely pre-existing: the Makefile, gpio.h, and AT5",
+    "Directly reproduced: plain `make` in c_test_programs fails at the first firmware file (AT5833.c) with the gpio.h:34 #error because the Makefile hardcodes -DPRODUCT_NAME_M3, which gpio.h rejects (only "
+   ]
+  },
+  {
+   "file": "c_test_programs/test_pid_overflow.c",
+   "line": 49,
+   "title": "Hardcoded DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=5 (no #ifndef) silently defeats the advertised revalidation workflow and would report a false PASS for shift=6 builds",
+   "detail": "motor_control.h (lines 105-113 of the diff) advertises building the firmware with EXTRA_DEFINES=\"DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=6\" and says to 'rerun c_test_programs/test_pid_overflow.sh' because shifts >= 6 need a smaller PID_MAX_ERROR_CHANGE. But test_pid_overflow.c line 49 defines the macro unconditionally (unlike PID_SHIFT_RIGHT, which is #ifndef-guarded on line 43), so EXTRA_PID_CFLAGS=\"-DDERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=6\" ./test_pid_overflow.sh produces only a -Wmacro-redefined warning and the in-file value 5 wins (verified empirically with clang: the file define overrides -D). The harness then PASSes while the actual shift=6 firmware genuinely overflows: lpf fixed point = 64*MEC = 64*2e6 = 128e6, decay multiply 128e6*63 = 8.06e9 > INT32_MAX (reachable with e.g. M17 V=390, kD=64 -> MEC capped at 2e6, alternating error +/-2^33). Exactly the scenario the header comment directs users to verify would be waved through. Same hardcoding pattern exists for INTEGRAL_TERM_AUTHORITY_SHIFT in test_pid_differential.sh's generated harness (both sides use the hardcoded 2, so a firmware change to that constant would falsely pass the differential test too). Fix: wrap both defines in #ifndef in the driver, matching the PID_SHIFT_RIGHT pattern.",
+   "severity": "minor",
+   "lens": "overflow-rederive",
+   "votes": [
+    "Confirmed by code trace and two empirical runs. test_pid_overflow.c:49 defines DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=5 unconditionally (unlike the #ifndef-guarded PID_SHIFT_RIGHT at line 43), and",
+    "Defect is INTRODUCED by the uncommitted diff: test_pid_overflow.c, test_pid_overflow.sh, and test_pid_differential.sh are all untracked new files (?? in git status, absent at HEAD), and the motor_cont",
+    "The failure scenario is reachable in actual testing practice: the exact invocation EXTRA_PID_CFLAGS=\"-DDERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=6\" ./test_pid_overflow.sh --quick appears in firmware/"
+   ]
+  },
+  {
+   "file": "c_test_programs/test_pid_differential.sh",
+   "line": 40,
+   "title": "Differential harness hardcodes INTEGRAL_TERM_AUTHORITY_SHIFT 2 instead of extracting it from the firmware; a firmware change to the anti-windup clamp shift false-PASSes",
+   "detail": "The harness's stated mechanism (line 24: 'pull the overflow-safety #defines out of the firmware so both sides use the shipped values') greps only ^#define PID_ERROR_INPUT_CLAMP and ^#define PID_MAX_ (line 25) but the extracted recompute_pid_parameters_and_set_pwm_voltage() also consumes INTEGRAL_TERM_AUTHORITY_SHIFT, which motor_control.c defines at line 2124 and this harness hardcodes to 2 at harness.c line 40. The extracted 'verbatim' firmware code is therefore compiled with the harness's value, not the shipped one. Concrete failure (verified by running it): change motor_control.c's #define INTEGRAL_TERM_AUTHORITY_SHIFT from 2 to 3 and rerun ./test_pid_differential.sh -> '6500000 samples, 0 mismatches / PASSED' even though the shipped firmware now computes max_integral_term = authority>>3 while the test verified authority>>2 semantics on both sides. This is precisely the anti-windup clamp fraction (25%) that this change set introduces and that PID_IMPROVEMENT_PLAN.md discusses tuning (37.5% vs 25%), so a retune is a likely future edit and the bitwise-equivalence guarantee would silently become vacuous. Note test_pid_overflow.sh handles this correctly (line 60 greps ^#define INTEGRAL_TERM_AUTHORITY_SHIFT from the source and the .c's own define is #ifndef-guarded) -- I confirmed it tracks the changed value. Fix: add INTEGRAL_TERM_AUTHORITY_SHIFT to the line-25 grep and #ifndef-guard the harness define (same treatment for the DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5 hardcode at harness line 38, which has the same drift failure mode against motor_control.h).",
+   "severity": "major",
+   "lens": "harness-blindspots",
+   "votes": [
+    "Reproduced the exact claimed failure: motor_control.c:2124 defines INTEGRAL_TERM_AUTHORITY_SHIFT 2, consumed by the extracted recompute function (line 2169), but the harness's extraction (awk from lin",
+    "The file c_test_programs/test_pid_differential.sh is untracked (new in the uncommitted diff; git show HEAD confirms it does not exist at HEAD), so the defect is introduced by this change set, not pre-",
+    "Reachable in realistic testing/development. The harness hardcode is confirmed (harness.c define INTEGRAL_TERM_AUTHORITY_SHIFT 2 vs firmware motor_control.c:2124, consumed at line 2169 in the extracted"
+   ]
+  },
+  {
+   "file": "tools/pid_debug_capture.py",
+   "line": 300,
+   "title": "Capture validation false-FAILs on healthy captures once anti-windup clamps the corrected integral (and always with kI=0 under saturation)",
+   "detail": "detect_shift() requires output == (P+I+D[+half]) >> shift on ALL samples, but the new firmware's back-calculation anti-windup (motor_control.c:2356-2371) records integral_term AFTER the correction. The identity survives an uncorrected-clamp saturation exactly (algebra verified), but when the correction itself clamps at -max_integral_term the recorded tuple satisfies no (shift, convention) pair: e.g. I=+26.2e6 (railed), P~=104.8e6 (error at max_error), D~=104.8e6 (error_change at max_error_change, kd=175000) -> out_raw=115185, corrected integral = 26.2e6 - 63985*2048 = -104.8e6, clamped to -26.2e6; recompute gives 89969 vs recorded 51200 (verified numerically). This is reachable at default M17 gains during an aggressive step/disturbance capture, so validate_and_summarize prints 'FAIL: no shift in 0..24 satisfies...' on a correct capture. Additionally check 4 (line ~371: kI=0 -> i_term must be 0) false-fails on ANY saturated sample, because with integral_constant_pid==0 the firmware zeroes integral_term (motor_control.c:2343) but the anti-windup block then writes a nonzero corrected_integral which is what pid_debug_data records. The doc comment at lines 25-28 ('output == (p+i+d) >> PID_SHIFT_RIGHT holds exactly') is also stale vs the half-LSB rounding and saturation clamp added in this same change set. Fix: exclude samples where |output| == pid_output_limit (out==+/-51200 at V=200) from the shift-identity and kI=0 checks, or model the back-calculation in the recompute.",
+   "severity": "major",
+   "lens": "sim-fidelity",
+   "votes": [
+    "Split verdict. The headline claim is refuted by direct code trace: detect_shift (tools/pid_debug_capture.py:309-317) already contains a saturation carve-out accepting samples where abs(out)==output_li",
+    "Introduced by the diff, not pre-existing: tools/pid_debug_capture.py is untracked (new in this change set) and the motor_control.c anti-windup it must model is also uncommitted, so nothing here exists",
+    "The headline scenario is unreachable: detect_shift() in the current working-tree code already contains an explicit saturation-consistency escape (tools/pid_debug_capture.py lines 289-326, plus an --ou"
+   ]
+  },
+  {
+   "file": "c_test_programs/pid_algorithm_sim.c",
+   "line": 528,
+   "title": "Sim CSV 'error' column is pre-max_error-clamp while firmware captures record the post-clamp error, contradicting the claimed column compatibility",
+   "detail": "The sim logs error32 = entry-clamped (+/-2^29) error only, but the firmware's pid_debug_data->error (motor_control.c:2375) is recorded after the +/-max_error clamp at lines 2327-2332 -- pid_debug_capture.py's own docs (lines 25-27) rely on this ('p_term == error * kP holds exactly'). The sim header (lines 29-30) claims 'first 6 columns match tools/pid_debug_capture.py captures so the same plotting works'. Failure scenario: any run where |error| exceeds max_error = (V<<19)/kP (e.g. --kp 20000 gives max_error=5242 while a 2-rot move peaks ~10k): sim CSV rows then violate p_term == error*kP (the sim computes P from the clamped error at line 241/257 but logs the unclamped one), so running the capture tool's validation on a sim CSV fails check 3, and overlaying sim traces on hardware captures shows different error waveforms (hardware flat-tops at max_error, sim does not) -- sim/hardware comparisons for high-kP or large-transient studies mislead. Fix: log the post-max_error-clamp error (or add both columns).",
+   "severity": "minor",
+   "lens": "sim-fidelity",
+   "votes": [
+    "Confirmed by trace: firmware stores pid_debug_data->error at motor_control.c:2375 AFTER the \u00b1max_error clamp (lines 2327-2332), while the sim logs error32 (pid_algorithm_sim.c:536-537, written at line",
+    "c_test_programs/pid_algorithm_sim.c is untracked (git status '??', no history at HEAD), so the defect is introduced by the uncommitted diff, not pre-existing. The defect itself is confirmed: the sim l",
+    "Verified: sim logs pre-max_error-clamp error (pid_algorithm_sim.c:536-537) while firmware records post-clamp error (motor_control.c:2327-2332, 2375), contradicting the header's column-compatibility cl"
+   ]
+  },
+  {
+   "file": "c_test_programs/test_pid_differential.sh",
+   "line": 81,
+   "title": "Differential test compares firmware against an embedded re-implementation, not pid_algorithm_sim.c, so drift in the actual simulator is undetectable",
+   "detail": "The harness's sim_pid()/sim_set_constants() are a second, hand-synced copy ('kept in sync with c_test_programs/pid_algorithm_sim.c') rather than code extracted or compiled from pid_algorithm_sim.c. Failure scenario: any future edit to pid_tick()/controller_init() in pid_algorithm_sim.c that diverges from firmware (the exact class of bug this test exists to catch) leaves test_pid_differential.sh passing, giving false confidence that sim battery conclusions transfer to firmware. A latent divergence already exists: pid_algorithm_sim.c:257 computes the P term as error * (int32_t)o->kp (raw, wraps negative for kp > INT32_MAX) while firmware and the harness multiply by the capped constant (motor_control.c:2345 with proportional_constant_pid = min(kp, INT32_MAX)). It is currently masked only because max_error becomes 0 whenever kp is capped (authority <= 800e6 < INT32_MAX forces the clamped error to 0), so outputs stay bitwise equal -- but nothing in the tests would notice if that masking ever stopped holding. Fix: extract the sim's step2 functions from pid_algorithm_sim.c the same way the firmware side is extracted, and change line 257 to use a capped kp mirroring the firmware constant.",
+   "severity": "minor",
+   "lens": "sim-fidelity",
+   "votes": [
+    "Confirmed by code trace and by mutation experiment. The differential harness extracts the firmware side verbatim from motor_control.c but embeds its own hand-synced copy of the step2 model (test_pid_d",
+    "Both test_pid_differential.sh and pid_algorithm_sim.c are untracked new files (git status '??'), absent at HEAD, so the defect is introduced entirely by the uncommitted diff. Spot-check confirms the c",
+    "Technically accurate but unreachable. The cited P-term divergence (pid_algorithm_sim.c:257 raw kp vs firmware's capped proportional_constant_pid) can only differ when kp > INT32_MAX, and PID_MAX_AUTHO"
+   ]
+  },
+  {
+   "file": "tools/pid_debug_capture.py",
+   "line": 373,
+   "title": "kI=0 check false-FAILs: anti-windup writes a nonzero integral_term into the debug struct even when integral_constant_pid == 0",
+   "detail": "With --set-pid KP 0 KD, firmware zeroes integral_term each tick (motor_control.c:2342-2344), but the anti-windup blocks (2356-2371) run unconditionally afterward: on a saturated tick they overwrite integral_term with the (clamped) back-calculated value, and the debug struct records that value. Numerically with M17 defaults and a saturating transient: reported i_term = -26,214,400 despite kI=0. The next tick re-zeroes it, so control behavior is correct, but the tool's check at lines 370-376 ('kI=0 -> i_term == 0 on all samples') counts any saturated sample as a failure and prints 'FAIL: kI=0 was set but i_term != 0', flipping the overall validation to FAIL. Concrete repro: pid_debug_capture.py --set-pid 2000 0 175000 --move 5 --move-time 0.7. Fix: exempt samples where output == \u00b1pid_output_limit (the AW write), or check i_term == 0 only on unsaturated samples. (Arguably the firmware should skip the AW integral write when integral_constant_pid == 0; that would also fix the misleading debug data.)",
+   "severity": "major",
+   "lens": "python-tools",
+   "votes": [
+    "Code trace confirms every element. firmware/Src/motor_control.c: with kI=0 line 2343 zeroes integral_term, but the unconditional anti-windup blocks (2356-2371) then overwrite it on any saturated tick ",
+    "The defect is INTRODUCED by the uncommitted diff, not pre-existing. Both interacting pieces are new: (1) tools/pid_debug_capture.py does not exist at git HEAD ('git show HEAD:tools/pid_debug_capture.p",
+    "Reachable in the tool's primary intended workflow. The repro gains (kP=2000, kI=0, kD=175000) are the tool's own M17 defaults with kI zeroed (pid_debug_capture.py:82-84), set via the supported --set-p"
+   ]
+  },
+  {
+   "file": "tools/pid_debug_capture.py",
+   "line": 390,
+   "title": "Integral-rail report uses the full pre-0.15.3.1 rail; with the new 25% clamp it can never show a railed integrator",
+   "detail": "default_rail = 200 << (11 + 8) = 104,857,600 is the OLD max_integral_term. The firmware in this same change set clamps the integral to authority >> INTEGRAL_TERM_AUTHORITY_SHIFT (2) = 26,214,400 (motor_control.c: new_max_integral_term = authority >> 2). A fully-railed integrator on new firmware is reported as 'peak |I| = 26214400 (25.0% of the default rail); samples at/over the rail: 0/N (0.0%)' \u2014 i.e. the windup-observation feature this tool exists for (docstring line 24) systematically reports 'not railed' when the integrator is pinned. Informational output only, but it directly misleads the PID-improvement analysis. Fix: report against authority >> 2 for firmware >= 0.15.3.1, or report both rails.",
+   "severity": "minor",
+   "lens": "python-tools",
+   "votes": [
+    "Confirmed by code trace. Old firmware (HEAD): max_integral_term = 200 << (11+8) = 104,857,600, matching the tool's default_rail at tools/pid_debug_capture.py:414. New firmware (uncommitted 0.15.3.1 an",
+    "Defect is introduced by the uncommitted change set: tools/pid_debug_capture.py is an untracked new file (does not exist at HEAD), so nothing about it is pre-existing. Substance confirmed: line 414 set",
+    "Reachable in the standard, already-planned workflow: current firmware source (0.15.3.3) clamps the integrator to authority>>2 = 26,214,400 for M17's default 200-count PWM voltage, exactly 25% of the t"
+   ]
+  },
+  {
+   "file": "tools/pid_debug_capture.py",
+   "line": 285,
+   "title": "read_csv crashes with an unhandled traceback on truncated or corrupted rows",
+   "detail": "samples.append((float(parts[0]),) + tuple(int(p) for p in parts[1:])) raises ValueError on a partially-written last line (tool killed mid-write, disk full), and a row with fewer than 6 columns produces a short tuple that later raises IndexError at make_plot (s[5]) or in validate paths. Neither ValueError nor IndexError is caught in main() (only CaptureError and KeyboardInterrupt, lines 501-506), so 'pid_debug_capture.py plot damaged.csv' exits with a raw traceback instead of a clean 'corrupt CSV at line N' message. Failure scenario: Ctrl-C during write_csv leaves a half row; re-plotting that capture always tracebacks. Wrap the parse in try/except per line and raise CaptureError (or skip the bad row with a warning).",
+   "severity": "minor",
+   "lens": "python-tools",
+   "votes": [
+    "Reproduced exactly as claimed: read_csv (line 285) has no per-row error handling, and main() catches only CaptureError/KeyboardInterrupt (lines 528-534). Running 'plot' on a CSV with a last line trunc",
+    "tools/pid_debug_capture.py is untracked (?? in git status), i.e. a brand-new file introduced entirely by the uncommitted diff, so the defect cannot be pre-existing at HEAD. The defect itself is confir",
+    "Reachable, but barely, and low-impact. The claimed trigger (Ctrl-C during write_csv) is a millisecond window after a multi-second capture \u2014 Ctrl-C during the capture loop itself produces no CSV at all"
+   ]
+  },
+  {
+   "file": "tools/pid_debug_capture.py",
+   "line": 232,
+   "title": "close_serial_port() in the finally block raises AttributeError and masks the real error when the port never opened",
+   "detail": "If servomotor.open_serial_port() at line 158 raises (nonexistent port, permission denied), the finally block skips the reset (motor is None) but still calls servomotor.close_serial_port(), which is ser.close() on the module-global ser that is still None (python_programs/servomotor/communication.py:38,469-470). The resulting AttributeError('NoneType' object has no attribute 'close') replaces the informative open failure and, not being a CaptureError, escapes main()'s handler as a raw traceback. Repro: python3 tools/pid_debug_capture.py -p /dev/does_not_exist --duration 1. Guard the close (track whether open succeeded, or wrap close in try/except).",
+   "severity": "minor",
+   "lens": "python-tools",
+   "votes": [
+    "Reproduced exactly: `python3 tools/pid_debug_capture.py -p /dev/does_not_exist --duration 1` ends in AttributeError('NoneType' object has no attribute 'close') from communication.py:470 via the uncond",
+    "Defect is INTRODUCED by the uncommitted diff: tools/pid_debug_capture.py is untracked (git status '??', `git show HEAD:tools/pid_debug_capture.py` fails \u2014 file does not exist at HEAD), so every line o",
+    "Reproduced exactly: `python3 tools/pid_debug_capture.py -p /dev/does_not_exist --duration 1` ends with AttributeError('NoneType' object has no attribute 'close') from communication.py:470 raised in th"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 3,
+   "title": "Top-of-file status block is two firmware versions stale (says 0.15.3.1 verified; commit is 0.15.3.3)",
+   "detail": "The bold status header says 'Status (2026-07-07 afternoon): firmware 0.15.3.1 flashed to the bench M17 and VERIFIED... See \u00a76 ... and \u00a78 ...'. The change set being committed sets main.c to 0.15.3.3, and sections 9\u201315 (through 2026-07-09) document that 0.15.3.2 and then 0.15.3.3 were built, bench-flashed, suite-verified (63/63) and released. Failure scenario: anyone reading only the status summary (its stated purpose) concludes the bench/release state is 0.15.3.1 and that sections 9\u201315 don't exist, e.g. re-running the overflow-hardening or V2 work, or flashing 0.15.3.1 as 'the verified build'. The header should point at \u00a712 and say 0.15.3.3.",
+   "severity": "minor",
+   "lens": "docs-consistency",
+   "votes": [
+    "Confirmed by trace: PID_IMPROVEMENT_PLAN.md line 3 status block says 0.15.3.1 is the verified bench build and points only at \u00a76/\u00a78, but main.c in the same change set defines version 0.15.3.3, \u00a79 docum",
+    "INTRODUCED by the diff, not pre-existing: firmware/PID_IMPROVEMENT_PLAN.md is untracked (git status shows '??'; it does not exist at git HEAD), so the entire file \u2014 including the stale status block \u2014 ",
+    "Header at line 3 genuinely says 0.15.3.1 is the verified bench state while main.c is 0.15.3.3 and \u00a79\u2013\u00a712 of the same file record 0.15.3.2/0.15.3.3 built, bench-verified (63/63 per \u00a712), and released. "
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 676,
+   "title": "Section 11 NOTE says the bench runs a build 'labeled 0.15.3.2' and the version bump is still pending; contradicted by \u00a712 and by main.c in this same commit",
+   "detail": "Section 11 ends with 'NOTE: the bench currently runs the V2 build (labeled 0.15.3.2 ... bump DEVELOPMENT_FIRMWARE_VERSION before the next release to disambiguate)', and the table row at line 664 says 'applied in tree; bump to 0.15.3.3 when committing'. Both action items are already done in this change set (main.c DEVELOPMENT_FIRMWARE_VERSION=3) and \u00a712 states 0.15.3.3 was built and bench-flashed. Failure scenario: a reader executes the stale instruction and bumps the version again (to 0.15.3.4) before release, or believes the bench binary is mislabeled when it is not. The NOTE should be rewritten in past tense ('resolved in 0.15.3.3, see \u00a712').",
+   "severity": "minor",
+   "lens": "docs-consistency",
+   "votes": [
+    "Verified by direct trace: PID_IMPROVEMENT_PLAN.md \u00a711 NOTE (line ~676) and table row #1 (line ~664) instruct a version bump and describe the bench as running a build 'labeled 0.15.3.2', but in the sam",
+    "firmware/PID_IMPROVEMENT_PLAN.md is untracked (not present at git HEAD), so the stale \u00a711 NOTE and the line-664 'bump to 0.15.3.3 when committing' cell are introduced entirely by the uncommitted chang",
+    "The NOTE at PID_IMPROVEMENT_PLAN.md:676 is genuinely stale (main.c already has DEVELOPMENT_FIRMWARE_VERSION=3 and 0.15.3.3 is released), but this is doc-only text with zero runtime surface \u2014 no RS485 "
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 70,
+   "title": "Exact line-number citations into motor_control.c were invalidated by this very diff (~+96 lines)",
+   "detail": "The diff adds ~96 lines to motor_control.c above the cited regions, so the doc's own line references now point at the wrong code: line 70 cites the M17 output block as 'motor_control.c:2474-2493' (the M17 branch's PID_controller call is now at line 2589 and the output block ~2590-2620; line 2474-2493 now lands inside motor_movement_calculations' preamble); line 25 cites PID_controller '~line 2198' (now 2268) and recompute_pid_parameters_and_set_pwm_voltage '~line 2117' (now 2146); line 26 cites the M17 caller branch '~line 2455' (motor_movement_calculations now starts at 2476, M17 branch at #if defined(PRODUCT_NAME_M17) line 2570). compute_velocity '~line 1981' is still exact. Failure scenario: a reader jumps to motor_control.c:2474-2493 expecting the dual-use (commutation offset + fudge-shifted voltage) block and reads unrelated queue/safety code instead.",
+   "severity": "minor",
+   "lens": "docs-consistency",
+   "votes": [
+    "Code trace confirms every citation is stale: the doc's numbers (1981/2117/2198/~2455, output block 2474-2493) exactly match HEAD's motor_control.c, but the uncommitted +133/-18 diff shifted the functi",
+    "Introduced by the diff, not pre-existing. firmware/PID_IMPROVEMENT_PLAN.md does not exist at HEAD (untracked new file in this diff), and the same uncommitted diff modifies firmware/Src/motor_control.c",
+    "Confirmed: the doc's citations are stale (PID_controller cited ~2198 vs actual 2268; recompute_pid... ~2117 vs 2146; M17 branch ~2455 vs 2570; line 70's exact range 2474-2493 now lands on motor_moveme"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 37,
+   "title": "Section 1 is titled 'How the current M17 PID works' but describes the pre-change (0.15.3.0) algorithm without a superseded marker",
+   "detail": "With this commit, several statements in \u00a71 no longer describe the code: line 58 'output = (i_term + p_term + d_term) >> 11' (now round-to-nearest with +1024 and back-calculation anti-windup, motor_control.c:2346-2370); line 67 'max_integral_term = 200 << 19 = 104,857,600' and line 79 'the I term alone is allowed 100% of full authority' (now authority >> INTEGRAL_TERM_AUTHORITY_SHIFT = 26,214,400 = 25%, motor_control.c:2168); line 81-82 'The PID itself never learns that its output was clamped downstream' (now it does, via pid_output_limit). The '(as-built)' suffix and \u00a76/\u00a79 hint at the history, but the word 'current' plus present-tense tables invite a reader to treat these values as live. Failure scenario: someone computes anti-windup margins or tuning ranges from the 104,857,600 clamp (4x the real value). Retitle to 'as of 0.15.3.0 (baseline)' or annotate the changed rows.",
+   "severity": "minor",
+   "lens": "docs-consistency",
+   "votes": [
+    "Code trace confirms all three cited discrepancies: motor_control.c:2347 now rounds to nearest with +1024 (doc line 58 shows plain >>11); INTEGRAL_TERM_AUTHORITY_SHIFT=2 (motor_control.c:2124, applied ",
+    "Introduced by the diff, not pre-existing: firmware/PID_IMPROVEMENT_PLAN.md is an untracked new file (does not exist at HEAD), and the same uncommitted diff modifies firmware/Src/motor_control.c (+151 ",
+    "Doc-only staleness in an internal planning journal (untracked WIP file). No executable path consumes the stale values: firmware, tests, sim (pid_algorithm_sim.c, run_pid_sim_battery.py), and capture t"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 407,
+   "title": "Section 6 misquotes section 3/P2's original SNR claim ('4x better' vs the ~20x/~32x actually claimed)",
+   "detail": "Section 6 item 3 says the FIR difference is 'WORSE, not 4x better as \u00a73/P2 originally claimed'. Section 3/P2 actually claims '~20\u00d7 better SNR' for the velocity-error path (line 197) and '~32\u00d7 SNR improvement' for the FIR fallback (line 216) \u2014 nowhere 4x. Failure scenario: a reader trying to reconcile the rejection of step 3 against the original analysis cannot find the quoted 4x figure and cannot tell which of the two (20x or 32x) claims was overturned, undermining confidence in the (correct) sqrt(2) result. The cross-reference should quote the actual figure from P2.",
+   "severity": "minor",
+   "lens": "docs-consistency",
+   "votes": [
+    "Verified by direct inspection: firmware/PID_IMPROVEMENT_PLAN.md line 406 says the FIR difference is 'WORSE, not 4x better as \u00a73/P2 originally claimed', but \u00a73/P2 actually claims '~20\u00d7 better SNR' (lin",
+    "The file firmware/PID_IMPROVEMENT_PLAN.md is untracked (not present at git HEAD), so the defect is entirely introduced by the uncommitted change. The defect itself is confirmed: line 406 rebuts a '4x ",
+    "Verified: \u00a76 item 3 (line 406) attributes a '4x better' SNR claim to \u00a73/P2, but \u00a73/P2 actually claims ~20x (line 194, velocity-error path) and ~32x (line 215, FIR fallback); '4x' appears nowhere. The "
+   ]
+  },
+  {
+   "file": "WORK_CHECKLIST.md",
+   "line": 23,
+   "title": "Working tree mixes two independent work streams; commit as (at least) two commits, and do NOT use git add -A",
+   "detail": "Recommended PID commit manifest: firmware/Src/motor_control.c, firmware/Src/motor_control.h, firmware/Src/main.c, firmware/PID_IMPROVEMENT_PLAN.md, c_test_programs/{pid_algorithm_sim.c, run_pid_sim_battery.py, run_pid_sim_extended_sweep.sh, test_pid_differential.sh, test_pid_overflow.c, test_pid_overflow.sh}, tools/pid_debug_capture.py, firmware/firmware_releases/servomotor_M17_fw0.15.3.3_scc3_hw1.5.firmware and servomotor_M23_fw0.15.3.3_scc1_hw0.10.firmware (plus the test_PID_controller.c prototype fix). Separate commit for the AI-docs/test-suite stream: API_documentation/* (4 modified docs + M17_generate_api_documentation.py + error_handling.txt), API_documentation/autogeneration/{hardware_setup.md,knowhow.md} (untracked but loaded by the modified generator at lines 33-35 \u2014 committing the generator without them breaks a clean checkout), python_programs/command_examples/ (same, line 35), python_programs/servomotor/{error_codes.json,motor_commands.json}, BUGS_FOUND_2026-07-09.md, WORK_CHECKLIST.md, python_programs/run_all_tests.py. Hazard: the tree also holds huge unrelated untracked dirs (Drivers/STM32G4xx_HAL_Driver/, micropython/, marketting_page/, datasheets/, Mechanical/, bootloader_STM32G431/, pricing_calculations/, assembly_steps/); a reflexive `git add -A` or `git add .` at repo root would sweep them all in. Stage files explicitly. Verified pre-commit: test_pid_overflow.sh --quick PASSED and test_pid_differential.sh PASSED in the current tree.",
+   "severity": "major",
+   "lens": "commit-hygiene",
+   "votes": [
+    "Traced and confirmed all core claims: (1) git status shows the PID stream (motor_control.c/.h, main.c, PID sim/test files, fw 0.15.3.x releases) interleaved with the AI-docs stream (API_documentation/",
+    "The defect is a property of the uncommitted diff, not pre-existing at HEAD. At HEAD the tree carried no PID or AI-docs changes; both streams (firmware/Src/motor_control.c|h, main.c, c_test_programs/pi",
+    "The hazard is live and the triggering operation is imminent: the tree currently holds 51 dirty/untracked paths from two distinct work streams, none of the huge unrelated dirs (marketting_page 381MB, d"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 676,
+   "title": "Intermediate 0.15.3.1/0.15.3.2 release binaries are superseded, and the on-disk 0.15.3.2 is a mislabeled different binary \u2014 recommend committing only 0.15.3.3",
+   "detail": "Four untracked intermediates exist (M17+M23 fw0.15.3.1 and fw0.15.3.2). The plan doc itself (line 676) states the V2 rebuild was 'labeled 0.15.3.2 \u2014 same version number, different binary' as the int64-AW build described in sections 9-10; mtimes confirm the on-disk servomotor_M17_fw0.15.3.2 (Jul 7 18:58, built 1 min after the final motor_control.c edit at 18:57) is the V2 variant, not the section-9 binary. Committing it enshrines a version-number collision: anyone flashing '0.15.3.2' to reproduce the section-9/10 results gets a different image and the device reports an identical version string. 0.15.3.3 supersedes both and run_all_tests.py's upgrade test picks the highest version, so nothing needs the intermediates. Recommendation: commit only the two 0.15.3.3 files; leave .1/.2 untracked (or rename with a disambiguating suffix per the keep-the-bytes policy). If tom prefers strict adherence to the commit-all-firmware_releases policy, at minimum add a note to the plan doc that the committed 0.15.3.2 is the V2 build.",
+   "severity": "minor",
+   "lens": "commit-hygiene",
+   "votes": [
+    "Every factual claim survives the trace. (1) git status confirms all four intermediates (M17+M23 fw0.15.3.1/.2) are untracked in firmware/firmware_releases/. (2) PID_IMPROVEMENT_PLAN.md lines 676-678 s",
+    "Introduced by the uncommitted change set, not pre-existing: firmware/PID_IMPROVEMENT_PLAN.md and all six 0.15.3.1/.2/.3 release binaries are untracked (??) and absent at HEAD (git show HEAD:firmware/P",
+    "The claimed failure (flashing '0.15.3.2' to reproduce section-9/10 results yields a different image) is unreachable as an actual failure: (1) nothing is committed yet \u2014 all six 0.15.3.x files are untr"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 480,
+   "title": "Plan doc references firmware/pid_baseline_captures/ (~23 MB, 7 dated dirs) which is untracked \u2014 decide commit-or-annotate",
+   "detail": "Sections 8, 12 and others cite capture directories by path (e.g. line 480 'firmware/pid_baseline_captures/2026-07-07_bench_fw0.15.3.1/', line 727 '..._bench_fw0.15.3.3_voltages/') as the evidence backing the doc's claims. The directory exists locally (~23 MB total, largest: 2026-07-07_sim at 11 MB, plus a gitignored .DS_Store) but is not staged; if the plan doc is committed without it, every citation dangles for any other clone. Failure scenario: reviewer on another machine follows the doc's capture paths -> nothing there, bench evidence unreproducible. Options: (a) commit the capture dirs alongside the doc (repo already tracks binary artifacts), or (b) add one line to the doc stating captures live only on the bench machine. Either is fine; committing the doc alone is the only wrong option.",
+   "severity": "minor",
+   "lens": "commit-hygiene",
+   "votes": [
+    "Verified by direct trace: PID_IMPROVEMENT_PLAN.md cites pid_baseline_captures paths at lines 480 and 727 exactly as claimed (plus 6 more references at lines 32/96/278/376/764/852); the directory exist",
+    "Introduced by the uncommitted diff: firmware/PID_IMPROVEMENT_PLAN.md is not tracked at HEAD (git cat-file confirms 'exists on disk, but not in HEAD'), so the doc and its dangling citations are entirel",
+    "Verified: firmware/PID_IMPROVEMENT_PLAN.md cites firmware/pid_baseline_captures/ paths at 8 places (lines 32, 96, 278, 376, 480, 727, 764, 852) as the evidence for its bench/sim claims, and both the d"
+   ]
+  },
+  {
+   "file": "python_programs/run_all_tests.py",
+   "line": 134,
+   "title": "run_all_tests.py stdin=DEVNULL change is NOT part of the PID work \u2014 commit it with the test/docs stream",
+   "detail": "The only change is adding stdin=subprocess.DEVNULL (plus explanatory comment) so child tests see a non-TTY stdin. It is a companion to the isatty() branches already committed in test_identify.py:82, test_leds.py:82, test_vibrate.py:81 (all unmodified in this tree, i.e. that work is in HEAD), and it was already modified in the session-start snapshot before the PID V2 work. It is a correct, wanted fix \u2014 without it the visual-confirmation tests inherit the runner's TTY and block on input() until the suite timeout \u2014 but it has nothing to do with firmware/Src/motor_control.c. Recommendation: include it in the AI-docs/test-suite commit, not the firmware PID commit, so the firmware commit stays revertable in isolation.",
+   "severity": "minor",
+   "lens": "commit-hygiene",
+   "votes": [
+    "Verified by code trace: the only uncommitted change in run_all_tests.py is stdin=subprocess.DEVNULL + comment (line 134). The isatty() branches it enables are already committed (3a44cee) at test_ident",
+    "The stdin=subprocess.DEVNULL change (plus comment) at python_programs/run_all_tests.py:126-134 is introduced by the uncommitted diff \u2014 at git HEAD the subprocess.run call has no stdin argument. The fi",
+    "Verified: the only diff in run_all_tests.py is stdin=subprocess.DEVNULL + comment at line 134; the companion isatty() branches are already committed (test_identify.py:82, test_leds.py:82, test_vibrate"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 664,
+   "title": "Stale pre-bump action notes in the plan doc: 'bump to 0.15.3.3 when committing' and 'bump DEVELOPMENT_FIRMWARE_VERSION before the next release' are already done",
+   "detail": "Line 664 says V2 is 'applied in tree; bump to 0.15.3.3 when committing' and lines 676-678 say 'bump DEVELOPMENT_FIRMWARE_VERSION before the next release to disambiguate'. Both actions are complete (main.c line 72 defines DEVELOPMENT_FIRMWARE_VERSION 3; 0.15.3.3 binaries built Jul 10). Committing the doc with open-sounding action items that are actually done will mislead a future reader (or a future Claude session resuming from the doc) into thinking a version bump is still pending. One-line edits to past tense before commit.",
+   "severity": "minor",
+   "lens": "commit-hygiene",
+   "votes": [
+    "The cited notes ('bump to 0.15.3.3 when committing', 'bump DEVELOPMENT_FIRMWARE_VERSION before the next release') are indeed completed (main.c has DEVELOPMENT_FIRMWARE_VERSION 3; 0.15.3.3 M17/M23 bina",
+    "The file is untracked (not present at git HEAD \u2014 `git show HEAD:firmware/PID_IMPROVEMENT_PLAN.md` errors), so the entire content is introduced by the uncommitted diff; the defect is new, not pre-exist",
+    "Confirmed: PID_IMPROVEMENT_PLAN.md line ~664 (\"applied in tree; bump to 0.15.3.3 when committing\") and the NOTE at ~676-678 (\"bump DEVELOPMENT_FIRMWARE_VERSION before the next release\") describe actio"
+   ]
+  },
+  {
+   "file": "c_test_programs/pid_algorithm_sim.c",
+   "line": 34,
+   "title": "New in-tree build products (pid_algorithm_sim) are not gitignored",
+   "detail": "The sim's documented build command (line 34: 'cc -O2 -o pid_algorithm_sim pid_algorithm_sim.c -lm') and run_pid_sim_battery.py's default --sim ./pid_algorithm_sim produce an untracked binary inside c_test_programs/, and c_test_programs/.gitignore has no entry for it (it ignores servo_simulator, test_crc32_c etc. but nothing from this work; test_pid_overflow.sh and test_pid_differential.sh build in $TMPDIR so they are clean). Failure scenario: build the sim per the docs, later run `git add c_test_programs` -> a Mach-O binary lands in the commit. Add pid_algorithm_sim (and any battery output dirs the scripts default to, if in-tree) to c_test_programs/.gitignore as part of this commit.",
+   "severity": "minor",
+   "lens": "commit-hygiene",
+   "votes": [
+    "Verified by code trace: pid_algorithm_sim.c line 34 documents an in-tree build (cc -O2 -o pid_algorithm_sim ... in c_test_programs/), git check-ignore confirms no gitignore pattern matches the resulti",
+    "Introduced by the diff: pid_algorithm_sim.c (with its documented in-tree build command at line 34) and run_pid_sim_battery.py (default --sim ./pid_algorithm_sim, default --report pid_sim_battery_repor",
+    "Reachable in the normal documented workflow: pid_algorithm_sim.c line 34 instructs an in-tree build and run_pid_sim_battery.py defaults --sim ./pid_algorithm_sim (plus --report pid_sim_battery_report."
+   ]
+  }
+ ],
+ "rejected": [
+  {
+   "file": "firmware/Src/motor_control.c",
+   "line": 3636,
+   "title": "motor_control_simulator_init does not reset the new pid_output_limit state",
+   "severity": "minor",
+   "why": [
+    "The omission exists (pid_output_limit is missing from motor_control_simulator_init's reset block, motor_control.c:3627-3636), but the failure scenario",
+    "The omission is technically present (pid_output_limit is missing from motor_control_simulator_init's reset block at motor_control.c:3627-3636), but th"
+   ]
+  },
+  {
+   "file": "firmware/Src/hall_sensor_calculations.c",
+   "line": 35,
+   "title": "PREEXISTING: M1 and M2 firmware do not build (SEGMENT_CHANGE_VALUES_TABLE_INITIALIZER undeclared), so the shared PID rewrite is unverifiable on those products",
+   "severity": "major",
+   "why": [
+    "Confirmed pre-existing and untouched by the diff. The uncommitted firmware changes are limited to Src/main.c, Src/motor_control.c, and Src/motor_contr",
+    "The build failure is confirmed (make PRODUCT_NAME=M1/M2 fails at hall_sensor_calculations.c:35) but it is pre-existing since commit be4147e (2024-12-0"
+   ]
+  },
+  {
+   "file": "c_test_programs/test_pid_overflow.c",
+   "line": 124,
+   "title": "Shadow model omits the PRODUCT_NAME_M2 'error >>= 3' step, so the shipped M1/M2 PID path has zero harness coverage and is unverifiable",
+   "severity": "major",
+   "why": [
+    "The finding does not hold against the actual code: test_pid_overflow.c lines 127-129 already contain '#ifdef PRODUCT_NAME_M2 e >>= 3; #endif' immediat",
+    "Newness lens: c_test_programs/test_pid_overflow.c is untracked (new in the uncommitted diff), so the pre-existing escape hatch does not apply \u2014 but th",
+    "The finding's premise is false in the current tree: test_pid_overflow.c lines 127-129 already mirror the M2-only 'e >>= 3' prescale in the int64 shado"
+   ]
+  },
+  {
+   "file": "c_test_programs/pid_algorithm_sim.c",
+   "line": 261,
+   "title": "Overflow shadow check omits the half-LSB rounding addend the firmware adds inside the same int32 sum",
+   "severity": "minor",
+   "why": [
+    "The textual discrepancy exists (shadow check at pid_algorithm_sim.c:261 omits the +1024 half-LSB addend included in the guarded int32 sum at lines 269",
+    "The missed-overflow band [INT32_MAX-1023, INT32_MAX] is unreachable in any sim invocation. All three PID terms are clamped against an authority derive"
+   ]
+  },
+  {
+   "file": "firmware/PID_IMPROVEMENT_PLAN.md",
+   "line": 563,
+   "title": "Section 9 still claims the anti-windup correction uses int64 multiply; the committed code is int32",
+   "severity": "minor",
+   "why": [
+    "The textual mismatch exists (plan line 557 says int64 multiply; motor_control.c:2357/2365 is int32), but section 9 is a dated historical record of the",
+    "The doc bullet at PID_IMPROVEMENT_PLAN.md:557 is genuinely stale (code uses int32), but the failure scenario is unreachable: there is no runtime path "
+   ]
+  },
+  {
+   "file": "WORK_CHECKLIST.md",
+   "line": 82,
+   "title": "Preexisting: eleven older firmware release binaries (0.14.x M17/M23/M3/M4) sit untracked despite the commit-firmware-releases policy",
+   "severity": "minor",
+   "why": [
+    "The files are indeed untracked (9, not 11 as claimed), but WORK_CHECKLIST.md itself \u2014 at the exact cited location \u2014 documents them under \"What is stil",
+    "Pre-existing condition, not introduced by the diff: the nine 0.14.x firmware release binaries were untracked before this work began (present in the se",
+    "No reachable failure scenario exists, and the repo explicitly contradicts the finding's premise. The finding anchors to WORK_CHECKLIST.md line ~82, wh"
+   ]
+  }
+ ]
+}

@@ -2112,30 +2112,123 @@ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
 static int32_t max_integral_term = 0;
 static int32_t max_error = 0;
 static int32_t max_error_change = 0;
+static int32_t pid_output_limit = 0;
+
+// The integral term is clamped to this fraction of the full output authority (as a right
+// shift: 2 -> 25%). This is the primary anti-windup measure: it bounds the stale "debt"
+// the integrator can store during a transient, which is what previously caused sustained
+// limit-cycle oscillation for integral constants above ~10 (see
+// firmware/PID_IMPROVEMENT_PLAN.md; validated in c_test_programs/pid_algorithm_sim.c --
+// clamps of 37.5% or more let the limit cycle return on a high-stiction motor, and 25%
+// still leaves ~1.4x margin over the largest static holding effort measured on the bench).
+#define INTEGRAL_TERM_AUTHORITY_SHIFT 2
+
+// Overflow-safety bounds for the PID integer math. Together they guarantee that every
+// int32 operation inside PID_controller stays within range for ANY combination of
+// user-settable gains (u32), max PWM voltage (u16), and position error (i64), which is
+// verified exhaustively by c_test_programs/test_pid_overflow.sh -- rerun it after any
+// change to this math. The bound derivation:
+//   - the error fed to the PID is clamped to +/-2^29 counts on entry, so the derivative's
+//     (error - previous_error) fits comfortably in int32,
+//   - the "authority" (max PWM voltage << (PID_SHIFT_RIGHT + FUDGE_SHIFT)) is capped at
+//     800e6, so the P term (<= authority), the D term (<= authority via the
+//     max_error_change relation, or <= 768e6 when the 2e6 cap binds), the I term
+//     (<= authority >> 2) and the rounding half-LSB sum to at most ~1.8e9 < 2^31,
+//   - max_error_change is capped at 2e6 so the derivative filter state (<= 32x that)
+//     survives its decay multiply by 31 (64e6 * 31 = 1.98e9 < 2^31),
+//   - the integral constant is capped so that one integration step from a fully-railed
+//     integrator cannot exceed int32 before the clamp is applied.
+#define PID_ERROR_INPUT_CLAMP            (1 << 29)
+#define PID_MAX_AUTHORITY_PRE_SHIFT      800000000
+#define PID_MAX_ERROR_CHANGE             2000000
 
 
 void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_motor_regen_pwm_voltage)
 {
-    int32_t new_max_error = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT));
-    if (pid_p != 0) {
-        new_max_error /= pid_p;
+    // All intermediate math is done in 64 bits and the results are capped to the
+    // PID_MAX_* bounds above, so that the per-tick int32 arithmetic in PID_controller
+    // provably cannot overflow for any settable gains/voltage. This function runs only
+    // when constants change, so the 64-bit cost is irrelevant.
+
+    // The gain commands deliver u32 values; values above INT32_MAX would flip sign when
+    // stored into the int32 working constants (turning feedback positive), so cap them.
+    int64_t p64 = (pid_p > (uint32_t)INT32_MAX) ? INT32_MAX : (int64_t)pid_p;
+    int64_t i64 = (pid_i > (uint32_t)INT32_MAX) ? INT32_MAX : (int64_t)pid_i;
+    int64_t d64 = (pid_d > (uint32_t)INT32_MAX) ? INT32_MAX : (int64_t)pid_d;
+
+    int64_t authority = ((int64_t)new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT));
+    if (authority > PID_MAX_AUTHORITY_PRE_SHIFT) {
+        authority = PID_MAX_AUTHORITY_PRE_SHIFT;
     }
-    int32_t new_derivative_constant_pid_scaled_for_averaging = (pid_d >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
-    int32_t new_max_integral_term = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT));
-//  int32_t max_pd_terms = ((MAX_INT32 - MAX_I_TERM) / 2); // there are maximum values for the three terms. we do this so that we can calculate everything within a int32_t and don't overflow the math
-    int32_t new_max_error_change = 0;
-    if (pid_d != 0) {
-        new_max_error_change = (new_max_motor_pwm_voltage << (PID_SHIFT_RIGHT + PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT)) / pid_d;
+
+    int64_t new_max_error = authority;
+    if (p64 != 0) {
+        new_max_error /= p64;
+    }
+    int64_t new_derivative_constant_pid_scaled_for_averaging = (d64 >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
+    int64_t new_max_integral_term = authority >> INTEGRAL_TERM_AUTHORITY_SHIFT;
+    // The anti-windup saturation point: beyond this output, neither the commutation angle
+    // nor the PWM voltage can increase any further (M17 semantics; on the other products
+    // this limit is at or above the callers' own clamps, so it only makes the anti-windup
+    // more conservative). The commutation angle saturates at HALL_TO_POSITION_90_DEGREE_OFFSET
+    // and the voltage at (max PWM voltage << FUDGE_SHIFT); the output stops having ANY
+    // physical effect only past the LARGER of the two -- clamping at the voltage term alone
+    // would cut the achievable lead angle below 90 degrees whenever the max PWM voltage is
+    // set under (HALL_TO_POSITION_90_DEGREE_OFFSET >> FUDGE_SHIFT) = 64, reducing torque
+    // at low current limits.
+    int64_t new_pid_output_limit = ((int64_t)new_max_motor_pwm_voltage << PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT);
+    if (new_pid_output_limit < HALL_TO_POSITION_90_DEGREE_OFFSET) {
+        new_pid_output_limit = HALL_TO_POSITION_90_DEGREE_OFFSET;
+    }
+    int64_t new_max_error_change = 0;
+    if (d64 != 0) {
+        new_max_error_change = authority / d64;
+        if (new_max_error_change > PID_MAX_ERROR_CHANGE) {
+            new_max_error_change = PID_MAX_ERROR_CHANGE;
+        }
+    }
+    // Cap the integral constant so that one integration step from a fully-railed
+    // integrator ((max_integral_term + max_error * ki) at its worst) still fits in int32
+    // before the clamp is applied. The largest error that can actually reach the
+    // integration step is bounded by BOTH the max_error clamp and the +/-2^29 input
+    // clamp, so use the smaller of the two (otherwise a small/zero kP -- which makes
+    // max_error huge -- would cap ki far more than overflow safety requires).
+    int64_t ki_capped = i64;
+    int64_t effective_max_error = new_max_error;
+    if (effective_max_error > PID_ERROR_INPUT_CLAMP) {
+        effective_max_error = PID_ERROR_INPUT_CLAMP;
+    }
+    if (effective_max_error > 0) {
+        int64_t ki_max = ((int64_t)INT32_MAX - new_max_integral_term) / effective_max_error;
+        if (ki_capped > ki_max) {
+            ki_capped = ki_max;
+        }
     }
     __disable_irq();
-    proportional_constant_pid = (int32_t)pid_p;
-    integral_constant_pid = (int32_t)pid_i;
-    derivative_constant_pid_scaled_for_averaging = new_derivative_constant_pid_scaled_for_averaging;
-    max_error = new_max_error;
-    max_integral_term = new_max_integral_term;
-    max_error_change = new_max_error_change;
+    proportional_constant_pid = (int32_t)p64;
+    integral_constant_pid = (int32_t)ki_capped;
+    derivative_constant_pid_scaled_for_averaging = (int32_t)new_derivative_constant_pid_scaled_for_averaging;
+    max_error = (int32_t)new_max_error;
+    max_integral_term = (int32_t)new_max_integral_term;
+    max_error_change = (int32_t)new_max_error_change;
+    pid_output_limit = (int32_t)new_pid_output_limit;
     max_motor_pwm_voltage = new_max_motor_pwm_voltage;
     max_motor_regen_pwm_voltage = new_max_motor_regen_pwm_voltage;
+    // Stale controller state from the previous constants can overflow when combined with
+    // the new ones (a large derivative filter value meeting a much larger derivative
+    // constant), so bring the state within the new bounds here. previous_error is
+    // deliberately NOT reset: it is always a previously-input-clamped value (|x| <= 2^29),
+    // so (error - previous_error) fits in int32 under ANY new constants, and zeroing it
+    // would make the next tick's error_change equal the full current position error --
+    // an avoidable one-tick derivative kick (up to ~3% of full output) on every
+    // Set-PID-constants / Set-maximum-motor-current sent during motion.
+    low_pass_filtered_error_change = 0;
+    if (integral_term > max_integral_term) {
+        integral_term = max_integral_term;
+    }
+    else if (integral_term < -max_integral_term) {
+        integral_term = -max_integral_term;
+    }
     __enable_irq();
 }
 
@@ -2195,11 +2288,28 @@ int32_t PID_controller_debug(int32_t error) // DEBUG this whole function, restor
 
 
 //int32_t PID_controller_use_this_one__above_one_is_for_debug_only(int32_t error)
-int32_t PID_controller(int32_t error)
+int32_t PID_controller(int64_t error_i64)
 {
+    int32_t error;
     int32_t output_value;
     int32_t proportional_term;
     int32_t derivative_term;
+
+    // The callers pass the full 64-bit position difference. Clamp it before narrowing so
+    // that a huge deviation (possible when the user loosens the position deviation limit)
+    // cannot wrap around during the int32 conversion or overflow the derivative's
+    // (error - previous_error) subtraction. +/-2^29 counts (= +/-163 shaft rotations of
+    // error) is far beyond any controllable situation and is further clamped to
+    // max_error / max_error_change below, exactly as before.
+    if (error_i64 > PID_ERROR_INPUT_CLAMP) {
+        error = PID_ERROR_INPUT_CLAMP;
+    }
+    else if (error_i64 < -PID_ERROR_INPUT_CLAMP) {
+        error = -PID_ERROR_INPUT_CLAMP;
+    }
+    else {
+        error = (int32_t)error_i64;
+    }
 
 //  printf("PID_controller: error = %d\n", error);
 
@@ -2224,7 +2334,11 @@ int32_t PID_controller(int32_t error)
         else if(error_change < -max_error_change) {
             error_change = -max_error_change;
         }
-        low_pass_filtered_error_change = (low_pass_filtered_error_change * (DERIVATIVE_CONSTANT_AVERAGING_SCALAR - 1)) >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
+        int32_t decayed_lpf = low_pass_filtered_error_change * (DERIVATIVE_CONSTANT_AVERAGING_SCALAR - 1);
+        if (decayed_lpf < 0) {
+            decayed_lpf += DERIVATIVE_CONSTANT_AVERAGING_SCALAR - 1; // the arithmetic shift below rounds toward -infinity, which would make negative filter values from -(DERIVATIVE_CONSTANT_AVERAGING_SCALAR-1)..-1 stick forever and bias the derivative term negative; this correction makes the decay round toward zero so both polarities decay fully to zero
+        }
+        low_pass_filtered_error_change = decayed_lpf >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT;
         low_pass_filtered_error_change += error_change;
         derivative_term = low_pass_filtered_error_change * derivative_constant_pid_scaled_for_averaging;
     }
@@ -2253,7 +2367,31 @@ int32_t PID_controller(int32_t error)
     }
     proportional_term = error * proportional_constant_pid;
 
-    output_value = (integral_term + proportional_term + derivative_term) >> PID_SHIFT_RIGHT;
+    output_value = (integral_term + proportional_term + derivative_term + (1 << (PID_SHIFT_RIGHT - 1))) >> PID_SHIFT_RIGHT; // the added half-LSB makes the shift round to nearest instead of toward -infinity, which would otherwise bias the output negative by up to 1 count
+
+    // Back-calculation anti-windup: when the output exceeds what the motor can physically
+    // apply (pid_output_limit), bleed the excess back out of the integrator so it cannot
+    // accumulate a large stale value ("windup") while the output is saturated. The
+    // correction math fits in int32 because of the PID_MAX_* caps established in
+    // recompute_pid_parameters_and_set_pwm_voltage: |I|+|P|+|D|+half <= ~1.8e9, so
+    // |output_value| <= ~880e3 and |excess * 2^PID_SHIFT_RIGHT| <= ~1.81e9 < 2^31
+    // (verified exhaustively by c_test_programs/test_pid_overflow.sh under UBSan).
+    if (output_value > pid_output_limit) {
+        int32_t corrected_integral = integral_term - ((output_value - pid_output_limit) * (1 << PID_SHIFT_RIGHT)); // multiply rather than left-shift: shifting a negative value is undefined behavior in C
+        if (corrected_integral < -max_integral_term) {
+            corrected_integral = -max_integral_term;
+        }
+        integral_term = corrected_integral;
+        output_value = pid_output_limit;
+    }
+    else if (output_value < -pid_output_limit) {
+        int32_t corrected_integral = integral_term - ((output_value + pid_output_limit) * (1 << PID_SHIFT_RIGHT)); // multiply rather than left-shift: shifting a negative value is undefined behavior in C
+        if (corrected_integral > max_integral_term) {
+            corrected_integral = max_integral_term;
+        }
+        integral_term = corrected_integral;
+        output_value = -pid_output_limit;
+    }
 
     // copy this information to these variables so that we can print them in the debugging interface
     if ((test_mode == READ_PID_DEBUG_DATA_TEST_MODE) && (multipurpose_data_type == 0)) {

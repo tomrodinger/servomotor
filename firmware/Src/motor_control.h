@@ -102,7 +102,15 @@
 #ifdef PRODUCT_NAME_M23
 #define PID_SHIFT_RIGHT 14
 #endif
+// Derivative-filter strength: the D term's error-change signal runs through a leaky
+// integrator (EMA) spanning 2^SHIFT control ticks (SHIFT=5 -> tau ~1 ms, cutoff ~155 Hz).
+// Overridable at build time (EXTRA_DEFINES="DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT=6")
+// for filter studies -- see firmware/PID_IMPROVEMENT_PLAN.md. NOTE: shifts >= 6 need a
+// smaller PID_MAX_ERROR_CHANGE for provable overflow safety at pathological gains; rerun
+// c_test_programs/test_pid_overflow.sh before releasing a change here.
+#ifndef DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT 5
+#endif
 #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
 #define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8 // 8 seems good
 

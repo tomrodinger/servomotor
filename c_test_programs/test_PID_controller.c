@@ -124,7 +124,7 @@ double PID_controller_double(double error)
 }
 
 
-int32_t PID_controller(int32_t error);
+int32_t PID_controller(int64_t error); // NOTE: signature changed in fw 0.15.3.2 (int64 input); this legacy harness predates the M17/M23-only product defines and does not currently build (see build_script.sh M3/M4 references)
 
 int main(void)
 {

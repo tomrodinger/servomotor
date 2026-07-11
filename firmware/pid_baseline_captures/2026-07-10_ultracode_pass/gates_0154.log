@@ -1,0 +1,17 @@
+=== overflow FULL (3 product sets) ===
+================ product parameters: M17 (shift 11) ================
+1079380000 total ticks, 0 invariant failures
+================ product parameters: M23 (shift 14) ================
+1079380000 total ticks, 0 invariant failures
+================ product parameters: M1/M2 (shift 18, M2 error prescale) ================
+1079380000 total ticks, 0 invariant failures
+OVERALL: PASSED -- no signed overflow, no bad shifts, no div0, shadow model exact on every tick (all parameter sets)
+=== battery ===
+============================================================
+60/62 checks passed; report: /private/tmp/claude-501/-Users-tom-Documents-Move-the-Needle-Servomotor-firmware/74e569b6-9702-4e05-a09d-9f128c5923f8/scratchpad/battery_0154.md
+=== extended sweep ===
+RESULT: 82/82 passed
+SIM EXTENDED SWEEP PASSED
+=== mutation spot-check (2 mutants must be killed) ===
+MUT1 killed
+MUT3 killed
