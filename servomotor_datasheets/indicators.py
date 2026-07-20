@@ -8,10 +8,10 @@ def add_indicators_section(story, style):
     story.append(Spacer(1, 8))
 
     led_description = tr(
-        "The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat "
-        "and quickly to indicate that the bootloader is running rather than the application. The red LED will "
-        "light up briefly to show communication on the bus and will indicate fatal error codes by flashing a "
-        "certain number of times."
+        "The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat, "
+        "flashes quickly to indicate that the bootloader is running rather than the application, and also lights "
+        "up briefly while a packet is being received, so it flickers with communication on the bus. The red LED "
+        "indicates fatal error codes by flashing a certain number of times."
     )
 
     button_description = tr(

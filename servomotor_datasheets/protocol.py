@@ -1,3 +1,4 @@
+import re
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, KeepTogether, PageBreak, Preformatted, Flowable
 from reportlab.lib import colors
 from reportlab.lib.styles import ParagraphStyle
@@ -45,6 +46,21 @@ class CodeBox(Flowable):
             self.canv.drawString(10, y_position, line)
             y_position -= 10  # Move down for next line
 
+
+def first_sentence(text):
+    """Return the first sentence of an API description: split at a period that
+    is followed by whitespace and an uppercase letter (so abbreviations like
+    "e.g. the" and version numbers like 0.15.4.0 do not end the sentence)."""
+    match = re.search(r'(?<=[a-z0-9\)])\.(?=\s+[A-Z])', text)
+    sentence = text[:match.start() + 1] if match else text
+    # A few descriptions open with a colon-led enumeration; for table use, cut
+    # an overlong first sentence at the colon.
+    if len(sentence) > 200 and ': ' in sentence:
+        head = sentence.split(': ', 1)[0]
+        if len(head) >= 40:
+            sentence = head + '.'
+    return sentence
+
 def add_protocol_overview(story, style):
     """Add protocol overview section"""
     elements = []
@@ -91,11 +107,15 @@ def create_command_table(title, commands, content_width):
 
     # Create table data. Command names stay in English (they match the
     # Python/Arduino API and motor_commands.json); descriptions are translated.
+    # Only the FIRST SENTENCE of each command's Description is used: the full
+    # descriptions in motor_commands.json are API-reference length (the complete
+    # text lives in the API documentation), while the datasheet table needs a
+    # one-line summary.
     data = [[tr('Command'), tr('Description')]]
     for cmd in commands:
         data.append([
             create_command_cell(cmd['CommandString']),
-            create_description_cell(tr(cmd['Description']))
+            create_description_cell(tr(first_sentence(cmd['Description'])))
         ])
     
     # Create table with adjusted column widths
