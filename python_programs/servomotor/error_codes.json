@@ -4,7 +4,7 @@
             "code": 0,
             "enum": "ERROR_NONE",
             "short_desc": "",
-            "long_desc": "No error condition",
+            "long_desc": "No error. The device is operating normally. When the error code field returned by the 'Get status' command is 0, no fatal error is active. (One artificial exception: 'Test mode' value 14 deliberately triggers a fatal error with code 0, in which case the device is in the fatal error state with the red LED on continuously even though the reported code is 0.)",
             "causes": ["Normal operation"],
             "solutions": ["No action needed"]
         },
@@ -12,864 +12,820 @@
             "code": 1,
             "enum": "ERROR_TIME_WENT_BACKWARDS",
             "short_desc": "time went backwards",
-            "long_desc": "The system detected that time appeared to move backwards, which indicates a problem with the microsecond clock",
+            "long_desc": "The internal 64-bit microsecond clock produced a timestamp earlier than the previous one. This is an internal consistency check of the device's time base and should never occur during normal operation.",
             "causes": [
-                "Timer overflow",
-                "Hardware clock malfunction",
-                "Software bug in time tracking"
+                "Internal firmware or timer malfunction (this indicates a bug, not a usage error)",
+                "Severe electrical disturbance corrupting the timer state"
             ],
             "solutions": [
-                "Reset the device",
-                "Check for timer configuration issues",
-                "Verify timer interrupt priorities"
+                "Send the 'System reset' command to restart the device",
+                "Check for electrical noise and power supply stability if it recurs",
+                "Report the problem to the manufacturer along with the firmware version and what the device was doing, if it is reproducible"
             ]
         },
         {
             "code": 2,
             "enum": "ERROR_FLASH_UNLOCK_FAIL",
             "short_desc": "flash unlock fail",
-            "long_desc": "Failed to unlock the flash memory for writing",
+            "long_desc": "The firmware failed to unlock the microcontroller's flash memory for writing. Flash is written when settings are saved (for example after 'Set device alias') and when firmware pages are written during a firmware upgrade.",
             "causes": [
-                "Flash memory is locked",
-                "Incorrect unlock sequence",
-                "Hardware protection enabled"
+                "The flash controller was left in a locked or error state by a previous operation",
+                "Microcontroller hardware fault"
             ],
             "solutions": [
-                "Reset the device",
-                "Check flash memory protection settings",
-                "Verify flash unlock sequence in code"
+                "Send the 'System reset' command and retry the operation",
+                "Power cycle the device if the error persists after a reset",
+                "If it still persists, the device likely has a hardware problem; contact the manufacturer"
             ]
         },
         {
             "code": 3,
             "enum": "ERROR_FLASH_WRITE_FAIL",
             "short_desc": "flash write fail",
-            "long_desc": "Failed to write data to flash memory",
+            "long_desc": "A write to the microcontroller's flash memory did not complete successfully (the flash controller did not confirm end of programming). This can occur while saving settings (for example after 'Set device alias') or while writing a firmware page during a firmware upgrade.",
             "causes": [
-                "Flash memory write protection active",
-                "Write operation timeout",
-                "Invalid flash address",
-                "Insufficient power during write"
+                "Unstable or interrupted power supply during the flash write",
+                "Flash memory wear or damage",
+                "The flash controller was in an error state from a previous operation"
             ],
             "solutions": [
-                "Check flash write protection settings",
-                "Verify flash write timing",
-                "Ensure stable power supply",
-                "Check flash address calculations"
+                "Send the 'System reset' command and retry the operation",
+                "Ensure the power supply is stable before saving settings or upgrading firmware",
+                "If a firmware upgrade fails repeatedly, power cycle and retry; if it still fails, contact the manufacturer"
             ]
         },
         {
             "code": 4,
             "enum": "ERROR_TOO_MANY_BYTES",
             "short_desc": "too many bytes",
-            "long_desc": "Data size exceeds buffer or memory limits",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "Command data too large",
-                "Buffer overflow attempt",
-                "Incorrect data length calculation"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Reduce data size",
-                "Split data into smaller chunks",
-                "Check data length calculations",
-                "Verify buffer size constraints"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 5,
             "enum": "ERROR_COMMAND_OVERFLOW",
             "short_desc": "command overflow",
-            "long_desc": "Command buffer overflow detected",
+            "long_desc": "A byte arrived on the RS485 bus while both of the device's receive buffers were still occupied by unprocessed packets. The device could not keep up with the incoming data stream.",
             "causes": [
-                "Too many commands sent too quickly",
-                "Command buffer full",
-                "Command processing too slow"
+                "Commands were sent back-to-back without waiting for the response to the previous command",
+                "Many broadcast commands (which produce no response to wait for) were sent in a rapid burst",
+                "Bus contention: more than one master transmitting, or electrical echo on the RS485 line"
             ],
             "solutions": [
-                "Reduce command frequency",
-                "Wait for command completion",
-                "Implement command flow control",
-                "Check command processing speed"
+                "Wait for each command's response before sending the next command to the same device",
+                "Insert a small delay between broadcast commands",
+                "Check the bus wiring for reflections or multiple simultaneous transmitters",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 6,
             "enum": "ERROR_COMMAND_TOO_LONG",
             "short_desc": "command too long",
-            "long_desc": "Individual command exceeds maximum allowed length",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it. A received packet that is too long for the receive buffer is silently discarded instead.",
             "causes": [
-                "Command data exceeds limit",
-                "Malformed command",
-                "Protocol violation"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Reduce command length",
-                "Split into multiple commands",
-                "Check command format",
-                "Verify protocol compliance"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 7,
             "enum": "ERROR_NOT_IN_OPEN_LOOP",
             "short_desc": "not in open loop",
-            "long_desc": "An operation that requires open loop control mode was attempted while the motor was in a different control mode",
+            "long_desc": "The 'Start calibration' command was received while the motor was not in open loop control mode. Calibration must be started from open loop mode, which is the mode the device is in after power-up or after a 'System reset'. It cannot be run after the motor has been switched to closed loop mode.",
             "causes": [
-                "Attempting calibration while not in open loop mode",
-                "Incorrect mode transition sequence"
+                "'Start calibration' was sent after the motor had already transitioned to closed loop mode (for example via 'Go to closed loop')"
             ],
             "solutions": [
-                "Switch to open loop mode before calibration",
-                "Reset motor control mode to open loop",
-                "Check mode transition logic in code"
+                "Send the 'System reset' command first (the device boots into open loop mode), then send 'Start calibration'"
             ]
         },
         {
             "code": 8,
             "enum": "ERROR_QUEUE_NOT_EMPTY",
             "short_desc": "queue not empty",
-            "long_desc": "An operation that requires an empty movement queue was attempted while the queue still had pending movements",
+            "long_desc": "A command that requires an empty motion queue was received while queued movements were still pending. This is raised by 'Start calibration', 'Go to closed loop', 'Homing', and 'Zero position' if the motion queue is not empty when they are received (and by 'Vibrate' on the M1 product only; on other products 'Vibrate' does nothing).",
             "causes": [
-                "Starting calibration with pending movements",
-                "Starting homing with pending movements",
-                "Attempting mode change with active movements"
+                "The command was sent while previously queued moves were still executing or still waiting in the queue"
             ],
             "solutions": [
-                "Wait for all movements to complete",
-                "Clear the movement queue",
-                "Call clear_the_queue_and_stop() before operation"
+                "Wait until 'Get n queued items' returns 0 before sending the command",
+                "Alternatively, send 'Emergency stop' to discard all queued moves, then send the command",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 9,
             "enum": "ERROR_HALL_SENSOR",
             "short_desc": "hall sensor error",
-            "long_desc": "Hall sensor readings are invalid or out of expected range",
+            "long_desc": "Not raised by the current firmware (the check that used this code is disabled). Historically it indicated hall sensor readings outside the valid range. Hall sensor problems in the current firmware typically surface as error 47 (hall position delta too large), error 10 (calibration overflow), or error 11 (not enough minima or maxima) instead.",
             "causes": [
-                "Hall sensor malfunction",
-                "Sensor connection issues",
-                "Magnetic interference",
-                "Sensor power issues"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Check hall sensor connections",
-                "Verify sensor power supply",
-                "Shield from magnetic interference",
-                "Replace faulty sensors"
+                "Send the 'System reset' command to clear the fatal error state",
+                "If you suspect a hall sensor problem, run 'Start calibration' and check for errors 10 or 11, or use 'Get hall sensor statistics' to inspect the sensor signals"
             ]
         },
         {
             "code": 10,
             "enum": "ERROR_CALIBRATION_OVERFLOW",
             "short_desc": "calibration overflow",
-            "long_desc": "Calibration data buffer overflow during motor calibration",
+            "long_desc": "During calibration the firmware records the positions of the hall sensor signal minima and maxima. More signal extremes were detected than the calibration buffer can hold, so calibration was aborted. This usually means the hall sensor signals contained many spurious peaks.",
             "causes": [
-                "Too many calibration points collected",
-                "Calibration buffer size exceeded",
-                "Incorrect calibration sequence"
+                "Noisy or glitchy hall sensor signals producing spurious minima and maxima",
+                "Electrical interference during calibration",
+                "A hardware problem with the hall sensors"
             ],
             "solutions": [
-                "Check calibration data buffer size",
-                "Verify calibration point collection logic",
-                "Reset and retry calibration"
+                "Send the 'System reset' command, then retry 'Start calibration'",
+                "Reduce sources of electrical noise near the motor during calibration",
+                "If calibration fails repeatedly with this error, the device may have a hall sensor hardware problem; contact the manufacturer"
             ]
         },
         {
             "code": 11,
             "enum": "ERROR_NOT_ENOUGH_MINIMA_OR_MAXIMA",
             "short_desc": "not enough minima or maxima",
-            "long_desc": "Insufficient number of peaks detected during hall sensor calibration",
+            "long_desc": "Calibration completed its movement, but at least one hall sensor channel produced fewer signal peaks than expected for a full calibration rotation. This usually means the motor shaft did not actually rotate as commanded, or a hall sensor is not producing a usable signal.",
             "causes": [
-                "Poor sensor signals",
-                "Incorrect motor movement during calibration",
-                "Sensor sensitivity issues",
-                "Mechanical problems"
+                "The motor shaft was blocked or under load during calibration (calibration must be done with the shaft free to rotate)",
+                "The motor did not rotate (mechanical binding, or motor windings not driven correctly)",
+                "A faulty or disconnected hall sensor"
             ],
             "solutions": [
-                "Check hall sensor signal quality",
-                "Verify motor movement during calibration",
-                "Adjust sensor sensitivity",
-                "Check for mechanical binding"
+                "Remove any load or obstruction from the motor shaft and retry calibration ('System reset', then 'Start calibration')",
+                "Verify that the shaft actually turns during calibration",
+                "If the shaft turns freely and the error persists, the device may have a hall sensor hardware problem; contact the manufacturer"
             ]
         },
         {
             "code": 12,
             "enum": "ERROR_VIBRATION_FOUR_STEP",
             "short_desc": "vibration four step",
-            "long_desc": "Error in four-step vibration sequence during motor testing",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "Incorrect vibration sequence",
-                "Motor movement obstruction",
-                "Control timing issues"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Check vibration sequence timing",
-                "Verify motor freedom of movement",
-                "Check control loop timing"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 13,
             "enum": "ERROR_NOT_IN_CLOSED_LOOP",
             "short_desc": "not in closed loop",
-            "long_desc": "An operation that requires closed loop control mode was attempted while in a different mode",
+            "long_desc": "The 'Homing' command was received while the motor was not in closed loop control mode. Homing works by detecting position deviation when the motor hits an obstacle, which requires closed loop control.",
             "causes": [
-                "Attempting position control in wrong mode",
-                "Incorrect mode transition",
-                "Mode change during operation"
+                "'Homing' was sent before switching the motor to closed loop mode"
             ],
             "solutions": [
-                "Switch to closed loop mode first",
-                "Check mode transition sequence",
-                "Verify control mode logic"
+                "Send 'Go to closed loop' first (the motor must have been calibrated at some point before that), wait for it to complete, then send 'Homing'",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 14,
             "enum": "ERROR_OVERVOLTAGE",
             "short_desc": "overvoltage",
-            "long_desc": "Motor supply voltage exceeds maximum allowed limit",
+            "long_desc": "The motor supply voltage exceeded the overvoltage threshold. Detection is done by a hardware comparator that triggers immediately via an interrupt. The comparator's reference is set by the firmware to a per-product value (26 V on M1/M2, 32 V on M17, 38 V on M23); there is no user command to change it. The most common cause is regenerated energy: a decelerating or externally driven motor acts as a generator and pumps energy back into the supply rail, raising its voltage.",
             "causes": [
-                "Power supply voltage too high",
-                "Regenerative braking voltage spike",
-                "Voltage measurement error"
+                "Regenerative energy from rapidly decelerating a high-inertia load raised the supply voltage",
+                "The motor shaft was spun by an external force while the device was powered",
+                "The power supply voltage is above the specified operating range"
             ],
             "solutions": [
-                "Check power supply voltage",
-                "Add regenerative braking resistor",
-                "Verify voltage measurements",
-                "Implement voltage limiting"
+                "Verify the power supply voltage is within the specified operating range",
+                "Decelerate more gently when moving high-inertia loads",
+                "Use a power supply that can absorb regenerated energy, or add capacitance across the supply",
+                "Avoid forcefully spinning the motor shaft while powered",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 15,
             "enum": "ERROR_ACCEL_TOO_HIGH",
             "short_desc": "accel too high",
-            "long_desc": "The requested acceleration exceeds the maximum allowed acceleration limit",
+            "long_desc": "A move was requested with an acceleration whose magnitude exceeds the configured maximum acceleration. This is checked when the move is added to the motion queue, for example by 'Move with acceleration' or by acceleration segments of 'Multimove'. The limit is set with 'Set maximum acceleration'.",
             "causes": [
-                "Movement command with excessive acceleration",
-                "Acceleration parameter too high",
-                "Incorrect acceleration calculation"
+                "The requested acceleration is larger than the configured maximum acceleration",
+                "A unit conversion mistake made the acceleration value much larger than intended"
             ],
             "solutions": [
                 "Reduce the requested acceleration",
-                "Check acceleration calculations",
-                "Verify max_acceleration setting"
+                "Increase the limit with 'Set maximum acceleration' if your application genuinely needs higher acceleration, but note that the firmware silently clamps the maximum acceleration to four times the boot default (48000 rot/s^2 on M17 as of firmware 0.15.8.0); a request above that ceiling returns success yet does not take effect, so this error keeps firing until you lower the requested acceleration",
+                "Double-check the units of the acceleration value you are sending",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 16,
             "enum": "ERROR_VEL_TOO_HIGH",
             "short_desc": "vel too high",
-            "long_desc": "The requested velocity exceeds the maximum allowed velocity limit",
+            "long_desc": "A velocity exceeded the configured maximum velocity. This is checked when a move is added to the motion queue (for example by 'Move with velocity' or velocity segments of 'Multimove') and is also enforced continuously while moves execute: if the commanded velocity ever exceeds the maximum during execution, this error is raised as well. The limit is set with 'Set maximum velocity'.",
             "causes": [
-                "Movement command with excessive velocity",
-                "Velocity parameter too high",
-                "Acceleration leading to excessive velocity"
+                "The requested velocity is larger than the configured maximum velocity",
+                "The limit was lowered with 'Set maximum velocity' while moves were executing: the new limit takes effect immediately (there is no guard against changing it mid-motion), so if it is below the currently executing velocity the runtime check trips at the next control cycle",
+                "In firmware before 0.15.4.0 only: an 'Emergency stop' or 'Reset time' sent mid-motion left an internal planner variable stale, so a later acceleration-based move could exceed the limit during execution even though it passed validation when queued (fixed in 0.15.4.0)",
+                "A unit conversion mistake made the velocity value much larger than intended"
             ],
             "solutions": [
-                "Reduce the requested velocity",
-                "Check velocity calculations",
-                "Verify max_velocity setting"
+                "Reduce the requested velocity or acceleration",
+                "Increase the limit with 'Set maximum velocity' if your application genuinely needs higher speed; note that 'Set maximum velocity' silently clamps any request above twice the boot default (18.67 rot/s on M17 as of firmware 0.15.8.0) to that ceiling and still replies success, so if this error persists after you raised the limit, your request exceeded the ceiling and the limit is capped there",
+                "Only change the maximum velocity while the motor is stopped and the queue is empty",
+                "On firmware before 0.15.4.0 only: after using 'Emergency stop' during motion, send 'System reset' before queueing new moves to restore a consistent internal state (fixed in 0.15.4.0; no reset is needed on current firmware)",
+                "Double-check the units of the velocity value you are sending",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 17,
             "enum": "ERROR_QUEUE_IS_FULL",
             "short_desc": "queue is full",
-            "long_desc": "Movement queue is full and cannot accept more commands",
+            "long_desc": "An attempt was made to add a move to the motion queue while the queue already held the maximum number of items (32). Note that a 'Multimove' command adds each of its moves to the same queue, and that 'Trapezoid move', 'Go to position', and 'Homing' each add up to 3 items (acceleration, coast, and deceleration segments), so about 10 such moves fill the queue.",
             "causes": [
-                "Too many queued movements",
-                "Commands sent too quickly",
-                "Queue not being processed"
+                "Moves were queued faster than they were being executed, without checking the queue level"
             ],
             "solutions": [
-                "Wait for queue space",
-                "Reduce command frequency",
-                "Check queue processing",
-                "Clear unnecessary movements"
+                "Poll 'Get n queued items' and only add moves when there is room in the queue",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 18,
             "enum": "ERROR_RUN_OUT_OF_QUEUE_ITEMS",
             "short_desc": "run out of queue items",
-            "long_desc": "Movement queue unexpectedly empty during operation",
+            "long_desc": "The motion queue became empty while the motor still had a nonzero commanded velocity. Every motion sequence must end with the motor brought back to zero velocity. If the last queued item finishes with the motor still moving and no further item has been queued, this error is raised.",
             "causes": [
-                "Movement sequence incomplete",
-                "Queue processing error",
-                "Timing synchronization issue"
+                "A move sequence (for example 'Move with velocity' or a 'Multimove') ended at a nonzero velocity with nothing else in the queue",
+                "When streaming moves continuously, the host did not queue the next move in time (queue underrun)"
             ],
             "solutions": [
-                "Check movement sequence completeness",
-                "Verify queue processing logic",
-                "Ensure proper movement timing"
+                "Always end motion sequences with a move that brings the velocity to zero (for example a final 'Move with velocity' with velocity 0, or a decelerating segment)",
+                "When streaming moves, keep the queue topped up ahead of execution; monitor it with 'Get n queued items'",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 19,
             "enum": "ERROR_MOTOR_BUSY",
             "short_desc": "motor busy",
-            "long_desc": "An operation was attempted while the motor was busy with another operation like calibration or homing",
+            "long_desc": "A command was received while the motor was busy with an exclusive operation. The operations that make the motor busy are calibration and homing (on the M1 product, also the go-to-closed-loop procedure and vibration). Raised by 'Start calibration', 'Go to closed loop', and all move-queueing commands ('Trapezoid move', 'Go to position', 'Move with velocity', 'Move with acceleration', 'Multimove', 'Homing') if they arrive while such an operation is in progress.",
             "causes": [
-                "Attempting new movement during calibration",
-                "Starting operation while homing active",
-                "Multiple concurrent motor operations"
+                "A new operation or move was requested before a previous exclusive operation (calibration or homing) finished"
             ],
             "solutions": [
-                "Wait for current operation to complete",
-                "Check motor_busy flag before operations",
-                "Implement proper operation sequencing"
+                "Wait for the current operation to complete before sending more commands; you can poll 'Get status' to see when the device is no longer busy",
+                "Note that 'Start calibration' finishes with an automatic reboot of the device; wait for the device to come back before sending further commands",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 20,
             "enum": "ERROR_CAPTURE_PAYLOAD_TOO_BIG",
             "short_desc": "too much capture data",
-            "long_desc": "The protocol used to communication over RS485 supports a total packet size that cannot be larger than 65535 bytes. The maximum payload size is just a bit less than this (about 65530 bytes). We have requested to capture hall sensor data that is larger than this maximum payload size.",
+            "long_desc": "The 'Capture hall sensor data' command was asked to return more data than fits in a single RS485 response packet. The response payload is limited to just under 65536 bytes (about 65526 bytes of data). The requested payload size is the number of points to capture multiplied by 2 bytes for each channel selected in the channel bitmask.",
             "causes": [
-                "We called the Capture hall sensor data command and gave it innapropriate parameters. The two relevant parameters are: (1) Number of points to read back from the device and (2) Channels to capture bitmask. The number of bits set in this second parameter multipled by two bytes per value multiplied by this first parameter determines the payload size."
+                "The requested number of points multiplied by 2 bytes per selected channel exceeds the maximum response payload size (about 65526 bytes)"
             ],
             "solutions": [
-                "Decrease the number of points to read back or disable reading back some of the channels. For instance, setting a bistmask to 1 will read back just one channel and that will cost two bytes per point."
+                "Request fewer points to capture",
+                "Select fewer channels in the channel bitmask (for example, bitmask 1 captures only the first hall sensor channel at 2 bytes per point)",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 21,
             "enum": "ERROR_CAPTURE_OVERFLOW",
             "short_desc": "capture overflow",
-            "long_desc": "The data could not be transmitted back over RS485 fast enough to keep up with the rate of capturing the data",
+            "long_desc": "During a 'Capture hall sensor data' operation, a new data point became ready before the previous one had been transmitted over RS485. The capture was producing data faster than the serial link could carry it.",
             "causes": [
-                "We called the Capture hall sensor data command and gave it innapropriate parameters"
+                "The capture parameters produce data faster than the RS485 link (230400 baud) can transmit it"
             ],
             "solutions": [
-                "You can do one of the following: (1) Disable some of the channels that you wish to capture by setting bits in the bitmask parameter to 0, or (2) You can capture less often by increasing the time steps per capture parameter, or (3) average more sameples together by increasing the number of samples to sum parameter"
+                "Capture fewer channels by clearing bits in the channel bitmask",
+                "Capture less often by increasing the 'time steps per sample' parameter",
+                "Average more data into each transmitted point by increasing the 'number of samples to sum' parameter",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 22,
             "enum": "ERROR_CURRENT_SENSOR_FAILED",
             "short_desc": "current sensor failed",
-            "long_desc": "The motor current sensor readings are outside expected baseline range",
+            "long_desc": "Whenever the MOSFETs are enabled ('Enable MOSFETs', or automatically at the start of calibration, go to closed loop, or vibrate), the firmware measures the motor current baseline while applying zero effective voltage to the motor. The measured baseline was outside the valid window, which indicates the current sensing circuitry is not reading correctly. This check exists on the M1, M2, and M23 products; the M17 firmware performs no such check, so this error does not occur on M17.",
             "causes": [
-                "Current sensor hardware failure",
-                "Incorrect sensor calibration",
-                "Wiring issues",
-                "Power supply problems"
+                "A hardware fault in the current sensing circuit",
+                "A power supply problem distorting the baseline measurement"
             ],
             "solutions": [
-                "Check current sensor connections",
-                "Verify power supply voltage",
-                "Calibrate current sensor",
-                "Check for hardware damage"
+                "Send the 'System reset' command (or power cycle) and try enabling the MOSFETs again",
+                "Verify the power supply voltage is within specification and stable",
+                "If the error persists, the device has a hardware defect; contact the manufacturer"
             ]
         },
         {
             "code": 23,
             "enum": "ERROR_MAX_PWM_VOLTAGE_TOO_HIGH",
             "short_desc": "max pwm voltage too high",
-            "long_desc": "Configured maximum PWM voltage exceeds hardware limits",
+            "long_desc": "The 'Set maximum motor current' command requested a motor current or regeneration current setting that maps to a PWM voltage above the absolute maximum the firmware allows.",
             "causes": [
-                "Incorrect PWM voltage setting",
-                "Configuration error",
-                "Hardware limitation violation"
+                "The requested maximum motor current or maximum regeneration current value is too large",
+                "A unit conversion mistake made the value much larger than intended (the command takes internal current units)"
             ],
             "solutions": [
-                "Reduce max PWM voltage setting",
-                "Check voltage configurations",
-                "Verify hardware specifications"
+                "Request a smaller maximum motor current and/or regeneration current",
+                "Double-check the units of the values you are sending",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 24,
             "enum": "ERROR_MULTIMOVE_MORE_THAN_32_MOVES",
             "short_desc": "multi-move more than 32 moves",
-            "long_desc": "Multi-move sequence exceeds maximum allowed number of moves",
+            "long_desc": "A 'Multimove' command specified more than the maximum of 32 moves in a single command. As of firmware 0.15.4.0 the count is validated before the move list is copied; in older firmware an oversized but size-consistent packet could corrupt memory before this error was raised.",
             "causes": [
-                "Too many moves in sequence",
-                "Movement splitting error",
-                "Command sequence too long"
+                "The 'number of moves' parameter of 'Multimove' was greater than 32"
             ],
             "solutions": [
-                "Reduce number of moves",
-                "Split into multiple sequences",
-                "Optimize movement planning"
+                "Send at most 32 moves per 'Multimove' command; split longer sequences into multiple commands",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 25,
             "enum": "ERROR_SAFETY_LIMIT_EXCEEDED",
             "short_desc": "safety limit exceeded",
-            "long_desc": "The motor position has exceeded the configured safety limits",
+            "long_desc": "The commanded position moved outside the configured safety limits (set with 'Set safety limits'). This is the real-time enforcement of the limits, checked continuously while the motor runs. Note that it tests the commanded (motion profile) position, not the measured position: an external force pushing the rotor does not trigger this error (that situation raises error 45 instead). Separate predictive checks at move-queueing time raise errors 26, 27, and 28.",
             "causes": [
-                "Movement command beyond safety bounds",
-                "Incorrect safety limit configuration",
-                "Motor overshooting target position"
+                "'Set safety limits' was sent with limits that exclude the current commanded position (the limits take effect immediately and are not validated against the current position)",
+                "During 'Homing', the collision-detection logic adjusted the commanded position to a point outside the configured limits",
+                "The safety limits were configured too close to the intended operating range"
             ],
             "solutions": [
-                "Adjust movement within safety limits",
-                "Check safety limit settings",
-                "Verify position calculations",
-                "Implement proper deceleration"
+                "Set the safety limits with some margin beyond the intended range of motion, and only while the commanded position is inside the new limits",
+                "When homing, make sure the expected contact point lies within the safety limits",
+                "Send the 'System reset' command to clear the fatal error state; note that after a reset the position is re-zeroed and safety limits return to their power-on defaults, so re-establish your reference position and limits"
             ]
         },
         {
             "code": 26,
             "enum": "ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE",
             "short_desc": "turn point out of safety zone",
-            "long_desc": "Calculated movement turn point exceeds safety zone limits",
+            "long_desc": "When an acceleration-type move is queued, the firmware predicts the point where the motor would momentarily reach zero velocity and reverse direction (the turn point). The predicted turn point lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing.",
             "causes": [
-                "Movement trajectory error",
-                "Safety zone misconfiguration",
-                "Trajectory calculation error"
+                "The requested move would carry the motor beyond a safety limit before turning around",
+                "The safety limits are configured too close to the intended range of motion"
             ],
             "solutions": [
-                "Adjust movement trajectory",
-                "Check safety zone settings",
-                "Verify turn point calculations"
+                "Adjust the move so its trajectory, including the turnaround point, stays within the safety limits",
+                "Widen the safety limits with 'Set safety limits' if appropriate",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 27,
             "enum": "ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE",
             "short_desc": "predicted position out of safety zone",
-            "long_desc": "Movement trajectory would exceed safety zone limits",
+            "long_desc": "When a move is queued, the firmware predicts the position at the end of the move. The predicted end position lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing.",
             "causes": [
-                "Movement command too large",
-                "Safety zone too restrictive",
-                "Position prediction error"
+                "The requested move ends outside the safety limits",
+                "The safety limits are configured too close to the intended range of motion",
+                "As of firmware 0.15.4.0, also raised when an extreme acceleration combined with a long move duration would overflow the internal 64-bit position prediction (such a move is invalid in any case)"
             ],
             "solutions": [
-                "Reduce movement distance",
-                "Check safety zone limits",
-                "Verify position predictions"
+                "Command moves that end within the safety limits",
+                "Widen the safety limits with 'Set safety limits' if appropriate",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 28,
             "enum": "ERROR_PREDICTED_VELOCITY_TOO_HIGH",
             "short_desc": "predicted velocity too high",
-            "long_desc": "Movement would result in velocity exceeding limits",
+            "long_desc": "When an acceleration-type move is queued, the firmware predicts the velocity at the end of the move. The predicted velocity exceeds the configured maximum velocity (set with 'Set maximum velocity'), so the move was rejected with this fatal error before executing.",
             "causes": [
-                "Acceleration too high",
-                "Movement distance too large",
-                "Velocity limit too low"
+                "The requested acceleration applied for the requested duration would take the motor past the maximum velocity",
+                "As of firmware 0.15.4.0, also raised when an extreme acceleration-times-duration product would overflow the internal 64-bit velocity prediction (such a move is invalid in any case)"
             ],
             "solutions": [
-                "Reduce acceleration",
-                "Increase movement time",
-                "Check velocity limits"
+                "Use a smaller acceleration or a shorter duration",
+                "Increase the limit with 'Set maximum velocity' if your application genuinely needs higher speed; note that 'Set maximum velocity' silently clamps any request above twice the boot default (18.67 rot/s on M17 as of firmware 0.15.8.0) to that ceiling and still replies success, so if this error persists after you raised the limit, your request exceeded the ceiling and the limit is capped there",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 29,
             "enum": "ERROR_DEBUG1",
             "short_desc": "debug1",
-            "long_desc": "Debug error used for development testing",
+            "long_desc": "Internal debug error code. In the current firmware it is used only by internal sanity checks that cannot trigger in a correctly built firmware. If observed, it was most likely triggered artificially via the 'Test mode' command (value 43).",
             "causes": [
-                "Development testing",
-                "Debug condition met"
+                "Triggered artificially via 'Test mode' (value 43)",
+                "An internal firmware sanity check failed (indicates a firmware build problem, not a usage error)"
             ],
             "solutions": [
-                "Check debug conditions",
-                "Contact developer"
+                "Send the 'System reset' command to clear the fatal error state",
+                "Report the problem to the manufacturer if it occurred without using 'Test mode'"
             ]
         },
         {
             "code": 30,
             "enum": "ERROR_CONTROL_LOOP_TOOK_TOO_LONG",
             "short_desc": "control loop took too long",
-            "long_desc": "The motor control loop calculations exceeded the maximum allowed time",
+            "long_desc": "The periodic motor control interrupt took longer than its allowed execution time budget. Real-time control could no longer be guaranteed, so the device shut down. This indicates a firmware performance problem rather than a usage error.",
             "causes": [
-                "Complex calculations taking too long",
-                "Interrupt conflicts",
-                "System overload"
+                "The motor control calculations exceeded their time budget (firmware performance issue)",
+                "An unusual combination of simultaneously active features increased the control loop's workload"
             ],
             "solutions": [
-                "Optimize control loop code",
-                "Check interrupt priorities",
-                "Reduce control loop complexity",
-                "Verify timer configurations"
+                "Send the 'System reset' command to clear the fatal error state",
+                "If reproducible, note which features were active (capture, statistics, streaming, etc.) and report it to the manufacturer with the firmware version"
             ]
         },
         {
             "code": 31,
             "enum": "ERROR_INDEX_OUT_OF_RANGE",
             "short_desc": "index out of range",
-            "long_desc": "Array or buffer index exceeds valid range",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "Buffer overflow attempt",
-                "Index calculation error",
-                "Memory access violation"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Check index calculations",
-                "Verify buffer sizes",
-                "Add range checking"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 32,
             "enum": "ERROR_CANT_PULSE_WHEN_INTERVALS_ACTIVE",
             "short_desc": "can't pulse when intervals are active",
-            "long_desc": "Pulse command attempted while interval timing active",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "Timing conflict",
-                "Incorrect pulse sequencing",
-                "Mode conflict"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Wait for intervals to complete",
-                "Check timing sequence",
-                "Verify mode compatibility"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 33,
             "enum": "ERROR_INVALID_RUN_MODE",
             "short_desc": "invalid run mode",
-            "long_desc": "Attempted to set invalid motor run mode",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "Invalid mode selection",
-                "Mode transition error",
-                "Configuration error"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Check mode selection",
-                "Verify mode transitions",
-                "Use valid run modes"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 34,
             "enum": "ERROR_PARAMETER_OUT_OF_RANGE",
             "short_desc": "parameter out of range",
-            "long_desc": "Configuration parameter exceeds valid range",
+            "long_desc": "A command parameter had a value that cannot be executed. As of firmware 0.15.4.0 this is raised for: a move duration of 0 in 'Trapezoid move', 'Go to position', 'Move with velocity', or 'Move with acceleration' (and a maximum homing time of 0 in 'Homing', which plans its move the same way) (in older firmware a zero-duration move was a silent no-op that still returned success), and for 'Set maximum acceleration' with the value 0 (which the motion planner divides by). As of firmware 0.15.5.0 it is also raised for 'Set safety limits' with the lower limit greater than the upper limit (in older firmware inverted limits were stored unvalidated and faulted with error 25 one control tick later, racing the command's own reply). As of firmware 0.15.6.0 it is also raised for 'Set maximum velocity' with the value 0 (older firmware accepted 0 and then silently planned every trapezoid/go-to-position as a zero-motion dwell). Other out-of-range parameters raise more specific errors (for example 15, 16, 23, 49, 50, or 51).",
             "causes": [
-                "Invalid parameter value",
-                "Configuration error",
-                "Calculation error"
+                "A move command was sent with a duration of 0",
+                "'Set maximum acceleration' was sent with the value 0",
+    "'Set safety limits' was sent with the lower limit greater than the upper limit (firmware 0.15.5.0 and later)",
+    "'Set maximum velocity' was sent with the value 0 (firmware 0.15.6.0 and later)",
+                "A unit conversion mistake rounded a small duration down to 0 internal timesteps"
             ],
             "solutions": [
-                "Check parameter values",
-                "Verify configuration",
-                "Use valid parameter ranges"
+                "Use a duration of at least one timestep (32 microseconds); durations shorter than half a timestep round to 0",
+                "Use a nonzero maximum acceleration",
+                "Use a nonzero maximum velocity",
+                "Send 'Set safety limits' with the lower limit less than or equal to the upper limit",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 35,
             "enum": "ERROR_DISABLE_MOSFETS_FIRST",
             "short_desc": "disable MOSFETs first",
-            "long_desc": "Operation requires MOSFETs to be disabled first",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it.",
             "causes": [
-                "MOSFETs still enabled",
-                "Incorrect operation sequence",
-                "Safety check failure"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Disable MOSFETs before operation",
-                "Check operation sequence",
-                "Verify MOSFET control"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 36,
             "enum": "ERROR_FRAMING",
             "short_desc": "framing error",
-            "long_desc": "Communication framing error detected",
+            "long_desc": "Not raised as a fatal error by the current firmware. UART framing errors on the RS485 line are detected and counted; the count can be read (and optionally reset) with the 'Get communication statistics' command. Note that the affected byte is still processed, so corruption is only caught by the packet-level checks (first byte validation and CRC32, when enabled) — another reason to keep CRC32 enabled.",
             "causes": [
-                "Serial communication error",
-                "Incorrect baud rate",
-                "Signal integrity issues"
+                "Baud rate mismatch between the host and the device (the device uses 230400 baud)",
+                "Poor signal quality on the RS485 line: wiring, termination, or grounding problems",
+                "Electrical interference"
             ],
             "solutions": [
-                "Check communication settings",
-                "Verify baud rate",
-                "Check signal integrity"
+                "Check the framing error counter with 'Get communication statistics' to monitor line quality",
+                "Verify the host is using 230400 baud",
+                "Check RS485 wiring, termination, and grounding"
             ]
         },
         {
             "code": 37,
             "enum": "ERROR_OVERRUN",
             "short_desc": "overrun error",
-            "long_desc": "Communication buffer overrun detected",
+            "long_desc": "Not raised as a fatal error by the current firmware. UART receive overruns (bytes arriving faster than the firmware could read them) are detected, counted, and the affected data is discarded; the count can be read (and optionally reset) with the 'Get communication statistics' command.",
             "causes": [
-                "Data received too quickly",
-                "Buffer processing too slow",
-                "Flow control issues"
+                "The device's receive interrupt was delayed while data kept arriving",
+                "Extremely heavy bus traffic"
             ],
             "solutions": [
-                "Implement flow control",
-                "Increase buffer size",
-                "Optimize data processing"
+                "Check the overrun error counter with 'Get communication statistics' to monitor for this condition",
+                "Reduce bus traffic or add small delays between packets"
             ]
         },
         {
             "code": 38,
             "enum": "ERROR_NOISE",
             "short_desc": "noise error",
-            "long_desc": "Communication noise detected",
+            "long_desc": "Not raised as a fatal error by the current firmware. UART noise detections on the RS485 line are counted; the count can be read (and optionally reset) with the 'Get communication statistics' command. Note that the affected byte is still processed, so corruption is only caught by the packet-level checks (first byte validation and CRC32, when enabled) — another reason to keep CRC32 enabled.",
             "causes": [
-                "Electrical interference",
-                "Poor signal quality",
-                "Wiring issues"
+                "Electrical interference on the RS485 line",
+                "Poor wiring, missing termination, or ground potential differences"
             ],
             "solutions": [
-                "Check wiring shielding",
-                "Reduce interference",
-                "Improve signal quality"
+                "Check the noise error counter with 'Get communication statistics' to monitor line quality",
+                "Improve cable shielding, routing, termination, and grounding"
             ]
         },
         {
             "code": 39,
             "enum": "ERROR_GO_TO_CLOSED_LOOP_FAILED",
             "short_desc": "go to closed loop failed",
-            "long_desc": "Failed to transition from open loop to closed loop control mode",
+            "long_desc": "The 'Go to closed loop' procedure could not determine the rotor position with enough confidence (the measured signal quality ratio was below the acceptance threshold), so the transition to closed loop control was aborted. This procedure exists only on the M1 product; on M17, M2, and M23 the 'Go to closed loop' command switches to closed loop mode immediately using the stored calibration and this error can only appear if triggered artificially via 'Test mode' value 53.",
             "causes": [
-                "Poor signal quality during transition",
-                "Incorrect phase detection",
-                "Motor position instability"
+                "The motor has not been calibrated, or the stored calibration does not match the motor",
+                "A load, friction, or an obstruction disturbed the motor during the procedure",
+                "Weak or noisy hall sensor signals"
             ],
             "solutions": [
-                "Check hall sensor signals",
-                "Verify motor phase sequence",
-                "Ensure stable motor position before transition",
-                "Calibrate motor before transition"
+                "Run 'Start calibration' (with the shaft free to rotate) and then retry 'Go to closed loop'",
+                "Reduce the load on the shaft during the go-to-closed-loop procedure",
+                "Send the 'System reset' command to clear the fatal error state and retry"
             ]
         },
         {
             "code": 40,
             "enum": "ERROR_OVERHEAT",
             "short_desc": "overheat",
-            "long_desc": "Motor or controller temperature too high",
+            "long_desc": "The device's internal temperature exceeded the overheat threshold (approximately 80 degrees Celsius) while the MOSFETs were enabled. The temperature is monitored continuously in the background whenever the motor is energized.",
             "causes": [
-                "Excessive motor current",
-                "Insufficient cooling",
-                "High ambient temperature",
-                "Mechanical binding"
+                "Sustained operation at high torque/current",
+                "High ambient temperature or insufficient airflow around the motor",
+                "A stall or mechanical binding causing continuous high current"
             ],
             "solutions": [
-                "Reduce motor load",
-                "Improve cooling",
-                "Check for mechanical issues",
-                "Allow system to cool"
+                "Let the motor cool down, then send the 'System reset' command to clear the fatal error state",
+                "Reduce the load, duty cycle, or the maximum motor current ('Set maximum motor current')",
+                "Improve ventilation or reduce the ambient temperature",
+                "Improve heat dissipation: add a heat sink to the motor or mount it against a metallic part of the machine so the structure carries the heat away",
+                "Check for mechanical binding that forces the motor to work excessively hard"
             ]
         },
         {
             "code": 41,
             "enum": "ERROR_TEST_MODE_ACTIVE",
             "short_desc": "test mode active",
-            "long_desc": "Operation not allowed while test mode is active",
+            "long_desc": "The 'Start calibration' command was received while a test mode was active. Calibration cannot run while the device is in a test mode.",
             "causes": [
-                "Test mode enabled",
-                "Mode conflict",
-                "Incorrect operation sequence"
+                "A 'Test mode' command was sent earlier and the test mode is still active"
             ],
             "solutions": [
-                "Disable test mode",
-                "Complete test sequence",
-                "Reset controller"
+                "Send the 'System reset' command to clear the test mode (and the fatal error state), then start calibration",
+                "As of firmware 0.15.4.0, 'Test mode' with value 0 also safely clears the test modes; in OLDER firmware value 0 locks up the device until it is power cycled — on older firmware always use 'System reset' instead"
             ]
         },
         {
             "code": 42,
             "enum": "ERROR_POSITION_DISCREPANCY",
             "short_desc": "position discrepancy",
-            "long_desc": "Mismatch between expected and actual position after movement",
+            "long_desc": "An internal consistency check failed: when the motion queue emptied, the position accumulated during execution did not match the position that was predicted when the moves were queued. This indicates an internal calculation error in the firmware, not a usage error.",
             "causes": [
-                "Position tracking error",
-                "Movement calculation error",
-                "Mechanical issues"
+                "A firmware bug in the motion calculations (this check exists to catch such bugs)"
             ],
             "solutions": [
-                "Check position calculations",
-                "Verify movement execution",
-                "Calibrate system"
+                "Send the 'System reset' command to clear the fatal error state",
+                "If reproducible, record the exact sequence of move commands that leads to it and report it to the manufacturer with the firmware version"
             ]
         },
         {
             "code": 43,
             "enum": "ERROR_OVERCURRENT",
             "short_desc": "overcurrent",
-            "long_desc": "Motor current exceeds maximum allowed limit",
+            "long_desc": "Reserved error code. It is defined in the firmware but no condition in the current firmware raises it. Motor current is limited by the 'Set maximum motor current' setting rather than by a separate overcurrent shutdown; sustained excessive current will eventually trigger error 40 (overheat) instead.",
             "causes": [
-                "Excessive motor load",
-                "Short circuit",
-                "Motor binding",
-                "Incorrect current limit"
+                "No code path raises this error in the current firmware",
+                "It can only appear if triggered artificially with the 'Test mode' command (values 14 to 73 deliberately raise fatal error codes for testing)"
             ],
             "solutions": [
-                "Reduce motor load",
-                "Check for shorts",
-                "Verify current limits",
-                "Check mechanical system"
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 44,
             "enum": "ERROR_PWM_TOO_HIGH",
             "short_desc": "PWM too high",
-            "long_desc": "The calculated PWM duty cycle exceeds the maximum allowed value",
+            "long_desc": "The motor control loop computed a PWM duty cycle outside the valid range after compensating for the measured supply voltage. This most commonly means the supply voltage sagged too low for the motor voltage being requested, so the firmware could not produce the required output. In the current firmware this check exists only in the M23 build; on other products this error can only appear if triggered artificially via 'Test mode' value 58.",
             "causes": [
-                "PID controller output too high",
-                "Incorrect PWM calculations",
-                "Motor load too high"
+                "The power supply voltage dropped (sagged) under load",
+                "The maximum motor current / PWM voltage setting is too high for the available supply voltage",
+                "The supply voltage is below the specified operating range"
             ],
             "solutions": [
-                "Adjust PID parameters",
-                "Check PWM calculation logic",
-                "Verify motor load conditions",
-                "Reduce movement demands"
+                "Use a power supply that holds its voltage under load (adequate current rating, shorter or thicker cables)",
+                "Reduce the maximum motor current with 'Set maximum motor current'",
+                "Verify the supply voltage stays within the specified operating range while the motor is working; 'Get supply voltage' can help monitor it",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 45,
             "enum": "ERROR_POSITION_DEVIATION_TOO_LARGE",
             "short_desc": "position deviation too large",
-            "long_desc": "The difference between commanded position and actual position exceeds allowed limits",
+            "long_desc": "The difference between the commanded position and the actual position measured by the hall sensors exceeded the configured limit (2 shaft rotations by default; changeable with 'Set max allowable position deviation'). The motor could not follow the commanded trajectory. This check runs continuously in the background.",
             "causes": [
-                "Mechanical obstruction",
-                "Motor stall",
-                "Insufficient torque",
-                "Incorrect PID tuning"
+                "The motor stalled or hit an obstruction",
+                "The load is too heavy for the configured maximum motor current",
+                "The commanded velocity/acceleration exceeds what the motor can deliver at this load",
+                "The deviation limit is configured very tight and normal tracking error exceeded it",
+                "Motion was commanded immediately after enabling the MOSFETs, before the rotor settled (allow roughly 0.3 seconds after 'Enable MOSFETs' before moving when using tight deviation limits)",
+                "Moves were commanded while the MOSFETs were disabled: the commanded position advances but the shaft does not, so the deviation grows with the commanded distance until it crosses the limit",
+                "'Set max allowable position deviation' was set to a value the tracking check cannot satisfy: a limit of zero trips on the first tick of any deviation (ordinary negative values are converted to their absolute value by the command, so they behave normally; on firmware 0.15.4.0 through 0.15.8.0 the wire value INT64_MIN was an exception that latched fatal 45 immediately (signed-absolute-value edge case, BUG-24); firmware 0.15.9.0 saturates it to the maximum limit instead)"
             ],
             "solutions": [
-                "Check for mechanical blockages",
-                "Verify motor power",
-                "Adjust PID parameters",
-                "Reduce acceleration/velocity demands"
+                "Remove the obstruction or reduce the load",
+                "Increase the maximum motor current with 'Set maximum motor current' to give the motor more torque",
+                "Use gentler velocity and acceleration",
+                "Increase the limit with 'Set max allowable position deviation' if it is unnecessarily tight",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 46,
             "enum": "ERROR_MOVE_TOO_FAR",
             "short_desc": "move too far",
-            "long_desc": "Requested movement distance exceeds system limits",
+            "long_desc": "A 'Go to position' command requested a target whose distance from the predicted end-of-queue position does not fit in a signed 32-bit displacement. Positions are tracked and reported internally as 64-bit values, and the position can accumulate beyond the 32-bit range through velocity moves, but the displacement of any single 'Go to position' move must fit in a signed 32-bit count value: about plus or minus 655.36 shaft rotations on M17, M23, and M3 (about 3357 on M1, about 470 on M2). This error is exclusive to 'Go to position'; other move commands cannot raise it because their wire formats already limit the displacement.",
             "causes": [
-                "Movement command too large",
-                "Position calculation overflow",
-                "Invalid target position"
+                "The requested target position is too many shaft rotations away from the position at the end of the current queue (more than about 655 rotations on M17/M23)",
+                "The current position has accumulated far from zero (for example through long-running velocity moves), so even a modest absolute target is more than the maximum displacement away",
+                "A unit conversion mistake made the target position much larger than intended"
             ],
             "solutions": [
-                "Reduce movement distance",
-                "Split into smaller moves",
-                "Check position calculations"
+                "Split very long travels into multiple sequential moves",
+                "Check the current position with 'Get position' before commanding absolute moves after long velocity-mode operation",
+                "Double-check the units of the position value you are sending",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 47,
             "enum": "ERROR_HALL_POSITION_DELTA_TOO_LARGE",
             "short_desc": "hall position delta too large",
-            "long_desc": "The change in hall sensor position between updates is larger than expected",
+            "long_desc": "The position derived from the hall sensors jumped further within one control loop cycle than is physically plausible. A single such glitch is tolerated (it can occur at startup); on the second occurrence the MOSFETs are disabled and this fatal error is raised.",
             "causes": [
-                "Hall sensor noise",
-                "Sensor malfunction",
-                "Motor moving too fast",
-                "Incorrect sensor readings"
+                "Electrical interference or a glitch on the hall sensor signals",
+                "A hall sensor wiring or hardware problem",
+                "The shaft was spun extremely fast by an external force"
             ],
             "solutions": [
-                "Check hall sensor connections",
-                "Verify sensor signal quality",
-                "Reduce motor speed",
-                "Check for electromagnetic interference"
+                "Check for sources of electrical interference near the motor and improve shielding/grounding",
+                "Avoid spinning the shaft violently by external means while powered",
+                "Send the 'System reset' command to clear the fatal error state",
+                "If it recurs without an external cause, the device may have a hall sensor hardware problem; contact the manufacturer"
             ]
         },
         {
             "code": 48,
             "enum": "ERROR_INVALID_FIRST_BYTE",
             "short_desc": "invalid first byte format",
-            "long_desc": "The received first byte does not have the least significant bit set to 1",
+            "long_desc": "Not raised as a fatal error by the current firmware. Every packet's first byte must have its least significant bit set to 1 (see the protocol specification). Packets violating this are silently discarded and counted; the count can be read (and optionally reset) with the 'Get communication statistics' command.",
             "causes": [
-                "Incorrect first byte encoding of the communication packet",
-                "The baud rate mismatches",
-                "Communication protocol mismatch",
-                "Data corruption during transmission",
-                "Sender not compliant with protocol requirements"
+                "The sender is not encoding the packet size byte according to the protocol (LSB must be 1)",
+                "Baud rate mismatch causing bytes to be misread",
+                "Data corruption on the RS485 line",
+                "The device started receiving mid-packet (synchronization loss)"
             ],
             "solutions": [
-                "Ensure all first bytes have LSB set to 1",
-                "Verify baud rates are the same on both ends",
-                "Update sender software to comply with protocol",
-                "Check for transmission errors",
-                "Verify first byte encoding logic"
+                "Check the 'first bit error' counter with 'Get communication statistics' to detect this condition",
+                "Verify the packet encoding in the sender software against the protocol specification",
+                "Verify both ends use 230400 baud",
+                "Check the RS485 line quality"
             ]
         },
         {
             "code": 49,
             "enum": "ERROR_CAPTURE_BAD_PARAMETERS",
             "short_desc": "capture bad parameters",
-            "long_desc": "Some invalid parameters were given when invoking the Capture hall sensor data command",
+            "long_desc": "The 'Capture hall sensor data' command was called with one or more invalid parameters.",
             "causes": [
-                "A capture type other than 1, 2, or 3 was given",
-                "The number of points to be captures was given as 0, which implies that you do not want any data",
-                "The number of time steps per sample was given as 0, which implies an infinite sampling rate",
-                "The number of samples to sum together was given as 0, which implies that you do not want any data",
-                "The division factor was given as 0, which implies that you want to divide by 0, which implies that you do not remember high school math",
-                "The bitmask that specifies the channels you want to capture was not valid. You either chose no channels or you chose channels that don't exits."
+                "The capture type was not 1, 2, or 3",
+                "The number of points to capture was 0",
+                "The number of time steps per sample was 0",
+                "The number of samples to sum was 0",
+                "The division factor was 0",
+                "The channel bitmask selected no valid channel: it must have at least one of the low three bits set (values 1 to 7) and no higher bits set"
             ],
             "solutions": [
-                "Give 1, 2, or 3 as the capture type",
-                "Give a value that is 1 or higher",
-                "Give a value that is 1 or higher",
-                "Give a value that is 1 or higher",
-                "Give a value that is 1 or higher",
-                "Normally, 7 specifies that all three channels should be captured. If you want to capture just one channel, choose either 1 (first channel only), 2 (second channel only), or 4 (third channel only)."
+                "Use 1, 2, or 3 as the capture type",
+                "Use values of 1 or greater for the number of points, time steps per sample, samples to sum, and division factor",
+                "Use a channel bitmask between 1 and 7 (7 captures all three hall sensor channels; 1, 2, or 4 capture a single channel)",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 50,
             "enum": "ERROR_BAD_ALIAS",
             "short_desc": "bad alias",
-            "long_desc": "You tried to set the device to one of the reserved aliases such as 254, 253, or 252",
+            "long_desc": "The 'Set device alias' command tried to assign a reserved alias to the device. Aliases 252, 253, and 254 are reserved by the protocol (254 marks extended addressing; 253 and 252 mark responses with and without CRC32) and cannot be assigned to a device.",
             "causes": [
-                "You tried to set the device to one of the reserved aliases such as 254, 253, or 252, which is not allowed. These aliases have special purposes."
+                "The requested alias was 252, 253, or 254, which are reserved by the protocol"
             ],
             "solutions": [
-                "When using the Set device alias command, make sure to use an allowed alias, which is 0 to 251. You can also set the alias to 255, which is the broadcast alias, which is similar like having no alias set."
+                "Use an alias from 0 to 251, or 255 to leave the device without a specific alias (255 is the broadcast address)",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 51,
             "enum": "ERROR_COMMAND_SIZE_WRONG",
             "short_desc": "command size wrong",
-            "long_desc": "The payload sent with the command does not match the expected size of the input parameters",
+            "long_desc": "The payload of a received command did not have the exact size expected for that command's parameters. Every command's payload size is validated: commands with no parameters must have an empty payload, and commands with parameters must have a payload exactly matching the combined size of their parameters.",
             "causes": [
-                "You have sent a command that does not have the expected parameters or sizes of parameters",
-                "Data was corrupted somehow during transmission over RS485 and you do not have CRC32 enabled to ensure integrity",
-                "You have not used the communication protocol correctly. For instance, you did not encode the size of the packet correctly."
+                "The command was sent with missing, extra, or wrongly sized parameters",
+                "The packet size byte was encoded incorrectly, so the payload length was misinterpreted",
+                "Data was corrupted during transmission and CRC32 checking was disabled, so the corruption went undetected"
             ],
             "solutions": [
-                "Make sure to send the correct parameters with all the correct size, Look at motor_commands.json for the details about every command and its parameters",
-                "Ensure good connections and grounding on the communication line and use CRC32 to ensure packet integrity",
-                "Check the documentation about the protocol and make sure that the packet you are sending is correctly formatted and that the packet size is right"
+                "Check the command's exact parameter list and sizes in the API documentation (or motor_commands.json) and send a payload that matches exactly",
+                "Verify the packet size encoding against the protocol specification",
+                "Keep CRC32 enabled so corrupted packets are rejected instead of misinterpreted",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         },
         {
             "code": 52,
             "enum": "ERROR_INVALID_FLASH_PAGE",
             "short_desc": "invalid flash page",
-            "long_desc": "You are sending a firmware packet and the specified firmware page to be written is not valid and out of range",
+            "long_desc": "During a firmware upgrade, a 'Firmware upgrade' packet specified a flash page outside the writable firmware region (pages holding the bootloader or the device settings are refused, as are pages beyond the firmware area). This error is raised by the bootloader, which is what runs on the device during a firmware upgrade.",
             "causes": [
-                "You have sent a firmware upgrade packet and the specified firmware page is not one that can be written. Maybe the firmware size that you are trying to write is too big?",
-                "The packet is encoded wrong"
+                "The firmware image being sent is too large for the device's flash",
+                "The upgrade tool computed a wrong page number, or the packet was corrupted"
             ],
             "solutions": [
-                "Make sure to send the correct firmware page numbers and ensure the firmware is not too big. You can look at the FIRST_FIRMWARE_PAGE_NUMBER and LAST_FIRMWARE_PAGE_NUMBER settings in settings.h",
-                "Study the protocol and make sure that everything is encoded right"
+                "Use an official .firmware release file and the standard upgrade tool (upgrade_firmware.py)",
+                "Verify you are flashing the correct firmware file for this product model",
+                "Power cycle the device and retry the upgrade"
             ]
         },
         {
             "code": 53,
             "enum": "ERROR_INVALID_TEST_MODE",
             "short_desc": "invalid test mode",
-            "long_desc": "You tried to trigger a certain test mode but it is not a valid one",
+            "long_desc": "The 'Test mode' command was called with an unsupported value. Test modes are development and diagnostic features: value 0 clears the test modes (safe as of firmware 0.15.4.0; in older firmware it locks up the device), values 1 to 9 run internal motor tests, 10 to 13 run LED tests, 14 to 73 deliberately trigger fatal error codes (the triggered code is the value minus 14), and 74 to 76 run production hardware tests. Values of 77 and above are invalid and raise this error.",
             "causes": [
-                "You are a user and doing something you should not and generally don't understand what you are getting yourself into",
-                "You are a developer and you did not study the source code enough yet to use the test modes successfully"
+                "A 'Test mode' value of 77 or higher was sent",
+                "The 'Test mode' command was used without understanding the available test modes"
             ],
             "solutions": [
-                "Don't call the Test mode command",
-                "Keep studying the source code until you know how this works"
+                "Avoid the 'Test mode' command during normal operation; it exists for development and production testing",
+                "Warning: 'Test mode' values 10 to 13 lock up the device until it is power cycled (the device stops processing commands, so even 'System reset' cannot recover it); in firmware before 0.15.4.0, value 0 does the same. 'System reset' safely clears all other test modes (motor test modes 1 to 9 and production test modes 74 to 76)",
+                "Send the 'System reset' command to clear the fatal error state"
+            ]
+        },
+        {
+            "code": 54,
+            "enum": "ERROR_STREAMING_OVERFLOW",
+            "short_desc": "streaming overflow",
+            "long_desc": "The current-streaming feature produced data faster than it could be transmitted: a streaming buffer became ready to send while the previous buffer's transmission was still in progress (double-buffer overrun). This feature applies to products with current streaming (M23).",
+            "causes": [
+                "The streaming data rate exceeds what the serial link can transmit (the stream is one-way with no flow control, so host behavior cannot cause or prevent this)",
+                "The transmission-complete interrupt was delayed inside the device"
+            ],
+            "solutions": [
+                "Reduce the streaming data rate",
+                "Stop streaming when it is not needed",
+                "Send the 'System reset' command to clear the fatal error state"
             ]
         }
     ]

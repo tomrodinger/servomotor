@@ -24,6 +24,7 @@ from .communication import (
     string_to_alias_or_unique_id,
     get_global_alias_or_unique_id,
     set_standard_options_from_args,
+    set_serial_port,
     set_serial_port_from_args,
     get_command_id,
     gather_inputs,

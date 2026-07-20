@@ -21,10 +21,15 @@ if is_micropython():
         def __init__(self, name, members):
             self._name = name
             self._members = {}
+            # Keep an explicit ordered list: MicroPython dicts do not guarantee
+            # insertion order, and the FIRST member is the library's default
+            # (e.g. the default unit of each unit type)
+            self._ordered_members = []
             for key, value in members.items():
                 enum_val = _EnumValue(key, value)
                 setattr(self, key, enum_val)
                 self._members[value] = enum_val
+                self._ordered_members.append(enum_val)
 
         def __call__(self, value):
             if value in self._members:
@@ -32,7 +37,7 @@ if is_micropython():
             raise ValueError("'%s' is not a valid %s" % (value, self._name))
 
         def __iter__(self):
-            return iter(self._members.values())
+            return iter(self._ordered_members)
 
         def __repr__(self):
             return "<enum '%s'>" % self._name

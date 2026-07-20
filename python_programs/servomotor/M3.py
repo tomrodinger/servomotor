@@ -39,38 +39,44 @@ class UnitConverter:
             print(f"Error loading conversion factors: {e}")
             return None
 
+    def _rescale_for_internal_unit(self, conv, factors):
+        """The time table in unit_conversions_*.json is expressed in timesteps,
+        but a few commands' wire unit is a different time unit (e.g. the
+        microsecond clock of 'Get current time' / 'Time sync'). For those,
+        rescale the table so the declared InternalUnit's own factor becomes 1.
+        Only time tables are rescaled: the velocity/acceleration tables
+        intentionally carry the firmware's 2^20 / 2^24 wire scaling, so their
+        InternalUnit factor is deliberately not 1."""
+        if conv['Type'] != 'time':
+            return factors
+        internal_factor = factors.get(conv['InternalUnit'])
+        if internal_factor is None:
+            # Fail loudly: silently skipping the rescale would reintroduce the
+            # ~32x wrong-conversion bug this mechanism exists to prevent
+            raise ValueError(f"conversion table has no factor for internal unit '{conv['InternalUnit']}'")
+        if internal_factor == 1:
+            return factors
+        return {unit: factor / internal_factor for unit, factor in factors.items()}
+
+    def _cache_one_conversion(self, conv):
+        key = f"{conv['Type']}_{conv['InternalUnit']}"
+        if key in self.conversion_factors:
+            return  # already cached; avoids re-reading the factors file per parameter occurrence
+        if 'ConversionFactorsFile' in conv:
+            factors = self._load_conversion_factors_from_file(conv['ConversionFactorsFile'])
+            if factors:
+                self.conversion_factors[key] = self._rescale_for_internal_unit(conv, factors)
+        elif 'ConversionFactors' in conv:
+            self.conversion_factors[key] = self._rescale_for_internal_unit(conv, conv['ConversionFactors'])
+
     def _cache_conversion_factors(self):
         """Cache conversion factors from command definitions"""
         for cmd in self.command_definitions:
-            if isinstance(cmd.get('Input'), list):
-                for param in cmd['Input']:
-                    if isinstance(param, dict) and 'UnitConversion' in param:
-                        conv = param['UnitConversion']
-                        key = f"{conv['Type']}_{conv['InternalUnit']}"
-                        
-                        if 'ConversionFactorsFile' in conv:
-                            # Load factors from external file
-                            factors = self._load_conversion_factors_from_file(conv['ConversionFactorsFile'])
-                            if factors:
-                                self.conversion_factors[key] = factors
-                        elif 'ConversionFactors' in conv:
-                            # Use inline factors
-                            self.conversion_factors[key] = conv['ConversionFactors']
-            
-            if isinstance(cmd.get('Output'), list):
-                for param in cmd['Output']:
-                    if isinstance(param, dict) and 'UnitConversion' in param:
-                        conv = param['UnitConversion']
-                        key = f"{conv['Type']}_{conv['InternalUnit']}"
-                        
-                        if 'ConversionFactorsFile' in conv:
-                            # Load factors from external file
-                            factors = self._load_conversion_factors_from_file(conv['ConversionFactorsFile'])
-                            if factors:
-                                self.conversion_factors[key] = factors
-                        elif 'ConversionFactors' in conv:
-                            # Use inline factors
-                            self.conversion_factors[key] = conv['ConversionFactors']
+            for io in ('Input', 'Output'):
+                if isinstance(cmd.get(io), list):
+                    for param in cmd[io]:
+                        if isinstance(param, dict) and 'UnitConversion' in param:
+                            self._cache_one_conversion(param['UnitConversion'])
 
     def get_conversion_info(self, command_string, param_name):
         """Get conversion information for a parameter"""
@@ -217,7 +223,8 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
                 converted_inputs = [int(round(v)) if isinstance(v, float) else v for v in (list(args) + list(kwargs.values()))]
 
         # Execute the command and get response
-        possibly_multiple_responses = communication.execute_command(command_id, converted_inputs, alias_or_unique_id=self.alias_or_unique_id, verbose=self.verbose)
+        possibly_multiple_responses = communication.execute_command(command_id, converted_inputs, alias_or_unique_id=self.alias_or_unique_id,
+                                                                    crc32_enabled=self.crc32_enabled, verbose=self.verbose)
 
         if not isinstance(possibly_multiple_responses, list):
             print("Error: Expected the response to be a list, but got: ", possibly_multiple_responses)
@@ -314,19 +321,31 @@ class AllMotors:
             # Convert string to integer if needed
             if len(alias_or_unique_id) == 1:
                 self.alias_or_unique_id = ord(alias_or_unique_id)  # Convert single character to ASCII value
+            elif len(alias_or_unique_id) == 16:
+                # Exactly 16 hex characters is a 64-bit unique ID (e.g. "AABBCCDDEEFF0011")
+                try:
+                    self.alias_or_unique_id = int(alias_or_unique_id, 16)
+                except ValueError:
+                    raise ValueError("A 16-character string must be a hexadecimal unique ID such as AABBCCDDEEFF0011")
+                if self.alias_or_unique_id <= 255:
+                    raise ValueError("This unique ID falls in the one-byte alias range (0-255), so it would be "
+                                     "misinterpreted as an alias; real device unique IDs are never this small")
             else:
                 try:
                     self.alias_or_unique_id = int(alias_or_unique_id)
                 except ValueError:
-                    raise ValueError("Alias or unique_id must be a single character or an integer")
+                    raise ValueError("Alias or unique_id must be a single character, a decimal integer, or a 16-hex-digit unique ID")
         else:
-            raise ValueError("Alias or unique_id must be a single character such as X or an integer such as 123 or a hex string such as AABBCCDDEEFF0011")
+            raise ValueError("Alias or unique_id must be a single character such as X or an integer such as 123 or a 16-hex-digit unique ID string such as AABBCCDDEEFF0011")
         # alias_or_unique_id may legitimately be None here (a deferred alias,
         # set later via use_this_alias_or_unique_id() or the global -a alias);
         # only range-check a real value -- comparing None to an int crashes.
         if self.alias_or_unique_id is not None:
             if self.alias_or_unique_id < 0 or self.alias_or_unique_id > 0xFFFFFFFFFFFFFFFF:
                 raise ValueError("Alias or unique_id must be in the range from 0 to 0xFFFFFFFFFFFFFFFF")
+            if self.alias_or_unique_id in (252, 253, 254):
+                raise ValueError("Aliases 252, 253 and 254 are reserved by the protocol (response markers "
+                                 "and the extended-addressing marker) and cannot address a device")
 
         if time_unit == None:
             time_unit = next(iter(TimeUnit)).value
@@ -355,7 +374,8 @@ class AllMotors:
         if voltage_unit == None:
             voltage_unit = next(iter(VoltageUnit)).value
         self._voltage_unit = VoltageUnit(voltage_unit)
-        
+
+        self.crc32_enabled = True  # matches the device's power-on default
         self.verbose = verbose
 
     def __del__(self):
@@ -409,6 +429,11 @@ class AllMotors:
             self._voltage_unit = VoltageUnit(new_unit)
         else: # in the case that the user specifies None, we choose a default as the first item in the enum
             self._voltage_unit = VoltageUnit(next(iter(VoltageUnit)).value)
+
+    def set_crc32_enabled(self, enabled):
+        """Control whether this object's outgoing commands append a CRC32. Set to False
+        after sending 'CRC32 control' 0 to the device (the device's power-on default is enabled)."""
+        self.crc32_enabled = bool(enabled)
 
 class M3(AllMotors):
     def __init__(self, alias_or_unique_id=None, time_unit=None, position_unit=None, velocity_unit=None, acceleration_unit=None, temperature_unit=None, current_unit=None, voltage_unit=None, verbose=2):

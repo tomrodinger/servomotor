@@ -415,6 +415,12 @@ def string_to_alias_or_unique_id(input_str):
         # It's a probably a regular alias since the length of the string is short
         return string_to_u8_alias(input_str)
 
+def set_serial_port(port):
+    """Set the serial port device to use (e.g. "/dev/ttyUSB0" or "COM3").
+    Call before open_serial_port()."""
+    global serial_port
+    serial_port = port
+
 def set_serial_port_from_args(args):
     global serial_port
 

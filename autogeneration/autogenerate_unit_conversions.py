@@ -286,7 +286,7 @@ def calculate_velocity_conversions(ONE_ROTATION_MICROSTEPS, INTERNAL_TIME_UNIT_H
         "degrees_per_second": deg_factor,
         "radians_per_second": rad_factor,
         "counts_per_second": rps_factor / ONE_ROTATION_MICROSTEPS,  # Correct conversion
-        "counts_per_timestep": rps_factor  # Correct conversion
+        "counts_per_timestep": 2**20  # 1 count/timestep in the firmware's 2^20-scaled wire unit (was wrongly rps_factor, ~104.86x too large)
     }
 
     # Calculate velocity verification values
@@ -495,7 +495,7 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
             ("scaling_note", "Velocity conversion factors include a 2^20 scaling factor and acceleration conversion factors include a 2^24 scaling factor to maintain precision when transmitting as integers")
         ])),
         ("units", OrderedDict([
-            ("time", ["timesteps", "seconds", "milliseconds", "minutes", "microseconds"]),  # timesteps must be first
+            ("time", ["seconds", "milliseconds", "minutes", "microseconds", "timesteps"]),  # the first unit in each list is the library's default unit
             ("position", ["shaft_rotations", "degrees", "radians", "encoder_counts"]),
             ("velocity", ["rotations_per_second", "rpm", "degrees_per_second", "radians_per_second", "counts_per_second", "counts_per_timestep"]),
             ("acceleration", ["rotations_per_second_squared", "rpm_per_second", "degrees_per_second_squared", "radians_per_second_squared", "counts_per_second_squared", "counts_per_timestep_squared"]),

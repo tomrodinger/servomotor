@@ -80,4 +80,8 @@ def detect_devices_iteratively(n_detections: int = 3, verbose: bool = False) -> 
     #            else:
     #                print(f"Unique ID: {unique_id:016X}, Alias: {alias}, CRC: {crc:08X} (CHECK FAILED: computed crc: {crc32_value:08X} vs. received crc: {crc:08X})")
     del motor255
+    # Discard any stray bytes (e.g. late detection responses) so the caller's
+    # next command starts from a clean receive buffer without needing to
+    # remember to flush manually.
+    servomotor.flush_receive_buffer()
     return list(device_dict.values())
