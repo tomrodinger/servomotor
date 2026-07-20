@@ -3,9 +3,23 @@
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 
-Last updated: 2026-05-28 (TODOs #1, #2, #3, #5 all committed and pushed-ready.
-Working tree is clean except for items deliberately left untracked. Firmware
-0.15.0.0 for M17 has been released and committed.)
+Last updated: 2026-07-20 (AI-docs accuracy project: massive July work is DONE
+but UNCOMMITTED — firmware releases 0.15.4.0 through 0.15.8.0 (bug fixes
+BUG-1..14, 16..21, 23; spec-aligned defaults 560 RPM / 12000 rot/s^2), fully
+rewritten error_codes.json + motor_commands.json, knowhow/hardware-setup docs
++ 47 examples embedded in regenerated API docs, datasheet v1.10 in 6
+languages, 37-experiment exploration log (EXPLORATION_LOG_2026-07-16.md),
+fleet characterization tool (python_programs/characterize_motors.py; 39 rack
+motors measured), PRODUCT_IMPROVEMENT_IDEAS.md (9 ideas). Open bugs: BUG-22
+(test mode 4 defunct, docs updated), BUG-24 (INT64_MIN deviation limit).
+Pending: commit everything in logical chunks; flash 0.15.8.0 to the 39-motor
+rack; datasheet regeneration from the updated JSONs (invalidates the 5
+translations — Tom's call); PyPI release notes for the two breaking library
+changes. See the status tables in BUGS_FOUND_2026-07-09.md for full detail.)
+
+(Older status of 2026-05-28 kept for history: TODOs #1, #2, #3, #5 all
+committed and pushed-ready. Firmware 0.15.0.0 for M17 released and
+committed.)
 
 > **▶ NEXT TASK: tom is choosing among the still-open TODOs:**
 > - **TODO #6** cross-OS verification (Windows / Linux) — uses the now-committed
@@ -20,6 +34,13 @@ Working tree is clean except for items deliberately left untracked. Firmware
 > - **TODO #9** MicroPython quality-of-life (M3 int-precision sentinel bug,
 >   `test_get_temperature` heap-busting refactor, optional perf-gap test tolerances)
 > - **TODO #4** minor cleanups (low priority)
+> - **TODO #10** (added 2026-07-09; ~done 2026-07-14) bugs from the AI-docs
+>   ground-truth verification: FIXED in firmware 0.15.4.0 + library (see the
+>   status table at the top of **`BUGS_FOUND_2026-07-09.md`**), every fix
+>   hardware-verified on the bench motor, 47-example suite + full test suite
+>   green (4 tests updated to the corrected specs). Remaining: BUG-15
+>   stress-read investigation, datasheet indicators.py red-LED staleness,
+>   TODO #8 is now closed by the BUG-9 library fix. NOT yet committed.
 >
 > No hard blocker on any of them; all are tom's choice.
 >
