@@ -13,6 +13,9 @@ What this test verifies (deterministic, no velocity measurement needed):
   2. With a high cap (after reset), a move_with_velocity commanding below the
      cap is accepted and runs with no fatal error. This proves the cap value
      actually changed behaviour rather than always rejecting.
+  3. A cap of 0 is rejected with ERROR_PARAMETER_OUT_OF_RANGE (34). Firmware
+     before 0.15.6.0 accepted 0 and then silently planned every trapezoid /
+     go-to-position as a zero-motion dwell (BUG-21).
 
 A high maximum acceleration is set first so that the velocity limit, not the
 acceleration limit, is the thing under test.
@@ -25,6 +28,7 @@ import servomotor
 from servomotor.communication import FatalError
 
 ERROR_VEL_TOO_HIGH = 16
+ERROR_PARAMETER_OUT_OF_RANGE = 34
 RESET_DELAY_S = 1.5
 
 HIGH_ACCEL = 100.0          # rotations_per_second_squared — plenty to reach any velocity quickly
@@ -115,6 +119,26 @@ def main():
             if err != 0:
                 raise AssertionError(f"under-cap move left fatal_error={err}, expected 0")
             print("  under-cap move accepted and completed cleanly.")
+
+            # --- Scenario C: a zero cap is rejected with ERROR_PARAMETER_OUT_OF_RANGE ---
+            print("\nResetting, then sending set_maximum_velocity(0) — must be rejected with error 34...")
+            motor.system_reset()
+            time.sleep(RESET_DELAY_S)
+            motor.enable_mosfets()
+            motor.zero_position()
+            try:
+                motor.set_maximum_velocity(0)
+                err = get_err(motor)
+                raise AssertionError(f"set_maximum_velocity(0) was ACCEPTED (fatal_error={err}); "
+                                     f"expected rejection with {ERROR_PARAMETER_OUT_OF_RANGE} (BUG-21, fixed in fw 0.15.6.0)")
+            except FatalError as e:
+                code = e.args[0] if e.args else None
+                if code != ERROR_PARAMETER_OUT_OF_RANGE:
+                    raise AssertionError(f"set_maximum_velocity(0) rejected with FatalError({code}); expected {ERROR_PARAMETER_OUT_OF_RANGE}")
+                print(f"  correctly rejected with FatalError({code}) = ERROR_PARAMETER_OUT_OF_RANGE.")
+            # the rejection latches a fatal error; recover before the common cleanup
+            motor.system_reset()
+            time.sleep(RESET_DELAY_S)
 
             motor.disable_mosfets()
             motor.system_reset()

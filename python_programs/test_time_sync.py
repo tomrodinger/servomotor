@@ -158,8 +158,9 @@ def time_sync_loop(motor, py_start, sync_offset_s, total_sync_s,
         if sleep_for > 0:
             time.sleep(sleep_for)
         now_offset = time.time() - py_start
-        master_time_us = int(now_offset * 1_000_000)
-        resp = motor.time_sync(master_time_us)
+        # The library's default time unit is seconds; the value is converted
+        # to the command's microsecond wire unit internally.
+        resp = motor.time_sync(now_offset)
         if not isinstance(resp, list) or len(resp) < 1:
             raise AssertionError(f"iter {i}: unexpected time_sync response: {resp!r}")
         err_us = resp[0]
@@ -170,7 +171,7 @@ def time_sync_loop(motor, py_start, sync_offset_s, total_sync_s,
         if verbose:
             phase = "L" if now_offset < lock_in_end_offset else "M"
             rcc = resp[1] if len(resp) > 1 else None
-            print(f"  [{phase}] iter {i:3d} t={now_offset:6.3f}s master={master_time_us:>10} err={err_us:>+6} rcc={rcc}")
+            print(f"  [{phase}] iter {i:3d} t={now_offset:6.3f}s master={int(now_offset * 1_000_000):>10} err={err_us:>+6} rcc={rcc}")
         i += 1
     return lock_in, measure
 

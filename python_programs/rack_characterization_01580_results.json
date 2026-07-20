@@ -1,0 +1,977 @@
+[
+  {
+    "unique_id": "04B9C4C9EE48531B",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.757,
+    "max_acceleration_rot_per_s2": 10398.1,
+    "velocity_trials": [
+      8.757,
+      8.76,
+      8.757,
+      8.76,
+      8.755,
+      8.754
+    ],
+    "acceleration_trials": [
+      10459.2,
+      10337.1,
+      10935.9,
+      9712.5,
+      10964.9,
+      9239.8
+    ],
+    "capture_scale_raw_per_rot": 7313289.2
+  },
+  {
+    "unique_id": "A6FC1C0BD24024E4",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.729,
+    "max_acceleration_rot_per_s2": 10332.8,
+    "velocity_trials": [
+      8.725,
+      8.727,
+      8.729,
+      8.73,
+      8.731,
+      8.728
+    ],
+    "acceleration_trials": [
+      10529.8,
+      10712.2,
+      9994.7,
+      10587.4,
+      10122.0,
+      10135.8
+    ],
+    "capture_scale_raw_per_rot": 7330326.0
+  },
+  {
+    "unique_id": "974FBD713E4B4455",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.739,
+    "max_acceleration_rot_per_s2": 11354.7,
+    "velocity_trials": [
+      8.741,
+      8.741,
+      8.741,
+      8.735,
+      8.738,
+      8.738
+    ],
+    "acceleration_trials": [
+      10719.1,
+      11863.1,
+      9984.4,
+      11399.9,
+      11309.6,
+      11419.0
+    ],
+    "capture_scale_raw_per_rot": 7326008.7
+  },
+  {
+    "unique_id": "FBE10AA9188D2E3F",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.721,
+    "max_acceleration_rot_per_s2": 10603.0,
+    "velocity_trials": [
+      8.721,
+      8.724,
+      8.719,
+      8.724,
+      8.721,
+      8.721
+    ],
+    "acceleration_trials": [
+      10618.8,
+      11084.9,
+      10264.6,
+      10587.2,
+      11101.4,
+      9576.6
+    ],
+    "capture_scale_raw_per_rot": 7339085.4
+  },
+  {
+    "unique_id": "9474B90381CC1317",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.738,
+    "max_acceleration_rot_per_s2": 11344.7,
+    "velocity_trials": [
+      8.737,
+      8.729,
+      8.729,
+      8.743,
+      8.739,
+      8.744
+    ],
+    "acceleration_trials": [
+      11404.2,
+      10516.0,
+      12047.5,
+      10696.3,
+      11285.2,
+      11710.0
+    ],
+    "capture_scale_raw_per_rot": 7318693.0
+  },
+  {
+    "unique_id": "D601439801DACDEB",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.724,
+    "max_acceleration_rot_per_s2": 10754.2,
+    "velocity_trials": [
+      8.726,
+      8.718,
+      8.722,
+      8.726,
+      8.724,
+      8.724
+    ],
+    "acceleration_trials": [
+      10595.3,
+      11256.5,
+      10417.0,
+      11539.5,
+      10533.3,
+      10913.0
+    ],
+    "capture_scale_raw_per_rot": 7338069.5
+  },
+  {
+    "unique_id": "08AB16E819F81873",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24100.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.719,
+    "max_acceleration_rot_per_s2": 10976.5,
+    "velocity_trials": [
+      8.719,
+      8.718,
+      8.715,
+      8.719,
+      8.721,
+      8.718
+    ],
+    "acceleration_trials": [
+      10739.3,
+      9872.0,
+      11792.1,
+      11145.1,
+      10807.9,
+      11982.2
+    ],
+    "capture_scale_raw_per_rot": 7341988.5
+  },
+  {
+    "unique_id": "0C729700C8B96AC7",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.765,
+    "max_acceleration_rot_per_s2": 11653.9,
+    "velocity_trials": [
+      8.762,
+      8.765,
+      8.764,
+      8.769,
+      8.765,
+      8.766
+    ],
+    "acceleration_trials": [
+      11341.1,
+      11606.3,
+      11909.0,
+      11295.1,
+      11999.9,
+      11701.5
+    ],
+    "capture_scale_raw_per_rot": 7303126.7
+  },
+  {
+    "unique_id": "221424C29C1AE3C6",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.747,
+    "max_acceleration_rot_per_s2": 11530.6,
+    "velocity_trials": [
+      8.747,
+      8.747,
+      8.742,
+      8.757,
+      8.748,
+      8.749
+    ],
+    "acceleration_trials": [
+      10874.4,
+      11495.3,
+      11566.0,
+      11051.7,
+      11590.5,
+      11625.6
+    ],
+    "capture_scale_raw_per_rot": 7322004.8
+  },
+  {
+    "unique_id": "14B7D892AA0389E9",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.739,
+    "max_acceleration_rot_per_s2": 11664.7,
+    "velocity_trials": [
+      8.739,
+      8.741,
+      8.738,
+      8.742,
+      8.739,
+      8.737
+    ],
+    "acceleration_trials": [
+      11826.9,
+      11502.6,
+      11919.4,
+      9976.8,
+      12507.6,
+      10793.0
+    ],
+    "capture_scale_raw_per_rot": 7325388.6
+  },
+  {
+    "unique_id": "962C7FC2F220000B",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.74,
+    "max_acceleration_rot_per_s2": 11159.4,
+    "velocity_trials": [
+      8.736,
+      8.734,
+      8.737,
+      8.749,
+      8.744,
+      8.744
+    ],
+    "acceleration_trials": [
+      11233.4,
+      10998.6,
+      11640.9,
+      11580.0,
+      11085.4,
+      10616.5
+    ],
+    "capture_scale_raw_per_rot": 7326910.4
+  },
+  {
+    "unique_id": "6BF6BF3044B6A143",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.73,
+    "max_acceleration_rot_per_s2": 11994.7,
+    "velocity_trials": [
+      8.723,
+      8.731,
+      8.73,
+      8.735,
+      8.728,
+      8.731
+    ],
+    "acceleration_trials": [
+      12243.8,
+      12692.3,
+      12357.9,
+      11745.5,
+      10955.3,
+      10930.5
+    ],
+    "capture_scale_raw_per_rot": 7331495.1
+  },
+  {
+    "unique_id": "E846EF4F7B2E28EF",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24100.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.755,
+    "max_acceleration_rot_per_s2": 11321.3,
+    "velocity_trials": [
+      8.752,
+      8.76,
+      8.754,
+      8.757,
+      8.755,
+      8.754
+    ],
+    "acceleration_trials": [
+      10769.6,
+      11760.4,
+      11197.7,
+      11444.8,
+      10870.3,
+      12028.5
+    ],
+    "capture_scale_raw_per_rot": 7314603.9
+  },
+  {
+    "unique_id": "0129D5E093037E68",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.732,
+    "max_acceleration_rot_per_s2": 11141.4,
+    "velocity_trials": [
+      8.731,
+      8.733,
+      8.732,
+      8.73,
+      8.726,
+      8.733
+    ],
+    "acceleration_trials": [
+      11029.1,
+      11032.6,
+      11250.2,
+      11885.4,
+      11259.8,
+      10158.9
+    ],
+    "capture_scale_raw_per_rot": 7335236.6
+  },
+  {
+    "unique_id": "90691FD33073F4CD",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24100.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.755,
+    "max_acceleration_rot_per_s2": 10904.4,
+    "velocity_trials": [
+      8.754,
+      8.753,
+      8.77,
+      8.756,
+      8.755,
+      8.764
+    ],
+    "acceleration_trials": [
+      12357.4,
+      11104.5,
+      9701.2,
+      10806.1,
+      10657.6,
+      11002.8
+    ],
+    "capture_scale_raw_per_rot": 7312087.8
+  },
+  {
+    "unique_id": "229E210595ADAAFB",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.75,
+    "max_acceleration_rot_per_s2": 11639.0,
+    "velocity_trials": [
+      8.757,
+      8.752,
+      8.751,
+      8.746,
+      8.739,
+      8.749
+    ],
+    "acceleration_trials": [
+      11966.0,
+      11739.3,
+      10105.9,
+      11538.6,
+      11227.4,
+      11949.5
+    ],
+    "capture_scale_raw_per_rot": 7325447.5
+  },
+  {
+    "unique_id": "3FE34E10207A6E5B",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.728,
+    "max_acceleration_rot_per_s2": 11178.1,
+    "velocity_trials": [
+      8.725,
+      8.73,
+      8.729,
+      8.73,
+      8.727,
+      8.727
+    ],
+    "acceleration_trials": [
+      11781.9,
+      9667.8,
+      11086.5,
+      11269.7,
+      11535.2,
+      11010.4
+    ],
+    "capture_scale_raw_per_rot": 7334157.1
+  },
+  {
+    "unique_id": "7B659204AA52A22A",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.756,
+    "max_acceleration_rot_per_s2": 11511.1,
+    "velocity_trials": [
+      8.757,
+      8.76,
+      8.763,
+      8.756,
+      8.752,
+      8.752
+    ],
+    "acceleration_trials": [
+      11191.5,
+      10514.1,
+      11525.6,
+      12191.2,
+      11782.1,
+      11496.7
+    ],
+    "capture_scale_raw_per_rot": 7323937.0
+  },
+  {
+    "unique_id": "67EF1D6AC2921A2A",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24000.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.703,
+    "max_acceleration_rot_per_s2": 11345.3,
+    "velocity_trials": [
+      8.7,
+      8.706,
+      8.705,
+      8.704,
+      8.701,
+      8.701
+    ],
+    "acceleration_trials": [
+      10077.2,
+      11727.9,
+      11520.6,
+      11170.1,
+      10897.9,
+      11718.3
+    ],
+    "capture_scale_raw_per_rot": 7356594.7
+  },
+  {
+    "unique_id": "2ED2D58D7744DD46",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.702,
+    "max_acceleration_rot_per_s2": 11865.0,
+    "velocity_trials": [
+      8.705,
+      8.705,
+      8.705,
+      8.7,
+      8.695,
+      8.7
+    ],
+    "acceleration_trials": [
+      12131.6,
+      12085.7,
+      12192.2,
+      11644.2,
+      10941.8,
+      11411.2
+    ],
+    "capture_scale_raw_per_rot": 7356184.0
+  },
+  {
+    "unique_id": "538BA7B758215751",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.732,
+    "max_acceleration_rot_per_s2": 10246.7,
+    "velocity_trials": [
+      8.728,
+      8.732,
+      8.732,
+      8.727,
+      8.733,
+      8.733
+    ],
+    "acceleration_trials": [
+      10238.8,
+      9846.3,
+      10579.8,
+      10254.7,
+      11284.3,
+      10205.0
+    ],
+    "capture_scale_raw_per_rot": 7333038.8
+  },
+  {
+    "unique_id": "1994E7FE82D86D4C",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.778,
+    "max_acceleration_rot_per_s2": 9996.4,
+    "velocity_trials": [
+      8.778,
+      8.778,
+      8.774,
+      8.78,
+      8.778,
+      8.782
+    ],
+    "acceleration_trials": [
+      10831.6,
+      9520.2,
+      9777.2,
+      11178.0,
+      9989.6,
+      10003.2
+    ],
+    "capture_scale_raw_per_rot": 7338321.6
+  },
+  {
+    "unique_id": "69BD35E368A525D6",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.743,
+    "max_acceleration_rot_per_s2": 11637.1,
+    "velocity_trials": [
+      8.744,
+      8.746,
+      8.746,
+      8.741,
+      8.731,
+      8.74
+    ],
+    "acceleration_trials": [
+      12055.9,
+      10776.6,
+      11957.7,
+      11241.3,
+      12099.2,
+      11316.5
+    ],
+    "capture_scale_raw_per_rot": 7313675.8
+  },
+  {
+    "unique_id": "3ED0F91FAADBD9AF",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.711,
+    "max_acceleration_rot_per_s2": 5329.7,
+    "velocity_trials": [
+      8.71,
+      8.713,
+      8.708,
+      8.717,
+      8.705,
+      8.712
+    ],
+    "acceleration_trials": [
+      4795.5,
+      5701.3,
+      6171.2,
+      4270.8,
+      5607.2,
+      5052.2
+    ],
+    "capture_scale_raw_per_rot": 7351712.6
+  },
+  {
+    "unique_id": "DCCA2FB16366F736",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.795,
+    "max_acceleration_rot_per_s2": 11204.8,
+    "velocity_trials": [
+      8.791,
+      8.787,
+      8.795,
+      8.796,
+      8.798,
+      8.796
+    ],
+    "acceleration_trials": [
+      11015.0,
+      9977.9,
+      12213.6,
+      11157.5,
+      11252.1,
+      11974.7
+    ],
+    "capture_scale_raw_per_rot": 7277551.2
+  },
+  {
+    "unique_id": "36C545790836B394",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.75,
+    "max_acceleration_rot_per_s2": 11614.8,
+    "velocity_trials": [
+      8.745,
+      8.75,
+      8.75,
+      8.749,
+      8.75,
+      8.75
+    ],
+    "acceleration_trials": [
+      10867.7,
+      12459.4,
+      11606.6,
+      10674.0,
+      11623.0,
+      11804.7
+    ],
+    "capture_scale_raw_per_rot": 7317923.1
+  },
+  {
+    "unique_id": "240871D6E400D46B",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.74,
+    "max_acceleration_rot_per_s2": 11216.6,
+    "velocity_trials": [
+      8.735,
+      8.744,
+      8.739,
+      8.741,
+      8.74,
+      8.742
+    ],
+    "acceleration_trials": [
+      10971.5,
+      11421.8,
+      11011.4,
+      11512.9,
+      10718.3,
+      11584.3
+    ],
+    "capture_scale_raw_per_rot": 7324906.2
+  },
+  {
+    "unique_id": "1CAE7F40D3E498E3",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.744,
+    "max_acceleration_rot_per_s2": 10208.2,
+    "velocity_trials": [
+      8.746,
+      8.746,
+      8.738,
+      8.741,
+      8.744,
+      8.744
+    ],
+    "acceleration_trials": [
+      9662.6,
+      10947.6,
+      10421.4,
+      11046.4,
+      9995.1,
+      9949.4
+    ],
+    "capture_scale_raw_per_rot": 7323386.9
+  },
+  {
+    "unique_id": "B2AEDD3FE8C1ED2A",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24100.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.761,
+    "max_acceleration_rot_per_s2": 11322.6,
+    "velocity_trials": [
+      8.76,
+      8.754,
+      8.765,
+      8.762,
+      8.758,
+      8.761
+    ],
+    "acceleration_trials": [
+      12212.1,
+      11860.9,
+      11077.1,
+      10800.4,
+      11053.0,
+      11568.0
+    ],
+    "capture_scale_raw_per_rot": 7306377.3
+  },
+  {
+    "unique_id": "3566EFBA6451C0BA",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24100.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.782,
+    "max_acceleration_rot_per_s2": 11578.4,
+    "velocity_trials": [
+      8.782,
+      8.776,
+      8.782,
+      8.782,
+      8.78,
+      8.783
+    ],
+    "acceleration_trials": [
+      10003.5,
+      11527.9,
+      11628.9,
+      10919.1,
+      11876.2,
+      12168.9
+    ],
+    "capture_scale_raw_per_rot": 7298177.9
+  },
+  {
+    "unique_id": "04245C407D26CCD0",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.767,
+    "max_acceleration_rot_per_s2": 8876.9,
+    "velocity_trials": [
+      8.766,
+      8.767,
+      8.767,
+      8.763,
+      8.771,
+      8.771
+    ],
+    "acceleration_trials": [
+      9031.8,
+      8295.5,
+      7279.8,
+      9049.8,
+      8982.4,
+      8771.4
+    ],
+    "capture_scale_raw_per_rot": 7304505.1
+  },
+  {
+    "unique_id": "F87E9B73958AFE60",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24200.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.774,
+    "max_acceleration_rot_per_s2": 11937.8,
+    "velocity_trials": [
+      8.768,
+      8.765,
+      8.77,
+      8.779,
+      8.778,
+      8.778
+    ],
+    "acceleration_trials": [
+      11945.2,
+      11930.5,
+      11115.4,
+      11366.6,
+      12117.4,
+      12182.4
+    ],
+    "capture_scale_raw_per_rot": 7306369.8
+  },
+  {
+    "unique_id": "E91B8F8F83E53636",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.724,
+    "max_acceleration_rot_per_s2": 11131.4,
+    "velocity_trials": [
+      8.72,
+      8.718,
+      8.722,
+      8.727,
+      8.725,
+      8.729
+    ],
+    "acceleration_trials": [
+      10702.9,
+      11052.6,
+      10568.6,
+      12159.1,
+      11825.2,
+      11210.2
+    ],
+    "capture_scale_raw_per_rot": 7344188.1
+  },
+  {
+    "unique_id": "5E2E8161CF1D2624",
+    "firmware": "0.15.8.0",
+    "supply_mv": 23900.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.715,
+    "max_acceleration_rot_per_s2": 10412.9,
+    "velocity_trials": [
+      8.712,
+      8.714,
+      8.713,
+      8.715,
+      8.718,
+      8.716
+    ],
+    "acceleration_trials": [
+      9929.5,
+      10818.9,
+      10763.2,
+      10118.3,
+      10566.9,
+      10258.9
+    ],
+    "capture_scale_raw_per_rot": 7343892.4
+  },
+  {
+    "unique_id": "DBC90AF071C2DC56",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.748,
+    "max_acceleration_rot_per_s2": 11491.3,
+    "velocity_trials": [
+      8.747,
+      8.745,
+      8.744,
+      8.75,
+      8.753,
+      8.753
+    ],
+    "acceleration_trials": [
+      12297.1,
+      10819.3,
+      11518.6,
+      11934.7,
+      10874.1,
+      11463.9
+    ],
+    "capture_scale_raw_per_rot": 7310801.6
+  },
+  {
+    "unique_id": "6B1352D54D4F5B7F",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.758,
+    "max_acceleration_rot_per_s2": 11784.5,
+    "velocity_trials": [
+      8.763,
+      8.762,
+      8.765,
+      8.754,
+      8.752,
+      8.754
+    ],
+    "acceleration_trials": [
+      12111.5,
+      11933.2,
+      10828.9,
+      10657.2,
+      11833.1,
+      11736.0
+    ],
+    "capture_scale_raw_per_rot": 7311612.1
+  },
+  {
+    "unique_id": "54B125BBEAE99E15",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24500.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.774,
+    "max_acceleration_rot_per_s2": 11908.8,
+    "velocity_trials": [
+      8.772,
+      8.765,
+      8.775,
+      8.773,
+      8.776,
+      8.774
+    ],
+    "acceleration_trials": [
+      11789.0,
+      12301.4,
+      12128.7,
+      10995.7,
+      11441.5,
+      12028.6
+    ],
+    "capture_scale_raw_per_rot": 7297086.3
+  },
+  {
+    "unique_id": "2D288D9C0725A642",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24400.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.728,
+    "max_acceleration_rot_per_s2": 11335.7,
+    "velocity_trials": [
+      8.731,
+      8.73,
+      8.73,
+      8.726,
+      8.726,
+      8.726
+    ],
+    "acceleration_trials": [
+      11415.0,
+      11727.3,
+      11130.8,
+      10707.5,
+      12006.1,
+      11256.5
+    ],
+    "capture_scale_raw_per_rot": 7337687.1
+  },
+  {
+    "unique_id": "13BB8D59C0DFC3B8",
+    "firmware": "0.15.8.0",
+    "supply_mv": 24300.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.74,
+    "max_acceleration_rot_per_s2": 11511.1,
+    "velocity_trials": [
+      8.744,
+      8.74,
+      8.74,
+      8.739,
+      8.737,
+      8.738
+    ],
+    "acceleration_trials": [
+      11491.1,
+      11531.2,
+      11402.8,
+      11853.5,
+      11460.1,
+      12027.5
+    ],
+    "capture_scale_raw_per_rot": 7331837.9
+  }
+]

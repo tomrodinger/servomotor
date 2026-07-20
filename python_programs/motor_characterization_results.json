@@ -1,0 +1,27 @@
+[
+  {
+    "unique_id": "99856389A2B46555",
+    "firmware": "0.15.7.0",
+    "supply_mv": 20000.0,
+    "current_limit": 390,
+    "max_velocity_rot_per_s": 8.651,
+    "max_acceleration_rot_per_s2": 9257.7,
+    "velocity_trials": [
+      8.651,
+      8.65,
+      8.653,
+      8.651,
+      8.653,
+      8.651
+    ],
+    "acceleration_trials": [
+      9095.5,
+      9048.8,
+      9627.9,
+      9492.9,
+      9411.3,
+      9104.1
+    ],
+    "capture_scale_raw_per_rot": 7402767.7
+  }
+]

@@ -65,6 +65,10 @@ def test_communication_while_high_speed(motor_alias):
 
         print("\nSetting maximum motor current...")
         motorX.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
+        # This test deliberately runs above the datasheet maximum speed (580 > 560 RPM).
+        # Since firmware 0.15.8.0 the boot default velocity limit IS the datasheet 560 RPM,
+        # so raise the limit first (the documented way to exceed the rating for experiments).
+        motorX.set_maximum_velocity(700)  # RPM (this M3 object uses velocity_unit="rpm")
 
         print("\nQueuing three moves:")
         print("1. Accelerate to 580 RPM over 30 seconds")

@@ -126,7 +126,12 @@ def run_tests(port, alias, test_files):
         status_message = "FAILED (Unknown)"
 
         try:
-            result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=TEST_TIMEOUT_SECONDS)
+            # stdin=DEVNULL so child tests see a non-TTY stdin. capture_output only
+            # redirects stdout/stderr; without this, children inherit the runner's TTY
+            # and visual-confirmation tests (test_identify/test_leds/test_vibrate) take
+            # their interactive branch and block on input() — see those tests' docstrings,
+            # which document that "run_all_tests.py redirects stdin".
+            result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=TEST_TIMEOUT_SECONDS, stdin=subprocess.DEVNULL)
 
             print(result.stdout) # Print stdout regardless of pass/fail
 

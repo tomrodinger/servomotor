@@ -12,15 +12,18 @@ into it (firmware/Src/motor_control.h:131-135):
   type 4 = PID debug data (sizeof = 20 bytes: 5 × int32)
   type 5 = GC6609 register dump (10 regs × 8 bytes = 80 bytes)
 
-The cmd 35 handler (firmware/Src/main.c:779-836) is special:
+The cmd 35 handler (firmware/Src/main.c) is special:
 
   * If the buffer is empty (`multipurpose_data_type == 0`) the firmware
-    sends NO response at all. The Python wrapper times out — by design.
+    (as of 0.15.4.0) replies with a payload of exactly one byte: the
+    data_type byte 0 — the Python wrapper returns b'\x00'. (Older
+    firmware sent NO response at all, so the wrapper timed out; a
+    TimeoutError here now indicates pre-0.15.4.0 firmware.)
   * If the buffer holds data, the firmware sends a custom packet
     whose payload is [data_type (1 byte)][data_size bytes]. After a
     successful transmit it calls clear_multipurpose_data() — so
-    follow-up reads of the same data return nothing UNLESS something
-    is actively repopulating the buffer.
+    follow-up reads of the same data return the empty (data_type 0)
+    response UNLESS something is actively repopulating the buffer.
 
 How we populate the buffer for this test
 ========================================
@@ -38,7 +41,7 @@ test:
   * `test_mode(4)` (GC6609 register dump, type 5) — would have been
     great because it auto-clears `test_mode` on completion
     (motor_control.c:2853), so a follow-up cmd 35 would genuinely
-    time out. But the bit-bang stalls in `waiting_for_start`
+    return the empty response. But the bit-bang stalls in `waiting_for_start`
     (GC6609.c:359) if the chip's UART does not respond, which on the
     bench M17 it didn't reliably do — the buffer never populated
     even after 5 s of waiting. Not robust enough for an auto-suite
@@ -61,8 +64,9 @@ What this test verifies
 =======================
 
   1. Empty buffer (post-reset, before any populator runs) → cmd 35
-     raises `servomotor.communication.TimeoutError`. Proves the
-     "no response when empty" branch is wired correctly.
+     returns exactly one byte, the data_type byte 0 (b'\x00'). Proves
+     the "empty response" branch is wired correctly. A TimeoutError
+     here means the device is running pre-0.15.4.0 firmware.
   2. After entering closed loop and asserting `test_mode(3)`, cmd 35
      returns a non-empty bytes payload whose first byte is the
      data-type tag (== 4, `MULTIPURPOSE_DATA_TYPE_PID_DEBUG_DATA`)
@@ -73,13 +77,13 @@ What this test verifies
      the firmware's reported size matched the wrapper's received
      length.
   4. After `system_reset()` (which clears both `test_mode` and the
-     buffer), cmd 35 times out again — closing the loop on the
-     empty-buffer behavior.
+     buffer), cmd 35 returns the empty (data_type 0) response again —
+     closing the loop on the empty-buffer behavior.
   5. No fatal error is left on the device throughout.
 
-(We deliberately do NOT assert "an immediate second cmd 35 times out"
-after the populated read. That would be wrong: PID iterations run
-every ~32 µs in closed loop and the gating predicate
+(We deliberately do NOT assert "an immediate second cmd 35 returns the
+empty response" after the populated read. That would be wrong: PID
+iterations run every ~32 µs in closed loop and the gating predicate
 `multipurpose_data_type == 0` becomes true again the moment our read
 clears it, so the buffer is silently repopulated long before any
 follow-up RS485 round-trip can complete. The empty-buffer behavior is
@@ -108,31 +112,40 @@ TEST_MODE_PID_DEBUG = 3
 # NOTE: we DELIBERATELY never call test_mode(0). See the module docstring.
 
 MULTIPURPOSE_DATA_TYPE_PID_DEBUG_DATA = 4
+MULTIPURPOSE_DATA_TYPE_EMPTY = 0
+EMPTY_BUFFER_RESPONSE = bytes([MULTIPURPOSE_DATA_TYPE_EMPTY])  # b'\x00'
 PID_DEBUG_PAYLOAD_BYTES = 5 * 4  # 5 × int32
 
 I32_MIN, I32_MAX = -(1 << 31), (1 << 31) - 1
 
 
-def attempt_read_buffer(motor):
-    """Call cmd 35; return bytes payload, or None on TimeoutError."""
+def read_buffer(motor, label):
+    """Call cmd 35 and return its bytes payload. Firmware >= 0.15.4.0 ALWAYS
+    responds (an empty buffer yields the one-byte data_type-0 payload), so a
+    TimeoutError is a hard failure indicating old firmware."""
     try:
         result = motor.read_multipurpose_buffer()
     except ServoTimeoutError:
-        return None
+        raise AssertionError(f"{label}: cmd 35 timed out. Firmware 0.15.4.0+ always responds "
+                             f"(empty buffer -> single data_type-0 byte); a timeout means the "
+                             f"device is running pre-0.15.4.0 firmware.")
     except Exception as e:
         # Bare-TimeoutError fallback (see test_correct_and_incorrect_addressing.py).
         if type(e).__name__ == "TimeoutError":
-            return None
+            raise AssertionError(f"{label}: cmd 35 timed out. Firmware 0.15.4.0+ always responds "
+                                 f"(empty buffer -> single data_type-0 byte); a timeout means the "
+                                 f"device is running pre-0.15.4.0 firmware.")
         raise
     if not isinstance(result, (bytes, bytearray)):
         raise AssertionError(f"cmd 35 returned non-bytes: {type(result).__name__}: {result!r}")
     return bytes(result)
 
 
-def assert_empty_buffer_times_out(motor, label):
-    result = attempt_read_buffer(motor)
-    if result is not None:
-        raise AssertionError(f"{label}: cmd 35 returned a response on an empty buffer: {result!r}")
+def assert_empty_buffer_response(motor, label):
+    result = read_buffer(motor, label)
+    if result != EMPTY_BUFFER_RESPONSE:
+        raise AssertionError(f"{label}: empty buffer must return exactly {EMPTY_BUFFER_RESPONSE!r} "
+                             f"(one data_type-0 byte, no payload); got {result!r}")
 
 
 def wait_for_closed_loop(motor, timeout_s):
@@ -177,10 +190,11 @@ def main():
             if args.repeat > 1:
                 print(f"\n========== REPEAT {repeat_idx + 1} / {args.repeat} ==========")
 
-            print("\nResetting; the empty multipurpose buffer must produce a TimeoutError on cmd 35...")
+            print("\nResetting; the empty multipurpose buffer must return the one-byte "
+                  "data_type-0 response (b'\\x00') on cmd 35...")
             motor.system_reset()
             time.sleep(RESET_DELAY_S)
-            assert_empty_buffer_times_out(motor, "post-reset empty buffer")
+            assert_empty_buffer_response(motor, "post-reset empty buffer")
             assert_no_fatal_error(motor, "after post-reset empty read")
 
             print("Entering closed loop and asserting test_mode 3 so PID writes its debug struct...")
@@ -192,10 +206,11 @@ def main():
             time.sleep(PID_DEBUG_CAPTURE_WINDOW_S)
 
             print("Reading cmd 35; expect [data_type=4][20 bytes of pid_debug_data]...")
-            raw = attempt_read_buffer(motor)
-            if raw is None:
-                raise AssertionError("cmd 35 returned no data even though test_mode 3 was asserted "
-                                     "inside closed loop — PID never populated the buffer?")
+            raw = read_buffer(motor, "populated buffer read")
+            if raw == EMPTY_BUFFER_RESPONSE:
+                raise AssertionError("cmd 35 returned the empty-buffer response even though "
+                                     "test_mode 3 was asserted inside closed loop — PID never "
+                                     "populated the buffer?")
             if len(raw) != 1 + PID_DEBUG_PAYLOAD_BYTES:
                 raise AssertionError(f"cmd 35 payload length {len(raw)} != "
                                      f"{1 + PID_DEBUG_PAYLOAD_BYTES} (1 type byte + 20 PID bytes)")
@@ -216,7 +231,7 @@ def main():
             time.sleep(RESET_DELAY_S)
 
             print("Final empty-buffer check after system_reset...")
-            assert_empty_buffer_times_out(motor, "post-cleanup empty buffer")
+            assert_empty_buffer_response(motor, "post-cleanup empty buffer")
             assert_no_fatal_error(motor, "after post-cleanup empty read")
 
         success = True

@@ -98,6 +98,10 @@ for unique_id, device in new_device_dict.items():
         motor.enable_mosfets()
         time.sleep(0.05)
         motor.set_maximum_motor_current(MAX_MOTOR_CURRENT, MAX_MOTOR_CURRENT)
+        # The sweep crosses the datasheet maximum speed (560 RPM = 3360 deg/s), which is
+        # the boot-default velocity limit since firmware 0.15.8.0; raise the limit first
+        # (the documented way to exceed the rating for experiments).
+        motor.set_maximum_velocity(4200)  # deg/s = 700 RPM
 
         current_speed = 0.0
         while 1:
