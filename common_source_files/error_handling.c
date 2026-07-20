@@ -82,9 +82,11 @@ static void handle_packet(void)
     switch(command) {
     case SYSTEM_RESET_COMMAND:
         rs485_done_with_this_packet_dont_disable_enable_irq();
-        if ((payload_size == 0) && !rs485_transmit_not_done()) { // we won't transmit if already transmitting (to prevent a deadlock inside the while(transmitCount > 0); statement inside the rs485_transmit function)
-            rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
-            reset_requested = 1;
+        if (payload_size == 0) {
+            if (!rs485_transmit_not_done()) { // we won't transmit if already transmitting (to prevent a deadlock inside the while(transmitCount > 0); statement inside the rs485_transmit function)
+                rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+            }
+            reset_requested = 1; // request the reset even if we could not reply: the reset only fires once the transmitter is idle, so a reset must never be silently dropped just because a previous reply was still draining
         }
         break;
     case GET_STATUS_COMMAND:
@@ -121,8 +123,10 @@ static void systick_half_cycle_delay_plus_handle_commands(uint8_t error_code)
         #endif
 
         if (if_fatal_error_then_respond_flag) {
-            rs485_transmit_error_packet(error_code);
-            if_fatal_error_then_respond_flag = 0;
+            if (!rs485_transmit_not_done()) { // never call rs485_transmit while a transmission is in progress: with interrupts disabled its entry wait (while(transmitCount > 0);) would spin forever, because only the TX interrupt decrements transmitCount and it cannot run. If busy, the manual USART pump below drains it and we respond on a later iteration.
+                rs485_transmit_error_packet(error_code);
+                if_fatal_error_then_respond_flag = 0;
+            }
         }
 
         // Since interrupts are now disabled to minimize the chance of any abnormal behaviour during a fata error state,
@@ -197,12 +201,30 @@ void fatal_error(uint16_t error_code)
     static uint8_t is_red_LED_on = 0;
     #endif
     heater_off();
-    disable_mosfets();
+    disable_mosfets(); // highest priority: remove power from the motor before anything else
     green_LED_off();
     fatal_error_systick_init();
+    // If this fatal error preempted the main loop while a command reply was still being
+    // transmitted, that transmission is now stalled (interrupts are off, so the TX interrupt
+    // can no longer feed the UART): the reply would be truncated on the wire, and worse, the
+    // response/reset logic in the loop below would deadlock forever inside rs485_transmit()'s
+    // entry wait, leaving the device silent to every command until a power cycle. Finish the
+    // reply by hand (the MOSFETs are already off, so the few hundred microseconds this takes
+    // are safe). The host then holds a complete reply for the in-flight command, so also
+    // cancel any deferred error response -- sending both would desynchronize the host's
+    // request/reply pairing.
+    if (rs485_transmit_not_done()) {
+        rs485_drain_transmit();
+        if_fatal_error_then_respond_flag = 0;
+    }
 //    rs485_init(); // reinitialize the UART, just in case it got corrupted. maybe don't need to do this if the risk of curruption is low.
     fatal_error_occurred = 1;
     set_device_error_code(error_code);
+    // Refresh the stale flags snapshot: in the fatal-error state the MOSFETs are
+    // off and nothing is running, so all flags read 0 -- EXCEPT the in-bootloader
+    // bit, which must stay truthful because this file is also linked into the
+    // bootloaders (a bootloader fatal error must still report bit 0 = 1)
+    set_device_status_flags(get_device_status()->flags & (1 << STATUS_IN_THE_BOOTLOADER_FLAG_BIT));
 
 //    message = get_error_text(error_code); // DEBUG commented out
     sprintf(buf, ": %u\n", error_code);

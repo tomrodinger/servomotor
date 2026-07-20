@@ -451,7 +451,7 @@ void USART1_IRQHandler(void)
         USART1->CR1 &= ~USART_CR1_TXFEIE; // nothing more to transmit, so disable the interrupt
     }
 
-    // And finally control the red LED such that it flashes during the time that a command is being received
+    // And finally control the green LED such that it flashes during the time that a command is being received
     if(receiveIndex > 0) {
         green_LED_on();
     }
@@ -513,8 +513,27 @@ void rs485_wait_for_transmit_done(void)
     while (rs485_transmit_not_done()); // wait for previous transmission to finish (buffer becomes empty and last data item writen to USART->TDR has been transmitted out of the shift register)
 }
 
+void rs485_drain_transmit(void)
+{
+    // Finish any in-progress transmission by hand. This is for contexts where interrupts are
+    // disabled (the fatal-error state): the TX interrupt can no longer feed the UART, so an
+    // in-flight reply would otherwise stall with transmitCount > 0 -- truncating the reply on
+    // the wire and deadlocking the next rs485_transmit() call in its while(transmitCount > 0);
+    // entry wait. Bounded so a wedged UART cannot hang us here; if the bound is ever hit, the
+    // rest of the packet is abandoned so that later transmissions cannot deadlock either.
+    uint32_t bound = 30000000; // hundreds of ms worth of iterations; a full transmit buffer needs only ~12 ms at 230400 baud
+    while (rs485_transmit_not_done() && (bound > 0)) {
+        USART1_IRQHandler();
+        bound--;
+    }
+    if (bound == 0) {
+        transmitCount = 0;
+    }
+}
+
 void rs485_transmit_no_error_packet(uint8_t is_broadcast)
 {
+    if_fatal_error_then_dont_respond(); // this command's response is being issued here; a fatal error from now on must not also send the deferred error reply (the extra packet would desynchronize the host's request/reply pairing)
     if (is_broadcast) {
         return; // if the received message was a broadcasted message then we will not respond (to prevent a collision on the bus if there are multiple devices)
     }
@@ -564,6 +583,7 @@ void rs485_transmit_error_packet(uint8_t error_code)
 // Please note that the structure that you pass in must contain the space for the crc32 if crc32_enabled is true
 void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
 {
+    if_fatal_error_then_dont_respond(); // this command's response is being issued here; a fatal error from now on must not also send the deferred error reply (the extra packet would desynchronize the host's request/reply pairing)
     if(crc32_enabled) {
         ((uint8_t*)data)[1] = RESPONSE_CHARACTER_CRC32_ENABLED;
     }
@@ -601,6 +621,7 @@ void rs485_finalize_and_transmit_packet(void *data, uint16_t structure_size)
 
 void rs485_start_the_packet(uint16_t payload_size)
 {
+    if_fatal_error_then_dont_respond(); // a response transmission is beginning; a fatal error from now on must not inject the deferred error reply into or after it
     struct __attribute__((__packed__)) {
         uint8_t packet_size;
         uint16_t extended_size;

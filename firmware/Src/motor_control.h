@@ -38,25 +38,28 @@
 #define CAPTURE_HALL_POSITION 2
 #define CAPTURE_ADJUSTED_HALL_SENSOR_READINGS 3
 
-#define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY >> 1)
+#define TIME_STEPS_PER_SECOND         (PWM_FREQUENCY) // the motor control interrupt runs once per PWM period (31250 steps/s, 32 us). The old >> 1 here dated from a configuration where control ran every second PWM period; it made MAX_VELOCITY compute 2x and MAX_ACCELERATION 4x their intended values (BUG-23)
 #define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS * ((uint64_t)1 << 32))
 //#define MICROSTEPS_PER_ROTATION       ((uint64_t)ONE_REVOLUTION_MICROSTEPS)
 #ifdef PRODUCT_NAME_M1
-#define MAX_RPM                       1020 // should be divisable by 60 ideally so that the MAX_RPS is an integer
+#define MAX_RPM                       1020
 #else
-#define MAX_RPM                       2040 // should be divisable by 60 ideally so that the MAX_RPS is an integer
+#define MAX_RPM                       560 // the datasheet's Maximum Speed spec; slightly above the ~516 RPM measured unloaded, so the motor itself, not this default limit, is what tops out
 #endif
-#define MAX_RPS                       (MAX_RPM / 60)
-#define MAX_MICROSTEPS_PER_SECOND     ((uint64_t)MAX_RPS * (uint64_t)MICROSTEPS_PER_ROTATION)
+#define MAX_MICROSTEPS_PER_SECOND     ((uint64_t)MAX_RPM * (uint64_t)MICROSTEPS_PER_ROTATION / 60) // divide by 60 LAST so MAX_RPM need not be a multiple of 60; the product MAX_RPM * MICROSTEPS_PER_ROTATION still fits in 64 bits for all products
 #define MAX_MICROSTEPS_PER_TIME_STEP  ((uint64_t)MAX_MICROSTEPS_PER_SECOND / (uint64_t)TIME_STEPS_PER_SECOND)
 #define MAX_VELOCITY                  ((int64_t)MAX_MICROSTEPS_PER_TIME_STEP)
 
-#define MM_PER_ROTATION                                    20
-#define MAX_ACCELERATION_MM_PER_SECOND_SQUARED             10000
-#define MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED      (MAX_ACCELERATION_MM_PER_SECOND_SQUARED / MM_PER_ROTATION)
-#define MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED     ((uint64_t)MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED * (uint64_t)MICROSTEPS_PER_ROTATION)
-#define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  ((uint64_t)MAX_ACCELERATION_MICROSTEPS_PER_SECOND_SQUARED / (uint64_t)(TIME_STEPS_PER_SECOND * TIME_STEPS_PER_SECOND))
+#define MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED      12000 // per the product spec; slightly above the measured unloaded spin-up (~11000 rot/s^2 at 24 V), so the motor itself is the practical limit
+#define MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED  (((uint64_t)MICROSTEPS_PER_ROTATION / (uint64_t)TIME_STEPS_PER_SECOND) * (uint64_t)MAX_ACCELERATION_ROTATIONS_PER_SECOND_SQUARED / (uint64_t)TIME_STEPS_PER_SECOND) // divide early: 12000 * MICROSTEPS_PER_ROTATION would overflow 64 bits
 #define MAX_ACCELERATION                                   ((int64_t)MAX_ACCELERATION_MICROSTEPS_PER_TIME_STEP_SQUARED)
+
+// The boot defaults are the rated maximums above, but 'Set maximum velocity' and
+// 'Set maximum acceleration' may deliberately exceed them for experimentation, up to
+// these ceilings (equal to the pre-BUG-23 effective limits, so previously working
+// experimental setups keep working)
+#define EXPERIMENTAL_MAX_VELOCITY                          (MAX_VELOCITY * 2)
+#define EXPERIMENTAL_MAX_ACCELERATION                      (MAX_ACCELERATION * 4)
 
 #define ACCELERATION_SHIFT_LEFT 8
 #define VELOCITY_SHIFT_LEFT 12

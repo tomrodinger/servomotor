@@ -66,6 +66,7 @@ void rs485_done_with_this_packet_dont_disable_enable_irq(void);
 void rs485_done_with_this_packet(void);
 void rs485_transmit(void *s, uint8_t len);
 void rs485_wait_for_transmit_done(void);
+void rs485_drain_transmit(void);
 uint8_t rs485_transmit_not_done(void);
 void rs485_transmit_no_error_packet(uint8_t is_broadcast);
 void rs485_transmit_error_packet(uint8_t error_code);
