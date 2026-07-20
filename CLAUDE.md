@@ -88,7 +88,7 @@ firmware-upgrade test's `../firmware/firmware_releases` path resolves.
 1. **JSON definitions** (`motor_commands.json`, `data_types.json`) define all 255 motor commands with parameter types and unit conversions
 2. **Autogeneration** creates Python methods, Arduino C++ methods, and unit conversion code from JSON
 3. **Python library** (`servomotor/`) sends commands via RS485 at 230400 baud
-4. **Firmware** (`firmware/Src/main.c`) processes commands in main loop, drives motor via GC6609 IC
+4. **Firmware** (`firmware/Src/main.c`) processes commands in main loop, drives motor via the AT5833 stepper driver IC (current M17 hardware, software compatibility code >= 2; the GC6609 was used on legacy units, scc 1, and its code is compiled out on current builds)
 
 ### Key Directories
 - `firmware/` - STM32G0xx firmware (C), builds `.firmware` files
@@ -110,9 +110,9 @@ firmware-upgrade test's `../firmware/firmware_releases` path resolves.
 
 ### Firmware Organization
 - `main.c` - Main loop, command processing, version defines (`MAJOR/MINOR/BUGFIX/DEVELOPMENT_FIRMWARE_VERSION`)
-- `GC6609.c` - Motor driver IC control (3-phase BLDC)
+- `AT5833.c` - Motor driver IC control (current M17 hardware; `GC6609.c` is the legacy driver, compiled only for software compatibility code 1)
 - `motor_control.c` - Motion profiling, PID control
-- `AT5833.c` / `hall_sensor_calculations.c` - Hall sensor interface
+- `hall_sensor_calculations.c` - Hall sensor interface
 - `commutation_table_M*.h` - Motor-specific commutation patterns (auto-generated)
 - `VERSIONS` file - Maps product name to hardware version and software compatibility code
 

@@ -30,6 +30,9 @@ class APIDocumentationGenerator:
         self.data_types_path = "/Users/tom/Documents/Move_the_Needle/Servomotor/python_programs/servomotor/data_types.json"
         self.error_codes_path = "/Users/tom/Documents/Move_the_Needle/Servomotor/python_programs/servomotor/error_codes.json"
         self.error_handling_text_path = "error_handling.txt"
+        self.hardware_setup_path = "hardware_setup.md"
+        self.knowhow_path = "knowhow.md"
+        self.command_examples_dir = "../../python_programs/command_examples"
         self.firmware_dir_path = "../../firmware/firmware_releases"
         self.valid_products_path = "VALID_PRODUCTS.txt"
         self.install_instructions_path = "install_instructions_example.sh"
@@ -97,7 +100,184 @@ class APIDocumentationGenerator:
             print(f"\n❌ ERROR: Could not find error handling text at {self.error_handling_text_path}")
             self.error_handling_text = "Error handling description not available."
             return False
-    
+
+    def load_hardware_setup(self):
+        """Load the hardware setup markdown section"""
+        try:
+            with open(self.hardware_setup_path, 'r') as f:
+                self.hardware_setup_md = f.read()
+            print(f"✓ Loaded hardware setup from {self.hardware_setup_path}")
+            return True
+        except FileNotFoundError:
+            print(f"\n❌ ERROR: Could not find hardware setup text at {self.hardware_setup_path}")
+            self.hardware_setup_md = None
+            return False
+
+    def load_knowhow(self):
+        """Load the know-how / best practices markdown section"""
+        try:
+            with open(self.knowhow_path, 'r') as f:
+                self.knowhow_md = f.read()
+            print(f"✓ Loaded know-how from {self.knowhow_path}")
+            return True
+        except FileNotFoundError:
+            print(f"\n❌ ERROR: Could not find know-how text at {self.knowhow_path}")
+            self.knowhow_md = None
+            return False
+
+    def load_command_example(self, command):
+        """Load the real runnable example program for a command, if one exists"""
+        if command['CommandString'] == 'Firmware upgrade':
+            # Deliberately no example program: raw page writes brick devices when
+            # done wrong. Emit a pointer to the supported tool instead of letting
+            # the caller fall back to a synthesized stub with placeholder values.
+            return ("# There is intentionally no minimal example for 'Firmware upgrade'.\n"
+                    "# Upgrading firmware requires correct page sequencing, model/compatibility\n"
+                    "# checks, and CRC handling; use the supported tool instead:\n"
+                    "#\n"
+                    "#   cd python_programs\n"
+                    "#   python3 upgrade_firmware.py -p <PORT> -a 255 <firmware_file.firmware>\n"
+                    "#\n"
+                    "# The tool validates the file against the device's product code and\n"
+                    "# software compatibility code before writing any page.\n")
+        method_name = self.get_python_method_name(command['CommandString'])
+        example_path = os.path.join(self.command_examples_dir, f"example_{method_name}.py")
+        try:
+            with open(example_path, 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            return None
+
+    @staticmethod
+    def demote_md_headings(md_text):
+        """Add one '#' to every markdown heading so an embedded document
+        nests one level below the enclosing section."""
+        out_lines = []
+        in_code = False
+        for line in md_text.split('\n'):
+            if line.strip().startswith('```'):
+                in_code = not in_code
+            if not in_code and line.startswith('#'):
+                line = '#' + line
+            out_lines.append(line)
+        return '\n'.join(out_lines)
+
+    def add_markdown_section_to_pdf(self, story, doc, md_text, heading_style, normal_style, code_style):
+        """Render a limited markdown subset (headings, paragraphs, bullets,
+        numbered lists, fenced code blocks) into reportlab story elements."""
+        sub_heading_style = ParagraphStyle(
+            'MdSubHeading', parent=normal_style, fontSize=13,
+            fontName='Helvetica-Bold', textColor=colors.black,
+            spaceBefore=12, spaceAfter=6)
+        sub_sub_heading_style = ParagraphStyle(
+            'MdSubSubHeading', parent=normal_style, fontSize=11,
+            fontName='Helvetica-Bold', textColor=colors.black,
+            spaceBefore=10, spaceAfter=4)
+
+        def escape(text):
+            return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+        in_code = False
+        code_lines = []
+        paragraph_lines = []
+
+        def flush_paragraph():
+            if paragraph_lines:
+                story.append(Paragraph(escape(' '.join(paragraph_lines)), normal_style))
+                story.append(Spacer(1, 6))
+                paragraph_lines.clear()
+
+        for line in md_text.split('\n'):
+            stripped = line.strip()
+            if stripped.startswith('```'):
+                flush_paragraph()
+                if in_code:
+                    code_box = self.CodeBox('\n'.join(code_lines), doc.width - 20, code_style)
+                    story.append(code_box)
+                    story.append(Spacer(1, 8))
+                    code_lines.clear()
+                in_code = not in_code
+                continue
+            if in_code:
+                code_lines.append(line)
+                continue
+            if stripped.startswith('# '):
+                flush_paragraph()
+                story.append(Paragraph(escape(stripped[2:]), heading_style))
+                story.append(Spacer(1, 8))
+            elif stripped.startswith('## '):
+                flush_paragraph()
+                story.append(Paragraph(escape(stripped[3:]), sub_heading_style))
+            elif stripped.startswith('### '):
+                flush_paragraph()
+                story.append(Paragraph(escape(stripped[4:]), sub_sub_heading_style))
+            elif stripped.startswith('- '):
+                flush_paragraph()
+                story.append(Paragraph('• ' + escape(stripped[2:]), normal_style))
+                story.append(Spacer(1, 3))
+            elif len(stripped) > 2 and stripped[0].isdigit() and '. ' in stripped[:4]:
+                flush_paragraph()
+                num, _, rest = stripped.partition('. ')
+                story.append(Paragraph(f'<b>{escape(num)}.</b> ' + escape(rest), normal_style))
+                story.append(Spacer(1, 3))
+            elif stripped == '':
+                flush_paragraph()
+            else:
+                paragraph_lines.append(stripped)
+        flush_paragraph()
+
+
+    UNIT_NOTES = {
+        'seconds': 'time in seconds',
+        'milliseconds': 'time in milliseconds',
+        'minutes': 'time in minutes',
+        'microseconds': 'time in microseconds',
+        'timesteps': 'raw internal time unit of 32 microseconds (31,250 per second)',
+        'shaft_rotations': 'rotations of the motor shaft',
+        'degrees': 'degrees of rotation',
+        'radians': 'radians of rotation',
+        'encoder_counts': 'raw encoder counts (3,276,800 per shaft rotation)',
+        'rotations_per_second': 'rotations per second',
+        'rpm': 'revolutions per minute',
+        'degrees_per_second': 'degrees per second',
+        'radians_per_second': 'radians per second',
+        'counts_per_second': 'encoder counts per second',
+        'counts_per_timestep': 'encoder counts per 32-microsecond timestep',
+        'rotations_per_second_squared': 'rotations per second squared',
+        'rpm_per_second': 'RPM per second',
+        'degrees_per_second_squared': 'degrees per second squared',
+        'radians_per_second_squared': 'radians per second squared',
+        'counts_per_second_squared': 'encoder counts per second squared',
+        'counts_per_timestep_squared': 'encoder counts per timestep squared',
+        'internal_current_units': 'raw internal current units (about 150-200 is a typical working value)',
+        'milliamps': 'milliamperes',
+        'amps': 'amperes',
+        'millivolts': 'millivolts',
+        'volts': 'volts',
+        'celsius': 'degrees Celsius',
+        'fahrenheit': 'degrees Fahrenheit',
+        'kelvin': 'kelvin',
+    }
+
+    def build_unit_reference(self):
+        """Build the unit reference from unit_conversions_M3.json — the same file
+        the library builds its unit enums from, so the documented lists and
+        defaults can never drift from the code. The FIRST unit of each list is
+        the library's default for that unit type."""
+        conversions_path = os.path.join(os.path.dirname(self.motor_commands_path),
+                                        'unit_conversions_M3.json')
+        with open(conversions_path, 'r') as f:
+            units = json.load(f)['units']
+        sections = []
+        for type_name, unit_list in units.items():
+            lines = []
+            for i, unit in enumerate(unit_list):
+                note = self.UNIT_NOTES.get(unit, unit.replace('_', ' '))
+                suffix = ' (default)' if i == 0 else ''
+                lines.append(f"{unit} - {note}{suffix}")
+            sections.append((f"{type_name.capitalize()} Units", lines))
+        return sections
+
     def load_install_instructions(self):
         """Load installation instructions from the symlinked file"""
         try:
@@ -474,14 +654,16 @@ class APIDocumentationGenerator:
         
         # Table of Contents
         md_content.append("## Table of Contents\n")
-        md_content.append("1. [Install the Python Library](#install-the-python-library)")
-        md_content.append("2. [Controlling the Servomotor From the Command Line](#controlling-the-servomotor-from-the-command-line)")
-        md_content.append("3. [Getting Started](#getting-started)")
-        md_content.append("4. [Data Types](#data-types)")
-        md_content.append("5. [Command Reference](#command-reference)")
-        toc_index = 6
+        md_content.append("1. [Hardware Setup](#hardware-setup)")
+        md_content.append("2. [Install the Python Library](#install-the-python-library)")
+        md_content.append("3. [Controlling the Servomotor From the Command Line](#controlling-the-servomotor-from-the-command-line)")
+        md_content.append("4. [Getting Started](#getting-started)")
+        md_content.append("5. [Know-How, Best Practices, and Gotchas](#know-how-best-practices-and-gotchas)")
+        md_content.append("6. [Data Types](#data-types)")
+        md_content.append("7. [Command Reference](#command-reference)")
+        toc_index = 8
         for group in sorted(self.commands_by_group.keys()):
-            anchor = group.lower().replace(' ', '-').replace('&', 'and')
+            anchor = group.lower().replace('&', '').replace(' ', '-')
             md_content.append(f"{toc_index}. [{group}](#{anchor})")
             toc_index += 1
         md_content.append(f"{toc_index}. [Unit Conversions](#unit-conversions)")
@@ -489,7 +671,11 @@ class APIDocumentationGenerator:
         md_content.append(f"{toc_index}. [Error Handling](#error-handling)")
         toc_index += 1
         md_content.append(f"{toc_index}. [Error Codes](#error-codes)\n")
-        
+
+        # Hardware Setup Section (embedded markdown, headings demoted one level)
+        if getattr(self, 'hardware_setup_md', None):
+            md_content.append(self.demote_md_headings(self.hardware_setup_md) + "\n")
+
         # Install the Python Library Section
         md_content.append("## Install the Python Library\n")
         md_content.append("You need to install the servomotor Python library before you can use it in your code. Run this command:\n")
@@ -527,7 +713,7 @@ class APIDocumentationGenerator:
         md_content.append(windows_instructions)
         md_content.append("```\n")
         md_content.append("After installation, you can verify the servomotor library is installed correctly by running:")
-        md_content.append("```python")
+        md_content.append("```bash")
         md_content.append("python3 -c \"import servomotor; print('Servomotor library installed successfully!')\"")
         md_content.append("```\n")
         
@@ -568,7 +754,11 @@ class APIDocumentationGenerator:
             md_content.append("# Example file not found")
         
         md_content.append("```\n")
-        
+
+        # Know-How Section (embedded markdown, headings demoted one level)
+        if getattr(self, 'knowhow_md', None):
+            md_content.append(self.demote_md_headings(self.knowhow_md) + "\n")
+
         # Data Types Section
         md_content.append("## Data Types\n")
         md_content.append("This section describes the various data types used in the Servomotor API commands.\n")
@@ -641,46 +831,37 @@ class APIDocumentationGenerator:
                             md_content.append(f"- `{out_name}`: {out_desc}")
                     md_content.append("")
                 
-                # Python example
-                md_content.append("**Example:**")
-                md_content.append("```python")
-                md_content.append(self.generate_python_example(cmd))
-                md_content.append("```\n")
+                # Python example: prefer the real runnable example program
+                real_example = self.load_command_example(cmd)
+                if real_example:
+                    md_content.append("**Example program:**")
+                    md_content.append("```python")
+                    md_content.append(real_example.rstrip())
+                    md_content.append("```\n")
+                else:
+                    md_content.append("**Example:**")
+                    md_content.append("```python")
+                    md_content.append(self.generate_python_example(cmd))
+                    md_content.append("```\n")
         
         # Unit Conversions Section
         md_content.append("## Unit Conversions\n")
         md_content.append("The servomotor library supports multiple unit systems for convenience.\n")
-        md_content.append("### Position Units")
-        md_content.append("- `encoder_counts`: Raw encoder counts (default)")
-        md_content.append("- `shaft_rotations`: Rotations of the motor shaft")
-        md_content.append("- `degrees`: Degrees of rotation")
-        md_content.append("- `radians`: Radians of rotation\n")
-        
-        md_content.append("### Velocity Units")
-        md_content.append("- `counts_per_second`: Encoder counts per second (default)")
-        md_content.append("- `rotations_per_second`: Rotations per second")
-        md_content.append("- `rpm`: Revolutions per minute")
-        md_content.append("- `degrees_per_second`: Degrees per second")
-        md_content.append("- `radians_per_second`: Radians per second\n")
-        
-        md_content.append("### Acceleration Units")
-        md_content.append("- `counts_per_second_squared`: Encoder counts per second² (default)")
-        md_content.append("- `rotations_per_second_squared`: Rotations per second²")
-        md_content.append("- `rpm_per_second`: RPM per second")
-        md_content.append("- `degrees_per_second_squared`: Degrees per second²")
-        md_content.append("- `radians_per_second_squared`: Radians per second²\n")
-        
-        md_content.append("### Time Units")
-        md_content.append("- `seconds`: Time in seconds")
-        md_content.append("- `milliseconds`: Time in milliseconds")
-        md_content.append("- `microseconds`: Time in microseconds\n")
+        for section_title, unit_lines in self.build_unit_reference():
+            md_content.append(f"### {section_title}")
+            for line in unit_lines:
+                unit, _, note = line.partition(' - ')
+                md_content.append(f"- `{unit}`: {note}")
+            md_content.append("")
         
         md_content.append("### Setting Units")
         md_content.append("You can set the units for a motor instance during initialization or at runtime:\n")
         md_content.append("```python")
-        md_content.append("# During initialization")
+        md_content.append("# During initialization (the alias is a single character, an integer 0-251,")
+        md_content.append("# or a 64-bit unique ID passed as an int)")
         md_content.append("motor = servomotor.M3(")
-        md_content.append("    alias='motor1',")
+        md_content.append("    'X',")
+        md_content.append("    time_unit='seconds',")
         md_content.append("    position_unit='degrees',")
         md_content.append("    velocity_unit='rpm',")
         md_content.append("    acceleration_unit='rpm_per_second'")
@@ -853,18 +1034,23 @@ class APIDocumentationGenerator:
         
         # Table of Contents
         md_content.append("## Table of Contents\n")
-        md_content.append("1. [Getting Started](#getting-started)")
-        md_content.append("2. [Data Types](#data-types)")
-        md_content.append("3. [Command Reference](#command-reference)")
-        toc_index = 4
+        md_content.append("1. [Hardware Setup](#hardware-setup)")
+        md_content.append("2. [Getting Started](#getting-started)")
+        md_content.append("3. [Data Types](#data-types)")
+        md_content.append("4. [Command Reference](#command-reference)")
+        toc_index = 5
         for group in sorted(self.commands_by_group.keys()):
-            anchor = group.lower().replace(' ', '-').replace('&', 'and')
+            anchor = group.lower().replace('&', '').replace(' ', '-')
             md_content.append(f"{toc_index}. [{group}](#{anchor})")
             toc_index += 1
         md_content.append(f"{toc_index}. [Error Handling](#error-handling)")
         toc_index += 1
         md_content.append(f"{toc_index}. [Error Codes](#error-codes)\n")
-        
+
+        # Hardware Setup Section (embedded markdown, headings demoted one level)
+        if getattr(self, 'hardware_setup_md', None):
+            md_content.append(self.demote_md_headings(self.hardware_setup_md) + "\n")
+
         # Getting Started Section
         md_content.append("## Getting Started\n")
         md_content.append("This section provides a complete example showing how to control a servomotor with Arduino.\n")
@@ -1128,13 +1314,15 @@ class APIDocumentationGenerator:
         )
         
         toc_items = [
-            '1. Install the Python Library',
-            '2. Controlling the Servomotor From the Command Line',
-            '3. Getting Started',
-            '4. Data Types',
-            '5. Command Reference'
+            '1. Hardware Setup',
+            '2. Install the Python Library',
+            '3. Controlling the Servomotor From the Command Line',
+            '4. Getting Started',
+            '5. Know-How, Best Practices, and Gotchas',
+            '6. Data Types',
+            '7. Command Reference'
         ]
-        toc_index = 6
+        toc_index = 8
         for group in sorted(self.commands_by_group.keys()):
             toc_items.append(f'   {toc_index}. {group}')
             toc_index += 1
@@ -1147,7 +1335,13 @@ class APIDocumentationGenerator:
         for item in toc_items:
             story.append(Paragraph(item, toc_style))
         story.append(PageBreak())
-        
+
+        # Hardware Setup Section
+        if getattr(self, 'hardware_setup_md', None):
+            self.add_markdown_section_to_pdf(story, doc, self.hardware_setup_md,
+                                             heading_style, normal_style, code_style)
+            story.append(PageBreak())
+
         # Install the Python Library Section
         story.append(Paragraph('Install the Python Library', heading_style))
         story.append(Spacer(1, 12))
@@ -1245,18 +1439,24 @@ class APIDocumentationGenerator:
             story.append(Paragraph('Example file not found', normal_style))
         
         story.append(PageBreak())
-        
+
+        # Know-How Section
+        if getattr(self, 'knowhow_md', None):
+            self.add_markdown_section_to_pdf(story, doc, self.knowhow_md,
+                                             heading_style, normal_style, code_style)
+            story.append(PageBreak())
+
         # Data Types Section - use the modular function
         self.generate_data_types_for_pdf(story, doc, heading_style, normal_style)
-        
+
         story.append(PageBreak())
-        
+
         # Command Reference
         story.append(Paragraph('Command Reference', heading_style))
         story.append(Spacer(1, 12))
         story.append(Paragraph('This section documents all available commands organized by category.', normal_style))
         story.append(Spacer(1, 12))
-        
+
         # Subheading style - black, bigger, and bold
         subheading_style = ParagraphStyle(
             'SubHeading',
@@ -1310,15 +1510,32 @@ class APIDocumentationGenerator:
                         cmd_content.append(Paragraph(output_text, normal_style))
                         cmd_content.append(Spacer(1, 6))
                 
-                # Python example with CodeBox
-                cmd_content.append(Paragraph('<b>Example:</b>', normal_style))
-                example_code = self.generate_python_example(cmd)
-                code_box = self.CodeBox(example_code, doc.width - 20, code_style)
-                cmd_content.append(code_box)
-                cmd_content.append(Spacer(1, 12))
-                
-                # Add as KeepTogether to avoid splitting
-                story.append(KeepTogether(cmd_content))
+                # Python example with CodeBox: prefer the real runnable example program
+                real_example = self.load_command_example(cmd)
+                if real_example:
+                    cmd_content.append(Paragraph('<b>Example program:</b>', normal_style))
+                    example_code = real_example.rstrip()
+                else:
+                    cmd_content.append(Paragraph('<b>Example:</b>', normal_style))
+                    example_code = self.generate_python_example(cmd)
+
+                # A CodeBox cannot split across pages; chunk long examples so
+                # each box fits on a page, and keep only short ones in the
+                # KeepTogether block with the command header.
+                MAX_CODEBOX_LINES = 45
+                code_lines = example_code.split('\n')
+                if len(code_lines) <= MAX_CODEBOX_LINES:
+                    code_box = self.CodeBox(example_code, doc.width - 20, code_style)
+                    cmd_content.append(code_box)
+                    cmd_content.append(Spacer(1, 12))
+                    story.append(KeepTogether(cmd_content))
+                else:
+                    story.append(KeepTogether(cmd_content))
+                    for i in range(0, len(code_lines), MAX_CODEBOX_LINES):
+                        chunk = '\n'.join(code_lines[i:i + MAX_CODEBOX_LINES])
+                        story.append(self.CodeBox(chunk, doc.width - 20, code_style))
+                        story.append(Spacer(1, 4))
+                    story.append(Spacer(1, 8))
             
             story.append(PageBreak())
         
@@ -1328,33 +1545,7 @@ class APIDocumentationGenerator:
         story.append(Paragraph('The servomotor library supports multiple unit systems for convenience.', normal_style))
         story.append(Spacer(1, 12))
         
-        units_info = [
-            ('<b>Position Units:</b>', [
-                'encoder_counts - Raw encoder counts (default)',
-                'shaft_rotations - Rotations of the motor shaft',
-                'degrees - Degrees of rotation',
-                'radians - Radians of rotation'
-            ]),
-            ('<b>Velocity Units:</b>', [
-                'counts_per_second - Encoder counts per second (default)',
-                'rotations_per_second - Rotations per second',
-                'rpm - Revolutions per minute',
-                'degrees_per_second - Degrees per second',
-                'radians_per_second - Radians per second'
-            ]),
-            ('<b>Acceleration Units:</b>', [
-                'counts_per_second_squared - Encoder counts per second² (default)',
-                'rotations_per_second_squared - Rotations per second²',
-                'rpm_per_second - RPM per second',
-                'degrees_per_second_squared - Degrees per second²',
-                'radians_per_second_squared - Radians per second²'
-            ]),
-            ('<b>Time Units:</b>', [
-                'seconds - Time in seconds',
-                'milliseconds - Time in milliseconds',
-                'microseconds - Time in microseconds'
-            ])
-        ]
+        units_info = [(f"<b>{title}:</b>", lines) for title, lines in self.build_unit_reference()]
         
         for title, units in units_info:
             story.append(Paragraph(title, normal_style))
@@ -1368,9 +1559,11 @@ class APIDocumentationGenerator:
         story.append(Paragraph('You can set the units for a motor instance during initialization or at runtime:', normal_style))
         story.append(Spacer(1, 6))
         
-        units_example = """# During initialization
+        units_example = """# During initialization (the alias is a single character, an integer
+# 0-251, or a 64-bit unique ID passed as an int)
 motor = servomotor.M3(
-    alias='motor1',
+    'X',
+    time_unit='seconds',
     position_unit='degrees',
     velocity_unit='rpm',
     acceleration_unit='rpm_per_second'
@@ -1574,20 +1767,27 @@ motor.set_velocity_unit('rotations_per_second')"""
             spaceAfter=6
         )
         
-        story.append(Paragraph('1. Getting Started', toc_style))
-        story.append(Paragraph('2. Data Types', toc_style))
-        story.append(Paragraph('3. Command Reference', toc_style))
-        
-        toc_index = 4
+        story.append(Paragraph('1. Hardware Setup', toc_style))
+        story.append(Paragraph('2. Getting Started', toc_style))
+        story.append(Paragraph('3. Data Types', toc_style))
+        story.append(Paragraph('4. Command Reference', toc_style))
+
+        toc_index = 5
         for group in sorted(self.commands_by_group.keys()):
             story.append(Paragraph(f'{toc_index}. {group}', toc_style))
             toc_index += 1
-        
+
         story.append(Paragraph(f'{toc_index}. Error Handling', toc_style))
         story.append(Paragraph(f'{toc_index + 1}. Error Codes', toc_style))
-        
+
         story.append(PageBreak())
-        
+
+        # Hardware Setup Section
+        if getattr(self, 'hardware_setup_md', None):
+            self.add_markdown_section_to_pdf(story, doc, self.hardware_setup_md,
+                                             heading_style, normal_style, code_style)
+            story.append(PageBreak())
+
         # Getting Started Section
         story.append(Paragraph('Getting Started', heading_style))
         story.append(Spacer(1, 12))
@@ -1680,7 +1880,13 @@ motor.set_velocity_unit('rotations_per_second')"""
         # Load error handling text
         if not self.load_error_handling_text():
             print("⚠️  Warning: Error handling text not loaded. Using default text.")
-        
+
+        # Load hardware setup and know-how sections
+        if not self.load_hardware_setup():
+            print("⚠️  Warning: Hardware setup section not loaded. Documentation will omit it.")
+        if not self.load_knowhow():
+            print("⚠️  Warning: Know-how section not loaded. Documentation will omit it.")
+
         # Load installation instructions
         if self.load_install_instructions() is None:
             sys.exit(1)
