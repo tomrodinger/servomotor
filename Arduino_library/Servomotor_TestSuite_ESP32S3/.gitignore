@@ -1,0 +1,5 @@
+# Build artifacts (host-mode binary + Arduino build cache) — not source.
+host_suite
+*.o
+/build/
+suite_run.log

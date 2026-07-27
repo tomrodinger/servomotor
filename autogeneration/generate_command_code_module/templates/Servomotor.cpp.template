@@ -6,13 +6,7 @@
 
 Servomotor::Servomotor(uint8_t alias, HardwareSerial& serialPort, int8_t rxPin, int8_t txPin, uint32_t baud)
     : _alias(alias), _uniqueId(0), _useExtendedAddressing(false), _comm(serialPort, baud, rxPin, txPin), _errno(0),
-      m_positionUnit(PositionUnit::SHAFT_ROTATIONS),
-      m_velocityUnit(VelocityUnit::ROTATIONS_PER_SECOND),
-      m_accelerationUnit(AccelerationUnit::ROTATIONS_PER_SECOND_SQUARED),
-      m_timeUnit(TimeUnit::SECONDS),
-      m_temperatureUnit(TemperatureUnit::CELSIUS),
-      m_voltageUnit(VoltageUnit::VOLTS),
-      m_currentUnit(CurrentUnit::AMPS) {
+{{generate_default_unit_initializers}} {
     
     Serial.print("[Motor] Initialized with standard addressing, Alias: ");
     Serial.println(_alias);

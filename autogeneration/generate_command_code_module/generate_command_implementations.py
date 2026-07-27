@@ -7,7 +7,7 @@ the method implementations for the Servomotor class.
 
 import re
 
-from .maps import ENDIAN_CONVERSION_MAP, TYPE_MAP, UNIT_CONVERSION_MAP
+from .maps import ENDIAN_CONVERSION_MAP, TYPE_MAP, UNIT_CONVERSION_MAP, get_variable_length_output
 
 def format_command_name(command_string):
     """
@@ -276,6 +276,17 @@ def generate_command_implementations(commands_data=None, data_types_data=None, *
                 # For multiple values in a struct, use the converted struct type
                 wrapper_return_type = return_type.replace('Response', 'ResponseConverted')
         
+        # Variable-length (size:null) outputs use a caller-owned buffer, not a fixed struct.
+        is_var_len, is_var_len_is_string = get_variable_length_output(cmd, data_types_data)
+        if is_var_len:
+            implementations.append(generate_variable_length_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, is_var_len_is_string,
+                type_map, endian_conversion_map, by_unique_id=False))
+            implementations.append(generate_variable_length_method_implementation(
+                cmd, cmd_str, cmd_id, func_name, has_input, is_var_len_is_string,
+                type_map, endian_conversion_map, by_unique_id=True))
+            continue
+
         # Generate implementations
         if needs_unit_conversion:
             # First generate the Raw implementation
@@ -667,7 +678,7 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                 
                 # Add conversion code - use the global function, not a class method
                 internal_var = f"{param_name}_internal"
-                method_lines.append(f"    float {internal_var} = ::{conversion_func}({param_name}, {unit_enum}, ConversionDirection::TO_INTERNAL);")
+                method_lines.append(f"    float {internal_var} = ::{conversion_func}({param_name}, {unit_enum}, ConversionDirection::TO_INTERNAL){_time_us_to_internal_suffix(param)};")
                 # Find this parameter in the Input array to get its original type
                 for input_param in cmd.get('Input', []):
                     if input_param.get('ParameterName') == param_name:
@@ -720,10 +731,10 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                     param_name = output_param.get('ParameterName')
                     primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i64', 'u64']
                     if type_str in primitive_types:
-                        method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                        method_lines.append(f"    float converted = ::{conversion_func}({_time_us_from_internal('(float)rawResult', output_param)}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
                     else:
                         # Otherwise assume it's a struct with a field name matching the parameter name
-                        method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                        method_lines.append(f"    float converted = ::{conversion_func}({_time_us_from_internal(f'(float)rawResult.{param_name}', output_param)}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
 
                     method_lines.append(f"    return converted;")
                 else:
@@ -736,7 +747,7 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                             conversion_func = unit_conversion_map.get(unit_type, 'convertUnknown')
                             unit_enum = f"m_{unit_type}Unit"
 
-                            method_lines.append(f"    converted.{param_name} = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                            method_lines.append(f"    converted.{param_name} = ::{conversion_func}({_time_us_from_internal(f'(float)rawResult.{param_name}', output_param)}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
                         else:
                             # Copy non-converted fields directly
                             param_name = output_param.get('ParameterName')
@@ -772,7 +783,7 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                 param_name = output_param.get('ParameterName')
                 primitive_types = ['i8', 'u8', 'i16', 'u16', 'i24', 'u24', 'i32', 'u32', 'i64', 'u64']
                 if type_str in primitive_types:
-                    method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
+                    method_lines.append(f"    float converted = ::{conversion_func}({_time_us_from_internal('(float)rawResult', output_param)}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
                 else:
                     method_lines.append(f"    float converted = ::{conversion_func}((float)rawResult.{param_name}, {unit_enum}, ConversionDirection::FROM_INTERNAL);")
                 method_lines.append(f"    return converted;")
@@ -965,6 +976,148 @@ def generate_simple_method_implementation(cmd, cmd_str, cmd_id, func_name, has_i
     method_lines.append("}")
     method_lines.append("")
     
+    return "\n".join(method_lines)
+
+
+def _time_us_from_internal(raw_expr, param):
+    """For a time OUTPUT whose wire InternalUnit is microseconds, the device value
+    is in microseconds (1 MHz), not timesteps (31250 Hz). Scale it to timesteps
+    before the timestep-based convertTime FROM_INTERNAL, removing the 32x error
+    (1e6/31250 = 32). No-op for every other parameter."""
+    uc = param.get('UnitConversion', {}) or {}
+    if uc.get('Type') == 'time' and uc.get('InternalUnit') == 'microseconds':
+        return f"({raw_expr}) * CONVERSION_FACTOR_MICROSECONDS"
+    return raw_expr
+
+
+def _time_us_to_internal_suffix(param):
+    """For a time INPUT whose wire InternalUnit is microseconds, divide the
+    timestep-based convertTime TO_INTERNAL result to get microseconds for the
+    wire. Returns the suffix string to append to the convertTime(...) call
+    (empty when not applicable)."""
+    uc = param.get('UnitConversion', {}) or {}
+    if uc.get('Type') == 'time' and uc.get('InternalUnit') == 'microseconds':
+        return " / CONVERSION_FACTOR_MICROSECONDS"
+    return ""
+
+
+def generate_variable_length_method_implementation(cmd, cmd_str, cmd_id, func_name, has_input,
+                                                   is_string, type_map, endian_conversion_map,
+                                                   by_unique_id=False):
+    """Generate the caller-owned-buffer implementation for a command whose single output
+    is a variable-length (size:null) type.
+
+    is_string=True  -> string_null_term: buffer is char*, result is null-terminated.
+    is_string=False -> general_data blob: buffer is uint8_t*, raw bytes, no terminator.
+    """
+    method_lines = []
+    buf_type = "char" if is_string else "uint8_t"
+
+    # Build the raw input parameter list (these commands have no unit conversion).
+    params = []
+    if has_input:
+        for idx, param in enumerate(cmd.get('Input', [])):
+            desc = param.get('Description', '')
+            param_name = param.get('ParameterName')
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                remainder = match.group(2)
+                if not param_name:
+                    words = remainder.strip().split()
+                    param_name = words[0] if words else f"param{idx}"
+                    param_name = re.sub(r'\W|^(?=\d)', '_', param_name.lower())
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                if isinstance(cpp_type, tuple):
+                    base_type, array_size = cpp_type
+                    params.append(f"{base_type} {param_name}[{array_size}]")
+                else:
+                    params.append(f"{cpp_type} {param_name}")
+
+    buffer_params = f"{buf_type}* buffer, uint16_t bufferSize, uint16_t* actualSize"
+
+    # Function signature
+    if by_unique_id:
+        sig_params = ", ".join(["uint64_t uniqueId"] + params + [buffer_params])
+        method_lines.append(f"void Servomotor::{func_name}({sig_params}) {{")
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called (by unique ID).");')
+    else:
+        sig_params = ", ".join(params + [buffer_params])
+        method_lines.append(f"void Servomotor::{func_name}({sig_params}) {{")
+        method_lines.append(f'    Serial.println("[Motor] {func_name} called.");')
+
+    # Fail-fast guard: send nothing on a bad buffer.
+    method_lines.append(f"    if (buffer == nullptr || bufferSize == 0) {{")
+    method_lines.append(f"        _errno = COMMUNICATION_ERROR_BUFFER_TOO_SMALL;")
+    method_lines.append(f"        if (actualSize) *actualSize = 0;")
+    method_lines.append(f"        return;")
+    method_lines.append(f"    }}")
+
+    method_lines.append(f"    const uint8_t commandID = {cmd_str.upper().replace(' ', '_')};")
+
+    # Build the payload (if any) and send the command.
+    if has_input:
+        payload_struct_name = format_payload_name(cmd_str)
+        method_lines.append(f"    {payload_struct_name} payload;")
+        for param in cmd.get('Input', []):
+            param_name = param.get('ParameterName')
+            if not param_name:
+                continue
+            desc = param.get('Description', '')
+            match = re.match(r'(\w+):\s*(.*)', desc)
+            if match:
+                type_str = match.group(1)
+                cpp_type = type_map.get(type_str, 'uint8_t')
+                if isinstance(cpp_type, tuple):
+                    method_lines.append(f"    memcpy(payload.{param_name}, {param_name}, sizeof(payload.{param_name}));")
+                else:
+                    endian_func = endian_conversion_map.get(cpp_type, '')
+                    if endian_func:
+                        method_lines.append(f"    payload.{param_name} = {endian_func}({param_name});")
+                    else:
+                        method_lines.append(f"    payload.{param_name} = {param_name};")
+        if by_unique_id:
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, (uint8_t*)&payload, sizeof(payload));")
+        else:
+            method_lines.append(f"    sendCommand(commandID, (uint8_t*)&payload, sizeof(payload));")
+    else:
+        if by_unique_id:
+            method_lines.append(f"    _comm.sendCommandByUniqueId(uniqueId, commandID, nullptr, 0);")
+        else:
+            method_lines.append(f"    sendCommand(commandID, nullptr, 0);")
+
+    # Receive the variable-length payload into the caller's buffer.
+    method_lines.append(f"    uint16_t receivedSize = 0;")
+    method_lines.append(f"    _errno = _comm.getResponse((uint8_t*)buffer, bufferSize, receivedSize);")
+    method_lines.append(f"    if (_errno == 0) {{")
+    if is_string:
+        method_lines.append(f"        // Guarantee a null terminator inside the caller's buffer.")
+        method_lines.append(f"        // getResponse only returns success when the data fit, so here")
+        method_lines.append(f"        // receivedSize <= bufferSize. A string_null_term already carries")
+        method_lines.append(f"        // its terminator on the wire; this makes termination certain even")
+        method_lines.append(f"        // if a future string type does not.")
+        method_lines.append(f"        if (receivedSize < bufferSize) {{")
+        method_lines.append(f"            buffer[receivedSize] = '\\0';")
+        method_lines.append(f"        }} else {{")
+        method_lines.append(f"            buffer[bufferSize - 1] = '\\0';")
+        method_lines.append(f"        }}")
+        method_lines.append(f"        if (actualSize) *actualSize = (uint16_t)strlen(buffer);")
+    else:
+        method_lines.append(f"        if (actualSize) *actualSize = receivedSize;")
+    method_lines.append(f"        return;")
+    method_lines.append(f"    }}")
+    method_lines.append(f"    if (_errno == COMMUNICATION_ERROR_BUFFER_TOO_SMALL) {{")
+    method_lines.append(f"        // getResponse reports the full required payload size in receivedSize.")
+    method_lines.append(f"        if (actualSize) *actualSize = receivedSize;")
+    if is_string:
+        method_lines.append(f"        buffer[0] = '\\0';")
+    method_lines.append(f"        return;")
+    method_lines.append(f"    }}")
+    method_lines.append(f"    if (actualSize) *actualSize = 0;")
+    if is_string:
+        method_lines.append(f"    buffer[0] = '\\0';")
+    method_lines.append("}")
+    method_lines.append("")
     return "\n".join(method_lines)
 
 

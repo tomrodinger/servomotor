@@ -500,7 +500,7 @@ def generate_unit_conversions_json(motor_type, velocity_factors, velocity_verifi
             ("velocity", ["rotations_per_second", "rpm", "degrees_per_second", "radians_per_second", "counts_per_second", "counts_per_timestep"]),
             ("acceleration", ["rotations_per_second_squared", "rpm_per_second", "degrees_per_second_squared", "radians_per_second_squared", "counts_per_second_squared", "counts_per_timestep_squared"]),
             ("current", ["internal_current_units", "milliamps", "amps"]),  # Renamed from arbitrary_units to internal_current_units
-            ("voltage", ["millivolts", "volts"]),
+            ("voltage", ["volts", "millivolts"]),  # volts first so both Python and Arduino default voltage to volts
             ("temperature", ["celsius", "fahrenheit", "kelvin"])
         ])),
         ("conversion_factors", OrderedDict([

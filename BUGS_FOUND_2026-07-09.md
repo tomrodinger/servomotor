@@ -647,3 +647,99 @@ the current defaults.
 - `API_documentation/autogeneration/error_handling.txt`: enriched with the
   verified fatal-error/LED semantics, communication statistics counters, and
   test-mode notes.
+
+---
+
+## STATUS UPDATE 2026-07-27 — Arduino library bugs FIXED + verified
+
+All Arduino-library bugs below are **FIXED** (generator-side changes, then regenerated;
+never hand-edited the generated files) and **verified on BOTH hardware targets** (ESP32-S3
+bench + 35-motor rack), 63/63 tests, 1043 assertions, 0 failures:
+
+| Bug | Fix |
+| :-- | :-- |
+| **BUG-25/26/27** (variable-length responses) | Generator now detects `size:null` output types and emits a CALLER-OWNED-BUFFER API: `void <cmd>([inputs,] buf, bufferSize, actualSize*)` — fail-fast guard on null/zero buffer (no bus traffic), strings null-terminated (actualSize = strlen), blobs raw, required size reported on `BUFFER_TOO_SMALL`. `Communication::getResponse` now reports the required size on too-small (it already drains the full packet). The 3 fixed-size response structs were removed. |
+| **BUG-28** (32× time) | Generator is now `InternalUnit`-aware: microsecond-wire time params (cmd 9 Get current time output, cmd 10 Time sync input) are scaled by `CONVERSION_FACTOR_MICROSECONDS` at the conversion call site. Timestep-based move durations unchanged. |
+| **BUG-29** (new, default units) | Arduino default units are now data-driven = the first unit listed per type in `unit_conversions_M3.json` (matching Python). Current default AMPS→`internal_current_units`; voltage list reordered so both libraries default to `volts` (firmware internal unit is decivolts / volts×10 — confirmed in ADC.c). |
+
+The test suite's 8 formerly-failing "expected-fail" assertions now PASS; those tests'
+known-bug annotations were cleared so any regression is flagged as unexpected.
+
+---
+
+## Arduino library — variable-length response bugs (found 2026-07-21)
+
+Found while validating the Arduino library after the doc/codegen work (multi-agent
+static audit + regenerate-and-diff + hardware confirmation). **NOT fixed yet — logged
+for a later fix session.** All three share ONE root cause and are pre-existing generator
+limitations, not regressions.
+
+**Root cause:** `autogeneration/generate_command_code.py` emits, for EVERY command response,
+a fixed-size C++ struct plus a `receivedSize == sizeof(struct)` **exact-match** check. That
+is wrong for response fields whose data type is **variable-length** (`string_null_term`,
+`general_data`, both `"size": null` in `data_types.json`). The firmware returns a payload
+whose length is not `sizeof(struct)`, so the equality check always fails, the method sets
+`COMMUNICATION_ERROR_DATA_WRONG_SIZE` and returns a zeroed/empty struct. The command can
+never deliver its data on Arduino. The **Python reference library handles these correctly**
+(`communication.py` ~747-816: null-terminator search for `string_null_term`, actual-length
+read for `general_data`).
+
+| Bug | Command | JSON output type | Generated struct | Runtime result on Arduino |
+| :-- | :------ | :--------------- | :--------------- | :------------------------ |
+| **BUG-25** | cmd 24 Get product description | `string_null_term` | `char[32]` (Servomotor.h:149) | firmware sends 11 B `"Servomotor\0"` → `11 != 32` → always `DATA_WRONG_SIZE`, returns empty. Empirically confirmed: Python returns `[['Servomotor\x00']]`; Arduino `getProductDescription()` never succeeds. |
+| **BUG-26** | cmd 7 Capture hall sensor data | `general_data` (stream) | `uint8_t data` (1 B, Servomotor.h:66-69) | multi-point capture is `nPoints*channels*2` bytes → never `== 1` → can never receive the capture. |
+| **BUG-27** | cmd 35 Read multipurpose buffer | `general_data` | `uint8_t bufferData` (1 B, Servomotor.h:217-220) | variable buffer contents → exact-1-byte check fails → always empty. |
+
+**Impact:** none are core motion/telemetry, so all runtime motion tests still pass; these are
+informational/diagnostic reads that are silently non-functional on Arduino.
+
+**Suggested fix (later):** teach `generate_command_code.py` to detect null-size data types and
+emit a variable-length receive path — a large/bounded buffer, accept `receivedSize <= bufsize`,
+and (for `string_null_term`) null-terminate — mirroring the Python `communication.py` logic.
+
+**Verification also done 2026-07-21 (no bugs):** regenerate-and-diff of the command code showed
+the committed `Servomotor.cpp`/`.h`/`Commands.h` are byte-identical to generator output for the
+current JSON across all 48 commands, except `//` description comments + timestamp (0 functional
+diffs). The datasheet Arduino example compiles verbatim for ESP32-S3 and runs correctly (moves
+exactly 1.0 rotation).
+
+## Arduino library — BUG-28: 32× time error for microsecond-wire commands (found 2026-07-21)
+
+Found by the expanded Arduino test suite (new `test_ard_time.cpp`) and confirmed against the
+Python library on the same motor. **NOT fixed yet — logged for later.**
+
+**Symptom:** the Arduino `getCurrentTime()` reads **32× too large** in every time unit (over a real
+1 s sleep it reported 32.36 s); `timeSync()` puts a value **32× too small** on the wire. The Python
+library reads the same device correctly (seconds≈1.0, µs≈1e6, timesteps≈31250).
+
+**Root cause:** the Arduino code generator is NOT `InternalUnit`-aware. It routes every `Type=="time"`
+parameter through one generated `convertTime()` whose table is normalized to **timesteps** (31250 Hz,
+`CONVERSION_FACTOR_SECONDS=31250`). Two parameters actually have `InternalUnit=="microseconds"` (1 MHz)
+on the wire, so they are off by exactly `1,000,000 / 31,250 = 32×`. The Python library fixes this via
+`M3.py` `_rescale_for_internal_unit` (keys factor tables on `Type_InternalUnit`); the Arduino generator
+has no equivalent. Root-cause locations: `autogeneration/generate_command_code_module/maps.py`
+(`UNIT_CONVERSION_MAP` maps Type→func only, ignores InternalUnit), `generate_command_implementations.py`
+(emits `convertTime` keyed on Type only), `generate_unit_conversion_code.py` (single timestep table).
+
+**Scope — exactly two parameters** (all 48 commands enumerated):
+
+| Bug | Cmd | Param | Dir | InternalUnit | Effect |
+| :-- | :-- | :---- | :-- | :----------- | :----- |
+| **BUG-28a** | 9 Get current time | `currentTime` | Output | microseconds | reads 32× too large |
+| **BUG-28b** | 10 Time sync | `masterTime` | Input | microseconds | sent 32× too small (huge timeError) |
+
+All timestep-`InternalUnit` time params (move durations: Trapezoid/Go-to-position/Homing duration,
+Move-with-velocity/acceleration timing, Multimove) are CORRECT — verified by passing motion tests.
+`updateFrequency` (raw Hz) and capture `timeStepsPerSample` (raw timesteps) carry no UnitConversion and
+are unaffected. **Suggested fix:** make the Arduino codegen `InternalUnit`-aware (mirror Python's
+`_rescale_for_internal_unit`), then regenerate.
+
+## Arduino test-suite expansion (2026-07-21)
+
+Added 14 new host-emulator `test_ard_*.cpp` files (~250 assertions) mirroring the Python per-command
+tests, covering ~all 48 commands. Run against the bench M17 (uid 99856389A2B46555) via an ESP32-S3
+USB↔RS485 bridge. Everything passes EXCEPT the four known bugs above (BUG-25 product description,
+BUG-26 capture hall data, BUG-27 read multipurpose buffer, BUG-28 time). Motion, settings, safety,
+PID, closed-loop, homing, addressing/set-alias, CRC32 control, detect, status, telemetry, diagnostics,
+vibrate/identify/test-mode all correct. (One initial homing failure was a test-only unit-clobber bug,
+fixed; homing library code is correct.)

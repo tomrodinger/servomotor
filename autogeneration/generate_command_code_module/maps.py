@@ -11,6 +11,7 @@ The goal is to keep the generator modules smaller and consistent.
 
 from __future__ import annotations
 
+import re
 from typing import Dict, Tuple, Union
 
 # For array types, values use a tuple of (base_type, array_size)
@@ -79,4 +80,36 @@ def get_cpp_type(type_str: str, default: str = 'uint8_t') -> CppType:
     - a (base_type, array_size) tuple (e.g. ("uint8_t", 10))
     """
     return TYPE_MAP.get(type_str, default)
+
+
+def get_variable_length_output(cmd, data_types_data):
+    """Detect a variable-length (size:null) single output for a command.
+
+    Looks up the command's sole Output parameter's data type in data_types.json.
+    A data type whose "size" is None is variable length (string_null_term id 201,
+    general_data id 204). Fixed types (string8=8, buf10=10, firmware_page=2058,
+    all numeric types) have a concrete size and are NOT affected.
+
+    Returns a (is_variable_length, is_string) tuple:
+    - is_variable_length: True only when the single output's data type has size == None.
+    - is_string: True for string_null_term (emit char* buffer, null-terminate);
+                 False for general_data / any other size:null blob (emit uint8_t* buffer).
+    Returns (False, False) for everything else (no output, success_response,
+    multiple outputs, unknown type, or a fixed-size type).
+    """
+    output_params = cmd.get('Output')
+    if not output_params or output_params == 'success_response':
+        return (False, False)
+    if not isinstance(output_params, list) or len(output_params) != 1:
+        return (False, False)
+    desc = output_params[0].get('Description', '')
+    m = re.match(r'(\w+):\s*(.*)', desc)
+    if not m:
+        return (False, False)
+    type_str = m.group(1)
+    data_type_map = {dt.get('data_type', ''): dt for dt in (data_types_data or [])}
+    dt = data_type_map.get(type_str)
+    if dt is None or dt.get('size') is not None:
+        return (False, False)
+    return (True, type_str == 'string_null_term')
 

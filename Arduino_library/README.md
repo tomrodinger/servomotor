@@ -333,79 +333,37 @@ Total displacement: 2 + 3 + 3 + 0 = 8 rotations
 
 ### Testing
 
-The library includes an Arduino emulator (`ArduinoEmulator.h` and `ArduinoEmulator.cpp`) that allows testing on desktop machines without actual hardware. Test files include:
-- `test_unit_conversions.cpp`: Validates unit conversion accuracy
-- `test_one_move.cpp`: Demonstrates unit conversions and motor control with detailed debug output
-- `test_get_temperature.cpp`: Demonstrates reading temperature from the motor
-- `test_emergency_stop.cpp`: Tests emergency stop functionality
-- `test_move_with_velocity.cpp`: Tests moveWithVelocity functionality with different units (rotations, degrees, encoder counts) and includes comprehensive error checking
-- `test_move_with_acceleration.cpp`: Tests moveWithAcceleration functionality with different units (rotations, degrees, radians, counts) and ensures proper stopping
+The library's test suite lives in **`Servomotor_TestSuite_ESP32S3/`** (see its
+README for full details). It contains ~37 modular tests (`tm_*.cpp`, one per
+command group, ~580 assertions) that build TWO ways from the same sources:
 
-The test framework (`test_framework.h` and `test_framework.cpp`) provides utilities for test reporting and error checking:
-- `TEST_RESULT` macro: Reports test results with pass/fail status
-- `checkMotorError` function: Checks for communication errors after motor commands and provides detailed error messages
+1. **On-device (primary):** all modules compile into one ESP32-S3 firmware that
+   runs natively on the Gearotons ESP32-S3 RS485 controller — one test per
+   boot, the ESP32 resets between tests, progress + pass/fail statistics
+   persist in NVS, and a serial CLI triggers tests over the debug link.
 
-To compile the test programs, use the provided build_tests.sh script which handles linking all necessary dependencies:
+   ```bash
+   cd Servomotor_TestSuite_ESP32S3
+   ./flash_suite.sh                 # refresh installed lib + compile + flash
+   python3 run_suite_mac.py         # start a full run and collect results
+   python3 run_suite_mac.py --only 5   # run a single test by index
+   ```
 
-```bash
-# Run the script to build all test programs
-./build_tests.sh
-```
+2. **Host mode:** the same modules compile on a desktop against the Arduino
+   emulator (`ArduinoEmulator.h`) and talk to a motor through any USB-RS485
+   port — no flashing needed, useful for quick iteration and for testing a
+   multi-motor bus from the desktop:
 
-The build_tests.sh script:
-- Automatically builds ALL test programs in the project (does not accept parameters)
-- Defines common source files needed by all tests
-- Sets compiler flags (C++17 standard)
-- Adds the REQUIRE_SERIAL_PORT flag for tests that need hardware communication
-- Creates executable files with the same name as the test file (without the .cpp extension)
+   ```bash
+   cd Servomotor_TestSuite_ESP32S3
+   ./build_host_suite.sh
+   ./host_suite /dev/cu.usbserial-XXXX <16-hex-unique-id> all
+   ./host_suite /dev/cu.usbserial-XXXX <16-hex-unique-id> multimove   # one test
+   ```
 
-After building the tests, you can run them individually or use the `run_all_tests.sh` script to run all tests:
-
-```bash
-# Run all tests with default settings (alias 'X' and unique ID '0123456789ABCDEF')
-./run_all_tests.sh
-
-# Run all tests with a specific serial port
-./run_all_tests.sh -p /dev/ttys004
-
-# Run all tests with a specific alias
-./run_all_tests.sh -a Y
-
-# Run all tests with a specific unique ID
-./run_all_tests.sh -u FEDCBA9876543210
-
-# Run all tests in alias mode only
-./run_all_tests.sh -s -a X
-
-# Run all tests in unique ID mode only
-./run_all_tests.sh -s -u 0123456789ABCDEF
-```
-
-The `run_all_tests.sh` script:
-- By default, runs each test twice: once with alias addressing and once with unique ID addressing
-- Provides command-line options to customize the test execution:
-  - `-p, --port PORT`: Specify the serial port to use (default: /dev/ttys014)
-  - `-a, --alias ID`: Specify the alias to use (default: X)
-  - `-u, --unique-id ID`: Specify the unique ID to use (default: 0123456789ABCDEF)
-  - `-s, --single-mode`: Run tests only in the mode specified by -a or -u
-  - `-h, --help`: Show help message
-
-You can also run individual test programs directly. Most test programs require a serial port parameter because they interact with the physical motor or the motor simulator:
-
-```bash
-# Example: Run the emergency stop test with a serial port
-./test_emergency_stop /dev/ttys004 X                # On macOS, using alias 'X'
-./test_emergency_stop /dev/ttys004 0123456789ABCDEF  # On macOS, using Unique ID
-./test_emergency_stop /dev/ttyUSB0 X                # On Linux, using alias 'X'
-./test_emergency_stop COM3 X                        # On Windows, using alias 'X'
-```
-
-The serial port parameter is required for any test that communicates with the motor. This includes all movement tests, status queries, and configuration commands. The only tests that might not require a serial port are those that exclusively test unit conversions without motor communication.
-
-Each test program requires:
-- C++17 standard (-std=c++17)
-- REQUIRE_SERIAL_PORT define for hardware communication
-- Linking with core library source files (ArduinoEmulator.cpp, Servomotor.cpp, etc.)
+Tests marked with known-bug annotations in `test_registry.cpp` assert the
+CORRECT behavior and are expected to fail until those library bugs are fixed;
+the suite summary counts them separately (`unexpected=0` means a clean run).
 
 ## TODO / Upcoming Changes
 

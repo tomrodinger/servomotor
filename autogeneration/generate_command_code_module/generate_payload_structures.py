@@ -7,7 +7,7 @@ the payload and response structure declarations for Servomotor.h.
 
 import re
 
-from .maps import TYPE_MAP
+from .maps import TYPE_MAP, get_variable_length_output
 
 def format_command_name(command_string):
     """
@@ -223,9 +223,12 @@ def generate_payload_structures(commands_data=None, data_types_data=None, **kwar
                 structure_lines.append(f"}} {func_name}Payload;")
                 structure_lines.append("")
         
-        # Handle response structures for commands with output parameters
+        # Handle response structures for commands with output parameters.
+        # Skip the fixed response struct for variable-length (size:null) outputs;
+        # those are delivered into a caller-owned buffer, so no struct is emitted.
         output_params = cmd.get('Output', [])
-        if output_params and output_params != 'success_response':
+        is_var_len_output, _ = get_variable_length_output(cmd, data_types_data)
+        if output_params and output_params != 'success_response' and not is_var_len_output:
             # Generate response type name algorithmically
             resp_type = format_response_name(cmd_str)
             

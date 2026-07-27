@@ -22,6 +22,49 @@ from generate_command_code_module.generate_command_methods import generate_comma
 from generate_command_code_module.generate_unit_setters import generate_unit_setters
 from generate_command_code_module.generate_command_implementations import generate_command_implementations
 
+# Fixed emission order for the unit-setting members. Must match the order the
+# members are DECLARED in Servomotor.h so the constructor member-initializer
+# list stays in declaration order (otherwise the compiler warns -Wreorder).
+_UNIT_MEMBER_ORDER = [
+    "position", "velocity", "acceleration", "time",
+    "temperature", "voltage", "current",
+]
+
+
+def _unit_enum_name(category):
+    # Same formula as generate_unit_conversion_code.py (category.capitalize()+"Unit").
+    return category.capitalize() + "Unit"
+
+
+def _first_enumerator(units, category):
+    # First-listed unit == the library's default; same enumerator formula the
+    # enum generator uses (upper-cased, spaces -> underscores).
+    return units[category][0].upper().replace(" ", "_")
+
+
+def generate_default_unit_initializers(unit_conversions_data):
+    """Constructor member-initializer entries; default = first-listed unit."""
+    units = unit_conversions_data["units"]
+    lines = []
+    for category in _UNIT_MEMBER_ORDER:
+        member = f"m_{category}Unit"
+        enum = _unit_enum_name(category)
+        first = _first_enumerator(units, category)
+        lines.append(f"      {member}({enum}::{first})")
+    return ",\n".join(lines)
+
+
+def generate_default_unit_members(unit_conversions_data):
+    """In-class member declarations with default = first-listed unit."""
+    units = unit_conversions_data["units"]
+    lines = []
+    for category in _UNIT_MEMBER_ORDER:
+        member = f"m_{category}Unit"
+        enum = _unit_enum_name(category)
+        first = _first_enumerator(units, category)
+        lines.append(f"    {enum} {member} = {enum}::{first};")
+    return "\n".join(lines)
+
 # Get the absolute path of the Arduino library directory
 ARDUINO_LIB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../Arduino_library/"))
 # Get the absolute path of the python_programs directory
@@ -123,6 +166,10 @@ def process_template(template_file, output_file, context):
             result = generate_unit_setters(context['commands_data'], context['unit_conversions_data'])
         elif func_name == 'generate_command_implementations':
             result = generate_command_implementations(context['commands_data'], context['data_types_data'])
+        elif func_name == 'generate_default_unit_initializers':
+            result = generate_default_unit_initializers(context['unit_conversions_data'])
+        elif func_name == 'generate_default_unit_members':
+            result = generate_default_unit_members(context['unit_conversions_data'])
         else:
             print(f"Error: Unknown function marker '{func_name}' in template")
             sys.exit(1)

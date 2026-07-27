@@ -425,6 +425,12 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     // Read the payload
     if((error_code = receiveBytes(buffer, bufferSize, bytesLeftToReadWithoutTheCRC32, &bytesLeftToRead,
                                   TIMEOUT_MS - (millis() - startTime))) != 0) {
+        if (error_code == COMMUNICATION_ERROR_BUFFER_TOO_SMALL) {
+            // Report the full required payload byte count so the caller can resize and retry.
+            // receiveBytes has already drained these payload bytes from the wire; the remaining
+            // CRC32 (if any) is drained by the flush label below.
+            receivedSize = bytesLeftToReadWithoutTheCRC32;
+        }
         goto flush_read_remaining_bytes_and_return_error;
     }
     receivedSize = bytesLeftToReadWithoutTheCRC32;

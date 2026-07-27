@@ -7,7 +7,7 @@ the method declarations for the Servomotor class.
 
 import re
 
-from .maps import TYPE_MAP
+from .maps import TYPE_MAP, get_variable_length_output
 
 def format_command_name(command_string):
     """
@@ -121,7 +121,11 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         
         # Determine if this command has outputs (returns a value)
         has_output = cmd.get('Output') and cmd['Output'] != 'success_response'
-        
+
+        # Detect a variable-length (size:null) single output. Such commands use a
+        # caller-owned buffer instead of returning a fixed response struct.
+        is_var_len, is_var_len_is_string = get_variable_length_output(cmd, data_types_data)
+
         # Determine the return type
         return_type = "void"
         if has_output:
@@ -225,7 +229,15 @@ def generate_command_methods(commands_data=None, data_types_data=None, **kwargs)
         raw_param_str = ", ".join(raw_params)
         wrapper_param_str = ", ".join(wrapper_params)
         
-        if needs_unit_conversion:
+        if is_var_len:
+            # Variable-length output: caller-owned buffer design.
+            # void <method>([inputs,] <buf>* buffer, uint16_t bufferSize, uint16_t* actualSize);
+            buf_type = "char" if is_var_len_is_string else "uint8_t"
+            buffer_params = f"{buf_type}* buffer, uint16_t bufferSize, uint16_t* actualSize"
+            alias_params = f"{raw_param_str}, {buffer_params}" if raw_param_str else buffer_params
+            method_lines.append(f"{indent}void {func_name}({alias_params});")
+            method_lines.append(f"{indent}void {func_name}(uint64_t uniqueId, {alias_params});")
+        elif needs_unit_conversion:
             # Add Raw method
             raw_method_declaration = f"{indent}{return_type} {func_name}Raw({raw_param_str});"
             method_lines.append(raw_method_declaration)
