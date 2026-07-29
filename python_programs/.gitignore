@@ -19,6 +19,9 @@ servomotor_simulator.py
 .saved_vscode_terminal_sessions
 PyPi_distribution/dist/
 PyPi_distribution/src/
+PyPi_distribution/build/
+*.egg-info/
+serial_device.txt
 MY_AXIS
 hall_calibration_one_rotation.txt
 hall_calibration_raw_data.bin

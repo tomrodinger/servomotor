@@ -22,6 +22,7 @@ Issues = "https://tutorial.gearotons.com/feedback"
 servomotor_command = "servomotor_command:main"
 detect_and_set_alias_all_devices = "detect_and_set_alias_all_devices:main"
 show_device_information_for_all_devices = "show_device_information_for_all_devices:main"
+upgrade_firmware = "upgrade_firmware:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -30,7 +31,7 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
-py-modules = ["terminal_formatting", "servomotor_command", "detect_and_set_alias_all_devices", "show_device_information_for_all_devices"]
+py-modules = ["terminal_formatting", "servomotor_command", "detect_and_set_alias_all_devices", "show_device_information_for_all_devices", "upgrade_firmware"]
 
 [tool.setuptools.dynamic]
 version = {attr = "servomotor.__version__"}

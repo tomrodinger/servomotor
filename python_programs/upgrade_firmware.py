@@ -55,6 +55,7 @@ import zlib
 import struct
 import servomotor
 import servomotor.communication
+import servomotor.serial_functions  # bound explicitly: `import servomotor` alone does not expose this submodule
 
 FIRMWARE_UPGRADE_COMMAND = 23
 SYSTEM_RESET_COMMAND = 27
@@ -356,87 +357,92 @@ def upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data,
     time.sleep(0.1)
 
 
-# Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
-# and it also takes a mandatory firmware file name
-parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
-parser.add_argument('-p', '--port', help='serial port device', default=None)
-parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
-parser.add_argument('-a', '--alias', help='alias of the device to communicate with, or a 16-character hex string for unique ID (only for new protocol)', default="255")
-parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new',
-                    help='Protocol to use for resetting the device into bootloader mode (default: new)')
-parser.add_argument('--bootloader-protocol', choices=['old', 'new'], default='new',
-                    help='Protocol to use for transferring the firmware (default: new)')
-parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
-parser.add_argument('firmware_filename', help='new firmware file to send to the device')
-args = parser.parse_args()
+def main():
+    # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
+    # and it also takes a mandatory firmware file name
+    parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
+    parser.add_argument('-p', '--port', help='serial port device', default=None)
+    parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
+    parser.add_argument('-a', '--alias', help='alias of the device to communicate with, or a 16-character hex string for unique ID (only for new protocol)', default="255")
+    parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new',
+                        help='Protocol to use for resetting the device into bootloader mode (default: new)')
+    parser.add_argument('--bootloader-protocol', choices=['old', 'new'], default='new',
+                        help='Protocol to use for transferring the firmware (default: new)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='increase output verbosity')
+    parser.add_argument('firmware_filename', help='new firmware file to send to the device')
+    args = parser.parse_args()
 
-# Set verbose level: 2 if -v is given, else 0
-verbose_level = 2 if args.verbose else 0
+    # Set verbose level: 2 if -v is given, else 0
+    verbose_level = 2 if args.verbose else 0
 
-if args.PORT == True:
-    serial_port = "MENU"
-else:
-    serial_port = args.port
-firmware_filename = args.firmware_filename
+    if args.PORT == True:
+        serial_port = "MENU"
+    else:
+        serial_port = args.port
+    firmware_filename = args.firmware_filename
 
-# Store protocol choices
-firmware_protocol = args.firmware_protocol
-bootloader_protocol = args.bootloader_protocol
+    # Store protocol choices
+    firmware_protocol = args.firmware_protocol
+    bootloader_protocol = args.bootloader_protocol
 
-servomotor.set_standard_options_from_args(args)
-global_alias_or_unique_id = servomotor.get_global_alias_or_unique_id()
+    servomotor.set_standard_options_from_args(args)
+    global_alias_or_unique_id = servomotor.get_global_alias_or_unique_id()
 
-# Input validation for protocol and alias/unique ID
-if (bootloader_protocol == 'old') and (global_alias_or_unique_id is not None) and (global_alias_or_unique_id != servomotor.ALL_ALIAS):
-    print("Error: The -a/--alias parameter is not supported with the old protocol. The old protocol only supports broadcast (alias 255).")
-    exit(1)
+    # Input validation for protocol and alias/unique ID
+    if (bootloader_protocol == 'old') and (global_alias_or_unique_id is not None) and (global_alias_or_unique_id != servomotor.ALL_ALIAS):
+        print("Error: The -a/--alias parameter is not supported with the old protocol. The old protocol only supports broadcast (alias 255).")
+        exit(1)
 
-print(f"Using firmware protocol: {firmware_protocol}")
-print(f"Using bootloader protocol: {bootloader_protocol}")
-if (firmware_protocol == 'old') and (bootloader_protocol == 'new'):
-    print("Error: we don't support the combination of a new bootloader protocol and old firmware protocol. No devices should need this.")
-    exit(1)
+    print(f"Using firmware protocol: {firmware_protocol}")
+    print(f"Using bootloader protocol: {bootloader_protocol}")
+    if (firmware_protocol == 'old') and (bootloader_protocol == 'new'):
+        print("Error: we don't support the combination of a new bootloader protocol and old firmware protocol. No devices should need this.")
+        exit(1)
 
-model_code, firmware_compatibility_code, data = read_binary(firmware_filename)
+    model_code, firmware_compatibility_code, data = read_binary(firmware_filename)
 
-print("This firmware is for a device with model [%s] and firmware compatibility code [%d]" % (model_code, firmware_compatibility_code))
+    print("This firmware is for a device with model [%s] and firmware compatibility code [%d]" % (model_code, firmware_compatibility_code))
 
-# pad zeros until the length of the data is divisable by 4
-while len(data) & 0x03 != 0:
-    data = data + b'\x00'
+    # pad zeros until the length of the data is divisable by 4
+    while len(data) & 0x03 != 0:
+        data = data + b'\x00'
 
-print("The firmware size after padding zeros to make the firmware size divisible by 4 is:", len(data))
+    print("The firmware size after padding zeros to make the firmware size divisible by 4 is:", len(data))
 
-#data_uint32 = []
-#for item in struct.iter_unpack('<I', data):  # unpack as little endian unsigned 32-bit integers
-#    data_uint32.append(item[0])
-#
-# we are finished manipulating, so now repack it back into bytes
-#data2 = b''
-#for item in data_uint32:
-#    data2 = data2 + struct.pack('<I', item)
+    #data_uint32 = []
+    #for item in struct.iter_unpack('<I', data):  # unpack as little endian unsigned 32-bit integers
+    #    data_uint32.append(item[0])
+    #
+    # we are finished manipulating, so now repack it back into bytes
+    #data2 = b''
+    #for item in data_uint32:
+    #    data2 = data2 + struct.pack('<I', item)
 
-firmware_size = (len(data) >> 2) - 1
-firmware_crc = binascii.crc32(data[4:])
-second_firmware_crc = zlib.crc32(data[4:])
-if (firmware_crc != second_firmware_crc):
-    print("Error: binascii.crc32() and binascii.crc32() produced different results, which is unexpected")
-    exit(1)
-else:
-    print("The upgrade_firmware progran has tested that binascii.crc32() and zlib.crc32() produced the same result. In the future we can eliminate usage of ascii.crc32 because it is slightly slower.")
-print("Firmware size is %u 32-bit values. Firmware CRC32 is 0x%08X." % (firmware_size, firmware_crc))
+    firmware_size = (len(data) >> 2) - 1
+    firmware_crc = binascii.crc32(data[4:])
+    second_firmware_crc = zlib.crc32(data[4:])
+    if (firmware_crc != second_firmware_crc):
+        print("Error: binascii.crc32() and binascii.crc32() produced different results, which is unexpected")
+        exit(1)
+    else:
+        print("The upgrade_firmware progran has tested that binascii.crc32() and zlib.crc32() produced the same result. In the future we can eliminate usage of ascii.crc32 because it is slightly slower.")
+    print("Firmware size is %u 32-bit values. Firmware CRC32 is 0x%08X." % (firmware_size, firmware_crc))
 
-# replacing the first 32-bit number with the firmware size. this first number contained the stack location, but we have moved this stack location to the 9th position in the startup script
-data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4, "little")
+    # replacing the first 32-bit number with the firmware size. this first number contained the stack location, but we have moved this stack location to the 9th position in the startup script
+    data = firmware_size.to_bytes(4, "little") + data[4:] + firmware_crc.to_bytes(4, "little")
 
-print("Will write this many bytes:", len(data))
-firmware_pages_needed = (len(data) + FLASH_PAGE_SIZE - 1) // FLASH_PAGE_SIZE
-last_page_used_by_this_firmware = FIRST_FIRMWARE_PAGE_NUMBER - 1 + firmware_pages_needed
-print_flash_memory_map(last_page_used_by_this_firmware)
+    print("Will write this many bytes:", len(data))
+    firmware_pages_needed = (len(data) + FLASH_PAGE_SIZE - 1) // FLASH_PAGE_SIZE
+    last_page_used_by_this_firmware = FIRST_FIRMWARE_PAGE_NUMBER - 1 + firmware_pages_needed
+    print_flash_memory_map(last_page_used_by_this_firmware)
 
-# Main protocol selection logic
-if bootloader_protocol == 'old':
-    ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
-    upgrade_firmware_old_protocol(ser, model_code, firmware_compatibility_code, data, bootloader_protocol, firmware_protocol)
-else:
-    upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data, args, verbose=verbose_level)
+    # Main protocol selection logic
+    if bootloader_protocol == 'old':
+        ser = servomotor.serial_functions.open_serial_port(serial_port, 230400, 0.05)
+        upgrade_firmware_old_protocol(ser, model_code, firmware_compatibility_code, data, bootloader_protocol, firmware_protocol)
+    else:
+        upgrade_firmware_new_protocol(model_code, firmware_compatibility_code, data, args, verbose=verbose_level)
+
+
+if __name__ == "__main__":
+    main()

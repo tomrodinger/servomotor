@@ -7,7 +7,7 @@ from the company Gearotons.
 Cross-platform compatible: Works on standard Python (Mac/PC/Raspberry Pi)
 and MicroPython (ESP32-S3).
 """
-__version__ = "0.11.0"  # 0.11: firmware-verified command/error metadata; default time unit now 'seconds' (was 'timesteps'); timesteps converts truly for clock commands (breaking)
+__version__ = "0.12.0"  # 0.12: ships the `upgrade_firmware` CLI (firmware upgrades no longer require a repo checkout)
 
 # Import platform detection first
 from .platform_detect import is_micropython, is_standard_python, get_platform, get_platform_info

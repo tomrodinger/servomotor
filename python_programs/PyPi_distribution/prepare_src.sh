@@ -39,5 +39,6 @@ cp -f "${PP_DIR}/terminal_formatting.py" "${DIST_DIR}/src/"
 cp -f "${PP_DIR}/servomotor_command.py" "${DIST_DIR}/src/"
 cp -f "${PP_DIR}/detect_and_set_alias_all_devices.py" "${DIST_DIR}/src/"
 cp -f "${PP_DIR}/show_device_information_for_all_devices.py" "${DIST_DIR}/src/"
+cp -f "${PP_DIR}/upgrade_firmware.py" "${DIST_DIR}/src/"
 
 echo "Staging complete."
