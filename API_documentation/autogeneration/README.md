@@ -51,6 +51,73 @@ The generator uses several input files:
 - `data_types.json` - Data type definitions
 - `error_codes.json` - Error code definitions with causes and solutions
 - `error_handling.txt` - Error handling description text
+- `hardware_setup.md` - Wiring, LEDs, buttons, mechanical/environmental (both documents)
+- `knowhow.md` - Cross-cutting operational knowledge and gotchas (both documents)
+- `arduino_essentials.md` - Error checking and Arduino environment setup (Arduino document only)
+
+## Editing the documentation
+
+**The `.md` and `.pdf` files in the parent directory are BUILD OUTPUTS. Never edit them —
+the next run of the generator silently overwrites your changes.** Edit the source instead:
+
+| To change | Edit |
+|---|---|
+| Per-command descriptions, parameters, returns | `../../python_programs/servomotor/motor_commands.json` |
+| Error code causes and solutions | `../../python_programs/servomotor/error_codes.json` |
+| Cross-cutting know-how, golden rules, gotchas | `knowhow.md` |
+| Arduino error checking / environment setup | `arduino_essentials.md` |
+| Hardware, wiring, LEDs | `hardware_setup.md` |
+| Fatal-error concept text | `error_handling.txt` |
+| The canonical Arduino example | `../../Arduino_library/example_trapezoid_move.cpp` (symlinked here) |
+| The canonical Python example | `../../python_programs/example_trapezoid_move.py` (symlinked here) |
+| Document structure, section order, what gets included | `M17_generate_api_documentation.py` |
+
+Regenerate afterwards and diff both outputs.
+
+### One know-how source, two languages
+
+`knowhow.md` is rendered into BOTH documents so the two can never drift apart. Two
+mechanisms adapt it to the reader's language, both implemented in
+`render_shared_section()`:
+
+1. **Language blocks**, for content that genuinely differs between the two libraries
+   (program skeletons, exception handling versus `getError()`, return-value shapes):
+
+   ```
+   <!--LANG:PYTHON-->
+   ...only in the Python document...
+   <!--LANG:END-->
+   <!--LANG:ARDUINO-->
+   ...only in the Arduino document...
+   <!--LANG:END-->
+   ```
+
+   These are HTML comments, so `knowhow.md` still reads correctly on its own. Blocks
+   must not be nested, and every one must be closed.
+
+2. **A curated symbol table**, `ARDUINO_API_SUBSTITUTIONS`, for prose that is identical
+   apart from the spelling of a method name (`zero_position()` -> `zeroPosition()`).
+   Every entry must be a symbol that actually exists in `Arduino_library/Servomotor.h`.
+   When adding a Python method name to the shared prose, either add it to that table or
+   use the command name in quotes (`'Zero position'`), which needs no translation.
+
+After editing, check that nothing leaked across:
+
+```bash
+python3 M17_generate_api_documentation.py
+cd ..
+grep -c 'LANG:' M17_servomotor_*_API_documentation.md          # must be 0
+grep -c 'get_status\|zero_position\|M3(' M17_servomotor_Arduino_API_documentation.md
+grep -c 'getError\|Serial1' M17_servomotor_Python_API_documentation.md
+```
+
+### Markdown supported in the embedded sections
+
+`add_markdown_section_to_pdf()` renders a subset of markdown into the PDFs: headings
+(`#`/`##`/`###`), paragraphs, bullets, numbered lists, block quotes, fenced code blocks,
+pipe tables, and inline `**bold**` and `` `code` ``. Anything outside that subset appears
+verbatim in the PDF, so stick to it in `knowhow.md`, `hardware_setup.md` and
+`arduino_essentials.md`.
 
 ## Validation Error Handling
 If any command in `motor_commands.json` is missing a `CommandGroup` field:

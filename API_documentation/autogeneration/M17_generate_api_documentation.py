@@ -32,6 +32,7 @@ class APIDocumentationGenerator:
         self.error_handling_text_path = "error_handling.txt"
         self.hardware_setup_path = "hardware_setup.md"
         self.knowhow_path = "knowhow.md"
+        self.arduino_essentials_path = "arduino_essentials.md"
         self.command_examples_dir = "../../python_programs/command_examples"
         self.firmware_dir_path = "../../firmware/firmware_releases"
         self.valid_products_path = "VALID_PRODUCTS.txt"
@@ -125,6 +126,72 @@ class APIDocumentationGenerator:
             self.knowhow_md = None
             return False
 
+    def load_arduino_essentials(self):
+        """Load the Arduino-only essentials section (error checking, environment)"""
+        try:
+            with open(self.arduino_essentials_path, 'r') as f:
+                self.arduino_essentials_md = f.read()
+            print(f"✓ Loaded Arduino essentials from {self.arduino_essentials_path}")
+            return True
+        except FileNotFoundError:
+            print(f"\n❌ ERROR: Could not find Arduino essentials text at {self.arduino_essentials_path}")
+            self.arduino_essentials_md = None
+            return False
+
+    # The know-how section is a SINGLE shared source (knowhow.md) rendered into both
+    # the Python and the Arduino documents, so the two can never drift apart. Two
+    # mechanisms adapt it to the reader's language:
+    #
+    #  1. <!--LANG:PYTHON--> ... <!--LANG:END--> and <!--LANG:ARDUINO--> ... <!--LANG:END-->
+    #     blocks, for content that is genuinely different between the libraries
+    #     (program skeletons, exception handling, return-value shapes).
+    #  2. The curated symbol table below, for prose that is identical apart from the
+    #     spelling of a method name. Every entry is an exact symbol verified to exist
+    #     in Arduino_library/Servomotor.h. Longest patterns are applied first so that
+    #     no substitution can partially consume another.
+    ARDUINO_API_SUBSTITUTIONS = [
+        ('go_to_closed_loop()', 'goToClosedLoop()'),
+        ('get_n_queued_items()', 'getNQueuedItems()'),
+        ('move_with_velocity(', 'moveWithVelocity('),
+        ('set_position_unit(', 'setPositionUnit('),
+        ('emergency_stop()', 'emergencyStop()'),
+        ('disable_mosfets()', 'disableMosfets()'),
+        ('enable_mosfets()', 'enableMosfets()'),
+        ('trapezoid_move(', 'trapezoidMove('),
+        ('zero_position()', 'zeroPosition()'),
+        ('system_reset()', 'systemReset()'),
+        ('get_status()', 'getStatus()'),
+        ('time_sync(', 'timeSync('),
+    ]
+
+    def render_shared_section(self, md_text, language):
+        """Resolve the <!--LANG:...--> blocks in a shared markdown source for one
+        language, and (for Arduino) rewrite Python method names into their Arduino
+        spellings. Returns markdown."""
+        if md_text is None:
+            return None
+        keep = 'PYTHON' if language == 'python' else 'ARDUINO'
+        out_lines = []
+        skipping = False
+        for line in md_text.split('\n'):
+            marker = line.strip()
+            if marker.startswith('<!--LANG:'):
+                name = marker[len('<!--LANG:'):].split('-->')[0].strip()
+                if name == 'END':
+                    skipping = False
+                else:
+                    skipping = (name != keep)
+                continue
+            if not skipping:
+                out_lines.append(line)
+        rendered = '\n'.join(out_lines)
+        if language == 'arduino':
+            for python_symbol, arduino_symbol in self.ARDUINO_API_SUBSTITUTIONS:
+                rendered = rendered.replace(python_symbol, arduino_symbol)
+        # Collapse the blank-line runs that removing a block can leave behind.
+        rendered = re.sub(r'\n{3,}', '\n\n', rendered)
+        return rendered
+
     def load_command_example(self, command):
         """Load the real runnable example program for a command, if one exists"""
         if command['CommandString'] == 'Firmware upgrade':
@@ -133,13 +200,22 @@ class APIDocumentationGenerator:
             # the caller fall back to a synthesized stub with placeholder values.
             return ("# There is intentionally no minimal example for 'Firmware upgrade'.\n"
                     "# Upgrading firmware requires correct page sequencing, model/compatibility\n"
-                    "# checks, and CRC handling; use the supported tool instead:\n"
+                    "# checks, and CRC handling; use the supported tool instead. It is installed\n"
+                    "# as a command by 'pip install servomotor' (version 0.12.0 and later):\n"
                     "#\n"
-                    "#   cd python_programs\n"
-                    "#   python3 upgrade_firmware.py -p <PORT> -a 255 <firmware_file.firmware>\n"
+                    "#   upgrade_firmware -p <PORT> -a <ALIAS> <firmware_file.firmware>\n"
                     "#\n"
-                    "# The tool validates the file against the device's product code and\n"
-                    "# software compatibility code before writing any page.\n")
+                    "# Address ONE motor with -a <ALIAS>. The tool's default is the broadcast\n"
+                    "# address 255, which flashes every matching device on the bus at once but\n"
+                    "# receives no replies, so it reports every page as written even when nothing\n"
+                    "# was written at all.\n"
+                    "#\n"
+                    "# The model code and firmware compatibility code are checked by the DEVICE,\n"
+                    "# not by the tool: the bootloader silently ignores pages whose codes do not\n"
+                    "# match its own. Run 'Get product info' first and compare its productCode and\n"
+                    "# firmwareCompatibility fields against the <MODEL> and scc<N> parts of the\n"
+                    "# file name. See the firmware upgrade section of this document for the full\n"
+                    "# procedure.\n")
         method_name = self.get_python_method_name(command['CommandString'])
         example_path = os.path.join(self.command_examples_dir, f"example_{method_name}.py")
         try:
@@ -174,23 +250,86 @@ class APIDocumentationGenerator:
             fontName='Helvetica-Bold', textColor=colors.black,
             spaceBefore=10, spaceAfter=4)
 
+        table_cell_style = ParagraphStyle(
+            'MdTableCell', parent=normal_style, fontSize=8, leading=10)
+        table_header_cell_style = ParagraphStyle(
+            'MdTableHeaderCell', parent=normal_style, fontSize=8, leading=10,
+            fontName='Helvetica-Bold', textColor=colors.whitesmoke)
+
         def escape(text):
             return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+        def inline(text):
+            """Escape for reportlab, then honour **bold** and `code` markup."""
+            out = escape(text)
+            out = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', out)
+            out = re.sub(r'`([^`]+?)`', r'<font face="Courier">\1</font>', out)
+            return out
+
+        def split_table_row(row):
+            return [cell.strip() for cell in row.strip().strip('|').split('|')]
+
+        def is_table_separator(row):
+            cells = split_table_row(row)
+            return bool(cells) and all(re.fullmatch(r':?-{2,}:?', c) for c in cells)
 
         in_code = False
         code_lines = []
         paragraph_lines = []
+        table_rows = []
+        # A bullet or quote whose source text wraps over several lines is one item.
+        # Without this, each continuation line became its own paragraph, which also
+        # split any **bold** or `code` span that straddled the line break.
+        pending = {'style': None, 'prefix': ''}
 
         def flush_paragraph():
             if paragraph_lines:
-                story.append(Paragraph(escape(' '.join(paragraph_lines)), normal_style))
-                story.append(Spacer(1, 6))
+                text = inline(' '.join(paragraph_lines))
+                if pending['style'] is not None:
+                    story.append(Paragraph(pending['prefix'] + text, pending['style']))
+                    story.append(Spacer(1, 3))
+                    pending['style'] = None
+                    pending['prefix'] = ''
+                else:
+                    story.append(Paragraph(text, normal_style))
+                    story.append(Spacer(1, 6))
                 paragraph_lines.clear()
+
+        def flush_table():
+            if not table_rows:
+                return
+            rows = [r for r in table_rows if not is_table_separator(r)]
+            table_rows.clear()
+            if not rows:
+                return
+            parsed = [split_table_row(r) for r in rows]
+            n_cols = max(len(r) for r in parsed)
+            data = []
+            for i, cells in enumerate(parsed):
+                cells = cells + [''] * (n_cols - len(cells))
+                style = table_header_cell_style if i == 0 else table_cell_style
+                data.append([Paragraph(inline(c), style) for c in cells])
+            table = Table(data, colWidths=[(doc.width - 20) / n_cols] * n_cols, repeatRows=1)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4a4a4a')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ]))
+            story.append(table)
+            story.append(Spacer(1, 8))
+
+        def flush_all():
+            flush_paragraph()
+            flush_table()
 
         for line in md_text.split('\n'):
             stripped = line.strip()
             if stripped.startswith('```'):
-                flush_paragraph()
+                flush_all()
                 if in_code:
                     code_box = self.CodeBox('\n'.join(code_lines), doc.width - 20, code_style)
                     story.append(code_box)
@@ -201,30 +340,42 @@ class APIDocumentationGenerator:
             if in_code:
                 code_lines.append(line)
                 continue
+            if stripped.startswith('|') and stripped.endswith('|'):
+                flush_paragraph()
+                table_rows.append(stripped)
+                continue
+            flush_table()
             if stripped.startswith('# '):
                 flush_paragraph()
-                story.append(Paragraph(escape(stripped[2:]), heading_style))
+                story.append(Paragraph(inline(stripped[2:]), heading_style))
                 story.append(Spacer(1, 8))
             elif stripped.startswith('## '):
                 flush_paragraph()
-                story.append(Paragraph(escape(stripped[3:]), sub_heading_style))
+                story.append(Paragraph(inline(stripped[3:]), sub_heading_style))
             elif stripped.startswith('### '):
                 flush_paragraph()
-                story.append(Paragraph(escape(stripped[4:]), sub_sub_heading_style))
+                story.append(Paragraph(inline(stripped[4:]), sub_sub_heading_style))
+            elif stripped.startswith('> '):
+                flush_paragraph()
+                pending['style'] = normal_style
+                pending['prefix'] = ''
+                paragraph_lines.append(stripped[2:])
             elif stripped.startswith('- '):
                 flush_paragraph()
-                story.append(Paragraph('• ' + escape(stripped[2:]), normal_style))
-                story.append(Spacer(1, 3))
+                pending['style'] = normal_style
+                pending['prefix'] = '• '
+                paragraph_lines.append(stripped[2:])
             elif len(stripped) > 2 and stripped[0].isdigit() and '. ' in stripped[:4]:
                 flush_paragraph()
                 num, _, rest = stripped.partition('. ')
-                story.append(Paragraph(f'<b>{escape(num)}.</b> ' + escape(rest), normal_style))
-                story.append(Spacer(1, 3))
+                pending['style'] = normal_style
+                pending['prefix'] = f'<b>{escape(num)}.</b> '
+                paragraph_lines.append(rest)
             elif stripped == '':
                 flush_paragraph()
             else:
                 paragraph_lines.append(stripped)
-        flush_paragraph()
+        flush_all()
 
 
     UNIT_NOTES = {
@@ -757,7 +908,8 @@ class APIDocumentationGenerator:
 
         # Know-How Section (embedded markdown, headings demoted one level)
         if getattr(self, 'knowhow_md', None):
-            md_content.append(self.demote_md_headings(self.knowhow_md) + "\n")
+            knowhow = self.render_shared_section(self.knowhow_md, 'python')
+            md_content.append(self.demote_md_headings(knowhow) + "\n")
 
         # Data Types Section
         md_content.append("## Data Types\n")
@@ -1036,9 +1188,11 @@ class APIDocumentationGenerator:
         md_content.append("## Table of Contents\n")
         md_content.append("1. [Hardware Setup](#hardware-setup)")
         md_content.append("2. [Getting Started](#getting-started)")
-        md_content.append("3. [Data Types](#data-types)")
-        md_content.append("4. [Command Reference](#command-reference)")
-        toc_index = 5
+        md_content.append("3. [Arduino Essentials: Checking for Errors and Setting Up Your Environment](#arduino-essentials-checking-for-errors-and-setting-up-your-environment)")
+        md_content.append("4. [Know-How, Best Practices, and Gotchas](#know-how-best-practices-and-gotchas)")
+        md_content.append("5. [Data Types](#data-types)")
+        md_content.append("6. [Command Reference](#command-reference)")
+        toc_index = 7
         for group in sorted(self.commands_by_group.keys()):
             anchor = group.lower().replace('&', '').replace(' ', '-')
             md_content.append(f"{toc_index}. [{group}](#{anchor})")
@@ -1064,9 +1218,22 @@ class APIDocumentationGenerator:
             md_content.append(example_code)
         except FileNotFoundError:
             md_content.append("// Example file arduino_library_example.cpp not found")
-        
+
         md_content.append("```\n")
-        
+
+        # Arduino Essentials (error checking + environment) — Arduino only, and
+        # deliberately placed before the command reference: a reader who stops
+        # after Getting Started must still have seen how to detect failures.
+        if getattr(self, 'arduino_essentials_md', None):
+            essentials = self.render_shared_section(self.arduino_essentials_md, 'arduino')
+            md_content.append(self.demote_md_headings(essentials) + "\n")
+
+        # Know-How Section — the same shared source the Python document uses,
+        # rendered with Arduino method names and Arduino code blocks.
+        if getattr(self, 'knowhow_md', None):
+            knowhow = self.render_shared_section(self.knowhow_md, 'arduino')
+            md_content.append(self.demote_md_headings(knowhow) + "\n")
+
         # Data Types Section
         md_content.append("## Data Types\n")
         md_content.append("This section describes the various data types used in the Servomotor Arduino API.\n")
@@ -1156,14 +1323,43 @@ class APIDocumentationGenerator:
         md_content.append("This section lists all possible error codes that can be returned by the servomotor.\n")
         
         if self.error_codes:
-            md_content.append("| Code | Enum | Description |")
-            md_content.append("|------|------|-------------|")
+            md_content.append("Look the code up here after `getError()` returns a positive value, or after "
+                              "`getStatus().fatalErrorCode` is nonzero, or by counting the red LED blinks.\n")
+            md_content.append("### Error Code Summary\n")
+            md_content.append("| Code | Enum | Meaning |")
+            md_content.append("|------|------|---------|")
             for error in self.error_codes:
                 if error['code'] == 0:  # Skip ERROR_NONE
                     continue
-                md_content.append(f"| {error['code']} | {error['enum']} | {error['long_desc']} |")
+                # Pipes inside a cell would silently shift every later column.
+                short_desc = str(error.get('short_desc', '')).replace('|', '\\|')
+                md_content.append(f"| {error['code']} | {error['enum']} | {short_desc} |")
             md_content.append("")
-        
+
+            # Full detail, including causes and solutions. Previously the Arduino
+            # document stopped at the summary table above, so the actionable half of
+            # error_codes.json reached Python readers only.
+            md_content.append("### Error Code Details\n")
+            for error in self.error_codes:
+                if error['code'] == 0:  # Skip ERROR_NONE
+                    continue
+
+                md_content.append(f"#### Error {error['code']}: {error['enum']}\n")
+                md_content.append(f"**Short Description:** {error['short_desc']}\n")
+                md_content.append(f"**Description:** {error['long_desc']}\n")
+
+                if error.get('causes'):
+                    md_content.append("**Possible Causes:**")
+                    for cause in error['causes']:
+                        md_content.append(f"- {cause}")
+                    md_content.append("")
+
+                if error.get('solutions'):
+                    md_content.append("**Solutions:**")
+                    for solution in error['solutions']:
+                        md_content.append(f"- {solution}")
+                    md_content.append("")
+
         # Write to file in parent directory
         output_file = "../M17_servomotor_Arduino_API_documentation.md"
         with open(output_file, 'w') as f:
@@ -1187,7 +1383,21 @@ class APIDocumentationGenerator:
             lines = self.text.split('\n')
             self.height = len(lines) * self.line_height + 16  # Line height + padding (8 top + 8 bottom)
             return (self.width, self.height)
-            
+
+        def split(self, availWidth, availHeight):
+            """Allow a long code block to flow across a page break. Without this,
+            any example longer than one page aborts the whole PDF build."""
+            lines = self.text.split('\n')
+            n_fit = int((availHeight - 16) // self.line_height)
+            # Keep at least two lines on each side, otherwise let the block move
+            # to the next frame whole (reportlab retries there with a full page).
+            if n_fit < 2 or n_fit >= len(lines) - 1:
+                return []
+            head = self.__class__('\n'.join(lines[:n_fit]), self.width, self.style)
+            tail = self.__class__('\n'.join(lines[n_fit:]), self.width, self.style)
+            return [head, tail]
+
+
         def draw(self):
             # Draw background rectangle with light grey fill
             self.canv.setFillColor(colors.HexColor('#f0f0f0'))
@@ -1440,10 +1650,11 @@ class APIDocumentationGenerator:
         
         story.append(PageBreak())
 
-        # Know-How Section
+        # Know-How Section, rendered for Python from the shared source
         if getattr(self, 'knowhow_md', None):
-            self.add_markdown_section_to_pdf(story, doc, self.knowhow_md,
-                                             heading_style, normal_style, code_style)
+            self.add_markdown_section_to_pdf(
+                story, doc, self.render_shared_section(self.knowhow_md, 'python'),
+                heading_style, normal_style, code_style)
             story.append(PageBreak())
 
         # Data Types Section - use the modular function
@@ -1579,6 +1790,17 @@ motor.set_velocity_unit('rotations_per_second')"""
         
         story.append(PageBreak())
         
+        self.generate_error_sections_for_pdf(story, doc, heading_style, normal_style)
+
+        # Build PDF
+        doc.build(story)
+        print(f"✓ Generated Python PDF documentation: {output_filename}")
+        return True
+
+    def generate_error_sections_for_pdf(self, story, doc, heading_style, normal_style):
+        """Generate the Error Handling and Error Codes sections for PDF - shared by
+        Python and Arduino. The Arduino PDF listed both in its table of contents but
+        never emitted them until this became a shared function."""
         # Error Handling Section
         story.append(Paragraph('Error Handling', heading_style))
         story.append(Spacer(1, 12))
@@ -1591,13 +1813,13 @@ motor.set_velocity_unit('rotations_per_second')"""
         else:
             story.append(Paragraph('Error handling description not available.', normal_style))
         story.append(Spacer(1, 12))
-        
+
         # Error Codes Section
         story.append(Paragraph('Error Codes', heading_style))
         story.append(Spacer(1, 12))
         story.append(Paragraph('This section lists all possible error codes that can be returned by the servomotor.', normal_style))
         story.append(Spacer(1, 12))
-        
+
         if self.error_codes:
             # Create style for error code headers
             error_code_style = ParagraphStyle(
@@ -1664,12 +1886,7 @@ motor.set_velocity_unit('rotations_per_second')"""
                 story.append(KeepTogether(error_content))
         else:
             story.append(Paragraph('Error codes not available.', normal_style))
-        
-        # Build PDF
-        doc.build(story)
-        print(f"✓ Generated Python PDF documentation: {output_filename}")
-        return True
-    
+
     def generate_arduino_pdf(self):
         """Generate Arduino PDF documentation"""
         print("\nGenerating Arduino PDF documentation...")
@@ -1769,10 +1986,12 @@ motor.set_velocity_unit('rotations_per_second')"""
         
         story.append(Paragraph('1. Hardware Setup', toc_style))
         story.append(Paragraph('2. Getting Started', toc_style))
-        story.append(Paragraph('3. Data Types', toc_style))
-        story.append(Paragraph('4. Command Reference', toc_style))
+        story.append(Paragraph('3. Arduino Essentials: Checking for Errors and Setting Up Your Environment', toc_style))
+        story.append(Paragraph('4. Know-How, Best Practices, and Gotchas', toc_style))
+        story.append(Paragraph('5. Data Types', toc_style))
+        story.append(Paragraph('6. Command Reference', toc_style))
 
-        toc_index = 5
+        toc_index = 7
         for group in sorted(self.commands_by_group.keys()):
             story.append(Paragraph(f'{toc_index}. {group}', toc_style))
             toc_index += 1
@@ -1803,9 +2022,23 @@ motor.set_velocity_unit('rotations_per_second')"""
             story.append(code_box)
         except FileNotFoundError:
             story.append(Paragraph('Example file arduino_library_example.cpp not found', normal_style))
-        
+
         story.append(PageBreak())
-        
+
+        # Arduino Essentials Section (error checking + environment)
+        if getattr(self, 'arduino_essentials_md', None):
+            self.add_markdown_section_to_pdf(
+                story, doc, self.render_shared_section(self.arduino_essentials_md, 'arduino'),
+                heading_style, normal_style, code_style)
+            story.append(PageBreak())
+
+        # Know-How Section, rendered for Arduino from the shared source
+        if getattr(self, 'knowhow_md', None):
+            self.add_markdown_section_to_pdf(
+                story, doc, self.render_shared_section(self.knowhow_md, 'arduino'),
+                heading_style, normal_style, code_style)
+            story.append(PageBreak())
+
         # Data Types Section - use the same modular function as Python
         self.generate_data_types_for_pdf(story, doc, heading_style, normal_style)
         
@@ -1851,9 +2084,12 @@ motor.set_velocity_unit('rotations_per_second')"""
                 
                 # Add as KeepTogether
                 story.append(KeepTogether(cmd_content))
-            
+
             story.append(PageBreak())
-        
+
+        # Error Handling and Error Codes - the same shared function the Python PDF uses
+        self.generate_error_sections_for_pdf(story, doc, heading_style, normal_style)
+
         # Build PDF
         doc.build(story)
         print(f"✓ Generated Arduino PDF documentation: {output_filename}")
@@ -1886,6 +2122,8 @@ motor.set_velocity_unit('rotations_per_second')"""
             print("⚠️  Warning: Hardware setup section not loaded. Documentation will omit it.")
         if not self.load_knowhow():
             print("⚠️  Warning: Know-how section not loaded. Documentation will omit it.")
+        if not self.load_arduino_essentials():
+            print("⚠️  Warning: Arduino essentials section not loaded. Documentation will omit it.")
 
         # Load installation instructions
         if self.load_install_instructions() is None:

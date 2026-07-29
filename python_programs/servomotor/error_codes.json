@@ -793,7 +793,7 @@
                 "The upgrade tool computed a wrong page number, or the packet was corrupted"
             ],
             "solutions": [
-                "Use an official .firmware release file and the standard upgrade tool (upgrade_firmware.py)",
+                "Use an official .firmware release file and the standard upgrade tool (the upgrade_firmware command, installed by pip install servomotor)",
                 "Verify you are flashing the correct firmware file for this product model",
                 "Power cycle the device and retry the upgrade"
             ]
