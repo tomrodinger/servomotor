@@ -3,7 +3,10 @@
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 
-Last updated: 2026-07-20 (AI-docs accuracy project: massive July work is DONE
+Last updated: 2026-07-29 (Arduino documentation overhaul — see the section
+immediately below; open items in DOC_VERIFICATION_FINDINGS_2026-07-29.md)
+
+Previous update: 2026-07-20 (AI-docs accuracy project: massive July work is DONE
 but UNCOMMITTED — firmware releases 0.15.4.0 through 0.15.8.0 (bug fixes
 BUG-1..14, 16..21, 23; spec-aligned defaults 560 RPM / 12000 rot/s^2), fully
 rewritten error_codes.json + motor_commands.json, knowhow/hardware-setup docs
@@ -20,6 +23,47 @@ changes. See the status tables in BUGS_FOUND_2026-07-09.md for full detail.)
 (Older status of 2026-05-28 kept for history: TODOs #1, #2, #3, #5 all
 committed and pushed-ready. Firmware 0.15.0.0 for M17 released and
 committed.)
+
+## 2026-07-29 — Arduino documentation overhaul (DONE, pushed)
+
+Triggered by a real M17-40 + ESP32-S3 customer support case. The customer's motor
+was latching fatal errors and his sketch never checked for them, so every later
+command silently did nothing; none of what he needed was reachable from the
+Arduino document. The handling AI's report lives outside this repo at
+`/Users/tom/Projects/protein_purification_machine_Jeffs_lab/DOCUMENTATION_IMPROVEMENT_REPORT.md`.
+
+DONE and pushed to origin/main (`1b56b63`, `1d159c3`, `36c387b`):
+
+- [x] `knowhow.md` now renders into BOTH API documents from one source, via
+      `<!--LANG:PYTHON/ARDUINO-->` blocks + a curated method-name table. It used to
+      reach the Python document only — that omission is what left Arduino users
+      without the golden rules, the status-bit table and the recovery recipe.
+- [x] New `arduino_essentials.md`: `getError()`, the negative comm-error codes, the
+      zero-return trap, the Get-status asymmetry, ESP32 "USB CDC On Boot".
+- [x] knowhow.md: startup sequence, zero-before-homing, the closed-loop lurch,
+      peak-vs-average speed, error triage table, upgrade procedure, firmware
+      version table.
+- [x] Fixed: the Arduino PDF listed Error Handling / Error Codes in its TOC but
+      never emitted them. Arduino error codes now carry causes and solutions.
+- [x] `example_trapezoid_move.cpp` checks `getError()` after every call (compiles
+      for esp32s3). `Arduino_library/README.md` class name fixed — it said
+      `ServoMotor`, which is a different library, so its sample never compiled.
+
+**▶ OPEN ITEMS from that work are in `DOC_VERIFICATION_FINDINGS_2026-07-29.md`** —
+32 agents re-verified every claim against source, and found rather more than the
+report did. Read that file before touching the Arduino library or the firmware
+planner. Highest-value entries:
+
+- [ ] **Arduino `Communication.cpp` receive hang** on a truncated reply (unsigned
+      timeout wrap; the wait loop can never exit). Sketch freezes, no error.
+- [ ] **Firmware `compute_trapezoid_move` divide-by-zero** when
+      `maxAcceleration >= 31250 x maxVelocity` — reachable with legal limits.
+      STATIC ANALYSIS ONLY; probe on the bench before fixing or documenting.
+- [ ] **`motor_commands.json` cmd 17** claims 'Go to closed loop' can raise error 22
+      on M17. False — that path is M1/M2/M23 only. It is mirrored into both
+      generated documents.
+- [ ] Six more doc/JSON inaccuracies (PyPI README still requires pyserial,
+      Arduino README's -8/-9 error list, `arbitrary_units`, and others).
 
 > **▶ NEXT TASK: tom is choosing among the still-open TODOs:**
 > - **TODO #6** cross-OS verification (Windows / Linux) — uses the now-committed
