@@ -1,4 +1,5 @@
 import os
+import sys
 from .vendor import serial
 from .vendor.serial.tools import list_ports
 
@@ -59,6 +60,13 @@ def open_serial_port_or_print_detailed_error(device_name = None, baud_rate = 230
             print("   Make sure that the hardware is connected properly and powered on")
             print("   Make sure that the serial port name is correct. This changes sometimes (especially if plugged into a different USB port)")
             print("   You can run this program with the -P option to list available serial ports on the system and then select a serial port from a menu")
+            if (errno == 13) and not sys.platform.startswith("win"):
+                # By far the most common first-run problem on Linux: serial devices are
+                # owned by the dialout (Debian/Ubuntu) or uucp (Arch/Fedora) group.
+                print("   Permission was denied on the device. On Linux you usually need to be in the")
+                print("   'dialout' group (or 'uucp' on some distributions). To fix this, run:")
+                print("       sudo usermod -a -G dialout $USER")
+                print("   then log out and back in (a reboot also works) for the change to take effect.")
             exit(1)
         serial_port = None
     return serial_port
@@ -79,7 +87,9 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
             print("You have not specified a serial port using the -p opton. So, getting the serial port name from this file:", device_file_path)
             device_name = open(device_file_path, "r").read().strip()
             device_name_from_file = device_name
-        except FileNotFoundError:
+        except OSError:
+            # OSError, not just FileNotFoundError: the file may also be unreadable
+            # (permissions) on a shared/system-wide install.
             print("Could not open that file")
             device_name = None
 
@@ -104,7 +114,15 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
             print("This serial port name will be used by default from now on.")
             print("To set a new default, you need to run this program with the -p option to specify the port you want")
             print("or run this program with the -P option to select a new default port from a menu.")
-        except FileNotFoundError:
-            print("ERROR: Could not open the file for writing (could not save the serial port name):", device_file_path)
+        except OSError as e:
+            # Catch OSError, not just FileNotFoundError: this file lives inside the installed
+            # package directory, which is NOT writable on a normal system-wide install
+            # (root-owned site-packages on Linux, C:\Program Files on Windows, read-only
+            # container images). Remembering the port is only a convenience -- the port is
+            # already open and usable -- so warn and carry on instead of crashing.
+            print("WARNING: Could not save the serial port name to:", device_file_path)
+            print("         Reason:", e)
+            print("         This is harmless. The port is open and this program will continue.")
+            print("         Pass -p to name the port each time (or -P to pick it from a menu).")
             
     return serial_port

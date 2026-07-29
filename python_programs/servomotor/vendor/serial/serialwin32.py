@@ -14,10 +14,14 @@ from __future__ import absolute_import
 # pylint: disable=invalid-name,too-few-public-methods
 import ctypes
 import time
-from serial import win32
+# Vendored: these must be RELATIVE imports, because this package is
+# servomotor.vendor.serial, not a top-level `serial`. serialposix.py was already
+# converted this way; serialwin32.py had been missed, which made every Windows
+# import fail with "ModuleNotFoundError: No module named 'serial'".
+from . import win32
 
-import serial
-from serial.serialutil import SerialBase, SerialException, to_bytes, PortNotOpenError, SerialTimeoutException
+from . import serialutil as serial
+from .serialutil import SerialBase, SerialException, to_bytes, PortNotOpenError, SerialTimeoutException
 
 
 class Serial(SerialBase):

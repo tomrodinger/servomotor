@@ -1,0 +1,116 @@
+name: Cross-platform test (Linux / Windows / macOS)
+
+# Hardware-free portability tests for the `servomotor` Python library.
+#
+# WHY THIS EXISTS
+# ---------------
+# The library vendors pyserial under servomotor/vendor/serial/. pyserial picks its
+# backend at import time from os.name, so serialwin32.py is NEVER imported on
+# Linux/macOS. A vendoring mistake there (absolute `import serial` instead of a
+# relative import) made every Windows install fail with
+#     ModuleNotFoundError: No module named 'serial'
+# while every Mac and Linux test still passed. No amount of testing on the
+# developer's Mac could have caught it -- only actually importing on Windows can.
+#
+# So: this workflow imports the built wheel on all three operating systems and
+# runs every console script. It needs no motor and no serial hardware.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'python_programs/**'
+      - '.github/workflows/test-python-cross-platform.yml'
+  pull_request:
+    paths:
+      - 'python_programs/**'
+      - '.github/workflows/test-python-cross-platform.yml'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        # 3.8 is the floor declared by requires-python; 3.13 is the current release.
+        # Testing both ends catches syntax/stdlib drift in either direction.
+        python-version: ['3.8', '3.13']
+        exclude:
+          # macos-latest runners are arm64, which has no CPython 3.8 build.
+          - os: macos-latest
+            python-version: '3.8'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Stage the src/ layout (same script the release workflow uses)
+        shell: bash
+        run: bash python_programs/PyPi_distribution/prepare_src.sh
+
+      - name: Build the wheel
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist_test python_programs/PyPi_distribution
+
+      - name: Install the built wheel
+        shell: bash
+        run: python -m pip install dist_test/*.whl
+
+      # Run from a directory that does NOT contain the servomotor/ source tree, so we
+      # are certain we are importing the INSTALLED package and not the repo copy.
+      - name: Import every module (this is what catches vendoring mistakes)
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "
+          import servomotor
+          print('servomotor', servomotor.__version__)
+          for m in ['serial_functions','serial_abstraction','communication','device_detection',
+                    'M3','command_loader','platform_detect','platform_utils','terminal_format_wrapper']:
+              __import__('servomotor.'+m); print('  OK servomotor.'+m)
+          # The backend is chosen by os.name, so this line is the actual Windows canary.
+          from servomotor.vendor import serial
+          from servomotor.vendor.serial.tools import list_ports
+          print('  vendored pyserial', serial.VERSION, '-> backend', serial.Serial.__module__)
+          list(list_ports.comports())   # must not raise even with no hardware present
+          print('  port enumeration OK')
+          import terminal_formatting
+          print('  OK terminal_formatting')
+          "
+
+      - name: Run every console script
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          for c in servomotor_command detect_and_set_alias_all_devices \
+                   show_device_information_for_all_devices upgrade_firmware; do
+            echo "--- $c --help"
+            "$c" --help > /dev/null || { echo "FAILED: $c"; exit 1; }
+          done
+          echo "all console scripts OK"
+
+      - name: Parse a real firmware file end-to-end (no hardware needed)
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          FW=$(ls "$GITHUB_WORKSPACE"/firmware/firmware_releases/*.firmware | head -1)
+          echo "using $FW"
+          # Exits non-zero at the serial port, which is expected and fine. We assert on
+          # the CRC32 line, which proves the header parse and checksum path both ran.
+          upgrade_firmware -p /dev/null "$FW" > out.txt 2>&1 || true
+          cat out.txt
+          grep -q "Firmware CRC32 is" out.txt || { echo "firmware parsing FAILED"; exit 1; }
+          echo "firmware parsing OK"
+
+      - name: Host test suite (encoding / decoding / CRC32)
+        shell: bash
+        working-directory: python_programs
+        run: python run_host_tests.py
