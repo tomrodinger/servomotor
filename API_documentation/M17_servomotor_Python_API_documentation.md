@@ -1,6 +1,6 @@
 # Servomotor Python API Documentation
 
-Generated: 2026-07-29 14:35:25
+Generated: 2026-07-30 11:09:21
 
 ## Latest Firmware Versions
 
@@ -2233,7 +2233,7 @@ finally:
 
 ## 🔧 Go to closed loop
 
-**Description:** Enter closed-loop position control mode. This command executes immediately (it is not queued) but has two preconditions: the movement queue must be empty, otherwise fatal error 8, ERROR_QUEUE_NOT_EMPTY, is raised, and the motor must not be busy, otherwise fatal error 19, ERROR_MOTOR_BUSY, is raised; on either fatal error the device replies with an error packet instead of a success response and stays in the fatal-error state until reset. The command automatically enables the MOSFETs if they are disabled (no separate 'Enable MOSFETs' is needed) and runs a current-sensor baseline check during that step, which can raise fatal error 22, ERROR_CURRENT_SENSOR_FAILED. It loads the commutation offset from saved settings without verifying that calibration was ever performed, so run 'Start calibration' at least once on a new unit. Completion semantics differ by product: on M2, M17, and M23 the transition is synchronous, so receiving the success response means the motor is already in closed loop (confirm via 'Get status' bit 2); on legacy M1 the success response only means an asynchronous procedure started, completion is indicated by status bit 5 clearing and bit 2 setting, and a failed attempt raises fatal error 39, ERROR_GO_TO_CLOSED_LOOP_FAILED. Calling it while already in closed loop is harmless on non-M1 products (given an empty queue and a non-busy motor). Any payload bytes raise fatal error 51, ERROR_COMMAND_SIZE_WRONG.
+**Description:** Enter closed-loop position control mode. This command executes immediately (it is not queued) but has two preconditions: the movement queue must be empty, otherwise fatal error 8, ERROR_QUEUE_NOT_EMPTY, is raised, and the motor must not be busy, otherwise fatal error 19, ERROR_MOTOR_BUSY, is raised; on either fatal error the device replies with an error packet instead of a success response and stays in the fatal-error state until reset. The command automatically enables the MOSFETs if they are disabled (no separate 'Enable MOSFETs' is needed); on M1, M2, and M23 that step runs a current-sensor baseline check which can raise fatal error 22, ERROR_CURRENT_SENSOR_FAILED, while M17 performs no current-sensor check. It loads the commutation offset from saved settings without verifying that calibration was ever performed, so run 'Start calibration' at least once on a new unit. Completion semantics differ by product: on M2, M17, and M23 the transition is synchronous, so receiving the success response means the motor is already in closed loop (confirm via 'Get status' bit 2); on legacy M1 the success response only means an asynchronous procedure started, completion is indicated by status bit 5 clearing and bit 2 setting, and a failed attempt raises fatal error 39, ERROR_GO_TO_CLOSED_LOOP_FAILED. Calling it while already in closed loop is harmless on non-M1 products (given an empty queue and a non-busy motor). Any payload bytes raise fatal error 51, ERROR_COMMAND_SIZE_WRONG.
 
 **Example program:**
 ```python

@@ -1,5 +1,6 @@
 # Build artifacts (host-mode binary + Arduino build cache) — not source.
 host_suite
+truncated_frame_test
 *.o
 /build/
 suite_run.log

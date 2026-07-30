@@ -85,6 +85,11 @@ private:
     void sendCommandCore(bool isExtended, uint64_t addressValue, uint8_t commandID,
                          const uint8_t* payload, uint16_t payloadSize);
     
+    // Discard up to maxBytes of a frame we have given up on, so its leftovers
+    // cannot be parsed as the head of the next reply. Takes what is already
+    // buffered rather than waiting for bytes that may never arrive.
+    void discardPartialFrame(int32_t maxBytes, int32_t budgetMs);
+
     // Helper function to receive bytes with timeout checking
     // If bytesLeftToRead is non-null, this decrements *bytesLeftToRead once per byte read.
     int8_t receiveBytes(void* buffer, uint16_t bufferSize, int32_t numBytes, int32_t *bytesLeftToRead,

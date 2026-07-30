@@ -232,6 +232,13 @@ what opens the port, so anything that must precede `begin()` has to happen first
   anything.
 - **The receive timeout is 1 second.** A command against a motor that is not there costs a full
   second before `getError()` returns `-1`. A loop that polls a missing motor will feel frozen.
-- **After a failed exchange, stray bytes can linger** in the receive buffer and get parsed as the
-  next reply, showing up as `-7`, `-3` or `-6`. The library does not expose a flush, so drain it
-  yourself before retrying: `while (Serial1.available()) Serial1.read();`
+- **A reply that starts but never finishes times out like any other failure.** A collision, a motor
+  rebooting mid-reply, or noise on an unbiased RS485 pair can deliver the beginning of a frame and
+  nothing more. That returns `-1` after the usual one-second budget, and the library discards the
+  remains of the abandoned frame so they cannot be read as the head of your next reply. (In library
+  versions before 0.10.1 this case hung forever with no timeout and no error, and leftover bytes
+  surfaced as a spurious `-7` on the following command.)
+- **Stray bytes can still linger in some situations** — most often after *Detect devices*, which
+  produces several replies over about a second. The library exposes no flush of its own, so if you
+  suspect the buffer is out of step, drain it yourself before normal traffic resumes:
+  `while (Serial1.available()) Serial1.read();`

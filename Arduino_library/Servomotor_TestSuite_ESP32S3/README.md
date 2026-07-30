@@ -24,6 +24,15 @@ TX=GPIO4) at 230400 baud.
   - a stale run from a different firmware build is refused (build-id check)
   - serial **CLI** to trigger tests over the debug link (`help`, `list`,
     `run`, `run <n>`, `results`, `detect`, `uid <hex>`, `stop`, `status`)
+- **`truncated_frame_test.cpp`** + **`build_truncated_frame_test.sh`** +
+  **`run_truncated_frame_test.py`** — a standalone transport-layer regression test for
+  `Communication::getResponse()`, needing **no motor and no hardware**. It creates a
+  pseudo-terminal and plays a scripted fake device on the far end, so a reply that starts
+  and never finishes can be produced on demand (a real motor cannot be asked to truncate a
+  reply on cue). Four cases: `silent`, `truncated`, `resync`, `partial`. It guards the
+  0.10.1 fix for the receive hang — before that fix, `truncated` hung forever and `partial`
+  left a stale byte that surfaced as a spurious `-7` on the next command. Suitable for CI.
+
 - **`host_main.cpp`** + **`build_host_suite.sh`** — the SAME modules also build
   on the Mac against `../ArduinoEmulator.h` for quick iteration without
   flashing: `./host_suite <port> <16-hex-uid> [all|<index>|<name>]`.

@@ -1,6 +1,6 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2026-07-29 14:35:25
+Generated: 2026-07-30 11:09:21
 
 ## Latest Firmware Versions
 
@@ -434,9 +434,16 @@ what opens the port, so anything that must precede `begin()` has to happen first
   anything.
 - **The receive timeout is 1 second.** A command against a motor that is not there costs a full
   second before `getError()` returns `-1`. A loop that polls a missing motor will feel frozen.
-- **After a failed exchange, stray bytes can linger** in the receive buffer and get parsed as the
-  next reply, showing up as `-7`, `-3` or `-6`. The library does not expose a flush, so drain it
-  yourself before retrying: `while (Serial1.available()) Serial1.read();`
+- **A reply that starts but never finishes times out like any other failure.** A collision, a motor
+  rebooting mid-reply, or noise on an unbiased RS485 pair can deliver the beginning of a frame and
+  nothing more. That returns `-1` after the usual one-second budget, and the library discards the
+  remains of the abandoned frame so they cannot be read as the head of your next reply. (In library
+  versions before 0.10.1 this case hung forever with no timeout and no error, and leftover bytes
+  surfaced as a spurious `-7` on the following command.)
+- **Stray bytes can still linger in some situations** — most often after *Detect devices*, which
+  produces several replies over about a second. The library exposes no flush of its own, so if you
+  suspect the buffer is out of step, drain it yourself before normal traffic resumes:
+  `while (Serial1.available()) Serial1.read();`
 
 
 ## Know-How, Best Practices, and Gotchas
@@ -622,7 +629,8 @@ Notes on the skeleton:
 - 'Get communication statistics' returns six u32 counters in this order: [crc32_errors, packet_decode_errors, first_bit_errors, framing_errors, overrun_errors, noise_errors]; the input flag (1) resets them after reading. These count silently-dropped garbage — poll them to monitor bus health (they should stay at 0 on a healthy bus).
 - If you suspect you sent a garbled or partial packet, keep the bus idle for at least 100 ms — the firmware's receiver resynchronizes after 100 ms of silence (bench-measured threshold: 95 ms of delay was not enough, 105 ms was — the documented figure is exact). Distinguish the failure modes: a CORRUPTED packet (bad CRC) is dropped and self-clears — the very next command works immediately, no wait needed; only a TRUNCATED/incomplete frame jams the parser and needs the 100 ms silence. Each malformation feeds a specific 'Get communication statistics' counter (LSB-clear first byte -> firstBitErrorCount, bad CRC -> crc32ErrorCount, bad declared size -> packetDecodeErrorCount).
 - The protocol's CRC32 is the standard CRC-32 (zlib/PNG polynomial, little-endian on the wire) — verified against Python's zlib.crc32. Useful when implementing the protocol on a new platform.
-- The Arduino library does NOT drain stale receive bytes before a request, and exposes no flush of its own. After any failed or timed-out exchange, and after device detection, leftover bytes can be parsed as the next reply and show up as getError() values of -7, -3 or -6. Drain the port yourself before normal traffic resumes: `while (Serial1.available()) Serial1.read();`
+- A reply that starts and never finishes (a collision, a motor rebooting mid-reply, noise on an unbiased pair) times out with getError() == -1 after the usual one-second budget, and the library discards the remains of that abandoned frame so they cannot be read as the head of the next reply. In library versions before 0.10.1 this case HUNG FOREVER with no timeout and no error, and any leftover bytes surfaced as a spurious -7 on the following command — if you are on an older library, upgrade.
+- The Arduino library still does not drain stale receive bytes before sending a request, and exposes no flush of its own. Bytes can therefore still linger in some situations — most often after 'Detect devices', which produces several replies over about a second. If you suspect the buffer is out of step, drain it yourself before normal traffic resumes: `while (Serial1.available()) Serial1.read();`
 - The Arduino read timeout (1 second) covers the WHOLE reply and requires the entire payload to be buffered at once, unlike the Python library, whose timeout restarts on each received byte. Long streamed responses that work from Python can therefore time out on Arduino unless you enlarge the UART receive buffer first.
 - Verify the link before trusting motion: ping the device 10-100 times with random 10-byte payloads and require exact echoes. 'Ping' requires exactly 10 bytes.
 - Under normal conditions reads do not fail — bench validation ran hundreds of commands with zero communication failures. A few long-running stress tests wrap status reads in a retry loop (their comments call the reads "unreliable" after heavy motion), but a dedicated stress investigation could not reproduce any failure on current firmware/library (49,360 reads across 729 aggressive motion segments, zero failures, all six device-side communication counters at 0) — those comments predate current firmware/library revisions and are not a latent bug. If you ever do see read failures, the first diagnostic is 'Get communication statistics' (then check wiring, grounding, CRC state) rather than routinely retrying them away.
@@ -1177,7 +1185,7 @@ motor.homing(maxDistance, maxDuration);
 
 #### Go to closed loop
 
-**Description:** Enter closed-loop position control mode. This command executes immediately (it is not queued) but has two preconditions: the movement queue must be empty, otherwise fatal error 8, ERROR_QUEUE_NOT_EMPTY, is raised, and the motor must not be busy, otherwise fatal error 19, ERROR_MOTOR_BUSY, is raised; on either fatal error the device replies with an error packet instead of a success response and stays in the fatal-error state until reset. The command automatically enables the MOSFETs if they are disabled (no separate 'Enable MOSFETs' is needed) and runs a current-sensor baseline check during that step, which can raise fatal error 22, ERROR_CURRENT_SENSOR_FAILED. It loads the commutation offset from saved settings without verifying that calibration was ever performed, so run 'Start calibration' at least once on a new unit. Completion semantics differ by product: on M2, M17, and M23 the transition is synchronous, so receiving the success response means the motor is already in closed loop (confirm via 'Get status' bit 2); on legacy M1 the success response only means an asynchronous procedure started, completion is indicated by status bit 5 clearing and bit 2 setting, and a failed attempt raises fatal error 39, ERROR_GO_TO_CLOSED_LOOP_FAILED. Calling it while already in closed loop is harmless on non-M1 products (given an empty queue and a non-busy motor). Any payload bytes raise fatal error 51, ERROR_COMMAND_SIZE_WRONG.
+**Description:** Enter closed-loop position control mode. This command executes immediately (it is not queued) but has two preconditions: the movement queue must be empty, otherwise fatal error 8, ERROR_QUEUE_NOT_EMPTY, is raised, and the motor must not be busy, otherwise fatal error 19, ERROR_MOTOR_BUSY, is raised; on either fatal error the device replies with an error packet instead of a success response and stays in the fatal-error state until reset. The command automatically enables the MOSFETs if they are disabled (no separate 'Enable MOSFETs' is needed); on M1, M2, and M23 that step runs a current-sensor baseline check which can raise fatal error 22, ERROR_CURRENT_SENSOR_FAILED, while M17 performs no current-sensor check. It loads the commutation offset from saved settings without verifying that calibration was ever performed, so run 'Start calibration' at least once on a new unit. Completion semantics differ by product: on M2, M17, and M23 the transition is synchronous, so receiving the success response means the motor is already in closed loop (confirm via 'Get status' bit 2); on legacy M1 the success response only means an asynchronous procedure started, completion is indicated by status bit 5 clearing and bit 2 setting, and a failed attempt raises fatal error 39, ERROR_GO_TO_CLOSED_LOOP_FAILED. Calling it while already in closed loop is harmless on non-M1 products (given an empty queue and a non-busy motor). Any payload bytes raise fatal error 51, ERROR_COMMAND_SIZE_WRONG.
 
 **Example:**
 ```cpp

@@ -12,6 +12,24 @@
 
 #define CRC32_POLYNOMIAL 0xEDB88320
 
+// How much of the one-second receive budget is left, saturated at zero.
+//
+// This MUST NOT be written inline as TIMEOUT_MS minus the elapsed time.
+// millis() returns an unsigned type, so that expression is evaluated in
+// unsigned arithmetic and WRAPS once elapsed exceeds TIMEOUT_MS, arriving in
+// receiveBytes' int32_t timeout_ms parameter as a negative number. That used to
+// hang the receive path forever on a truncated reply: a reply that starts and
+// never finishes burns the whole budget reading the response character, and the
+// error path then called receiveBytes again with the wrapped budget. Returning
+// 0 instead means "already expired", which is the truth.
+static inline int32_t remainingReceiveBudgetMs(uint32_t startTime) {
+    uint32_t elapsed = millis() - startTime;
+    if (elapsed >= (uint32_t)TIMEOUT_MS) {
+        return 0;
+    }
+    return (int32_t)((uint32_t)TIMEOUT_MS - elapsed);
+}
+
 static uint32_t crc32_value;
 static bool s_commSerialOpened = false;
 
@@ -286,7 +304,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     int32_t bytesLeftToReadWithoutTheCRC32;
 
     // Read first (encoded) size byte. From it we will determine the packet size or determine it to indicate extended size
-    if((error_code = receiveBytes(&(sizeBytes[0]), 1, 1, nullptr, TIMEOUT_MS - (millis() - startTime))) != 0) {
+    if((error_code = receiveBytes(&(sizeBytes[0]), 1, 1, nullptr, remainingReceiveBudgetMs(startTime))) != 0) {
         return error_code;
     }
 
@@ -324,7 +342,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
         // We determined that the size byte indicates an extended size where the size is incoded in 16-bite. Read them.
         uint16_t extendedSize;
         if((error_code = receiveBytes(&extendedSize, sizeof(extendedSize), sizeof(extendedSize), nullptr,
-                                      TIMEOUT_MS - (millis() - startTime))) != 0) {
+                                      remainingReceiveBudgetMs(startTime))) != 0) {
             return error_code;
         }
         sizeBytes[1] = ((uint8_t*)&extendedSize)[0];
@@ -360,7 +378,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
         
     // Read response character
     uint8_t responseChar;
-    if((error_code = receiveBytes(&responseChar, 1, 1, &bytesLeftToRead, TIMEOUT_MS - (millis() - startTime))) != 0) {
+    if((error_code = receiveBytes(&responseChar, 1, 1, &bytesLeftToRead, remainingReceiveBudgetMs(startTime))) != 0) {
         goto flush_read_remaining_bytes_and_return_error;
     }
     #ifdef VERBOSE
@@ -404,7 +422,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     // Now receive the error code byte from the remote device if there are enough bytes left
     if (bytesLeftToReadWithoutTheCRC32 >= 1) {
         if((error_code = receiveBytes(&remoteErrorCode, sizeof(remoteErrorCode), sizeof(remoteErrorCode), &bytesLeftToRead,
-                                      TIMEOUT_MS - (millis() - startTime))) != 0) {
+                                      remainingReceiveBudgetMs(startTime))) != 0) {
             goto flush_read_remaining_bytes_and_return_error;
         }
         remoteErrorCodePresent = 1;
@@ -424,7 +442,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
 
     // Read the payload
     if((error_code = receiveBytes(buffer, bufferSize, bytesLeftToReadWithoutTheCRC32, &bytesLeftToRead,
-                                  TIMEOUT_MS - (millis() - startTime))) != 0) {
+                                  remainingReceiveBudgetMs(startTime))) != 0) {
         if (error_code == COMMUNICATION_ERROR_BUFFER_TOO_SMALL) {
             // Report the full required payload byte count so the caller can resize and retry.
             // receiveBytes has already drained these payload bytes from the wire; the remaining
@@ -439,7 +457,7 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     if (responseChar == RESPONSE_CHARACTER_CRC32_ENABLED) {
         uint32_t crc32 = 0;
         if((error_code = receiveBytes(&crc32, sizeof(crc32), sizeof(crc32), &bytesLeftToRead,
-                                      TIMEOUT_MS - (millis() - startTime))) != 0) {
+                                      remainingReceiveBudgetMs(startTime))) != 0) {
             goto flush_read_remaining_bytes_and_return_error;
         }
         // And also calculate the CRC32 and compare to make sure that the received CRC32 is correct. Include all bytes, including the size bytes, in the calculation except don't include the CRC32 bytes themselves.
@@ -630,8 +648,44 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
     return (errorCode == 0) ? COMMUNICATION_SUCCESS : -errorCode;
 */
 flush_read_remaining_bytes_and_return_error:
-    receiveBytes(nullptr, 0, bytesLeftToRead, &bytesLeftToRead, TIMEOUT_MS - (millis() - startTime));
+    // Discard whatever is left of this failed frame so it cannot be mistaken
+    // for the NEXT reply.
+    //
+    // This used to call receiveBytes(), which waits for ALL the requested bytes
+    // to be buffered before reading any of them. On a truncated frame those
+    // bytes never arrive, so it discarded NOTHING and the leftovers were parsed
+    // as the head of the following reply — typically surfacing as -7
+    // (BAD_FIRST_BYTE) on a command that was itself perfectly fine.
+    // discardPartialFrame() takes what is actually there instead of waiting for
+    // what may never come.
+    discardPartialFrame(bytesLeftToRead, remainingReceiveBudgetMs(startTime));
     return error_code;
+}
+
+// Consume up to maxBytes of a frame we have given up on. Reads whatever is
+// already buffered, and keeps reading while bytes are still trickling in, but
+// never blocks waiting for bytes that may never arrive. budgetMs is an upper
+// bound on the trickle wait, not a delay: with a budget of 0 this drains the
+// buffer and returns immediately.
+void Communication::discardPartialFrame(int32_t maxBytes, int32_t budgetMs) {
+    if (maxBytes <= 0) {
+        return;
+    }
+    if (budgetMs < 0) {
+        budgetMs = 0;
+    }
+    uint32_t startTime = millis();
+    int32_t discarded = 0;
+    while (discarded < maxBytes) {
+        if (_serial.available() > 0) {
+            _serial.read();
+            discarded++;
+            continue;
+        }
+        if ((millis() - startTime) > (uint32_t)budgetMs) {
+            break;
+        }
+    }
 }
 
 void Communication::flush() {
@@ -654,10 +708,20 @@ int8_t Communication::receiveBytes(void* buffer, uint16_t bufferSize, int32_t nu
 
     bool bufferTooSmall = (buffer != nullptr && bufferSize < numBytes);
 
+    // A negative budget means "already expired". Clamping here is what makes
+    // this loop provably terminating: the comparison below is unsigned, so a
+    // negative timeout_ms would convert to ~4.29e9 and the loop could never
+    // exit. Callers should already be passing a saturated value from
+    // remainingReceiveBudgetMs(); this is the second line of defence, because
+    // the failure mode is an unrecoverable freeze rather than a wrong answer.
+    if (timeout_ms < 0) {
+        timeout_ms = 0;
+    }
+
     // Wait for all bytes to arrive
     uint32_t startTime = millis();
     while (_serial.available() < numBytes) {
-        if (millis() - startTime > timeout_ms) {
+        if ((millis() - startTime) > (uint32_t)timeout_ms) {
             #ifdef VERBOSE
             Serial.println("A timeout error occured while receiving");
             #endif

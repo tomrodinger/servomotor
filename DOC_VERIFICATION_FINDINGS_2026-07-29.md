@@ -11,8 +11,39 @@ the documentation work itself. See those commit messages for the full list.
 
 **What this file is for:** everything the sweep found that was *not* acted on, because it is a
 code change rather than a documentation change, or because it is outside the scope of that task.
-All of it is source-verified with file:line unless explicitly marked otherwise. None of it is
-bench-verified.
+All of it is source-verified with file:line unless explicitly marked otherwise. None of it was
+bench-verified at the time of writing — see the status update immediately below for what has
+since been fixed and tested.
+
+---
+
+## STATUS UPDATE 2026-07-30 — two items FIXED
+
+Both of the items called out as highest-value have been fixed and tested on the bench
+(ESP32-S3 + M17 motor). The rest of this document is unchanged and still open.
+
+- **3.1 Arduino receive hang — FIXED.** Reproduced deterministically first, then fixed.
+  `Communication.cpp` now computes the remaining receive budget through
+  `remainingReceiveBudgetMs()`, which saturates at zero instead of wrapping, and
+  `receiveBytes()` clamps a negative budget and compares unsigned-against-unsigned so the
+  wait loop is provably terminating. Fixing only that turned out to trade the freeze for a
+  poisoned NEXT command (the leftovers of the abandoned frame were parsed as the following
+  reply's size byte, surfacing as a spurious `-7`), which was then also fixed: the error
+  path calls the new `discardPartialFrame()`, which takes what is actually buffered instead
+  of waiting for bytes that will never arrive. Arduino library version bumped to 0.10.1.
+  Regression test: `Servomotor_TestSuite_ESP32S3/truncated_frame_test.cpp` +
+  `run_truncated_frame_test.py` — four cases (silent / truncated / resync / partial), no
+  hardware required, each verified to FAIL before the fix and PASS after.
+
+- **4. `motor_commands.json` cmd 17 error-22 claim — FIXED.** 'Go to closed loop' no longer
+  states unconditionally that it runs a current-sensor baseline check; it now names the
+  products, matching what 'Enable MOSFETs' already said. Re-verified against the firmware:
+  `check_current_sensor_and_enable_mosfets()` is compiled three ways, and the
+  `#if defined(PRODUCT_NAME_M17)` variant (motor_control.c:3501-3512) only sets
+  `TIM1->CCR1 = 0` and calls `enable_mosfets()` — no baseline sample, no path to error 22.
+  The Arduino library and both API documents were regenerated. Regression test:
+  `python_programs/test_host_command_description_accuracy.py`, also verified to fail on the
+  old wording.
 
 ---
 
@@ -91,7 +122,7 @@ diverge if anyone ever set them differently.
 `autogeneration/generate_command_code_module/`, not in the output.
 `Communication.cpp`/`.h` are hand-written.
 
-### 3.1 Receive hang on a truncated reply (highest severity here)
+### 3.1 Receive hang on a truncated reply — FIXED 2026-07-30 (see status update above)
 
 `Communication.cpp` `getResponse()` passes `TIMEOUT_MS - (millis() - startTime)` into
 `receiveBytes` (call sites `:289, 327, 363, 407, 427, 442, 633`). Once elapsed exceeds
