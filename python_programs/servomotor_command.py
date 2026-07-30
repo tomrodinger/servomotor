@@ -8,7 +8,7 @@ from terminal_formatting import format_error, format_info, format_warning, forma
 def main() -> int:
     # Define the arguments for this program
     parser = argparse.ArgumentParser(description='This program will let you send any supported command to the motor')
-    parser.add_argument('-p', '--port', help='serial port device', default=None)
+    parser.add_argument('-p', '--port', help='serial port device. If omitted, the SERVOMOTOR_PORT environment variable is used, then the port saved from the last successful run.', default=None)
     parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
     parser.add_argument('-a', '--alias', help='alias of the device to control, or a 16-character hex string for unique ID (extended addressing). Default is 255 (broadcast)', default=None)
     parser.add_argument('-c', '--commands', help='list all supported commands with detailed descriptions', action="store_true")

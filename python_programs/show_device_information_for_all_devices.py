@@ -31,7 +31,7 @@ def find_unused_alias(alias_dict, min_alias, max_alias):
 def main() -> int:
     # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
     parser = argparse.ArgumentParser(description='Add some random moves to the queue to test the calculations of the safety limits')
-    parser.add_argument('-p', '--port', help='serial port device', default=None)
+    parser.add_argument('-p', '--port', help='serial port device. If omitted, the SERVOMOTOR_PORT environment variable is used, then the port saved from the last successful run.', default=None)
     parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
     parser.add_argument('-v', '--verbose', help='print verbose messages', action='store_true')
     args = parser.parse_args()

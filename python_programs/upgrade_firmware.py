@@ -361,7 +361,7 @@ def main():
     # Define the arguments for this program. This program takes in an optional -p option to specify the serial port device
     # and it also takes a mandatory firmware file name
     parser = argparse.ArgumentParser(description='Upgrade the firmware on a device')
-    parser.add_argument('-p', '--port', help='serial port device', default=None)
+    parser.add_argument('-p', '--port', help='serial port device. If omitted, the SERVOMOTOR_PORT environment variable is used, then the port saved from the last successful run.', default=None)
     parser.add_argument('-P', '--PORT', help='show all ports on the system and let the user select from a menu', action="store_true")
     parser.add_argument('-a', '--alias', help='alias of the device to communicate with, or a 16-character hex string for unique ID (only for new protocol)', default="255")
     parser.add_argument('--firmware-protocol', choices=['old', 'new'], default='new',
