@@ -5,6 +5,83 @@ from .vendor.serial.tools import list_ports
 
 SAVED_SERIAL_DEVICE_FILENAME = "serial_device.txt"
 
+# Environment variable that names the serial port to use. It outranks the saved
+# default but is outranked by an explicit -p / -P on the command line.
+SERIAL_PORT_ENV_VAR = "SERVOMOTOR_PORT"
+
+
+def get_config_dir():
+    """Return the per-user directory where this library keeps its settings.
+
+    The saved port used to live inside the installed package directory, which is
+    wrong in three ways: it is not writable on a normal system-wide install, it is
+    wiped by every upgrade, and it is shared by every user of the machine. Use the
+    conventional per-user location for each platform instead.
+
+    On Windows this deliberately uses LOCALAPPDATA rather than APPDATA: APPDATA
+    roams between machines in a domain, and a COM port number means nothing on a
+    different machine.
+    """
+    # Honour XDG_CONFIG_HOME wherever it is set, including on macOS -- people who
+    # set it have done so on purpose.
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    if xdg:
+        return os.path.join(xdg, "servomotor")
+    if sys.platform.startswith("win"):
+        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        return os.path.join(base, "servomotor")
+    if sys.platform == "darwin":
+        return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "servomotor")
+    return os.path.join(os.path.expanduser("~"), ".config", "servomotor")
+
+
+def get_saved_port_path():
+    """Full path of the file that remembers the last successfully opened port."""
+    return os.path.join(get_config_dir(), SAVED_SERIAL_DEVICE_FILENAME)
+
+
+def _legacy_saved_port_path():
+    """The pre-0.12.2 location: inside the installed package directory."""
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), SAVED_SERIAL_DEVICE_FILENAME)
+
+
+def read_saved_port():
+    """Return the remembered port name, or None.
+
+    Falls back to the old in-package location so that users upgrading from an
+    earlier version do not silently lose their saved default.
+    """
+    for path in (get_saved_port_path(), _legacy_saved_port_path()):
+        try:
+            with open(path, "r") as f:
+                name = f.read().strip()
+            if name:
+                return name
+        except OSError:
+            continue
+    return None
+
+
+def save_port(port_name):
+    """Remember port_name for next time. Returns True on success.
+
+    Never raises: remembering the port is a convenience, and the caller already
+    has a working port in hand. A read-only or unwritable location must not turn
+    into a failed run.
+    """
+    path = get_saved_port_path()
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(port_name)
+        return True
+    except OSError as e:
+        print("WARNING: Could not save the serial port name to:", path)
+        print("         Reason:", e)
+        print("         This is harmless. The port is open and this program will continue.")
+        print("         Pass -p to name the port each time, or set %s." % SERIAL_PORT_ENV_VAR)
+        return False
+
 
 def select_serial_port_from_menu():
     while(1):
@@ -71,27 +148,36 @@ def open_serial_port_or_print_detailed_error(device_name = None, baud_rate = 230
         serial_port = None
     return serial_port
 
-# Open a serial port with the given device name and baud rate and timeout
-# If the port is already opened or if it cannot be opened then give an error and exit
-# If the device name is None then get the device name from a file called "serial_device.txt" from
-# the current directory
 def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
-    # get the full path of the python program that is executing right now
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    device_file_path = current_dir + "/" + SAVED_SERIAL_DEVICE_FILENAME
-    device_name_from_file = None
-#    device_file_path = open_serial_port.__code__.co_filename.replace("serial_functions.py", SAVED_SERIAL_DEVICE_FILENAME)
+    """Open the serial port, working out which port to use.
 
-    if device_name == None:
-        try:
-            print("You have not specified a serial port using the -p opton. So, getting the serial port name from this file:", device_file_path)
-            device_name = open(device_file_path, "r").read().strip()
-            device_name_from_file = device_name
-        except OSError:
-            # OSError, not just FileNotFoundError: the file may also be unreadable
-            # (permissions) on a shared/system-wide install.
-            print("Could not open that file")
-            device_name = None
+    Precedence, highest first -- the more explicit and more recent the intent,
+    the higher it wins:
+
+      1. device_name  -- an explicit -p on the command line, or "MENU" for -P
+      2. $SERVOMOTOR_PORT
+      3. the saved default from the last successful run
+      4. ask the user to pick from a menu
+
+    -P ("MENU") deliberately jumps straight to the menu: the user asked to choose,
+    so neither the environment variable nor the saved file may pre-empt that.
+    """
+    device_name_already_saved = None
+
+    if device_name is None:
+        env_port = os.environ.get(SERIAL_PORT_ENV_VAR)
+        if env_port:
+            device_name = env_port.strip()
+            print("Using the serial port named by %s: %s" % (SERIAL_PORT_ENV_VAR, device_name))
+
+    if device_name is None:
+        device_name = read_saved_port()
+        device_name_already_saved = device_name
+        if device_name is None:
+            print("No serial port specified with -p, no %s set, and no saved default." % SERIAL_PORT_ENV_VAR)
+        else:
+            print("Using the saved serial port:", device_name)
+            print("(saved at %s)" % get_saved_port_path())
 
     if (device_name == None) or (device_name == "MENU"):
         print("Will let the user select the serial port from a menu")
@@ -105,24 +191,12 @@ def open_serial_port(device_name = None, baud_rate = 230400, timeout = 0.1):
         if serial_port == None:
             exit(1)
 
-    if(device_name != device_name_from_file):
-        # we have successfully opened the serial port at this point, and now we want to save the device name
-        # to the file in the current directory with the name specified in SAVED_SERIAL_DEVICE_FILENAME
-        try:
-            open(device_file_path, "w").write(serial_port.name)
-            print("Saved the serial device name to the file at:", device_file_path)
+    # The port is open and working, so remember it as the new default. Skip the write
+    # when it already matches what is stored, so a normal run does no disk I/O.
+    if serial_port.name != device_name_already_saved:
+        if save_port(serial_port.name):
+            print("Saved the serial device name to:", get_saved_port_path())
             print("This serial port name will be used by default from now on.")
-            print("To set a new default, you need to run this program with the -p option to specify the port you want")
-            print("or run this program with the -P option to select a new default port from a menu.")
-        except OSError as e:
-            # Catch OSError, not just FileNotFoundError: this file lives inside the installed
-            # package directory, which is NOT writable on a normal system-wide install
-            # (root-owned site-packages on Linux, C:\Program Files on Windows, read-only
-            # container images). Remembering the port is only a convenience -- the port is
-            # already open and usable -- so warn and carry on instead of crashing.
-            print("WARNING: Could not save the serial port name to:", device_file_path)
-            print("         Reason:", e)
-            print("         This is harmless. The port is open and this program will continue.")
-            print("         Pass -p to name the port each time (or -P to pick it from a menu).")
-            
+            print("To override it: pass -p, or -P to choose from a menu, or set %s." % SERIAL_PORT_ENV_VAR)
+
     return serial_port
