@@ -1,6 +1,6 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2026-07-30 15:38:42
+Generated: 2026-07-30 16:07:09
 
 ## Latest Firmware Versions
 
@@ -674,7 +674,7 @@ Two codes are internal-consistency faults rather than user errors: 30 (control l
 Firmware upgrades go over the same RS485 bus as everything else, using the Python tool. There is no Arduino-side upgrade path — even if your application runs on an Arduino or ESP32, do the upgrade from a computer with a USB-to-RS485 adapter.
 
 - Get the tool: `pip3 install --upgrade servomotor`. Since library version 0.12.0 this installs an `upgrade_firmware` command directly, along with `servomotor_command`, `detect_and_set_alias_all_devices` and `show_device_information_for_all_devices`. No repository checkout is needed. Do not install pyserial — a copy is bundled inside the package and is what the library actually imports.
-- Use library version 0.12.2 or later. 0.12.0 could not be imported on Windows at all (the bundled pyserial copy used absolute imports, fixed in 0.12.1), and versions before 0.12.1 aborted with an uncaught PermissionError when they could not save the remembered serial port into the installed-package directory — which a normal system-wide install hit every time. 0.12.2 moves that file to a per-user config directory and adds the SERVOMOTOR_PORT environment variable, so you can name the port once instead of passing -p to every command below.
+- Use library version 0.12.2 or later. ON WINDOWS, 0.12.0 and every earlier version that bundled pyserial could not open a serial port at all — and the failure is easy to misdiagnose, because `import servomotor` SUCCEEDS. A working import is therefore not evidence that your version is good. The error appears only when you actually open a port, as `ModuleNotFoundError: No module named 'serial'` raised from `from serial import win32` (the bundled pyserial's Windows backend used absolute imports; fixed in 0.12.1). Separately, versions before 0.12.1 aborted with an uncaught PermissionError when they could not save the remembered serial port into the installed-package directory — which a normal system-wide install hit every time. 0.12.2 moves that file to a per-user config directory and adds the SERVOMOTOR_PORT environment variable, so you can name the port once instead of passing -p to every command below.
 - The `.firmware` image files are NOT part of the pip package; obtain them separately.
 - CHECK COMPATIBILITY FIRST. Run `show_device_information_for_all_devices -p <PORT>` and note the Product Code and Firmware Compatibility Code. The file name encodes both: `servomotor_M17_fw0.15.9.0_scc3_hw1.5.firmware` means model `M17` and compatibility code `3`. Both must match your device exactly.
 - A MISMATCH IS SILENT. The check happens in the device's bootloader, which simply ignores any page whose codes do not match and says nothing on the bus; the explanatory message goes only to an internal debug port you cannot see. The tool has no way to notice.
