@@ -1061,3 +1061,223 @@ truthful debug data + removing a one-sided standstill drive. **Decision: keep
 both** (cost ~7 instructions ≈ 0.1 µs/tick; removal would force weakening the
 H10 hardware gate and two battery checks plus a full re-verification cycle for
 strictly-equivalent code).
+
+## 19. Zero-crossing-gated integral: implementation + release-overshoot fix (0.15.4.0/0.15.4.1, 2026-07-12/13)
+
+**0.15.4.0 — the gate (plan §17) implemented in firmware.** M17-only (#ifdef):
+authority cap lowered to 500e6 on M17 only (int32 proof with full-authority I;
+non-M17 keeps 800e6 — cap BINDS there), new `max_integral_term_full` used by the
+ki cap / back-calc clamps / constants-change re-clamp, gate state (4 words)
+reset at all PID-reset sites. Verified: differential 6.5M samples bit-exact
+(harness now #ifdef-aware — TRAP: it previously compiled extracted code without
+PRODUCT_NAME_M17, which would have silently tested the gateless path; 6/6
+mutations killed incl. lost-define + inverted-cap), UBSan overflow 3 sets x
+1.42B ticks with proven gate coverage (152M above-rail ticks), sim port
+bit-identical to prototype 14/14, battery gained gate section (77/79), review
+agent 0 must-fix. Bench (fw flashed same day): ISR window-max 26/27-28 µs vs
+26/27 baseline (cost ≤ 1 µs resolution; PID_controller static size 208→296);
+capture identity exact; **objective A/B at low current: settled error after a
+0.1%-rev step at current 25: 0.15.3.4 parks 1,991 counts short forever (I pinned
+at 25% rail), 0.15.4.1 settles at 1 count (I reached 317% of rail)**; at
+current 15: 2,289 → 791 (I at full authority).
+
+**Bench-found design flaw (Tom, hand test): release-after-sustained-hold
+overshoot.** Any hand/load interaction ≥ 0.1 s opens the gate and charges I
+toward full authority; on release the rotor flies home, and the post-crossing
+midpoint (computed against a stale sample) left a large frozen I pushing
+through the target for the whole 0.1 s freeze. Reproduced in sim after adding
+`--load-until` (load vanishes mid-run): 13.4k-count overshoot vs 2.9k gate-off.
+NOT the freeze duration (short holdoff made 0.30-load releases WORSE — gate
+reopens during the excursion).
+
+**Fix (0.15.4.1) — "freeze-unwind + stale-crossing clamp"**, selected from 5
+sim candidates (bleed/cross-to-rail/midpoint-down rejected with data — bleed
+defeats the self-tune and hunts at low stiction):
+1. During the post-crossing freeze, integration steps that REDUCE |I| are
+   applied, floored at 0 (freeze only blocks re-charging).
+2. A crossing whose previous crossing is > INTEGRAL_GATE_STALE_TICKS (2x
+   holdoff) old is a release/first event: its midpoint is clamped to the 25%
+   rail (new saturating counter `integral_gate_ticks_since_cross`, INT32_MAX =
+   no history).
+Sim results: release overshoot 13.4k → 5.3-5.6k (settle 0.11 s; residual is
+rotor momentum), load-hold accuracy IMPROVES (662 → 285-400 counts), Tom-step
+scenario improves (-914..755 → ~250), all battery/no-regress gates pass.
+Adversarial verification (19 seeds, timed releases every 0.05 s, pulsed loads,
+ki/kd/load extremes): CONFIRMED-SHIPPABLE in the recommended envelope
+(ki ≤ 100); winner also CLEANS unfixed-gate hunt pockets at ship gains
+(L0.14/ki5/kd175k hunted 6/10 seeds unfixed → 0/10) and is strictly better at
+catastrophic extremes (ki=5000: unfixed runs away to the input clamp, fixed
+stays bounded). **Documented out-of-envelope corners (firmware accepts these
+gains; candidates for a future bounded-unwind remedy — do NOT ship untested):**
+(a) sustained-hold hunt at ki 200-300/kd175k and ki ≥ 500/kd350k (std
+600-1,300 vs 33); (b) load exactly == stiction with ki5/kd350k hunts 10/10
+seeds at 3 Hz (narrow pocket; ship gains clean); (c) cyclic loads: ~40% better
+release overshoot but ~40% worse re-application sag (I drains between cycles);
+(d) release from saturated (≥0.24 N·m) holds still ~9-12k (charge accrues
+before any crossing exists — uncatchable by crossing rules).
+Harness mirrors updated + mutation-proven (differential 7.0M samples 0
+mismatches, 3/3 new mutations detected incl. a probe pinning the stale
+threshold from both sides; overflow adds release-stress phase + 4 mandatory
+coverage counters, full 3-set run clean). PID_controller static 296 → 372
+instructions; bench ISR unchanged (26/28 µs window-max).
+
+**Status: 0.15.4.1 on the bench motor, held for Tom's subjective re-test.
+UNCOMMITTED. Remaining before commit/release: Tom's hand verdict; remaining
+bench items: disable→displace→enable transient (review §16 finding), spring
+(sign-reversing) load, sustained-stall thermal soak, fleet stiction spread;
+decide whether the out-of-envelope corners need the bounded-unwind remedy
+first. The mislabeled fw0.15.4.0 artifacts (rebuilt with fix code before the
+version bump) were moved to .bak; only 0.15.4.1 binaries are real.**
+
+## 20. Large-inertia (plastic disk) overshoot characterization (2026-07-13, bench)
+
+Tom mounted a large plastic disk (large J) and saw big overshoot. Measured
+programmatically via hall-position polling (~280 Hz; the PID debug error field
+clamps at max_error and pegged — do not use it for large-overshoot work):
+snap (0.05 s) trapezoid steps at current 200, kp2000/ki25/kd350k: 0.05 rot →
+10.2k counts (1.1°); 0.20 rot → 150k (16.5°); 0.61 rot → 214k (23.5°).
+**Mechanism is BALLISTIC, not loop tuning:** output railed (peak ~400% of I-rail
+= full saturation) through the catch-up, so stopping distance = J·ω²/2τ.
+Evidence: ki=0 vs ki=25 within 15% (integral not the driver); kd sweep 350k→5.6M
+barely helps (150k→90k) and kd ≥ 2.8M hunts with the disk (settle never);
+move-time series collapses it: 0.2-rot move in 0.05 s → 18.5°, in 0.2 s →
+**0.05°** (448 counts), 1.0 s → 0.02°. The cliff sits where demanded accel
+crosses achievable τ/J. Conclusion: with big inertia, command profiles the
+torque can follow (or raise the current limit); no gain change fixes a
+saturated approach. Hand-release overshoot with the disk is the same physics
+(momentum) — the 0.15.4.1 fix removes the integral contribution only.
+Scripts: scratchpad measure_overshoot2.py / measure_movetime.py (hall-polling
+method worth promoting to tools/ if reused).
+
+## 21. Per-load PID tunability study (2026-07-13, sim; 3,762 runs + adversarial validation)
+
+**Tom's requirement:** a no-overshoot tuning for the bare rotor, another for a
+loaded shaft — "the PID should be tunable for any kind of load." Bench with the
+loose plastic disk was irreproducible (backlash; 0.75° vs 7.5° same config), so
+the quantitative answer comes from the sim (rigid --inertia), fw 0.15.4.1
+semantics, snap 0.2-rot step, V=200. Results archived in
+pid_baseline_captures/2026-07-13_per_load_tuning/.
+
+**VALIDATED TUNING TABLE (snap-step overshoot; 9,102 counts = 1°):**
+| load (× rotor J) | tuning | snap overshoot | caveats |
+|---|---|---|---|
+| ×1 (bare) | kp2000 / ki25 / **kd700k** | 1.1–1.3k counts (0.13°) | robust seeds 1–12, ki 5–100, low stiction; at 2× hall noise prefer kd350k (default) |
+| ×5 | **kp500 / ki25 / kd1.4M** | 1.2–1.4k (0.14°) | settle 0.2–4 s (parks inside ±1000 deadband); fallback kp250/kd1.4M = 5.8k but 0.23 s |
+| ×20 | **none good** | best 1.8–2.0k (kp500/kd1.4M) | permanent 1.5k-count 3.8–4 Hz limit cycle at EVERY ki 1–100; the "quiet" cell (kp2000/kd350k, 65.6k ov) is stick-slip parking — hunts at low stiction/small steps/releases. Use profiled moves (default gains track 2-rot/2-s at postrms ~47). |
+| ×50 | kp250 / ki25 / kd1.4M "best available" | 15–18k (1.7–1.9°) | hunts in ~20% of seeds; kp250/kd5.6M REJECTED (1/24-seed 24° tail at low stiction — noise-saturated D fails to brake) |
+Amplitude bound: snap steps ≥ 0.6 rot at J ≥ 20 = 25°+ for EVERY tuning
+(saturated ballistics). Universal: standstill dormancy safe everywhere; the
+0.15.4.1 release fix never re-breaks; at J ≥ 20 the ki-driven stick-slip cycle
+is the residual limiter (ki 1–100 all sustain it — ki/deadband sweep at heavy J
+is the top follow-up).
+
+**Architecture findings (H1/H2 quantified on scratch sims):**
+- H1 braking window CONFIRMED: error clamp = authority/kp blinds the loop
+  beyond 52k counts at kp2000; kp2000 heavy-J overshoot matches the
+  stopping-distance-minus-window bound. Lowering kp widens the window — the
+  legitimate in-firmware per-load knob (knee at kp~500/J5–20, kp~250/J50).
+- **Widening the error clamp REJECTED**: the clamp is the architecture's
+  emergent braking trigger (P railed at +authority cancels against mec-railed D
+  at −authority exactly at the window edge). An 8× window made J50 overshoot
+  47° (P un-cancellable + gain-1 back-calc slams I to the wrong rail).
+- H2 D-noise ceiling CONFIRMED: mec = authority/kd ≈ hall-noise σ at kd~2.8M →
+  stock usable kd caps at ~1.4M, J-independent. **Velocity-D (unclamped int64
+  error_change + int64 D/LPF/sum) is the worthwhile future firmware option**:
+  its noise ceiling scales WITH inertia (J50 quiet at kd=22.4M = 16× more
+  damping authority) → J50 snap overshoot 0.2° quiet (9× better than stock
+  best), release peak 3–4× better, and it needs a per-load mode switch anyway
+  (at bare J it is WORSE — noise). Cost: int64 LPF/D/sum in the tick (ISR
+  budget re-check required), keep PID_MAX_ERROR_CHANGE=2e6 as wrap protection.
+  NOT implemented; candidate §22 after the heavy-J ki/deadband sweep.
+
+## 22. Hands-on smoothness: slewed gate corrections (0.15.4.2, 2026-07-13)
+
+**Bench findings (Tom, disk rig):** on 0.15.4.1 with kI active: (1) buzz when
+holding the shaft slightly off-position, (2) jerkiness when rocking it through
+the setpoint, (3) release overshoot. Killer diagnostic: at kI=0 (gate machinery
+inert) ALL THREE vanish — but return is weak/slow and it parks short. So the
+roughness is the gate itself under human interaction — never measured before
+(all prior scenarios were hands-off).
+
+**Made measurable:** sim gained --forced-rock/--forced-hold (rotor externally
+prescribed) + per-tick |ΔI|/|Δoutput| smoothness metrics. Quantified on
+0.15.4.1: every rocking crossing is "stale" and the midpoint clamp slams the
+integral by 79–105M pre-shift IN ONE 32 µs TICK = a full rail-to-rail torque
+reversal (the jerk); holds ramp rail→full at raw error·ki (3.4–20 ms; the buzz,
+plus stick-slip and disk backlash).
+
+**Fix shipped in 0.15.4.2 — crossing-correction SLEW (N4):** corrections become
+a target the integral approaches at (full authority >> 4) per tick during the
+freeze, with the release unwind running in parallel (no snap-back; abandoned
+without a jump at freeze expiry; crossing sample stays pre-correction). One-tick
+|ΔI| 103M → 6.58M (bound airtight in a 630-run adversarial rock grid), rock
+output slam 51k → 3.6–4.9k counts. Slew shift 4 is a hard cliff: N≥5 hunts
+d-shift-7 holds (9/10 seeds). Bonus: cures the §19 ki≥200 hold-hunt corners
+(5/5→0/5) at their original cells.
+
+**REJECTED companion — above-rail windup rate cap (M11):** designed to soften
+the hold-fight ramp and initially selected as part of the winner; adversarial
+verification BROKE it: the cap equilibrates against the back-calculation drain
+and pins holding torque at ~68% of rail for loads ≥ 0.26 N·m (parks 7.9° off,
+10/10 seeds, permanent) + 26 new hunt pockets (13 in-envelope). Firmware ships
+SLEW-ONLY; the hold-fight ramp stays raw (buzz may partially remain during
+deliberate sustained holds — bench verdict pending). Any future wind cap must
+solve the back-calc interaction first. Also honest: the §19-corner "cures" are
+partly relocations (same gains hunt at other stiction/J cells); pocket-hopping
+is a pre-existing gate trait.
+
+**Slew-only re-verification:** heavy-load hold cell that killed M11 now back at
+peak_i=100% with base-class parks; rock ΔI bound 6.58M; release 2.8–8.6k;
+Tom-step park −6..−42. Battery 160/162 (2 documented corners) + sweep 82/82
+(regression agent, post-sim-edit). Differential + overflow mirrors updated for
+slew-only with mutation proofs (see workflow results).
+
+**Also this session: per-load return-speed law.** Return cruise speed ≈
+authority/kD counts/tick (P-rail vs D-rail balance) — kD is both the landing
+brake AND a cruise governor; kI adds up to 2× more. At heavy J, "10 rev/s
+return + soft landing" is impossible for fixed gains (commanded ≥0.5-rot snaps
+at J≥20 land ballistic at 8–38° with ANY gains once kI drives the approach);
+that requires trajectory-aware braking (§21 velocity-D / cascade — future).
+Bench default for the disk rig: kp500/ki25/kd1.4M @ current 390 ≈ 2.8 rev/s
+cruise; kp2000/ki25/kd350k gives ~10 rev/s hand-release returns with fine
+small-step behavior but crashes commanded multi-turn snaps at heavy J.
+
+## 23. VERDICT: the gated integral (0.15.4.x) is REJECTED AND REVERTED (2026-07-13)
+
+> **Note added 2026-07-31, when this record was committed to git.** The two sentences below
+> were true on 2026-07-13 and are kept as written. They are NOT the current state: the tree now
+> ships fw **0.15.9.0**, and the version numbers 0.15.4.0–0.15.4.2 were later **reused** for real,
+> shipped releases that have nothing to do with the gate. So two different builds share the name
+> `servomotor_M17_fw0.15.4.0_scc3_hw1.5.firmware` — the real released one in
+> `firmware/firmware_releases/` (36,929 bytes) and the rejected gate build preserved here as
+> `...firmware.bak` (37,025 bytes). Do not confuse them. For what the real 0.15.4.0 onwards
+> actually changed, see the behaviour-by-firmware-version table in
+> `API_documentation/autogeneration/knowhow.md`.
+
+**Sections 17–22 describe an experiment that FAILED and was reverted. The shipping
+firmware is 0.15.3.4 (commit 858544d). No 0.15.4.x code exists in the tree.**
+
+Tom's bench verdict on 0.15.4.2, after every repair attempt: the **whine/vibration when
+holding the shaft off-position** and the **jerkiness when rocking it through the setpoint**
+were still there and "quite bad". Decisive diagnostic: at **kI=0 (gate machinery inert) all
+complaints vanish**. The roughness is the gate itself.
+
+Root cause (the lesson to keep): **the gate makes the loop's behavior depend on interaction
+history**, and its state machine (same-sign counter, crossing midpoints, freeze windows,
+staleness detection) runs on exactly the 0.1–1 s timescales a human hand works at — so a
+hand continuously re-triggers it and feels the torque *trend* shifting. This is structural
+to any state-machine-gated integrator, not a tuning or smoothing defect. The slew fix
+(0.15.4.2) reduced per-tick torque steps 15× and changed nothing a hand could feel: a
+0.5 ms ramp and a 32 µs step are the same thing to a finger. Our whole validation suite —
+which the design passed, including the objective goal (a 0.1%-rev step that 0.15.3.4 parks
+1,991 counts short of converged to 1 count on the bench) — measured only hands-off
+scenarios.
+
+**Full post-mortem, preserved rejected source, rejected binaries, and the list of
+directions that do NOT carry this flaw (feedforward hold-torque estimation being the most
+promising):**
+`pid_baseline_captures/2026-07-13_gate_experiment_REVERTED/POSTMORTEM.md`.
+
+Everything else in §17–§22 remains valid and useful: the load-holding physics (§17), the
+per-load tuning table and the braking-window / D-noise-ceiling architecture findings (§21),
+the large-inertia ballistics (§20), and the return-speed law (cruise ≈ authority/kD; §22).

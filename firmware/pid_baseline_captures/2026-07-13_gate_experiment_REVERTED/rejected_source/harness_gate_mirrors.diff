@@ -1,0 +1,2955 @@
+diff --git a/c_test_programs/pid_algorithm_sim.c b/c_test_programs/pid_algorithm_sim.c
+index bed916b..222b906 100644
+--- a/c_test_programs/pid_algorithm_sim.c
++++ b/c_test_programs/pid_algorithm_sim.c
+@@ -26,6 +26,39 @@
+  *   step3  + D term from a 32-tick FIR difference of the error instead of
+  *            per-tick difference + leaky low-pass (same DC gain: 32x)
+  *
++ * Firmware mapping:
++ *   fw 0.15.3.4        = --alg step2                (gate off, the sim default)
++ *   fw 0.15.4.0  (M17) = --alg step2 --i-gate avg   (zero-crossing-gated integral windup,
++ *                        holdoff 3125 ticks / deadband 1000 counts = the sim defaults for
++ *                        those flags; always on in the M17 firmware)
++ *   fw 0.15.4.1+ (M17) = --alg step2 --i-gate avg --i-gate-freeze-unwind --i-gate-stale-ticks 6250
++ *                        (adds the release-overshoot fix: unwind-during-freeze +
++ *                        stale-crossing midpoint clamp)
++ * The gate stays OFF by default here so every pre-gate baseline and check remains
++ * comparable; pass --i-gate avg to simulate the shipped M17 semantics. Design +
++ * validation: firmware/PID_IMPROVEMENT_PLAN.md section 17; the validated reference is
++ * firmware/pid_baseline_captures/2026-07-11_load_holding_study/pid_sim_zerocross_prototype.c
++ * (this file is that prototype, promoted; clamp/freeze/bleed were research-only modes).
++ *
++ * Release-after-hold overshoot study (2026-07-13, bench bug in fw 0.15.4.0):
++ * --load-until S makes a hand release expressible (the --load torque vanishes at
++ * t=S); banner then reports release_peak_err (max |error| within 1.5 s of release)
++ * and release_settle_s. Fix candidates are the --i-gate-freeze-unwind /
++ * --i-gate-release-bleed / --i-gate-cross-to-rail / --i-gate-midpoint-down /
++ * --i-gate-stale-ticks flags (all default off; gate behavior is bit-identical to
++ * the shipped firmware when they are absent). Winner validated by battery
++ * section 8: --i-gate-freeze-unwind --i-gate-stale-ticks 6250.
++ *
++ * Hand-interaction smoothness study (2026-07-13, bench complaints on fw 0.15.4.1:
++ * buzz when holding off-position, jerk when rocking across the setpoint):
++ * --forced-rock/--forced-hold prescribe the ROTOR position (the hand dominates;
++ * plant integration is bypassed inside the forcing window, the controller runs
++ * normally) and the banner reports per-tick |delta I| / |delta output| max+p99
++ * over the window. Smoothing candidates: --i-gate-slew (crossing corrections
++ * slew to a target instead of assigning instantly) and --i-gate-wind-slew
++ * (above-rail outward windup rate cap). All default off; behavior without the
++ * flags is bit-identical to the pre-flag build.
++ *
+  * Output: CSV whose first 6 columns match tools/pid_debug_capture.py captures
+  * (t_s,error,p_term,i_term,d_term,output) so the same plotting works, plus
+  * extra columns (desired,actual,voltage) for plant ground truth.
+@@ -65,6 +98,26 @@ typedef enum { ALG_OLD = 0, ALG_STEP1A, ALG_STEP1B, ALG_STEP1, ALG_STEP2, ALG_ST
+ static const char *ALG_NAMES[] = {"old", "step1a", "step1b", "step1", "step2", "step3"};
+ /* step1a = only the LPF decay fix; step1b = only the output rounding fix (isolation variants) */
+ 
++/* zero-crossing-gated integral windup (analysis agent "zerocross", 2026-07-11):
++ * the integral may wind past the 25% clamp toward FULL authority only while the
++ * position error has kept one sign (beyond a deadband) for i_gate_holdoff ticks.
++ * On a zero crossing the gate closes; mode selects the reaction:
++ *   clamp  : immediately re-clamp I to the 25% rail
++ *   freeze : freeze integration for holdoff ticks; I keeps its value (and while
++ *            the gate is closed, |I| may not GROW past 25% but keeps any excess)
++ *   bleed  : while the gate is closed, decay the above-25% excess by
++ *            excess >> bleed_shift per tick (time constant ~2^bleed_shift ticks)
++ * Only active for --alg step2/step3. */
++typedef enum { GATE_OFF = 0, GATE_CLAMP, GATE_FREEZE, GATE_BLEED, GATE_AVG } gate_t;
++static const char *GATE_NAMES[] = {"off", "clamp", "freeze", "bleed", "avg"};
++/* avg: on a zero crossing, set I to the midpoint of its values at this and the
++ * previous crossing (the stick-slip cycle turns symmetrically around the true
++ * hold torque, so the midpoint self-tunes to it), then freeze for holdoff.
++ * avg IS THE SHIPPED MODE: M17 firmware runs it unconditionally with holdoff 3125 /
++ * deadband 1000 (firmware/Src/motor_control.c PID_controller); firmware 0.15.4.1+
++ * additionally runs --i-gate-freeze-unwind --i-gate-stale-ticks 6250 (the
++ * release-overshoot fix). */
++
+ /* ------------------------------------------------------------------ options */
+ typedef struct {
+     alg_t alg;
+@@ -83,6 +136,7 @@ typedef struct {
+     double static_friction;  /* breakaway friction, N*m (>= coulomb; stick-slip) */
+     double viscous;          /* N*m*s/rad */
+     double load;             /* constant external torque N*m */
++    double load_until_s;     /* --load applies only for t < this; 0 = forever (release test) */
+     uint64_t seed;
+     const char *csv_path;
+     int decimate;
+@@ -94,6 +148,47 @@ typedef struct {
+     int d_shift;             /* derivative filter strength: EMA over 2^d_shift ticks (default 5; 0 = no filter) */
+     int floor_output;        /* ablation: use the OLD floor output shift (no half-LSB rounding) on step2+ */
+     int sticky_decay;        /* ablation: use the OLD sticky (floor) LPF decay on step2+ */
++    gate_t i_gate;           /* zero-crossing windup gate mode (default off) */
++    int32_t i_gate_holdoff;  /* ticks of one-signed error before I may exceed 25%; also freeze window */
++    int32_t i_gate_deadband; /* |error| must exceed this for a sign to register (0 = every count) */
++    int i_gate_bleed_shift;  /* bleed mode: per-tick excess decay = excess >> this */
++    int i_gate_base_bc;      /* back-calc clamp uses the BASE 25% limit instead of the gated limit */
++    /* ---- release-overshoot fix candidates (2026-07-13, all default OFF; only
++     * touch the freeze/avg gate paths, so gate-off and plain-gate behavior are
++     * bit-identical when these flags are absent) ---- */
++    int i_gate_freeze_unwind;   /* A: during the post-crossing freeze, integration steps that
++                                 * REDUCE |I| are applied (floored at 0); only outward winding
++                                 * stays paused */
++    int i_gate_release_bleed;   /* B: during the freeze, decay the above-25%-rail excess by
++                                 * excess >> this per tick (0 = off) */
++    int i_gate_cross_to_rail;   /* C: at a crossing, if the two crossing samples disagree by
++                                 * more than 2x in magnitude (or in sign), take the smaller-
++                                 * magnitude sample as truth instead of the midpoint */
++    int i_gate_midpoint_down;   /* D: the crossing midpoint rule may only DISCHARGE: applied
++                                 * only when |midpoint| < |I|, otherwise I keeps its value */
++    int32_t i_gate_stale_ticks; /* E: a crossing whose previous crossing is older than this many
++                                 * ticks is a RELEASE (hold-cycle crossings repeat every few
++                                 * thousand ticks): the stale midpoint is not trusted (0 = off) */
++    int i_gate_stale_zero;      /* E variant: on a stale crossing set I to 0 instead of
++                                 * clamping the midpoint to the 25% rail */
++    /* ---- hand-interaction forcing (2026-07-13 smoothness study; default off).
++     * Inside the forcing window the rotor position is PRESCRIBED (the hand
++     * dominates; plant integration bypassed); the controller runs normally and
++     * per-tick |delta I| / |delta output| are recorded. ---- */
++    double forced_rock_amp;   /* counts: rotor = setpoint + AMP*sin(2*pi*F*t) (0 = off) */
++    double forced_rock_hz;    /* rock frequency (default 1.0) */
++    double forced_hold_off;   /* counts: rotor pinned at setpoint - OFFSET, so error = +OFFSET
++                               * (0 = off; --forced-rock wins if both are given) */
++    double forced_from_s;     /* forcing window start (default 1.0 s) */
++    double forced_until_s;    /* forcing window end; 0 = until the end of the run */
++    /* ---- integral smoothing candidates (2026-07-13; default off) ---- */
++    int i_gate_slew_shift;      /* C1: avg-gate crossing/stale corrections set a TARGET and I
++                                 * slews toward it at max_integral_full >> N per tick during the
++                                 * freeze (replaces freeze-unwind until the target is reached;
++                                 * unwind resumes for the freeze remainder). 0 = instant (off) */
++    int i_gate_wind_slew_shift; /* C2: ABOVE the 25% rail, outward windup is rate-capped at
++                                 * max_integral_full >> M per tick; below the rail and all
++                                 * inward motion unchanged. 0 = uncapped (off) */
+ } opts_t;
+ 
+ /* ------------------------------------------------------------------ RNG (deterministic) */
+@@ -128,12 +223,32 @@ static int32_t deriv_scaled;             /* kD >> 5 */
+ static int32_t ki_effective;             /* kI after the overflow cap (step2+) */
+ static int32_t output_limit;             /* V << FUDGE_SHIFT: full authority in output counts */
+ 
++/* zero-crossing gate state (all int32; ports to firmware as 3 words) */
++static int32_t max_integral_full;        /* full pre-shift authority (gate-open I limit) */
++static int32_t zc_prev_sign;             /* -1/0/+1: last error sign seen beyond the deadband */
++static int32_t zc_same_ticks;            /* consecutive registered ticks with that sign (saturates at holdoff) */
++static int32_t zc_freeze_ticks;          /* freeze mode: remaining ticks with integration paused */
++static int32_t zc_last_cross_i;          /* avg mode: integral value at the previous crossing */
++static int32_t zc_ticks_since_cross;     /* E: ticks since the previous crossing (saturating) */
++static int32_t zc_slew_target;           /* C1: pending crossing-correction target for I */
++static int32_t zc_slew_active;           /* C1: nonzero while I is still slewing to the target */
++static int32_t zc_slew_dir;              /* C1: +1/-1 original correction direction (slew ends
++                                          * when I reaches or PASSES the target, e.g. when the
++                                          * parallel unwind overtakes it; never snaps back) */
++static int32_t i_limit_now;              /* effective integral limit this tick (base or full) */
++static int64_t gate_open_ticks;          /* metric */
++static int64_t gate_crossings;           /* metric */
++
+ static int64_t saturated_ticks;          /* metrics */
+ static int64_t overflow_violations;
+ 
+-/* overflow-safety bounds; must match firmware/Src/motor_control.c (see test_pid_overflow.sh) */
++/* overflow-safety bounds; must match firmware/Src/motor_control.c (see test_pid_overflow.sh).
++ * The authority cap is the M17 value (fw 0.15.4.0 lowered it from 800e6 so a gate-opened
++ * FULL-authority integral keeps |P|+|I|+|D| under 2^31; other products stay at 800e6).
++ * At this sim's fixed MAX_PWM_V=200 the authority is 200<<19 = 104,857,600, so the cap
++ * never binds here either way. */
+ #define PID_ERROR_INPUT_CLAMP        (1 << 29)
+-#define PID_MAX_AUTHORITY_PRE_SHIFT  800000000
++#define PID_MAX_AUTHORITY_PRE_SHIFT  500000000
+ #define PID_MAX_ERROR_CHANGE         2000000
+ 
+ static void controller_init(const opts_t *o) {
+@@ -145,6 +260,16 @@ static void controller_init(const opts_t *o) {
+     error_ring_fill = 0;
+     saturated_ticks = 0;
+     overflow_violations = 0;
++    zc_prev_sign = 0;
++    zc_same_ticks = 0;
++    zc_freeze_ticks = 0;
++    zc_last_cross_i = 0;
++    zc_ticks_since_cross = INT32_MAX;   /* "no previous crossing" counts as stale */
++    zc_slew_target = 0;
++    zc_slew_active = 0;
++    zc_slew_dir = 0;
++    gate_open_ticks = 0;
++    gate_crossings = 0;
+ 
+     if (o->alg >= ALG_STEP2) {
+         /* hardened constants pipeline (firmware >= 0.15.3.2): 64-bit with caps */
+@@ -166,9 +291,13 @@ static void controller_init(const opts_t *o) {
+         if (o->i_clamp_frac16 > 0) mi = (mi * o->i_clamp_frac16) >> 4;
+         else                       mi >>= o->i_clamp_shift;
+         max_integral_term = (int32_t)mi;
++        max_integral_full = (int32_t)authority;
++        /* the ki overflow cap must be computed against the LARGEST value the
++         * integral can hold; with the gate enabled that is full authority */
++        int64_t i_cap_for_ki = (o->i_gate != GATE_OFF) ? max_integral_full : max_integral_term;
+         int64_t eff_me = me > PID_ERROR_INPUT_CLAMP ? (int64_t)PID_ERROR_INPUT_CLAMP : me;
+         if (eff_me > 0) {
+-            int64_t ki_max = ((int64_t)INT32_MAX - max_integral_term) / eff_me;
++            int64_t ki_max = ((int64_t)INT32_MAX - i_cap_for_ki) / eff_me;
+             if (ki > ki_max) ki = ki_max;
+         }
+         ki_effective = (int32_t)ki;
+@@ -183,6 +312,8 @@ static void controller_init(const opts_t *o) {
+         ki_effective = (int32_t)o->ki;
+         deriv_scaled = (int32_t)(o->kd >> AVG_SCALAR_SHIFT);
+     }
++    if (o->alg < ALG_STEP2) max_integral_full = max_integral_term;
++    i_limit_now = max_integral_term;
+     output_limit = MAX_PWM_V << FUDGE_SHIFT;             /* 51200 at V=200 */
+     /* firmware >= 0.15.3.4: the anti-windup saturation point is the LARGER of the
+      * voltage term and the 90-degree commutation angle (matters only for V < 64) */
+@@ -248,14 +379,221 @@ static int32_t pid_tick(const opts_t *o, int64_t error_i64,
+     else if (error > max_error) error = max_error;
+ 
+     if (ki_effective != 0) {
+-        /* optional integration deadband: within +/-i_deadband counts of the target,
+-         * stop pushing -- the position is already as good as the mechanics can hold,
+-         * and integrating across the torque dead zone only causes perpetual hunting */
+-        int within_sep = (o->i_freeze_above == 0 || (error <= o->i_freeze_above && error >= -o->i_freeze_above));
+-        if (within_sep && (o->i_deadband == 0 || error > o->i_deadband || error < -o->i_deadband)) {
+-            integral_term += error * ki_effective;
+-            if (integral_term > max_integral_term) integral_term = max_integral_term;
+-            else if (integral_term < -max_integral_term) integral_term = -max_integral_term;
++        if (o->i_gate != GATE_OFF && o->alg >= ALG_STEP2) {
++            /* ---- zero-crossing-gated windup ----
++             * sign of error beyond the deadband; sign==0 (inside deadband) holds
++             * all gate state (neither progress nor reset). */
++            int32_t s = 0;
++            if (error > o->i_gate_deadband) s = 1;
++            else if (error < -o->i_gate_deadband) s = -1;
++            int crossed = 0;
++            if (s != 0) {
++                if (s == zc_prev_sign) {
++                    if (zc_same_ticks < o->i_gate_holdoff) zc_same_ticks++;
++                } else {
++                    if (zc_prev_sign != 0) crossed = 1;
++                    zc_prev_sign = s;
++                    zc_same_ticks = 0;
++                }
++            }
++            int gate_open = (zc_same_ticks >= o->i_gate_holdoff);
++            if (gate_open) gate_open_ticks++;
++            if (crossed) gate_crossings++;
++            i_limit_now = gate_open ? max_integral_full : max_integral_term;
++            int stale_cross = 0;
++            if (o->i_gate_stale_ticks > 0) {
++                if (crossed) stale_cross = (zc_ticks_since_cross > o->i_gate_stale_ticks);
++                if (crossed) zc_ticks_since_cross = 0;
++                else if (zc_ticks_since_cross < INT32_MAX) zc_ticks_since_cross++;
++            }
++
++            if (crossed) {
++                if (o->i_gate == GATE_CLAMP) {
++                    if (integral_term > max_integral_term) integral_term = max_integral_term;
++                    else if (integral_term < -max_integral_term) integral_term = -max_integral_term;
++                } else if (o->i_gate == GATE_FREEZE) {
++                    zc_freeze_ticks = o->i_gate_holdoff;
++                } else if (o->i_gate == GATE_AVG) {
++                    /* midpoint of I at this and the previous crossing (self-tunes
++                     * to the hold torque of a symmetric stick-slip cycle) */
++                    int32_t tmp = integral_term;
++                    int32_t mid = (int32_t)(((int64_t)integral_term + zc_last_cross_i) >> 1);
++                    if (o->i_gate_cross_to_rail) {
++                        /* candidate C: the midpoint is only meaningful when both crossing
++                         * samples describe the same oscillation (a real hold cycle turns
++                         * symmetrically around the hold torque). If the two samples
++                         * disagree by more than 2x in magnitude, or in sign, the previous
++                         * one is stale (e.g. a release after a long quiet hold) and the
++                         * smaller-magnitude sample is taken as truth. */
++                        int64_t a = integral_term < 0 ? -(int64_t)integral_term : (int64_t)integral_term;
++                        int64_t b = zc_last_cross_i < 0 ? -(int64_t)zc_last_cross_i : (int64_t)zc_last_cross_i;
++                        int disagree = (a > 2 * b) || (b > 2 * a) ||
++                                       ((integral_term ^ zc_last_cross_i) < 0);
++                        if (disagree) mid = (a <= b) ? integral_term : zc_last_cross_i;
++                    }
++                    if (o->i_gate_midpoint_down) {
++                        /* candidate D: the crossing rule may only DISCHARGE the
++                         * integrator; a midpoint that would RAISE |I| (stale large
++                         * previous sample) is ignored */
++                        int64_t am = mid < 0 ? -(int64_t)mid : (int64_t)mid;
++                        int64_t ai = integral_term < 0 ? -(int64_t)integral_term : (int64_t)integral_term;
++                        if (am > ai) mid = integral_term;
++                    }
++                    if (stale_cross) {
++                        /* candidate E: the previous crossing is too old to describe the
++                         * current oscillation -- this crossing is a release/new event.
++                         * Do not trust the midpoint: clamp it to the 25% rail (or
++                         * discharge fully with --i-gate-stale-zero). */
++                        if (o->i_gate_stale_zero) {
++                            mid = 0;
++                        } else {
++                            if (mid > max_integral_term) mid = max_integral_term;
++                            else if (mid < -max_integral_term) mid = -max_integral_term;
++                        }
++                    }
++                    if (o->i_gate_slew_shift > 0 && mid != integral_term) {
++                        /* C1: no instantaneous assignment -- the correction becomes a
++                         * TARGET and I slews there during the freeze (bounded dI/dt).
++                         * The crossing SAMPLE recorded for the next midpoint stays the
++                         * pre-correction value, exactly as in the instant version. */
++                        zc_slew_target = mid;
++                        zc_slew_dir = (mid > integral_term) ? 1 : -1;
++                        zc_slew_active = 1;
++                    } else {
++                        integral_term = mid;
++                    }
++                    zc_last_cross_i = tmp;
++                    zc_freeze_ticks = o->i_gate_holdoff;
++                }
++            }
++
++            if ((o->i_gate == GATE_FREEZE || o->i_gate == GATE_AVG) && zc_freeze_ticks > 0) {
++                zc_freeze_ticks--;          /* integration paused; I keeps its value */
++                if (zc_slew_active) {
++                    /* C1: move I toward the crossing-correction target at a bounded
++                     * rate. DESIGN CHOICE (V-B, chosen after V-A "slew replaces
++                     * unwind" measurably regressed release peak and hold settling):
++                     * the slew runs WITHIN the freeze and freeze-unwind stays
++                     * ACTIVE in parallel, applied on top of the slew step, so a
++                     * release discharge is never slower than 0.15.4.1's unwind
++                     * path. The slew ends when I reaches or PASSES the target in
++                     * the original correction direction (no snap-back when the
++                     * unwind overtakes it). dI/dt stays bounded by
++                     * slew_step + |error|*ki -- both individually bounded.
++                     * (release-bleed, a research-only flag, is skipped while
++                     * slewing.) */
++                    int64_t step = (int64_t)max_integral_full >> o->i_gate_slew_shift;
++                    if (step < 1) step = 1;
++                    int64_t ni = (int64_t)integral_term;
++                    int64_t diff = (int64_t)zc_slew_target - ni;
++                    if (diff * zc_slew_dir <= 0) {
++                        zc_slew_active = 0;            /* reached or passed: done */
++                    } else if (diff > step) {
++                        ni += step;
++                    } else if (diff < -step) {
++                        ni -= step;
++                    } else {
++                        ni = zc_slew_target;
++                        zc_slew_active = 0;
++                    }
++                    if (o->i_gate_freeze_unwind) {
++                        /* parallel unwind: same inward-only floor-at-0 rule as the
++                         * non-slew freeze branch below */
++                        int64_t nu = ni + (int64_t)error * ki_effective;
++                        if (ni > 0 && nu < ni)      ni = nu < 0 ? 0 : nu;
++                        else if (ni < 0 && nu > ni) ni = nu > 0 ? 0 : nu;
++                    }
++                    integral_term = (int32_t)ni;
++                } else {
++                if (o->i_gate_freeze_unwind) {
++                    /* candidate A: the freeze exists to stop RE-charging during the
++                     * post-crossing oscillation, not to lock in a stale charge:
++                     * steps that REDUCE |I| are applied, floored at zero (so the
++                     * freeze still blocks winding up in the opposite direction) */
++                    int64_t ni = (int64_t)integral_term + (int64_t)error * ki_effective;
++                    if (integral_term > 0 && ni < integral_term)
++                        integral_term = ni < 0 ? 0 : (int32_t)ni;
++                    else if (integral_term < 0 && ni > integral_term)
++                        integral_term = ni > 0 ? 0 : (int32_t)ni;
++                }
++                if (o->i_gate_release_bleed > 0) {
++                    /* candidate B: decay the above-25%-rail excess with time
++                     * constant ~2^N ticks while frozen (linear 1/tick tail) */
++                    if (integral_term > max_integral_term) {
++                        int32_t excess = integral_term - max_integral_term;
++                        int32_t dec = excess >> o->i_gate_release_bleed;
++                        if (dec == 0) dec = 1;
++                        integral_term -= dec;
++                    } else if (integral_term < -max_integral_term) {
++                        int32_t excess = -max_integral_term - integral_term;
++                        int32_t dec = excess >> o->i_gate_release_bleed;
++                        if (dec == 0) dec = 1;
++                        integral_term += dec;
++                    }
++                }
++                }
++            } else {
++                if (zc_slew_active) zc_slew_active = 0;   /* C1: freeze expired before the
++                                                           * target was reached: abandon (no
++                                                           * jump; I just continues from here) */
++                /* integrate with an outward limit of i_limit_now; if |I| already
++                 * exceeds the (just lowered) limit, allow only inward movement */
++                int64_t ni = (int64_t)integral_term + (int64_t)error * ki_effective;
++                if (o->i_gate_wind_slew_shift > 0) {
++                    /* C2: outward windup ABOVE the 25% rail is rate-limited to
++                     * max_integral_full >> M per tick (the gentle hold-fight ramp).
++                     * Below the rail, and for all inward motion, integration is
++                     * untouched. On the tick that crosses the rail from below only
++                     * the above-rail portion is limited. */
++                    int64_t wstep = (int64_t)max_integral_full >> o->i_gate_wind_slew_shift;
++                    if (wstep < 1) wstep = 1;
++                    if (ni > (int64_t)integral_term && ni > (int64_t)max_integral_term) {
++                        int64_t base = integral_term > max_integral_term
++                                       ? (int64_t)integral_term : (int64_t)max_integral_term;
++                        if (ni > base + wstep) ni = base + wstep;
++                    } else if (ni < (int64_t)integral_term && ni < -(int64_t)max_integral_term) {
++                        int64_t base = integral_term < -max_integral_term
++                                       ? (int64_t)integral_term : -(int64_t)max_integral_term;
++                        if (ni < base - wstep) ni = base - wstep;
++                    }
++                }
++                if (ni > i_limit_now) {
++                    if (ni < integral_term)      integral_term = (int32_t)ni;      /* unwinding */
++                    else if (integral_term < i_limit_now) integral_term = i_limit_now;
++                    /* else: hold the excess (freeze-above-limit) */
++                } else if (ni < -i_limit_now) {
++                    if (ni > integral_term)      integral_term = (int32_t)ni;
++                    else if (integral_term > -i_limit_now) integral_term = -i_limit_now;
++                } else {
++                    integral_term = (int32_t)ni;
++                }
++            }
++
++            if (o->i_gate == GATE_BLEED && !gate_open) {
++                /* decay any above-25% excess with time constant ~2^bleed_shift ticks;
++                 * linear tail of 1/tick so it always reaches the rail eventually */
++                if (integral_term > max_integral_term) {
++                    int32_t excess = integral_term - max_integral_term;
++                    int32_t dec = excess >> o->i_gate_bleed_shift;
++                    if (dec == 0) dec = 1;
++                    integral_term -= dec;
++                } else if (integral_term < -max_integral_term) {
++                    int32_t excess = -max_integral_term - integral_term;
++                    int32_t dec = excess >> o->i_gate_bleed_shift;
++                    if (dec == 0) dec = 1;
++                    integral_term += dec;
++                }
++            }
++        } else {
++            /* optional integration deadband: within +/-i_deadband counts of the target,
++             * stop pushing -- the position is already as good as the mechanics can hold,
++             * and integrating across the torque dead zone only causes perpetual hunting */
++            int within_sep = (o->i_freeze_above == 0 || (error <= o->i_freeze_above && error >= -o->i_freeze_above));
++            if (within_sep && (o->i_deadband == 0 || error > o->i_deadband || error < -o->i_deadband)) {
++                integral_term += error * ki_effective;
++                if (integral_term > max_integral_term) integral_term = max_integral_term;
++                else if (integral_term < -max_integral_term) integral_term = -max_integral_term;
++            }
+         }
+     } else {
+         integral_term = 0;
+@@ -281,11 +619,19 @@ static int32_t pid_tick(const opts_t *o, int64_t error_i64,
+         else if (sat < -output_limit) sat = -output_limit;
+         if (sat != output_value) {
+             /* back-calculation: bleed the excess out of the integrator (gain 1).
+-             * int64 multiply (not shift: shifting negatives is UB) so it cannot overflow. */
++             * int64 multiply (not shift: shifting negatives is UB) so it cannot overflow.
++             * With the zero-cross gate: clamp to the gated limit (i_limit_now), or to
++             * the base 25% limit if --i-gate-base-bc was given. */
++            /* gain-1 back-calc removes exactly the output excess; the additional
++             * hard clamp uses FULL authority when the gate is enabled (clamping to
++             * the gate-closed 25% limit would slam a legitimately wound-up I on a
++             * transient D-spike saturation) */
++            int32_t bc_limit = max_integral_term;
++            if (o->i_gate != GATE_OFF && !o->i_gate_base_bc) bc_limit = max_integral_full;
+             int64_t correction = (int64_t)(output_value - sat) * (1 << PID_SHIFT_RIGHT);
+             int64_t new_i = (int64_t)integral_term - correction;
+-            if (new_i > max_integral_term) new_i = max_integral_term;
+-            else if (new_i < -max_integral_term) new_i = -max_integral_term;
++            if (new_i > bc_limit) new_i = bc_limit;
++            else if (new_i < -bc_limit) new_i = -bc_limit;
+             integral_term = (int32_t)new_i;
+             saturated_ticks++;
+             output_value = sat;
+@@ -371,6 +717,10 @@ static void traj_tick(traj_t *tr, int64_t now_tick) {
+ }
+ 
+ /* ------------------------------------------------------------------ metrics helpers */
++static int dbl_cmp(const void *a, const void *b) {
++    double x = *(const double *)a, y = *(const double *)b;
++    return (x > y) - (x < y);
++}
+ typedef struct { double sum, sum2; int64_t n; } stat_t;
+ static void stat_add(stat_t *s, double v) { s->sum += v; s->sum2 += v * v; s->n++; }
+ static double stat_mean(const stat_t *s) { return s->n ? s->sum / s->n : 0.0; }
+@@ -391,13 +741,15 @@ static void usage(void) {
+         "  --move ROT                    trapezoid move of ROT rotations (default none)\n"
+         "  --move-time S                 move duration (default 2)\n"
+         "  --move-delay S                move start time (default 1)\n"
+-        "  --noise SIGMA                 hall noise sigma in counts (default 18)\n"
++        "  --noise SIGMA                 hall noise sigma in counts (default 33)\n"
+         "  --tau-max NM                  stall torque at V=200 (default 0.40)\n"
+         "  --inertia KGM2                rotor+load inertia (default 5.4e-6)\n"
+         "  --coulomb NM                  kinetic Coulomb friction (default 0.022)\n"
+-        "  --static-friction NM          breakaway friction (default 0.060; stick-slip)\n"
++        "  --static-friction NM          breakaway friction (default 0.13; stick-slip)\n"
+         "  --viscous NMS                 viscous friction (default 0.0009)\n"
+         "  --load NM                     constant external torque (default 0)\n"
++        "  --load-until S                the --load torque applies only for t < S seconds;\n"
++        "                                0 = forever (default). Models a hand release.\n"
+         "  --seed N                      RNG seed (default 12345)\n"
+         "  --csv PATH                    write CSV log\n"
+         "  --decimate N                  log every Nth tick (default 4)\n"
+@@ -409,7 +761,37 @@ static void usage(void) {
+         "  --i-deadband N                skip integration when |error| < N counts (default off)\n"
+         "  --i-freeze-above N            integral separation: skip integration when |error| > N (default off)\n"
+         "  --i-clamp-shift N             integral clamp = authority >> N (default 2 = 25%%)\n"
+-        "  --i-clamp-frac N              integral clamp = authority * N/16 (overrides shift)\n");
++        "  --i-clamp-frac N              integral clamp = authority * N/16 (overrides shift)\n"
++        "  --i-gate MODE                 zero-cross windup gate: off|avg|clamp|freeze|bleed (default off)\n"
++        "  --i-gate-holdoff N            one-signed ticks before I may exceed 25%% (default 3125)\n"
++        "  --i-gate-deadband N           |error| must exceed N counts to register a sign (default 1000)\n"
++        "  --i-gate-bleed-shift N        bleed mode: excess decay = excess >> N per tick (default 11)\n"
++        "  --i-gate-base-bc              back-calc clamps I to the 25%% rail even when gate open\n"
++        "release-overshoot fix candidates (avg/freeze gate only; all default off):\n"
++        "  --i-gate-freeze-unwind        A: during the post-crossing freeze, allow integration\n"
++        "                                steps that REDUCE |I| (floored at 0); outward stays paused\n"
++        "  --i-gate-release-bleed N      B: during the freeze, decay above-25%%-rail excess by\n"
++        "                                excess >> N per tick (0 = off)\n"
++        "  --i-gate-cross-to-rail        C: crossing samples disagreeing >2x (or in sign) use the\n"
++        "                                smaller-magnitude sample instead of the midpoint\n"
++        "  --i-gate-midpoint-down        D: crossing midpoint applied only when it reduces |I|\n"
++        "  --i-gate-stale-ticks N        E: a crossing whose previous crossing is > N ticks old is\n"
++        "                                a release: clamp the midpoint to the 25%% rail (0 = off)\n"
++        "  --i-gate-stale-zero           E variant: discharge I to 0 on a stale crossing\n"
++        "hand-interaction forcing + integral smoothing (2026-07-13; all default off):\n"
++        "  --forced-rock AMP             prescribe rotor = setpoint + AMP*sin(2 pi F t) counts\n"
++        "                                (hand rocks the shaft; plant bypassed in the window)\n"
++        "  --forced-rock-hz F            rock frequency in Hz (default 1)\n"
++        "  --forced-hold OFF             prescribe rotor pinned at setpoint - OFF counts\n"
++        "                                (hand holds the shaft off-position; error = +OFF)\n"
++        "  --forced-from S               forcing window start (default 1.0 s)\n"
++        "  --forced-until S              forcing window end (default: end of run)\n"
++        "  --i-gate-slew N               C1: crossing corrections SLEW to a target at\n"
++        "                                max_integral_full >> N per tick (0 = instant)\n"
++        "  --i-gate-wind-slew M          C2: above-rail outward windup rate capped at\n"
++        "                                max_integral_full >> M per tick (0 = uncapped)\n"
++        "M17 firmware 0.15.4.0+ == --alg step2 --i-gate avg (holdoff 3125, deadband 1000;\n"
++        "always on in firmware). clamp/freeze/bleed are research modes, not shipped.\n");
+ }
+ 
+ int main(int argc, char **argv) {
+@@ -425,6 +807,11 @@ int main(int argc, char **argv) {
+         .coulomb = 0.022, .static_friction = 0.13, .viscous = 0.0009, .load = 0.0,
+         .seed = 12345, .csv_path = NULL, .decimate = 4, .quiet = 0,
+         .i_deadband = 0, .i_clamp_shift = 2, .d_shift = 5,
++        /* gate flag defaults = the shipped M17 firmware tuning, so "--i-gate avg"
++         * alone reproduces fw 0.15.4.0+ exactly; the gate itself defaults OFF */
++        .i_gate = GATE_OFF, .i_gate_holdoff = 3125, .i_gate_deadband = 1000,
++        .i_gate_bleed_shift = 11, .i_gate_base_bc = 0,
++        .forced_rock_hz = 1.0, .forced_from_s = 1.0,
+     };
+ 
+     for (int i = 1; i < argc; i++) {
+@@ -456,6 +843,7 @@ int main(int argc, char **argv) {
+         else if (ARG("--static-friction")) o.static_friction = atof(argv[++i]);
+         else if (ARG("--viscous")) o.viscous = atof(argv[++i]);
+         else if (ARG("--load")) o.load = atof(argv[++i]);
++        else if (ARG("--load-until")) o.load_until_s = atof(argv[++i]);
+         else if (ARG("--seed")) o.seed = strtoull(argv[++i], NULL, 10);
+         else if (ARG("--csv")) o.csv_path = argv[++i];
+         else if (ARG("--decimate")) o.decimate = atoi(argv[++i]);
+@@ -466,6 +854,32 @@ int main(int argc, char **argv) {
+         else if (ARG("--d-shift")) o.d_shift = atoi(argv[++i]);
+         else if (!strcmp(argv[i], "--floor-output")) o.floor_output = 1;
+         else if (!strcmp(argv[i], "--sticky-decay")) o.sticky_decay = 1;
++        else if (ARG("--i-gate")) {
++            i++;
++            if      (!strcmp(argv[i], "clamp"))  o.i_gate = GATE_CLAMP;
++            else if (!strcmp(argv[i], "freeze")) o.i_gate = GATE_FREEZE;
++            else if (!strcmp(argv[i], "bleed"))  o.i_gate = GATE_BLEED;
++            else if (!strcmp(argv[i], "avg"))    o.i_gate = GATE_AVG;
++            else if (!strcmp(argv[i], "off"))    o.i_gate = GATE_OFF;
++            else { usage(); return 2; }
++        }
++        else if (ARG("--i-gate-holdoff")) o.i_gate_holdoff = (int32_t)atoi(argv[++i]);
++        else if (ARG("--i-gate-deadband")) o.i_gate_deadband = (int32_t)atoi(argv[++i]);
++        else if (ARG("--i-gate-bleed-shift")) o.i_gate_bleed_shift = atoi(argv[++i]);
++        else if (!strcmp(argv[i], "--i-gate-base-bc")) o.i_gate_base_bc = 1;
++        else if (!strcmp(argv[i], "--i-gate-freeze-unwind")) o.i_gate_freeze_unwind = 1;
++        else if (ARG("--i-gate-release-bleed")) o.i_gate_release_bleed = atoi(argv[++i]);
++        else if (!strcmp(argv[i], "--i-gate-cross-to-rail")) o.i_gate_cross_to_rail = 1;
++        else if (!strcmp(argv[i], "--i-gate-midpoint-down")) o.i_gate_midpoint_down = 1;
++        else if (ARG("--i-gate-stale-ticks")) o.i_gate_stale_ticks = (int32_t)atoi(argv[++i]);
++        else if (!strcmp(argv[i], "--i-gate-stale-zero")) o.i_gate_stale_zero = 1;
++        else if (ARG("--forced-rock")) o.forced_rock_amp = atof(argv[++i]);
++        else if (ARG("--forced-rock-hz")) o.forced_rock_hz = atof(argv[++i]);
++        else if (ARG("--forced-hold")) o.forced_hold_off = atof(argv[++i]);
++        else if (ARG("--forced-from")) o.forced_from_s = atof(argv[++i]);
++        else if (ARG("--forced-until")) o.forced_until_s = atof(argv[++i]);
++        else if (ARG("--i-gate-slew")) o.i_gate_slew_shift = atoi(argv[++i]);
++        else if (ARG("--i-gate-wind-slew")) o.i_gate_wind_slew_shift = atoi(argv[++i]);
+         else if (!strcmp(argv[i], "--quiet")) o.quiet = 1;
+         else if (!strcmp(argv[i], "--help")) { usage(); return 0; }
+         else { fprintf(stderr, "unknown arg: %s\n", argv[i]); usage(); return 2; }
+@@ -486,6 +900,26 @@ int main(int argc, char **argv) {
+     int64_t move_start_tick = (int64_t)(o.move_delay_s * TICK_HZ);
+     int64_t move_end_tick = move_start_tick + (int64_t)(o.move_time_s * TICK_HZ);
+     int move_started = 0;
++    /* --load-until: tick at which the external load vanishes (-1 = never).
++     * When the flag is absent load_now == o.load on every tick, so the plant
++     * arithmetic is bit-identical to the pre-flag build. */
++    int64_t load_off_tick = o.load_until_s > 0.0 ? (int64_t)(o.load_until_s * TICK_HZ) : -1;
++    /* --forced-rock/--forced-hold: hand-interaction forcing window. When both
++     * flags are absent forcing_enabled == 0 and every tick takes the plant
++     * path unchanged (bit-identical to the pre-flag build). */
++    int forcing_enabled = (o.forced_rock_amp != 0.0 || o.forced_hold_off != 0.0);
++    int64_t forced_start_tick = (int64_t)(o.forced_from_s * TICK_HZ);
++    int64_t forced_end_tick = o.forced_until_s > 0.0 ? (int64_t)(o.forced_until_s * TICK_HZ) : n_ticks;
++    double *forced_di = NULL, *forced_dout = NULL;   /* per-tick |delta| samples in the window */
++    int64_t forced_nd = 0;
++    int forced_have_prev = 0;
++    int32_t forced_prev_i = 0, forced_prev_out = 0, forced_i_end = 0;
++    int64_t forced_ticks = 0;
++    if (forcing_enabled) {
++        forced_di = malloc(sizeof(double) * (size_t)n_ticks);
++        forced_dout = malloc(sizeof(double) * (size_t)n_ticks);
++        if (!forced_di || !forced_dout) { perror("malloc"); return 1; }
++    }
+ 
+     FILE *csv = NULL;
+     if (o.csv_path) {
+@@ -502,6 +936,9 @@ int main(int argc, char **argv) {
+     }
+ 
+     /* metrics windows */
++    stat_t last1s_err = {0}, last05s_err = {0};              /* settled window at end of run */
++    int64_t hold_settle_tick = -1, hold_settle_candidate = -1;   /* first |err|<1000 sustained 0.2 s */
++    int32_t i_term_final = 0;
+     stat_t ss_err = {0}, ss_d = {0}, ss_i = {0};             /* steady state before move (or last 60% if no move) */
+     stat_t post_err = {0};                                    /* after move ends + settle grace */
+     double peak_err_move = 0, peak_i = 0;
+@@ -514,6 +951,10 @@ int main(int argc, char **argv) {
+     double peak_abs_vel = 0.0;
+     double overshoot_counts = 0.0;      /* most negative error after the stimulus (positive number) */
+     int crossed_zero = 0;
++    /* release metrics (--load-until only): peak |error| within 1.5 s of the load
++     * vanishing, and time from release until |error| < 1000 sustained 0.2 s */
++    double release_peak_err = 0.0;
++    int64_t release_settle_tick = -1, release_settle_candidate = -1;
+     /* limit-cycle frequency: count zero crossings of error in the last 40% of the run */
+     int64_t zc_window_start = (int64_t)(n_ticks * 0.6);
+     int64_t zero_crossings = 0;
+@@ -532,6 +973,23 @@ int main(int argc, char **argv) {
+         traj_tick(&tr, tick);
+         int64_t desired_i64 = (int64_t)llround(tr.pos);
+ 
++        /* hand-interaction forcing: the hand dominates the plant, so the rotor
++         * position (and its velocity, for a clean handoff at release) is
++         * prescribed; the controller below runs normally against it. */
++        int forcing_now = 0;
++        if (forcing_enabled && tick >= forced_start_tick && tick < forced_end_tick) {
++            forcing_now = 1;
++            double tloc = (double)(tick - forced_start_tick) * DT;
++            if (o.forced_rock_amp != 0.0) {
++                double w = 2.0 * M_PI * o.forced_rock_hz;
++                theta = tr.pos + o.forced_rock_amp * sin(w * tloc);
++                omega = o.forced_rock_amp * w * cos(w * tloc);
++            } else {
++                theta = tr.pos - o.forced_hold_off;   /* error ~= +OFFSET */
++                omega = 0.0;
++            }
++        }
++
+         /* sensor */
+         double measured = theta + o.noise_counts * grand_();
+         int64_t hall_i64 = (int64_t)llround(measured);
+@@ -547,7 +1005,24 @@ int main(int argc, char **argv) {
+         int32_t voltage; uint32_t applied_e;
+         m17_output_stage(output, sensor_wrapped, &voltage, &applied_e);
+ 
++        /* forced-window smoothness metrics: per-tick |delta I| (pre-shift) and
++         * |delta output| (post-shift counts), deltas between consecutive ticks
++         * INSIDE the window (the window-entry teleport is not a gate artifact) */
++        if (forcing_now) {
++            if (forced_have_prev) {
++                forced_di[forced_nd] = fabs((double)i_term - (double)forced_prev_i);
++                forced_dout[forced_nd] = fabs((double)output - (double)forced_prev_out);
++                forced_nd++;
++            }
++            forced_prev_i = i_term;
++            forced_prev_out = output;
++            forced_have_prev = 1;
++            forced_i_end = i_term;
++            forced_ticks++;
++        }
++
+         /* plant: torque from load angle between applied and true electrical angle */
++        if (!forcing_now) {
+         int32_t true_e = (int32_t)(((int64_t)llround(theta)) & (COUNTS_PER_ECYCLE - 1));
+         int32_t delta_e = (int32_t)applied_e - true_e;
+         /* wrap to [-32768, 32767] */
+@@ -571,7 +1046,8 @@ int main(int argc, char **argv) {
+         /* stick-slip friction: when stopped, the drive torque must exceed the (higher)
+          * static friction to break away; once moving, kinetic Coulomb + viscous apply,
+          * and the rotor re-sticks when velocity crosses zero with sub-Coulomb torque. */
+-        double tau_drive = tau - o.load;
++        double load_now = (load_off_tick >= 0 && tick >= load_off_tick) ? 0.0 : o.load;
++        double tau_drive = tau - load_now;
+         int stuck = (omega == 0.0) ||
+                     (fabs(omega_rad) < 2e-3 && fabs(tau_drive) < o.coulomb);
+         if (stuck && fabs(tau_drive) <= o.static_friction) {
+@@ -585,6 +1061,7 @@ int main(int argc, char **argv) {
+         double alpha = tau_net / o.inertia;                   /* rad/s^2 */
+         omega += alpha * COUNTS_PER_RAD * DT;                 /* counts/s */
+         theta += omega * DT;
++        }   /* !forcing_now */
+ 
+         /* ---- metrics ---- */
+         if (fabs(omega) > peak_abs_vel) peak_abs_vel = fabs(omega);
+@@ -598,7 +1075,34 @@ int main(int argc, char **argv) {
+         }
+         int32_t abs_err = error32 < 0 ? -error32 : error32;
+         if (abs_err > max_abs_error_seen) max_abs_error_seen = abs_err;
++        if (load_off_tick >= 0 && tick >= load_off_tick) {
++            if (tick < load_off_tick + (int64_t)(1.5 * TICK_HZ) && (double)abs_err > release_peak_err)
++                release_peak_err = abs_err;
++            if (release_settle_tick < 0) {
++                if (abs_err < 1000) {
++                    if (release_settle_candidate < 0) release_settle_candidate = tick;
++                    if (tick - release_settle_candidate >= (int64_t)(0.2 * TICK_HZ))
++                        release_settle_tick = release_settle_candidate;
++                } else {
++                    release_settle_candidate = -1;
++                }
++            }
++        }
+         if (fabs((double)i_term) > peak_i) peak_i = fabs((double)i_term);
++        i_term_final = i_term;
++
++        /* settled-error windows: last 1.0 s and last 0.5 s of the run */
++        if (tick >= n_ticks - (int64_t)TICK_HZ)         stat_add(&last1s_err, error32);
++        if (tick >= n_ticks - (int64_t)(0.5 * TICK_HZ)) stat_add(&last05s_err, error32);
++        /* hold-settle: first time |error| enters and stays below 1000 counts for 0.2 s */
++        if (hold_settle_tick < 0) {
++            if (abs_err < 1000) {
++                if (hold_settle_candidate < 0) hold_settle_candidate = tick;
++                if (tick - hold_settle_candidate >= (int64_t)(0.2 * TICK_HZ)) hold_settle_tick = hold_settle_candidate;
++            } else {
++                hold_settle_candidate = -1;
++            }
++        }
+ 
+         if (o.move_rot != 0.0) {
+             if (tick < move_start_tick) { stat_add(&ss_err, error32); stat_add(&ss_d, d_term); stat_add(&ss_i, i_term); }
+@@ -660,6 +1164,58 @@ int main(int argc, char **argv) {
+         printf("settle_ms=%.1f\n", settle_tick >= 0 ? (settle_tick - move_end_tick) * DT * 1000.0 : -1.0);
+     }
+     printf("osc_freq_hz=%.1f\n", osc_freq);
++    printf("last1s_err_mean=%.1f\n", stat_mean(&last1s_err));
++    printf("last1s_err_std=%.1f\n", stat_std(&last1s_err));
++    printf("last05s_err_mean=%.1f\n", stat_mean(&last05s_err));
++    printf("last05s_err_std=%.1f\n", stat_std(&last05s_err));
++    printf("hold_settle_s=%.3f\n", hold_settle_tick >= 0 ? hold_settle_tick * DT : -1.0);
++    printf("i_final=%d\n", i_term_final);
++    if (load_off_tick >= 0) {
++        printf("release_peak_err=%.0f\n", release_peak_err);
++        printf("release_settle_s=%.3f\n",
++               release_settle_tick >= 0 ? (release_settle_tick - load_off_tick) * DT : -1.0);
++    }
++    if (o.i_gate != GATE_OFF) {
++        printf("gate=%s holdoff=%d deadband=%d bleed_shift=%d base_bc=%d\n",
++               GATE_NAMES[o.i_gate], o.i_gate_holdoff, o.i_gate_deadband,
++               o.i_gate_bleed_shift, o.i_gate_base_bc);
++        printf("gate_open_pct=%.1f\n", 100.0 * gate_open_ticks / (double)n_ticks);
++        printf("gate_crossings=%lld\n", (long long)gate_crossings);
++    }
++    if (o.i_gate_slew_shift || o.i_gate_wind_slew_shift) {
++        printf("gate_slew_shift=%d gate_wind_slew_shift=%d\n",
++               o.i_gate_slew_shift, o.i_gate_wind_slew_shift);
++    }
++    if (forcing_enabled) {
++        /* smoothness metrics over the forced window (deltas between consecutive
++         * in-window ticks); p99 = value at index floor(0.99*(n-1)) after sort */
++        double di_max = 0, di_p99 = 0, dout_max = 0, dout_p99 = 0;
++        if (forced_nd > 0) {
++            qsort(forced_di, (size_t)forced_nd, sizeof(double), dbl_cmp);
++            qsort(forced_dout, (size_t)forced_nd, sizeof(double), dbl_cmp);
++            di_max = forced_di[forced_nd - 1];
++            dout_max = forced_dout[forced_nd - 1];
++            int64_t p99 = (int64_t)(0.99 * (double)(forced_nd - 1));
++            di_p99 = forced_di[p99];
++            dout_p99 = forced_dout[p99];
++        }
++        if (o.forced_rock_amp != 0.0)
++            printf("forced=rock amp=%g hz=%g from=%g until=%g\n",
++                   o.forced_rock_amp, o.forced_rock_hz, o.forced_from_s,
++                   forced_end_tick >= n_ticks ? o.duration_s : o.forced_until_s);
++        else
++            printf("forced=hold offset=%g from=%g until=%g\n",
++                   o.forced_hold_off, o.forced_from_s,
++                   forced_end_tick >= n_ticks ? o.duration_s : o.forced_until_s);
++        printf("forced_ticks=%lld\n", (long long)forced_ticks);
++        printf("forced_di_max=%.0f\n", di_max);
++        printf("forced_di_p99=%.0f\n", di_p99);
++        printf("forced_dout_max=%.0f\n", dout_max);
++        printf("forced_dout_p99=%.0f\n", dout_p99);
++        printf("forced_i_end=%d\n", forced_i_end);
++        free(forced_di);
++        free(forced_dout);
++    }
+     printf("vel_at_linear_entry_cps=%.0f\n", vel_at_linear_entry);
+     printf("peak_vel_rev_s=%.2f\n", peak_abs_vel / COUNTS_PER_REV);
+     printf("overshoot_counts=%.0f\n", overshoot_counts);
+diff --git a/c_test_programs/run_pid_sim_battery.py b/c_test_programs/run_pid_sim_battery.py
+index cce5255..d28b69e 100644
+--- a/c_test_programs/run_pid_sim_battery.py
++++ b/c_test_programs/run_pid_sim_battery.py
+@@ -20,10 +20,12 @@ import sys
+ ALGS = ["old", "step1", "step2", "step3"]
+ 
+ 
+-def run_sim(simbin, outdir, tag, **kw):
++def run_sim(simbin, outdir, tag, flags=None, **kw):
+     cmd = [simbin, "--quiet"]
+     for k, v in kw.items():
+         cmd += ["--" + k.replace("_", "-"), str(v)]
++    if flags:
++        cmd += list(flags)
+     if outdir:
+         cmd += ["--csv", os.path.join(outdir, f"sim_{tag}.csv")]
+     proc = subprocess.run(cmd, capture_output=True, text=True)
+@@ -42,6 +44,22 @@ def run_sim(simbin, outdir, tag, **kw):
+     return result
+ 
+ 
++def run_sim_raw(simbin, flags=None, **kw):
++    """Run the sim and return the raw stdout banner (no CSV, no parsing).
++    Used for the gate-dormancy proof, which requires BIT-identical banners."""
++    cmd = [simbin, "--quiet"]
++    for k, v in kw.items():
++        cmd += ["--" + k.replace("_", "-"), str(v)]
++    if flags:
++        cmd += list(flags)
++    proc = subprocess.run(cmd, capture_output=True, text=True)
++    if proc.returncode not in (0,):
++        raise RuntimeError(f"sim failed (raw): rc={proc.returncode}\n{proc.stdout}\n{proc.stderr}")
++    if not proc.stdout.strip():
++        raise RuntimeError(f"sim produced no banner (raw): {' '.join(cmd)}")
++    return proc.stdout
++
++
+ def fmt(v):
+     if isinstance(v, float):
+         return f"{v:,.1f}" if abs(v) < 1e6 else f"{v/1e6:,.1f}M"
+@@ -210,6 +228,281 @@ def main():
+         report.append(f"| {seed} | {fmt(vals['step2'])} | {fmt(vals['step3'])} |")
+     report.append("")
+ 
++    # ---------------------------------------------------------------- 7. zero-crossing windup gate
++    # M17 firmware 0.15.4.0+ semantics = step2 + --i-gate avg (holdoff 3125, deadband
++    # 1000; always on in firmware). Validated in PID_IMPROVEMENT_PLAN.md section 17.
++    print("\n[7] Zero-crossing windup gate (--i-gate avg = M17 fw 0.15.4.0+ semantics)")
++    GATE = dict(i_gate="avg", i_gate_holdoff=3125, i_gate_deadband=1000)
++    GATE_GAINS = dict(alg="step2", ki=25, kd=350000)
++    report += ["## 7. Zero-crossing windup gate (step2 + `--i-gate avg`, holdoff 3125 / deadband 1000)",
++               "",
++               "M17 fw 0.15.4.0+ runs this gate unconditionally: the integral may wind past",
++               "the 25% rail toward FULL authority only while the error keeps one sign for",
++               "0.1 s; each zero crossing sets I to the midpoint of its last two crossing",
++               "values and pauses integration 0.1 s (plan doc section 17).",
++               "",
++               "| case | seed | key metrics |", "|---|---|---|"]
++    # (a) load holding: the capability the gate adds -- under a 0.20 Nm hanging load
++    # (plain step2 parks ~9.3k counts away) the gated loop must settle the mean error
++    # inside the +/-1000-count deadband, and to do so I must exceed the 25% rail.
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"gate_load020_s{seed}",
++                    duration=8, load=0.20, seed=seed, **GATE_GAINS, **GATE)
++        check(f"gate: 0.20 Nm load held, settled |mean err| < 1000 (seed {seed})",
++              abs(r["last1s_err_mean"]) < 1000, f"mean {r['last1s_err_mean']:.0f}")
++        check(f"gate: integral winds past the 25% rail under load (gate exercised, seed {seed})",
++              r["peak_i_pct_of_full_rail"] > 25.0, f"peak_i {r['peak_i_pct_of_full_rail']:.1f}% of full rail")
++        report.append(f"| load 0.20 Nm hold | {seed} | mean_err={r['last1s_err_mean']:.0f} "
++                      f"peak_i={r['peak_i_pct_of_full_rail']:.1f}% crossings={int(r.get('gate_crossings', 0))} |")
++    # (b) no-load move: the gate must not reintroduce the limit cycle step2 killed.
++    for seed in (1, 2, 3, 4, 5):
++        r = run_sim(args.sim, args.outdir, f"gate_move2_s{seed}",
++                    duration=8, move=2, seed=seed, **GATE_GAINS, **GATE)
++        check(f"gate: no-load move stays quiet (post RMS < 500, seed {seed})",
++              r["post_move_rms"] < 500, f"{r['post_move_rms']:.0f}")
++        report.append(f"| move 2 rot / 2 s | {seed} | post_rms={r['post_move_rms']:.0f} |")
++    # (c) large step: snap-back overshoot must stay below step2's ~2.9k baseline band.
++    for seed in (1, 3, 6):
++        r = run_sim(args.sim, args.outdir, f"gate_step061_s{seed}",
++                    duration=8, step=0.61, seed=seed, **GATE_GAINS, **GATE)
++        check(f"gate: 0.61-rot step overshoot < 3000 (seed {seed})",
++              r["overshoot_counts"] < 3000, f"{r['overshoot_counts']:.0f}")
++        report.append(f"| step 0.61 rot | {seed} | overshoot={r['overshoot_counts']:.0f} |")
++    # (d) dormancy proof: at standstill the error never leaves the deadband, so the
++    # gate must be COMPLETELY inert -- gate-on banner bit-identical to gate-off
++    # (minus the three gate-status lines that only print when the gate is enabled).
++    for seed in (1, 2, 3):
++        base = dict(duration=5, seed=seed, **GATE_GAINS)
++        off_lines = run_sim_raw(args.sim, **base).splitlines()
++        on_lines = [l for l in run_sim_raw(args.sim, **base, **GATE).splitlines()
++                    if not l.startswith(("gate=", "gate_open_pct=", "gate_crossings="))]
++        check(f"gate: dormant at standstill, banner bit-identical to gate-off (seed {seed})",
++              on_lines == off_lines,
++              "identical" if on_lines == off_lines else "BANNERS DIFFER")
++        report.append(f"| standstill dormancy | {seed} | "
++                      f"{'bit-identical to gate-off' if on_lines == off_lines else 'DIFFERS'} |")
++    report.append("")
++
++    # ---------------------------------------------------------------- 8. release-after-hold overshoot
++    # Bench finding 2026-07-13 (fw 0.15.4.0): releasing the shaft after a sustained
++    # hold overshoots visibly -- the gate winds I toward full authority during the
++    # hold; on release the crossing midpoint leaves a large stale charge and the
++    # 0.1 s freeze blocks ALL unwinding while it pushes the rotor past home.
++    # --load-until makes the scenario expressible. Proposed fix (winner of the
++    # 2026-07-13 candidate study): freeze-unwind + stale-crossing rail clamp
++    # (--i-gate-freeze-unwind --i-gate-stale-ticks 6250). Candidates rejected by
++    # this study: release-bleed (hunts at low stiction), cross-to-rail 2x rule
++    # (destroys hold acquisition), midpoint-down (no discharge of the main store).
++    print("\n[8] Release-after-hold overshoot (--load-until) + freeze-unwind/stale-clamp fix")
++    FIX = ["--i-gate-freeze-unwind", "--i-gate-stale-ticks", "6250"]
++    report += ["## 8. Release-after-hold overshoot (`--load-until`) and the freeze-unwind fix",
++               "",
++               "Scenario R: 0.20 Nm load for 3 s (gate winds I to ~2x rail), then the load",
++               "vanishes (hand release). Unfixed gate overshoots thousands of counts past",
++               "home; the fix (`--i-gate-freeze-unwind --i-gate-stale-ticks 6250`) lets the",
++               "freeze discharge |I| and distrusts stale crossing midpoints.",
++               "",
++               "| case | seed | key metrics |", "|---|---|---|"]
++    # (a) --load-until 0 (disabled) must be bit-inert: banner identical to flag absent.
++    for seed in (1,):
++        base = dict(duration=5, load=0.20, seed=seed, **GATE_GAINS)
++        without = run_sim_raw(args.sim, **base)
++        with_flag = run_sim_raw(args.sim, load_until=0, **base)
++        check(f"--load-until 0 is inert (banner bit-identical, seed {seed})",
++              without == with_flag)
++        report.append(f"| load-until disabled inertness | {seed} | "
++                      f"{'bit-identical' if without == with_flag else 'DIFFERS'} |")
++    R = dict(duration=8, load=0.20, load_until=3, **GATE_GAINS)
++    R3 = dict(duration=8, load=0.20, load_until=1.5, **GATE_GAINS)
++    # (b) the unfixed gate reproduces the bench overshoot (documents the bug).
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"rel_unfixed_s{seed}", seed=seed, **R, **GATE)
++        check(f"release bug reproduced: unfixed gate peak > 6000 after release (seed {seed})",
++              r["release_peak_err"] > 6000, f"{r['release_peak_err']:.0f}")
++        report.append(f"| R release, unfixed gate | {seed} | peak={r['release_peak_err']:.0f} |")
++    # (c) fix: release excursion < 6000 counts (unfixed worst is ~13.4k; gate-off's
++    # own post-release |error| envelope is 9.0-9.6k on these seeds).
++    for name, scen in (("R", R), ("R3", R3)):
++        for seed in (1, 2, 3):
++            r = run_sim(args.sim, args.outdir, f"rel_fix_{name}_s{seed}",
++                        seed=seed, flags=FIX, **scen, **GATE)
++            check(f"fix: {name} release peak < 6000 (seed {seed})",
++                  r["release_peak_err"] < 6000, f"{r['release_peak_err']:.0f}")
++            check(f"fix: {name} settles after release (seed {seed})",
++                  r["release_settle_s"] >= 0, f"{r['release_settle_s']:.3f}s")
++            report.append(f"| {name} release, fixed gate | {seed} | "
++                          f"peak={r['release_peak_err']:.0f} settle={r['release_settle_s']:.3f}s |")
++    # (d) fix must not regress the gate's load-holding win (mirrors 7a).
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"rel_fix_hold_s{seed}",
++                    duration=8, load=0.20, seed=seed, flags=FIX, **GATE_GAINS, **GATE)
++        check(f"fix: 0.20 Nm load still held, |mean err| < 1000 (seed {seed})",
++              abs(r["last1s_err_mean"]) < 1000, f"mean {r['last1s_err_mean']:.0f}")
++        check(f"fix: integral still winds past the 25% rail (seed {seed})",
++              r["peak_i_pct_of_full_rail"] > 25.0, f"{r['peak_i_pct_of_full_rail']:.1f}%")
++        check(f"fix: mid-load hold does not hunt (err std < 60, seed {seed})",
++              r["last1s_err_std"] < 60, f"std {r['last1s_err_std']:.1f}")
++        report.append(f"| load 0.20 hold, fixed gate | {seed} | mean={r['last1s_err_mean']:.0f} "
++                      f"std={r['last1s_err_std']:.1f} peak_i={r['peak_i_pct_of_full_rail']:.1f}% |")
++    # (e) fix: no-load move stays quiet (mirrors 7b).
++    for seed in (1, 2, 3, 4, 5):
++        r = run_sim(args.sim, args.outdir, f"rel_fix_move_s{seed}",
++                    duration=8, move=2, seed=seed, flags=FIX, **GATE_GAINS, **GATE)
++        check(f"fix: no-load move stays quiet (post RMS < 500, seed {seed})",
++              r["post_move_rms"] < 500, f"{r['post_move_rms']:.0f}")
++        report.append(f"| move 2 rot, fixed gate | {seed} | post_rms={r['post_move_rms']:.0f} |")
++    # (f) fix: large-step overshoot still bounded (mirrors 7c).
++    for seed in (1, 3, 6):
++        r = run_sim(args.sim, args.outdir, f"rel_fix_step_s{seed}",
++                    duration=8, step=0.61, seed=seed, flags=FIX, **GATE_GAINS, **GATE)
++        check(f"fix: 0.61-rot step overshoot < 3000 (seed {seed})",
++              r["overshoot_counts"] < 3000, f"{r['overshoot_counts']:.0f}")
++        report.append(f"| step 0.61 rot, fixed gate | {seed} | overshoot={r['overshoot_counts']:.0f} |")
++    # (g) fix: standstill dormancy preserved (mirrors 7d).
++    for seed in (1, 2, 3):
++        base = dict(duration=5, seed=seed, **GATE_GAINS)
++        off_lines = run_sim_raw(args.sim, **base).splitlines()
++        on_lines = [l for l in run_sim_raw(args.sim, flags=FIX, **base, **GATE).splitlines()
++                    if not l.startswith(("gate=", "gate_open_pct=", "gate_crossings="))]
++        check(f"fix: dormant at standstill, banner bit-identical to gate-off (seed {seed})",
++              on_lines == off_lines,
++              "identical" if on_lines == off_lines else "BANNERS DIFFER")
++        report.append(f"| standstill dormancy, fixed gate | {seed} | "
++                      f"{'bit-identical to gate-off' if on_lines == off_lines else 'DIFFERS'} |")
++    # (h) fix: low-stiction hold must not hunt -- THE check that rejects bleed-style
++    # discharge (bleed hunts at 8 Hz with err std ~3500 here).
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"rel_fix_lowstict_s{seed}",
++                    duration=8, load=0.20, static_friction=0.03, seed=seed,
++                    flags=FIX, **GATE_GAINS, **GATE)
++        check(f"fix: low-stiction (0.03) hold does not hunt (err std < 500, seed {seed})",
++              r["last1s_err_std"] < 500, f"std {r['last1s_err_std']:.1f}")
++        report.append(f"| low-stiction hold, fixed gate | {seed} | mean={r['last1s_err_mean']:.0f} "
++                      f"std={r['last1s_err_std']:.1f} |")
++    report.append("")
++
++    # ---------------------------------------------------------------- 9. hand-interaction smoothness + gate-slew smoothing
++    # Bench findings 2026-07-13 (fw 0.15.4.1, large-inertia disk): buzz when
++    # HOLDING the shaft off-position, jerk when ROCKING it across the setpoint;
++    # both vanish at ki=0. Root cause: the avg-gate crossing midpoint reassigns
++    # I DISCONTINUOUSLY (one-tick |dI| up to ~103M pre-shift = a full
++    # rail-to-rail output slam) and the post-holdoff windup ramps I to full
++    # authority at the raw ki rate. Smoothing study (this section's flags):
++    # --i-gate-slew N (crossing corrections slew to a target at full>>N per
++    # tick, freeze-unwind runs in parallel) + --i-gate-wind-slew M (above-rail
++    # outward windup capped at full>>M per tick). WINNER: N=4, M=11
++    # (full>>4 = 6.55M/tick slew; full>>11 = 51.2k/tick wind cap): one-tick
++    # |dI| bounded at ~6.6M (15.7x better), forced-rock output slam 51k -> 3.9-4.1k
++    # counts, cures the section-19 out-of-envelope hold-hunt corners
++    # (ki200/kd175k 5/5 -> 0/5, ki500/kd350k 4/5 -> 0/5, load==stiction
++    # 10/10 -> ~5/10), keeps hold/release/move/step/dormancy within budget.
++    print("\n[9] Hand-interaction smoothness (--forced-rock/--forced-hold) + slew smoothing")
++    WINNER = ["--i-gate-slew", "4", "--i-gate-wind-slew", "11"]
++    ROCK = dict(duration=6, forced_rock=30000, forced_rock_hz=1)
++    report += ["## 9. Hand-interaction smoothness (`--forced-rock`/`--forced-hold`) and the gate-slew smoothing",
++               "",
++               "Rock scenario: rotor position prescribed as a 30k-count 1 Hz sine (a hand",
++               "rocking the shaft); the unfixed 0.15.4.1 gate slams I by ~103M pre-shift",
++               "counts in ONE tick at each crossing (a full rail-to-rail torque step).",
++               "Winner smoothing: `--i-gate-slew 4 --i-gate-wind-slew 11` (crossing",
++               "corrections slew at full>>4 per tick with unwind in parallel; above-rail",
++               "windup capped at full>>11 per tick).",
++               "",
++               "| case | seed | key metrics |", "|---|---|---|"]
++    # (a) new flags at 0 / absent must be bit-inert (same style as the --load-until proof)
++    base = dict(duration=5, load=0.20, seed=1, **GATE_GAINS)
++    without = run_sim_raw(args.sim, flags=FIX, **base, **GATE)
++    with_zero = run_sim_raw(args.sim, flags=FIX + ["--i-gate-slew", "0", "--i-gate-wind-slew", "0",
++                                                   "--forced-rock", "0", "--forced-hold", "0"],
++                            **base, **GATE)
++    check("smoothing/forcing flags at 0 are inert (banner bit-identical)", without == with_zero)
++    report.append(f"| zero-flag inertness | 1 | {'bit-identical' if without == with_zero else 'DIFFERS'} |")
++    # (b) the unfixed gate's crossing discontinuity is reproduced (documents the bug).
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"smooth_unfixed_s{seed}",
++                    seed=seed, flags=FIX, **ROCK, **GATE_GAINS, **GATE)
++        check(f"rock bug reproduced: unfixed one-tick |dI| > 50M (seed {seed})",
++              r["forced_di_max"] > 50e6, f"{r['forced_di_max']/1e6:.1f}M")
++        check(f"rock bug reproduced: unfixed output slam > 20k counts/tick (seed {seed})",
++              r["forced_dout_max"] > 20000, f"{r['forced_dout_max']:.0f}")
++        report.append(f"| rock 30k@1Hz, unfixed 0.15.4.1 | {seed} | di_max={r['forced_di_max']/1e6:.1f}M "
++                      f"dout_max={r['forced_dout_max']:.0f} |")
++    # (c) ki=0 is the smoothness floor (Tom's 'all problems gone' reference).
++    for seed in (1,):
++        r = run_sim(args.sim, args.outdir, f"smooth_ki0_s{seed}",
++                    seed=seed, flags=FIX, ki=0, **ROCK,
++                    **{k: v for k, v in GATE_GAINS.items() if k != "ki"}, **GATE)
++        check(f"ki=0 reference: dI identically 0 (seed {seed})", r["forced_di_max"] == 0)
++        check(f"ki=0 reference: output floor < 4000 counts/tick (seed {seed})",
++              r["forced_dout_max"] < 4000, f"{r['forced_dout_max']:.0f}")
++        report.append(f"| rock 30k@1Hz, ki=0 floor | {seed} | dout_max={r['forced_dout_max']:.0f} |")
++    # (d) winner: per-tick |dI| bounded by the slew constant (full>>4 = 6.55M plus
++    # the parallel-unwind term), >10x below the unfixed slam; output slams gone.
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"smooth_winner_s{seed}",
++                    seed=seed, flags=FIX + WINNER, **ROCK, **GATE_GAINS, **GATE)
++        check(f"winner: rock one-tick |dI| < 8M (bounded by slew step, seed {seed})",
++              r["forced_di_max"] < 8e6, f"{r['forced_di_max']/1e6:.2f}M")
++        check(f"winner: rock output slam < 8000 counts/tick (was ~51k, seed {seed})",
++              r["forced_dout_max"] < 8000, f"{r['forced_dout_max']:.0f}")
++        check(f"winner: >10x smoother than unfixed (di_max ratio, seed {seed})",
++              r["forced_di_max"] < 0.1 * 103e6, f"{r['forced_di_max']/1e6:.2f}M vs ~103M")
++        report.append(f"| rock 30k@1Hz, winner N4/M11 | {seed} | di_max={r['forced_di_max']/1e6:.2f}M "
++                      f"dout_max={r['forced_dout_max']:.0f} |")
++        check(f"winner rock: no overflow (seed {seed})", r["overflow_violations"] == 0)
++    # (e) winner no-regress vs the 0.15.4.1 keep-goals (J x1, battery gains).
++    for seed in (1, 2, 3):
++        r = run_sim(args.sim, args.outdir, f"smooth_hold_s{seed}",
++                    duration=8, load=0.20, seed=seed, flags=FIX + WINNER, **GATE_GAINS, **GATE)
++        check(f"winner: 0.20 Nm load held, |mean err| < 1000 (seed {seed})",
++              abs(r["last1s_err_mean"]) < 1000, f"mean {r['last1s_err_mean']:.0f}")
++        check(f"winner: integral still winds past the 25% rail (seed {seed})",
++              r["peak_i_pct_of_full_rail"] > 25.0, f"{r['peak_i_pct_of_full_rail']:.1f}%")
++        check(f"winner: hold does not hunt (err std < 60, seed {seed})",
++              r["last1s_err_std"] < 60, f"std {r['last1s_err_std']:.1f}")
++        r = run_sim(args.sim, args.outdir, f"smooth_rel_s{seed}",
++                    duration=8, load=0.20, load_until=3, seed=seed,
++                    flags=FIX + WINNER, **GATE_GAINS, **GATE)
++        check(f"winner: release peak < 6700 (1.2x the 0.15.4.1 fix, seed {seed})",
++              r["release_peak_err"] < 6700, f"{r['release_peak_err']:.0f}")
++        r = run_sim(args.sim, args.outdir, f"smooth_move_s{seed}",
++                    duration=8, move=2, seed=seed, flags=FIX + WINNER, **GATE_GAINS, **GATE)
++        check(f"winner: no-load move stays quiet (post RMS < 500, seed {seed})",
++              r["post_move_rms"] < 500, f"{r['post_move_rms']:.0f}")
++        r = run_sim(args.sim, args.outdir, f"smooth_step_s{seed}",
++                    duration=8, step=0.61, seed=seed, flags=FIX + WINNER, **GATE_GAINS, **GATE)
++        check(f"winner: 0.61-rot step overshoot < 3000 (seed {seed})",
++              r["overshoot_counts"] < 3000, f"{r['overshoot_counts']:.0f}")
++        report.append(f"| winner no-regress set | {seed} | see checks |")
++    # (f) winner: standstill dormancy preserved (mirrors 7d/8g).
++    for seed in (1, 2, 3):
++        base = dict(duration=5, seed=seed, **GATE_GAINS)
++        off_lines = run_sim_raw(args.sim, **base).splitlines()
++        on_lines = [l for l in run_sim_raw(args.sim, flags=FIX + WINNER, **base, **GATE).splitlines()
++                    if not l.startswith(("gate=", "gate_open_pct=", "gate_crossings=",
++                                         "gate_slew_shift="))]
++        check(f"winner: dormant at standstill, banner bit-identical to gate-off (seed {seed})",
++              on_lines == off_lines,
++              "identical" if on_lines == off_lines else "BANNERS DIFFER")
++        report.append(f"| standstill dormancy, winner | {seed} | "
++                      f"{'bit-identical' if on_lines == off_lines else 'DIFFERS'} |")
++    # (g) the load==stiction hunt pocket (plan section 19 corner b): the slew
++    # smoothing is also a partial CURE -- document base 10/10 vs winner <= 7/10.
++    hunts_base = hunts_win = 0
++    for seed in range(1, 11):
++        rb = run_sim(args.sim, None, f"smooth_stic_b{seed}", duration=8, load=0.13,
++                     ki=5, kd=350000, alg="step2", seed=seed, flags=FIX, **GATE)
++        rw = run_sim(args.sim, None, f"smooth_stic_w{seed}", duration=8, load=0.13,
++                     ki=5, kd=350000, alg="step2", seed=seed, flags=FIX + WINNER, **GATE)
++        hunts_base += rb["last1s_err_std"] > 500
++        hunts_win += rw["last1s_err_std"] > 500
++    check("stiction pocket documented: unfixed hunts >= 8/10 (ki5/kd350k, load 0.13)",
++          hunts_base >= 8, f"{hunts_base}/10")
++    check("winner reduces the stiction-pocket hunts to <= 7/10",
++          hunts_win <= 7, f"{hunts_win}/10")
++    report.append(f"| stiction pocket 0.13 ki5/kd350k | 1-10 | base {hunts_base}/10 -> winner {hunts_win}/10 |")
++    report.append("")
++
+     # ---------------------------------------------------------------- summary
+     n_fail = sum(1 for _, ok, _ in checks if not ok)
+     report += ["## Result", "",
+diff --git a/c_test_programs/test_pid_differential.sh b/c_test_programs/test_pid_differential.sh
+index 644c65d..7e54952 100755
+--- a/c_test_programs/test_pid_differential.sh
++++ b/c_test_programs/test_pid_differential.sh
+@@ -1,9 +1,24 @@
+ #!/bin/bash
+ # Differential test: the REAL firmware PID_controller (extracted verbatim from
+-# firmware/Src/motor_control.c at build time) vs the simulator's step2 model
+-# (c_test_programs/pid_algorithm_sim.c). Feeds both identical random error
+-# sequences with periodic random gain changes and asserts bitwise-identical
+-# outputs and integrator state. Exits 0 on PASS.
++# firmware/Src/motor_control.c at build time, compiled in the M17 configuration --
++# PRODUCT_NAME_M17, which enables the zero-crossing-gated integral windup) vs the
++# simulator's step2 model (c_test_programs/pid_algorithm_sim.c). Feeds both identical
++# random error sequences with periodic random gain changes and asserts bitwise-identical
++# outputs and integrator/gate state. Also runs a gate probe that proves the extracted
++# firmware path really contains the windup gate (integral demonstrably exceeding the
++# 25% rail; midpoint + freeze on the zero crossing) so a lost PRODUCT_NAME_M17 define
++# cannot silently regress this test to the old hard-clamp path, and the 0.15.4.1
++# release-overshoot logic (stale-crossing midpoint clamped to exactly the 25% rail;
++# freeze-unwind shrinking |I| toward a 0 floor during the freeze; the fresh-crossing
++# midpoint kept unclamped as the contrast case), and the 0.15.4.2 SLEW-ONLY torque
++# smoothing (crossing corrections become a TARGET and I slews there at exactly
++# full_authority >> INTEGRAL_GATE_SLEW_SHIFT per tick with the freeze-unwind applied in
++# parallel on top; a slew still in flight at freeze expiry is abandoned WITHOUT a jump;
++# a crossing arriving mid-slew re-arms toward the new midpoint). NOTE: 0.15.4.2 is the
++# slew ONLY -- the companion above-rail wind cap ("M11", sim flag --i-gate-wind-slew)
++# was REJECTED by adversarial verification (it caps heavy-load holding torque) and must
++# NOT appear in the firmware or in this reference model. Exits 0 on PASS.
++# PID_DIFF_EXTRA_CFLAGS adds compiler flags (e.g. UBSan) without changing defaults.
+ set -e
+ cd "$(dirname "$0")"
+ # PID_SRC (absolute path) overrides the source under test -- used by mutation testing
+@@ -21,26 +36,51 @@ extract() {  # $1 = pattern of the function's first line, $2 = output file
+ }
+ extract '^void recompute_pid_parameters_and_set_pwm_voltage' "$WORK/recompute.c"
+ extract '^int32_t PID_controller\(' "$WORK/pid.c"
+-# pull the overflow-safety and clamp-policy #defines out of the firmware so both sides
+-# use the shipped values (a firmware change to INTEGRAL_TERM_AUTHORITY_SHIFT etc. must
+-# fail this test until the reference model is updated, not be silently masked by stubs)
+-grep -h "^#define PID_ERROR_INPUT_CLAMP\|^#define PID_MAX_\|^#define INTEGRAL_TERM_AUTHORITY_SHIFT" "$SRC" > "$WORK/pid_defines.h"
++# Pull the overflow-safety, clamp-policy and windup-gate #defines out of the firmware so
++# both sides use the shipped values (a firmware change to INTEGRAL_TERM_AUTHORITY_SHIFT
++# etc. must fail this test until the reference model is updated, not be silently masked
++# by stubs). Some of these are product-selected (#ifdef PRODUCT_NAME_M17:
++# PID_MAX_AUTHORITY_PRE_SHIFT 500e6 vs 800e6; INTEGRAL_GATE_* exist only on M17), so a
++# flat grep would emit two conflicting definitions and silently keep the wrong one.
++# Instead: keep EVERY preprocessor-conditional line of the source as a skeleton around
++# the wanted #define lines, and let the real C preprocessor resolve the product branch
++# (the harness #defines PRODUCT_NAME_M17 before including this header).
++awk '/^[ \t]*#[ \t]*(if|ifdef|ifndef|elif|else|endif)/ ||
++     /^#define (PID_ERROR_INPUT_CLAMP|PID_MAX_|INTEGRAL_TERM_AUTHORITY_SHIFT|INTEGRAL_GATE_)/' \
++    "$SRC" > "$WORK/pid_defines.h"
+ grep -h "^#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT" "$(dirname "$SRC")/motor_control.h" >> "$WORK/pid_defines.h" 2>/dev/null || true
+ [ -s "$WORK/pid_defines.h" ] || { echo "EXTRACTION FAILED for PID_ overflow defines"; exit 1; }
+ grep -q "INTEGRAL_TERM_AUTHORITY_SHIFT" "$WORK/pid_defines.h" || { echo "EXTRACTION FAILED for INTEGRAL_TERM_AUTHORITY_SHIFT"; exit 1; }
++grep -q "INTEGRAL_GATE_HOLDOFF_TICKS" "$WORK/pid_defines.h" || { echo "EXTRACTION FAILED for INTEGRAL_GATE defines"; exit 1; }
++grep -q "INTEGRAL_GATE_STALE_TICKS" "$WORK/pid_defines.h" || { echo "EXTRACTION FAILED for INTEGRAL_GATE_STALE_TICKS"; exit 1; }
++grep -q "INTEGRAL_GATE_SLEW_SHIFT" "$WORK/pid_defines.h" || { echo "EXTRACTION FAILED for INTEGRAL_GATE_SLEW_SHIFT"; exit 1; }
+ 
+ cat > "$WORK/harness.c" <<'EOF'
+-/* Differential harness: firmware-extracted PID vs simulator step2 model. */
++/* Differential harness: firmware-extracted PID vs simulator step2 model.
++ *
++ * The extracted firmware code is compiled in the M17 CONFIGURATION: the zero-crossing
++ * windup gate (and the 500e6 authority cap) exist only under PRODUCT_NAME_M17 and would
++ * silently preprocess OUT otherwise, leaving this test green while exercising the old
++ * hard-clamp path. Must be defined before pid_defines.h and the extracted sources. */
++#define PRODUCT_NAME_M17
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+ #include <string.h>
+ 
+ /* ---- firmware environment stubs / constants (M17 values) ---- */
+-#include "pid_defines.h"   /* PID_ERROR_INPUT_CLAMP, INTEGRAL_TERM_AUTHORITY_SHIFT,
+-                            * DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT -- extracted
+-                            * from the firmware sources so this harness cannot mask a
+-                            * firmware clamp-policy change with a stale stub value */
++#include "pid_defines.h"   /* PID_ERROR_INPUT_CLAMP, PID_MAX_*, INTEGRAL_TERM_AUTHORITY_SHIFT,
++                            * INTEGRAL_GATE_*, DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT --
++                            * extracted from the firmware sources so this harness cannot mask
++                            * a firmware clamp-policy change with a stale stub value */
++/* Guard against the define extraction resolving the WRONG product branch: the M17
++ * overflow analysis requires max_error <= authority < 2^29 (see the bound derivation in
++ * motor_control.c); the other products' 800e6 value violates this, so picking the #else
++ * branch of PID_MAX_AUTHORITY_PRE_SHIFT fails right here instead of silently retuning
++ * both sides of the differential test. */
++_Static_assert((int64_t)PID_MAX_AUTHORITY_PRE_SHIFT < (int64_t)PID_ERROR_INPUT_CLAMP,
++               "extracted authority cap is not the M17 value (wrong #ifdef branch?)");
+ #define PID_SHIFT_RIGHT 11
+ #define PWM_VOLTAGE_VS_COMMUTATION_POSITION_FUDGE_SHIFT 8
+ #define DERIVATIVE_CONSTANT_AVERAGING_SCALAR (1 << DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT)
+@@ -61,9 +101,21 @@ static int32_t proportional_constant_pid = 0;
+ static int32_t integral_constant_pid = 0;
+ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
+ static int32_t max_integral_term = 0;
++static int32_t max_integral_term_full = 0; /* gate-open integral limit (full authority on M17) */
+ static int32_t max_error = 0;
+ static int32_t max_error_change = 0;
+ static int32_t pid_output_limit = 0;
++#ifdef PRODUCT_NAME_M17
++/* zero-crossing windup gate state, referenced by the extracted M17 code */
++static int32_t integral_gate_prev_sign = 0;
++static int32_t integral_gate_same_sign_ticks = 0;
++static int32_t integral_gate_freeze_ticks = 0;
++static int32_t integral_gate_last_cross_integral = 0;
++static int32_t integral_gate_ticks_since_cross = INT32_MAX; /* saturating; INT32_MAX = no crossing yet (stale) */
++static int32_t integral_gate_slew_target = 0;  /* where an in-flight crossing correction is headed */
++static int32_t integral_gate_slew_dir = 0;     /* original correction direction (+1/-1) */
++static int32_t integral_gate_slew_active = 0;  /* a correction is slewing (only during the freeze) */
++#endif
+ static uint16_t max_motor_pwm_voltage = 200;
+ static uint16_t max_motor_regen_pwm_voltage = 200;
+ static uint8_t test_mode = 0;
+@@ -85,11 +137,20 @@ void fw_set_pid_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
+ }
+ 
+ /* ---- independent model: hardened step2 semantics (kept in sync with
+- * c_test_programs/pid_algorithm_sim.c pid_tick / controller_init and the
+- * firmware overflow hardening of 0.15.3.2) ---- */
++ * c_test_programs/pid_algorithm_sim.c pid_tick / controller_init, the firmware overflow
++ * hardening of 0.15.3.2, the 0.15.4.0 zero-crossing windup gate -- GATE_AVG in
++ * firmware/pid_baseline_captures/2026-07-11_load_holding_study/pid_sim_zerocross_prototype.c --
++ * the 0.15.4.1 release-overshoot fix: stale-crossing midpoint clamp + freeze-unwind,
++ * and the 0.15.4.2 slew-only torque smoothing. Firmware semantics == the sim run with
++ * "--i-gate avg --i-gate-freeze-unwind --i-gate-stale-ticks 6250 --i-gate-slew 4"
++ * (pid_algorithm_sim.c ~444-510; NO --i-gate-wind-slew: the wind cap was rejected) ---- */
+ static int32_t s_integral, s_prev_err, s_lpf;
+-static int32_t s_max_error, s_max_err_chg, s_max_integral, s_deriv_scaled, s_out_limit;
++static int32_t s_max_error, s_max_err_chg, s_max_integral, s_max_integral_full, s_deriv_scaled, s_out_limit;
+ static int32_t s_kp, s_ki;
++/* windup gate state */
++static int32_t s_gate_prev_sign, s_gate_ticks, s_gate_freeze, s_gate_last_cross;
++static int32_t s_gate_ticks_since_cross = INT32_MAX; /* saturating; INT32_MAX = no crossing yet */
++static int32_t s_slew_target, s_slew_dir, s_slew_active; /* in-flight crossing-correction slew */
+ 
+ static void sim_set_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
+     int64_t p64 = p > (uint32_t)INT32_MAX ? INT32_MAX : (int64_t)p;
+@@ -107,10 +168,12 @@ static void sim_set_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
+         s_max_err_chg = (int32_t)mec;
+     }
+     s_max_integral = (int32_t)(authority >> INTEGRAL_TERM_AUTHORITY_SHIFT);
++    s_max_integral_full = (int32_t)authority; /* M17: the gate may raise I to the FULL authority */
+     int64_t ki = i64;
+     int64_t eff_me = me > PID_ERROR_INPUT_CLAMP ? (int64_t)PID_ERROR_INPUT_CLAMP : me;
+     if (eff_me > 0) {
+-        int64_t ki_max = ((int64_t)INT32_MAX - s_max_integral) / eff_me;
++        /* every "fully railed integrator" bound uses the FULL limit, not the 25% rail */
++        int64_t ki_max = ((int64_t)INT32_MAX - s_max_integral_full) / eff_me;
+         if (ki > ki_max) ki = ki_max;
+     }
+     s_ki = (int32_t)ki;
+@@ -118,11 +181,16 @@ static void sim_set_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
+     s_deriv_scaled = (int32_t)(d64 >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
+     s_out_limit = (int32_t)((int64_t)v << 8);
+     if (s_out_limit < HALL_TO_POSITION_90_DEGREE_OFFSET) s_out_limit = HALL_TO_POSITION_90_DEGREE_OFFSET;
+-    /* constants change resets the derivative FILTER state and re-bounds the integral;
++    /* constants change resets the derivative FILTER state, re-bounds the integral to the
++     * new FULL limit (an integral legitimately above the 25% rail is NOT slammed down;
++     * the gated integration step then only lets it move inward) and re-arms the gate;
+      * previous_error is deliberately kept (see firmware comment) */
+     s_lpf = 0;
+-    if (s_integral > s_max_integral) s_integral = s_max_integral;
+-    else if (s_integral < -s_max_integral) s_integral = -s_max_integral;
++    if (s_integral > s_max_integral_full) s_integral = s_max_integral_full;
++    else if (s_integral < -s_max_integral_full) s_integral = -s_max_integral_full;
++    s_gate_prev_sign = 0; s_gate_ticks = 0; s_gate_freeze = 0; s_gate_last_cross = 0;
++    s_gate_ticks_since_cross = INT32_MAX;
++    s_slew_target = 0; s_slew_dir = 0; s_slew_active = 0;
+ }
+ 
+ static int32_t sim_pid(int64_t error_i64) {
+@@ -144,32 +212,655 @@ static int32_t sim_pid(int64_t error_i64) {
+     if (error < -s_max_error) error = -s_max_error;
+     else if (error > s_max_error) error = s_max_error;
+     if (s_ki != 0) {
+-        s_integral += error * s_ki;
+-        if (s_integral > s_max_integral) s_integral = s_max_integral;
+-        else if (s_integral < -s_max_integral) s_integral = -s_max_integral;
++        /* zero-crossing-gated integration (M17). While the error keeps one sign beyond
++         * the deadband for the holdoff, the integral may wind to the FULL authority; on
++         * each zero crossing it is set to the midpoint of its values at the last two
++         * crossings and integration pauses for the holdoff. */
++        int32_t gs = 0;
++        if (error > INTEGRAL_GATE_DEADBAND) gs = 1;
++        else if (error < -INTEGRAL_GATE_DEADBAND) gs = -1;
++        int32_t crossed = 0;
++        if (gs != 0) { /* inside the deadband the gate state neither advances nor resets */
++            if (gs == s_gate_prev_sign) {
++                if (s_gate_ticks < INTEGRAL_GATE_HOLDOFF_TICKS) s_gate_ticks++;
++            } else {
++                crossed = (s_gate_prev_sign != 0);
++                s_gate_prev_sign = gs;
++                s_gate_ticks = 0;
++            }
++        }
++        int32_t lim = (s_gate_ticks >= INTEGRAL_GATE_HOLDOFF_TICKS) ? s_max_integral_full : s_max_integral;
++        /* stale-crossing detection (0.15.4.1): a crossing whose previous crossing is
++         * older than the stale threshold is a RELEASE (or first-ever: the counter is
++         * initialized saturated at INT32_MAX) event, not part of a hold-acquisition
++         * bounce sequence */
++        int32_t stale_cross = 0;
++        if (crossed) {
++            stale_cross = (s_gate_ticks_since_cross > INTEGRAL_GATE_STALE_TICKS);
++            s_gate_ticks_since_cross = 0;
++        } else if (s_gate_ticks_since_cross < INT32_MAX) {
++            s_gate_ticks_since_cross++;
++        }
++        if (crossed) {
++            int32_t prev = s_integral;
++            int32_t mid = (int32_t)(((int64_t)s_integral + s_gate_last_cross) >> 1);
++            if (stale_cross) {
++                /* the midpoint would carry the charge of a load that no longer exists:
++                 * clamp it to the 25% rail (midpoint is computed BEFORE this clamp;
++                 * the slew target below is the POST-clamp value) */
++                if (mid > s_max_integral) mid = s_max_integral;
++                else if (mid < -s_max_integral) mid = -s_max_integral;
++            }
++            if (mid != s_integral) {
++                /* 0.15.4.2: no instantaneous assignment (a full correction is a
++                 * rail-to-rail torque step in one tick): the correction becomes a
++                 * TARGET and I slews there during the freeze. The crossing SAMPLE
++                 * recorded for the next midpoint stays the pre-correction value. */
++                s_slew_target = mid;
++                s_slew_dir = (mid > s_integral) ? 1 : -1;
++                s_slew_active = 1;
++            }
++            /* mid == I: nothing (I unchanged, no slew armed) */
++            s_gate_last_cross = prev;
++            s_gate_freeze = INTEGRAL_GATE_HOLDOFF_TICKS;
++        }
++        if (s_gate_freeze > 0) {
++            s_gate_freeze--;
++            if (s_slew_active) {
++                /* 0.15.4.2 slew: move I toward the crossing-correction target at
++                 * full_authority >> INTEGRAL_GATE_SLEW_SHIFT per tick (floor 1), with
++                 * the freeze-unwind running IN PARALLEL on top of each step (inward-
++                 * only, floored at 0) so a release discharge is never slower than the
++                 * instant version. The slew ends when I reaches or PASSES the target
++                 * in the original correction direction (no snap-back when the unwind
++                 * overtakes it). int64 for model independence; the firmware does this
++                 * in int32, proven safe: |target - I| <= 2*full <= 1e9 < 2^31 and the
++                 * ki cap bounds the unwind product. */
++                int64_t step = (int64_t)s_max_integral_full >> INTEGRAL_GATE_SLEW_SHIFT;
++                if (step < 1) step = 1;
++                int64_t slewed = s_integral;
++                int64_t remaining = (int64_t)s_slew_target - slewed;
++                if ((s_slew_dir > 0) ? (remaining <= 0) : (remaining >= 0)) {
++                    s_slew_active = 0;              /* reached or passed: done, no move */
++                } else if (remaining > step) {
++                    slewed += step;
++                } else if (remaining < -step) {
++                    slewed -= step;
++                } else {
++                    slewed = s_slew_target;
++                    s_slew_active = 0;
++                }
++                int64_t nu = slewed + (int64_t)error * s_ki; /* parallel unwind on the slewed value */
++                if (slewed > 0 && nu < slewed) slewed = (nu < 0) ? 0 : nu;
++                else if (slewed < 0 && nu > slewed) slewed = (nu > 0) ? 0 : nu;
++                s_integral = (int32_t)slewed;
++            } else {
++                /* freeze-unwind (0.15.4.1): integration steps that REDUCE |I| are applied
++                 * during the freeze, floored at zero (the freeze still blocks winding up
++                 * the other direction). int64 for model independence; the firmware does
++                 * this in int32, proven safe by the ki cap: |I| <= full limit and
++                 * |error*ki| <= INT32_MAX - full limit, so the sum fits int32. */
++                int64_t ni = (int64_t)s_integral + (int64_t)error * s_ki;
++                if (s_integral > 0 && ni < s_integral) s_integral = (ni < 0) ? 0 : (int32_t)ni;
++                else if (s_integral < 0 && ni > s_integral) s_integral = (ni > 0) ? 0 : (int32_t)ni;
++            }
++        } else {
++            /* 0.15.4.2: a slew still in flight when the freeze expires is abandoned
++             * WITHOUT a jump (I just continues from wherever it is) */
++            s_slew_active = 0;
++            /* integrate with an OUTWARD limit of lim; inward movement is always allowed;
++             * if |I| already exceeds a just-lowered limit, hold the excess */
++            int64_t ni = (int64_t)s_integral + (int64_t)error * s_ki; /* int64 for model independence; the fw ki cap proves it fits int32 */
++            if (ni > lim) {
++                if (ni < s_integral) s_integral = (int32_t)ni;
++                else if (s_integral < lim) s_integral = lim;
++            } else if (ni < -lim) {
++                if (ni > s_integral) s_integral = (int32_t)ni;
++                else if (s_integral > -lim) s_integral = -lim;
++            } else s_integral = (int32_t)ni;
++        }
+     } else s_integral = 0;
+     int32_t p_term = error * s_kp;
+     int32_t out = (s_integral + p_term + d_term + (1 << 10)) >> 11;
++    /* back-calculation clamps use the FULL integral limit (a gate-wound integral must not
++     * be slammed to the 25% rail by a transient saturation) */
+     if (out > s_out_limit) {
+         int64_t ci = (int64_t)s_integral - ((int64_t)(out - s_out_limit) * (1 << 11));
+-        if (ci < -s_max_integral) ci = -s_max_integral;
++        if (ci < -s_max_integral_full) ci = -s_max_integral_full;
+         s_integral = (int32_t)ci;
+         out = s_out_limit;
+     } else if (out < -s_out_limit) {
+         int64_t ci = (int64_t)s_integral - ((int64_t)(out + s_out_limit) * (1 << 11));
+-        if (ci > s_max_integral) ci = s_max_integral;
++        if (ci > s_max_integral_full) ci = s_max_integral_full;
+         s_integral = (int32_t)ci;
+         out = -s_out_limit;
+     }
+     return out;
+ }
+ 
++static void reset_both_states(void) {
++    integral_term = 0; previous_error = 0; low_pass_filtered_error_change = 0;
++    integral_gate_prev_sign = 0; integral_gate_same_sign_ticks = 0;
++    integral_gate_freeze_ticks = 0; integral_gate_last_cross_integral = 0;
++    integral_gate_ticks_since_cross = INT32_MAX;
++    integral_gate_slew_target = 0; integral_gate_slew_dir = 0; integral_gate_slew_active = 0;
++    s_integral = 0; s_prev_err = 0; s_lpf = 0;
++    s_gate_prev_sign = 0; s_gate_ticks = 0; s_gate_freeze = 0; s_gate_last_cross = 0;
++    s_gate_ticks_since_cross = INT32_MAX;
++    s_slew_target = 0; s_slew_dir = 0; s_slew_active = 0;
++}
++
++static int states_match(void) {
++    return integral_term == s_integral &&
++           low_pass_filtered_error_change == s_lpf &&
++           max_integral_term_full == s_max_integral_full &&
++           integral_gate_prev_sign == s_gate_prev_sign &&
++           integral_gate_same_sign_ticks == s_gate_ticks &&
++           integral_gate_freeze_ticks == s_gate_freeze &&
++           integral_gate_last_cross_integral == s_gate_last_cross &&
++           integral_gate_ticks_since_cross == s_gate_ticks_since_cross &&
++           integral_gate_slew_target == s_slew_target &&
++           integral_gate_slew_dir == s_slew_dir &&
++           integral_gate_slew_active == s_slew_active;
++}
++
+ /* ---- driver ---- */
+ static uint64_t rng = 987654321;
+ static uint64_t xr(void) { rng ^= rng >> 12; rng ^= rng << 25; rng ^= rng >> 27; return rng * 2685821657736338717ULL; }
+ 
+ int main(void) {
+     uint64_t mismatches = 0, n = 0;
++
++    /* ---- gate probe: prove the EXTRACTED FIRMWARE path really contains the windup gate,
++     * the 0.15.4.1 release-overshoot logic and the 0.15.4.2 crossing-correction SLEW. If
++     * PRODUCT_NAME_M17 were lost, the old path hard-clamps the integral at the 25% rail
++     * and this probe fails loudly instead of the whole test silently passing on the wrong
++     * code. Constants: kp=2000 ki=100 kd=0 v=200 -> authority 104857600, 25% rail
++     * 26214400, output limit 51200; one integration step at |e|=2000 is 200000; one slew
++     * step is full>>4 = 6553600. Sequence:
++     *   A: sustained +2000 opens the gate after the holdoff and winds I far past the
++     *      rail (back-calculation settles it near output_limit*2048 - P ~= 100.9e6);
++     *   1: the first sign flip is a FIRST-EVER crossing (ticks_since_cross saturated at
++     *      INT32_MAX) => STALE: the raw midpoint (~50e6, vs previous crossing value 0)
++     *      must be clamped to EXACTLY the 25% rail -- observable as the armed SLEW
++     *      TARGET (0.15.4.2: no instant assignment) -- and I must then move by EXACTLY
++     *      full>>4 per tick toward it with the parallel freeze-unwind step (200000)
++     *      applied on top, until it lands on the target [slew scenario (a)];
++     *   U: after the slew lands, the plain freeze-unwind continues: |I|-reducing steps
++     *      applied (checked 100 ticks in), floored at 0 (checked 200 ticks later) while
++     *      the freeze is still active;
++     *   2: flipping back the tick after the freeze expires is a FRESH crossing (gap <
++     *      stale threshold): a midpoint of ~50e6 must be KEPT above the rail (NOT
++     *      clamped) -- the exact contrast to crossing 1 -- observable as the slew
++     *      target; the outward slew (I>0 rising, e>0) takes pure full>>4 steps (the
++     *      inward-only unwind must NOT fire);
++     *   C: two slew steps in, a new crossing arrives MID-SLEW: it must RE-ARM the slew
++     *      toward the NEW midpoint (target/direction replaced, no jump), which then
++     *      lands exactly [slew scenario (c)];
++     *   3: after holding one sign for holdoff*2 + 350 ticks, the next flip's gap EXCEEDS
++     *      the shipped stale threshold (holdoff*2) => STALE again: the slew target must
++     *      be EXACTLY the NEGATIVE 25% rail this time (negative-side clamp coverage) and
++     *      the slew rate is re-checked approaching from below. The gap is deliberately
++     *      written in terms of the HOLDOFF, not of INTEGRAL_GATE_STALE_TICKS, so a
++     *      mutated/retuned stale multiplier fails here and must be reconciled
++     *      deliberately instead of being silently mirrored.
++     * A second constants set (ki=10000) then builds slew scenario (b): an outward slew
++     * stalled at the 0-floor by an in-deadband opposing error for the whole freeze must
++     * be ABANDONED at freeze expiry without a jump. */
++    fw_set_pid_constants(2000, 100, 0, 200);
++    sim_set_constants(2000, 100, 0, 200);
++    reset_both_states();
++    int32_t unwind_step = 2000 * integral_constant_pid; /* one |I|-reducing freeze-unwind step at |e|=2000 */
++    /* The expected slew step is written with a LITERAL shift of 4, not with the
++     * extracted INTEGRAL_GATE_SLEW_SHIFT (which both sides of the differential share):
++     * a mutated/retuned slew rate in the firmware fails HERE and must be reconciled
++     * deliberately instead of being silently mirrored by the reference model. The value
++     * is a validated hard cliff (shifts >= 5 hunt d-shift-7 holds; see motor_control.c). */
++    int32_t probe_slew_step = max_integral_term_full >> 4;
++    int32_t peak_integral = 0;
++    for (int k = 0; k < 8000; k++) {
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at k=%d fw=%d sim=%d fwI=%d simI=%d\n", k, a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_term > peak_integral) peak_integral = integral_term;
++    }
++    printf("gate probe: peak firmware integral %d vs 25%% rail %d (full limit %d)\n",
++           peak_integral, max_integral_term, max_integral_term_full);
++    if (peak_integral <= max_integral_term) {
++        printf("GATE NOT EXERCISED: integral never exceeded the 25%% rail -- the zero-crossing\n"
++               "windup gate is not in the compiled firmware path (PRODUCT_NAME_M17 lost?)\n");
++        printf("FAILED\n");
++        return 1;
++    }
++    /* crossing 1: first-ever => STALE => raw midpoint clamped to exactly the 25% rail,
++     * observable since 0.15.4.2 as the armed SLEW TARGET (no instant assignment); then
++     * [scenario (a)] I must descend by exactly (full>>4) + one parallel unwind step per
++     * tick until it lands on the target */
++    int32_t raw_mid1 = (int32_t)(((int64_t)integral_term + integral_gate_last_cross_integral) >> 1);
++    if (raw_mid1 <= max_integral_term) {
++        printf("GATE PROBE: raw crossing-1 midpoint %d does not exceed the rail %d -- stale clamp not observable\n",
++               raw_mid1, max_integral_term);
++        mismatches++;
++    }
++    int32_t I0 = integral_term;
++    {
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at crossing 1: fw=%d sim=%d fwI=%d simI=%d\n", a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 1 || integral_gate_slew_dir != -1 ||
++            integral_gate_slew_target != max_integral_term) {
++            printf("GATE PROBE: STALE crossing 1 slew not armed at exactly the rail: active=%d dir=%d target=%d "
++                   "(want 1/-1/%d; raw midpoint %d; instant-assignment regression?)\n",
++                   integral_gate_slew_active, integral_gate_slew_dir, integral_gate_slew_target,
++                   max_integral_term, raw_mid1);
++            mismatches++;
++        }
++        if (integral_term != I0 - probe_slew_step - unwind_step) {
++            printf("GATE PROBE: crossing-1 tick slew step wrong: I=%d want I0 %d - (full>>4) %d - unwind %d = %d\n",
++                   integral_term, I0, probe_slew_step, unwind_step, I0 - probe_slew_step - unwind_step);
++            mismatches++;
++        }
++    }
++    /* scenario (a): exactly full>>4 (plus the parallel unwind on top) per tick, landing
++     * on the target */
++    int slew1_ticks = 1; /* the crossing tick itself already slewed once */
++    while (integral_gate_slew_active && slew1_ticks < 40) {
++        int32_t prevI = integral_term;
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        slew1_ticks++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH during crossing-1 slew at tick %d: fwI=%d simI=%d\n", slew1_ticks, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++        if (integral_gate_slew_active) {
++            if (prevI - integral_term != probe_slew_step + unwind_step) {
++                printf("GATE PROBE: crossing-1 slew rate wrong at tick %d: dI=%d want (full>>4) %d + unwind %d (SLEW_SHIFT retuned?)\n",
++                       slew1_ticks, prevI - integral_term, probe_slew_step, unwind_step);
++                mismatches++;
++                break;
++            }
++        }
++        else {
++            /* landing tick: snap to the target then one parallel unwind on top, OR (if
++             * the previous tick's unwind already pushed I past the target) no slew move
++             * plus the unwind -- both are exact firmware semantics; which one occurs is
++             * fixed by the deterministic I0 */
++            if (integral_term != max_integral_term - unwind_step &&
++                !(prevI <= max_integral_term && integral_term == prevI - unwind_step)) {
++                printf("GATE PROBE: crossing-1 slew landing wrong: I=%d (prev %d), want target %d - unwind %d\n",
++                       integral_term, prevI, max_integral_term, unwind_step);
++                mismatches++;
++            }
++        }
++    }
++    if (integral_gate_slew_active) {
++        printf("GATE PROBE: crossing-1 slew did not complete within 40 ticks (target %d, I=%d)\n",
++               integral_gate_slew_target, integral_term);
++        mismatches++;
++    }
++    printf("gate probe: STALE crossing 1 (first-ever): raw midpoint %d -> slew TARGET clamped to exactly the rail %d; "
++           "landed in %d ticks of exactly (full>>4=%d)+unwind(%d) per tick [scenario (a)]\n",
++           raw_mid1, max_integral_term, slew1_ticks, probe_slew_step, unwind_step);
++    /* freeze-unwind: after the slew lands, |I| must keep SHRINKING during the freeze */
++    int32_t freeze_start_I = integral_term;
++    int consumed_freeze = slew1_ticks; /* freeze ticks consumed so far (crossing tick + slew) */
++    for (int k = 0; k < 100; k++) {
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH in freeze-unwind at k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    if (integral_gate_freeze_ticks <= 0 || integral_term != freeze_start_I - 100 * unwind_step) {
++        printf("GATE PROBE: freeze-unwind did not shrink I: freeze start I=%d, 100 ticks in I=%d, expected %d (freeze_ticks=%d)\n",
++               freeze_start_I, integral_term, freeze_start_I - 100 * unwind_step, integral_gate_freeze_ticks);
++        mismatches++;
++    }
++    printf("gate probe: freeze-unwind: I at freeze start %d -> %d after 100 ticks (freeze still active, %d ticks left)\n",
++           freeze_start_I, integral_term, integral_gate_freeze_ticks);
++    for (int k = 0; k < 200; k++) { /* the unwind must floor at 0, not integrate across */
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at unwind floor k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    if (integral_term != 0 || integral_gate_freeze_ticks <= 0) {
++        printf("GATE PROBE: unwind floor violated: I=%d (want 0), freeze_ticks=%d (want >0)\n",
++               integral_term, integral_gate_freeze_ticks);
++        mismatches++;
++    }
++    printf("gate probe: freeze-unwind floored at I=%d with %d freeze ticks remaining\n",
++           integral_term, integral_gate_freeze_ticks);
++    consumed_freeze += 300; /* the 100-tick unwind check + the 200-tick floor check */
++    for (int k = 0; k < INTEGRAL_GATE_HOLDOFF_TICKS - consumed_freeze; k++) { /* run the freeze out */
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH running out the freeze at k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    if (integral_gate_freeze_ticks != 0) {
++        printf("GATE PROBE: freeze did not expire on schedule: freeze_ticks=%d\n", integral_gate_freeze_ticks);
++        mismatches++;
++    }
++    /* crossing 2: gap = holdoff-1 ticks since crossing 1 => FRESH: the above-rail
++     * midpoint must be KEPT (not clamped), observable as the slew target; the OUTWARD
++     * slew from I=0 takes pure full>>4 steps (the inward-only parallel unwind must NOT
++     * fire: the +2000 step would RAISE |I|) */
++    int32_t raw_mid2 = (int32_t)(((int64_t)integral_term + integral_gate_last_cross_integral) >> 1);
++    if (raw_mid2 <= max_integral_term) {
++        printf("GATE PROBE: raw crossing-2 midpoint %d not above the rail %d -- fresh-keep not observable\n",
++               raw_mid2, max_integral_term);
++        mismatches++;
++    }
++    {
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at crossing 2: fw=%d sim=%d fwI=%d simI=%d\n", a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 1 || integral_gate_slew_dir != 1 ||
++            integral_gate_slew_target != raw_mid2) {
++            printf("GATE PROBE: FRESH crossing 2 slew target wrong: active=%d dir=%d target=%d, expected 1/1/%d (must NOT be clamped to %d)\n",
++                   integral_gate_slew_active, integral_gate_slew_dir, integral_gate_slew_target,
++                   raw_mid2, max_integral_term);
++            mismatches++;
++        }
++        if (integral_term != probe_slew_step) {
++            printf("GATE PROBE: crossing-2 tick outward slew step wrong: I=%d want %d (pure full>>4; inward-only unwind must not fire)\n",
++                   integral_term, probe_slew_step);
++            mismatches++;
++        }
++    }
++    printf("gate probe: FRESH crossing 2 (gap %d ticks): slew TARGET %d KEPT above rail %d (not clamped); outward slew running\n",
++           INTEGRAL_GATE_HOLDOFF_TICKS - 1, integral_gate_slew_target, max_integral_term);
++    /* two more pure outward steps (I = 2*step, 3*step), still mid-slew */
++    for (int k = 0; k < 2; k++) {
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match() || integral_term != (k + 2) * probe_slew_step || integral_gate_slew_active != 1) {
++            printf("GATE PROBE: crossing-2 outward slew tick %d wrong: fwI=%d simI=%d want %d (slew_active=%d)\n",
++                   k, integral_term, s_integral, (k + 2) * probe_slew_step, integral_gate_slew_active);
++            mismatches++;
++        }
++    }
++    /* scenario (c): a crossing arriving MID-SLEW must RE-ARM the slew toward the NEW
++     * midpoint (target and direction replaced; no jump), which then lands exactly.
++     * The last crossing SAMPLE is 0 (I at crossing 2), so the new midpoint is I/2. */
++    int32_t old_target_c = integral_gate_slew_target;
++    int32_t I_c = integral_term; /* 3*step, far from the old ~50e6 target */
++    int32_t mid_c = (int32_t)(((int64_t)I_c + integral_gate_last_cross_integral) >> 1);
++    {
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at mid-slew crossing C: fw=%d sim=%d fwI=%d simI=%d\n", a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 1 || integral_gate_slew_dir != -1 ||
++            integral_gate_slew_target != mid_c || integral_gate_slew_target == old_target_c) {
++            printf("GATE PROBE: mid-slew crossing C did not RE-ARM toward the new midpoint: active=%d dir=%d target=%d, want 1/-1/%d (old target %d)\n",
++                   integral_gate_slew_active, integral_gate_slew_dir, integral_gate_slew_target,
++                   mid_c, old_target_c);
++            mismatches++;
++        }
++        if (integral_term != I_c - probe_slew_step - unwind_step) {
++            printf("GATE PROBE: re-armed slew first step wrong: I=%d want %d - %d - %d = %d\n",
++                   integral_term, I_c, probe_slew_step, unwind_step, I_c - probe_slew_step - unwind_step);
++            mismatches++;
++        }
++    }
++    {
++        /* remaining distance is now within one step: the slew must land EXACTLY on the
++         * new target (then one parallel unwind on top) and deactivate */
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match() || integral_gate_slew_active != 0 ||
++            integral_term != mid_c - unwind_step) {
++            printf("GATE PROBE: re-armed slew landing wrong: fwI=%d simI=%d want new target %d - unwind %d = %d (slew_active=%d)\n",
++                   integral_term, s_integral, mid_c, unwind_step, mid_c - unwind_step, integral_gate_slew_active);
++            mismatches++;
++        }
++    }
++    printf("gate probe: crossing C (mid-slew, gap 2 ticks): RE-ARMED from target %d to new midpoint %d, landed at %d [scenario (c)]\n",
++           old_target_c, mid_c, integral_term);
++    /* crossing 3: keep the NEGATIVE error for holdoff*2 + 350 ticks (the freeze from
++     * crossing C runs out, the gate reopens and I rails near the negative full
++     * authority), then flip: the gap exceeds the shipped stale threshold => STALE =>
++     * the slew target must be clamped to exactly the NEGATIVE 25% rail this time
++     * (negative-side clamp coverage), approached at the exact slew rate from below */
++    for (int k = 0; k < INTEGRAL_GATE_HOLDOFF_TICKS * 2 + 350; k++) {
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH re-winding for crossing 3 at k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    int32_t raw_mid3 = (int32_t)(((int64_t)integral_term + integral_gate_last_cross_integral) >> 1);
++    if (raw_mid3 >= -max_integral_term) {
++        printf("GATE PROBE: raw crossing-3 midpoint %d does not exceed the NEGATIVE rail %d -- stale clamp not observable\n",
++               raw_mid3, -max_integral_term);
++        mismatches++;
++    }
++    int32_t I_3 = integral_term;
++    {
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at crossing 3: fw=%d sim=%d fwI=%d simI=%d\n", a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 1 || integral_gate_slew_dir != 1 ||
++            integral_gate_slew_target != -max_integral_term) {
++            printf("GATE PROBE: STALE crossing 3 (gap %d ticks > shipped threshold %d) slew target not the negative rail: "
++                   "active=%d dir=%d target=%d, want 1/1/%d (raw midpoint %d)\n",
++                   INTEGRAL_GATE_HOLDOFF_TICKS * 2 + 350 + 1, (int32_t)(INTEGRAL_GATE_STALE_TICKS),
++                   integral_gate_slew_active, integral_gate_slew_dir, integral_gate_slew_target,
++                   -max_integral_term, raw_mid3);
++            mismatches++;
++        }
++        if (integral_term != I_3 + probe_slew_step + unwind_step) {
++            printf("GATE PROBE: crossing-3 tick slew step wrong: I=%d want %d + (full>>4) %d + unwind %d = %d\n",
++                   integral_term, I_3, probe_slew_step, unwind_step, I_3 + probe_slew_step + unwind_step);
++            mismatches++;
++        }
++    }
++    int slew3_ticks = 1;
++    while (integral_gate_slew_active && slew3_ticks < 40) {
++        int32_t prevI = integral_term;
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        slew3_ticks++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH during crossing-3 slew at tick %d: fwI=%d simI=%d\n", slew3_ticks, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++        if (integral_gate_slew_active) {
++            if (integral_term - prevI != probe_slew_step + unwind_step) {
++                printf("GATE PROBE: crossing-3 slew rate wrong at tick %d: dI=%d want (full>>4) %d + unwind %d (SLEW_SHIFT retuned?)\n",
++                       slew3_ticks, integral_term - prevI, probe_slew_step, unwind_step);
++                mismatches++;
++                break;
++            }
++        }
++        else {
++            if (integral_term != -max_integral_term + unwind_step &&
++                !(prevI >= -max_integral_term && integral_term == prevI + unwind_step)) {
++                printf("GATE PROBE: crossing-3 slew landing wrong: I=%d (prev %d), want target %d + unwind %d\n",
++                       integral_term, prevI, -max_integral_term, unwind_step);
++                mismatches++;
++            }
++        }
++    }
++    if (integral_gate_slew_active) {
++        printf("GATE PROBE: crossing-3 slew did not complete within 40 ticks (target %d, I=%d)\n",
++               integral_gate_slew_target, integral_term);
++        mismatches++;
++    }
++    printf("gate probe: STALE crossing 3 (gap %d ticks): raw midpoint %d -> slew TARGET clamped to exactly the negative rail %d; "
++           "landed in %d ticks at (full>>4)+unwind\n",
++           INTEGRAL_GATE_HOLDOFF_TICKS * 2 + 350 + 1, raw_mid3, -max_integral_term, slew3_ticks);
++
++    /* ---- slew scenario (b): a slew ABANDONED by freeze expiry, without a jump.
++     * Constants: kp=2000 ki=10000 kd=0 v=200 -> same authority/rail/slew step as above,
++     * but one unwind step at |e|=1000 (INSIDE the deadband, so the gate state holds and
++     * no new crossing can rescue the slew) is 10e6 > the 6553600 slew step: an OUTWARD
++     * slew fighting the inward parallel unwind is pinned at the 0 floor and can never
++     * reach its target, so it is still active when the freeze expires -- the
++     * integration path must then clear it FIRST (abandon) and integrate normally from
++     * wherever I is (NO jump to the distant target). */
++    fw_set_pid_constants(2000, 10000, 0, 200);
++    sim_set_constants(2000, 10000, 0, 200);
++    reset_both_states();
++    for (int k = 0; k < 4000; k++) { /* open the gate, I to the back-calculation ceiling */
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH in scenario (b) wind-up at k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    /* crossing E (first-ever => stale => slew to the rail); at ki=10000 the slew plus
++     * unwind reach the rail and then the 0 floor within a few ticks */
++    for (int k = 0; k < 10; k++) {
++        int32_t a = PID_controller(-2000);
++        int32_t b = sim_pid(-2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH in scenario (b) at crossing E k=%d fwI=%d simI=%d\n", k, integral_term, s_integral);
++            mismatches++;
++            break;
++        }
++    }
++    if (integral_term != 0 || integral_gate_slew_active != 0 || integral_gate_freeze_ticks <= 0) {
++        printf("GATE PROBE: scenario (b) setup failed after crossing E: I=%d slew_active=%d freeze=%d (want 0/0/>0)\n",
++               integral_term, integral_gate_slew_active, integral_gate_freeze_ticks);
++        mismatches++;
++    }
++    /* crossing F (fresh, gap 9 ticks): outward target = last crossing sample / 2, far
++     * above I=0; the crossing tick takes one pure outward slew step */
++    int32_t raw_midF = (int32_t)(((int64_t)integral_term + integral_gate_last_cross_integral) >> 1);
++    if (raw_midF <= max_integral_term) {
++        printf("GATE PROBE: scenario (b) raw crossing-F midpoint %d not above the rail %d -- outward slew not observable\n",
++               raw_midF, max_integral_term);
++        mismatches++;
++    }
++    {
++        int32_t a = PID_controller(2000);
++        int32_t b = sim_pid(2000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at crossing F: fw=%d sim=%d fwI=%d simI=%d\n", a, b, integral_term, s_integral);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 1 || integral_gate_slew_dir != 1 ||
++            integral_gate_slew_target != raw_midF || integral_term != probe_slew_step) {
++            printf("GATE PROBE: crossing F outward slew not armed: active=%d dir=%d target=%d I=%d (want 1/1/%d/%d)\n",
++                   integral_gate_slew_active, integral_gate_slew_dir, integral_gate_slew_target,
++                   integral_term, raw_midF, probe_slew_step);
++            mismatches++;
++        }
++    }
++    /* stall the slew with an in-deadband opposing error: two bounce ticks (2*step
++     * minus one unwind, then the 0 floor), after which I stays pinned at 0 with the
++     * slew still active */
++    {
++        int32_t a = PID_controller(-1000);
++        int32_t b = sim_pid(-1000);
++        n++;
++        if (a != b || !states_match() ||
++            integral_term != 2 * probe_slew_step - 1000 * integral_constant_pid ||
++            integral_gate_slew_active != 1) {
++            printf("GATE PROBE: scenario (b) stall tick 1 wrong: fwI=%d simI=%d want %d (slew_active=%d)\n",
++                   integral_term, s_integral, 2 * probe_slew_step - 1000 * integral_constant_pid,
++                   integral_gate_slew_active);
++            mismatches++;
++        }
++    }
++    {
++        int32_t a = PID_controller(-1000);
++        int32_t b = sim_pid(-1000);
++        n++;
++        if (a != b || !states_match() || integral_term != 0 || integral_gate_slew_active != 1) {
++            printf("GATE PROBE: scenario (b) stall tick 2 (0 floor) wrong: fwI=%d simI=%d want 0 (slew_active=%d)\n",
++                   integral_term, s_integral, integral_gate_slew_active);
++            mismatches++;
++        }
++    }
++    int32_t remaining_freeze_b = integral_gate_freeze_ticks;
++    for (int k = 0; k < remaining_freeze_b; k++) { /* pinned at the floor for the whole freeze */
++        int32_t a = PID_controller(-1000);
++        int32_t b = sim_pid(-1000);
++        n++;
++        if (a != b || !states_match() || integral_term != 0 || integral_gate_slew_active != 1) {
++            printf("GATE PROBE: scenario (b) stalled slew not pinned at the 0 floor: k=%d fwI=%d simI=%d slew_active=%d\n",
++                   k, integral_term, s_integral, integral_gate_slew_active);
++            mismatches++;
++            break;
++        }
++    }
++    if (integral_gate_freeze_ticks != 0 || integral_gate_slew_active != 1 || integral_term != 0) {
++        printf("GATE PROBE: scenario (b) pre-expiry state wrong: freeze=%d slew_active=%d I=%d (want 0/1/0)\n",
++               integral_gate_freeze_ticks, integral_gate_slew_active, integral_term);
++        mismatches++;
++    }
++    {
++        /* the abandon tick */
++        int32_t abandoned_target = integral_gate_slew_target;
++        int32_t a = PID_controller(-1000);
++        int32_t b = sim_pid(-1000);
++        n++;
++        if (a != b || !states_match()) {
++            printf("GATE PROBE MISMATCH at the abandon tick: fw=%d sim=%d fwI=%d simI=%d fwSlewActive=%d simSlewActive=%d\n",
++                   a, b, integral_term, s_integral, integral_gate_slew_active, s_slew_active);
++            mismatches++;
++        }
++        if (integral_gate_slew_active != 0 || integral_term != -1000 * integral_constant_pid) {
++            printf("GATE PROBE: slew not ABANDONED at freeze expiry: slew_active=%d I=%d, want 0/%d "
++                   "(target was %d; a jump to it, or a stale active flag, is the 0.15.4.2 abandon bug)\n",
++                   integral_gate_slew_active, integral_term, -1000 * integral_constant_pid, abandoned_target);
++            mismatches++;
++        }
++        printf("gate probe: scenario (b): outward slew (target %d) stalled at the 0 floor for the whole freeze, "
++               "ABANDONED at expiry without a jump (I=%d, slew_active=%d)\n",
++               abandoned_target, integral_term, integral_gate_slew_active);
++    }
++
++    /* ---- differential sweep ---- */
+     const struct { uint32_t p, i, d; uint16_t v; } gains[] = {
+         {2000, 5, 175000, 200}, {2000, 25, 350000, 200}, {2000, 0, 175000, 200}, {2000, 5, 0, 200},
+         {500, 100, 1000000, 400}, {20000, 500, 2000000, 65535}, {1, 1, 1, 1}, {0, 0, 0, 0},
+@@ -177,18 +868,31 @@ int main(void) {
+         /* overflow-cap territory: u32 extremes, small-kD LPF corner, kI increment cap */
+         {4294967295u, 4294967295u, 4294967295u, 65535},
+         {1, 2147483648u, 40, 200}, {2000, 40460, 45, 1820}, {1, 4294967295u, 33, 65535},
++        /* the gate-probe constants at the legal M17 max PWM voltage (390): moderate ki,
++         * no D -- heavy stale/fresh crossing + freeze-unwind traffic in the square-wave
++         * phase */
++        {2000, 100, 0, 390},
+     };
+-    for (int g = 0; g < (int)(sizeof(gains) / sizeof(gains[0])); g++) {
++    const int NGAINS = (int)(sizeof(gains) / sizeof(gains[0]));
++    for (int g = 0; g < NGAINS; g++) {
+         fw_set_pid_constants(gains[g].p, gains[g].i, gains[g].d, gains[g].v);
+         sim_set_constants(gains[g].p, gains[g].i, gains[g].d, gains[g].v);
+         /* reset both states fully */
+-        integral_term = 0; previous_error = 0; low_pass_filtered_error_change = 0;
+-        s_integral = 0; s_prev_err = 0; s_lpf = 0;
++        reset_both_states();
+         for (int k = 0; k < 500000; k++) {
+             /* halfway through, change the constants WITHOUT a full state reset, so the
+              * firmware's constants-change state handling is compared too */
+             if (k == 250000) {
+-                int gg = (g + 5) % (int)(sizeof(gains) / sizeof(gains[0]));
++                int gg = (g + 5) % NGAINS;
++                fw_set_pid_constants(gains[gg].p, gains[gg].i, gains[gg].d, gains[gg].v);
++                sim_set_constants(gains[gg].p, gains[gg].i, gains[gg].d, gains[gg].v);
++            }
++            /* second change INSIDE the sign-biased phase below: by k=400000 the gate has
++             * typically been open with |I| above the 25% rail, so this exercises the
++             * constants-change critical section (re-clamp to the FULL limit + gate
++             * re-arm) with a gate-wound integral */
++            if (k == 400000) {
++                int gg = (g + 7) % NGAINS;
+                 fw_set_pid_constants(gains[gg].p, gains[gg].i, gains[gg].d, gains[gg].v);
+                 sim_set_constants(gains[gg].p, gains[gg].i, gains[gg].d, gains[gg].v);
+             }
+@@ -199,15 +903,31 @@ int main(void) {
+             else if (r % 7 == 1) e = (int64_t)(xr() % 200001) - 100000;
+             else if (r % 7 == 2) e = (int64_t)(xr() >> 20) - (1LL << 43);
+             else                 e = (int64_t)(xr() % 2001) - 1000;
++            /* last 200k ticks: force the error sign into a slow square wave (15000-tick
++             * half-period) so it keeps one sign well past the 3125-tick holdoff -- this
++             * drives the windup gate through open (full-limit) stretches, zero crossings
++             * (midpoint + freeze), freeze expiry and the hold-excess re-limit, which the
++             * sign-random phase above almost never reaches */
++            if (k >= 300000) {
++                int64_t mag = (e < 0) ? -e : e;
++                e = (((k / 15000) & 1) == 0) ? mag : -mag;
++            }
+             int32_t a = PID_controller(e);
+             int32_t b = sim_pid(e);
+             n++;
+-            if (a != b || integral_term != s_integral ||
+-                low_pass_filtered_error_change != s_lpf) {
++            if (a != b || !states_match()) {
+                 if (mismatches < 5)
+-                    printf("MISMATCH gains=%u/%u/%u/%u k=%d e=%lld fw=%d sim=%d fwI=%d simI=%d fwLPF=%d simLPF=%d\n",
++                    printf("MISMATCH gains=%u/%u/%u/%u k=%d e=%lld fw=%d sim=%d fwI=%d simI=%d fwLPF=%d simLPF=%d "
++                           "fwGate=%d/%d/%d/%d/%d slew=%d/%d/%d simGate=%d/%d/%d/%d/%d slew=%d/%d/%d\n",
+                            gains[g].p, gains[g].i, gains[g].d, gains[g].v, k, (long long)e, a, b,
+-                           integral_term, s_integral, low_pass_filtered_error_change, s_lpf);
++                           integral_term, s_integral, low_pass_filtered_error_change, s_lpf,
++                           integral_gate_prev_sign, integral_gate_same_sign_ticks,
++                           integral_gate_freeze_ticks, integral_gate_last_cross_integral,
++                           integral_gate_ticks_since_cross,
++                           integral_gate_slew_target, integral_gate_slew_dir, integral_gate_slew_active,
++                           s_gate_prev_sign, s_gate_ticks, s_gate_freeze, s_gate_last_cross,
++                           s_gate_ticks_since_cross,
++                           s_slew_target, s_slew_dir, s_slew_active);
+                 mismatches++;
+             }
+         }
+@@ -218,5 +938,7 @@ int main(void) {
+ }
+ EOF
+ 
+-cc -O2 -Wall -I "$WORK" -o "$WORK/pid_diff" "$WORK/harness.c" -lm
++# PID_DIFF_EXTRA_CFLAGS: opt-in extra flags (e.g. "-fsanitize=undefined -fno-sanitize-recover=all"
++# to verify the int32 overflow invariants empirically); default build is unchanged.
++cc -O2 -Wall $PID_DIFF_EXTRA_CFLAGS -I "$WORK" -o "$WORK/pid_diff" "$WORK/harness.c" -lm
+ "$WORK/pid_diff"
+diff --git a/c_test_programs/test_pid_overflow.c b/c_test_programs/test_pid_overflow.c
+index 0b59774..71aea2f 100644
+--- a/c_test_programs/test_pid_overflow.c
++++ b/c_test_programs/test_pid_overflow.c
+@@ -10,18 +10,60 @@
+  *   1. clang UBSan (-fsanitize=signed-integer-overflow,shift,integer-divide-by-zero)
+  *      reports the exact source line of any signed overflow / bad shift / div0.
+  *   2. Invariant shadow checks after every tick (int64 recomputation of the
+- *      output identity, integral-clamp bound, LPF-state bound).
++ *      output identity, integral-clamp bound, LPF-state bound, and — on M17 —
++ *      the full zero-crossing windup-gate state machine).
++ *
++ * The M17 build (-DPRODUCT_NAME_M17) compiles the zero-crossing-gated integral
++ * windup (PID_IMPROVEMENT_PLAN.md section 17, release-overshoot fix fw
++ * 0.15.4.1, slew-only torque smoothing fw 0.15.4.2): the integral may wind
++ * past the 25% rail toward the FULL authority once the error has kept one sign
++ * beyond a ±INTEGRAL_GATE_DEADBAND for INTEGRAL_GATE_HOLDOFF_TICKS; each zero
++ * crossing midpoints the integral against its value at the previous crossing —
++ * clamped to the 25% rail when the previous crossing is STALE (older than
++ * INTEGRAL_GATE_STALE_TICKS on a saturating since-last-cross counter,
++ * INT32_MAX = never crossed) — and starts the holdoff freeze. Since fw
++ * 0.15.4.2 a nonzero correction is NOT assigned instantly (a rail-to-rail
++ * torque step in one 32 us tick): it is armed as a SLEW
++ * (target/dir/active) that moves the integral toward the (possibly clamped)
++ * midpoint at (full authority >> INTEGRAL_GATE_SLEW_SHIFT) per freeze tick,
++ * with the reduce-only unwind (floored at zero) applied IN PARALLEL on top of
++ * each step; the slew ends when it lands exactly on the target or reaches/
++ * PASSES it in the original direction, and a freeze expiry abandons it without
++ * a jump. An equal midpoint arms nothing (an in-flight slew keeps its old
++ * target). Without a slew, the freeze applies only integration steps that
++ * REDUCE |I| (floored at zero), as in 0.15.4.1. NOTE: there is deliberately NO
++ * above-rail wind-rate cap ("M11") — that companion design was rejected
++ * (breaks heavy-load holding); if the extracted code grows one, this harness
++ * must be revisited. The shadow model mirrors the whole state machine
++ * tick-exactly (including the counter saturation at INT32_MAX), and the driver
++ * REQUIRES (M17 only) that the run demonstrably exercised it: integral above
++ * the 25% rail, crossings, gate-open ticks, freeze ticks, the hold-excess /
++ * inward-above-limit branches, stale crossings (both the never-crossed and the
++ * real-elapsed-counter kind), stale midpoint clamps, freeze-unwind steps, and
++ * every slew outcome (armed, re-armed mid-flight, midpoint==I no-arm, partial
++ * steps, exact-landing completions, reach-or-pass terminations, freeze-expiry
++ * abandons, parallel-unwind applications) must all have fired, so a build that
++ * silently preprocesses the gate (or the release-overshoot fix, or the slew)
++ * out cannot PASS; conversely the slew counters must stay ZERO on the
++ * gate-less products.
+  *
+  * The driver is deliberately adversarial:
+  *   - a grid of gain/voltage configurations including every boundary the math
+  *     cares about (kD around the AVG_SCALAR edge 31..64, kI at the integral
+- *     increment limit, V at each product's shift-overflow boundary, full u32
+- *     extremes for all three gains),
++ *     increment limit — including the new M17 cap edge at kp=0/V=max — V at
++ *     each product's shift-overflow boundary, full u32 extremes for all gains),
+  *   - hostile error waveforms (extremes, alternating extremes, ramps, triangle
+  *     waves across 6 decades of amplitude, spike trains, windup pump cycles,
+  *     random heavy-tailed noise),
+  *   - runtime gain/voltage CHANGES mid-waveform (a stale filter state meeting
+- *     new constants is a classic overflow source),
++ *     new constants is a classic overflow source; on M17 this also re-arms the
++ *     windup gate with a possibly above-rail integral),
++ *   - long one-signed stretches and sign-flip storms that drive the windup gate
++ *     through every branch, including a deterministic walk and a worst-case
++ *     |P|+|I|+|D| sum probe at the authority cap,
++ *   - a deterministic slew walk (crossings DURING active slews, deadband-error
++ *     stalls that abandon a slew at freeze expiry, recompute mid-slew, the
++ *     largest legal |error*ki| product inside the slew parallel unwind),
+  *   - a long random soak.
+  *
+  * Every configuration/waveform pair also verifies, in int64, that
+@@ -30,7 +72,8 @@
+  * silently producing wrong values.
+  *
+  * Run:  ./test_pid_overflow.sh          (from c_test_programs/)
+- * Exit 0 = clean. Any UBSan report or invariant failure -> exit 1.
++ * Exit 0 = clean. Any UBSan report, invariant failure, or (M17) missing gate
++ * coverage -> exit 1.
+  */
+ 
+ #include <stdio.h>
+@@ -56,6 +99,10 @@
+ #ifndef INTEGRAL_TERM_AUTHORITY_SHIFT
+ #define INTEGRAL_TERM_AUTHORITY_SHIFT 2
+ #endif
++/* The windup-gate tuning macros (INTEGRAL_GATE_HOLDOFF_TICKS / _DEADBAND /
++ * _STALE_TICKS) are deliberately given NO fallback: on an M17 build they must
++ * come from the firmware source via clamp_fallback.h, and a failed extraction
++ * must break the compile rather than silently test stale values. */
+ /* commutation 90-degree offset: (N_COMMUTATION_STEPS * N_COMMUTATION_SUB_STEPS) >> 2;
+  * 16384 for M17/M23 (64 x 1024). Override via EXTRA_PID_CFLAGS for other tables. */
+ #ifndef HALL_TO_POSITION_90_DEGREE_OFFSET
+@@ -66,6 +113,18 @@
+ static void __disable_irq(void) {}
+ static void __enable_irq(void) {}
+ 
++/* driver-side gate timing (used to SHAPE phase-5 waveforms on every product;
++ * on the gate-less products they are just plausible waveform periods) */
++#ifdef PRODUCT_NAME_M17
++#define GATE_HOLDOFF_DRV  INTEGRAL_GATE_HOLDOFF_TICKS
++#define GATE_DEADBAND_DRV INTEGRAL_GATE_DEADBAND
++#define GATE_STALE_DRV    INTEGRAL_GATE_STALE_TICKS
++#else
++#define GATE_HOLDOFF_DRV  3125
++#define GATE_DEADBAND_DRV 1000
++#define GATE_STALE_DRV    (3125 * 2)
++#endif
++
+ /* globals the extracted firmware code references */
+ static int32_t integral_term = 0;
+ static int32_t previous_error = 0;
+@@ -77,9 +136,21 @@ static int32_t proportional_constant_pid = 0;
+ static int32_t integral_constant_pid = 0;
+ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
+ static int32_t max_integral_term = 0;
++static int32_t max_integral_term_full = 0;
+ static int32_t max_error = 0;
+ static int32_t max_error_change = 0;
+ static int32_t pid_output_limit = 0;
++#ifdef PRODUCT_NAME_M17
++/* zero-crossing windup-gate state (mirrors firmware statics) */
++static int32_t integral_gate_prev_sign = 0;
++static int32_t integral_gate_same_sign_ticks = 0;
++static int32_t integral_gate_freeze_ticks = 0;
++static int32_t integral_gate_last_cross_integral = 0;
++static int32_t integral_gate_ticks_since_cross = INT32_MAX; /* saturating; INT32_MAX = no crossing yet (stale) */
++static int32_t integral_gate_slew_target = 0;  /* where an in-flight crossing correction is headed */
++static int32_t integral_gate_slew_dir = 0;     /* original correction direction (+1/-1) */
++static int32_t integral_gate_slew_active = 0;  /* a correction is slewing (only during the freeze) */
++#endif
+ static uint16_t max_motor_pwm_voltage = 200;
+ static uint16_t max_motor_regen_pwm_voltage = 200;
+ static uint8_t test_mode = 0;
+@@ -95,42 +166,121 @@ static struct pid_debug_data_struct *pid_debug_data = (void *)&calibration;
+ #include "extracted_recompute.c"
+ #include "extracted_pid.c"
+ 
+-static void set_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
+-    pid_p = p; pid_i = i; pid_d = d;
+-    recompute_pid_parameters_and_set_pwm_voltage(v, v);
+-}
+-
+-static void reset_state(void) {
+-    integral_term = 0;
+-    previous_error = 0;
+-    low_pass_filtered_error_change = 0;
+-}
+-
+ /* ------------------------------------------------------------------ checks */
+ static uint64_t g_ticks = 0, g_invariant_failures = 0;
++static uint64_t g_kicap_checks = 0, g_int_step_checks = 0;
++static int64_t g_max_abs_sum = 0;   /* peak |I+P+D+half| seen (int32 proof headroom) */
++#ifdef PRODUCT_NAME_M17
++static uint64_t g_above_rail_ticks = 0;  /* |I| > 25% rail (only the gate can do this) */
++static uint64_t g_gate_open_ticks = 0;   /* ticks with the FULL-authority limit active */
++static uint64_t g_gate_crossings = 0;    /* midpoint + freeze events */
++static uint64_t g_freeze_ticks = 0;      /* ticks in the freeze branch (recharge blocked, reduce-only integration) */
++static uint64_t g_hold_excess = 0;       /* above a (re-lowered) limit, winding outward: held */
++static uint64_t g_inward_above = 0;      /* above the limit but unwinding: allowed */
++static uint64_t g_stale_crossings = 0;   /* crossings whose previous crossing was stale/absent */
++static uint64_t g_stale_elapsed = 0;     /* ...of those, via a REAL elapsed counter (not the INT32_MAX never-crossed path) */
++static uint64_t g_midpoint_clamps = 0;   /* stale midpoints actually clamped to the +/-25% rail */
++static uint64_t g_unwind_steps = 0;      /* freeze-tick integration steps applied because they REDUCE |I| */
++#endif
++/* fw 0.15.4.2 slew coverage: declared on ALL products so the gate-less runs can
++ * assert they stay ZERO; only the M17 shadow model increments them */
++static uint64_t g_slew_armed = 0;        /* crossings that armed/re-targeted a slew (midpoint != I) */
++static uint64_t g_slew_rearm = 0;        /* ...of those, while a previous slew was still in flight */
++static uint64_t g_slew_noarm = 0;        /* crossings with midpoint == I: nothing armed, I untouched */
++static uint64_t g_slew_steps = 0;        /* partial +/-slew_step moves executed */
++static uint64_t g_slew_completed = 0;    /* slews that landed exactly on their target (snap branch) */
++static uint64_t g_slew_passed = 0;       /* slews ended by the reach-or-PASS check (unwind/back-calc overtook) */
++static uint64_t g_slew_abandoned = 0;    /* slews still active at freeze expiry (cleared, no jump) */
++static uint64_t g_slew_unwind = 0;       /* parallel-unwind applications on slew-branch ticks */
+ static const char *g_context = "";
+ 
+ static void fail(const char *what, int64_t a, int64_t b) {
+     if (g_invariant_failures < 20) {
+         fprintf(stderr, "INVARIANT FAIL [%s] tick=%" PRIu64 ": %s (%" PRId64 " vs %" PRId64 ")  "
+-                        "gains=%u/%u/%u V=%u I=%d lpf=%d\n",
++                        "gains=%u/%u/%u V=%u I=%d lpf=%d",
+                 g_context, g_ticks, what, a, b, pid_p, pid_i, pid_d,
+                 max_motor_pwm_voltage, integral_term, low_pass_filtered_error_change);
++#ifdef PRODUCT_NAME_M17
++        fprintf(stderr, " gate={sign=%d ticks=%d freeze=%d lastx=%d since=%d slew={t=%d d=%d a=%d}}",
++                integral_gate_prev_sign, integral_gate_same_sign_ticks,
++                integral_gate_freeze_ticks, integral_gate_last_cross_integral,
++                integral_gate_ticks_since_cross, integral_gate_slew_target,
++                integral_gate_slew_dir, integral_gate_slew_active);
++#endif
++        fprintf(stderr, "\n");
+     }
+     g_invariant_failures++;
+ }
+ 
++static void set_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
++    pid_p = p; pid_i = i; pid_d = d;
++    recompute_pid_parameters_and_set_pwm_voltage(v, v);
++    /* ki-cap invariant, checked EXPERIMENTALLY on every configuration: one
++     * integration step from a fully-railed integrator must fit in int32, i.e.
++     * max_integral_term_full + min(max_error, input clamp) * ki <= INT32_MAX */
++    if (integral_constant_pid != 0) {
++        int64_t eff = max_error;
++        if (eff > PID_ERROR_INPUT_CLAMP) eff = PID_ERROR_INPUT_CLAMP;
++        int64_t worst = (int64_t)max_integral_term_full + eff * (int64_t)integral_constant_pid;
++        if (worst > INT32_MAX) fail("ki-cap invariant (full rail + max_error*ki > INT32_MAX)", worst, INT32_MAX);
++    }
++#ifdef PRODUCT_NAME_M17
++    /* full limit == the whole authority == rail << AUTHORITY_SHIFT (authority is
++     * always a multiple of 1<<AUTHORITY_SHIFT here, so the relation is exact) */
++    if ((int64_t)max_integral_term_full != ((int64_t)max_integral_term << INTEGRAL_TERM_AUTHORITY_SHIFT))
++        fail("max_integral_term_full != full authority", max_integral_term_full,
++             (int64_t)max_integral_term << INTEGRAL_TERM_AUTHORITY_SHIFT);
++    if (integral_gate_prev_sign || integral_gate_same_sign_ticks ||
++        integral_gate_freeze_ticks || integral_gate_last_cross_integral ||
++        integral_gate_ticks_since_cross != INT32_MAX)
++        fail("gate state not re-armed by recompute", integral_gate_ticks_since_cross, INT32_MAX);
++    if (integral_gate_slew_target || integral_gate_slew_dir || integral_gate_slew_active)
++        fail("slew state not re-armed by recompute (fw 0.15.4.2)", integral_gate_slew_active, 0);
++#else
++    if (max_integral_term_full != max_integral_term)
++        fail("max_integral_term_full != max_integral_term on a gate-less product",
++             max_integral_term_full, max_integral_term);
++#endif
++    g_kicap_checks++;
++}
++
++static void reset_state(void) {
++    integral_term = 0;
++    previous_error = 0;
++    low_pass_filtered_error_change = 0;
++#ifdef PRODUCT_NAME_M17
++    integral_gate_prev_sign = 0;
++    integral_gate_same_sign_ticks = 0;
++    integral_gate_freeze_ticks = 0;
++    integral_gate_last_cross_integral = 0;
++    integral_gate_ticks_since_cross = INT32_MAX;
++    integral_gate_slew_target = 0;
++    integral_gate_slew_dir = 0;
++    integral_gate_slew_active = 0;
++#endif
++}
++
+ /* one controller tick + full int64 shadow verification */
+ static void tick(int64_t error_i64) {
+     /* snapshot pre-tick state for the shadow model */
+     int64_t I0 = integral_term;
+     int64_t prev0 = previous_error;
+     int64_t lpf0 = low_pass_filtered_error_change;
++#ifdef PRODUCT_NAME_M17
++    int64_t gs_prev = integral_gate_prev_sign;
++    int64_t gs_ticks = integral_gate_same_sign_ticks;
++    int64_t gs_freeze = integral_gate_freeze_ticks;
++    int64_t gs_lastx = integral_gate_last_cross_integral;
++    int64_t gs_since = integral_gate_ticks_since_cross;
++    int64_t gs_slew_t = integral_gate_slew_target;
++    int64_t gs_slew_d = integral_gate_slew_dir;
++    int64_t gs_slew_a = integral_gate_slew_active;
++#endif
+ 
+     int32_t out = PID_controller(error_i64);
+     g_ticks++;
+ 
+-    /* ---- int64 shadow model of the (hardened) firmware semantics ---- */
++    /* ---- int64 shadow model of the firmware semantics ---- */
+     int64_t e = error_i64;
+     if (e > PID_ERROR_INPUT_CLAMP) e = PID_ERROR_INPUT_CLAMP;
+     else if (e < -PID_ERROR_INPUT_CLAMP) e = -PID_ERROR_INPUT_CLAMP;
+@@ -154,24 +304,174 @@ static void tick(int64_t error_i64) {
+     if (ec > max_error) ec = max_error;
+     else if (ec < -max_error) ec = -max_error;
+     int64_t I = I0;
++#ifdef PRODUCT_NAME_M17
++    /* exact port of the zero-crossing windup gate (same order of operations) */
++    if (integral_constant_pid != 0) {
++        int64_t gate_sign = 0;
++        if (ec > INTEGRAL_GATE_DEADBAND) gate_sign = 1;
++        else if (ec < -INTEGRAL_GATE_DEADBAND) gate_sign = -1;
++        int64_t crossed = 0;
++        if (gate_sign != 0) {   /* inside the deadband the gate state holds */
++            if (gate_sign == gs_prev) {
++                if (gs_ticks < INTEGRAL_GATE_HOLDOFF_TICKS) gs_ticks++;
++            } else {
++                crossed = (gs_prev != 0);
++                gs_prev = gate_sign;
++                gs_ticks = 0;
++            }
++        }
++        int64_t ilimit = (gs_ticks >= INTEGRAL_GATE_HOLDOFF_TICKS)
++                             ? (int64_t)max_integral_term_full : (int64_t)max_integral_term;
++        if (gs_ticks >= INTEGRAL_GATE_HOLDOFF_TICKS) g_gate_open_ticks++;
++        /* stale-crossing detector: saturating ticks-since-last-cross counter;
++         * INT32_MAX (the reset value) means "never crossed" and is always stale */
++        int64_t stale_cross = 0;
++        if (crossed) {
++            stale_cross = (gs_since > INTEGRAL_GATE_STALE_TICKS);
++            if (stale_cross) {
++                g_stale_crossings++;
++                if (gs_since != INT32_MAX) g_stale_elapsed++;
++            }
++            gs_since = 0;
++        } else if (gs_since < INT32_MAX) {
++            gs_since++;                /* saturates exactly like the firmware int32 */
++        }
++        if (crossed) {
++            g_gate_crossings++;
++            int64_t prevI = I;
++            int64_t midpoint = (I + gs_lastx) >> 1;   /* same arithmetic-shift semantics */
++            if (stale_cross) {
++                /* release/first-ever event: the stored charge belongs to a load
++                 * that is gone, so the midpoint is clamped to the 25% rail */
++                if (midpoint > max_integral_term) { midpoint = max_integral_term; g_midpoint_clamps++; }
++                else if (midpoint < -max_integral_term) { midpoint = -max_integral_term; g_midpoint_clamps++; }
++            }
++            /* fw 0.15.4.2: a nonzero correction is no longer assigned in one
++             * tick; it is armed as a SLEW toward the (possibly clamped)
++             * midpoint. An equal midpoint arms nothing, and an in-flight slew
++             * then simply keeps its old target (the handler never disarms).
++             * The crossing SAMPLE recorded for the next midpoint stays the
++             * pre-correction value, exactly as in the instant version. */
++            if (midpoint != I) {
++                if (gs_slew_a) g_slew_rearm++;
++                gs_slew_t = midpoint;
++                gs_slew_d = (midpoint > I) ? 1 : -1;
++                gs_slew_a = 1;
++                g_slew_armed++;
++            } else {
++                g_slew_noarm++;
++            }
++            gs_lastx = prevI;
++            gs_freeze = INTEGRAL_GATE_HOLDOFF_TICKS;
++        }
++        if (gs_freeze > 0) {
++            gs_freeze--;
++            g_freeze_ticks++;
++            if (gs_slew_a) {
++                /* fw 0.15.4.2 slew branch: one bounded step toward the target,
++                 * with the reduce-only unwind running IN PARALLEL on top of it
++                 * (so a release discharge is never slower than the instant
++                 * version); the slew ends when I lands exactly on the target or
++                 * reaches/PASSES it in the original direction (no snap-back
++                 * when the unwind overtakes it). The parallel unwind runs even
++                 * on the termination tick. */
++                int64_t slew_step = (int64_t)max_integral_term_full >> INTEGRAL_GATE_SLEW_SHIFT;
++                if (slew_step < 1) slew_step = 1;
++                int64_t slewed = I;
++                int64_t remaining = gs_slew_t - slewed;
++                if (remaining > INT32_MAX || remaining < INT32_MIN)   /* the firmware computes this in int32 */
++                    fail("slew remaining exceeds int32 (firmware would wrap)", remaining, INT32_MAX);
++                if ((gs_slew_d > 0) ? (remaining <= 0) : (remaining >= 0)) {
++                    gs_slew_a = 0;                     /* reached or passed: done, no move */
++                    g_slew_passed++;
++                } else if (remaining > slew_step) {
++                    slewed += slew_step;
++                    g_slew_steps++;
++                } else if (remaining < -slew_step) {
++                    slewed -= slew_step;
++                    g_slew_steps++;
++                } else {
++                    slewed = gs_slew_t;                /* lands exactly on the target */
++                    gs_slew_a = 0;
++                    g_slew_completed++;
++                }
++                if (slewed > INT32_MAX || slewed < INT32_MIN)   /* the firmware computes this in int32 */
++                    fail("slew step exceeds int32 (firmware would wrap)", slewed, INT32_MAX);
++                int64_t nu = slewed + ec * (int64_t)integral_constant_pid;
++                g_int_step_checks++;
++                if (nu > INT32_MAX || nu < INT32_MIN)   /* the firmware computes this in int32 */
++                    fail("slew parallel-unwind exceeds int32 (firmware would wrap)", nu, INT32_MAX);
++                if (slewed > 0 && nu < slewed) {
++                    slewed = (nu < 0) ? 0 : nu;
++                    g_slew_unwind++;
++                } else if (slewed < 0 && nu > slewed) {
++                    slewed = (nu > 0) ? 0 : nu;
++                    g_slew_unwind++;
++                }
++                I = slewed;
++            } else {
++                /* the freeze blocks RE-charging only: integration steps that REDUCE
++                 * |I| are applied, floored at zero (release-overshoot fix) */
++                int64_t ni = I + ec * (int64_t)integral_constant_pid;
++                g_int_step_checks++;
++                if (ni > INT32_MAX || ni < INT32_MIN)   /* the firmware computes this in int32 */
++                    fail("freeze-unwind step exceeds int32 (firmware would wrap)", ni, INT32_MAX);
++                if (I > 0 && ni < I) {
++                    I = (ni < 0) ? 0 : ni;
++                    g_unwind_steps++;
++                } else if (I < 0 && ni > I) {
++                    I = (ni > 0) ? 0 : ni;
++                    g_unwind_steps++;
++                }
++            }
++        } else {
++            /* fw 0.15.4.2: a slew that outlives its freeze is abandoned without
++             * a jump -- the integration path's first statement clears it */
++            if (gs_slew_a) { gs_slew_a = 0; g_slew_abandoned++; }
++            int64_t ni = I + ec * (int64_t)integral_constant_pid;
++            g_int_step_checks++;
++            if (ni > INT32_MAX || ni < INT32_MIN)   /* the firmware computes this in int32 */
++                fail("integration step exceeds int32 (firmware would wrap)", ni, INT32_MAX);
++            if (ni > ilimit) {
++                if (ni < I) { I = ni; g_inward_above++; }   /* above limit but unwinding */
++                else if (I < ilimit) I = ilimit;
++                else if (I > ilimit) g_hold_excess++;       /* winding outward above limit: held */
++            } else if (ni < -ilimit) {
++                if (ni > I) { I = ni; g_inward_above++; }
++                else if (I > -ilimit) I = -ilimit;
++                else if (I < -ilimit) g_hold_excess++;
++            } else {
++                I = ni;
++            }
++        }
++    } else {
++        I = 0;   /* ki == 0: firmware zeroes the integral and skips the gate entirely */
++    }
++#else
+     if (integral_constant_pid != 0) {
+-        I += ec * integral_constant_pid;
++        int64_t ni = I + ec * (int64_t)integral_constant_pid;
++        g_int_step_checks++;
++        if (ni > INT32_MAX || ni < INT32_MIN)
++            fail("integration step exceeds int32 (firmware would wrap)", ni, INT32_MAX);
++        I = ni;
+         if (I > max_integral_term) I = max_integral_term;
+         else if (I < -max_integral_term) I = -max_integral_term;
+     } else {
+         I = 0;
+     }
++#endif
+     int64_t P = ec * proportional_constant_pid;
+     int64_t sum = I + P + d_term + (1 << (PID_SHIFT_RIGHT - 1));
++    if (llabs(sum) > g_max_abs_sum) g_max_abs_sum = llabs(sum);
+     int64_t expected = sum >> PID_SHIFT_RIGHT;
+     if (expected > pid_output_limit) {
+         int64_t ci = I - ((expected - pid_output_limit) * (1 << PID_SHIFT_RIGHT));
+-        if (ci < -max_integral_term) ci = -max_integral_term;
++        if (ci < -max_integral_term_full) ci = -max_integral_term_full;
+         I = ci;
+         expected = pid_output_limit;
+     } else if (expected < -pid_output_limit) {
+         int64_t ci = I - ((expected + pid_output_limit) * (1 << PID_SHIFT_RIGHT));
+-        if (ci > max_integral_term) ci = max_integral_term;
++        if (ci > max_integral_term_full) ci = max_integral_term_full;
+         I = ci;
+         expected = -pid_output_limit;
+     }
+@@ -180,12 +480,28 @@ static void tick(int64_t error_i64) {
+     if ((int64_t)out != expected) fail("output identity", out, expected);
+     if ((int64_t)integral_term != I) fail("integral state", integral_term, I);
+     if ((int64_t)low_pass_filtered_error_change != lpf) fail("lpf state", low_pass_filtered_error_change, lpf);
++#ifdef PRODUCT_NAME_M17
++    if ((int64_t)integral_gate_prev_sign != gs_prev) fail("gate prev_sign", integral_gate_prev_sign, gs_prev);
++    if ((int64_t)integral_gate_same_sign_ticks != gs_ticks) fail("gate same_sign_ticks", integral_gate_same_sign_ticks, gs_ticks);
++    if ((int64_t)integral_gate_freeze_ticks != gs_freeze) fail("gate freeze_ticks", integral_gate_freeze_ticks, gs_freeze);
++    if ((int64_t)integral_gate_last_cross_integral != gs_lastx) fail("gate last_cross_integral", integral_gate_last_cross_integral, gs_lastx);
++    if ((int64_t)integral_gate_ticks_since_cross != gs_since) fail("gate ticks_since_cross", integral_gate_ticks_since_cross, gs_since);
++    if ((int64_t)integral_gate_slew_target != gs_slew_t) fail("gate slew_target", integral_gate_slew_target, gs_slew_t);
++    if ((int64_t)integral_gate_slew_dir != gs_slew_d) fail("gate slew_dir", integral_gate_slew_dir, gs_slew_d);
++    if ((int64_t)integral_gate_slew_active != gs_slew_a) fail("gate slew_active", integral_gate_slew_active, gs_slew_a);
++#endif
+     /* absolute bounds that make later-tick int32 arithmetic provably safe */
+     int64_t lpf_bound = 32LL * (max_error_change ? max_error_change : 0);
+     if (llabs((int64_t)low_pass_filtered_error_change) > lpf_bound)
+         fail("lpf bound", low_pass_filtered_error_change, lpf_bound);
++    if (llabs((int64_t)integral_term) > max_integral_term_full)
++        fail("integral full bound", integral_term, max_integral_term_full);
++#ifdef PRODUCT_NAME_M17
++    if (llabs((int64_t)integral_term) > max_integral_term) g_above_rail_ticks++;
++#else
+     if (llabs((int64_t)integral_term) > max_integral_term)
+         fail("integral bound", integral_term, max_integral_term);
++#endif
+ }
+ 
+ /* ------------------------------------------------------------------ waveforms */
+@@ -243,16 +559,26 @@ static const wave_t WAVES[] = {
+ /* ------------------------------------------------------------------ main */
+ static const uint32_t KP_VALS[] = {0, 1, 2, 3, 31, 32, 33, 1000, 2000, 20000, 65535,
+                                    1000000, 2147483647u, 2147483648u, 4294967295u};
+-static const uint32_t KI_VALS[] = {0, 1, 5, 25, 200, 40000, 40459, 40460, 65535,
++static const uint32_t KI_VALS[] = {0, 1, 3, 4, 5, 25, 200, 40000, 40459, 40460, 65535,
+                                    1000000, 2147483647u, 2147483648u, 4294967295u};
+-static const uint32_t KD_VALS[] = {0, 1, 31, 32, 33, 40, 48, 49, 52, 63, 64, 175000, 350000,
+-                                   1000000, 100000000, 2147483647u, 2147483648u, 4294967295u};
++static const uint32_t KD_VALS[] = {0, 1, 31, 32, 33, 40, 48, 49, 52, 63, 64, 256, 384, 175000,
++                                   350000, 1000000, 100000000, 2147483647u, 2147483648u, 4294967295u};
+ static const uint16_t V_VALS[]  = {0, 1, 31, 32, 100, 200, 400, 511, 512, 1820, 1821, 4095, 4096, 65535};
+ 
+ int main(int argc, char **argv) {
+     int quick = (argc > 1 && !strcmp(argv[1], "--quick"));
+     char ctx[256];
+ 
++#ifdef PRODUCT_NAME_M17
++    fprintf(stderr, "config: PID_SHIFT_RIGHT=%d authority-cap=%lld windup gate: ON (holdoff=%d deadband=%d stale=%d slew-shift=%d)\n",
++            PID_SHIFT_RIGHT, (long long)PID_MAX_AUTHORITY_PRE_SHIFT,
++            (int)INTEGRAL_GATE_HOLDOFF_TICKS, (int)INTEGRAL_GATE_DEADBAND,
++            (int)INTEGRAL_GATE_STALE_TICKS, (int)INTEGRAL_GATE_SLEW_SHIFT);
++#else
++    fprintf(stderr, "config: PID_SHIFT_RIGHT=%d authority-cap=%lld windup gate: OFF\n",
++            PID_SHIFT_RIGHT, (long long)PID_MAX_AUTHORITY_PRE_SHIFT);
++#endif
++
+     /* -------- phase 1: boundary gain grid x all waveforms (sampled) -------- */
+     fprintf(stderr, "[phase 1] boundary gain grid x waveforms...\n");
+     uint64_t n_cfg = 0;
+@@ -336,9 +662,309 @@ int main(int argc, char **argv) {
+         tick(e);
+     }
+ 
++    /* -------- phase 5: zero-crossing windup-gate stress -------- */
++    /* On M17 this drives the gate through every branch: open (long one-signed
++     * stretches), wind past the 25% rail toward the full authority, crossing
++     * storms (midpoint + freeze churn), freeze expiry inside the deadband, the
++     * hold-excess and inward-above-limit paths, stale crossings (release
++     * events) with the midpoint clamp, the reduce-only freeze-unwind, and the
++     * maximal integration step at the ki cap under the M17 authority cap. On
++     * the gate-less products the same waveforms exercise the plain clamp path. */
++    fprintf(stderr, "[phase 5] windup-gate stress...\n");
++
++    /* 5a: deterministic gate path walk (guarantees the coverage counters) */
++    g_context = "gate-paths";
++    set_constants(2000, 25, 0, 200);
++    reset_state();
++    for (int k = 0; k < 8000; k++) tick(3000);                      /* open at holdoff, wind above the rail */
++    tick(-3000);                                                    /* crossing #1: STALE (never crossed): midpoint(I,0) clamped to the rail arms a slew + freeze; same tick: 1 slew step + parallel unwind */
++    tick(3000);                                                     /* crossing #2: 1 tick later, NON-stale midpoint RE-TARGETS the in-flight slew, refreeze; lands on the target the same tick */
++    for (int k = 0; k < GATE_HOLDOFF_DRV; k++) tick(GATE_DEADBAND_DRV / 2);   /* freeze expires inside the deadband */
++    for (int k = 0; k < 200; k++) tick(3000);                       /* limit back at 25%, I above it: hold-excess */
++    for (int k = 0; k < 1000; k++) tick(-(GATE_DEADBAND_DRV / 2));  /* in-deadband unwind: inward-above-limit */
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 2000; k++) tick(3000);   /* reopen, wind back toward full */
++
++    /* 5b: worst |P|+|I|+|D| sum, all three peaks ALIGNED: kp=2 pins P at the
++     * full authority (max_error = authority/2 stays under the +/-2^29 input
++     * clamp even for an 800e6 authority), a long one-signed hold opens the gate
++     * and rails I at the FULL authority, and an upward sawtooth sitting on the
++     * max_error clamp then drives the derivative LPF toward its rail (sustained
++     * +2e6 error steps; the sawtooth reset costs only one clamped step) WITHOUT
++     * disturbing P or I. kd is swept around the D-term optimum (D peaks near
++     * kd = authority/2e6; 256 for a 500e6 authority, 384/416 for 800e6), so
++     * this probes the |I|+|P|+|D|+half < 2^31 bound live and demonstrably
++     * overflows if the M17 authority cap is raised without revisiting the gate
++     * (verified by mutation: cap 800e6 + gate -> UBSan fires here). */
++    static const uint32_t KD_WORST[] = {224, 256, 288, 384, 416, 512};
++    for (unsigned c = 0; c < sizeof(KD_WORST) / 4; c++) {
++        snprintf(ctx, sizeof(ctx), "gate-worst-sum kd=%u", KD_WORST[c]);
++        g_context = ctx;
++        set_constants(2, 4294967295u, KD_WORST[c], 65535);
++        reset_state();
++        int64_t base = max_error;                 /* ec pinned at max_error from here up */
++        for (int k = 0; k < GATE_HOLDOFF_DRV + 2000; k++) tick(base);   /* open gate, rail I at full */
++        for (int cyc = 0; cyc < 120; cyc++)                              /* sawtooth: rail the D filter */
++            for (int k = 0; k < 60; k++) tick(base + 2000000LL * k);
++        for (int k = 0; k < 400; k++) tick((k & 1) ? -(base + 118000000) : (base + 118000000));
++    }
++
++    /* 5c: ki-cap edge at every voltage: kp=0 makes max_error = full authority,
++     * so the capped ki gives the largest legal integration step; hold-flip just
++     * above the holdoff so every half-cycle reopens the gate */
++    for (unsigned vi = 0; vi < sizeof(V_VALS) / 2; vi++) {
++        for (uint32_t kp = 0; kp <= 1; kp++) {
++            set_constants(kp, 4294967295u, 0, V_VALS[vi]);
++            snprintf(ctx, sizeof(ctx), "gate-kicap kp=%u V=%u", kp, V_VALS[vi]);
++            g_context = ctx;
++            reset_state();
++            wave_pump(1LL << 30, GATE_HOLDOFF_DRV + 75);
++        }
++    }
++
++    /* 5d: randomized gate storm: hold / dwell / flip phases + mid-storm
++     * constant changes with hot (possibly above-rail) gate state */
++    rng = 0x000C0FFEE0DDBA11ULL;
++    static const struct { uint32_t p, i, d; uint16_t v; } SCFG[] = {
++        {2000, 40, 0, 400}, {0, 4294967295u, 0, 65535}, {1, 4294967295u, 256, 65535},
++        {2000, 25, 350000, 200}, {100, 5, 0, 511},
++    };
++    int storm_rounds = quick ? 400 : 4000;
++    for (unsigned c = 0; c < sizeof(SCFG) / sizeof(SCFG[0]); c++) {
++        set_constants(SCFG[c].p, SCFG[c].i, SCFG[c].d, SCFG[c].v);
++        reset_state();
++        for (int r = 0; r < storm_rounds; r++) {
++            snprintf(ctx, sizeof(ctx), "gate-storm cfg=%u round=%d", c, r);
++            g_context = ctx;
++            int len = (int)rr(50, 4000);
++            int64_t amp = rr(GATE_DEADBAND_DRV + 100, 100000);
++            switch (xr() % 8) {
++            case 0: for (int k = 0; k < len; k++) tick(amp); break;                 /* one-signed hold */
++            case 1: for (int k = 0; k < len; k++) tick(-amp); break;
++            case 2: for (int k = 0; k < len; k++)                                    /* dwell inside the deadband */
++                        tick(rr(-GATE_DEADBAND_DRV / 2, GATE_DEADBAND_DRV / 2));
++                    break;
++            case 3: for (int k = 0; k < len; k++) tick((k & 1) ? -amp : amp); break; /* per-tick flip storm */
++            case 4: { int hold = (int)rr(2, 400);                                    /* slow flip churn */
++                      for (int k = 0; k < len; k++) tick(((k / hold) & 1) ? -amp : amp);
++                      break; }
++            case 5: for (int k = 0; k < len; k++)                                    /* noise straddling the deadband */
++                        tick(rr(-3 * GATE_DEADBAND_DRV, 3 * GATE_DEADBAND_DRV));
++                    break;
++            case 6: for (int k = 0; k < len; k++)                                    /* spikes over a one-signed floor */
++                        tick((k % 7) ? 2 * GATE_DEADBAND_DRV : ((k & 8) ? (1LL << 35) : -(1LL << 35)));
++                    break;
++            case 7: /* mid-storm constant change with hot gate state (re-arm path) */
++                set_constants(KP_VALS[xr() % (sizeof(KP_VALS) / 4)], KI_VALS[xr() % (sizeof(KI_VALS) / 4)],
++                              KD_VALS[xr() % (sizeof(KD_VALS) / 4)], V_VALS[xr() % (sizeof(V_VALS) / 2)]);
++                for (int k = 0; k < len; k++) tick(((k / 200) & 1) ? -amp : amp);
++                set_constants(SCFG[c].p, SCFG[c].i, SCFG[c].d, SCFG[c].v);
++                break;
++            }
++        }
++    }
++
++    /* 5e: release-overshoot walk (deterministic; pins down the fw 0.15.4.1
++     * delta: the stale-crossing midpoint clamp and the reduce-only
++     * freeze-unwind; under fw 0.15.4.2 every crossing correction SLEWS to its
++     * midpoint instead of jumping, so this walk also arms/terminates slews on
++     * every crossing -- the inputs are unchanged and the shadow model tracks
++     * the slewed trajectory tick-exactly). Sub-scenarios, with ki=25/V=200
++     * (step 75000/tick, rail=26214400, full=104857600, slew step 6553600 on M17):
++     *   (i)   first-ever crossing: ticks_since_cross is saturated at INT32_MAX
++     *         so the crossing is stale by definition; I is at the FULL rail so
++     *         midpoint(I,0)=I/2 exceeds the 25%% rail and MUST clamp (the
++     *         clamped value is now the SLEW target);
++     *   (ii)  the freeze then sees an opposite-signed error every tick: the
++     *         slew walks I down to the target (snap-complete), then plain
++     *         unwind steps fire until I floors at exactly 0 and then stop;
++     *   (iii) quiet stretch (inside the deadband) far longer than the stale
++     *         window, then a crossing: a GENUINE stale event through the
++     *         elapsed counter (not the INT32_MAX path);
++     *   (iv)  a crossing pair 1 tick apart (the second RE-TARGETS the in-flight
++     *         slew; its non-stale midpoint keeps an above-rail charge), a
++     *         reopened hold back to the full rail with > stale-window ticks
++     *         elapsing, then a crossing: genuine stale WITH a midpoint clamp;
++     *   (v)   near-cap gains (ki at the cap, kp=0, V=max): the largest legal
++     *         |error*ki| product lands inside the slew PARALLEL unwind (floors
++     *         I at 0 mid-slew; the next tick terminates via reach-or-PASS);
++     *   (vi)  recompute mid-freeze: full gate re-arm, next crossing stale again. */
++    fprintf(stderr, "[phase 5e] release-overshoot walk...\n");
++    g_context = "gate-release";
++    set_constants(2000, 25, 0, 200);
++    reset_state();
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 5000; k++) tick(3000);   /* open the gate, rail I at FULL */
++    tick(-3000);                                                    /* (i) stale (never-crossed) crossing: midpoint clamp */
++    for (int k = 0; k < 600; k++) tick(-3000);                      /* (ii) unwind reduces I to 0, then holds it there */
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 5000; k++) tick(-3000);  /* freeze expires, reopen negative, I -> -FULL */
++    for (int k = 0; k < GATE_STALE_DRV + 500; k++) tick(0);         /* quiet inside the deadband: since-cross counter grows past stale */
++    tick(3000);                                                     /* (iii) GENUINE stale crossing (elapsed-counter path; midpoint (−full+full)/2=0 becomes the slew target) */
++    tick(-3000);                                                    /* (iv) 1 tick later: NON-stale crossing RE-TARGETS the in-flight slew; midpoint kept above the rail */
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 5000; k++) tick(-3000);  /* reopen, I -> -FULL; since-cross grows past stale during the hold */
++    tick(3000);                                                     /* genuine stale with I=-FULL: midpoint below -rail clamps at -rail (slew target) */
++    /* (v) near-cap gains during the freeze: ki caps at 3 with kp=0/V=65535
++     * (authority 500e6 on M17), so |error*ki| = 1.5e9 -- the largest legal
++     * integration-step product -- lands inside the slew PARALLEL unwind */
++    g_context = "gate-release-kicap";
++    set_constants(0, 4294967295u, 0, 65535);
++    reset_state();
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 100; k++) tick(1LL << 30);   /* rail I at FULL in one step once open */
++    tick(-(1LL << 30));                                             /* stale crossing: clamp to rail arms a slew; the parallel unwind slams I to 0 the same tick */
++    for (int k = 0; k < 300; k++) tick(-(1LL << 30));               /* reach-or-PASS ends the slew; unwind holds I at 0 for the rest of the freeze */
++    /* (vi) recompute mid-freeze: the gate re-arms (freeze cleared, counter back
++     * to INT32_MAX) so integration resumes at once and the next crossing after
++     * the sign sequence -,+ is stale again */
++    g_context = "gate-release-rearm";
++    set_constants(2000, 25, 0, 200);
++    reset_state();
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 2000; k++) tick(5000);   /* open + wind above the rail */
++    tick(-5000);                                                    /* crossing -> freeze armed */
++    for (int k = 0; k < 50; k++) tick(-5000);                       /* 50 ticks into the freeze */
++    set_constants(2000, 25, 0, 200);                                /* recompute mid-freeze: full re-arm */
++    for (int k = 0; k < 200; k++) tick(-5000);                      /* freeze is gone: integration resumes immediately */
++    tick(5000);                                                     /* first flip after re-arm: stale (never-crossed) again */
++    for (int k = 0; k < 200; k++) tick(5000);
++
++    /* -------- phase 5f: crossing-correction SLEW walk (fw 0.15.4.2) -------- */
++    /* The 0.15.4.2 delta: a crossing correction is armed as a slew that walks
++     * I toward the midpoint at (full authority >> INTEGRAL_GATE_SLEW_SHIFT)
++     * per freeze tick with the reduce-only unwind in PARALLEL, and is
++     * abandoned without a jump if the freeze expires first. Deterministic
++     * walk with kp=2000/ki=25000/kd=0/V=200 (rail=26214400, full=104857600,
++     * slew step=6553600, max_error=52428; a deadband-dwelling error of -999
++     * unwinds 999*25000=24975000 per tick > slew step, so it can STALL an
++     * away-from-zero slew at the zero floor without ever crossing). While the
++     * gate holds I at the FULL rail, the output saturates (52 kish > the 51200
++     * output limit with P at 6e6), so the back-calculation settles the
++     * END-of-tick integral at 98856960, not 104857600 -- all numbers below
++     * account for that. Each sub-scenario is PINNED by a required delta on its
++     * coverage counter, so waveform/back-calc drift cannot silently defeat it:
++     *   (i)    stale crossing near the FULL rail: the rail-clamped midpoint is
++     *          armed as a slew (dir=-1); the same tick runs one partial step
++     *          plus the parallel unwind;
++     *   (ii)   a crossing 1 tick later RE-TARGETS the in-flight slew (dir=+1:
++     *          the midpoint against the near-full sample lies above I);
++     *   (iii)  the slew then climbs one step per tick (charging integration is
++     *          blocked in parallel: unwind never increases |I|) and lands
++     *          EXACTLY on the target (snap-complete);
++     *   (iv)   a later crossing arms a down-slew whose parallel unwind floors
++     *          I at 0 mid-flight; the next tick terminates via reach-or-PASS
++     *          (target now on the wrong side, no snap-back);
++     *   (v)    a fresh dir=+1 slew + 3124 deadband(-999) ticks: every tick
++     *          steps up then floors back to 0, so slew_active survives the
++     *          whole freeze and the expiry tick ABANDONS it without a jump;
++     *   (vi)   the next crossing lands at I=0 with last-cross sample 0:
++     *          midpoint == I arms NOTHING (I untouched, no slew);
++     *   (vii)  recompute MID-SLEW: the gate re-arm zeroes target/dir/active
++     *          (asserted directly in set_constants) and the next flip is a
++     *          never-crossed stale crossing again;
++     *   (viii) near-cap gains inside the slew parallel unwind are covered by
++     *          phase 5e (v) above (|error*ki| = 1.5e9 on a slew tick). */
++    fprintf(stderr, "[phase 5f] crossing-slew walk...\n");
++    g_context = "slew-walk";
++    set_constants(2000, 25000, 0, 200);
++    reset_state();
++#ifdef PRODUCT_NAME_M17
++#define REQUIRE_5F_DELTA(counter, before, what) do { \
++        if ((counter) <= (before)) fail("5f sub-scenario did not fire: " what, (int64_t)(counter), (int64_t)(before)); \
++    } while (0)
++    uint64_t s5f_armed, s5f_rearm, s5f_noarm, s5f_steps, s5f_comp, s5f_pass, s5f_aband, s5f_unw, s5f_clamp;
++#define SNAP_5F() (s5f_armed = g_slew_armed, s5f_rearm = g_slew_rearm, s5f_noarm = g_slew_noarm, \
++                   s5f_steps = g_slew_steps, s5f_comp = g_slew_completed, s5f_pass = g_slew_passed, \
++                   s5f_aband = g_slew_abandoned, s5f_unw = g_slew_unwind, s5f_clamp = g_midpoint_clamps)
++#else
++#define REQUIRE_5F_DELTA(counter, before, what)
++#define SNAP_5F()
++#endif
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 60; k++) tick(3000);  /* open the gate, wind I to the full-authority
++                    * region (back-calculation equilibrium: 98856960 at tick end) */
++    SNAP_5F();
++    tick(-3000);   /* (i) stale crossing: midpoint 49428480 clamps to the rail; slew armed (target 26214400, dir=-1);
++                    * same tick: step to 92303360, parallel unwind -75000000 -> I=17303360, slew still active */
++    REQUIRE_5F_DELTA(g_slew_armed, s5f_armed, "(i) arm");
++    REQUIRE_5F_DELTA(g_midpoint_clamps, s5f_clamp, "(i) stale midpoint clamp");
++    REQUIRE_5F_DELTA(g_slew_steps, s5f_steps, "(i) partial step");
++    REQUIRE_5F_DELTA(g_slew_unwind, s5f_unw, "(i) parallel unwind");
++    tick(3000);    /* (ii) crossing with the slew IN FLIGHT: re-target to midpoint (17303360+98856960)/2=58080160,
++                    * dir=+1; same tick: step up to 23856960 (charging unwind not applied) */
++    REQUIRE_5F_DELTA(g_slew_rearm, s5f_rearm, "(ii) re-arm in flight");
++    for (int k = 0; k < 5; k++) tick(3000);   /* climb 6553600/tick: 30410560 ... 56624960 */
++    tick(3000);    /* (iii) remaining 1455200 < step: SNAP exactly onto 58080160, slew done */
++    REQUIRE_5F_DELTA(g_slew_completed, s5f_comp, "(iii) snap-complete");
++    for (int k = 0; k < 40; k++) tick(3000);  /* rest of freeze: recharging blocked, I holds */
++    tick(-3000);   /* (iv) crossing: midpoint (58080160+17303360)/2=37691760, dir=-1; same tick the parallel
++                    * unwind (-75000000) floors I at 0 after the partial step */
++    tick(-3000);   /* target 37691760 is now on the WRONG side of I=0 for dir=-1: reach-or-PASS, no snap-back */
++    REQUIRE_5F_DELTA(g_slew_passed, s5f_pass, "(iv) reach-or-pass");
++    for (int k = 0; k < 20; k++) tick(-3000); /* freeze continues at I=0 (nothing to unwind) */
++    tick(3000);    /* (v) crossing at I=0: midpoint (0+58080160)/2=29040080, dir=+1; steps to 6553600 */
++    for (int k = 0; k < GATE_HOLDOFF_DRV - 1; k++) tick(-999);  /* deadband stall: step up, floor to 0, every tick;
++                    * slew_active survives all remaining freeze ticks */
++    tick(0);       /* freeze expired, error inside the deadband: the integration path ABANDONS the slew; I stays 0 */
++    REQUIRE_5F_DELTA(g_slew_abandoned, s5f_aband, "(v) freeze-expiry abandon");
++    tick(-3000);   /* (vi) crossing at I=0 with last-cross sample 0: midpoint == I -> NOTHING armed */
++    REQUIRE_5F_DELTA(g_slew_noarm, s5f_noarm, "(vi) midpoint==I no-arm");
++    for (int k = 0; k < 10; k++) tick(-3000); /* freeze at I=0 */
++    /* (vii) recompute mid-slew */
++    g_context = "slew-walk-rearm";
++    set_constants(2000, 25000, 0, 200);
++    reset_state();
++    for (int k = 0; k < GATE_HOLDOFF_DRV + 60; k++) tick(3000);  /* reopen, back to the full-rail equilibrium */
++    tick(-3000);                          /* stale crossing arms a slew (still active after its own tick) */
++#ifdef PRODUCT_NAME_M17
++    if (!integral_gate_slew_active)
++        fail("5f(vii) premise: slew not active before mid-slew recompute", integral_gate_slew_active, 1);
++#endif
++    set_constants(2000, 25000, 0, 200);   /* recompute MID-SLEW: slew target/dir/active must all clear (checked in set_constants) */
++    for (int k = 0; k < 50; k++) tick(-3000);  /* no freeze after re-arm: integration resumes immediately */
++    tick(3000);                           /* first flip after re-arm: never-crossed stale crossing again */
++    for (int k = 0; k < 50; k++) tick(3000);
++
+     fprintf(stderr, "\n%" PRIu64 " total ticks, %" PRIu64 " invariant failures\n",
+             g_ticks, g_invariant_failures);
+-    if (g_invariant_failures) { printf("FAILED\n"); return 1; }
++    fprintf(stderr, "ki-cap invariant checked on %" PRIu64 " configurations; "
++                    "integration steps int32-range-checked: %" PRIu64 "; "
++                    "peak |I+P+D+half| = %" PRId64 " (bound 2^31 = 2147483648)\n",
++            g_kicap_checks, g_int_step_checks, g_max_abs_sum);
++    int coverage_failed = 0;
++#ifdef PRODUCT_NAME_M17
++    fprintf(stderr, "gate coverage: above-25%%-rail ticks=%" PRIu64 " crossings=%" PRIu64
++                    " gate-open ticks=%" PRIu64 " freeze ticks=%" PRIu64
++                    " hold-excess ticks=%" PRIu64 " inward-above-limit ticks=%" PRIu64 "\n",
++            g_above_rail_ticks, g_gate_crossings, g_gate_open_ticks,
++            g_freeze_ticks, g_hold_excess, g_inward_above);
++    fprintf(stderr, "release-fix coverage: stale crossings=%" PRIu64
++                    " (real-elapsed-counter=%" PRIu64 ") midpoint clamps=%" PRIu64
++                    " freeze-unwind steps=%" PRIu64 "\n",
++            g_stale_crossings, g_stale_elapsed, g_midpoint_clamps, g_unwind_steps);
++    fprintf(stderr, "slew coverage (fw 0.15.4.2): armed=%" PRIu64 " (rearm-in-flight=%" PRIu64
++                    " noarm-midpoint-eq=%" PRIu64 ") steps=%" PRIu64 " completed=%" PRIu64
++                    " passed=%" PRIu64 " abandoned=%" PRIu64 " parallel-unwind=%" PRIu64 "\n",
++            g_slew_armed, g_slew_rearm, g_slew_noarm, g_slew_steps,
++            g_slew_completed, g_slew_passed, g_slew_abandoned, g_slew_unwind);
++    if (!g_above_rail_ticks || !g_gate_crossings || !g_gate_open_ticks ||
++        !g_freeze_ticks || !g_hold_excess || !g_inward_above ||
++        !g_stale_crossings || !g_stale_elapsed || !g_midpoint_clamps || !g_unwind_steps) {
++        fprintf(stderr, "GATE COVERAGE FAILED: the zero-crossing windup gate (or its "
++                        "release-overshoot fix: stale clamp / freeze-unwind) was not fully "
++                        "exercised (all-zero counters mean PRODUCT_NAME_M17 was not compiled in)\n");
++        coverage_failed = 1;
++    }
++    if (!g_slew_armed || !g_slew_rearm || !g_slew_noarm || !g_slew_steps ||
++        !g_slew_completed || !g_slew_passed || !g_slew_abandoned || !g_slew_unwind) {
++        fprintf(stderr, "SLEW COVERAGE FAILED: the fw 0.15.4.2 crossing-correction slew "
++                        "(arm / re-arm / no-arm / partial step / snap-complete / reach-or-pass / "
++                        "freeze-expiry abandon / parallel unwind) was not fully exercised\n");
++        coverage_failed = 1;
++    }
++#else
++    if (g_slew_armed || g_slew_rearm || g_slew_noarm || g_slew_steps ||
++        g_slew_completed || g_slew_passed || g_slew_abandoned || g_slew_unwind) {
++        fprintf(stderr, "SLEW COUNTERS NONZERO ON A GATE-LESS PRODUCT: the crossing-correction "
++                        "slew is M17-only and must not fire here\n");
++        coverage_failed = 1;
++    }
++#endif
++    if (g_invariant_failures || coverage_failed) { printf("FAILED\n"); return 1; }
+     printf("PASSED (invariants; UBSan verdict comes from the wrapper script)\n");
+     return 0;
+ }
+diff --git a/c_test_programs/test_pid_overflow.sh b/c_test_programs/test_pid_overflow.sh
+index d53ba64..3256798 100755
+--- a/c_test_programs/test_pid_overflow.sh
++++ b/c_test_programs/test_pid_overflow.sh
+@@ -9,11 +9,16 @@
+ # int32 firmware arithmetic on any tick.
+ #
+ # By default the driver runs once per PRODUCT PARAMETER SET (the PID is shared
+-# code): M17 (PID_SHIFT_RIGHT=11), M23 (14), and M1/M2 (18, with the M2-only
+-# 'error >>= 3' prescale compiled in), so all products' arithmetic is proven.
++# code): M17 (PID_SHIFT_RIGHT=11 AND -DPRODUCT_NAME_M17, which compiles IN the
++# zero-crossing windup gate and the 500e6 authority cap), M23 (14), and M1/M2
++# (18, with the M2-only 'error >>= 3' prescale compiled in), so all products'
++# arithmetic is proven. The M17 driver additionally REQUIRES gate coverage
++# (integral above the 25% rail, crossings, freeze, hold-excess...) so a build
++# that silently preprocesses the gate out cannot PASS; each run is also checked
++# to report the expected 'windup gate: ON/OFF' for its product set.
+ #
+ # Run this whenever PID_controller or its constants change:
+-#     cd c_test_programs && ./test_pid_overflow.sh          (~4-6 min, all products)
++#     cd c_test_programs && ./test_pid_overflow.sh          (~4-7 min, all products)
+ #     ./test_pid_overflow.sh --quick                        (~1 min smoke, all products)
+ #
+ # A meta-test first proves the sanitizer actually detects a known overflow, so
+@@ -61,18 +66,43 @@ echo "extracted $(wc -l < "$WORK/extracted_pid.c") + $(wc -l < "$WORK/extracted_
+ 
+ # Pull the PID overflow-safety #defines out of the firmware sources so the extracted
+ # functions compile with the exact values that ship (the driver's own defines are
+-# #ifndef fallbacks). DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT lives in the header.
+-grep -h "^#define PID_\|^#define INTEGRAL_TERM_AUTHORITY_SHIFT" "$SRC" > "$WORK/clamp_fallback.h" || true
+-if [ -f "$SRC_HDR" ]; then
+-    grep -h "^#define DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT" "$SRC_HDR" >> "$WORK/clamp_fallback.h" || true
+-fi
++# #ifndef fallbacks). Some of these are PRODUCT-CONDITIONAL (the authority cap is
++# 500e6 under PRODUCT_NAME_M17 / 800e6 otherwise, and the windup-gate tuning exists
++# only under PRODUCT_NAME_M17), so each target #define is emitted wrapped in its
++# exact enclosing preprocessor conditionals and the compiler resolves it per product
++# set -- a naive grep would emit BOTH authority-cap branches and clang only WARNS on
++# the redefinition, silently testing the wrong value.
++extract_defines() {  # $1 = source file, $2 = ERE matching the target #define lines
++    awk -v target="$2" '
++        /^[ \t]*#[ \t]*(if|ifdef|ifndef)([ \t(]|$)/ { depth++; open[depth] = $0; elseseen[depth] = 0; next }
++        /^[ \t]*#[ \t]*elif([ \t(]|$)/ { if (depth > 0) elseseen[depth] = 2; next }
++        /^[ \t]*#[ \t]*else/  { if (depth > 0) elseseen[depth] = 1; next }
++        /^[ \t]*#[ \t]*endif/ { if (depth > 0) depth--; next }
++        $0 ~ target {
++            for (i = 1; i <= depth; i++) if (elseseen[i] == 2) {
++                print "#error \"extract_defines: target define under #elif -- extend the extractor\""
++                exit
++            }
++            for (i = 1; i <= depth; i++) { print open[i]; if (elseseen[i]) print "#else" }
++            print
++            for (i = 1; i <= depth; i++) print "#endif"
++        }
++    ' "$1"
++}
++{
++    extract_defines "$SRC" '^#define[ \t]+(PID_|INTEGRAL_TERM_AUTHORITY_SHIFT|INTEGRAL_GATE_)'
++    if [ -f "$SRC_HDR" ]; then
++        extract_defines "$SRC_HDR" '^#define[ \t]+DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT'
++    fi
++} > "$WORK/clamp_fallback.h"
+ if ! grep -q "PID_ERROR_INPUT_CLAMP" "$WORK/clamp_fallback.h"; then
+     echo "#define PID_ERROR_INPUT_CLAMP ((int64_t)INT32_MAX)" >> "$WORK/clamp_fallback.h"
+ fi
+ 
+ # ---------------------------------------------------------------- build & run (per product)
+-run_one() {  # $1 = label, $2 = extra cflags; remaining script args passed to the driver
+-    local label="$1" cflags="$2"; shift 2
++run_one() {  # $1 = label, $2 = extra cflags, $3 = expected gate marker (ON/OFF, "" = skip);
++             # remaining script args passed to the driver
++    local label="$1" cflags="$2" gate="$3"; shift 3
+     echo ""
+     echo "================ product parameters: $label ================"
+     cc -O1 -Wall $SAN_FLAGS $cflags -include "$WORK/clamp_fallback.h" -I "$WORK" \
+@@ -83,24 +113,28 @@ run_one() {  # $1 = label, $2 = extra cflags; remaining script args passed to th
+     set -e
+     local hits
+     hits=$(grep -c "runtime error" "$WORK/stderr.log" || true)
+-    grep -v "runtime error" "$WORK/stderr.log" | tail -8
++    grep -v "runtime error" "$WORK/stderr.log" | tail -16
+     cat "$WORK/stdout.log"
+     if [ "$hits" -gt 0 ]; then
+         echo "UBSan detected $hits overflow/shift/div0 sites in the firmware PID code [$label]:"
+         grep "runtime error" "$WORK/stderr.log" | sort -u | head -20
+         return 1
+     fi
+-    [ "$rc" -eq 0 ] || { echo "invariant mismatches [$label] -- see above"; return 1; }
++    if [ -n "$gate" ] && ! grep -q "windup gate: $gate" "$WORK/stderr.log"; then
++        echo "CONFIG CHECK FAILED [$label]: driver did not report 'windup gate: $gate'"
++        return 1
++    fi
++    [ "$rc" -eq 0 ] || { echo "invariant/coverage failure [$label] -- see above"; return 1; }
+     return 0
+ }
+ 
+ FAILED=0
+ if [ -n "${EXTRA_PID_CFLAGS:-}" ]; then
+-    run_one "custom (EXTRA_PID_CFLAGS)" "$EXTRA_PID_CFLAGS" "$@" || FAILED=1
++    run_one "custom (EXTRA_PID_CFLAGS)" "$EXTRA_PID_CFLAGS" "" "$@" || FAILED=1
+ else
+-    run_one "M17 (shift 11)" "-DPID_SHIFT_RIGHT=11" "$@" || FAILED=1
+-    run_one "M23 (shift 14)" "-DPID_SHIFT_RIGHT=14" "$@" || FAILED=1
+-    run_one "M1/M2 (shift 18, M2 error prescale)" "-DPID_SHIFT_RIGHT=18 -DPRODUCT_NAME_M2" "$@" || FAILED=1
++    run_one "M17 (shift 11, zero-crossing windup gate)" "-DPID_SHIFT_RIGHT=11 -DPRODUCT_NAME_M17" "ON" "$@" || FAILED=1
++    run_one "M23 (shift 14)" "-DPID_SHIFT_RIGHT=14" "OFF" "$@" || FAILED=1
++    run_one "M1/M2 (shift 18, M2 error prescale)" "-DPID_SHIFT_RIGHT=18 -DPRODUCT_NAME_M2" "OFF" "$@" || FAILED=1
+ fi
+ 
+ echo ""
+@@ -108,4 +142,4 @@ if [ "$FAILED" -ne 0 ]; then
+     echo "OVERALL: FAILED"
+     exit 1
+ fi
+-echo "OVERALL: PASSED -- no signed overflow, no bad shifts, no div0, shadow model exact on every tick (all parameter sets)"
++echo "OVERALL: PASSED -- no signed overflow, no bad shifts, no div0, shadow model exact on every tick (all parameter sets; M17 gate coverage proven)"

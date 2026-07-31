@@ -1,0 +1,92 @@
+{
+  "summary": "Mirror the 0.15.4.2 slew-only smoothing into differential and overflow harnesses",
+  "agentCount": 2,
+  "logs": [],
+  "result": {
+    "differential": {
+      "summary": "Updated the reference model in c_test_programs/test_pid_differential.sh to the exact 0.15.4.2 slew-only delta (arm-on-crossing, slew+parallel-unwind in the freeze, abandon-without-jump at expiry; NO wind cap), added the 3 slew statics to the firmware stubs and the per-tick state comparison, added a loud INTEGRAL_GATE_SLEW_SHIFT extraction check, and extended the gate probe with deterministic scenarios (a) multi-tick slew at exactly full>>4 per tick with the parallel unwind on top, (b) slew abandoned by freeze expiry with no jump, (c) mid-slew crossing re-arming to the new midpoint. Full run: 7,024,878 samples, 0 mismatches, PASSED (also UBSan-clean). All 3 required mutations DETECTED with first divergence reported.",
+      "verdict": "PASS",
+      "details": [
+        "File updated: /Users/tom/Documents/Move_the_Needle/Servomotor/c_test_programs/test_pid_differential.sh (firmware/Src untouched). Reference model mirrors 0.15.4.2 exactly: crossing handler arms slew when midpoint != I (target=post-stale-clamp midpoint, dir=sign, active=1; nothing when equal; last_cross keeps the pre-correction sample); freeze branch with slew_active moves I by max_integral_term_full >> INTEGRAL_GATE_SLEW_SHIFT (floor 1) toward the target, deactivates on reach-or-pass in the original direction, then applies the inward-only 0-floored unwind (error*ki) on the slewed value; non-slew freeze branch is the unchanged 0.15.4.1 freeze-unwind; integration path's first statement clears slew_active (abandon, no jump). No wind-cap logic anywhere, matching the rejected-M11 history.",
+        "New statics integral_gate_slew_target/dir/active added to the harness firmware stubs, s_slew_target/dir/active to the sim model, both zeroed in reset_both_states() and in the sim's constants-change gate re-arm (mirroring the firmware's recompute critical section); states_match() now compares all three every tick; the sweep MISMATCH printf prints both sides' slew triples.",
+        "Loud extraction check added: grep for INTEGRAL_GATE_SLEW_SHIFT in the extracted pid_defines.h exits 1 with 'EXTRACTION FAILED for INTEGRAL_GATE_SLEW_SHIFT' -- verified by running against a copy with the define stripped (fired, exit 1).",
+        "Probe scenario (a): STALE crossing 1 (first-ever) now asserts the rail-exact clamp on the armed slew TARGET (26214400) and that I descends by exactly (full>>4=6553600)+parallel unwind(200000) per tick from I0=100858304, landing on the target in 12 ticks; the mirrored check runs again at STALE crossing 3 on the NEGATIVE rail (-26214400, new negative-side clamp coverage). The expected step uses a LITERAL shift 4 (not the extracted define) so a retuned/mutated slew rate fails the probe instead of being silently mirrored. Original 0.15.4.1 guarantees all preserved: fresh crossing 2 keeps the above-rail target 50429152 unclamped, freeze-unwind shrinks I (26014400 -> 6014400 in 100 ticks) and floors at 0 with freeze active, stale threshold still pinned via holdoff*2+350 gap.",
+        "Probe scenario (c): a crossing 2 ticks into the outward slew (I=19660800, old target 50429152) re-arms toward the new midpoint 9830400 with dir=-1 and lands exactly at 9630400 (target minus one unwind) two ticks later, slew_active back to 0.",
+        "Probe scenario (b) (second constants set kp=2000 ki=10000 v=200): an outward slew (target 50428928) is stalled at the 0 floor by an in-deadband opposing error (|e|=1000, unwind 10e6 > slew step 6553600) for the entire 3125-tick freeze, then abandoned at expiry: slew_active cleared FIRST and I continues from 0 to exactly -10000000 (no jump to the target).",
+        "Full test vs real firmware: 7,024,878 samples (>= 6.5M), 0 mismatches, PASSED, exit 0; also PASSED with PID_DIFF_EXTRA_CFLAGS='-fsanitize=undefined -fno-sanitize-recover=all' (empirically confirms the int32 slew arithmetic bounds).",
+        "Mutation [instant] (arming block replaced by integral_term = midpoint): DETECTED, exit 1. First divergence at the crossing-1 tick: fw=10749 sim=43996, fwI=26014400 (instant jump) vs simI=94104704 (one slew step); probe also reports 'slew not armed at exactly the rail: active=0 dir=0 target=0'.",
+        "Mutation [rate] (INTEGRAL_GATE_SLEW_SHIFT 4 -> 2): DETECTED, exit 1. The differential itself stays matched (both sides share the extracted define -- by design), and the literal-4 probe pin catches it: first divergence at the crossing-1 tick 'I=74443904 want 94104704' and 'slew rate wrong at tick 2: dI=26414400 want 6553600 + 200000 (SLEW_SHIFT retuned?)'.",
+        "Mutation [abandon] (integration-path integral_gate_slew_active = 0 line removed): DETECTED, exit 1 (2 mismatches). First divergence at the scenario-(b) abandon tick via the per-tick state comparison: fwSlewActive=1 vs simSlewActive=0 with identical I=-10000000, plus the explicit 'slew not ABANDONED at freeze expiry' probe message.",
+        "Commands to reproduce: cd /Users/tom/Documents/Move_the_Needle/Servomotor/c_test_programs && ./test_pid_differential.sh (pristine); PID_SRC=<mutant.c> ./test_pid_differential.sh (mutants, with motor_control.h copied next to the mutant -- pre-existing harness requirement for the DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT extraction). Mutants kept in /private/tmp/claude-501/-Users-tom-Documents-Move-the-Needle-Servomotor-firmware/74e569b6-9702-4e05-a09d-9f128c5923f8/scratchpad/slewmirror/differential/ (mutant_instant.c, mutant_rate.c, mutant_abandon.c, mutant_nodefine.c)."
+      ]
+    },
+    "overflow": {
+      "summary": "test_pid_overflow.c's int64 shadow model now mirrors the fw 0.15.4.2 slew-only delta exactly (slew arming at crossings with post-stale-clamp midpoint comparison, bounded slew step full>>4 floor 1 with the reduce-only parallel unwind on every slew tick including termination ticks, reach-or-pass / snap-exact terminations, abandon-without-jump as the integration path's first act, recompute zeroing target/dir/active — NO wind cap anywhere). The .sh define extraction was confirmed to emit INTEGRAL_GATE_SLEW_SHIFT 4 under #ifdef PRODUCT_NAME_M17 only. Added 8 slew coverage counters (armed/rearm-in-flight/noarm-midpoint-eq/steps/completed/passed/abandoned/parallel-unwind) required nonzero on M17 and required zero on M23 and M1/M2, plus a deterministic phase-5f walk (kp=2000/ki=25000/V=200) that pins each sub-scenario with a required counter delta: stale-clamp arm, re-arm during an active slew, snap-complete, unwind-overtakes reach-or-pass, a 3124-tick deadband(-999) stall that forces a freeze-expiry abandon, midpoint==I no-arm, and recompute mid-slew (slew-active premise asserted, re-arm zeroing asserted in set_constants); near-cap |error*ki|=1.5e9 lands inside the slew parallel unwind via the existing 5e(v). Meta-test passed, 4 shadow mutations (instant-assign, no-abandon, no-parallel-unwind, always-arm) all correctly FAILED the harness, and the FULL 3-product run PASSED: 1,419,310,316 ticks per set, 0 UBSan reports, 0 shadow mismatches, 79.7 s wall.",
+      "verdict": "PASS",
+      "details": [
+        "Files changed: /Users/tom/Documents/Move_the_Needle/Servomotor/c_test_programs/test_pid_overflow.c (shadow-model delta, slew statics, coverage counters, phase 5f, banner now prints slew-shift=4) and /Users/tom/Documents/Move_the_Needle/Servomotor/c_test_programs/test_pid_overflow.sh (display-only: tail -12 -> tail -16 so the wider per-set report fits; extraction untouched). Firmware sources not touched; firmware confirmed at 0.15.4.2 in Src/main.c.",
+        "Define extraction confirmed: the existing extract_defines awk emits '#ifdef PRODUCT_NAME_M17 / #define INTEGRAL_GATE_SLEW_SHIFT 4 / #endif' (verified by running the extractor standalone; also emits the two authority-cap branches and the three gate-tuning defines correctly wrapped). No wind-cap define exists in the firmware, matching the rejected-M11 history.",
+        "Baseline honesty check: the pre-edit harness FAILS to compile against 0.15.4.2 (undeclared integral_gate_slew_target/dir/active referenced by the verbatim-extracted firmware), proving the update was load-bearing.",
+        "Shadow delta ported with same order of operations: crossing computes midpoint (int64 >>1), stale-clamps it, THEN compares to I; unequal arms target/dir=(midpoint>I)?1:-1/active (never disarms on equal — an in-flight slew keeps its old target); lastx keeps the pre-correction sample; freeze slew branch does done-check (dir>0 ? remaining<=0 : remaining>=0), +/-step, or snap-to-target, then ALWAYS applies the parallel inward-only floor-at-0 unwind (error*ki), incl. on termination ticks; integration path clears slew_active first (abandon). int32-fit fail() checks added for remaining, slewed+/-step, and the slew parallel-unwind sum; set_constants asserts recompute zeroes slew state; reset_state mirrors the three reset sites; post-tick compares all three new statics.",
+        "Mutation verification (PID_SRC override, M17 --quick, 201,636,328 ticks each): A instant-assignment instead of slew -> 23,646,599 invariant failures; B abandon removed -> exactly 1 failure, caught precisely at the 5f(v) expiry tick ('gate slew_active (1 vs 0)', proving the deterministic abandon scenario is the load-bearing detector); C parallel unwind removed -> 3,227,108 failures; E always-arm (midpoint==I) -> 7,727 failures. All OVERALL: FAILED as required. Meta-test (known int32 overflow detected by UBSan) passed on every invocation.",
+        "Hand-analysis correction found during mutation B triage: while the gate holds I at the full rail with kp=2000/V=200, the output back-calculation settles end-of-tick I at 98,856,960 (not 104,857,600), shifting the walk's midpoints (58,080,160 / 29,040,080...). Phase 5f comments use the corrected numbers and every sub-scenario is now pinned by REQUIRE_5F_DELTA on its counter, so drift cannot silently defeat the walk.",
+        "FULL run (./test_pid_overflow.sh, meta-test + 3 product sets): wall time 79.7 s (76.4 s user). Requirement met: 0 UBSan runtime errors (0 'runtime error' lines in the full log), 0 shadow mismatches, 0 invariant failures. OVERALL: PASSED.",
+        "Per-set: M17 (shift 11, gate ON, authority cap 500e6, slew-shift 4): 1,419,310,316 ticks, 0 failures; peak |I+P+D+half| = 1,494,360,264 < 2^31; ki-cap checked on 39,092 configs; 1,328,566,080 int32-range-checked integration steps; gate coverage: above-rail 137,188,710, crossings 153,566,855, gate-open 188,445,952, freeze 493,115,566, hold-excess 204,489, inward-above 1,576,435, stale crossings 39,910 (elapsed-counter 290), midpoint clamps 2,351, freeze-unwind steps 78,565,508.",
+        "M17 slew counters (all required nonzero): armed=77,076,091 (rearm-in-flight=14,698, noarm-midpoint-eq=76,490,764), steps=418,676, completed=77,036,073, passed=25,301, abandoned=1 (only the deterministic 5f(v) stall produces it — hence the pin), parallel-unwind=8,864,159.",
+        "M23 (shift 14, gate OFF): 1,419,310,316 ticks, 0 failures, peak sum 1,799,653,980; M1/M2 (shift 18, M2 prescale): 1,419,310,316 ticks, 0 failures, peak sum 1,799,776,860; on both, the new non-M17 check asserts all 8 slew counters are ZERO (passed), and the script's 'windup gate: OFF' marker check passed.",
+        "Scratch artifacts (mutants, extraction, full logs): /private/tmp/claude-501/-Users-tom-Documents-Move-the-Needle-Servomotor-firmware/74e569b6-9702-4e05-a09d-9f128c5923f8/scratchpad/slewmirror/overflow/ (mut_A_instant.c, mut_B_noabandon.c, mut_C_nounwind.c, mut_E_alwaysarm.c, full_run_final.log). Nothing committed to git."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Mirror"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "mirror:differential",
+      "phaseIndex": 1,
+      "phaseTitle": "Mirror",
+      "agentId": "a2e4e7b96b9d5958b",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1783920033584,
+      "queuedAt": 1783920023904,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Updated the reference model in c_test_programs/test_pid_dif…",
+      "promptPreview": "CONTEXT — firmware/Src/motor_control.c went 0.15.4.1 -> 0.15.4.2 (uncommitted): the M17 zero-cross integral gate gained SLEW-ONLY torque smoothing. IMPORTANT HISTORY: the original design (slew + an above-rail wind cap \"M11\") was REJECTED by adversarial verification (the wind cap breaks heavy-load holding); the firmware contains ONLY the slew. The sim keeps BOTH flags for research; firmware semanti…",
+      "lastProgressAt": 1783921828514,
+      "tokens": 131504,
+      "toolCalls": 31,
+      "durationMs": 1794930,
+      "resultPreview": "{\"summary\":\"Updated the reference model in c_test_programs/test_pid_differential.sh to the exact 0.15.4.2 slew-only delta (arm-on-crossing, slew+parallel-unwind in the freeze, abandon-without-jump at expiry; NO wind cap), added the 3 slew statics to the firmware stubs and the per-tick state comparison, added a loud INTEGRAL_GATE_SLEW_SHIFT extraction check, and extended the gate probe with determi…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "mirror:overflow",
+      "phaseIndex": 1,
+      "phaseTitle": "Mirror",
+      "agentId": "acb35d57390b1c808",
+      "model": "claude-fable-5",
+      "state": "done",
+      "startedAt": 1783920027280,
+      "queuedAt": 1783920023904,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "test_pid_overflow.c's int64 shadow model now mirrors the fw…",
+      "promptPreview": "CONTEXT — firmware/Src/motor_control.c went 0.15.4.1 -> 0.15.4.2 (uncommitted): the M17 zero-cross integral gate gained SLEW-ONLY torque smoothing. IMPORTANT HISTORY: the original design (slew + an above-rail wind cap \"M11\") was REJECTED by adversarial verification (the wind cap breaks heavy-load holding); the firmware contains ONLY the slew. The sim keeps BOTH flags for research; firmware semanti…",
+      "lastProgressAt": 1783921739654,
+      "tokens": 166102,
+      "toolCalls": 38,
+      "durationMs": 1712374,
+      "resultPreview": "{\"summary\":\"test_pid_overflow.c's int64 shadow model now mirrors the fw 0.15.4.2 slew-only delta exactly (slew arming at crossings with post-stale-clamp midpoint comparison, bounded slew step full>>4 floor 1 with the reduce-only parallel unwind on every slew tick including termination ticks, reach-or-pass / snap-exact terminations, abandon-without-jump as the integration path's first act, recomput…"
+    }
+  ],
+  "totalTokens": 297606,
+  "totalToolCalls": 69
+}

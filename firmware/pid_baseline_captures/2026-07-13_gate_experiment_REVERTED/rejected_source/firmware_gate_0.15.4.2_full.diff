@@ -1,0 +1,412 @@
+diff --git a/firmware/Src/main.c b/firmware/Src/main.c
+index 5ed6aeb..9d16330 100644
+--- a/firmware/Src/main.c
++++ b/firmware/Src/main.c
+@@ -68,8 +68,8 @@ struct __attribute__((__packed__)) firmware_version_struct {
+ };
+ #define MAJOR_FIRMWARE_VERSION 0
+ #define MINOR_FIRMWARE_VERSION 15
+-#define BUGFIX_FIRMWARE_VERSION 3
+-#define DEVELOPMENT_FIRMWARE_VERSION 4 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
++#define BUGFIX_FIRMWARE_VERSION 4
++#define DEVELOPMENT_FIRMWARE_VERSION 2 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+ struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
+ 
+ #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
+diff --git a/firmware/Src/motor_control.c b/firmware/Src/motor_control.c
+index d013e39..06cb135 100644
+--- a/firmware/Src/motor_control.c
++++ b/firmware/Src/motor_control.c
+@@ -2110,9 +2110,21 @@ static int32_t proportional_constant_pid = 0;
+ static int32_t integral_constant_pid = 0;
+ static int32_t derivative_constant_pid_scaled_for_averaging = 0;
+ static int32_t max_integral_term = 0;
++static int32_t max_integral_term_full = 0; // gate-open integral limit: full authority on M17, == max_integral_term on other products
+ static int32_t max_error = 0;
+ static int32_t max_error_change = 0;
+ static int32_t pid_output_limit = 0;
++#ifdef PRODUCT_NAME_M17
++// State of the zero-crossing windup gate (see the block comment in PID_controller)
++static int32_t integral_gate_prev_sign = 0;           // -1/0/+1: sign of the last error seen outside the deadband
++static int32_t integral_gate_same_sign_ticks = 0;     // how long the error has kept that sign (saturates at the holdoff)
++static int32_t integral_gate_freeze_ticks = 0;        // remaining ticks of the post-crossing integration pause
++static int32_t integral_gate_last_cross_integral = 0; // integral_term captured at the previous zero crossing
++static int32_t integral_gate_ticks_since_cross = INT32_MAX; // saturating; INT32_MAX = no crossing yet (stale)
++static int32_t integral_gate_slew_target = 0;  // where an in-flight crossing correction is headed
++static int32_t integral_gate_slew_dir = 0;     // original correction direction (+1/-1)
++static int32_t integral_gate_slew_active = 0;  // a correction is slewing (only during the freeze)
++#endif
+ 
+ // The integral term is clamped to this fraction of the full output authority (as a right
+ // shift: 2 -> 25%). This is the primary anti-windup measure: it bounds the stale "debt"
+@@ -2130,18 +2142,56 @@ static int32_t pid_output_limit = 0;
+ // change to this math. The bound derivation:
+ //   - the error fed to the PID is clamped to +/-2^29 counts on entry, so the derivative's
+ //     (error - previous_error) fits comfortably in int32,
+-//   - the "authority" (max PWM voltage << (PID_SHIFT_RIGHT + FUDGE_SHIFT)) is capped at
+-//     800e6, so the P term (<= authority), the D term (<= authority via the
+-//     max_error_change relation, or <= 768e6 when the 2e6 cap binds), the I term
+-//     (<= authority >> 2) and the rounding half-LSB sum to at most ~1.8e9 < 2^31,
++//   - the "authority" (max PWM voltage << (PID_SHIFT_RIGHT + FUDGE_SHIFT)) is capped so
++//     that the P term (<= authority), the D term (<= authority via the max_error_change
++//     relation, or <= 768e6 when the 2e6 cap binds), the I term and the rounding half-LSB
++//     sum to under 2^31. On M17 the zero-crossing windup gate can legitimately raise the
++//     I term to the FULL authority, so the cap is 500e6 there (sum 3*500e6 = 1.5e9); the
++//     legal M17 max PWM voltage is 390, so real authority never exceeds 390<<19 = 204.5e6
++//     and the lower cap costs nothing. Other products keep 800e6 (their raw authority is
++//     4e9-20e9, so the cap actively BINDS and lowering it would silently retune them)
++//     with I <= authority>>2 (sum ~1.8e9),
+ //   - max_error_change is capped at 2e6 so the derivative filter state (<= 32x that)
+ //     survives its decay multiply by 31 (64e6 * 31 = 1.98e9 < 2^31),
+ //   - the integral constant is capped so that one integration step from a fully-railed
+ //     integrator cannot exceed int32 before the clamp is applied.
+ #define PID_ERROR_INPUT_CLAMP            (1 << 29)
++#ifdef PRODUCT_NAME_M17
++#define PID_MAX_AUTHORITY_PRE_SHIFT      500000000
++#else
+ #define PID_MAX_AUTHORITY_PRE_SHIFT      800000000
++#endif
+ #define PID_MAX_ERROR_CHANGE             2000000
+ 
++#ifdef PRODUCT_NAME_M17
++// Zero-crossing windup gate tuning (design + sim validation: PID_IMPROVEMENT_PLAN.md
++// section 17; prototype archived in pid_baseline_captures/2026-07-11_load_holding_study/).
++// The holdoff must exceed the stick-slip limit cycle's half-period (~29 ms measured at
++// 17-22 Hz) or the cycle's one-signed half-waves could open the gate -- do not reduce it
++// below ~1500 ticks. The deadband is the terminal accuracy window: a friction-breakaway
++// hop must be able to land inside it (bench hop quantum ~2000 counts -> deadband >= half
++// of that; 1000 was validated across ki 5..100 where 500 hunts at ki <= 10).
++#define INTEGRAL_GATE_HOLDOFF_TICKS      3125   // 0.1 s at the 31.25 kHz PID rate
++#define INTEGRAL_GATE_DEADBAND           1000   // counts (0.031% of a revolution)
++// A crossing whose previous crossing is older than this is a RELEASE (or first-ever)
++// event, not part of a hold-acquisition bounce sequence (those repeat every ~0.1-0.3 s):
++// the midpoint would be computed against a stale sample, so it is clamped to the 25%
++// rail instead -- the stored charge belongs to a load that is gone. The threshold is
++// uncritical (2x holdoff and 10x holdoff validated identical in the sim).
++#define INTEGRAL_GATE_STALE_TICKS        (INTEGRAL_GATE_HOLDOFF_TICKS * 2)
++// Torque-smoothness bound (bench finding 2026-07-13: hands-on interaction felt jerky
++// because crossing corrections reassigned the integral INSTANTLY -- up to a full
++// rail-to-rail torque reversal in one 32 us tick). Crossing/stale corrections now SLEW
++// to their target at (full authority >> SLEW_SHIFT) per tick. Validated as the slew-only
++// composition of the sim smoothing study (PID_IMPROVEMENT_PLAN.md section 22): the value
++// is a hard cliff -- slew shifts >= 5 hunt d-shift-7 holds; rerun the study before
++// changing. NOTE: an above-rail windup rate cap ("M11") was designed as a companion and
++// REJECTED by adversarial verification: it equilibrates against the back-calculation
++// drain and caps holding torque at ~68% of the rail for loads >= 0.26 N*m (parks ~8
++// degrees off, permanently) -- do not add a wind cap without solving that interaction.
++#define INTEGRAL_GATE_SLEW_SHIFT         4
++#endif
++
+ 
+ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_voltage, uint16_t new_max_motor_regen_pwm_voltage)
+ {
+@@ -2167,6 +2217,15 @@ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_vol
+     }
+     int64_t new_derivative_constant_pid_scaled_for_averaging = (d64 >> DERIVATIVE_CONSTANT_AVERAGING_SCALAR_SHIFT);
+     int64_t new_max_integral_term = authority >> INTEGRAL_TERM_AUTHORITY_SHIFT;
++#ifdef PRODUCT_NAME_M17
++    // The windup gate may raise the integral all the way to the full authority while the
++    // error keeps one sign; every bound that must hold for a "fully railed" integrator
++    // (the ki cap below, the back-calculation clamps, the re-clamp on constants change)
++    // therefore uses this FULL limit, not the 25% rail.
++    int64_t new_max_integral_term_full = authority;
++#else
++    int64_t new_max_integral_term_full = new_max_integral_term;
++#endif
+     // The anti-windup saturation point: beyond this output, neither the commutation angle
+     // nor the PWM voltage can increase any further (M17 semantics; on the other products
+     // this limit is at or above the callers' own clamps, so it only makes the anti-windup
+@@ -2188,7 +2247,7 @@ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_vol
+         }
+     }
+     // Cap the integral constant so that one integration step from a fully-railed
+-    // integrator ((max_integral_term + max_error * ki) at its worst) still fits in int32
++    // integrator ((max_integral_term_full + max_error * ki) at its worst) still fits in int32
+     // before the clamp is applied. The largest error that can actually reach the
+     // integration step is bounded by BOTH the max_error clamp and the +/-2^29 input
+     // clamp, so use the smaller of the two (otherwise a small/zero kP -- which makes
+@@ -2199,7 +2258,7 @@ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_vol
+         effective_max_error = PID_ERROR_INPUT_CLAMP;
+     }
+     if (effective_max_error > 0) {
+-        int64_t ki_max = ((int64_t)INT32_MAX - new_max_integral_term) / effective_max_error;
++        int64_t ki_max = ((int64_t)INT32_MAX - new_max_integral_term_full) / effective_max_error;
+         if (ki_capped > ki_max) {
+             ki_capped = ki_max;
+         }
+@@ -2210,6 +2269,7 @@ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_vol
+     derivative_constant_pid_scaled_for_averaging = (int32_t)new_derivative_constant_pid_scaled_for_averaging;
+     max_error = (int32_t)new_max_error;
+     max_integral_term = (int32_t)new_max_integral_term;
++    max_integral_term_full = (int32_t)new_max_integral_term_full;
+     max_error_change = (int32_t)new_max_error_change;
+     pid_output_limit = (int32_t)new_pid_output_limit;
+     max_motor_pwm_voltage = new_max_motor_pwm_voltage;
+@@ -2223,12 +2283,27 @@ void recompute_pid_parameters_and_set_pwm_voltage(uint16_t new_max_motor_pwm_vol
+     // an avoidable one-tick derivative kick (up to ~3% of full output) on every
+     // Set-PID-constants / Set-maximum-motor-current sent during motion.
+     low_pass_filtered_error_change = 0;
+-    if (integral_term > max_integral_term) {
+-        integral_term = max_integral_term;
++    if (integral_term > max_integral_term_full) {
++        integral_term = max_integral_term_full;
+     }
+-    else if (integral_term < -max_integral_term) {
+-        integral_term = -max_integral_term;
++    else if (integral_term < -max_integral_term_full) {
++        integral_term = -max_integral_term_full;
+     }
++#ifdef PRODUCT_NAME_M17
++    // Re-arm the windup gate: the limit falls back to the 25% rail until the error keeps
++    // one sign for the holdoff again, but an integral legitimately above the rail is NOT
++    // slammed down (clamped only to the new FULL limit above; the gated integration step
++    // then allows it to move inward only), so a constants change during load holding does
++    // not produce a torque step.
++    integral_gate_prev_sign = 0;
++    integral_gate_same_sign_ticks = 0;
++    integral_gate_freeze_ticks = 0;
++    integral_gate_last_cross_integral = 0;
++    integral_gate_ticks_since_cross = INT32_MAX;
++    integral_gate_slew_target = 0;
++    integral_gate_slew_dir = 0;
++    integral_gate_slew_active = 0;
++#endif
+     __enable_irq();
+ }
+ 
+@@ -2354,6 +2429,152 @@ int32_t PID_controller(int64_t error_i64)
+         error = max_error;
+     }
+     if (integral_constant_pid != 0) {
++#ifdef PRODUCT_NAME_M17
++        // Zero-crossing-gated integral windup (PID_IMPROVEMENT_PLAN.md section 17).
++        // The 25% integral rail (max_integral_term) is what keeps stick-slip limit cycles
++        // dead, but it also caps the torque the loop can sustain at a SMALL position error.
++        // A persistently one-signed error (holding an external load) is exactly the case
++        // where more integral is safe, while an error that keeps crossing zero is the
++        // signature of oscillation. So: once the error has kept one sign (beyond a small
++        // deadband) for the holdoff time, the integral may wind toward the FULL authority;
++        // on each zero crossing it is set to the midpoint of its values at the last two
++        // crossings -- the static-friction band is symmetric about the true holding torque,
++        // so successive crossing values bracket it and the midpoint self-tunes -- and
++        // integration pauses for the holdoff.
++        int32_t gate_sign = 0;
++        if (error > INTEGRAL_GATE_DEADBAND) {
++            gate_sign = 1;
++        }
++        else if (error < -INTEGRAL_GATE_DEADBAND) {
++            gate_sign = -1;
++        }
++        int32_t crossed = 0;
++        if (gate_sign != 0) { // inside the deadband the gate state neither advances nor resets
++            if (gate_sign == integral_gate_prev_sign) {
++                if (integral_gate_same_sign_ticks < INTEGRAL_GATE_HOLDOFF_TICKS) {
++                    integral_gate_same_sign_ticks++;
++                }
++            }
++            else {
++                crossed = (integral_gate_prev_sign != 0);
++                integral_gate_prev_sign = gate_sign;
++                integral_gate_same_sign_ticks = 0;
++            }
++        }
++        int32_t integral_limit = (integral_gate_same_sign_ticks >= INTEGRAL_GATE_HOLDOFF_TICKS) ? max_integral_term_full : max_integral_term;
++        int32_t stale_cross = 0;
++        if (crossed) {
++            stale_cross = (integral_gate_ticks_since_cross > INTEGRAL_GATE_STALE_TICKS);
++            integral_gate_ticks_since_cross = 0;
++        }
++        else if (integral_gate_ticks_since_cross < INT32_MAX) {
++            integral_gate_ticks_since_cross++;
++        }
++        if (crossed) {
++            int32_t previous_integral = integral_term;
++            int32_t midpoint = (int32_t)(((int64_t)integral_term + integral_gate_last_cross_integral) >> 1); // int64 sum: each operand is bounded by the full authority (<= 500e6) so the int32 sum could not overflow today, but the int64 keeps that true even if the cap is ever raised
++            if (stale_cross) {
++                // the previous crossing is too old to describe the current oscillation --
++                // this crossing is a release (or first) event, so the midpoint would carry
++                // the charge of a load that no longer exists; clamp it to the 25% rail
++                if (midpoint > max_integral_term) {
++                    midpoint = max_integral_term;
++                }
++                else if (midpoint < -max_integral_term) {
++                    midpoint = -max_integral_term;
++                }
++            }
++            if (midpoint != integral_term) {
++                // No instantaneous assignment (a full correction is a rail-to-rail torque
++                // step in one tick -- feels like a jerk under a hand): the correction
++                // becomes a TARGET and the integral slews there during the freeze. The
++                // crossing SAMPLE recorded for the next midpoint stays the pre-correction
++                // value, exactly as in the instant version.
++                integral_gate_slew_target = midpoint;
++                integral_gate_slew_dir = (midpoint > integral_term) ? 1 : -1;
++                integral_gate_slew_active = 1;
++            }
++            integral_gate_last_cross_integral = previous_integral;
++            integral_gate_freeze_ticks = INTEGRAL_GATE_HOLDOFF_TICKS;
++        }
++        if (integral_gate_freeze_ticks > 0) {
++            integral_gate_freeze_ticks--;
++            if (integral_gate_slew_active) {
++                // Move the integral toward the crossing-correction target at a bounded
++                // rate, with the release unwind running IN PARALLEL on top of each step
++                // (so a release discharge is never slower than the instant version). The
++                // slew ends when the integral reaches or PASSES the target in the original
++                // correction direction (no snap-back when the unwind overtakes it). All
++                // int32: |target - I| <= 2x full authority <= 1e9 < 2^31.
++                int32_t slew_step = max_integral_term_full >> INTEGRAL_GATE_SLEW_SHIFT;
++                if (slew_step < 1) {
++                    slew_step = 1;
++                }
++                int32_t slewed = integral_term;
++                int32_t remaining = integral_gate_slew_target - slewed;
++                if ((integral_gate_slew_dir > 0) ? (remaining <= 0) : (remaining >= 0)) {
++                    integral_gate_slew_active = 0; // reached or passed: done
++                }
++                else if (remaining > slew_step) {
++                    slewed += slew_step;
++                }
++                else if (remaining < -slew_step) {
++                    slewed -= slew_step;
++                }
++                else {
++                    slewed = integral_gate_slew_target;
++                    integral_gate_slew_active = 0;
++                }
++                int32_t unwound_integral = slewed + error * integral_constant_pid; // ki cap bounds this
++                if (slewed > 0 && unwound_integral < slewed) {
++                    slewed = (unwound_integral < 0) ? 0 : unwound_integral;
++                }
++                else if (slewed < 0 && unwound_integral > slewed) {
++                    slewed = (unwound_integral > 0) ? 0 : unwound_integral;
++                }
++                integral_term = slewed;
++            }
++            else {
++                // The freeze exists to stop RE-charging during the post-crossing
++                // oscillation, not to lock in a stale charge: integration steps that
++                // REDUCE |I| are applied (floored at zero so the freeze still blocks
++                // winding up the other direction). Without this, a released hand/load
++                // leaves a large frozen integral pushing the rotor through the target
++                // for the whole 0.1 s freeze (bench finding 2026-07-13).
++                int32_t unwound_integral = integral_term + error * integral_constant_pid; // same product as the normal step; the ki cap bounds it
++                if (integral_term > 0 && unwound_integral < integral_term) {
++                    integral_term = (unwound_integral < 0) ? 0 : unwound_integral;
++                }
++                else if (integral_term < 0 && unwound_integral > integral_term) {
++                    integral_term = (unwound_integral > 0) ? 0 : unwound_integral;
++                }
++            }
++        }
++        else {
++            integral_gate_slew_active = 0; // freeze expired before the target was reached: abandon without a jump
++            int32_t new_integral = integral_term + error * integral_constant_pid; // cannot overflow: ki is capped so that (full rail + max_error * ki) fits in int32
++            if (new_integral > integral_limit) {
++                if (new_integral < integral_term) {
++                    integral_term = new_integral; // above the limit but unwinding: always allowed
++                }
++                else if (integral_term < integral_limit) {
++                    integral_term = integral_limit;
++                }
++                // else: already above a just-lowered limit and winding outward: hold the excess
++            }
++            else if (new_integral < -integral_limit) {
++                if (new_integral > integral_term) {
++                    integral_term = new_integral;
++                }
++                else if (integral_term > -integral_limit) {
++                    integral_term = -integral_limit;
++                }
++            }
++            else {
++                integral_term = new_integral;
++            }
++        }
++#else
+         integral_term += error * integral_constant_pid;
+         if(integral_term > max_integral_term) {
+             integral_term = max_integral_term;
+@@ -2361,6 +2582,7 @@ int32_t PID_controller(int64_t error_i64)
+         else if(integral_term < -max_integral_term) {
+             integral_term = -max_integral_term;
+         }
++#endif
+     }
+     else {
+         integral_term = 0;
+@@ -2373,21 +2595,25 @@ int32_t PID_controller(int64_t error_i64)
+     // apply (pid_output_limit), bleed the excess back out of the integrator so it cannot
+     // accumulate a large stale value ("windup") while the output is saturated. The
+     // correction math fits in int32 because of the PID_MAX_* caps established in
+-    // recompute_pid_parameters_and_set_pwm_voltage: |I|+|P|+|D|+half <= ~1.8e9, so
+-    // |output_value| <= ~880e3 and |excess * 2^PID_SHIFT_RIGHT| <= ~1.81e9 < 2^31
+-    // (verified exhaustively by c_test_programs/test_pid_overflow.sh under UBSan).
++    // recompute_pid_parameters_and_set_pwm_voltage: |I|+|P|+|D|+half <= ~1.5e9 on M17
++    // (authority cap 500e6, I up to the FULL authority through the windup gate) and
++    // <= ~1.8e9 on the other products, so |output_value| <= ~880e3 and
++    // |excess * 2^PID_SHIFT_RIGHT| <= ~1.81e9 < 2^31 (verified exhaustively by
++    // c_test_programs/test_pid_overflow.sh under UBSan). The clamps use the FULL integral
++    // limit: clamping to the 25% rail here would slam a legitimately gate-wound integral
++    // on any transient D-spike saturation and drop the holding torque.
+     if (output_value > pid_output_limit) {
+         int32_t corrected_integral = integral_term - ((output_value - pid_output_limit) * (1 << PID_SHIFT_RIGHT)); // multiply rather than left-shift: shifting a negative value is undefined behavior in C
+-        if (corrected_integral < -max_integral_term) {
+-            corrected_integral = -max_integral_term;
++        if (corrected_integral < -max_integral_term_full) {
++            corrected_integral = -max_integral_term_full;
+         }
+         integral_term = corrected_integral;
+         output_value = pid_output_limit;
+     }
+     else if (output_value < -pid_output_limit) {
+         int32_t corrected_integral = integral_term - ((output_value + pid_output_limit) * (1 << PID_SHIFT_RIGHT)); // multiply rather than left-shift: shifting a negative value is undefined behavior in C
+-        if (corrected_integral > max_integral_term) {
+-            corrected_integral = max_integral_term;
++        if (corrected_integral > max_integral_term_full) {
++            corrected_integral = max_integral_term_full;
+         }
+         integral_term = corrected_integral;
+         output_value = -pid_output_limit;
+@@ -3222,6 +3448,16 @@ void zero_position(void)
+     integral_term = 0;
+     previous_error = 0;
+     low_pass_filtered_error_change = 0;
++#ifdef PRODUCT_NAME_M17
++    integral_gate_prev_sign = 0;
++    integral_gate_same_sign_ticks = 0;
++    integral_gate_freeze_ticks = 0;
++    integral_gate_last_cross_integral = 0;
++    integral_gate_ticks_since_cross = INT32_MAX;
++    integral_gate_slew_target = 0;
++    integral_gate_slew_dir = 0;
++    integral_gate_slew_active = 0;
++#endif
+     __enable_irq();
+ }
+ 
+@@ -3620,6 +3856,16 @@ void motor_control_simulator_init(void)
+     integral_term = 0;
+     previous_error = 0;
+     low_pass_filtered_error_change = 0;
++#ifdef PRODUCT_NAME_M17
++    integral_gate_prev_sign = 0;
++    integral_gate_same_sign_ticks = 0;
++    integral_gate_freeze_ticks = 0;
++    integral_gate_last_cross_integral = 0;
++    integral_gate_ticks_since_cross = INT32_MAX;
++    integral_gate_slew_target = 0;
++    integral_gate_slew_dir = 0;
++    integral_gate_slew_active = 0;
++#endif
+     min_PID_error = 2147483647;
+     max_PID_error = -2147483648;
+     
+@@ -3655,6 +3901,7 @@ void motor_control_simulator_init(void)
+     integral_constant_pid = 0;
+     derivative_constant_pid_scaled_for_averaging = 0;
+     max_integral_term = 0;
++    max_integral_term_full = 0;
+     max_error = 0;
+     max_error_change = 0;
+     
