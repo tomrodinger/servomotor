@@ -19,8 +19,11 @@ since been fixed and tested.
 
 ## STATUS UPDATE 2026-07-30 — two items FIXED
 
-Both of the items called out as highest-value have been fixed and tested on the bench
-(ESP32-S3 + M17 motor). The rest of this document is unchanged and still open.
+Both of the items called out as highest-value have been fixed, tested on the bench
+(ESP32-S3 + M17 motor) and SHIPPED as Arduino library v0.10.1 — verified live in the Arduino
+Library Manager index on 2026-07-31, with the served ZIP confirmed to contain the fix.
+The rest of this document is unchanged and still open; the top remaining item is the firmware
+compute_trapezoid_move divide-by-zero in section 2.1, which needs a bench probe.
 
 - **3.1 Arduino receive hang — FIXED.** Reproduced deterministically first, then fixed.
   `Communication.cpp` now computes the remaining receive budget through

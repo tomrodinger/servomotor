@@ -3,8 +3,9 @@
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 
-Last updated: 2026-07-29 (Arduino documentation overhaul — see the section
-immediately below; open items in DOC_VERIFICATION_FINDINGS_2026-07-29.md)
+Last updated: 2026-07-31 (Arduino library 0.10.1 shipped — see the section immediately
+below. Remaining open items in DOC_VERIFICATION_FINDINGS_2026-07-29.md; the top one is the
+firmware compute_trapezoid_move divide-by-zero, which needs a bench probe.)
 
 Previous update: 2026-07-20 (AI-docs accuracy project: massive July work is DONE
 but UNCOMMITTED — firmware releases 0.15.4.0 through 0.15.8.0 (bug fixes
@@ -48,6 +49,31 @@ DONE and pushed to origin/main (`1b56b63`, `1d159c3`, `36c387b`):
 - [x] `example_trapezoid_move.cpp` checks `getError()` after every call (compiles
       for esp32s3). `Arduino_library/README.md` class name fixed — it said
       `ServoMotor`, which is a different library, so its sample never compiled.
+
+## 2026-07-30/31 — Arduino library 0.10.1 SHIPPED
+
+Both bugs from the verification sweep are fixed, tested on the bench and PUBLISHED.
+
+- [x] **Receive hang on a truncated reply** — reproduced first (deterministic, no hardware),
+      then fixed at both ends: the remaining-budget helper saturates at zero instead of
+      wrapping unsigned, and `receiveBytes()` clamps a negative budget and compares
+      unsigned-vs-unsigned. Fixing only that traded the freeze for a POISONED NEXT COMMAND
+      (leftovers of the abandoned frame read as the next reply's size byte -> spurious -7),
+      so the error path now calls `discardPartialFrame()`.
+- [x] **'Go to closed loop' false error-22 claim on M17** — corrected in motor_commands.json,
+      library + both API documents regenerated.
+- [x] Regression tests, both verified to FAIL before the fix and PASS after:
+      `Servomotor_TestSuite_ESP32S3/truncated_frame_test.cpp` (+ runner, 4 cases, no hardware)
+      and `python_programs/test_host_command_description_accuracy.py`.
+- [x] Full battery: on-device 63/63 modules / 1042 assertions / 0 crashed (14m12s);
+      host-only 8/8; transport 4/4; example compiles for esp32s3.
+- [x] Published: mirror tag `v0.10.1`, `arduino-lint --library-manager update --compliance
+      strict` clean, GitHub Releases backfilled for v0.9.2 / v0.10.0 / v0.10.1.
+      **Verified live in the Arduino index 2026-07-31** — the served ZIP contains the fix.
+- [x] API docs also updated for servomotor 0.12.2 (SERVOMOTOR_PORT + per-user config dir),
+      which had gone stale one commit after being written.
+
+Commits: 7a29069 (fix + tests), d3510b8 (0.12.2 doc update). Both on origin/main.
 
 **▶ OPEN ITEMS from that work are in `DOC_VERIFICATION_FINDINGS_2026-07-29.md`** —
 32 agents re-verified every claim against source, and found rather more than the
