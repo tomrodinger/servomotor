@@ -1281,3 +1281,13 @@ promising):**
 Everything else in §17–§22 remains valid and useful: the load-holding physics (§17), the
 per-load tuning table and the braking-window / D-noise-ceiling architecture findings (§21),
 the large-inertia ballistics (§20), and the return-speed law (cruise ≈ authority/kD; §22).
+
+## 24. What came after (pointer)
+
+The next campaign (2026-07-15 → 2026-07-20) attacked the hold whine under compliant loads:
+current floor, velocity observer + output pole, sliding-surface landing law, and a large set
+of bench-nulled interventions. It ended paused at a dead end. The full record — the measured
+onset/frequency laws, the complete tried-and-failed table, the sim-credibility postmortem,
+and the resume plan — is in **`PID_WHINE_CAMPAIGN_2026-07.md`**. The experiment code lives on
+branch `pid-current-floor`; nothing from it ships. The prior research sweep that reframed the
+problem is `PID_RESEARCH_2026-07-14.md`.
