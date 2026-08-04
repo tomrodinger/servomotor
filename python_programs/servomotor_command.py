@@ -16,7 +16,7 @@ def main() -> int:
     parser.add_argument('-v', '--verbose', help='equivalent to --verbose-level 2', action="store_true")
     parser.add_argument('--verbose-level', type=int, choices=[0, 1, 2], help='Set verbosity level (0: no output, 1: minimal output, 2: detailed output)', default=None)
     parser.add_argument('command',
-                        help='This is the command to be sent to the motor. For example ENABLE_MOSFETS_COMMAND. Run this program with the -c option to see all supported commands.',
+                        help='This is the command to be sent to the motor. For example enable_mosfets (names are matched ignoring case, spaces and underscores, and carry no _COMMAND suffix). Run this program with the -c option to see all supported commands.',
                         nargs='?',
                         default=None)
     parser.add_argument('inputs',

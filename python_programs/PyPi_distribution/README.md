@@ -58,7 +58,10 @@ then log out and back in for the change to take effect.
 ## Requirements
 
 - Python 3.6+
-- pyserial 3.5+
+
+That is the whole list. pyserial is BUNDLED inside this package
+(`servomotor/vendor/serial/`) and imported from there, so `pip install servomotor`
+pulls in no other dependencies and you do not need to install pyserial yourself.
 
 ## Contributing
 

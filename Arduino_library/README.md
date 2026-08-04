@@ -128,19 +128,15 @@ CRC32 checksums provide additional data integrity verification:
 
 The protocol includes robust error handling with specific error codes. The `Communication` class functions (particularly `getResponse`) return specific negative error codes on failure, or `COMMUNICATION_SUCCESS` (0) on success:
 
-- `COMMUNICATION_ERROR_TIMEOUT` (-1): Timed out waiting for response bytes at various stages:
-  - First byte
-  - Size bytes
-  - Response character
-  - Command byte
-  - Payload
-  - CRC (if enabled)
-- `COMMUNICATION_ERROR_DATA_WRONG_SIZE` (-2): Received data size does not match expected size
+- `COMMUNICATION_ERROR_TIMEOUT` (-1): Timed out waiting for reply bytes. The 1-second budget covers the WHOLE reply, not each byte, and the stages it can expire in are: the first size byte, the extended size bytes, the response character, the device error byte, the payload, and the CRC32 (if enabled). A broadcast (alias 255) also produces this, because broadcasts are never answered.
+- `COMMUNICATION_ERROR_DATA_WRONG_SIZE` (-2): The reply's payload length did not match what the command expects
 - `COMMUNICATION_ERROR_BAD_RESPONSE_CHAR` (-3): The response character byte was not `RESPONSE_CHARACTER_CRC32_ENABLED (253)` or `RESPONSE_CHARACTER_CRC32_DISABLED (252)`
-- `COMMUNICATION_ERROR_BUFFER_TOO_SMALL` (-5): The provided buffer size did not match the calculated payload size in the received response
+- `COMMUNICATION_ERROR_BUFFER_TOO_SMALL` (-5): Your buffer was smaller than the payload the device sent. For the variable-length calls the required size is reported back through `actualSize`, so you can resize and retry
 - `COMMUNICATION_ERROR_CRC32_MISMATCH` (-6): Calculated CRC32 of the received response did not match the received CRC32 value (when CRC enabled)
 - `COMMUNICATION_ERROR_BAD_FIRST_BYTE` (-7): The first byte of a received packet did not have LSB=1, indicating a format error or corrupted data
-- `COMMUNICATION_ERROR_BAD_THIRD_BYTE` (-8): The third byte in the response (expected to be the Command Byte) was invalid
+- `COMMUNICATION_ERROR_PACKET_TOO_SMALL` (-9): The declared packet length was too small to be a valid reply
+
+Two further macros exist in `Communication.h` but are never returned by any code path, so do not write handlers for them: `COMMUNICATION_ERROR_BAD_STATUS_CHAR` (-4) and `COMMUNICATION_ERROR_BAD_THIRD_BYTE` (-8). (-8 in particular described a "Command Byte" in the response; replies contain no command byte.)
 
 ### Buffer Handling
 

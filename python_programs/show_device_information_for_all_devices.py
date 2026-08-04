@@ -91,7 +91,12 @@ def main() -> int:
                 response = motor.get_firmware_version()
                 device.firmware_version = response[0]
                 in_bootloader = response[1]
-                assert(in_bootloader == 0)
+                # Do NOT assert here. A device sitting in the bootloader is exactly
+                # what you are trying to diagnose after an interrupted firmware
+                # upgrade, and an AssertionError would kill the one tool that could
+                # tell you so. Report it and carry on.
+                if in_bootloader:
+                    device.firmware_version = str(device.firmware_version) + " (IN BOOTLOADER)"
             except Exception as e:
                 print(f"Communication error: {e}")
                 return 1

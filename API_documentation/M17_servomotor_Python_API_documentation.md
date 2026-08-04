@@ -1,12 +1,12 @@
 # Servomotor Python API Documentation
 
-Generated: 2026-07-30 16:07:09
+Generated: 2026-08-04 13:47:19
 
 ## Latest Firmware Versions
 
 At the time of generating this API reference, the latest released firmware versions for the servomotors are:
 
-- **Model M17**: `servomotor_M17_fw0.15.9.0_scc3_hw1.5.firmware`
+- **Model M17**: `servomotor_M17_fw0.15.12.0_scc3_hw1.5.firmware`
 
 
 If you are experiencing problems, you can try to set the firmware of your product to this version and try again, and report the problem to us using the feedback page.
@@ -415,7 +415,7 @@ Firmware upgrades go over the same RS485 bus as everything else, using the Pytho
 
 ### Behaviour by firmware version
 
-Read your firmware version before anything else — 'Get firmware version' — and check this list before assuming a behaviour described elsewhere in this document applies to you. Version numbers arrive least-significant-first. Everything below is M17; the current release is 0.15.9.0.
+Read your firmware version before anything else — 'Get firmware version' — and check this list before assuming a behaviour described elsewhere in this document applies to you. Version numbers arrive least-significant-first. Everything below is M17; the current release is 0.15.12.0.
 
 | Firmware | What changed, and how you would notice |
 |---|---|
@@ -426,6 +426,7 @@ Read your firmware version before anything else — 'Get firmware version' — a
 | 0.15.7.0 | Boot-default motion limits corrected: maximum velocity 68 to 34 rot/s, maximum acceleration 2,000 to 500 rot/s^2. Also new in this release: 'Set maximum velocity' and 'Set maximum acceleration' can RAISE the limit above the boot default at all — earlier firmware clamped every request at the boot default itself. |
 | 0.15.8.0 | Boot defaults aligned to the product specification: maximum velocity 560 RPM (9.3333 rot/s), maximum acceleration 12,000 rot/s^2. THIS IS THE MOST LIKELY MIGRATION HAZARD. Relative to 0.15.6.0 and earlier the default velocity limit is about 7.3x LOWER (68 to 9.3333 rot/s) while the default acceleration limit is 6x HIGHER (2,000 to 12,000 rot/s^2). Any program written against older firmware that commands faster than 560 RPM now gets a fatal error at queue time and needs one explicit 'Set maximum velocity' call. The maximum SETTABLE velocity also drops, to a firmware clamp of 18.67 rot/s — requests above it are silently clamped and still reply success. |
 | 0.15.9.0 | 'Set max allowable position deviation' with the extreme negative wire value now saturates to the maximum limit instead of storing a negative limit that latched fatal error 45 on the next control tick. That landmine existed in 0.15.4.0 through 0.15.8.0. |
+| 0.15.12.0 | Trapezoid-move planner fixes, all three customer-visible. (a) A move is no longer SILENTLY IGNORED when the acceleration limit is very high relative to the speed limit. Setting a speed limit below about 0.384 rotations/second while leaving the 12,000 rotations/second^2 factory-default acceleration — an ordinary slow, precise axis — used to make every 'Trapezoid move' and 'Go to position' return success and never move the shaft. They now move correctly. (b) A move that is far too aggressive is no longer silently WRONG. The planner's acceleration is now saturated rather than truncated into a 32-bit field, so instead of moving an arbitrary distance (measured: 8,191 counts where 3,276,800 were asked for) or not at all, the move is rejected with fatal error 15. (c) When the acceleration ramp works out shorter than one 32-microsecond control tick, the move is queued as a constant-velocity segment plus a stop instead of a three-segment ramp. That removes an intermittent fatal error 18 that struck roughly one ordinary slow move in five. Note the consequences: some very short moves that used to be rejected are now performed (they were always within the speed limit), and an over-commanded short move may now report fatal error 16 rather than 15. |
 
 Boot defaults on the current firmware, for reference: maximum velocity 9.3333 rot/s (560 RPM), maximum acceleration 12,000 rot/s^2, maximum motor and regeneration current 200 internal units (of a 390 ceiling), maximum allowable position deviation 2 shaft rotations, PID constants P=2000 I=5 D=175000. All of these are volatile and return on every reset.
 
@@ -1021,9 +1022,9 @@ finally:
 
 **Parameters:**
 - `motorCurrent`: u16: The maximum motor current in arbitrary units (not amps). A value of 150 or 200 is suitable. Internally this caps the applied PWM duty and rescales the PID controller's authority; at speed the firmware additionally allows back-EMF compensation on top of this cap, so it acts as a torque/current cap rather than an absolute duty limit. Must not exceed the product-specific maximum (M1/M2: 300, M17: 390, M23: 1024) or fatal error 23, ERROR_MAX_PWM_VOLTAGE_TOO_HIGH, is raised.
-  - Unit type: current (internal: arbitrary_units)
+  - Unit type: current (internal: internal_current_units)
 - `regenerationCurrent`: u16: The motor regeneration current (while braking) in the same arbitrary units. It sets the regen-side analog-watchdog threshold, which currently only drives the red LED on M1/M2 and has no functional effect on M17/M23. The value is still range-checked: exceeding the product-specific maximum (M1/M2: 300, M17: 390, M23: 1024) raises fatal error 23, ERROR_MAX_PWM_VOLTAGE_TOO_HIGH, so do not treat this parameter as ignorable.
-  - Unit type: current (internal: arbitrary_units)
+  - Unit type: current (internal: internal_current_units)
 
 **Example program:**
 ```python
@@ -2030,7 +2031,7 @@ finally:
 
 ## 🔧 Trapezoid move
 
-**Description:** Travel the given signed displacement over exactly the given duration, relative to the position at the end of previously queued motion (for an absolute target use 'Go to position'). The move is queued, not immediate: it is appended to the 32-item movement queue (normally exactly 3 slots: accelerate/coast/decelerate (a normal-length zero-displacement timed dwell still takes 3 because its accelerate and decelerate segments have nonzero durations even though their acceleration is zero), but the coast item is silently dropped whenever its computed duration works out to exactly zero -- which happens for any move whose duration is even and at most twice max velocity divided by max acceleration (a short even-duration triangular move, or an equally short dwell) -- leaving the move in only 2 slots) and begins only after all previously queued items finish. The success response confirms validation and queueing only, not motion. Speed follows from displacement/duration; the 'Set maximum velocity' and 'Set maximum acceleration' settings only size the acceleration ramp and act as hard limits, raising fatal error ERROR_ACCEL_TOO_HIGH or ERROR_PREDICTED_VELOCITY_TOO_HIGH when violated. Other fatal errors: ERROR_QUEUE_IS_FULL, ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE, ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE, ERROR_MOTOR_BUSY during calibration or homing, and ERROR_COMMAND_SIZE_WRONG for any payload other than 8 bytes. A duration of 0 is rejected with fatal error 34, ERROR_PARAMETER_OUT_OF_RANGE (in firmware before 0.15.4.0 it was a silent no-op that still returned success). The profile assumes zero initial velocity: if the preceding queued motion ends at velocity v0, the actual displacement becomes the commanded value plus v0 times the duration and the move ends at v0, not at rest. Accepted even with MOSFETs disabled, in which case the commanded position advances anyway and typically trips fatal error ERROR_POSITION_DEVIATION_TOO_LARGE.
+**Description:** Travel the given signed displacement over exactly the given duration, relative to the position at the end of previously queued motion (for an absolute target use 'Go to position'). The move is queued, not immediate: it is appended to the 32-item movement queue (normally exactly 3 slots: accelerate/coast/decelerate (a normal-length zero-displacement timed dwell still takes 3 because its accelerate and decelerate segments have nonzero durations even though their acceleration is zero), but the coast item is silently dropped whenever its computed duration works out to exactly zero -- which happens for any move whose duration is even and at most twice max velocity divided by max acceleration (a short even-duration triangular move, or an equally short dwell) -- leaving the move in only 2 slots) and begins only after all previously queued items finish. The success response confirms validation and queueing only, not motion. The speed that gets validated is the profile's PEAK, not the displacement/duration average: the planner sizes a fixed ramp and then checks the peak acceleration and the peak velocity, so a move whose average is inside the limits can still be rejected. A duration too short for the distance raises fatal error 15, ERROR_ACCEL_TOO_HIGH (the derived acceleration is checked first and is always reached at or before the velocity limit); ERROR_PREDICTED_VELOCITY_TOO_HIGH applies to the acceleration-type commands rather than to this one. Other fatal errors: ERROR_QUEUE_IS_FULL, ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE, ERROR_TURN_POINT_OUT_OF_SAFETY_ZONE, ERROR_MOTOR_BUSY during calibration or homing, and ERROR_COMMAND_SIZE_WRONG for any payload other than 8 bytes. A duration of 0 is rejected with fatal error 34, ERROR_PARAMETER_OUT_OF_RANGE (in firmware before 0.15.4.0 it was a silent no-op that still returned success). The profile assumes zero initial velocity: if the preceding queued motion ends at velocity v0, the actual displacement becomes the commanded value plus v0 times the duration and the move ends at v0, not at rest. Accepted even with MOSFETs disabled, in which case the commanded position advances anyway and typically trips fatal error ERROR_POSITION_DEVIATION_TOO_LARGE.
 
 **Parameters:**
 - `displacement`: i32: The signed relative displacement to travel, measured from the position at the end of the previously queued motion (not an absolute position). Can be positive or negative. Internally in encoder counts; counts per rotation are motor-specific (see the unit conversion file), e.g. 3276800 counts per shaft rotation on M3/M17.

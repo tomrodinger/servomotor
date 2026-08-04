@@ -39,7 +39,7 @@ void setup() {
   //  Python library. Today those defaults are:
   //     position=shaft_rotations  time=seconds  velocity=rotations_per_second
   //     acceleration=rot/s^2      temperature=celsius
-  //     current=internal_current_units   voltage=millivolts
+  //     current=internal_current_units   voltage=volts
   //  (Setting them explicitly, as below, is good practice regardless.)
   // ---------------------------------------------------------------------------
 #if defined(ESP32)
