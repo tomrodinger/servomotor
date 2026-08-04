@@ -453,6 +453,35 @@ void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int
     uint32_t delta_t2 = total_time - (delta_t1 << 1);
     int64_t numerator = delta_d;
     int64_t denominator = ((delta_t1 + delta_t2) * delta_t1);
+    if(denominator == 0) {
+        // The division below would be by zero, which does NOT trap on this core:
+        // it silently yields acceleration 0, so the move is accepted with a
+        // success response, raises no error, and the shaft never moves. Two ways
+        // to get here, both confirmed on hardware (fw 0.15.9.0, on the M17 bench
+        // motor and on all 35 rack motors):
+        //   1. delta_t1 above truncating to 0, which happens whenever the
+        //      acceleration limit exceeds about 31250x the velocity limit --
+        //      for example a 0.3 rotation/second speed limit with the 12000
+        //      rotation/second^2 factory default acceleration.
+        //   2. total_time <= 1, which makes (total_time >> 1) zero regardless of
+        //      the limits.
+        // Correct it by giving the ramp the shortest length it can physically
+        // have, one control tick. That is the honest reading of case 1: the ramp
+        // really is shorter than one tick, so it occupies one tick and the rest
+        // of the move coasts, and the three queued segments still sum to
+        // total_time. Case 2 cannot sum to total_time (two ramps need two
+        // ticks), so delta_t2 floors at 0 and the resulting large acceleration
+        // is rejected by the existing limit check in add_to_queue -- a loud
+        // error instead of a silent no-op.
+        delta_t1 = 1;
+        if(total_time >= 2) {
+            delta_t2 = total_time - 2;
+        }
+        else {
+            delta_t2 = 0; // must not underflow: a wrapped uint32 would queue a ~38 hour coast
+        }
+        denominator = ((delta_t1 + delta_t2) * delta_t1);
+    }
     int64_t acceleration = numerator / denominator;
 
     print_int64("max_velocity: ", max_velocity);
@@ -466,7 +495,25 @@ void compute_trapezoid_move(int32_t total_displacement, uint32_t total_time, int
     print_int64("acceleration: ", (int64_t)acceleration);
 
 //  acceleration >>= 8;
-    *acceleration_returned = acceleration;
+    // acceleration is computed as int64 but returned through an int32_t*. A move
+    // that is far too aggressive for the configured limits produces a value well
+    // outside int32 range, and a plain assignment TRUNCATES it -- silently, and
+    // to an essentially arbitrary result. Confirmed on hardware (fw 0.15.9.0,
+    // M17): 1 rotation in 10 timesteps computes exactly 2^41, whose low 32 bits
+    // are 0, so the move was accepted, raised no error and never moved; and
+    // 1 rotation in 100 timesteps truncated to a value that moved 8,191 counts
+    // instead of 3,276,800. Truncation can also flip the sign, which would drive
+    // the motor the wrong way.
+    // Saturating keeps the magnitude out of range instead, so the existing
+    // acceleration check in add_to_queue() rejects the move with
+    // ERROR_ACCEL_TOO_HIGH -- the truth, and loud.
+    if(acceleration > INT32_MAX) {
+        acceleration = INT32_MAX;
+    }
+    else if(acceleration < INT32_MIN) {
+        acceleration = INT32_MIN;
+    }
+    *acceleration_returned = (int32_t)acceleration;
     *delta_t1_returned = (uint32_t)delta_t1;
     *delta_t2_returned = (uint32_t)delta_t2;
 }
@@ -1935,6 +1982,66 @@ void clear_the_queue_and_stop(void)
 }
 
 
+// Queue the segments that make up one trapezoid-shaped move. Shared by
+// 'Trapezoid move' and 'Go to position' (and therefore by 'Homing', which goes
+// through add_trapezoid_move_to_queue) so the shape is decided in exactly one
+// place. Calibration deliberately does NOT use this: it queues a different,
+// repeating back-and-forth pattern with its own known-good parameters.
+//
+// Normally the move is three segments: ramp up, coast, ramp down.
+//
+// The exception is a ramp of a single control tick. The three segments are
+// queued by three separate add_to_queue() calls while the 31.25 kHz control ISR
+// is running, and the ISR can consume a 32 microsecond first segment before the
+// second one has been queued. handle_queued_movements() then finds the queue
+// empty with a nonzero velocity and raises ERROR_RUN_OUT_OF_QUEUE_ITEMS.
+// Measured on hardware (fw 0.15.9.0 and 0.15.10.0 alike, so this is not new):
+// about 20% of ORDINARY two-second moves failed this way whenever
+// maxVelocity/maxAcceleration worked out to one tick -- for example a
+// 0.5 rotation/second speed limit with the 12000 rotation/second^2 factory
+// default acceleration, which is just a slow, precise axis.
+//
+// A one-tick ramp completes inside a single control period, so it is exactly
+// representable as a step straight to the coast velocity. Queue the coast as
+// one long segment followed by a one-tick stop. The first segment is then
+// seconds long rather than microseconds, so the ISR cannot drain it before the
+// rest is queued: the race becomes impossible rather than merely unlikely, and
+// no interrupt masking is needed anywhere.
+//
+// The trailing zero-velocity segment is not optional. A velocity segment HOLDS
+// its velocity, so without it the queue would empty at full speed and raise the
+// very error this is avoiding, on every move.
+static void queue_trapezoid_segments(int32_t total_displacement, uint32_t total_time,
+                                     int32_t acceleration, uint32_t delta_t1, uint32_t delta_t2)
+{
+    if((delta_t1 <= 1) && (total_time >= 3)) {
+        // Velocity is scaled by VELOCITY_SHIFT_LEFT (12) where acceleration uses
+        // ACCELERATION_SHIFT_LEFT (8), so compute the velocity directly at its
+        // own scale rather than deriving it from acceleration, which would throw
+        // away four bits. Holding (total_displacement << 20) << 12 for
+        // (total_time - 1) ticks yields exactly total_displacement << 32, which
+        // is the internal position representation -- no rounding drift.
+        int64_t velocity = ((int64_t)total_displacement << 20) / (int64_t)(total_time - 1);
+        // Saturate rather than truncate on the way into add_to_queue's int32
+        // parameter, so an over-commanded move is rejected by the existing
+        // velocity check instead of silently turning into a different move.
+        if(velocity > INT32_MAX) {
+            velocity = INT32_MAX;
+        }
+        else if(velocity < INT32_MIN) {
+            velocity = INT32_MIN;
+        }
+        add_to_queue((int32_t)velocity, total_time - 1, MOVE_WITH_VELOCITY);
+        add_to_queue(0, 1, MOVE_WITH_VELOCITY);
+        return;
+    }
+
+    add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
+    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+}
+
+
 void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time)
 {
     int32_t acceleration;
@@ -1947,9 +2054,7 @@ void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time
 //  predicted_end_of_queue_position.i32[1] += total_displacement;
     compute_trapezoid_move(total_displacement, total_time, &acceleration, &delta_t1, &delta_t2);
 
-    add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    queue_trapezoid_segments(total_displacement, total_time, acceleration, delta_t1, delta_t2);
 }
 
 
@@ -1973,31 +2078,8 @@ void add_go_to_position_to_queue(int64_t absolute_position, uint32_t move_time)
     }
     compute_trapezoid_move((int32_t)total_displacement, move_time, &acceleration, &delta_t1, &delta_t2);
 
-    add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
+    queue_trapezoid_segments((int32_t)total_displacement, move_time, acceleration, delta_t1, delta_t2);
 }
-
-
-#if 0
-void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time)
-{
-    int32_t acceleration;
-    uint32_t delta_t1;
-    uint32_t delta_t2;
-
-    // This command only supports the case of adding a move when the queue is fully empty. Let's make sure of that.
-    if(n_items_in_queue != 0) {
-        fatal_error(ERROR_QUEUE_NOT_EMPTY); // All error messages are defined in error_text.h, which is an autogenerated file based on error_codes.json in the servomotor Python module (<repo root>/python_programs/servomotor/error_codes.json)
-    }
-    int32_t total_displacement = absolute_position - current_position.i32[1];
-    compute_trapezoid_move(total_displacement, move_time, &acceleration, &delta_t1, &delta_t2);
-
-    add_to_queue(acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-    add_to_queue(0, delta_t2, MOVE_WITH_ACCELERATION);
-    add_to_queue(-acceleration, delta_t1, MOVE_WITH_ACCELERATION);
-}
-#endif
 
 
 //#define VELOCITY_AVERAGING_SHIFT_RIGHT 8

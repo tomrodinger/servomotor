@@ -192,7 +192,6 @@ void fast_capture_until_trigger(void);
 
 void add_to_queue(int32_t parameter, uint32_t n_time_steps, movement_type_t movement_type);
 void add_trapezoid_move_to_queue(int32_t total_displacement, uint32_t total_time);
-//void add_go_to_position_to_queue(int32_t absolute_position, uint32_t move_time);
 void add_go_to_position_to_queue(int64_t absolute_position, uint32_t move_time);
 uint8_t take_from_queue(int32_t *end_position, uint64_t *end_time);
 uint8_t get_n_items_in_queue(void);
