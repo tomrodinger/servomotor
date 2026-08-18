@@ -1,6 +1,6 @@
 # Servomotor Python API Documentation
 
-Generated: 2026-08-04 13:47:19
+Generated: 2026-08-18 15:30:24
 
 ## Latest Firmware Versions
 
@@ -198,9 +198,44 @@ Everything in this section was verified against the firmware source code and the
 5. Fatal errors LATCH. Once any fatal error trips, the motor disables itself, the red LED blinks the error code, and every command except 'Get status' and 'System reset' fails (each failing command's error reply carries the code). Bench-verified exhaustively: 12 probed commands — ping, all position/time/temperature readers, enable/disable MOSFETs, emergency stop, zero position, reset time, detect devices — ALL receive the error reply, and NONE of them un-latches the fault; 'System reset' alone recovers. First find out WHICH error it is — a FatalError exception carries the code (e.args[0] in Python), or read it with 'Get status' — and look it up so you can address the cause. Then clear it with system_reset() followed by the post-reset wait (0.5 s or more of bus silence).
 6. NEVER send 'Test mode' with values 10-13 (LED tests): they lock the firmware up after replying, and only a power cycle (or the physical reset button) recovers the device. As of firmware 0.15.4.0, 'Test mode' 0 safely clears all test modes; in OLDER firmware value 0 also locks the device up — 'System reset' always safely clears test modes on any firmware.
 7. An empty queue does not always mean motion is finished: if a commanded velocity exceeded what the motor can physically reach (~8.6 rot/s unloaded), the commanded position runs ahead of the rotor and, in closed loop, the motor keeps moving after the queue empties until it catches up (bench-measured: 0.35 s of extra travel after a 1 s profile at an unattainable speed). For true motion-complete, require queue empty AND position settled (two consecutive equal hall readings, or commanded-minus-measured within tolerance). Practically: poll 'Get n queued items' to 0, then allow an extra 0.1-0.3 s for mechanical settling before reading exact positions (polling at full rate is harmless; a 0.01-0.1 s sleep between polls just saves host CPU). Alternatively sleep the commanded duration plus ~5% margin (the motor's clock is accurate to well under 1%; +0.41% offset measured on the bench).
-8. The motion queue holds at most 32 items, shared by all move commands. One 'Trapezoid move' or 'Go to position' always occupies exactly 3 slots (accelerate/coast/decelerate — degenerate phases still take a slot, including a zero-displacement dwell), so at most 10 such moves fit; 'Move with velocity'/'Move with acceleration' take 1 slot each. The item currently executing is included in the count. Exceeding the queue is fatal error 17 — and bench-verified, the fault does not just reject the extra item: it ABORTS the entire in-flight choreography (MOSFETs drop, queue cleared). When streaming moves, poll 'Get n queued items' and stay below the cap.
+8. The motion queue holds at most 32 items, shared by all move commands. A 'Trapezoid move' or 'Go to position' normally occupies 3 slots (accelerate/coast/decelerate — degenerate phases still take a slot, including a zero-displacement dwell), so at most 10 such moves fit. BUT SINCE FIRMWARE 0.15.12.0 IT CAN BE 2, AND THE CONDITION IS COUNTERINTUITIVE: when the acceleration ramp works out to one control tick or less, the planner emits a constant-velocity segment plus a one-tick stop instead of three segments, and then 16 moves fit instead of 10. The ramp is `maximum velocity / maximum acceleration`, so this happens exactly when you make the speed limit LOW while leaving the acceleration limit high — a slow, precise axis with the 12,000 rot/s^2 factory default. Bench-measured on both a rack motor and the bench motor: at the default speed limit exactly 10 moves were accepted before fatal error 17; with the speed limit at 0.3 rot/s, exactly 16 were. So LOWERING the speed limit INCREASES how many moves fit — the opposite of what most people would guess, and worth knowing if you size a plan against the queue. Do not hard-code either number; poll 'Get n queued items'. 'Move with velocity'/'Move with acceleration' take 1 slot each, and a 'Multimove' entry takes 1 slot per entry; 'Move with velocity'/'Move with acceleration' take 1 slot each. The item currently executing is included in the count. Exceeding the queue is fatal error 17 — and bench-verified, the fault does not just reject the extra item: it ABORTS the entire in-flight choreography (MOSFETs drop, queue cleared). When streaming moves, poll 'Get n queued items' and stay below the cap.
 9. Also bench-verified planner algebra: a trapezoid or go-to-position queued after motion that ends at velocity v0 superimposes — it travels an EXTRA v0 x duration and ends at v0, not at rest (measured: MWV(1 rot/s, 1 s) + trapezoid(2 rot, 1 s) landed at exactly 4.0 rot, not 3.0). Only queue them after motion that ends at rest, or account for the superposition.
 10. Safety limits live in the CURRENT position frame — 'Zero position' silently moves your fences to new physical locations. Set safety limits AFTER homing and zeroing, and re-send them after any later zeroing if the fence protects real hardware (details under Motion control patterns).
+
+### Positioning accuracy: absolute moves converge, and nothing drifts far
+
+A single move delivers up to ONE COUNT LESS than commanded. This is integer division inside the
+planner, not a mechanical effect, and it is visible with the MOSFETs off: ask for 1,638,400 counts
+and the commanded position lands on 1,638,399. One count is 0.3 parts per million of a revolution,
+so it never matters mechanically — but it decides which command to build a repeatable machine on.
+
+- **'Go to position' CONVERGES.** It is absolute, so the second call sees the one-count error and
+  corrects it. Bench-measured, four identical calls to the same target: `1638399, 1638400, 1638400,
+  1638400`. It is not idempotent on the first call; it is convergent, and idempotent from the
+  second onwards. If you need to land exactly on a coordinate, issue the absolute move twice, or
+  simply re-issue it at each cycle of your loop, which most programs do anyway.
+- **Relative 'Trapezoid move' does NOT self-correct**, but it also does not accumulate the way you
+  would fear. Bench-measured, one full rotation split into 10, 50 and 200 relative moves gave a
+  total shortfall of **1 count in every case** — not one count per move. Across every regime
+  measured the total stayed within a few counts: 1-2 counts over a rotation, about 8 counts over
+  400 rotations, about 5 counts over 5,000 rotations. The internal position keeps sub-count
+  precision, so the error is bounded rather than cumulative.
+
+Practical rule: use relative moves freely; if a machine must return to an exact coordinate, use an
+absolute 'Go to position' for that step, and expect the first one to be a count short.
+
+### A stale limit from a previous program is a real hazard
+
+This is what golden rule 2 is protecting you from, made concrete. Limits are volatile but they
+survive until the next reset or power cycle, NOT until your program exits. A program that sets a
+tight limit and exits leaves the motor configured that way for whatever runs next.
+
+Bench-demonstrated: program A sets the speed limit to 0.2 rot/s and exits. Program B starts without
+a reset and commands an ordinary one-rotation move — and gets fatal error 16. Nothing in program B
+is wrong; it inherited a limit it never set and cannot see, because there is no getter for it.
+
+Always begin with 'System reset' and the post-reset wait. If you are debugging a program that
+"works sometimes", check whether something else ran first.
 
 ### Recommended startup sequence
 
@@ -273,6 +308,52 @@ Notes on the skeleton:
 - The clock commands ('Get current time', and the masterTime input of 'Time sync') use microseconds on the wire, and the library converts them correctly from/to whatever time unit you configured. The time-error output of 'Time sync' is the exception: it is always returned as raw microseconds with no conversion. (Older library versions mis-scaled these two commands by ~32x in any unit except 'timesteps' — if you may be running an old library, read the clock with time_unit='timesteps', which then passes raw microseconds through.)
 - (Older library versions only: the velocity unit named 'counts_per_timestep' carried a conversion factor ~104.86x too large. It is correct in the current library.)
 - Do not hand-roll internal-unit conversions copied from older scripts: legacy demos (ball_throwing_demo.py, ball_juggling_demo.py, magnetic_disk_machine/*) hardcode per-rotation values such as 4,320,000 or 4,752,000 (64*1350*50 or *55) that do not match current motors, and use an obsolete protocol module. Use the library's unit system.
+
+### Driving many motors on one bus — measured on a 35-motor rack
+
+Everything else in this document describes one motor. These numbers come from a bus with
+thirty-five M17s on it, all on firmware 0.15.12.0, with the MOSFETs off so only the commanded
+position moves.
+
+- **A broadcast move is exact, not approximate.** One 'Trapezoid move' sent to address 255 moved
+  all 35 motors by *identically* 819,199 counts of a commanded 819,200 — spread ZERO across the
+  whole bus. Broadcast is therefore the right primitive for coordinated multi-axis motion: it is
+  one packet, it starts every axis on the same control tick, and every axis performs the same
+  arithmetic.
+- **Addressing motors individually costs about 4 ms each.** Queueing the same move on 35 motors one
+  at a time took 142 ms end to end. That is fine for setup, but it means individually-addressed
+  commands cannot start axes together — the last motor begins moving ~140 ms after the first. Use
+  broadcast when simultaneity matters, and individual addressing only for per-axis parameters.
+- **A supervisory polling loop tops out around 7 full sweeps per second.** Reading the position of
+  all 35 motors in a loop sustained 262 reads/second, i.e. 7.5 complete sweeps/second, with **zero
+  errors over 11,000 reads**. Budget accordingly: at 35 axes you get roughly 7 Hz of state, and
+  polling harder just queues behind the bus.
+- **One motor faulting does NOT disturb the others.** With one motor deliberately faulted, five
+  others were commanded and all five moved correctly. A single broadcast 'System reset' then
+  cleared the fault on every motor at once (35/35 clean). A fault is genuinely per-device, and
+  bus-wide recovery is one packet.
+
+#### The gotcha that will bite you here
+
+Unit settings are **host-side, per-motor-object, and sticky**. They persist until you change them
+and are silently applied to every later reading. Nothing errors.
+
+The same device clock, read five ways within a second of each other:
+
+| time unit | value reported |
+|---|---|
+| seconds | 1.8069 |
+| milliseconds | 1814.5360 |
+| microseconds | 1818352.0000 |
+| timesteps | 56585.1562 |
+| minutes | 0.0304 |
+
+In a multi-motor script it is very easy to set a unit for one phase of the program and then read
+something unrelated in a later phase. That exact mistake — setting `timesteps` for a motion
+section, then reading clocks further down — produced an apparent **4,150-second disagreement**
+between motors that was really 133 milliseconds of read-order skew. The number looked like a
+serious hardware fault and was a unit label. **Set the unit immediately before you read, or set it
+once at startup and never change it.**
 
 ### Addressing and multi-motor buses
 
@@ -400,7 +481,7 @@ Two codes are internal-consistency faults rather than user errors: 30 (control l
 
 ### Upgrading the firmware
 
-Firmware upgrades go over the same RS485 bus as everything else, using the Python tool. There is no Arduino-side upgrade path — even if your application runs on an Arduino or ESP32, do the upgrade from a computer with a USB-to-RS485 adapter.
+Firmware upgrades go over the same RS485 bus as everything else, using the Python tool. The upgrade protocol itself has no Arduino-side implementation — but that does NOT mean a motor wired to an Arduino or ESP32 is unreachable. If the motor's only RS485 connection is to a microcontroller, flash that board with a TRANSPARENT USB-to-RS485 BRIDGE and run the ordinary Python tool through it. A working bridge is in this repository at `Arduino_library/ESP32S3_RS485_Bridge/`; it is about twenty lines and simply relays bytes both ways. This is strongly preferable to reimplementing the upgrade in C++, because the protocol stays in the tested Python and because the same bridge then gives every other host tool access to that motor. Bench-verified: an M17 whose only link was an ESP32-S3 was upgraded 0.15.9.0 -> 0.15.12.0 through such a bridge, and the whole 111-module test suite was then run against it. If you write your own bridge, read the two gotchas at the end of this section first — both cost a full test run to find.
 
 - Get the tool: `pip3 install --upgrade servomotor`. Since library version 0.12.0 this installs an `upgrade_firmware` command directly, along with `servomotor_command`, `detect_and_set_alias_all_devices` and `show_device_information_for_all_devices`. No repository checkout is needed. Do not install pyserial — a copy is bundled inside the package and is what the library actually imports.
 - Use library version 0.12.2 or later. ON WINDOWS, 0.12.0 and every earlier version that bundled pyserial could not open a serial port at all — and the failure is easy to misdiagnose, because `import servomotor` SUCCEEDS. A working import is therefore not evidence that your version is good. The error appears only when you actually open a port, as `ModuleNotFoundError: No module named 'serial'` raised from `from serial import win32` (the bundled pyserial's Windows backend used absolute imports; fixed in 0.12.1). Separately, versions before 0.12.1 aborted with an uncaught PermissionError when they could not save the remembered serial port into the installed-package directory — which a normal system-wide install hit every time. 0.12.2 moves that file to a per-user config directory and adds the SERVOMOTOR_PORT environment variable, so you can name the port once instead of passing -p to every command below.
@@ -412,6 +493,73 @@ Firmware upgrades go over the same RS485 bus as everything else, using the Pytho
 - VERIFY AFTERWARDS — the tool does not. Run `servomotor_command -p <PORT> -a <ALIAS> get_firmware_version` and confirm the new version with inBootloader = 0. (Note: `show_device_information_for_all_devices` fails with an assertion error against a device sitting in the bootloader, so use `servomotor_command` for this check.)
 - YOUR CALIBRATION AND ALIAS SURVIVE. An upgrade only rewrites the application flash pages. The device alias, the three hall-sensor midlines, the commutation position offset and the motor-phases-reversed flag live in a separate settings page that the burn routine refuses to write. You do not need to recalibrate after an upgrade.
 - AN INTERRUPTED UPGRADE CANNOT BRICK THE MOTOR. The bootloader lives in pages the upgrade also refuses to write, and it verifies the application by CRC32 on every boot. A half-written image simply fails that check, so the device stays in the bootloader, still answering RS485 — recognisable by a fast-blinking green LED (about 10 Hz, versus the brief once-per-second blip of the running application) and by 'Get status' bit 0 being set. Recovery is to run the same `upgrade_firmware` command again.
+
+### Two ways to fault a motor with a setting, not a move
+
+Both of these are commands that are perfectly legal, return normally in most circumstances, and
+nonetheless take the machine down. Neither is documented anywhere else.
+
+**Lowering the speed limit while a move is running faults that move.** The obvious way to slow a
+machine down is to reduce 'Set maximum velocity'. Do that mid-move and you get fatal error 16, an
+abrupt uncommanded stop, and a latched fault — the opposite of the intended effect. The cause is
+that the limit is enforced in two places with different scopes: a move is validated against the
+limits when it is QUEUED, but the control loop also re-checks the LIVE velocity against the
+CURRENT limit on every one of its 31,250 ticks per second. Lowering the ceiling below the speed a
+move is already travelling at therefore faults a move that was legal when queued.
+Bench-measured: dropping the ceiling from 5 to 2 rot/s during a move that peaks near 0.5 rot/s is
+harmless; dropping it to 0.2 rot/s faults immediately with code 16.
+**To slow a machine down, stop it first, or only ever RAISE the limit mid-flight.**
+
+**Setting a safety fence that excludes the current position usually loses its own reply.** A fence
+with lower < upper that simply does not contain where the motor currently is, is accepted and
+correctly faults with error 25 within one control tick. But the fence goes live before the
+command's reply is sent, and the fault fires from the control loop, so the reply is frequently
+never transmitted. Bench-measured over 30 trials: **10 of 30 lost the reply (33%)**, versus 0 of 30
+for a fence that includes the current position. The fault itself is reliable — code 25 was raised
+in 29 of 30.
+
+So a timeout from 'Set safety limits' does NOT mean the motor is gone. Treat it as "check status":
+read 'Get status' and you will find error 25. Note that the firmware already guards the closely
+related case — an INVERTED fence (lower > upper) is rejected cleanly with error 34 before the
+limits are applied, precisely to avoid this race — so only the excludes-current-position case
+behaves this way.
+
+### Diagnosing a faulted motor: you get the error number and nothing else
+
+Golden rule 5 says every command except 'Get status' and 'System reset' fails once a fault latches.
+The consequence is worth stating separately, because it shapes how you should write monitoring
+code: **no telemetry survives a fault.** Temperature, supply voltage, position, the device clock,
+even 'Get product info' and 'Ping' all return the latched error code instead of their data. The
+single number from 'Get status' is the entire diagnostic surface.
+
+That is a sound fail-safe — a faulted machine should refuse to act — but it means the readings you
+would want in order to work out WHY a motor stopped (did it overheat? did the supply sag? where was
+it?) are unavailable at exactly the moment you need them.
+
+**Therefore: log telemetry continuously while things are working, not after they break.** Polling
+is cheap and provably harmless — bench-measured, polling any getter continuously through a move
+leaves the endpoint bit-identical to an undisturbed reference, and reads consume no queue slots.
+
+#### If you write your own USB-to-RS485 bridge, two traps
+
+Both produce the same symptom: short exchanges work perfectly, sustained traffic fails
+intermittently, and the failure looks exactly like a firmware fault under load. Both were found the
+hard way, by a 111-module suite reporting six modules "failing under load" that were nothing of the
+kind.
+
+1. **Yield to the scheduler when idle.** A `loop()` that polls both ports and never blocks starves
+   the RTOS idle task, and on an ESP32 the task watchdog eventually resets the board mid-run. The
+   host then sees a plain read timeout. One `delay(1)` when no bytes moved fixes it; without it a
+   200-cycle soak died at cycle 96.
+2. **Do not use `readBytes()` to move the data.** It inherits Stream's one-second timeout, so if
+   the driver reports N bytes available but returns fewer, the loop blocks for up to a second in
+   one direction and cannot relay the reply travelling the other way. The host times out on a
+   command the motor answered correctly. Use `read()` in a loop bounded by `available()`, so
+   neither direction can ever stall the other. Fixing this took one test module from 22 passed /
+   18 failed to 40 passed / 0 failed.
+
+Also: enlarge both receive buffers. USB CDC delivers a 2,067-byte firmware page far faster than a
+230,400 baud wire can carry it, and the default CDC receive buffer is only 256 bytes.
 
 ### Behaviour by firmware version
 

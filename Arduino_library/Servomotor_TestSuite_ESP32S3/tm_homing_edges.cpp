@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 // tm_homing_edges.cpp
 //
-// Edge-case probe for the HOMING command (cmd 30) preconditions and boundaries.
+// Edge-case probe for the HOMING command (cmd 14) preconditions and boundaries.
 // Every assertion encodes firmware GROUND TRUTH, verified in:
 //   - firmware/Src/motor_control.c  start_homing()               (lines ~1387)
 //   - firmware/Src/motor_control.c  add_trapezoid_move_to_queue()(lines ~1938)
