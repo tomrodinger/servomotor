@@ -3,7 +3,43 @@
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 
-Last updated: 2026-07-31 (Arduino library 0.10.1 shipped — see the section immediately
+Last updated: 2026-08-18 — see the AUGUST 2026 section immediately below. The July item that
+used to sit at the top of this file (the firmware `compute_trapezoid_move` divide-by-zero needing a
+bench probe) is **DONE**: it was probed, root-caused, fixed and shipped as firmware 0.15.12.0.
+
+## AUGUST 2026 — test-suite expansion (DONE, pushed a33f519)
+
+Full record: **`TEST_EXPANSION_CAMPAIGN_2026-08.md`** — read its "HOW TO RESUME" section first; it
+has the current hardware state and the exact commands.
+
+- [x] Test suite expanded 63 → **119** modules, 843 → **2348** assertions; all verified on the
+      35-motor rack, and 111 modules re-verified on the bench motor.
+- [x] Firmware **0.15.12.0** released earlier (planner divide-by-zero, int32 truncation, queue-fill
+      race) and now running on the whole fleet including the bench motor.
+- [x] ESP32-S3 **RS485 bridge** written, so host tools reach a motor wired only to a
+      microcontroller. Bench M17 upgraded 0.15.9.0 → 0.15.12.0 through it.
+- [x] `knowhow.md` extended and one existing rule CORRECTED (golden rule 8: a trapezoid move takes
+      3 queue slots normally but **2** since 0.15.12.0, so a lower speed limit lets MORE moves fit,
+      10 → 16). Both API manuals regenerated.
+- [x] New host-only guards that need no hardware: data-file integrity, Python/Arduino unit parity,
+      and test-suite hygiene. `run_host_tests.py` is 12/12.
+
+### OPEN — awaiting Tom's decision, deliberately NOT fixed
+
+He asked for investigation and reporting only, so no firmware source was touched. All three have
+root cause, evidence and options in `TEST_EXPANSION_CAMPAIGN_2026-08.md`.
+
+- [ ] **F1** — lowering `max_velocity` mid-move faults that move (error 16). The control loop
+      re-checks the LIVE velocity against the CURRENT ceiling every tick, so the obvious way to slow
+      a machine down breaks it instead.
+- [ ] **F2** — a faulted motor answers only `get_status`; no telemetry survives a fault, so the one
+      error number is the entire diagnostic surface.
+- [ ] **F3** — `Set safety limits` loses its own reply 33% of the time when the new fence excludes
+      the current position (10/30 measured, control 0/30). **Most fixable of the three:** the
+      firmware already guards the closely-related inverted-fence case at `main.c:710` for exactly
+      this reason, and a regression test already exists.
+
+Previous: Last updated: 2026-07-31 (Arduino library 0.10.1 shipped — see the section immediately
 below. Remaining open items in DOC_VERIFICATION_FINDINGS_2026-07-29.md; the top one is the
 firmware compute_trapezoid_move divide-by-zero, which needs a bench probe.)
 

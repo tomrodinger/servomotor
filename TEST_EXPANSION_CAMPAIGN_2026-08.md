@@ -7,6 +7,46 @@ here, and **do NOT fix it**.
 
 **This file is the durable record.** It survives context clears. Read it first to resume.
 
+## HOW TO RESUME — current state and exact commands (2026-08-18)
+
+**Hardware right now.** Always `ls /dev/cu.*` and probe first; the numbers move.
+
+| what | port | state |
+|---|---|---|
+| 35-motor rack | `/dev/cu.usbserial-110` | all fw 0.15.12.0, all alias 88 → address by unique ID, left clean |
+| bench M17 `99856389A2B46555` | `/dev/cu.usbmodem2101` | fw 0.15.12.0 (upgraded 2026-08-06), reached THROUGH the bridge |
+
+**The ESP32-S3 currently holds the RS485 BRIDGE, not the on-device test suite.** That is why host
+tools can reach the bench motor at all. To go back to on-device runs:
+`Arduino_library/Servomotor_TestSuite_ESP32S3/flash_suite.sh`.
+
+```bash
+# build the host runner (needed after adding or editing any module)
+cd Arduino_library/Servomotor_TestSuite_ESP32S3 && ./build_host_suite.sh
+
+# run ONE module against the rack, or against the bench motor via the bridge
+./host_suite /dev/cu.usbserial-110  5E2E8161CF1D2624 <module>
+./host_suite /dev/cu.usbmodem2101   99856389A2B46555 <module>
+
+# after writing a new tm_*.cpp — never hand-edit test_registry.{h,cpp}
+./register_modules.py --apply
+
+# which commands are thinly covered?
+./coverage_report.py --gaps 8
+
+# hardware-free suites (fast, run these before committing)
+cd ../../python_programs && python3 run_host_tests.py          # 12 tests
+python3 test_fleet_consistency.py -p /dev/cu.usbserial-110     # all 35 motors agree
+```
+
+**BEFORE trusting any hardware result:** `pgrep -f host_suite`. Two processes on one RS485 bus
+corrupt each other silently and the failures look exactly like device faults.
+
+**Upgrading the bench motor** (or any motor behind a microcontroller): flash the bridge, then use
+`test_firmware_upgrade.py -p <port> -a X`, which is alias-addressed and ACKs every page.
+`upgrade_firmware.py` in its default BROADCAST mode reports success for every page while verifying
+nothing.
+
 ## Baseline at start (2026-08-04)
 
 | | count |
