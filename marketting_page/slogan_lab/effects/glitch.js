@@ -142,7 +142,7 @@
     dwell: 4300,
     theme: { bg: '#0B0C0E', fg: '#F5F6F8' },
     setup: function (stage, ctx) {
-      var w = wrapper(stage, '#0B0C0E');
+      var w = wrapper(stage, ctx.sc.paper);
       var G = { ch: [] };
       G.baseA = face(ctx.from, FULL); w.appendChild(G.baseA);
       G.baseB = face(ctx.to, FULL); w.appendChild(G.baseB);
@@ -345,7 +345,7 @@
     theme: { bg: '#0A0B0D', fg: '#EFF1F3' },
     setup: function (stage, ctx) {
       var d = size(stage, ctx);
-      var w = wrapper(stage, '#0A0B0D');
+      var w = wrapper(stage, ctx.sc.paper);
       var col = FX.el('div', null, {
         position: 'absolute', left: '0', right: '0', top: '0', height: (4 * d.H) + 'px',
         willChange: 'transform',
@@ -486,7 +486,7 @@
     dwell: 4400,
     theme: { bg: '#07080A', fg: '#EDEFF2' },
     setup: function (stage, ctx) {
-      var w = wrapper(stage, '#07080A');
+      var w = wrapper(stage, ctx.sc.paper);
       var a = face(ctx.from, FULL), b = face(ctx.to, FULL);
       a._inner.style.willChange = b._inner.style.willChange = 'transform, filter';
       w.appendChild(a); w.appendChild(b);

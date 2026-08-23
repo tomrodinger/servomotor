@@ -19,6 +19,7 @@ BOX_PX = 6.0        # ink box moved/resized this many px at t=0.008 or t=0.992
 COV = 0.060         # this fraction of the stage visibly differs from the canonical frame
 FLASH_ABS = 0.30    # this fraction of the stage went near-white
 FLASH_REL = 4.0     # ...or this many times the canonical frame's own bright coverage
+GROUND_SHIFT = 0.25 # the stage's own colour moved this far from the canonical frame's
 
 
 def defects(r):
@@ -39,11 +40,19 @@ def defects(r):
         if cov is not None and cov > COV:
             out.append((end + "-DIFF", 40.0 + cov * 50, "%.1f%% of the stage differs" % (cov * 100)))
 
-    base, fl = r.get("flashBase", 0.0), r.get("flash", 0.0)
-    if fl > FLASH_ABS or (base > 0 and fl > base * FLASH_REL and fl > 0.12):
-        out.append(("FLASH", 50.0 + fl * 40,
-                    "%.0f%% of the stage near-white at t=%s (canon %.0f%%)"
-                    % (fl * 100, r.get("flashAt"), base * 100)))
+    # A flash is the GROUND changing colour, not the frame being bright. Absolute brightness is
+    # meaningless on a light stage, where the canonical frame is near-white to begin with.
+    gs = r.get("groundShift")
+    if gs is not None:
+        if gs > GROUND_SHIFT:
+            out.append(("FLASH", 50.0 + gs * 40,
+                        "the stage itself changes colour by %.2f at t=%s" % (gs, r.get("groundShiftAt"))))
+    else:
+        base, fl = r.get("flashBase", 0.0), r.get("flash", 0.0)   # older reports
+        if fl > FLASH_ABS or (base > 0 and fl > base * FLASH_REL and fl > 0.12):
+            out.append(("FLASH", 50.0 + fl * 40,
+                        "%.0f%% of the stage near-white at t=%s (canon %.0f%%)"
+                        % (fl * 100, r.get("flashAt"), base * 100)))
 
     bl = r.get("blankFrames") or []
     if len(bl) >= 3:

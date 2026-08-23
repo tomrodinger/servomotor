@@ -433,7 +433,7 @@
       font: '"Helvetica Neue", Inter, Helvetica, Arial, sans-serif',
     },
     setup: function (stage, ctx) {
-      var g = gooWrap(stage, '#000000');
+      var g = gooWrap(stage, ctx.sc.paper);
       stage._box = g.box;
       /* ONE glyph per cell, not two.
        *

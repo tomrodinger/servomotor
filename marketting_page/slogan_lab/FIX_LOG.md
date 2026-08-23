@@ -377,3 +377,38 @@ had already been found and fixed *somewhere* in this codebase and then not appli
 
 `_frameaudit.html` is the harness; its stage is a copy of `rate.html`'s, so what it measures is what
 Tom sees. Change one, change the other.
+
+---
+
+# Round 8 — the rater's "On white" toggle
+
+`rate.html` has an **On white** button. Everything above was measured on the dark stage, so the
+light one was an entirely untested surface. Auditing it found the *mirror image* of the night's
+first bug.
+
+**First, the metric was wrong.** The initial white run reported all 96 effects flashing, which is
+nonsense. "Flash" was defined as the fraction of the stage gone near-white — and on a white stage
+the canonical frame is already 97% near-white, so every frame trips it. The measure now asks the
+question Tom actually asked: does the **ground** change colour? It compares each frame's median
+colour against the canonical frame's median colour. Validated both ways before trusting it — 0.000
+on the repaired `glitch-tear`, and 0.939 when the old white sheet was forced back in for one mount,
+against a 0.25 threshold.
+
+With that fixed: **88 of 96 clean on white.**
+
+**Four effects hard-coded a DARK sheet** — `glitch-lock`, `glitch-crt`, `glitch-rgb`,
+`liquid-mercury` — which is a black flash on a white stage, exactly the same mistake as the white
+paper on a dark stage, pointing the other way. All four now take `ctx.sc.paper`. Verified on both
+stages: ground shift 0.00-0.04 everywhere, and nothing on the dark stage regressed.
+
+**Three effects legitimately vanish on white, and are deliberately left alone.** `light-neon`,
+`light-bloom` and `dissolve-luminance` are built on additive light: `mixBlendMode: 'screen'`, white
+halos, `rgba(255,253,244, …)` ink. White is screen's identity, so on a white ground they compose to
+nothing. This is the same shape as the subtractive-print problem that `print-riso` and
+`dissolve-chromatic` needed solving in round 1, and the fix is the same in reverse — flip to
+`multiply` with dark ink when `ctx.sc.dark` is false. That is a genuine re-implementation of three
+effects, and they are pixel-perfect on the dark stage, which is the one being rated. Not worth
+doing speculatively at 03:30. **Known limitation, written down rather than half-fixed.**
+
+`mechanical-dot-matrix` also differs by 15-20% on white (its dot rendering does not resolve to
+plain text there). Same category, same reasoning.

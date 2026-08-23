@@ -105,15 +105,25 @@ def audit_effect(page, box, fx, pair, save_dir=None):
     canon_a, ink_a = at(0.0)
     canon_b, ink_b = at(1.0)
     base_bright = float((luma(canon_a) > 0.75).mean())
+    # The GROUND the transition is running on, i.e. the stage colour with the text ignored. A
+    # "flash" is this changing, not the frame being bright: on the rater's white stage the
+    # canonical frame is already 97% near-white, so an absolute brightness test flags all 96
+    # effects and means nothing. Comparing each frame's ground against the canonical frame's
+    # ground asks the question Tom actually asked — does the background change colour?
+    base_ground = np.median(canon_a.reshape(-1, 3), axis=0)
 
     rec = {"id": fx["id"], "family": fx.get("family", ""), "pair": pair,
            "canonInkA": ink_a, "canonInkB": ink_b, "frames": {}}
 
     worst_flash, worst_flash_t = base_bright, None
+    worst_shift, worst_shift_t = 0.0, None
     blanks = []
     for t in FRAMES:
         img, ink = at(t)
         bright = float((luma(img) > 0.75).mean())
+        shift = float(np.abs(np.median(img.reshape(-1, 3), axis=0) - base_ground).mean())
+        if shift > worst_shift:
+            worst_shift, worst_shift_t = shift, t
         cov = float((np.abs(img - canon_a).max(axis=2) > 0.06).mean())
         rec["frames"][str(t)] = {"bright": round(bright, 4), "box": ink_bbox(img)}
         if bright > worst_flash:
@@ -141,6 +151,8 @@ def audit_effect(page, box, fx, pair, save_dir=None):
     rec["flash"] = round(worst_flash, 4)
     rec["flashBase"] = round(base_bright, 4)
     rec["flashAt"] = worst_flash_t
+    rec["groundShift"] = round(worst_shift, 4)
+    rec["groundShiftAt"] = worst_shift_t
     rec["blankFrames"] = blanks
     rec["errors"] = page.evaluate("() => getErrors()")
 
@@ -161,6 +173,8 @@ def main():
                     help="thin the mid-transition probes; for sweeping many slogan pairs")
     ap.add_argument("--width", type=int, default=0,
                     help="stage width in px (default: the harness's own 1100, i.e. the rater's)")
+    ap.add_argument("--white", action="store_true",
+                    help="stage on white, matching the rater's 'On white' toggle")
     ap.add_argument("--out", default=os.path.join(OUT, "report.json"))
     a = ap.parse_args()
 
@@ -182,6 +196,9 @@ def main():
         if a.width:
             got = page.evaluate("w => setWidth(w)", a.width)
             print("stage width set to %spx" % got)
+        if a.white:
+            page.evaluate("() => setWhite(true)")
+            print("stage on WHITE (the rater's 'On white' toggle)")
         box = page.locator("#box")
         if want:
             effects = [e for e in effects if e["id"] in want]
