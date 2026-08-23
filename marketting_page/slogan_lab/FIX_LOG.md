@@ -394,7 +394,7 @@ colour against the canonical frame's median colour. Validated both ways before t
 on the repaired `glitch-tear`, and 0.939 when the old white sheet was forced back in for one mount,
 against a 0.25 threshold.
 
-With that fixed: **88 of 96 clean on white.**
+With that fixed: 88 of 96 clean on white. After the four dark-sheet repairs below, **92 of 96**.
 
 **Four effects hard-coded a DARK sheet** — `glitch-lock`, `glitch-crt`, `glitch-rgb`,
 `liquid-mercury` — which is a black flash on a white stage, exactly the same mistake as the white
@@ -412,3 +412,35 @@ doing speculatively at 03:30. **Known limitation, written down rather than half-
 
 `mechanical-dot-matrix` also differs by 15-20% on white (its dot rendering does not resolve to
 plain text there). Same category, same reasoning.
+
+---
+
+# Morning state, 06:00
+
+| check | result |
+|---|---|
+| 96 effects x 14 slogan pairs, dark stage 1100px (the rater) | **96 clean / 0 defects**, 1344 records |
+| 96 effects x 2 pairs, dark stage 680px (wrapping width) | **96 clean / 0 defects** |
+| 96 effects x 2 pairs, white stage (the "On white" toggle) | **92 clean / 4 known**, listed below |
+| canonical invariance / determinism / thrown errors | 0 / 0 / 0 |
+| continuity | 1 flagged: `light-neon`, a deliberate flicker |
+
+Worst residual on the rated stage: ink box 4px, median 1px, on 46px type.
+
+`rate.html` checked end to end at 06:00: 96 effects registered, stage `rgb(10,11,12)`, kerning
+disabled, all three buttons present, ratings still cleared, headlines cycling, no console errors.
+
+The four that are not clean on white, all understood and all perfect on the dark stage:
+
+| effect | why |
+|---|---|
+| `light-neon` | additive light — `mixBlendMode: 'screen'`, and white is screen's identity |
+| `light-bloom` | same |
+| `dissolve-luminance` | same |
+| `mechanical-dot-matrix` | its dot rendering does not resolve to plain text on a light ground |
+
+The fix for all four is the reversal that `print-riso` and `dissolve-chromatic` already got in
+round 1: flip to `multiply` with dark ink when `ctx.sc.dark` is false. It is a real
+re-implementation of four effects and was not worth doing speculatively overnight.
+
+The 96 GIFs in `gifs/` were re-exported from the fixed effects.
