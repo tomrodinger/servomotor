@@ -486,14 +486,25 @@
     theme: { bg: '#FFFFFF', fg: '#111114' },
     setup: function (stage, ctx) {
       stage.innerHTML = '';
-      var wrap = wrapEl({ background: '#FFFFFF', isolation: 'isolate' });
+      /* multiply's identity is white, screen's is black. The two-beat inking below leans on
+         that identity to keep a plate invisible until it is wanted, so both the blend mode and
+         the identity colour have to flip together with the ground. */
+      var dark = ctx.sc.dark;
+      var C = stage._chr = {
+        blend: dark ? 'screen' : 'multiply',
+        ident: dark ? [0, 0, 0] : CH_PAPER,      // contributes nothing under this blend
+        ink: dark ? [245, 245, 247] : CH_INK,    // a single neutral impression
+      };
+      C.inkCss = 'rgb(' + C.ink.join(',') + ')';
+      C.identCss = 'rgb(' + C.ident.join(',') + ')';
+      var wrap = wrapEl({ background: ctx.sc.paper, isolation: 'isolate' });
 
       function plates(s) {
         var list = [];
         for (var p = 0; p < PLATES.length; p++) {
           var d = lineEl();
-          d.style.color = p < 2 ? 'rgb(255,255,255)' : CH_INK_CSS;
-          d.style.mixBlendMode = 'multiply';
+          d.style.color = p < 2 ? C.identCss : C.inkCss;
+          d.style.mixBlendMode = C.blend;
           fillPlain(d, s);
           wrap.appendChild(d);
           list.push(d);
@@ -506,7 +517,7 @@
       stage._L = { wrap: wrap, out: o, in: n };
     },
     frame: function (stage, t) {
-      var L = stage._L, u = stage._u, p, P, d, sep, sc, fade;
+      var L = stage._L, u = stage._u, C = stage._chr, p, P, d, sep, sc, fade;
 
       /* outgoing: plates slip apart, each fading as it goes.
          A line in perfect register is ONE impression, not three. Three independently anti-aliased
@@ -524,7 +535,7 @@
         P = PLATES[p]; d = L.out[p];
         sep = 14 * u * a;
         sc = lerp(1, P.sc, a * 2.2);
-        d.style.color = p < 2 ? mix(CH_PAPER, P.rgb, s1) : mix(CH_INK, P.rgb, s2);
+        d.style.color = p < 2 ? mix(C.ident, P.rgb, s1) : mix(C.ink, P.rgb, s2);
         d.style.transform =
           'translate(' + (P.out[0] * sep).toFixed(2) + 'px,' + (P.out[1] * sep).toFixed(2) + 'px) ' +
           'scale(' + sc.toFixed(4) + ')';
@@ -543,7 +554,7 @@
         P = PLATES[p]; d = L.in[p];
         sep = 17 * u * ((1 - b) - over);
         sc = lerp(P.sc, 1, b);
-        d.style.color = p < 2 ? mix(P.rgb, CH_PAPER, r2) : mix(P.rgb, CH_INK, r1);
+        d.style.color = p < 2 ? mix(P.rgb, C.ident, r2) : mix(P.rgb, C.ink, r1);
         d.style.transform =
           'translate(' + (P.in[0] * sep).toFixed(2) + 'px,' + (P.in[1] * sep).toFixed(2) + 'px) ' +
           'scale(' + sc.toFixed(4) + ')';

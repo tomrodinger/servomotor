@@ -89,6 +89,14 @@
      exactly the two slogans at rest with nothing extra painted over them */
   function edges(t, a, b) { return Math.min(span(t, 0, a), span(1 - t, 0, b)); }
 
+  /* Same, but with a DEAD BAND: exactly 0 until `d`, and again after 1-d.
+     edges() only *approaches* zero at the endpoints, and the engine hands the effect frames as
+     close in as t=0.008 — at which edges(t,0.06,..) is already 0.13. Thirteen percent of a
+     white glare is not nothing: it is bright enough to count as ink, up in the corner where the
+     canonical frame has none, which reads as a lamp switching on the instant the effect starts.
+     Anything opaque that is NOT one of the two words wants this envelope, not the soft one. */
+  function ornament(t, d, w) { return Math.min(span(t, d, d + w), span(1 - t, d, d + w)); }
+
   /* ============================================================ 1. specular sweep ==========
      A gloss highlight — the kind that runs across a polished button — travels the line. The
      swap happens exactly under the hot band, so the join between two different texts is never
@@ -471,24 +479,34 @@
         l.inner.style.filter = bl > 0.05 ? 'blur(' + bl.toFixed(2) + 'px)' : 'none';
       }
 
-      // the sun drops through the first half of the move, then rises on the other side
-      var drop = E.inOutCubic(span(t, 0, 0.48));
-      var rise = E.inOutCubic(span(t, 0.48, 1));
+      /* THE SUN STARTS AND ENDS OVERHEAD.
+         This used to open with the shadow already cast — skew -13deg, two-thirds length, 20%
+         alpha — and close the same way, with the arriving shadow parked under the new line for
+         the last sixth of the move. Both resting slogans are drawn by the engine with no shadow
+         at all, so the effect punched a full cast shadow onto the headline on its first frame and
+         yanked it off again on its last: measured, the ink box jumped 241px at t=0.008.
+         The metaphor already had the answer in it and was only half wired — `rise` was computed
+         and never used. Now the sun really does start straight overhead (no shadow to see), drop
+         through the middle of the move where all the raking happens, and climb back overhead on
+         the far side. The shadow is BORN out of nothing and RETRACTS into nothing, so the two
+         endpoint frames are the bare words. */
+      var drop = E.inOutCubic(span(t, 0, 0.48));         // sun falling toward the horizon
+      var noon = E.inOutCubic(span(t, 0.78, 1));         // ...and climbing back overhead after
       var detach = E.inCubic(span(t, 0.34, 0.62));       // the old shadow letting go and leaving
-      var arrive = E.outCubic(span(t, 0.38, 0.86));      // the new shadow raking in and standing up
+      var arrive = E.outCubic(span(t, 0.38, 0.82));      // the new shadow raking in and standing up
 
       cast(L.outS,
-        lerp(-13, -62, drop),                            // rakes further over as the sun drops
-        lerp(0.66, 1.55, drop),
+        lerp(0, -62, drop),                              // rakes further over as the sun drops
+        lerp(0.04, 1.55, drop),                          // ...and lengthens out from underfoot
         lerp(0, 62, detach),
-        lerp(0.20, 0.30, drop) * (1 - span(t, 0.46, 0.72)),
+        lerp(0, 0.30, drop) * (1 - span(t, 0.46, 0.72)),
         lerp(0.4, 5.5, detach));
 
       cast(L.inS,
-        lerp(64, -13, arrive),                           // comes in raked the other way, stands up
-        lerp(1.60, 0.66, arrive),
+        lerp(64, -13, arrive) * (1 - noon),              // comes in raked the other way, stands up
+        lerp(1.60, 0.66, arrive) * (1 - noon) + 0.04 * noon,
         lerp(-64, 0, arrive),
-        Math.min(span(t, 0.34, 0.48), 1) * lerp(0.30, 0.20, arrive),
+        Math.min(span(t, 0.34, 0.48), 1) * lerp(0.30, 0.20, arrive) * (1 - noon),
         lerp(5.5, 0.4, arrive));
 
       // the text itself: the old holds until the new shadow has arrived, then hands over
@@ -498,9 +516,12 @@
       L.in.inner.style.opacity = String(fadeIn);
       L.in.inner.style.transform = 'translateY(' + (6 * (1 - E.outCubic(fadeIn))).toFixed(2) + 'px)';
 
-      // the light source itself, swinging across as the shadow swings the other way
+      // the light source itself, swinging across as the shadow swings the other way.
+      // edges() left this at 13% on the first frame — a white core bright enough to register as
+      // ink in the top-right corner, where the canonical frame has nothing at all. The lamp is a
+      // decoration, so it takes the dead-banded envelope: off entirely at both endpoints.
       var lx = lerp(88, 12, E.inOutCubic(t));
-      L.glare.style.opacity = String(edges(t, 0.06, 0.08));
+      L.glare.style.opacity = String(ornament(t, 0.03, 0.10));
       L.glare.style.background = 'radial-gradient(46% 130% at ' + lx.toFixed(1) + '% 8%,'
         + ' rgba(255,255,255,.90) 0%, rgba(255,250,232,.42) 34%, rgba(255,247,224,0) 74%)';
     },
@@ -510,8 +531,11 @@
       L.outS.inner.style.opacity = '0';
       L.in.inner.style.opacity = '1';
       L.in.inner.style.transform = 'none';
-      L.inS.inner.style.opacity = '0.20';
-      L.inS.inner.style.transform = 'translateX(0%) skewX(-13deg) scaleY(0.66) scaleX(1.011)';
+      // Settled means sun overhead, so no shadow — the same picture the engine's canonical layer
+      // draws. Parking a 20% cast shadow here contradicted it and was the reason the last frame
+      // of the transition did not match the first frame of the rest.
+      L.inS.inner.style.opacity = '0';
+      L.inS.inner.style.transform = 'translateX(0%) skewX(0deg) scaleY(0.04) scaleX(1)';
       L.inS.inner.style.filter = 'none';
       L.glare.style.opacity = '0';
     },

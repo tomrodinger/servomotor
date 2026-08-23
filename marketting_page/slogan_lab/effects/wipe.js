@@ -294,8 +294,24 @@
 
   /* inset that ignores the word box's 0.26em breathing padding: v% of the GLYPH band, measured
      from the top (fromTop) or the bottom. */
+  /* Clip a word box, v = 0 shows all of it, v = 100 hides all of it.
+   *
+   * Each word sits inside 0.26em of empty padding top and bottom (see wordsInto), so a plain
+   * 0->100% inset spends its first and last sixth eating padding and the word looks frozen at both
+   * ends of its window. The pad term biases the travel onto actual glyph.
+   *
+   * It used to ramp 0.26em -> -0.26em, which put the clip edge at the glyph's BOTTOM at v=100
+   * rather than at the bottom of the box, leaving the empty bottom padding unclipped. That was
+   * invisible right up until you notice frame() also translates the inner span down by up to
+   * 0.16em — which walks real glyph pixels into that supposedly empty strip. The incoming line was
+   * therefore showing as a sliver at t=0, and the measured ink box spanned BOTH slogans at once:
+   * up to 334px off canonical, worst on the pairs whose two texts differ most in width. Only the
+   * all-slogan-pairs sweep caught it; pairs 0 and 12 happen to hide it.
+   *
+   * Ramping to zero instead keeps the bias where it matters and makes "hidden" mean hidden.
+   */
   function pctPad(v, fromTop) {
-    var pad = (0.26 - 0.0052 * v).toFixed(4) + 'em';
+    var pad = (0.26 * (1 - v / 100)).toFixed(4) + 'em';
     var len = 'calc(' + v.toFixed(2) + '% + ' + pad + ')';
     return fromTop ? 'inset(' + len + ' 0 0 0)' : 'inset(0 0 ' + len + ' 0)';
   }

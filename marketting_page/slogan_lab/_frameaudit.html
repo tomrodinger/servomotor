@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>frame audit harness</title>
+<style>
+  /* The stage below is a byte-for-byte copy of rate.html's .stagebox / .fx-stage rules, so what
+     this harness measures is what Tom sees in the rater. Change one, change the other. */
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#141416;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",
+       "Helvetica Neue",Helvetica,Arial,sans-serif}
+  #box{position:relative;background:#0A0B0C;color:#F5F5F7;height:330px;width:1100px;overflow:hidden}
+  #box.onwhite{background:#fff;color:#1d1d1f}
+  .fx-stage{position:absolute;inset:0;
+            font-size:clamp(26px,3.4vw,46px);line-height:1.08;letter-spacing:-.03em;text-align:center}
+  .fx-stage .fx-light{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+  .fx-stage .fx-light,.fx-stage .fx-bold{display:block}
+</style>
+</head>
+<body>
+<div id="box"><div id="stage"></div></div>
+
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+/* Deterministic single-frame renderer for the audit.
+ *
+ * The engine already makes every effect a pure function of progress t, so a frame can simply be
+ * asked for rather than caught mid-animation. Nothing here ever calls play(): the player is
+ * mounted, parked, and then driven one _render(t) at a time. That is what makes the audit
+ * reproducible — two runs of the same effect at the same t are the same pixels.
+ */
+const SLOGANS = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+];
+
+const stage = document.getElementById('stage');
+const box = document.getElementById('box');
+
+window.__errors = [];
+window.addEventListener('error', e => window.__errors.push(String(e.message)));
+const _err = console.error;
+console.error = function () {
+  window.__errors.push(Array.prototype.join.call(arguments, ' '));
+  return _err.apply(console, arguments);
+};
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error('load failed: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+window.__ready = (async () => {
+  for (const f of window.SLOGAN_FX_FILES) await loadScript(f);
+  return SloganFX.all().map(e => ({ id: e.id, name: e.name || '', family: e.family || '',
+                                    duration: e.duration || 1000 }));
+})();
+
+let player = null, mountedId = null, mountedPair = null;
+
+/* Mount one effect and park it. `pair` selects which slogan pair the transition runs between —
+   the audit sweeps several, because a bug can hide behind one particular pair's word count. */
+window.mountFx = function (id, pair) {
+  const fx = SloganFX.get(id);
+  if (!fx) throw new Error('no such effect: ' + id);
+  if (player) { try { player.destroy(); } catch (e) {} }
+  window.__errors.length = 0;
+  stage.innerHTML = '';
+  player = SloganFX.mount(stage, fx, SLOGANS, { start: pair });
+  player.pause();
+  mountedId = id; mountedPair = pair;
+  return true;
+};
+
+window.setFrame = function (t) {
+  player._render(t);
+  return true;
+};
+
+window.setWhite = function (on) { box.classList.toggle('onwhite', !!on); };
+
+/* Resize the stage the way a browser window resize would. Effects that MEASURE at setup
+   (glyph positions, row heights, column counts) can be right at 1100px and wrong at 390px,
+   and the rater only ever shows one width. */
+window.setWidth = function (w) { box.style.width = w + 'px'; return box.getBoundingClientRect().width; };
+
+/* Geometry of what is actually on screen, independent of pixels: the union of the client rects of
+   every element that carries text. Cheap, and it catches a size or position jump that a pixel diff
+   might blur away. */
+window.inkBox = function () {
+  const r0 = box.getBoundingClientRect();
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, n = 0;
+  const walk = (el) => {
+    for (const c of el.children) {
+      const cs = getComputedStyle(c);
+      if (cs.visibility === 'hidden' || cs.display === 'none' || parseFloat(cs.opacity) === 0) continue;
+      const hasText = Array.prototype.some.call(c.childNodes,
+        n => n.nodeType === 3 && n.textContent.trim().length);
+      if (hasText) {
+        const r = c.getBoundingClientRect();
+        if (r.width && r.height) {
+          x0 = Math.min(x0, r.left - r0.left); y0 = Math.min(y0, r.top - r0.top);
+          x1 = Math.max(x1, r.right - r0.left); y1 = Math.max(y1, r.bottom - r0.top);
+          n++;
+        }
+      }
+      walk(c);
+    }
+  };
+  walk(box);
+  if (!n) return null;
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, n };
+};
+
+window.getErrors = function () { return window.__errors.slice(); };
+</script>
+</body>
+</html>

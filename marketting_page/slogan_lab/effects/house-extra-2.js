@@ -21,9 +21,9 @@
         position: 'absolute', left: '0', right: '0', textAlign: 'center',
         willChange: 'transform,opacity,filter',
       });
-      var a = FX.el('span', 'fx-light'); a.textContent = s.light;
-      var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
-      d.appendChild(a); d.appendChild(FX.el('br')); d.appendChild(b);
+      var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+      var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+      d.appendChild(a); d.appendChild(b);
       wrap.appendChild(d);
       return d;
     }
@@ -42,11 +42,11 @@
       var d = FX.el('div', 'fx-line', {
         position: 'absolute', left: '0', right: '0', textAlign: 'center',
       });
-      var l = FX.el('span', 'fx-light');
+      var l = FX.el('span', 'fx-light', { display: 'block' });
       var lc = FX.charWords(s.light); l.appendChild(lc.frag);
-      var b = FX.el('span', 'fx-bold');
+      var b = FX.el('span', 'fx-bold', { display: 'block' });
       var bc = FX.charWords(s.bold); b.appendChild(bc.frag);
-      d.appendChild(l); d.appendChild(FX.el('br')); d.appendChild(b);
+      d.appendChild(l); d.appendChild(b);
       wrap.appendChild(d);
       return { el: d, nodes: lc.nodes.concat(bc.nodes) };
     }
@@ -71,6 +71,7 @@
       var tick = FX.el('div', null, {
         position: 'absolute', top: '50%', width: '1px', height: '13px',
         marginTop: '-6px', background: '#2B4C7E', pointerEvents: 'none',
+        opacity: '0',
       });
       stage._l.wrap.appendChild(rule);
       stage._l.wrap.appendChild(tick);
@@ -80,10 +81,16 @@
       var L = stage._l;
       var draw = E.inOutCubic(span(t, 0, .55));
       var back = E.inOutCubic(span(t, .5, 1));
+      /* The drafting furniture used to be at full strength from the very first frame, and the
+       * tick starts parked at left:0 — the stage edge, 330px outside the canonical headline box.
+       * So the transition opened with a hard blue mark appearing out of nowhere at the far left,
+       * which is exactly the snap Tom sees. The rule and its tick belong to the middle of the
+       * transition, not to the rest state, so let the pen come down over the first tenth. */
+      var pen = E.outQuad(span(t, .01, .12));
       stage._rule.style.width = (draw * 100) + '%';
-      stage._rule.style.opacity = String(1 - back);
+      stage._rule.style.opacity = String(pen * (1 - back));
       stage._tick.style.left = (draw * 100) + '%';
-      stage._tick.style.opacity = String(draw > 0 ? 1 - back : 0);
+      stage._tick.style.opacity = String(pen * (1 - back));
       // old line is erased behind the travelling tick; new line is drawn in after it
       L.out.style.webkitClipPath = L.out.style.clipPath =
         'inset(0 ' + (draw * 100) + '% 0 0)';
@@ -111,25 +118,36 @@
       var scale = FX.el('div', null, {
         position: 'absolute', left: '0', right: '0', bottom: '10%', height: '9px',
         backgroundImage: 'repeating-linear-gradient(to right,#9aa3ad 0 1px,transparent 1px 12px)',
-        opacity: '.5', pointerEvents: 'none',
+        opacity: '0', pointerEvents: 'none',
       });
       stage._l.wrap.appendChild(scale);
       stage._scale = scale;
     },
     frame: function (stage, t) {
       var L = stage._l;
-      var p = E.outQuint(t);
+      /* outQuint is nearly 4% along by t=0.008, which was pulling the outgoing line 4px left on
+       * the very first frame. Hold the carriage still for the first 6% and run the same curve
+       * over what is left, so the slide starts from the canonical position instead of beside it. */
+      var p = E.outQuint(span(t, .06, 1));
       var over = Math.sin(Math.PI * clamp(t, 0, 1)) * 5;   // slight travel past the mark
       L.out.style.transform = 'translateX(' + (-p * 100 - over) + 'px)';
       L.out.style.opacity = String(1 - E.inQuad(span(t, .1, .55)));
       L.in.style.transform = 'translateX(' + ((1 - p) * 110 + over) + 'px)';
       L.in.style.opacity = String(E.outCubic(span(t, .3, .8)));
+      /* The scale was painted at a flat .5 opacity for the whole of 0<t<1. It is a full-width
+       * ruler near the bottom of the stage, so at t=0.008 and t=0.992 the ink on screen was an
+       * 1100px rule plus the headline instead of the ~440px headline alone — a 650px jump in the
+       * measured box, and to the eye a ruler that blinks on and off around every transition.
+       * The scale is part of the movement: it has to arrive and leave with it. */
+      var vis = Math.min(span(t, 0, .16), 1 - span(t, .84, 1));
+      stage._scale.style.opacity = String(.5 * vis);
       stage._scale.style.backgroundPosition = (-p * 90) + 'px 0';
     },
     rest: function (stage) {
       var L = stage._l;
       L.out.style.opacity = '0';
       L.in.style.opacity = '1'; L.in.style.transform = 'none';
+      stage._scale.style.opacity = '0';
     },
   });
 
@@ -139,6 +157,24 @@
     id: 'hy-origami', name: 'Origami Panels', family: 'Fold',
     blurb: 'Vertical panels fold away in sequence and unfold as the new line.',
     duration: 1400,
+    /* MECHANISM REBUILT.
+     *
+     * This used to turn each panel a full 180 degrees about its left or right edge and carry the
+     * new text on a counter-rotated back face. Two problems, both fatal to the endpoint contract:
+     *
+     *   1. `overflow:hidden` clips in the slot's OWN coordinates and the clip travels with the
+     *      transform. A half-turn about a side hinge is a mirror about that hinge, so the visible
+     *      window ends up one panel-width to the side of where the panel belongs — the eight
+     *      panels landed interleaved, ~157px off the canonical box at pair 0 and ~482px at 12.
+     *   2. The back face was counter-rotated about ITS own centre, which is not the hinge, so the
+     *      two mirrors composed into a translation rather than cancelling.
+     *
+     * The idea survives: vertical panels, alternating hinges, folding away in sequence and
+     * unfolding as the new line. But now they fold to EDGE-ON and back out again — a real
+     * accordion closing and reopening — and the text swaps at the crease where the panel is
+     * invisible. A quarter-turn out and back is identity at both ends by construction, so t=0.008
+     * and t=0.992 are the canonical frames whatever the stagger does.
+     */
     setup: function (stage, ctx) {
       stage.innerHTML = '';
       var wrap = FX.el('div', 'fx-wrap', {
@@ -161,10 +197,10 @@
             left: (-off) + 'px', width: '0', textAlign: 'center',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           });
-          var a = FX.el('span', 'fx-light'); a.textContent = s.light;
-          var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
+          var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+          var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
           var inner = FX.el('div');
-          inner.appendChild(a); inner.appendChild(FX.el('br')); inner.appendChild(b);
+          inner.appendChild(a); inner.appendChild(b);
           f.appendChild(inner);
           return f;
         }
@@ -185,15 +221,19 @@
         p.o.style.left = (-p.k * W / p.N) + 'px';
         p.n.style.left = (-p.k * W / p.N) + 'px';
         var lead = (p.k / p.N) * .42;
-        var q = E.inOutCubic(span(t, lead, lead + .5));
-        var ang = q * 180;
+        var q = span(t, lead, lead + .5);
+        // 0 -> 1 -> 0 with a flat start and a flat finish, so a panel that has not begun and a
+        // panel that has finished are both exactly unrotated. sin(pi*q) would leave a 4.5deg
+        // tilt on the leading panel at t=0.008; the raised-cosine leaves 0.23deg.
+        var fold = .5 - .5 * Math.cos(2 * Math.PI * q);
+        var ang = fold * 90;
         p.slot.style.transform = 'rotateY(' + (p.k % 2 ? -ang : ang) + 'deg)';
+        // swap at the crease, where the panel is edge-on and the change cannot be seen
         p.o.style.opacity = String(q < .5 ? 1 : 0);
         p.n.style.opacity = String(q < .5 ? 0 : 1);
-        // counter-rotate the revealed face so the new text reads the right way round
-        p.n.style.transform = 'rotateY(180deg)';
-        var shade = 1 - Math.abs(Math.cos(ang * Math.PI / 180)) * .18;
-        p.slot.style.filter = 'brightness(' + shade + ')';
+        p.n.style.transform = 'none';
+        // darkest edge-on, back to full when the panel lies flat again at either end
+        p.slot.style.filter = 'brightness(' + (1 - fold * .22) + ')';
       });
     },
     rest: function (stage) {
@@ -300,13 +340,26 @@
             transform: 'translateY(' + (-k2 * 100 / N) + '%)',
           });
           var box = FX.el('div', 'fx-line');
-          var a = FX.el('span', 'fx-light'); a.textContent = s.light;
-          var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
-          box.appendChild(a); box.appendChild(FX.el('br')); box.appendChild(b);
+          var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+          var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+          box.appendChild(a); box.appendChild(b);
           f.appendChild(box);
           return f;
         }
         var o = face(ctx.from, k), n = face(ctx.to, k);
+        /* The back face has to turn about the SAME axis as the slat that carries it, or the two
+         * half-turns compose into a translation instead of cancelling.
+         *
+         * Each face is a full-stage-height sheet shifted up so its band lines up with the slat, so
+         * its default origin (50% 50%) is the middle of the STAGE, while the slat pivots about the
+         * middle of its own band. Only the centre slat had those two coincide; every other slat
+         * landed its text one or more band-heights out, which is the 33px the endpoint audit saw
+         * at t=0.992 once the nine displaced bands were unioned together.
+         *
+         * The slat's pivot sits at stage y = (k + 0.5) * slatHeight, and the face is aligned to
+         * stage coordinates, so as a fraction of the face's own N-band height that is
+         * (2k+1)/(2N). Setting the origin there makes the pair of mirrors exact. */
+        n.style.transformOrigin = '50% ' + ((2 * k + 1) * 100 / (2 * N)) + '%';
         n.style.transform += ' rotateX(180deg)';
         slat.appendChild(o); slat.appendChild(n);
         wrap.appendChild(slat);
@@ -384,9 +437,9 @@
           backfaceVisibility: 'hidden', transformOrigin: 'center center',
           willChange: 'transform',
         });
-        var a = FX.el('span', 'fx-light'); a.textContent = s.light;
-        var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
-        d.appendChild(a); d.appendChild(FX.el('br')); d.appendChild(b);
+        var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+        var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+        d.appendChild(a); d.appendChild(b);
         wrap.appendChild(d);
         return d;
       }

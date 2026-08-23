@@ -234,7 +234,7 @@
     theme: { bg: '#FBFBF9', fg: '#16171A' },
     setup: function (stage, ctx) {
       var d = size(stage, ctx);
-      var w = wrapper(stage, '#FBFBF9');
+      var w = wrapper(stage, ctx.sc.paper);
 
       /* measure where the type actually is — font, wrapping and stage height all move it */
       var probe = face(ctx.from, FULL);
@@ -418,7 +418,7 @@
     theme: { bg: '#F2F2EF', fg: '#191A1D' },
     setup: function (stage, ctx) {
       var d = size(stage, ctx);
-      var w = wrapper(stage, '#F2F2EF');
+      var w = wrapper(stage, ctx.sc.paper);
       var cols = clamp(Math.round(d.W / 68), 5, 13);
       var rows = clamp(Math.round(d.H / 42), 3, 8);
       stage._m = [];
@@ -569,7 +569,7 @@
     theme: { bg: '#FAFAF7', fg: '#17181B' },
     setup: function (stage, ctx) {
       var d = size(stage, ctx);
-      var w = wrapper(stage, '#FAFAF7');
+      var w = wrapper(stage, ctx.sc.paper);
 
       /* the two sharp lines, built per character so we can measure real glyph positions;
          charWords keeps each word an inline-block, so nothing ever breaks mid-word */

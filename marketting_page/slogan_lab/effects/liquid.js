@@ -206,7 +206,7 @@
       font: '"Helvetica Neue", Inter, Helvetica, Arial, sans-serif',
     },
     setup: function (stage, ctx) {
-      var g = gooWrap(stage, '#FFFFFF');
+      var g = gooWrap(stage, ctx.sc.paper);
       stage._box = g.box;
       stage._out = charLayer(g.wrap, ctx.from);
       stage._in = charLayer(g.wrap, ctx.to);
@@ -222,8 +222,18 @@
          The peak sits at t=0.42 — the instant the blob exists — and is nearly spent by t=0.55,
          by which time the new line is already pulling out of it and legible again. */
       var g = Math.exp(-Math.pow((t - 0.42) / 0.115, 2));
-      stage._box.style.filter = g < 0.005 ? 'none'
-        : 'blur(' + n3(6.5 * g) + 'px) contrast(' + n3(1 + 13 * g) + ')';
+
+      /* The filter is applied for the WHOLE transition, at identity values when g is small,
+         rather than being switched between 'none' and a value at a threshold.
+         Toggling `filter` on and off is not a no-op even when the value is nearly identity: it
+         creates and destroys a stacking context, so the box is re-rasterised and the type shifts
+         by a fraction of a pixel. Measured as a single frame-to-frame step of 0.036 at t=0.157
+         against a background of 0.005 — a 7x pop in the middle of an otherwise smooth melt, and
+         the only real discontinuity found in the whole set. Holding the filter on costs a
+         blur(0px) that never renders differently, and the pop is gone.
+         The effect layer is hidden at t<=0 and t>=1, so this never touches the canonical frames. */
+      stage._box.style.filter =
+        'blur(' + n3(6.5 * g) + 'px) contrast(' + n3(1 + 13 * g) + ')';
 
       /* Ink swells before it melts. Without this the 300-weight row is too thin to survive the
          contrast threshold and vanishes instead of going gooey. */

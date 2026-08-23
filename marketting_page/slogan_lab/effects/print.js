@@ -133,9 +133,23 @@
           });
           line.appendChild(word);
           if (gi < groups.length - 1) {
-            var sp = FX.el('span', null, { whiteSpace: 'pre' });
-            sp.textContent = ' ';
+            /* The inter-word gap is a CELL, so it can collapse with the group it introduces.
+               alignWords pads the word LIST as well as the letters, so turning a four-word slogan
+               into a seven-word one leaves groups that are entirely blank at one end. Those
+               collapse to zero width below, but the space in FRONT of each of them did not, and on
+               a centred line those phantom spaces drag the text sideways — 8-13px off canonical on
+               the six slogan pairs whose two texts differ in word count. */
+            var nxt = groups[gi + 1].pairs;
+            var liveA = nxt.some(function (q) { return (q[0] || '').trim(); });
+            var liveB = nxt.some(function (q) { return (q[1] || '').trim(); });
+            var sp = FX.el('span', null, {
+              display: 'inline-block', whiteSpace: 'pre', willChange: 'width',
+            });
+            sp.textContent = liveA ? ' ' : '';
             line.appendChild(sp);
+            stage._cells.push({
+              c: sp, a: liveA ? ' ' : '', b: liveB ? ' ' : '', blank: true, gap: true,
+            });
           }
         });
         col.appendChild(line);
@@ -164,6 +178,9 @@
          letter with no counterpart grows out of nothing under the press, which is what a press
          does anyway. */
       for (k = 0; k < C.length; k++) {
+        /* Gaps are exempt: a live gap IS a space, and zeroing it would run the words together.
+           Its two widths were measured from its own two sides, which are '' where it collapses. */
+        if (C[k].gap) continue;
         if (!(C[k].a || '').trim()) C[k].wa = 0;
         if (!(C[k].b || '').trim()) C[k].wb = 0;
       }
@@ -220,11 +237,17 @@
     dwell: 4600,
     theme: { bg: '#F7F3E8', fg: '#1B1A18', font: SANS },
     setup: function (stage, ctx) {
-      // isolate so mixBlendMode multiplies against this paper and nothing outside it
-      var wrap = wrapper(stage, { background: '#F7F3E8', isolation: 'isolate' });
+      /* Riso is a SUBTRACTIVE process: spot inks multiply down onto white paper. That is only
+         true on white paper. On the dark hero the same drums have to work the other way round —
+         light added to a dark ground — so the blend flips to screen and the sheet becomes
+         whatever the stage already is. The misregistration, the re-inking and the walk back
+         into alignment are identical; only the direction of the ink changes. */
+      var blend = ctx.sc.dark ? 'screen' : 'multiply';
+      // isolate so the blend composites against this sheet and nothing outside it
+      var wrap = wrapper(stage, { background: ctx.sc.paper, isolation: 'isolate' });
       stage._key = sheet(wrap, ctx.from);
-      stage._g = sheet(wrap, ctx.from, { color: GREEN, mixBlendMode: 'multiply' });
-      stage._p = sheet(wrap, ctx.from, { color: PINK, mixBlendMode: 'multiply' });
+      stage._g = sheet(wrap, ctx.from, { color: GREEN, mixBlendMode: blend });
+      stage._p = sheet(wrap, ctx.from, { color: PINK, mixBlendMode: blend });
       stage._ctx = ctx;
     },
     frame: function (stage, t, ctx) {
@@ -408,9 +431,9 @@
           willChange: 'clip-path',
         });
         var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
-        var a = FX.el('span', 'fx-light'); a.textContent = s.light + ' ';
-        var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
-        inner.appendChild(a); inner.appendChild(FX.el('br')); inner.appendChild(b);
+        var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light + ' ';
+        var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+        inner.appendChild(a); inner.appendChild(b);
         f.appendChild(inner);
         return { el: f, inner: inner };
       }
@@ -493,7 +516,14 @@
       var fs = parseFloat(getComputedStyle(stage).fontSize) || 26;
       var x = xf * W - hw * fs;
       var hh = (cur.y1 - cur.y0) + 6;
-      var vis = Math.min(span(t, 0, 0.05), span(1 - t, 0, 0.05));
+      /* The carriage parks at the far left of the sheet, well outside the headline's own box, so
+         it is the leftmost thing on the stage the moment it is drawn at all. span(t,0,0.05) is
+         already at 16% on the engine's first handover frame (t=0.008) — 16% of a near-black block
+         on paper is plainly visible — and the ink box therefore jumped 302px left of canonical
+         before a single band had printed. A dead band ahead of the ramp keeps the head and its
+         wet stripe entirely off the sheet until the first pass is genuinely under way, and gets
+         them off again before the last one finishes, so the endpoint frames are the words alone. */
+      var vis = Math.min(span(t, 0.02, 0.09), span(1 - t, 0.02, 0.09));
 
       stage._head.style.height = hh + 'px';
       stage._head.style.transform = 'translate(' + n2(x) + 'px,' + (cur.y0 - 3) + 'px)';
@@ -537,29 +567,33 @@
       var wrap = wrapper(stage);
 
       // bottom sheet: the new line, always fully printed, simply covered up at first
-      sheet(wrap, ctx.to, { background: TEAR_PAPER });
+      var PAPER = ctx.sc.paper;                       // the sheet IS the stage, whatever it is
+      sheet(wrap, ctx.to, { background: PAPER });
 
       // the part of the top sheet still attached (right of the tear)
-      stage._keep = sheet(wrap, ctx.from, { background: TEAR_PAPER, willChange: 'clip-path' });
+      stage._keep = sheet(wrap, ctx.from, { background: PAPER, willChange: 'clip-path' });
 
       // the torn-off piece (left of the tear): opaque paper that moves as one
       var piece = FX.el('div', null, {
         position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
-        background: TEAR_PAPER, willChange: 'transform, clip-path, opacity, filter',
+        background: PAPER, willChange: 'transform, clip-path, opacity, filter',
       });
       var pi = FX.el('div', null, {
         position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       });
       var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
-      var a = FX.el('span', 'fx-light'); a.textContent = ctx.from.light + ' ';
-      var b = FX.el('span', 'fx-bold'); b.textContent = ctx.from.bold;
-      inner.appendChild(a); inner.appendChild(FX.el('br')); inner.appendChild(b);
+      // Two block rows and NO <br> — see sheet() above. A <br> between two display:block
+      // halves adds an empty third line box, so the torn piece sat looser and higher than
+      // the canon and the headline jumped at both ends of the tear.
+      var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = ctx.from.light;
+      var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = ctx.from.bold;
+      inner.appendChild(a); inner.appendChild(b);
       pi.appendChild(inner); piece.appendChild(pi);
       // the raw fibre along the torn edge: a sliver of near-white clipped inside the piece
       var fib = FX.el('div', null, {
         position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
-        background: 'rgba(255,255,255,.72)', willChange: 'clip-path', pointerEvents: 'none',
+        background: ctx.sc.shade(0.34), willChange: 'clip-path', pointerEvents: 'none',
       });
       piece.appendChild(fib);
       wrap.appendChild(piece);

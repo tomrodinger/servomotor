@@ -111,10 +111,18 @@
         willChange: 'transform,opacity',
       });
       var items = [];
-      add(d, s.light, 'fx-light', items);
-      if (o.split) d.appendChild(el('br'));
-      else d.appendChild(document.createTextNode(' '));
-      add(d, s.bold, 'fx-bold', items);
+      /* Two BLOCK rows, no <br>. These layers tag individual WORDS .fx-light/.fx-bold, so
+         the engine's two-line enforcement deliberately skips them (it only acts on a parent
+         holding exactly one of each) and the <br> was the only thing separating the halves —
+         which meant an extra anonymous line box and a headline that jumped a whole line the
+         moment the effect took over. Giving each half its own block row separates them the
+         same way the canonical layer does. Every caller passes split:true, so the old
+         one-line branch was dead code and is gone. */
+      var rowL = el('div', null, { display: 'block' });
+      var rowB = el('div', null, { display: 'block' });
+      add(rowL, s.light, 'fx-light', items);
+      add(rowB, s.bold, 'fx-bold', items);
+      d.appendChild(rowL); d.appendChild(rowB);
       wrap.appendChild(d);
       return { el: d, items: items };
     }
@@ -219,7 +227,14 @@
 
       for (k = 0; k < ni; k++) {
         var lead2 = 0.14 + u(k, ni) * 0.16;
-        s = span(t, lead2, 1);
+        /* The bounce has to LAND before the transition ends, not exactly on it. This window used
+           to close at t=1, so at t=0.992 outBounce had not quite reached 1 and every word was
+           still a fraction of a pixel above its resting place — the last thing the eye sees is the
+           headline settling after the effect is supposed to be over. Invisible at 1100px, where
+           nothing wraps; 6.3% of the stage out at 680px, where the long slogan runs to more lines
+           and the residual is multiplied across them. Landing at 0.96 leaves the final frames
+           genuinely at rest. */
+        s = span(t, lead2, 0.96);
         var b = E.outBounce(s);
         // squash exactly at the contacts: b touches 1 at each landing, and the window closes
         // as s -> 1 so the settled frame is never squashed
@@ -320,12 +335,14 @@
           background: 'linear-gradient(180deg, rgba(122,182,72,.75), rgba(122,182,72,.10))',
         });
         var d = el('div', 'fx-line', { position: 'absolute', left: '0', right: '0', textAlign: 'center' });
-        var lt = el('span', 'fx-light'); lt.textContent = s.light;
-        var bd = el('span', 'fx-bold'); bd.textContent = s.bold;
-        d.appendChild(lt); d.appendChild(el('br')); d.appendChild(bd);
+        var lt = el('span', 'fx-light', { display: 'block' }); lt.textContent = s.light;
+        var bd = el('span', 'fx-bold', { display: 'block' }); bd.textContent = s.bold;
+        d.appendChild(lt); d.appendChild(bd);
         a.appendChild(rod); a.appendChild(d);
         wrap.appendChild(a);
-        return a;
+        // the rod is kept out separately: it is hardware, and has to fade independently of the
+        // words hanging off it — see the `rig` envelope in frame()
+        return { el: a, rod: rod };
       }
       var out = arm(ctx.from), inn = arm(ctx.to);
       var pin = el('div', null, {
@@ -335,12 +352,31 @@
       });
       wrap.appendChild(pin);
       stage.appendChild(wrap);
-      stage._p = { out: out, in: inn, pin: pin };
+      stage._p = { out: out.el, in: inn.el, rodOut: out.rod, rodIn: inn.rod, pin: pin };
     },
     frame: function (stage, t) {
       var P = stage._p;
-      // a short anticipation the wrong way, then the push
-      var back = 7 * Math.sin(Math.PI * span(t, 0, 0.20));
+
+      /* THE RIG IS NOT PART OF THE HEADLINE.
+         The pivot pin sits at the very top of the stage and the rod runs 38% of the way down it,
+         both in solid green, both painted at full strength from the first frame to the last. The
+         canonical resting frames are two lines of text and nothing else, roughly 126px below the
+         pin — so the ink box grew by exactly that 126px the instant the effect took over, and
+         shrank by it again at the end. Measured 126px at BOTH endpoints on every slogan pair.
+         The rig now materialises as the push begins and is gone before the line rings to a stop,
+         which is also the better reading: you see the pendulum's hardware while it is doing
+         something, not bolted to a headline standing still. The dead band matters — a plain ramp
+         is still at 8% on the handover frame, and 8% of this green is above the noise floor. */
+      var rig = Math.min(span(t, 0.02, 0.12), span(1 - t, 0.02, 0.12));
+      P.rodOut.style.opacity = String(rig);
+      P.rodIn.style.opacity = String(rig);
+      P.pin.style.opacity = String(rig * (0.25 + 0.75 * Math.sin(Math.PI * clamp(t, 0, 1))));
+
+      /* A short anticipation the wrong way, then the push. sin() leaves the arm at 0.88deg on the
+         handover frame; rotating about the pivot at the top of the stage, that is already ±6px of
+         vertical shear at the ends of a 800px line — visible as a tilt appearing from nowhere.
+         Squaring it gives the same peak and the same return to zero, but leaves from rest. */
+      var back = 7 * Math.pow(Math.sin(Math.PI * span(t, 0, 0.20)), 2);
       var swing = 64 * E.inCubic(span(t, 0.05, 0.62));
       var ao = back - swing;
       P.out.style.transform = 'rotate(' + ao.toFixed(2) + 'deg)';
@@ -351,14 +387,16 @@
       var ai = 58 * (1 - q);
       P.in.style.transform = 'rotate(' + (-ai).toFixed(2) + 'deg)';
       P.in.style.opacity = String(clamp(span(t, 0.20, 0.36), 0, 1));
-      P.pin.style.opacity = String(0.25 + 0.75 * Math.sin(Math.PI * clamp(t, 0, 1)));
     },
     rest: function (stage) {
       var P = stage._p;
       P.out.style.opacity = '0';
       P.in.style.transform = 'rotate(0deg)';
       P.in.style.opacity = '1';
-      P.pin.style.opacity = '0.25';
+      // settled = rig struck, matching the engine's canonical frame, which is text only
+      P.rodOut.style.opacity = '0';
+      P.rodIn.style.opacity = '0';
+      P.pin.style.opacity = '0';
     },
   });
 

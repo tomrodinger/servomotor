@@ -57,10 +57,18 @@
         willChange: 'transform,opacity,filter', backfaceVisibility: 'hidden',
       });
       var w = [];
-      addWords(d, s.light, 'fx-light', w);
-      if (o.split) d.appendChild(el('br'));
-      else d.appendChild(document.createTextNode(' '));
-      addWords(d, s.bold, 'fx-bold', w);
+      /* Two BLOCK rows, no <br>. These layers tag individual WORDS .fx-light/.fx-bold, so
+         the engine's two-line enforcement deliberately skips them (it only acts on a parent
+         holding exactly one of each) and the <br> was the only thing separating the halves —
+         which meant an extra anonymous line box and a headline that jumped a whole line the
+         moment the effect took over. Giving each half its own block row separates them the
+         same way the canonical layer does. Every caller passes split:true, so the old
+         one-line branch was dead code and is gone. */
+      var rowL = el('div', null, { display: 'block' });
+      var rowB = el('div', null, { display: 'block' });
+      addWords(rowL, s.light, 'fx-light', w);
+      addWords(rowB, s.bold, 'fx-bold', w);
+      d.appendChild(rowL); d.appendChild(rowB);
       wrap.appendChild(d);
       return { el: d, words: w };
     }

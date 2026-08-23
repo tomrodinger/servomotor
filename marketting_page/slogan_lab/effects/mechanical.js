@@ -60,14 +60,28 @@
     return clamp(Math.min(t / inA, (1 - t) / outA), 0, 1);
   }
 
+  /* 'rgb(r,g,b)' -> 'rgba(r,g,b,a)'. The sheet colours ctx.sc hands out are opaque by design, but
+     every piece of machinery in this file has to be able to fade to literally nothing at the
+     endpoints, so it needs them with an alpha channel. */
+  function fade(rgb, a) {
+    var m = /rgba?\(([^)]+)\)/.exec(rgb || '');
+    if (!m) return rgb;
+    var p = m[1].split(',');
+    return 'rgba(' + p[0].trim() + ',' + p[1].trim() + ',' + p[2].trim() + ',' + a.toFixed(3) + ')';
+  }
+
   /* ================================================================= 1. SPLIT-FLAP BOARD ==== */
   /* Solari departure board. Every cell is a real two-flap card: the top flap falls away showing
      the next glyph's top half behind it, then the bottom flap swings up. Each cell riffles
      through its own deterministic number of intermediate glyphs before landing on the target. */
 
-  var CH = 1.16;                 /* card height, em */
-  var CM = 0.01;                 /* card margin, em — set so the row pitch equals the canon's */
-  var CG = 0.02;                 /* gap between a card and its cell edge, em */
+  /* Row pitch has to be the canon's line box exactly. The cells are inline-blocks aligned to the
+     top of their line, so their MARGIN box is what sets the pitch: CH + 2*CM must equal the
+     stage's 1.08 line-height. At the old 1.16 + 2*0.01 every board row stood 0.10em taller than
+     the canonical one, which walked the second line down and stretched the ink box at both ends. */
+  var CH = 1.06;                 /* card height, em */
+  var CM = 0.01;                 /* card margin, em — CH + 2*CM == the canon's 1.08 line box */
+  var CGX = 0.09;                /* how far a flap's clipper reaches past its cell, em */
 
   function flapSeq(a, b, k) {
     var set = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -80,21 +94,35 @@
     return seq;
   }
 
+  /* One half of a card. Two jobs, and they want different widths, so they are two elements:
+       - the CLIPPER shows only the top or the bottom of a full-height glyph, and it reaches CGX
+         past the cell on both sides;
+       - the FACE, the painted card itself, stays exactly on the cell.
+     A cell is one glyph advance wide and the stage runs -0.03em letter-spacing, so a clipper on
+     the cell bounds shaved the right-hand edge off every glyph. Invisible while the cards are lit,
+     obvious at t=0.008 and t=0.992 where the cards have faded out and the glyphs are all that is
+     left to compare against the canonical line. The card must line up with the grid; the letter
+     must not be touched. */
   function flapHalf(isTop) {
     var d = FX.el('div', null, {
-      position: 'absolute', left: CG + 'em', right: CG + 'em', height: (CH / 2) + 'em',
+      position: 'absolute', left: (-CGX) + 'em', right: (-CGX) + 'em', height: (CH / 2) + 'em',
       overflow: 'hidden', background: 'transparent',
-      borderRadius: isTop ? '.07em .07em 0 0' : '0 0 .07em .07em',
       backfaceVisibility: 'hidden',
     });
     d.style[isTop ? 'top' : 'bottom'] = '0';
+    var face = FX.el('div', null, {
+      position: 'absolute', left: CGX + 'em', right: CGX + 'em', top: '0', bottom: '0',
+      background: 'transparent',
+      borderRadius: isTop ? '.07em .07em 0 0' : '0 0 .07em .07em',
+    });
+    d.appendChild(face);
     var txt = FX.el('div', null, {
-      position: 'absolute', left: '0', right: '0', height: CH + 'em',
+      position: 'absolute', left: CGX + 'em', right: CGX + 'em', height: CH + 'em',
       lineHeight: CH + 'em', textAlign: 'center', whiteSpace: 'pre',
     });
     txt.style.top = isTop ? '0' : (-CH / 2) + 'em';
     d.appendChild(txt);
-    return { box: d, txt: txt };
+    return { box: d, face: face, txt: txt };
   }
 
   FX.register({
@@ -115,16 +143,6 @@
       stage._gaps = [];
       var rows = twoRows(c.inner);
 
-      /* Measure the real monospace advance rather than assuming .6em: the cell pitch has to equal
-         the canonical text's character pitch to the pixel, or a long line wraps one word earlier
-         than the canon does and the headline jumps a whole line at the endpoints. */
-      var probe = FX.el('span', null, { position: 'absolute', visibility: 'hidden', whiteSpace: 'pre' });
-      probe.textContent = 'MMMMMMMMMM';
-      c.inner.appendChild(probe);
-      var ADV = probe.getBoundingClientRect().width / 10 || 12;
-      c.inner.removeChild(probe);
-      stage._adv = ADV;
-
       function hasSide(g, side) {
         return g.pairs.some(function (p) { return !!(p[side] || '').trim(); });
       }
@@ -132,6 +150,29 @@
       /* One board row per half of the headline, so the two lines of the canonical rest state
          survive the whole transition. */
       function buildRow(host, a, b) {
+        /* Per-glyph natural advances, measured in THIS row's weight.
+           The board used to be one monospace pitch, measured off an 'M', on the assumption that
+           the stage was running the effect's own monospace theme. The rater deliberately never
+           applies an effect's theme — the page owns the font — so every cell came out an 'M' wide
+           in a proportional face and the line rendered hundreds of px wider than the canonical
+           text it has to start and end on (425px out at t=0.008, 373px at t=0.992).
+           Cells are now one glyph wide and animate from the FROM glyph's advance to the TO
+           glyph's, the way the flip-card board further down does it. The cards, the riffle and
+           the two-flap fall are unchanged; only the grid stops pretending to be monospace. */
+        var probe = FX.el('span', null, {
+          position: 'absolute', visibility: 'hidden', whiteSpace: 'pre', left: '-9999px', top: '0',
+        });
+        host.appendChild(probe);
+        var cache = {};
+        function adv(ch) {
+          if (!ch) return 0;
+          if (cache[ch] == null) {
+            probe.textContent = ch;
+            cache[ch] = probe.getBoundingClientRect().width;
+          }
+          return cache[ch];
+        }
+        var SPW = adv(' ');
         var groups = FX.alignWords(a, b);
         groups.forEach(function (g, gi) {
           var word = FX.el('span', null, { display: 'inline-block', whiteSpace: 'nowrap' });
@@ -139,8 +180,8 @@
             var k = stage._cells.length;
             var cell = FX.el('span', null, {
               position: 'relative', display: 'inline-block', verticalAlign: 'top',
-              width: ADV + 'px', height: CH + 'em', margin: CM + 'em 0',
-              perspective: '7em', overflow: 'hidden',
+              width: adv(pr[0]).toFixed(3) + 'px', height: CH + 'em', margin: CM + 'em 0',
+              perspective: '7em',
             });
             var blank = (!(pr[0] || '').trim() && !(pr[1] || '').trim());
             var st = flapHalf(true), sb = flapHalf(false);
@@ -159,47 +200,49 @@
             word.appendChild(cell);
             stage._cells.push({
               st: st.txt, sb: sb.txt, ft: ft, fb: fb, blank: blank, seam: seam, cell: cell,
-              halves: [st.box, sb.box, ft.box, fb.box],
+              faces: [st.face, sb.face, ft.face, fb.face],
               /* a cell that only exists on one side of the pair is a card the board is adding or
-                 pulling out: its slot closes as it flips, so each endpoint measures exactly the
-                 text that is actually there — no ghost width left over from the other slogan */
-              wa: !!(pr[0] || '').trim(), wb: !!(pr[1] || '').trim(),
+                 pulling out: its slot closes to zero as it flips, so each endpoint measures
+                 exactly the text that is there — no ghost width left over from the other slogan */
+              wa: adv(pr[0]), wb: adv(pr[1]),
               seq: blank ? [' ', ' '] : flapSeq(pr[0], pr[1], k),
             });
           });
           host.appendChild(word);
           if (gi < groups.length - 1) {
-            var sp = FX.el('span', null, { display: 'inline-block', width: ADV + 'px' });
+            var sp = FX.el('span', null, { display: 'inline-block', width: SPW.toFixed(3) + 'px' });
             host.appendChild(sp);
             stage._gaps.push({
-              el: sp,
+              el: sp, w: SPW,
               a: hasSide(g, 0) && hasSide(groups[gi + 1], 0),
               b: hasSide(g, 1) && hasSide(groups[gi + 1], 1),
             });
           }
         });
+        host.removeChild(probe);
       }
       buildRow(rows[0], ctx.from.light, ctx.to.light);
       buildRow(rows[1], ctx.from.bold, ctx.to.bold);
     },
-    frame: function (stage, t) {
-      var cells = stage._cells, n = cells.length, A = stage._adv;
+    frame: function (stage, t, ctx) {
+      var cells = stage._cells, n = cells.length, sc = ctx.sc;
       /* the cards themselves fade up out of plain text and back into it, so the frames either
-         side of the engine's canonical endpoints are plain text on the same grid */
-      var chrome = chromeAt(t, 0.07, 0.10);
-      var cardBg = 'rgba(28,29,32,' + chrome.toFixed(3) + ')';
-      var seamBg = 'rgba(8,9,10,' + chrome.toFixed(3) + ')';
+         side of the engine's canonical endpoints are plain text on the same grid.
+         The card was a hard-coded near-black rgba(28,29,32) — a black card carrying dark ink the
+         moment the stage is light. It is now the stage's own sheet, lifted. */
+      var chrome = chromeAt(t, 0.08, 0.10);
+      var cardBg = fade(sc.raised, chrome);
+      var seamBg = fade(sc.sunken, chrome);
       var gp = E.inOutQuad(span(t, 0.08, 0.84));
       for (var gi = 0; gi < stage._gaps.length; gi++) {
         var G = stage._gaps[gi];
-        G.el.style.width = (A * lerp(G.a ? 1 : 0, G.b ? 1 : 0, gp)).toFixed(3) + 'px';
+        G.el.style.width = lerp(G.a ? G.w : 0, G.b ? G.w : 0, gp).toFixed(3) + 'px';
       }
       for (var k = 0; k < n; k++) {
         var c = cells[k];
         var lead = 0.08 + (k / Math.max(1, n)) * 0.30 + h1(k, 9) * 0.04;
         var p = E.inOutQuad(span(t, lead, lead + 0.46));
-        var wf = c.wa && c.wb ? 1 : (c.wa ? 1 - p : (c.wb ? p : 0));
-        c.cell.style.width = (A * wf).toFixed(3) + 'px';
+        c.cell.style.width = lerp(c.wa, c.wb, p).toFixed(3) + 'px';
         var steps = c.seq.length - 1;
         var f = Math.min(p * steps, steps);
         var si = Math.min(Math.floor(f), steps - 1);
@@ -221,7 +264,7 @@
           c.ft.box.style.filter = c.fb.box.style.filter = 'none';
           continue;   /* a pad cell holds width only — never a card, never a seam */
         }
-        for (var q = 0; q < 4; q++) c.halves[q].style.background = cardBg;
+        for (var q = 0; q < 4; q++) c.faces[q].style.background = cardBg;
         c.seam.style.background = seamBg;
         /* the fall is fast, the swing-up lands with a little bite */
         if (u < 0.5) {
@@ -245,7 +288,8 @@
       stage._cells.forEach(function (c) {
         var last = c.seq[c.seq.length - 1];
         c.st.textContent = last; c.sb.textContent = last;
-        for (var q = 0; q < 4; q++) c.halves[q].style.background = 'transparent';
+        c.cell.style.width = c.wb.toFixed(3) + 'px';
+        for (var q = 0; q < 4; q++) c.faces[q].style.background = 'transparent';
         c.seam.style.background = 'transparent';
         c.ft.txt.textContent = last; c.fb.txt.textContent = last;
         c.ft.box.style.transform = 'rotateX(0deg)';
@@ -298,9 +342,13 @@
                grow, shrink or spin without dragging the line around with it. The width itself is
                animated from the FROM glyph's width to the TO glyph's, which is what makes the
                first and last frames measure exactly like the engine's canonical text. */
+            /* Height is the canon's line box, not a roomier 1.18em. The cells are top-aligned
+               inline-blocks, so their height IS the row pitch: at 1.18em every row stood 0.10em
+               taller than the canonical one, which pushed the bold line down and stretched the
+               ink box ~13px at the start and ~20px at the end. */
             var cell = FX.el('span', null, {
               position: 'relative', display: 'inline-block', verticalAlign: 'top',
-              perspective: '520px', height: '1.18em', width: '0px',
+              perspective: '520px', height: '1.08em', width: '0px',
             });
             var card = FX.el('span', null, {
               position: 'absolute', left: '0', top: '0', width: '0', height: '0',
@@ -312,7 +360,7 @@
             function face(ch, back) {
               var f = FX.el('span', null, {
                 position: 'absolute', left: '0', top: '0', display: 'block', whiteSpace: 'pre',
-                textAlign: 'center', lineHeight: '1.18em', padding: '0',
+                textAlign: 'center', lineHeight: '1.08em', padding: '0',
                 backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
                 borderRadius: '2px',
               });
@@ -323,9 +371,11 @@
                  the middle of a word at the very endpoint the canon renders as clean text. */
               if (!(ch || '').trim()) f.style.visibility = 'hidden';
               f.appendChild(g);
+              /* the raking shadow is plain black at low alpha, which darkens correctly whatever
+                 the sheet under it happens to be — it is a shadow, not a sheet */
               var shade = FX.el('span', null, {
                 position: 'absolute', left: '0', top: '0', right: '0', bottom: '0',
-                borderRadius: '2px', background: '#0B0C0E', opacity: '0', zIndex: '2',
+                borderRadius: '2px', background: '#000', opacity: '0', zIndex: '2',
                 pointerEvents: 'none',
               });
               f.appendChild(shade);
@@ -364,15 +414,20 @@
         C.b.el.style.transform = 'translateX(-50%) rotateY(180deg)';
       });
     },
-    frame: function (stage, t) {
-      var cards = stage._cards, n = cards.length;
+    frame: function (stage, t, ctx) {
+      var cards = stage._cards, n = cards.length, sc = ctx.sc;
       /* the whole board leans back a touch while the wave crosses it */
       var tilt = Math.sin(Math.PI * E.inOutQuad(t)) * 3.2;
       stage._board.style.transform = 'rotateX(' + tilt + 'deg)';
-      /* the tiles themselves fade up out of plain text and back into it at the endpoints */
-      var chrome = chromeAt(t, 0.08, 0.09);
-      var faceBg = 'linear-gradient(rgba(255,255,255,' + chrome.toFixed(3) +
-        '),rgba(241,238,231,' + chrome.toFixed(3) + '))';
+      /* The tiles fade up out of plain text and back into it at the endpoints — but a linear ramp
+         still left 9-10% of a tile painted over every glyph at t=0.008 and t=0.992, which is
+         ~9% of the stage reading differently from the canonical frame. Squaring the ramp puts the
+         endpoints at half a percent while the tiles are still fully solid across the middle. */
+      var chrome = Math.pow(chromeAt(t, 0.12, 0.12), 2);
+      /* The faces were a hard-coded white-to-#F1EEE7 gradient: right on this effect's own beige
+         theme, a full white card wall on the dark stage the rater actually uses. The card is the
+         stage's own sheet, lifted off it. */
+      var faceBg = 'linear-gradient(' + fade(sc.raised, chrome) + ',' + fade(sc.paper, chrome) + ')';
       var gp = E.inOutQuart(span(t, 0.06, 0.90));
       for (var gi = 0; gi < stage._gaps.length; gi++) {
         var G = stage._gaps[gi];
@@ -393,9 +448,12 @@
           'translateZ(' + z.toFixed(2) + 'px) rotateY(' + ang.toFixed(2) + 'deg) scale(' +
           sc.toFixed(3) + ')';
         if (C.blank) continue;
+        /* cast shadow stays plain black — a shadow darkens whatever it falls on — but the hairline
+           round the tile has to READ, so it comes off ctx.sc.edge, which leans light on a dark
+           stage and dark on a light one */
         var sh = '0 ' + (1.5 + 7 * s).toFixed(1) + 'px ' + (3 + 10 * s).toFixed(1) +
           'px rgba(0,0,0,' + (chrome * (0.10 + 0.20 * s)).toFixed(3) +
-          '), inset 0 0 0 1px rgba(0,0,0,' + (chrome * 0.07).toFixed(3) + ')';
+          '), inset 0 0 0 1px ' + fade(sc.edge, chrome * 0.55);
         C.a.el.style.boxShadow = C.b.el.style.boxShadow = sh;
         C.a.el.style.background = C.b.el.style.background = faceBg;
         /* light rakes across the face as it turns: the leading edge stays bright, the far side
@@ -626,6 +684,7 @@
       var panel = FX.el('div', null, { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 });
       dotBg(panel, '#1D2428', 38);
       w.appendChild(panel);
+      stage._panel = panel;
 
       function sign(s, cls) {
         var glow = FX.el('div', null, {
@@ -640,19 +699,20 @@
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         });
         dotMask(inner, 42);
-        var txt = FX.el('div', null, {
-          textAlign: 'center', maxWidth: '100%', lineHeight: '1.26em',
-          WebkitTextStroke: '0.014em currentColor',
-        });
+        /* No line-height of its own. At 1.26em the sign's two rows sat 0.18em further apart than
+           the canonical pair, so even with the LEDs off the headline was the wrong shape at both
+           endpoints. The stage's 1.08 is the shape the engine parks on. */
+        var txt = FX.el('div', null, { textAlign: 'center', maxWidth: '100%' });
         twoWeights(txt, s);
         inner.appendChild(txt); outer.appendChild(inner); glow.appendChild(outer);
         w.appendChild(glow);
-        return { glow: glow, outer: outer, inner: inner };
+        return { glow: glow, outer: outer, inner: inner, txt: txt };
       }
 
       stage._ghost = sign(ctx.from);
       stage._out = sign(ctx.from);
       stage._in = sign(ctx.to);
+      stage._signs = [stage._ghost, stage._out, stage._in];
 
       var scan = FX.el('div', null, { position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 });
       dotBg(scan, '#FFF2D2', 44);
@@ -664,13 +724,33 @@
       var P = -12 + e * 124;                       /* refresh-bar position, % of board */
       var soft = 5;
 
+      /* THE BOARD IS NOT ALWAYS A BOARD.
+         The panel of unlit dots, the mask that chops the glyphs into pixels, the LED bloom and the
+         hairline text stroke were all on for the whole transition, so ~29% of the stage differed
+         from the canonical frame at t=0.008 AND at t=0.992 — the endpoints were an LED sign where
+         the engine parks plain text. All of it now ramps up out of, and back into, an ordinary
+         rendered line: at the ends the dots literally grow until they swallow their own cells and
+         the message resolves into solid type, which is also how a real sign looks when you walk
+         far enough away from it. */
+      var chrome = chromeAt(t, 0.09, 0.11);
+      stage._panel.style.opacity = chrome.toFixed(3);
+      /* 42% of the cell's half-diagonal is a round LED; past 100% the circle swallows the whole
+         cell, which is the same thing as having no mask at all */
+      var rad = lerp(112, 42, chrome);
+      for (var i = 0; i < stage._signs.length; i++) {
+        dotMask(stage._signs[i].inner, rad);
+        stage._signs[i].txt.style.WebkitTextStroke =
+          (0.014 * chrome).toFixed(4) + 'em currentColor';
+      }
+
       sweepMask(stage._out.outer, 'linear-gradient(90deg, transparent ' + (P - 1).toFixed(2) +
         '%, #000 ' + (P + soft).toFixed(2) + '%)');
       sweepMask(stage._in.outer, 'linear-gradient(90deg, #000 ' + (P - soft).toFixed(2) +
         '%, transparent ' + (P + 1).toFixed(2) + '%)');
 
       /* phosphor persistence: the whole old message hangs on faintly, then decays */
-      stage._ghost.glow.style.opacity = String(0.16 * (1 - E.outQuad(span(t, 0.10, 0.92))));
+      stage._ghost.glow.style.opacity =
+        String(0.16 * chrome * (1 - E.outQuad(span(t, 0.10, 0.92))));
       sweepMask(stage._ghost.outer, 'linear-gradient(90deg, #000 0%, #000 100%)');
 
       /* the bar itself: a band of every LED on the board driven hard */
@@ -679,22 +759,31 @@
         '%, #000 ' + P.toFixed(2) + '%, rgba(0,0,0,.35) ' + (P + 2.4).toFixed(2) +
         '%, transparent ' + (P + 5.5).toFixed(2) + '%)';
       sweepMask(stage._scan, band);
-      stage._scan.style.opacity = String(0.85 * Math.min(1, span(t, 0, 0.06) * 1) *
+      stage._scan.style.opacity = String(chrome * 0.85 * Math.min(1, span(t, 0, 0.06) * 1) *
         (1 - E.inQuad(span(t, 0.88, 1))));
 
-      /* glow, and a two-beat settle flash once the bar clears the right edge */
+      /* glow, and a two-beat settle flash once the bar clears the right edge. The bloom is ink
+         spread outside the glyph, so it has to shrink to nothing with the rest of the hardware or
+         the ink box measures wider than the canon at the ends. */
       var flash = 1 + 0.34 * Math.sin(span(t, 0.86, 1) * Math.PI * 2) * (1 - span(t, 0.86, 1));
-      stage._out.glow.style.filter = 'drop-shadow(0 0 .07em rgba(255,179,36,.55))';
+      var bloom = (0.07 * chrome).toFixed(4) + 'em';
+      stage._out.glow.style.filter = 'drop-shadow(0 0 ' + bloom + ' rgba(255,179,36,.55))';
       stage._in.glow.style.filter =
-        'drop-shadow(0 0 .07em rgba(255,179,36,.6)) brightness(' + flash.toFixed(3) + ')';
-      stage._ghost.glow.style.filter = 'blur(.4px)';
+        'drop-shadow(0 0 ' + bloom + ' rgba(255,179,36,.6)) brightness(' + flash.toFixed(3) + ')';
+      stage._ghost.glow.style.filter = 'blur(' + (0.4 * chrome).toFixed(3) + 'px)';
     },
     rest: function (stage) {
       sweepMask(stage._out.outer, 'linear-gradient(90deg, transparent 0%, transparent 100%)');
       sweepMask(stage._in.outer, 'linear-gradient(90deg, #000 0%, #000 100%)');
       stage._ghost.glow.style.opacity = '0';
       stage._scan.style.opacity = '0';
-      stage._in.glow.style.filter = 'drop-shadow(0 0 .07em rgba(255,179,36,.6))';
+      stage._panel.style.opacity = '0';
+      /* settled == the sign has resolved into ordinary type: dots off, mask open, no bloom */
+      stage._signs.forEach(function (S) {
+        dotMask(S.inner, 112);
+        S.txt.style.WebkitTextStroke = '0em currentColor';
+      });
+      stage._in.glow.style.filter = 'none';
     },
   });
 
@@ -718,32 +807,34 @@
       var w = box(stage, { perspective: '900px' });
       stage._wrap = w;
 
-      function line(s, sz) {
+      /* The sheet in the machine is the SAME sheet the engine parks on: two rows, page type size,
+         page line height. This used to set fontSize .9em, lineHeight 1.32em and run both halves
+         into one flowing paragraph separated by a space — so the headline shrank 10%, re-wrapped
+         wherever it liked and collapsed from two lines to one the instant the transition started
+         (316px out at t=0.008, 250px at t=0.992). Only the striking is per character now. */
+      function line(s) {
         var b = FX.el('div', null, {
           position: 'absolute', left: 0, top: 0, right: 0, bottom: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           willChange: 'transform,opacity',
         });
-        var inner = FX.el('div', null, {
-          textAlign: 'center', maxWidth: '100%', fontSize: sz, lineHeight: '1.32em',
-        });
+        var inner = FX.el('div', null, { textAlign: 'center', maxWidth: '100%' });
+        var rows = twoRows(inner);
         var nodes = [];
-        function add(text, cls) {
+        function add(row, text, cls) {
           var cw = FX.charWords(text, cls);
-          inner.appendChild(cw.frag);
-          cw.nodes.forEach(function (nd) { nd.classList.add(cls); nodes.push(nd); });
+          row.appendChild(cw.frag);
+          cw.nodes.forEach(function (nd) { nodes.push(nd); });
         }
-        add(s.light, 'fx-light');
-        var gap = FX.el('span', null, { whiteSpace: 'pre' }); gap.textContent = ' ';
-        inner.appendChild(gap);
-        add(s.bold, 'fx-bold');
+        add(rows[0], s.light, 'fx-light');
+        add(rows[1], s.bold, 'fx-bold');
         b.appendChild(inner);
         w.appendChild(b);
         return { box: b, inner: inner, nodes: nodes };
       }
 
-      stage._old = line(ctx.from, '.9em');
-      stage._new = line(ctx.to, '.9em');
+      stage._old = line(ctx.from);
+      stage._new = line(ctx.to);
 
       var caret = FX.el('div', null, {
         position: 'absolute', left: '0', top: '0', width: '.09em', height: '1.1em',
@@ -783,8 +874,14 @@
       var sh = span(t, 0.08, 0.30);
       var shunt = sh <= 0 ? 0 : (sh >= 1 ? 1 : E.outBack(sh));
 
-      /* ---- strike schedule */
-      var T0 = 0.26, T1 = 0.985;
+      /* the carriage, the caret and nothing else: hardware fades out before the endpoints */
+      var chrome = chromeAt(t, 0.06, 0.06);
+
+      /* ---- strike schedule.
+         The last key used to land at 0.985 and take another 0.066 to settle, so at t=0.992 the
+         final four glyphs were still 30% opaque, 1.3x oversized and rotated — the frame the engine
+         hands over to the canonical text. Everything is struck and settled by ~0.95 now. */
+      var T0 = 0.26, T1 = 0.88;
       function strikeAt(k) { return n <= 1 ? T0 : T0 + (k / (n - 1)) * (T1 - T0); }
       var last = -1;
       for (var k = 0; k < n; k++) {
@@ -831,7 +928,10 @@
       }
       stage._caret.style.height = ch + 'px';
       stage._caret.style.transform = 'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px)';
-      stage._caret.style.opacity = String(last < 0 ? 0.58 : 0.5);
+      /* The caret is a full-line-height bar of ink sitting outside the text, so at the endpoints
+         it both widens and heightens the ink box against a canonical frame that has no caret at
+         all. Squared so it is gone, not merely faint, by the time the engine takes over. */
+      stage._caret.style.opacity = String((last < 0 ? 0.58 : 0.5) * chrome * chrome);
     },
     rest: function (stage) {
       var N = stage._new, pos = stage._pos;
@@ -855,7 +955,15 @@
      under a fixed hairline, and instead of easing politely to a stop it overshoots and is walked
      back in three shrinking vernier corrections until the mark sits dead on the line. */
 
-  function slideBase(u) { return E.outQuint(span(u, 0, 0.66)); }
+  /* The shove has to START FROM REST. Bare outQuint dumps 6% of the journey into the first 1% of
+     the transition, so at t=0.008 the rail — and with it the whole headline — had already jumped
+     75px sideways out of the canonical position the engine had just been showing. Gating it with a
+     short ease-in keeps the punch (three quarters of the travel is still done by t=0.17) and puts
+     the frame next to the canonical one within a quarter of a pixel of it. */
+  function slideBase(u) {
+    var s = span(u, 0, 0.66);
+    return E.outQuint(s) * E.inQuad(clamp(s / 0.22, 0, 1));
+  }
   function slideWobble(u) {
     var v = span(u, 0.46, 1);
     if (v <= 0 || v >= 1) return 0;
@@ -906,7 +1014,7 @@
       }
 
       /* fixed stator scale */
-      scale(w, '2px', false, 'D');
+      var stator = scale(w, '2px', false, 'D');
 
       /* the rail: masked at both ends so text slides in and out through a soft edge */
       var railBox = FX.el('div', null, {
@@ -933,9 +1041,10 @@
           position: 'absolute', left: 0, top: 0, right: 0, bottom: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         });
-        var inner = FX.el('div', null, {
-          textAlign: 'center', maxWidth: '100%', lineHeight: '1.26em', padding: '0 .4em',
-        });
+        /* No line-height or padding of its own: the rail carries the canonical two-line block,
+           not a looser copy of it. At 1.26em the two halves sat 0.18em further apart than the
+           text the engine shows either side of this transition. */
+        var inner = FX.el('div', null, { textAlign: 'center', maxWidth: '100%' });
         twoWeights(inner, s);
         b.appendChild(inner);
         b.style.transform = 'translateX(' + dx + 'px)';
@@ -961,13 +1070,27 @@
       glass.appendChild(hair);
       w.appendChild(glass);
       stage._glass = glass; stage._hair = hair;
+      stage._scales = [stator, sl];
     },
     frame: function (stage, t) {
       var D = stage._D;
+      /* THE INSTRUMENT IS NOT PART OF THE HEADLINE.
+         Both engraved scales run 340% of the stage wide and the glass cursor is a lit panel down
+         the middle of it, so at t=0.008 and t=0.992 the ink on screen spanned the whole stage
+         while the canonical frame either side was two centred lines of text — 659px and 706px out,
+         the worst pair of endpoints in the file. The rail's hardware now racks up out of nothing
+         and back into it; only the text is left at the ends. */
+      var chrome = chromeAt(t, 0.12, 0.12);
+      stage._scales[0].style.opacity = (0.55 * chrome).toFixed(3);
+      stage._scales[1].style.opacity = (0.55 * chrome).toFixed(3);
+      stage._glass.style.opacity = chrome.toFixed(3);
+
       var x = slideX(t, D);
       var v = Math.abs(slideX(clamp(t + 0.012, 0, 1), D) - slideX(clamp(t - 0.012, 0, 1), D));
       var bl = Math.min(3.4, v * 0.09);
-      var tilt = 0.34 * (1 - slideBase(t));
+      /* the rail's lean off true goes with the hardware — a rotation about the stage centre moves
+         the text too, and at the endpoints the text must not move */
+      var tilt = 0.34 * (1 - slideBase(t)) * chrome;
       stage._rail.style.transform =
         'translateX(' + x.toFixed(2) + 'px) rotate(' + tilt.toFixed(3) + 'deg)';
       stage._rail.style.filter = bl > 0.06 ? 'blur(' + bl.toFixed(2) + 'px)' : 'none';

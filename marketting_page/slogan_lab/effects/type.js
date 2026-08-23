@@ -193,8 +193,16 @@
         var units = [], inners = [];
         [[light, 300], [bold, 650]].forEach(function (part) {
           var row = FX.el('div', null, { textAlign: 'center' });
+          /* Characters are hidden with VISIBILITY, not display, so the block always occupies the
+             fully-typed layout: same width, same height, same wrap points, from the first frame to
+             the last. That is what lets the row stay text-align:center like the canonical layer.
+             It used to toggle display and left-align inside a width locked to the measured text —
+             which held still at 1100px, where none of the slogans wrap, and came apart at 680px,
+             where the long one does: the effect left-aligned each wrapped line while the canon
+             centred it, 53px out at the start and 66px at the end. Revealing rather than inserting
+             costs nothing and is correct at every width. */
           var inner = FX.el('span', null, {
-            display: 'inline-block', textAlign: 'left', verticalAlign: 'top',
+            display: 'inline-block', textAlign: 'center', verticalAlign: 'top',
             whiteSpace: 'normal', fontWeight: String(part[1]),
           });
           units = units.concat(typeUnits(inner, part[0], part[1]));
@@ -202,11 +210,8 @@
           box.appendChild(row);
           inners.push(inner);
         });
-        inners.forEach(function (inner) {
-          var r = inner.getBoundingClientRect();
-          inner.style.width = (r.width + 0.5) + 'px';
-          inner.style.height = r.height + 'px';
-        });
+        // No width/height lock: with visibility-hiding the block is already at its settled size.
+
         return { holder: holder, units: units, first: inners[0] };
       }
 
@@ -241,17 +246,17 @@
            key-repeat accelerate the way a held delete key does */
         var tau = 0.12 + 0.88 * Math.pow((nA - i) / nA, 0.85);
         var on = tp < tau;
-        A[i].el.style.display = on ? A[i].disp : 'none';
+        A[i].el.style.visibility = on ? 'visible' : 'hidden';
         A[i].el.style.opacity = '1';
         if (!typing && on && A[i].disp === 'inline-block') last = A[i].el;
       }
       for (i = 0; i < B.length; i++) {
         var born = wB[i];
         if (tq < born) {
-          B[i].el.style.display = 'none';
+          B[i].el.style.visibility = 'hidden';
         } else {
           var age = clamp((tq - born) / 0.030, 0, 1);
-          B[i].el.style.display = B[i].disp;
+          B[i].el.style.visibility = 'visible';
           B[i].el.style.opacity = String(lerp(0.15, 1, age));
           if (B[i].disp === 'inline-block') {
             B[i].el.style.transform = 'translateY(' + (0.11 * (1 - age)) + 'em)';
@@ -268,9 +273,14 @@
       }
       var busy = (t > 0.025 && t < 0.34) || (t > 0.39 && t < 0.94);
       var ph = (t * 5) % 1;                       // blink is a function of t, not of the clock
-      /* the canon carries no caret, so it fades in after the start and out before the end
-         instead of popping into existence on top of a settled line */
-      var edge = span(t, 0, 0.05) * (1 - span(t, 0.95, 1));
+      /* The canon carries no caret, so it fades in after the start and out before the end instead
+         of popping into existence on top of a settled line. The old window opened at t=0, which
+         is not "after the start": the block caret hangs 0.58em past the last glyph, so by t=0.008
+         it was already legible and the headline measured 25px wider than the canonical FROM text —
+         a visible bar appearing out of nowhere at the moment the transition starts. Nothing is
+         erased before t=0.02 either, so hold the caret back until the delete key does something,
+         and have it gone well before the last keystroke settles. */
+      var edge = span(t, 0.02, 0.10) * (1 - span(t, 0.90, 0.97));
       cur.style.opacity = String((busy ? 1 : (ph < 0.55 ? 1 : 0.05)) * edge);
     },
   });

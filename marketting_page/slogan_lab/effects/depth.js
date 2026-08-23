@@ -98,9 +98,11 @@
     var L = layer(box, { light: '', bold: '' }, opt);
     L.inner.innerHTML = '';
     var w1 = FX.words(s.light, 'fx-light'), w2 = FX.words(s.bold, 'fx-bold');
-    L.inner.appendChild(w1.frag);
-    L.inner.appendChild(FX.el('br'));
-    L.inner.appendChild(w2.frag);
+    // Block rows rather than a <br> — see the note at the top of this file; the <br> added an
+    // empty third line box and the layer sat a line off the canonical text at both ends.
+    var r1 = FX.el('div', null, { display: 'block' }); r1.appendChild(w1.frag);
+    var r2 = FX.el('div', null, { display: 'block' }); r2.appendChild(w2.frag);
+    L.inner.appendChild(r1); L.inner.appendChild(r2);
     L.nodes = w1.nodes.concat(w2.nodes);
     L.nodes.forEach(function (n) {
       n.style.backfaceVisibility = 'hidden';
@@ -158,8 +160,8 @@
     dwell: 4200,
     setup: function (stage, ctx) {
       var sc = scene(stage, 1500);
-      var A = layer(sc.box, ctx.from, { bg: WHITE.bg });
-      var B = layer(sc.box, ctx.to, { bg: WHITE.bg });
+      var A = layer(sc.box, ctx.from, { bg: ctx.sc.paper });
+      var B = layer(sc.box, ctx.to, { bg: ctx.sc.paper });
       var H = equalize(sc.box, [A.face, B.face]);
       A.face.style.transform = 'translateZ(' + (H / 2) + 'px)';
       B.face.style.transform = 'rotateX(90deg) translateZ(' + (H / 2) + 'px)';
@@ -213,8 +215,8 @@
     setup: function (stage, ctx) {
       var sc = scene(stage, 1150);
       /* static backing: new top half above the hinge, old bottom half below it */
-      var topNew = layer(sc.box, ctx.to, { bg: PAPER.bg });
-      var botOld = layer(sc.box, ctx.from, { bg: PAPER.bg });
+      var topNew = layer(sc.box, ctx.to, { bg: ctx.sc.paper });
+      var botOld = layer(sc.box, ctx.from, { bg: ctx.sc.paper });
       var H = equalize(sc.box, [topNew.face, botOld.face]);
       var half = Math.round(H / 2);
       topNew.face.style.clipPath = 'inset(0 0 ' + (H - half) + 'px 0)';
@@ -238,7 +240,7 @@
         });
         var clip = FX.el('div', null, {
           position: 'absolute', left: '0', top: '0', right: '0', bottom: '0',
-          clipPath: 'inset(0)', background: PAPER.bg,
+          clipPath: 'inset(0)', background: ctx.sc.paper,
         });
         var line = FX.el('div', null, {
           position: 'absolute', left: '0', right: '0', top: offset + 'px', height: H + 'px',
@@ -255,7 +257,7 @@
       var front = side(ctx.from, 0, false);         // old, top half
       var back = side(ctx.to, -half, true);         // new, bottom half (mirrored twice = upright)
       sc.box.appendChild(leaf);
-      stage._s = { leaf: leaf, front: front, back: back, cast: castShadow };
+      stage._s = { leaf: leaf, front: front, back: back, cast: castShadow, bot: botOld.face };
     },
     frame: function (stage, t) {
       var s = stage._s;
@@ -268,6 +270,17 @@
       s.front.shade.style.opacity = String(clamp(.58 * (1 - c), 0, .88));
       s.back.shade.style.opacity = String(clamp(.58 * (1 + c), 0, .88));
       s.cast.style.opacity = String(clamp((th - 55) / 115, 0, 1) * .34 * (1 - span(t, .90, 1)));
+
+      /* Retire the outgoing bottom half as the leaf lands on top of it.
+         The leaf's own back face carries the incoming bottom half, so once the fold is nearly flat
+         the old copy underneath has nothing left to contribute — it is only there to be seen
+         BEFORE the leaf arrives. It is supposed to be hidden by the leaf, and at 1100px it is; at
+         680px the long slogan wraps, the block gets taller, and the leaf no longer covers it at
+         the very end. Isolating the surfaces one at a time showed the whole 21px of surplus ink in
+         the settled frame was this layer and nothing else — hiding it alone reproduced the
+         canonical frame exactly. Fading it out over the last 30 degrees of the fall cannot affect
+         any earlier frame, because until then it is behind an opaque leaf either way. */
+      s.bot.style.opacity = String(1 - clamp((th - 150) / 28, 0, 1));
     },
     rest: function (stage) {
       var s = stage._s;
@@ -275,6 +288,7 @@
       s.front.shade.style.opacity = '.9';
       s.back.shade.style.opacity = '0';
       s.cast.style.opacity = '0';
+      s.bot.style.opacity = '0';
     },
   });
 
@@ -545,7 +559,7 @@
         for (var k = 0; k < PANELS; k++) {
           var p = FX.el('div', null, {
             position: 'absolute', left: '0', right: '0', top: (k * h) + 'px', height: h + 'px',
-            clipPath: 'inset(0)', background: PAPER.bg, transformOrigin: '50% 50%',
+            clipPath: 'inset(0)', background: ctx.sc.paper, transformOrigin: '50% 50%',
             willChange: 'transform',
           });
           var line = FX.el('div', null, {
@@ -557,7 +571,7 @@
           line.appendChild(inner);
           p.appendChild(line);
           p._shade = shade(p);
-          p._sheen = shade(p, PAPER.bg);
+          p._sheen = shade(p, ctx.sc.paper);
           p._top = k * h; p._h = h;
           wrap.appendChild(p);
           panels.push(p);

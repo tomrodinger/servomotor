@@ -165,6 +165,57 @@
     return groups;
   }
 
+  /* ------------------------------------------------------------------ stage palette
+   *
+   * Several effects are built around a sheet of paper — letterpress, riso misregistration, a torn
+   * edge, a folding face. They hard-coded that sheet white, which is correct on a white page and
+   * completely wrong on the dark hero: the stage went black -> white -> black on every cycle, a
+   * full-screen flash with the headline inverted in the middle of it.
+   *
+   * The sheet is not white. The sheet is *whatever the stage already is*. Read that off the DOM
+   * once, at setup, and hand the effect a matching pair of colours. This also makes the rater's
+   * "On white" toggle honest — the same effect re-mounts as dark ink on white paper — instead of
+   * needing a second hard-coded palette.
+   */
+  function parseRGB(str) {
+    var m = /rgba?\(([^)]+)\)/.exec(str || '');
+    if (!m) return null;
+    var p = m[1].split(',').map(parseFloat);
+    if (p.length > 3 && p[3] === 0) return null;         // fully transparent: keep looking
+    return [p[0], p[1], p[2]];
+  }
+
+  function stageColors(node) {
+    var rgb = null, n = node;
+    while (n && n.nodeType === 1) {
+      rgb = parseRGB(getComputedStyle(n).backgroundColor);
+      if (rgb) break;
+      n = n.parentElement;
+    }
+    if (!rgb) rgb = [10, 11, 12];
+    var lum = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+    var dark = lum < 0.5;
+    function mix(target, amt) {
+      return 'rgb(' + rgb.map(function (c, i) {
+        return Math.round(c + (target[i] - c) * amt);
+      }).join(',') + ')';
+    }
+    return {
+      dark: dark,
+      /* the stage's own colour, opaque — use this for a sheet that must occlude what is under it */
+      paper: 'rgb(' + rgb.map(Math.round).join(',') + ')',
+      /* text on that sheet */
+      ink: dark ? '#F5F5F7' : '#1d1d1f',
+      /* a sheet lifted slightly off the stage, for a card that needs an edge without a border */
+      raised: mix(dark ? [255, 255, 255] : [0, 0, 0], 0.07),
+      sunken: mix(dark ? [0, 0, 0] : [255, 255, 255], 0.35),
+      /* a hairline that reads on either ground */
+      edge: mix(dark ? [255, 255, 255] : [0, 0, 0], 0.22),
+      /* nudge the stage colour toward ink or away from it, 0..1 */
+      shade: function (amt) { return mix(dark ? [255, 255, 255] : [0, 0, 0], amt); },
+    };
+  }
+
   function el(tag, cls, css) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -201,6 +252,25 @@
     this.onTick = opts.onTick || null;
     stage.classList.add('fx-stage');
     stage.setAttribute('aria-live', 'off');
+
+    /* KERNING OFF, for the whole stage, canonical layer included.
+     *
+     * Most effects animate per word or per character, which means wrapping each one in its own
+     * inline-block. A glyph in its own box cannot kern against its neighbour, so a split line
+     * renders slightly WIDER than the same text as one run — measured at a consistent 11-12px on
+     * a 797px line, about a quarter of a pixel per glyph. The canonical layer is one plain run and
+     * does kern, so the headline breathed outward by ~6px a side the instant an effect took over,
+     * and back in when it ended. Twenty-two effects showed it.
+     *
+     * There is no way to make a split line kern, so the fix is the other direction: stop the plain
+     * run kerning too. Both renderings then agree exactly (0-1px), and the cost is a sub-pixel
+     * looseness at 46px that is invisible on its own but would be very visible as a jump.
+     *
+     * This belongs on the stage rather than in each effect: the canonical layer has to agree with
+     * whatever the effect does, so the two must be told the same thing from one place.
+     */
+    stage.style.fontKerning = 'none';
+    stage.style.fontVariantLigatures = 'none';
 
     /* CANONICAL REST STATE.
      *
@@ -278,6 +348,9 @@
       reduced: this.reduced,
       ease: ease, lerp: lerp, span: span, clamp: clamp,
       chars: chars, words: words, charWords: charWords, alignWords: alignWords, el: el,
+    stageColors: stageColors,
+      /* the ground this transition is running on; see stageColors() */
+      sc: stageColors(this.stage),
     };
   };
 

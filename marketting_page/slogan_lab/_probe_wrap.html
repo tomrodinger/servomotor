@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>wrap probe</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#141416;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif}
+#box{position:relative;background:#0A0B0C;color:#F5F5F7;height:330px;width:1100px;overflow:hidden}
+.fx-stage{position:absolute;inset:0;font-size:clamp(26px,3.4vw,46px);line-height:1.08;letter-spacing:-.03em;text-align:center}
+.fx-stage .fx-light{font-weight:300}.fx-stage .fx-bold{font-weight:650}
+.fx-stage .fx-light,.fx-stage .fx-bold{display:block}
+</style></head><body>
+<div id="box"><div id="stage"></div></div>
+<script src="engine.js"></script><script src="manifest.js"></script>
+<script>
+const SLOGANS=[["A motor, and everything","that usually surrounds it."],
+["The whole drive system.","Inside one motor."],["Four systems.","One motor."],
+["Motion control,","fully integrated."],["You wanted motion.","Not a wiring project."],
+["A motor that","needs nothing else."],["The whole motion system.","One motor."],
+["Everything that moves it,","inside it."],["Motion control.","All in one."],
+["Stepper, driver, controller, encoder.","One part number."],
+["Bolts in like a stepper.","Runs like a full servo."],
+["Four bolts. One cable.","A complete servo system."],
+["Servomotor:","stepper, driver, controller and encoder in one."],
+["No driver board. No encoder to mount.","It's all inside."]];
+const stage=document.getElementById('stage'), box=document.getElementById('box');
+function load(src){return new Promise((r,j)=>{const s=document.createElement('script');s.src=src;s.onload=r;s.onerror=j;document.head.appendChild(s)})}
+window.__ready=(async()=>{for(const f of window.SLOGAN_FX_FILES)await load(f);return true})();
+
+function rectOf(e){
+  const r=e.getBoundingClientRect(), b=box.getBoundingClientRect();
+  return {x:+(r.left-b.left).toFixed(2),y:+(r.top-b.top).toFixed(2),w:+r.width.toFixed(2),h:+r.height.toFixed(2)};
+}
+
+/* Compare, for one effect and one pair, the canonical rows against whatever the effect's own layer
+   draws at t=0.008 — element by element, so a difference is attributable to a specific node. */
+window.probe=function(id,pair){
+  const p=SloganFX.mount(stage,SloganFX.get(id),SLOGANS,{start:pair}); p.pause();
+  p._render(0);
+  const canon={light:rectOf(p.canonA),bold:rectOf(p.canonB),box:rectOf(p.canonA.parentElement),
+               canonW:+p.canon.getBoundingClientRect().width.toFixed(2)};
+  p._render(0.008);
+  const rows=[...p.layer.querySelectorAll('.fx-light,.fx-bold')].slice(0,6).map(e=>{
+    const cs=getComputedStyle(e), pcs=getComputedStyle(e.parentElement);
+    return {cls:e.className,disp:cs.display,ws:cs.whiteSpace,ls:cs.letterSpacing,fs:cs.fontSize,
+            fw:cs.fontWeight,r:rectOf(e),
+            parentDisp:pcs.display,parentW:+e.parentElement.getBoundingClientRect().width.toFixed(2),
+            parentPad:pcs.padding,kids:e.children.length};
+  });
+  return {canon,rows};
+};
+</script></body></html>
