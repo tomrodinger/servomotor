@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><title>v10 rest sheet</title>
+<style>
+html,body{margin:0;background:#f4f4f4;font-family:ui-monospace,Menlo,monospace;}
+.band{position:relative;overflow:hidden;background:#fff;margin-bottom:6px;}
+.band iframe{position:absolute;left:0;border:0;}
+.tag{position:absolute;left:6px;top:4px;z-index:5;font-size:11px;color:#c0392b;background:rgba(255,255,255,.9);padding:1px 4px;}
+</style>
+<div id="host"></div>
+<script>
+function q(k,d){var m=new RegExp('[?&]'+k+'=([^&]*)').exec(location.search);return m?decodeURIComponent(m[1]):d;}
+var W=parseInt(q('w','1440'),10);
+var TOP=parseInt(q('top','180'),10);
+var BAND=parseInt(q('band','330'),10);
+var FH=parseInt(q('fh','1100'),10);
+var list=q('i','0,1,2,3,4').split(',');
+var host=document.getElementById('host');
+for(var k=0;k<list.length;k++){
+  var i=list[k];
+  var d=document.createElement('div');
+  d.className='band'; d.style.width=W+'px'; d.style.height=BAND+'px';
+  var tag=document.createElement('div'); tag.className='tag'; tag.textContent='#'+i;
+  d.appendChild(tag);
+  var f=document.createElement('iframe');
+  f.src='v10.html?sl='+i;
+  f.style.top=(-TOP)+'px'; f.style.width=W+'px'; f.style.height=FH+'px';
+  f.setAttribute('scrolling','no');
+  d.appendChild(f);
+  host.appendChild(d);
+}
+</script>

@@ -1,0 +1,4 @@
+<!doctype html><meta charset=utf-8><body style="font:40px monospace;padding:20px">
+<div id=o>...</div>
+<iframe id=f src="v20.html" style="width:1280px;height:200px;visibility:hidden"></iframe>
+<script>document.getElementById('f').onload=function(){document.getElementById('o').textContent='H='+this.contentDocument.body.scrollHeight+' W='+this.contentDocument.documentElement.scrollWidth;}</script>

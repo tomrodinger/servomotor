@@ -75,6 +75,13 @@
     margin-top: 40px;
 }
 
+.heroImageCaption {
+    margin-top: 14px;
+    font-size: 0.95rem;
+    color: #666;
+    letter-spacing: 0.01em;
+}
+
 /* CTA Button */
 .ctaContainer {
     text-align: center;
@@ -206,8 +213,13 @@
 
 .dimensionImageContainer {
     text-align: center;
-    flex: 1;
-    min-width: 200px;
+    flex: 1 1 calc(50% - 20px);
+    min-width: 260px;
+    /* four drawings of differing aspect ratio sit two-up: make each cell a column so
+       the label can be pushed to the bottom, otherwise the labels sit at different
+       heights across a row */
+    display: flex;
+    flex-direction: column;
 }
 
 .dimensionImage {
@@ -216,12 +228,25 @@
 }
 
 .dimensionLabel {
-    margin-top: 10px;
+    margin-top: auto;
+    padding-top: 10px;
     font-weight: bold;
     color: var(--primary-color);
 }
 
 /* Tables */
+.tableScroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+}
+
+.tableScroll .specsTable,
+.tableScroll .conditionsTable {
+    margin: 0;
+    min-width: 560px;
+}
+
 .specsTable, .conditionsTable {
     width: 100%;
     border-collapse: collapse;
@@ -283,6 +308,13 @@
 
 .btnPrimary:hover {
     background-color: var(--secondary-color);
+}
+
+/* Long literal URLs (the motor_commands.json link) are unbreakable words and were
+   forcing the whole page to scroll sideways on phones. Let them wrap. */
+.marketing a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* Code blocks */

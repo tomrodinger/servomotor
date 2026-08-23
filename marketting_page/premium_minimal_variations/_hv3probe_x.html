@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>p</title>
+<style>body{font:26px monospace;margin:0}iframe{border:0;display:block;height:120px}#o{position:fixed;top:0;left:0;background:#fff;z-index:9;padding:10px}</style>
+<div id="o">measuring…</div>
+<iframe id="f1" src="v3.html" style="width:1440px"></iframe>
+<iframe id="f2" src="v3.html" style="width:900px"></iframe>
+<iframe id="f3" src="v3.html" style="width:390px"></iframe>
+<iframe id="f4" src="v3.html" style="width:360px"></iframe>
+<script>
+window.addEventListener('load',()=>{setTimeout(()=>{
+ let s='';
+ for(const id of ['f1','f2','f3','f4']){const f=document.getElementById(id);const d=f.contentDocument;
+   s+=id+' w='+f.contentWindow.innerWidth+' h='+d.documentElement.scrollHeight+' sw='+d.documentElement.scrollWidth+'<br>';}
+ document.getElementById('o').innerHTML=s;},1800)});
+</script>

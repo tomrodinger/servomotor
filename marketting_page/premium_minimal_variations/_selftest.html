@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Slogan cycler self-test</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0c0c0d;color:#e8e8ec;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px}
+  h1{font-size:14px;margin-bottom:4px;font-family:-apple-system,sans-serif}
+  h1 span{color:#7AB648}
+  .sub{color:#7c7c85;font-size:11px;margin-bottom:12px}
+  table{border-collapse:collapse;width:100%;max-width:1500px}
+  th,td{padding:4px 8px;text-align:left;border-bottom:1px solid #232327;white-space:nowrap}
+  th{color:#7AB648;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+  td.n{color:#8b8b93}
+  .ok{color:#7fd25a}.bad{color:#ff6b6b;font-weight:700}.warn{color:#e0b341}
+  tr.fail td{background:#1e1113}
+  #sum{margin:12px 0;padding:8px 12px;border:1px solid #26262a;border-radius:8px;display:inline-block}
+</style>
+</head>
+<body>
+<h1><span>Gearotons</span> slogan cycler — self test</h1>
+<div class="sub">Loads every variant in a same-origin iframe and asserts the SLOGAN_CYCLER_SPEC hard requirements.
+Hero height is measured across all 15 slogans at 3 widths; any variation is a layout shift.</div>
+<div id="sum">running…</div>
+<table id="t">
+  <thead><tr>
+    <th>page</th><th>hook</th><th>items</th><th>seek</th><th>goto</th>
+    <th>h-var 1440</th><th>h-var 900</th><th>h-var 390</th><th>overflow</th><th>h1 text</th><th>notes</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+
+<script>
+const PAGES = Array.from({length: 20}, (_, i) => 'v' + (i + 1) + '.html');
+const WIDTHS = [1440, 900, 390];
+const tbody = document.querySelector('#t tbody');
+let pass = 0, fail = 0;
+
+function cell(txt, cls) { return '<td class="' + (cls || '') + '">' + txt + '</td>'; }
+
+async function loadFrame(src, width) {
+  return new Promise(resolve => {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-99999px;top:0;border:0;width:' + width + 'px;height:900px';
+    f.src = src;
+    f.onload = () => setTimeout(() => resolve(f), 140);   // let fonts/layout settle
+    document.body.appendChild(f);
+  });
+}
+
+/* Measure the hero block height for every slogan. If the page locked its height as the spec
+   requires, the spread across all 15 is ~0. Anything more is a visible jump on the live page. */
+async function measure(f) {
+  const w = f.contentWindow, d = f.contentDocument;
+  const S = w.__slogan;
+  if (!S) return { err: 'no __slogan' };
+  const h1 = d.querySelector('h1');
+  if (!h1) return { err: 'no h1' };
+
+  const hs = [];
+  const n = (S.items && S.items.length) || 0;
+  for (let i = 0; i < n; i++) {
+    try { S.goto(i); } catch (e) { return { err: 'goto threw: ' + e.message }; }
+    hs.push(Math.round(h1.getBoundingClientRect().height));
+  }
+  const spread = hs.length ? Math.max(...hs) - Math.min(...hs) : -1;
+  const de = d.documentElement;
+  const overflow = de.scrollWidth > de.clientWidth + 1;
+  const text = (h1.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 34);
+  return { spread, overflow, text, n };
+}
+
+(async function () {
+  for (const p of PAGES) {
+    const row = document.createElement('tr');
+    let res = {}, notes = [];
+    const frames = [];
+    try {
+      for (const w of WIDTHS) frames.push(await loadFrame(p, w));
+      const w0 = frames[0].contentWindow;
+      const S = w0.__slogan;
+      const hasHook = !!S;
+      const items = (S && S.items && S.items.length) || 0;
+      const hasSeek = !!(S && typeof S.seek === 'function');
+      const hasGoto = !!(S && typeof S.goto === 'function');
+
+      const ms = [];
+      for (const f of frames) ms.push(await measure(f));
+      const errs = ms.filter(m => m.err).map(m => m.err);
+      if (errs.length) notes.push(errs[0]);
+
+      // does seek actually render an intermediate frame different from both ends?
+      let seekOk = 'n/a';
+      if (hasSeek) {
+        try {
+          const d0 = frames[0].contentDocument;
+          // A transform-driven effect never changes innerHTML — it mutates inline styles on
+          // descendants (or on the h1 itself). Sampling only innerHTML reported such effects as
+          // "STATIC" when they were working fine, so sample the style attributes too.
+          // Effects drive animation in very different places: inline styles on the h1, on its
+          // descendants, on a wrapper ABOVE the h1, or via a CSS custom property on an ancestor
+          // that a stylesheet rule reads. Only computed styles catch all of those, so walk from
+          // three ancestors above the h1 down through every descendant and hash the animatable
+          // properties. Sampling inline style attributes alone produced false "STATIC" reports.
+          const PROPS = ['transform', 'opacity', 'filter', 'clipPath', 'webkitMaskImage',
+                         'backgroundImage', 'color', 'letterSpacing', 'fontVariationSettings'];
+          const sig = () => {
+            const h = d0.querySelector('h1');
+            let root = h;
+            for (let k = 0; k < 3 && root.parentElement; k++) root = root.parentElement;
+            const nodes = [root, ...root.querySelectorAll('*')];
+            let s = '';
+            for (const n of nodes) {
+              const cs = w0.getComputedStyle(n);
+              for (const p of PROPS) s += cs[p] + ',';
+              s += '|';
+            }
+            return s + h.innerText;
+          };
+          S.goto(0);
+          const a = sig();
+          S.seek(0, 0.5);
+          const mid = sig();
+          S.seek(0, 0.85);
+          const late = sig();
+          seekOk = (mid !== a || late !== mid) ? 'yes' : 'STATIC';
+        } catch (e) { seekOk = 'threw'; }
+      }
+
+      const bad = !hasHook || items !== 15 || !hasSeek || !hasGoto
+        || ms.some(m => m.err || m.overflow || (m.spread > 2));
+      if (bad) { fail++; row.className = 'fail'; } else { pass++; }
+
+      row.innerHTML =
+        cell(p, 'n') +
+        cell(hasHook ? 'yes' : 'NO', hasHook ? 'ok' : 'bad') +
+        cell(items, items === 15 ? 'ok' : 'bad') +
+        cell(seekOk, seekOk === 'yes' ? 'ok' : 'bad') +
+        cell(hasGoto ? 'yes' : 'NO', hasGoto ? 'ok' : 'bad') +
+        ms.map(m => cell(m.err ? '—' : (m.spread + 'px'),
+                         m.err ? 'bad' : (m.spread > 2 ? 'bad' : 'ok'))).join('') +
+        cell(ms.some(m => m.overflow) ? 'YES' : 'no', ms.some(m => m.overflow) ? 'bad' : 'ok') +
+        cell((ms[0] && ms[0].text) || '—', 'n') +
+        cell(notes.join('; ') || '', 'warn');
+    } catch (e) {
+      fail++; row.className = 'fail';
+      row.innerHTML = cell(p, 'n') + '<td class="bad" colspan="10">LOAD ERROR: ' + e.message + '</td>';
+    }
+    frames.forEach(f => f.remove());
+    tbody.appendChild(row);
+    document.getElementById('sum').textContent = 'pass ' + pass + '  ·  fail ' + fail;
+  }
+  document.getElementById('sum').innerHTML =
+    '<b class="' + (fail ? 'bad' : 'ok') + '">pass ' + pass + ' · fail ' + fail + '</b>';
+  document.title = 'selftest:' + pass + '/' + (pass + fail);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!doctype html><meta charset="utf-8"><title>v6 strip</title>
+<style>
+html,body{margin:0;background:#222;font:11px ui-monospace,Menlo,monospace;color:#fff}
+.row{position:relative;margin:0 0 6px;}
+.lab{position:absolute;left:4px;top:4px;z-index:5;background:#000;color:#7f7;padding:2px 6px}
+.win{position:relative;overflow:hidden;background:#fff}
+iframe{position:absolute;border:0;transform-origin:0 0}
+</style>
+<div id="host"></div>
+<script>
+var q=new URLSearchParams(location.search);
+var i=+(q.get('i')||3);
+var W=+(q.get('w')||1440);
+var TS=(q.get('t')||'0,0.15,0.35,0.5,0.65,0.85,1').split(',');
+var CX=+(q.get('cx')||120), CY=+(q.get('cy')||150), CW=+(q.get('cw')||700), CH=+(q.get('ch')||380);
+var SC=+(q.get('sc')||1);
+var host=document.getElementById('host');
+var frames=[];
+TS.forEach(function(t){
+  var row=document.createElement('div'); row.className='row';
+  var lab=document.createElement('div'); lab.className='lab'; lab.textContent='i='+i+'→'+((i+1)%15)+'  t='+t+'  w='+W;
+  var win=document.createElement('div'); win.className='win';
+  win.style.width=(CW*SC)+'px'; win.style.height=(CH*SC)+'px';
+  var f=document.createElement('iframe');
+  f.style.width=W+'px'; f.style.height='1400px';
+  f.style.left=(-CX*SC)+'px'; f.style.top=(-CY*SC)+'px';
+  f.style.transform='scale('+SC+')';
+  f.src='/premium_minimal_variations/v6.html?slm=1';
+  f.dataset.t=t;
+  win.appendChild(f); row.appendChild(lab); row.appendChild(win); host.appendChild(row);
+  frames.push(f);
+});
+var done=0;
+frames.forEach(function(f){
+  f.onload=function(){ done++; };
+});
+setTimeout(function(){
+  frames.forEach(function(f){
+    try{
+      var S=f.contentWindow.__slogan;
+      var t=parseFloat(f.dataset.t);
+      if(t<=0){ S.pause(); S.seek(i,0); }
+      else if(t>=1){ S.pause(); S.goto((i+1)%15); }
+      else { S.pause(); S.seek(i,t); }
+    }catch(e){ document.title='ERR '+e; }
+  });
+},900);
+</script>

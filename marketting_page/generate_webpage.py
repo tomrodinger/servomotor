@@ -493,6 +493,7 @@ def copy_assets_to_nextjs(nextjs_path, skip_assets=False):
     images_to_copy = [
         ('M17_series_overview.jpg', 'M17_series_overview.jpg'),
         ('connection_diagram.jpg', 'connection_diagram.jpg'),
+        ('M17-34_dimensions.png', 'M17-34_dimensions.png'),
         ('M17-40_dimensions.png', 'M17-40_dimensions.png'),
         ('M17-48_dimensions.png', 'M17-48_dimensions.png'),
         ('M17-60_dimensions.png', 'M17-60_dimensions.png'),
@@ -625,7 +626,32 @@ def copy_to_ecommerce(preview_dir='./preview', ecommerce_path='../../AI_testing/
         print("\n❌ No files were copied. Please check the preview generation.")
 
 def main():
-    """Main function - generates everything automatically"""
+    """Main function - generates everything automatically.
+
+    OBSOLETE AS A WHOLE, 2026-08-23. Step 1 below rebuilds the store component from
+    `templates/next_index_template.jsx` -- the OLD stacked design -- and step 2 copies it into the
+    store. Since 2026-08-22 the marketing page is hand-authored in `final/index.html`
+    (MARKETING_PAGE_WORKFLOW.md), so running this publishes the old layout over the new page.
+
+    Use `python3 deploy_to_store.py` instead. It builds preview/ from the hand-authored page and
+    then calls this module's `copy_to_ecommerce()` for the copy -- that half is NOT obsolete, and
+    importing it stays unguarded on purpose.
+    """
+    import argparse as _argparse, sys as _sys
+    ap = _argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--i-know-this-overwrites-hand-edits", action="store_true",
+                    help="regenerate the store component from the OLD template and deploy it")
+    a = ap.parse_args()
+    if not getattr(a, "i_know_this_overwrites_hand_edits", False):
+        print("REFUSING TO RUN.")
+        print("This rebuilds components/MarketingContent.js from templates/next_index_template.jsx")
+        print("(the OLD stacked design) and copies it into the store, replacing the hand-authored")
+        print("page. To deploy the real page:")
+        print("  python3 deploy_to_store.py")
+        print("See MARKETING_PAGE_WORKFLOW.md. If you really mean the old template:")
+        print("  python3 generate_webpage.py --i-know-this-overwrites-hand-edits")
+        _sys.exit(2)
+
     print("🚀 Generating marketing content...")
     
     # Step 1: Generate preview structure

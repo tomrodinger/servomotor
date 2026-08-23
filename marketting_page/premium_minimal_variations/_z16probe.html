@@ -1,0 +1,64 @@
+<!doctype html><meta charset="utf-8"><title>v16 probe</title>
+<style>html,body{margin:0;padding:0}iframe{border:0;display:block}</style>
+<pre id="o">running</pre>
+<script>
+var q=new URLSearchParams(location.search);
+var W=+(q.get('w')||1440);
+var f=document.createElement('iframe');
+f.style.width=W+'px'; f.style.height='1000px';
+f.setAttribute('scrolling','no');
+f.src='v16.html';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, S=w.__slogan;
+    var L=[];
+    L.push('RESULTS w='+W);
+    if(!S){ L.push('NO __slogan'); done(L); return; }
+    L.push('api: '+['items','index','pause','resume','goto','seek'].map(function(k){return k+'='+(typeof S[k]);}).join(' '));
+    L.push('items='+S.items.length+' state='+JSON.stringify(S.state()));
+    S.pause();
+    var box=d.getElementById('sl');
+    var h1=box.parentNode;
+    var heights=[], h1h=[], tops=[], bots=[];
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var r=box.getBoundingClientRect(), r1=h1.getBoundingClientRect();
+      heights.push(Math.round(r.height*100)/100);
+      h1h.push(Math.round(r1.height*100)/100);
+      // measure actual ink extents of layer A
+      var ws=d.getElementById('slA').getElementsByClassName('sl-w');
+      var mn=1e9,mx=-1e9,lf=1e9,rt=-1e9;
+      for(var j=0;j<ws.length;j++){var b=ws[j].getBoundingClientRect(); if(!b.width)continue;
+        if(b.top<mn)mn=b.top; if(b.bottom>mx)mx=b.bottom; if(b.left<lf)lf=b.left; if(b.right>rt)rt=b.right;}
+      tops.push(Math.round((mn-r.top)*10)/10);
+      bots.push(Math.round((r.bottom-mx)*10)/10);
+      L.push('  ['+i+'] h='+heights[i]+' h1='+h1h[i]+' inkTop='+tops[i]+' inkBot='+bots[i]+' inkL='+Math.round(lf)+' inkR='+Math.round(rt)+' scrollW='+d.documentElement.scrollWidth+' clientW='+d.documentElement.clientWidth);
+    }
+    var uh={}; heights.forEach(function(v){uh[v]=1;});
+    L.push('distinct box heights: '+Object.keys(uh).join(','));
+    var uh1={}; h1h.forEach(function(v){uh1[v]=1;});
+    L.push('distinct h1 heights: '+Object.keys(uh1).join(','));
+    // overflow at rest and mid-transition for longest slogan (index 12)
+    var ov=[];
+    [0,0.15,0.35,0.5,0.65,0.85,1].forEach(function(t){
+      S.seek(12,t);
+      ov.push(t+':'+d.documentElement.scrollWidth+'/'+d.body.scrollWidth);
+    });
+    L.push('overflow seek(12,t) scrollW/bodyW clientW='+d.documentElement.clientWidth+' -> '+ov.join(' '));
+    // idempotency of seek
+    S.seek(3,0.42);
+    var e1=d.getElementById('slA').getElementsByClassName('sl-i')[0].style.cssText;
+    S.seek(7,0.9); S.seek(3,0.42);
+    var e2=d.getElementById('slA').getElementsByClassName('sl-i')[0].style.cssText;
+    L.push('seek idempotent: '+(e1===e2)+' ['+e1+']');
+    // index reporting
+    S.goto(4); L.push('goto(4) index='+S.index());
+    S.seek(9,0.5); L.push('seek(9,.5) index='+S.index()+' mode='+S.state().mode);
+    // reduced motion: this browser is forced reduced
+    L.push('reduced='+S.state().reduced);
+    done(L);
+  },1200);
+};
+function done(L){ document.getElementById('o').textContent=L.join('\n')+'\nDONE'; document.title='READY'; }
+</script>

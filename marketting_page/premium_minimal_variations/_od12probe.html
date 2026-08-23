@@ -1,0 +1,71 @@
+<!doctype html><meta charset="utf-8"><title>v12 odometer probe</title>
+<style>html,body{margin:0;font:12px ui-monospace,Menlo,monospace}iframe{border:0;display:block}</style>
+<pre id="out">running…</pre>
+<script>
+var qp={};(location.search||'').replace(/^\?/,'').split('&').forEach(function(kv){if(!kv)return;var a=kv.split('=');qp[a[0]]=decodeURIComponent(a[1]||'');});
+var W=parseInt(qp.w||'1440',10),H=parseInt(qp.h||'1400',10);
+var f=document.createElement('iframe');
+f.width=W;f.height=H;
+f.src='v12.html?motion=1&pause=1';
+document.body.appendChild(f);
+var lines=[];
+function P(s){lines.push(s);document.getElementById('out').textContent=lines.join('\n');}
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument,w=f.contentWindow;
+    var S=w.__slogan;
+    if(!S){P('NO __slogan');return;}
+    P('width='+W+'  keys='+Object.keys(S).join(','));
+    var h1=d.querySelector('#top h1');
+    var st=d.querySelector('.odo');
+    P('h1.clientWidth='+h1.clientWidth+'  stageH='+S._h()+'  h1H='+h1.offsetHeight);
+    var hs={},ov=[],i;
+    var de=d.documentElement;
+    for(i=0;i<15;i++){
+      S.goto(i);
+      var hh=h1.getBoundingClientRect().height;
+      hs[i]=Math.round(hh*100)/100;
+      // measure ink extents of face
+      var ds=d.querySelectorAll('.odo-face .odo-d');
+      var minx=1e9,maxx=-1e9,j,r;
+      for(j=0;j<ds.length;j++){r=ds[j].getBoundingClientRect();if(r.width===0&&r.height===0)continue;if(r.left<minx)minx=r.left;if(r.right>maxx)maxx=r.right;}
+      var hr=h1.getBoundingClientRect();
+      ov.push(i+':'+Math.round(minx-hr.left)+'/'+Math.round(hr.right-maxx));
+      if(de.scrollWidth>de.clientWidth)P('!! HORIZ OVERFLOW at slogan '+i+' scrollW='+de.scrollWidth+' clientW='+de.clientWidth);
+    }
+    var vals=Object.keys(hs).map(function(k){return hs[k];});
+    P('h1 heights: '+JSON.stringify(hs));
+    P('height spread: '+(Math.max.apply(null,vals)-Math.min.apply(null,vals)));
+    P('side margins (left/right px inside h1): '+ov.join('  '));
+    P('doc scrollW='+de.scrollWidth+' clientW='+de.clientWidth+'  bodyScrollW='+d.body.scrollWidth);
+    // rest fidelity: compare drum line width vs plain text width
+    S.goto(0);
+    var probe=d.createElement('h1');
+    probe.style.cssText='position:absolute;left:0;top:0;visibility:hidden;width:'+h1.clientWidth+'px';
+    h1.parentNode.appendChild(probe);
+    probe.innerHTML='<span style="display:block;white-space:nowrap"><span id="pa">A motor, and everything</span></span>';
+    var plain=d.getElementById('pa').getBoundingClientRect().width;
+    P('plain line1 width = '+plain.toFixed(2));
+    var l1=d.querySelectorAll('.odo-face')[1].firstChild;
+    var ws=l1.querySelectorAll('.odo-w'),tot=0,k;
+    var fr=ws[0].getBoundingClientRect(),lr=ws[ws.length-1].getBoundingClientRect();
+    P('drum line1 width = '+(lr.right-fr.left).toFixed(2)+'  (delta '+((lr.right-fr.left)-plain).toFixed(2)+'px)');
+    probe.parentNode.removeChild(probe);
+    // seek determinism
+    S.seek(3,0.5);
+    var snap=[].slice.call(d.querySelectorAll('.odo-face .odo-c')).map(function(e){return e.style.transform+'|'+e.style.opacity;}).join(';');
+    S.goto(9);S.seek(3,0.5);
+    var snap2=[].slice.call(d.querySelectorAll('.odo-face .odo-c')).map(function(e){return e.style.transform+'|'+e.style.opacity;}).join(';');
+    P('seek deterministic: '+(snap===snap2)+'  (len '+snap.length+')');
+    // count visible cells at a few t
+    [0,0.15,0.35,0.5,0.65,0.85,1].forEach(function(t){
+      S.seek(3,t);
+      var cs=d.querySelectorAll('.odo-face .odo-c'),vis=0,dg=0,gl=0;
+      for(var m=0;m<cs.length;m++){var o=cs[m].style.opacity;o=(o===''?1:parseFloat(o));if(o>0.03){vis++;if(cs[m].className.indexOf('dg')>=0)dg++;else gl++;}}
+      P('t='+t+'  visible cells='+vis+' (glyph '+gl+', digit '+dg+')');
+    });
+    S.goto(0);
+    P('DONE');
+  },900);
+};
+</script>

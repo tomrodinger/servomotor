@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>filmstrip</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#fff}
+  .cell{
+    position:relative; overflow:hidden; background:#fff; color:#1d1d1f;
+    border-bottom:0; padding:14px 20px;
+  }
+  .fx-stage{
+    position:absolute; inset:14px 20px; display:flex; align-items:center; justify-content:center;
+    font-size:26px; line-height:1.2; letter-spacing:-.02em; text-align:center;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  }
+  .fx-stage .fx-light{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+</style>
+</head>
+<body>
+<div id="strip"></div>
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+/* Render EVERY frame of one transition stacked vertically, so a single screenshot yields the whole
+   animation. Slicing that image into equal bands gives frame-exact GIF export without paying a
+   browser launch per frame (which would be ~1200 launches for the full library).
+
+   ?id=<effect-id>   which effect            (required)
+   ?i=<n>            slogan index to start from        default 9
+   ?n=<frames>       how many frames                   default 18
+   ?w=<px>&h=<px>    cell size                         default 760x200
+   ?bg=RRGGBB&fg=RRGGBB   override colours (else effect theme)
+*/
+const SLOGANS = [
+  ["A motor, and everything",               "that usually surrounds it."],
+  ["The whole drive system.",               "Inside one motor."],
+  ["Four systems.",                         "One motor."],
+  ["Motion control,",                       "fully integrated."],
+  ["You wanted motion.",                    "Not a wiring project."],
+  ["A motor that",                          "needs nothing else."],
+  ["The whole motion system.",              "One motor."],
+  ["Everything that moves it,",             "inside it."],
+  ["Motion control.",                       "All in one."],
+  ["Stepper, driver, controller, encoder.", "One part number."],
+  ["Bolts in like a stepper.",              "Runs like a full servo."],
+  ["Four bolts. One cable.",                "A complete servo system."],
+  ["Servomotor:",                           "stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.", "It's all inside."],
+  ["Driver, controller and encoder",        "are no longer your problem."],
+];
+
+(async function () {
+  const q = new URLSearchParams(location.search);
+  for (const f of (window.SLOGAN_FX_FILES || [])) {
+    await new Promise(res => {
+      const s = document.createElement('script');
+      s.src = f + '?v=' + Date.now();
+      s.onload = res; s.onerror = res;
+      document.head.appendChild(s);
+    });
+  }
+
+  const fx = SloganFX.get(q.get('id'));
+  const strip = document.getElementById('strip');
+  if (!fx) { document.title = 'MISSING'; strip.textContent = 'no such effect: ' + q.get('id'); return; }
+
+  const i = parseInt(q.get('i') || '9', 10);
+  const n = parseInt(q.get('n') || '18', 10);
+  const W = parseInt(q.get('w') || '760', 10);
+  const H = parseInt(q.get('h') || '200', 10);
+  const th = fx.theme || {};
+  const bg = q.get('bg') ? '#' + q.get('bg') : (th.bg || '#ffffff');
+  const fg = q.get('fg') ? '#' + q.get('fg') : (th.fg || '#1d1d1f');
+
+  document.body.style.width = W + 'px';
+  for (let k = 0; k < n; k++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.style.width = W + 'px';
+    cell.style.height = H + 'px';
+    cell.style.background = bg;
+    cell.style.color = fg;
+    const stage = document.createElement('div');
+    if (th.font) stage.style.fontFamily = th.font;
+    if (th.italic) stage.style.fontStyle = 'italic';
+    cell.appendChild(stage);
+    strip.appendChild(cell);
+
+    // hold the last frame one extra beat so the loop reads as a settle, not a snap
+    const t = n === 1 ? 1 : Math.min(1, k / (n - 2 > 0 ? n - 2 : 1));
+    const p = SloganFX.mount(stage, fx, SLOGANS, { start: i });
+    p.pause();
+    p.seek(i, t);
+  }
+  document.title = 'ready:' + fx.id + ':' + n + ':' + W + ':' + H;
+})();
+</script>
+</body>
+</html>

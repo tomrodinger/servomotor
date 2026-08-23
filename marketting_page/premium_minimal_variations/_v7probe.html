@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8"><title>v7 probe</title>
+<style>html,body{margin:0;background:#fff;font:13px monospace}
+#f{border:0;display:block}
+#o{white-space:pre;padding:8px}</style>
+<iframe id="f" src="v7.html?__play=1&__sl=0"></iframe>
+<pre id="o">pending</pre>
+<script>
+(function(){
+  var qs = new URLSearchParams(location.search);
+  var W = parseInt(qs.get('w')||'1440',10), H = parseInt(qs.get('h')||'900',10);
+  var f = document.getElementById('f');
+  f.style.width = W+'px'; f.style.height = H+'px';
+  f.addEventListener('load', function(){
+    setTimeout(run, 400);
+  });
+  function run(){
+    var d = f.contentDocument, w = f.contentWindow;
+    var api = w.__slogan;
+    var out = [];
+    if(!api){ document.getElementById('o').textContent='NO API'; return; }
+    var h1 = d.querySelector('.hero h1');
+    var lede = d.querySelector('.hero .lede');
+    var img = d.querySelector('.hero-img');
+    var doc = d.documentElement;
+    out.push('viewport '+doc.clientWidth+'x'+w.innerHeight+'  scrollW='+doc.scrollWidth+' bodyScrollW='+d.body.scrollWidth);
+    for(var i=0;i<api.items.length;i++){
+      api.pause(); api.goto(i);
+      var r1 = h1.getBoundingClientRect(), r2 = lede.getBoundingClientRect(), r3=img.getBoundingClientRect();
+      // widest painted child inside h1
+      var maxR = 0, minL = 1e9;
+      var ws = h1.getElementsByClassName('sl-w');
+      for(var j=0;j<ws.length;j++){ var r=ws[j].getBoundingClientRect(); if(r.right>maxR)maxR=r.right; if(r.left<minL)minL=r.left; }
+      out.push('S'+String(i).padStart(2,'0')+
+        ' h1H='+r1.height.toFixed(2)+
+        ' h1Top='+r1.top.toFixed(2)+
+        ' ledeTop='+r2.top.toFixed(2)+
+        ' imgTop='+r3.top.toFixed(2)+
+        ' wordL='+minL.toFixed(1)+' wordR='+maxR.toFixed(1)+
+        ' scrollW='+doc.scrollWidth);
+    }
+    // mid-transition overflow check
+    var worst=0, worstDesc='';
+    for(var i2=0;i2<api.items.length;i2++){
+      for(var t=0;t<=1.0001;t+=0.05){
+        api.seek(i2,t);
+        var sw = doc.scrollWidth;
+        if(sw>worst){ worst=sw; worstDesc='seek('+i2+','+t.toFixed(2)+')'; }
+      }
+    }
+    out.push('MAX scrollW during transitions: '+worst+' at '+worstDesc+'  (clientWidth '+doc.clientWidth+')');
+    api.goto(0);
+    document.getElementById('o').textContent = out.join('\n');
+    document.title = 'done';
+  }
+})();
+</script>

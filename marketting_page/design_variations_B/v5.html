@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+table{border-collapse:collapse;width:100%}
+pre{overflow:auto;max-width:100%}
+
+body{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0b1a2e;color:#c5e0ff;
+  background-image:linear-gradient(rgba(80,140,220,.08) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(80,140,220,.08) 1px,transparent 1px);background-size:24px 24px}
+.top{position:sticky;top:0;z-index:20;background:rgba(11,26,46,.95);border-bottom:1px solid #2a4a72;
+  display:flex;justify-content:space-between;align-items:center;padding:.6rem 3vw;font-size:.8rem}
+.top .brand{display:flex;gap:.5rem;align-items:center;text-decoration:none;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.top img{height:28px}.top nav{display:flex;gap:1rem;align-items:center}
+.top a{text-decoration:none;color:#9ec4ef}.top a.shop{background:#7AB648;color:#0b1a2e;padding:.4rem .85rem;font-weight:700}
+.pane{display:grid;grid-template-columns:1.15fr .85fr;min-height:85vh;border-bottom:1px solid #2a4a72}
+.draw{padding:2rem 3vw;display:flex;flex-direction:column;justify-content:center;border-right:1px solid #2a4a72;position:relative}
+.draw img{max-height:55vh;margin:1rem auto;background:rgba(255,255,255,.04);padding:1rem;border:1px dashed #3a6a9a}
+.callouts{padding:2rem 3vw;display:flex;flex-direction:column;justify-content:center;gap:1rem}
+.callout{border-left:3px solid #7AB648;padding:.4rem 0 .4rem .9rem}
+.callout h3{margin:0 0 .25rem;font-size:.85rem;color:#7AB648;letter-spacing:.08em;text-transform:uppercase}
+.callout p{margin:0;font-size:.88rem;font-family:Avenir,Helvetica,Arial,sans-serif;line-height:1.45}
+.hero-title{font-family:Avenir,Helvetica,Arial,sans-serif;font-size:clamp(1.6rem,3vw,2.4rem);margin:0 0 .6rem;color:#fff}
+.sheet{padding:2.5rem 3vw;font-family:Avenir,Helvetica,Arial,sans-serif}
+.sheet h2{font-family:ui-monospace,Menlo,monospace;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:#7AB648}
+table.specs{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;margin-top:1rem;background:rgba(0,0,0,.25)}
+table.specs th,table.specs td{border:1px solid #2a4a72;padding:.5rem;text-align:left}
+.dimrow{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0}
+.dimrow img{background:#fff;padding:.5rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding:0 3vw 2.5rem}
+pre.code{background:#061018;border:1px solid #2a4a72;color:#9fef9f;padding:1rem;font-size:.8rem}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#2a4a72;border-top:1px solid #2a4a72}
+.apps figure{margin:0;background:#0b1a2e}.apps img{width:100%;aspect-ratio:1;object-fit:cover;opacity:.9}
+.apps figcaption{padding:.4rem .6rem;font-size:.75rem}
+footer{padding:2.5rem 3vw;border-top:1px solid #2a4a72;font-family:Avenir,Helvetica,Arial,sans-serif}
+footer a{color:#7AB648;margin-right:1rem}
+@media(max-width:900px){.pane,.two,.dimrow{grid-template-columns:1fr}.draw{border-right:0;border-bottom:1px solid #2a4a72}.apps{grid-template-columns:1fr 1fr}}
+
+
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="#top"><img src="../Gearotons_Logo.png" alt="">GEAROTONS · DWG</a>
+  <nav>
+    <a href="#blueprint">Blueprint</a><a href="#models">Specs</a><a href="#start">Code</a>
+    <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  </nav>
+</header>
+<section class="pane" id="top">
+  <div class="draw" id="blueprint">
+    <p style="font-size:.72rem;letter-spacing:.15em;color:#7AB648">SHEET 01 · M17 SERIES</p>
+    <h1 class="hero-title">Technical overview: all-in-one servomotor</h1>
+    <img src="../connection_diagram.jpg" alt="Connection diagram">
+    <p style="font-size:.75rem;opacity:.7;text-align:center">RS-485 daisy-chain topology · single host connection</p>
+  </div>
+  <div class="callouts">
+    <div class="callout"><h3>A · Package</h3><p>Motor + driver + motion controller + encoder integrated.</p></div>
+    <div class="callout"><h3>B · Bus</h3><p>Control any number of motors over one RS-485 bus.</p></div>
+    <div class="callout"><h3>C · Form</h3><p>NEMA 17 mounting, footprint 42.2 × 42.2 mm, no protrusions.</p></div>
+    <div class="callout"><h3>D · Loop</h3><p>Encoder + PID at 32 kHz. Max speed 560 RPM. 12–24 V.</p></div>
+    <div class="callout"><h3>E · Hosts</h3><p>Raspberry Pi, Arduino, ESP32, Mac, PC.</p></div>
+    <p><a class="shop" href="https://gearotons.com/store" style="background:#7AB648;color:#0b1a2e;padding:.5rem 1rem;text-decoration:none;font-weight:700;display:inline-block">Shop Now</a></p>
+  </div>
+</section>
+<section class="sheet" id="models">
+  <h2>Dimensional &amp; electrical data</h2>
+  <p>M17-60 · 0.65 N·m · 38 W · 470 g · 59.8 mm height<br>
+  M17-48 · 0.55 N·m · 32 W · 360 g · 48.6 mm height<br>
+  M17-40 · 0.42 N·m · 25 W · 285 g · 41.6 mm height</p>
+  <table class='specs'><thead><tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr></thead><tbody><tr><th scope='row'>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr><tr><th scope='row'>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr><tr><th scope='row'>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr><tr><th scope='row'>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr><tr><th scope='row'>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr><tr><th scope='row'>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr><tr><th scope='row'>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr><tr><th scope='row'>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody></table>
+  <div class="dimrow">
+    <img src="../M17-60_dimensions.png" alt="M17-60" loading="lazy">
+    <img src="../M17-48_dimensions.png" alt="M17-48" loading="lazy">
+    <img src="../M17-40_dimensions.png" alt="M17-40" loading="lazy">
+  </div>
+</section>
+<section class="two" id="start">
+  <div>
+    <h2 style="font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:#7AB648">Procedure · first move</h2>
+    <p style="font-family:Avenir,Helvetica,Arial,sans-serif">pip3 install servomotor · or Arduino Library Manager: “Servomotor”</p>
+    <img src="../adapter_and_wire_small.jpg" alt="Adapter" style="margin-top:1rem;border:1px solid #2a4a72">
+  </div>
+  <pre class='code'><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3(&quot;X&quot;, time_unit=&quot;seconds&quot;,
+                position_unit=&quot;degrees&quot;)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+</section>
+<section class="apps" id="apps">
+  <figure><img src="../robotics_small.jpg" alt=""><figcaption>Robotics</figcaption></figure>
+  <figure><img src="../automation_small.jpg" alt=""><figcaption>CNC</figcaption></figure>
+  <figure><img src="../test_rack_small.jpg" alt=""><figcaption>Test racks</figcaption></figure>
+  <figure><img src="../motor_back_small.jpg" alt=""><figcaption>Label / QR</figcaption></figure>
+</section>
+<footer id="about">
+  <p>OPEN SOURCE · Gearotons · Shenzhen 2022 · Canadian founder</p>
+  <p><a href="https://gearotons.com/store">Shop Now</a><a href="https://gearotons.com">Documentation</a><a href="https://github.com/tomrodinger/servomotor">GitHub</a></p>
+  <p style="opacity:.7;font-size:.9rem">Affordable and Simple All-in-One Motion Control</p>
+</footer>
+
+</body>
+</html>

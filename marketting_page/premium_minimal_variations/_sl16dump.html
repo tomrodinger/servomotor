@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>sl16 dump</title>
+<style>body{margin:0;font:12px monospace}iframe{border:0;height:700px;display:block}</style>
+<pre id="r">pending</pre>
+<script>
+var WIDTHS=[1440,900,390];
+var lines=[];
+function once(w,done){
+  var f=document.createElement('iframe');
+  f.style.width=w+'px';
+  f.src='v16.html?probe=1';
+  f.onload=function(){
+    var win=f.contentWindow, doc=f.contentDocument;
+    var S=win.__slogan;
+    if(!S){ lines.push('W'+w+' NO __slogan'); f.remove(); done(); return; }
+    S.pause();
+    var box=doc.getElementById('sl');
+    var h1=box.parentNode;
+    var hs=[],ovf=[],h1h=[];
+    for(var i=0;i<S.items.length;i++){
+      S.goto(i);
+      var br=box.getBoundingClientRect();
+      hs.push(Math.round(br.height*100)/100);
+      h1h.push(Math.round(h1.getBoundingClientRect().height*100)/100);
+      var de=doc.documentElement;
+      ovf.push(de.scrollWidth-de.clientWidth);
+    }
+    lines.push('W'+w+' boxH='+hs.join(',')+' h1H='+h1h.join(',')+' ovf='+ovf.join(','));
+    // mid-transition overflow check
+    var mo=[];
+    for(var j=0;j<S.items.length;j++){
+      for(var t=0;t<=1.0001;t+=0.25){
+        S.seek(j,t);
+        var de2=doc.documentElement;
+        mo.push(de2.scrollWidth-de2.clientWidth);
+      }
+    }
+    var mx=0; for(var k=0;k<mo.length;k++) if(mo[k]>mx) mx=mo[k];
+    lines.push('W'+w+' maxMidOverflow='+mx+' state='+JSON.stringify(S.state()));
+    f.remove();
+    done();
+  };
+  document.body.appendChild(f);
+}
+var idx=0;
+function next(){
+  if(idx>=WIDTHS.length){ document.getElementById('r').textContent='RESULTS\n'+lines.join('\n')+'\nDONE'; return; }
+  var w=WIDTHS[idx++];
+  once(w,next);
+}
+next();
+</script>

@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>v16 harness</title>
+<style>html,body{margin:0;padding:0;background:#E9E5DE}iframe{border:0;display:block}
+#tag{position:fixed;right:0;bottom:0;z-index:9;font:11px/1.4 Menlo,monospace;background:#fff;color:#222;padding:2px 6px;opacity:.9}</style>
+<iframe id="f" scrolling="no"></iframe><div id="tag"></div>
+<script>
+// ?a=W,H,I,T,MOTION      T<0 => rest state (goto only)
+var a=(new URLSearchParams(location.search).get('a')||'1440,760,7,-1,0').split(',');
+var W=+a[0]||1440, H=+a[1]||760, I=+a[2]||0, T=parseFloat(a[3]), MO=+a[4]||0;
+var f=document.getElementById('f'), tag=document.getElementById('tag');
+f.style.width=W+'px'; f.style.height=H+'px';
+f.src='v16.html';
+f.onload=function(){
+  var t0=Date.now();
+  (function poll(){
+    var w=f.contentWindow, s=w&&w.__slogan;
+    if(!s){ if(Date.now()-t0<8000) return setTimeout(poll,40); tag.textContent='NO __slogan'; return; }
+    if(MO){ s.forceMotion(true); tag.textContent='live mode='+s.state().mode; return; }
+    s.pause(); s.goto(I);
+    if(T>=0){ s.seek(I,T); }
+    // let two frames land, then report
+    w.requestAnimationFrame(function(){w.requestAnimationFrame(function(){
+      var st=s.state();
+      tag.textContent='i='+s.index()+' t='+(T>=0?T:'rest')+' h='+st.height+' mode='+st.mode+' red='+st.reduced;
+    });});
+  })();
+};
+</script>

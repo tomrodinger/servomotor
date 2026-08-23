@@ -1,0 +1,22 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff;font:13px monospace}
+#out{position:absolute;left:0;top:0;width:1200px;background:#fff;z-index:9;padding:8px;white-space:pre-wrap}
+iframe{position:absolute;left:0;top:2000px;width:390px;height:24000px;border:0;}</style>
+<div id="out">loading…</div>
+<iframe id="f" src="http://127.0.0.1:8912/premium_minimal_variations/v9.html" scrolling="no"></iframe>
+<script>
+window.addEventListener('load',function(){
+ setTimeout(function(){
+  var d=document.getElementById('f').contentDocument, W=390, lines=[];
+  lines.push('scrollWidth='+d.documentElement.scrollWidth+' bodyScrollW='+d.body.scrollWidth);
+  var all=d.querySelectorAll('*'), seen={};
+  for(var i=0;i<all.length;i++){var e=all[i];var r=e.getBoundingClientRect();
+   if(r.right>W+1||r.left<-1){
+     var k=e.tagName+'.'+(e.className&&e.className.baseVal===undefined?e.className:'')+'';
+     if(seen[k])continue; seen[k]=1;
+     lines.push(k+'  left='+Math.round(r.left)+' right='+Math.round(r.right)+' w='+Math.round(r.width)+'  txt='+(e.textContent||'').slice(0,40).replace(/\s+/g,' '));
+   }}
+  document.getElementById('out').textContent=lines.slice(0,60).join('\n');
+ },1200);
+});
+</script>

@@ -1,0 +1,37 @@
+<!doctype html><meta charset="utf-8"><title>v10 transition strip</title>
+<style>
+html,body{margin:0;background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+.band{position:relative;overflow:hidden;border-bottom:1px solid #d8d8d8;}
+.band iframe{position:absolute;left:0;border:0;}
+.tag{position:absolute;left:8px;top:6px;z-index:5;font-size:12px;color:#c0392b;background:#fff;padding:1px 5px;}
+</style>
+<div id="host"></div>
+<script>
+function q(k,d){var m=new RegExp('[?&]'+k+'=([^&]*)').exec(location.search);return m?decodeURIComponent(m[1]):d;}
+var i=parseInt(q('i','5'),10);
+var W=parseInt(q('w','1440'),10);
+var TOP=parseInt(q('top','140'),10);
+var BAND=parseInt(q('band','360'),10);
+var FH=parseInt(q('fh','1000'),10);
+var ts=q('t','0,0.15,0.35,0.5,0.65,0.85,1').split(',');
+var host=document.getElementById('host');
+for(var k=0;k<ts.length;k++){
+  var t=ts[k];
+  var d=document.createElement('div');
+  d.className='band';
+  d.style.width=W+'px';
+  d.style.height=BAND+'px';
+  var tag=document.createElement('div');
+  tag.className='tag';
+  tag.textContent='i='+i+'  t='+t;
+  d.appendChild(tag);
+  var f=document.createElement('iframe');
+  f.src='v10.html?sl='+i+'&t='+t;
+  f.style.top=(-TOP)+'px';
+  f.style.width=W+'px';
+  f.style.height=FH+'px';
+  f.setAttribute('scrolling','no');
+  d.appendChild(f);
+  host.appendChild(d);
+}
+</script>

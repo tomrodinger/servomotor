@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff;font:12px monospace;}
+.h{position:absolute;left:-20000px;top:0;}
+iframe{height:1000px;border:0;}</style>
+<div id="o">measuring…</div><div class="h" id="h"></div>
+<script>
+var widths=[360,390,768,980,1440,1920];var frames=[];
+widths.forEach(function(w){var f=document.createElement('iframe');f.style.width=w+'px';f.scrolling='no';
+ f.src='http://127.0.0.1:8912/premium_minimal_variations/v19.html';document.getElementById('h').appendChild(f);frames.push([w,f]);});
+setTimeout(function(){
+ var out=[];
+ frames.forEach(function(p){var w=p[0],f=p[1];
+  try{
+   var d=f.contentDocument,D=d.documentElement,B=d.body;
+   var sw=Math.max(D.scrollWidth,B.scrollWidth),sh=Math.max(D.scrollHeight,B.scrollHeight);
+   var bad=[],all=d.querySelectorAll('*');
+   for(var k=0;k<all.length;k++){var r=all[k].getBoundingClientRect();
+     if(r.width>0&&(r.right>w+1||r.left<-1)){var c=all[k].className;bad.push(all[k].tagName+'.'+(typeof c=='string'?c.slice(0,34):'')+' L'+Math.round(r.left)+' R'+Math.round(r.right));}}
+   out.push('<b>w='+w+'</b> scrollW='+sw+' H='+sh+' overflow:'+(sw>w+1?'YES':'no')+'<br>&nbsp;&nbsp;'+(bad.slice(0,10).join('<br>&nbsp;&nbsp;')||'none'));
+  }catch(e){out.push('w='+w+' ERR '+e);}
+ });
+ document.getElementById('o').innerHTML=out.join('<hr>');
+},3000);
+</script>

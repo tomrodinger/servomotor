@@ -1,0 +1,46 @@
+<!doctype html><meta charset="utf-8"><title>sl16 strip</title>
+<style>
+  html,body{margin:0;padding:0;background:#5c5c5c;font:11px/1.3 ui-monospace,Menlo,monospace;}
+  .row{position:relative;overflow:hidden;margin:0 0 6px;background:#E9E5DE;}
+  .row iframe{border:0;display:block;position:relative;}
+  .lab{position:absolute;left:0;top:0;z-index:9;background:rgba(0,0,0,.78);color:#9EF;padding:2px 7px;letter-spacing:.06em;}
+</style>
+<div id="out"></div>
+<script>
+var q=new URLSearchParams(location.search);
+var W=+(q.get('w')||1440);
+var CT=+(q.get('ct')||150);      /* crop top */
+var CH=+(q.get('ch')||330);      /* crop height */
+var IH=+(q.get('ih')||900);      /* iframe height */
+var specs=(q.get('f')||'s:0:0.5').split(',');
+var out=document.getElementById('out');
+var pending=specs.length;
+specs.forEach(function(sp){
+  var p=sp.split(':');
+  var row=document.createElement('div');
+  row.className='row';
+  row.style.width=W+'px';
+  row.style.height=CH+'px';
+  var lab=document.createElement('span');
+  lab.className='lab';
+  lab.textContent=sp;
+  var f=document.createElement('iframe');
+  f.style.width=W+'px';
+  f.style.height=IH+'px';
+  f.style.marginTop=(-CT)+'px';
+  f.setAttribute('scrolling','no');
+  f.src='v16.html';
+  f.onload=function(){
+    var S=f.contentWindow.__slogan;
+    if(S){
+      S.pause();
+      if(p[0]==='s') S.seek(+p[1],+p[2]);
+      else S.goto(+p[1]);
+    }
+    if(--pending===0) document.title='READY';
+  };
+  row.appendChild(f);
+  row.appendChild(lab);
+  out.appendChild(row);
+});
+</script>

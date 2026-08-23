@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>p</title>
+<style>html,body{margin:0;background:#111;color:#fff;font:12px monospace}
+iframe{border:0;display:block}#o{white-space:pre;padding:8px}</style>
+<div id="o">…</div><iframe id="f" src="/premium_minimal_variations/v4.html?anim=1&pause=1" width="1440" height="900"></iframe>
+<script>
+var f=document.getElementById('f');
+f.onload=function(){
+ setTimeout(function(){
+  var d=f.contentDocument, W=f.contentWindow;
+  var h1=d.querySelector('.hero h1');
+  var stage=d.querySelector('.sl-stage');
+  var out=[];
+  var S=W.__slogan.items;
+  var m=d.createElement('span');
+  m.style.cssText='display:block;position:absolute;left:0;right:0;top:0;visibility:hidden';
+  stage.appendChild(m);
+  for(var i=0;i<S.length;i++){
+    m.innerHTML=S[i][0]+'<br><strong>'+S[i][1]+'</strong>';
+    out.push(i+': '+m.offsetHeight);
+  }
+  out.push('stageW='+stage.clientWidth+' h1H='+h1.offsetHeight);
+  document.getElementById('o').textContent=out.join('\n');
+ },500);
+};
+</script>

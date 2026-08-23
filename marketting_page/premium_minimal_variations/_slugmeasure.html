@@ -1,0 +1,77 @@
+<!doctype html><meta charset="utf-8"><title>slug measure</title>
+<style>body{font:13px/1.35 monospace;margin:0;white-space:pre}
+iframe{border:0;display:block;height:900px;position:absolute;left:-5000px;top:0}</style>
+<div id="o">measuring…</div>
+<iframe id="f1" src="v3.html" style="width:1440px"></iframe>
+<iframe id="f2" src="v3.html" style="width:900px"></iframe>
+<iframe id="f3" src="v3.html" style="width:390px"></iframe>
+<script>
+const SLOGANS = [
+  ["A motor, and everything",              "that usually surrounds it."],
+  ["The whole drive system.",              "Inside one motor."],
+  ["Four systems.",                        "One motor."],
+  ["Motion control,",                      "fully integrated."],
+  ["You wanted motion.",                   "Not a wiring project."],
+  ["A motor that",                         "needs nothing else."],
+  ["The whole motion system.",             "One motor."],
+  ["Everything that moves it,",            "inside it."],
+  ["Motion control.",                      "All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.",             "Runs like a full servo."],
+  ["Four bolts. One cable.",               "A complete servo system."],
+  ["Servomotor:",                          "stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder",       "are no longer your problem."],
+];
+function measureIn(win, label){
+  const d = win.document;
+  const h1 = d.querySelector('.hero h1');
+  const cs = win.getComputedStyle(h1);
+  let out = '\n=== '+label+' vw='+win.innerWidth+' h1 width='+h1.clientWidth.toFixed(1)
+    +' font='+cs.fontSize+' lh='+cs.lineHeight+' natH='+h1.offsetHeight.toFixed(1)+'\n';
+  // measurer inside h1
+  const m = d.createElement('div');
+  m.style.cssText='position:absolute;left:0;top:0;width:100%;visibility:hidden;pointer-events:none';
+  h1.style.position='relative';
+  h1.appendChild(m);
+  const probe = d.createElement('span'); probe.style.display='block'; probe.textContent='Hxg';
+  m.appendChild(probe); const lineH = probe.offsetHeight; m.textContent='';
+  out += 'single line box height = '+lineH.toFixed(2)+'\n';
+  function split(text, italic){
+    m.textContent='';
+    const holder = d.createElement(italic?'em':'span');
+    holder.style.display='block';
+    m.appendChild(holder);
+    const words = text.split(' ');
+    const spans = words.map((w,i)=>{const s=d.createElement('span'); s.textContent=w; holder.appendChild(s); if(i<words.length-1) holder.appendChild(d.createTextNode(' ')); return s;});
+    const lines=[]; let cur=null, curTop=null;
+    spans.forEach(s=>{const r=s.getBoundingClientRect(); const top=Math.round(r.top*2)/2;
+      if(curTop===null||Math.abs(top-curTop)>1){cur={words:[],left:r.left,right:r.right};lines.push(cur);curTop=top;}
+      cur.words.push(s.textContent); cur.right=r.right;});
+    const h = holder.offsetHeight;
+    m.textContent='';
+    return {lines:lines.map(l=>({t:l.words.join(' '),w:l.right-l.left})), h:h};
+  }
+  let maxTotal=0, maxIdx=-1;
+  SLOGANS.forEach((s,i)=>{
+    const a=split(s[0],false), b=split(s[1],true);
+    const n=a.lines.length+b.lines.length;
+    const total=a.h+b.h;
+    if(total>maxTotal){maxTotal=total;maxIdx=i;}
+    out += String(i).padStart(2)+' n='+n+' H='+total.toFixed(1)
+      +'  A['+a.lines.map(l=>l.t+'|'+l.w.toFixed(0)).join(' // ')+']'
+      +'  B['+b.lines.map(l=>l.t+'|'+l.w.toFixed(0)).join(' // ')+']\n';
+  });
+  out += 'MAX total height = '+maxTotal.toFixed(1)+' at index '+maxIdx+'  (natural now = '+h1.offsetHeight.toFixed(1)+')\n';
+  m.remove();
+  return out;
+}
+window.addEventListener('load',()=>{setTimeout(()=>{
+  let s='';
+  for(const [id,label] of [['f1','1440'],['f2','900'],['f3','390']]){
+    const f=document.getElementById(id);
+    try{ s+=measureIn(f.contentWindow,label); }catch(e){ s+='\nERR '+label+' '+e; }
+  }
+  document.getElementById('o').textContent=s;
+},1200)});
+</script>

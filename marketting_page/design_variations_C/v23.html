@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+
+<style>
+
+/* product cutouts — no white studio rectangle */
+img[src*="transparent/"]{
+  background:transparent !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.12));
+}
+body.dark-cut img[src*="transparent/"],
+img.on-dark[src*="transparent/"]{
+  filter:drop-shadow(0 26px 50px rgba(0,0,0,.55));
+}
+img[src*="dimensions.png"]{
+  background:#fff;
+  border-radius:8px;
+  padding:8px;
+}
+
+/* C-safe-overflow */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video{max-width:100%;height:auto}
+pre,table{max-width:100%}
+pre{overflow-x:auto}
+td,th{word-break:break-word}
+
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font:16px/1.5 "Avenir Next",Avenir,Helvetica,sans-serif;background:#07131f;color:#d7e6f2}
+img{max-width:100%;height:auto;display:block}
+a{color:#00a3e0}
+nav{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:#07131f;border-bottom:1px solid #143049}
+nav img{height:24px;filter:invert(1)}
+.shop{background:#00a3e0;color:#07131f;padding:8px 14px;font-weight:700;text-decoration:none}
+.shop:hover{background:#4cc4f0;color:#07131f}
+.hero{padding:56px 6vw}
+.hero h1{font-size:clamp(32px,5vw,56px);color:#fff}
+.bento{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:auto auto;gap:12px;padding:0 6vw 48px}
+.bento article{background:#0d2236;padding:18px;border-radius:4px}
+.bento .wide{grid-column:1/2;grid-row:1/3}
+.bento img{width:100%;height:100%;object-fit:cover;max-height:360px}
+section{padding:48px 6vw}
+h2{color:#fff}
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.feats article{background:#0d2236;padding:14px}
+.models{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+pre{background:#031018;border:1px solid #143049;padding:18px;overflow:auto;font:13px/1.55 ui-monospace,Menlo,monospace;color:#9ad8f0}
+.os img{height:42px;background:#fff;padding:3px;margin-right:8px}
+@media(max-width:800px){.bento,.feats,.models{grid-template-columns:1fr}.bento .wide{grid-column:auto}}
+
+</style>
+</head>
+<body class="dark-cut">
+
+<nav>
+  <a href="#top"><img src="../Gearotons_Logo.png" alt="Gearotons"></a>
+  <a class="shop" href="https://gearotons.com/store">Shop</a>
+</nav>
+<header class="hero" id="top">
+  <p style="color:#00a3e0;letter-spacing:.16em;text-transform:uppercase;font-size:12px">The layer under the motion</p>
+  <h1>Gearotons is the critical layer powering the joint.</h1>
+  <p style="max-width:40em;margin-top:12px">Affordable and Simple All-in-One Motion Control. The M17 Series Servomotors are all-in-one motion control: motor, driver, motion controller, and encoder in a single compact package. RS-485 lets you daisy-chain any number of motors from one connection. Three models — M17-60, M17-48, M17-40 — share the same control characteristics at three torques.</p>
+</header>
+<div class="bento">
+  <article class="wide"><img class="cutout" src="../transparent/one_motor_transparent_small.png" alt=""></article>
+  <article><h3>HBM of the bench</h3><p>32 kHz loop, on-package encoder.</p></article>
+  <article><h3>Gen-anything bus</h3><p>RS-485. Daisy-chain any number.</p></article>
+  <article><h3>Edge motion</h3><p>Pi, Arduino, ESP32, Mac, PC.</p></article>
+  <article><h3>Open docs</h3><p>Written for you — and for your AI.</p></article>
+</div>
+<section id="features">
+  <h2>Design tools, in the motor</h2>
+  <div class="feats"><article><h3>All-in-one package</h3><p>Motor, driver, motion controller, and encoder in one compact body.</p></article><article><h3>One bus, any number</h3><p>Daisy-chain motors on a single RS-485 connection.</p></article><article><h3>High-level commands</h3><p>“Enable MOSFETs” and “Trapezoid move” — no timing-critical STEP/DIR.</p></article><article><h3>NEMA 17 size</h3><p>Nearly the same size as a stepper with the same specs. No protrusions.</p></article><article><h3>Standard mounting</h3><p>Standard NEMA 17 hole pattern and footprint.</p></article><article><h3>12–24 V</h3><p>Wide voltage range for bench supplies and industrial rails.</p></article><article><h3>32 kHz closed loop</h3><p>Built-in encoder and a PID loop running at 32 kHz.</p></article><article><h3>Efficient vs. stepper</h3><p>Closed loop draws what the load needs — not a constant holding current.</p></article></div>
+</section>
+<section id="models">
+  <h2>Datasheet</h2>
+  <div class="models"><article style='background:#0d2236;padding:14px'><h3>M17-60</h3><img src='../M17-60_dimensions.png' alt='' style='background:#fff;margin:8px 0'><p>0.65 N·m</p></article><article style='background:#0d2236;padding:14px'><h3>M17-48</h3><img src='../M17-48_dimensions.png' alt='' style='background:#fff;margin:8px 0'><p>0.55 N·m</p></article><article style='background:#0d2236;padding:14px'><h3>M17-40</h3><img src='../M17-40_dimensions.png' alt='' style='background:#fff;margin:8px 0'><p>0.42 N·m</p></article></div>
+  <div style="overflow:auto;margin-top:16px">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;padding:10px 8px;color:#00a3e0;border-bottom:1px solid #143049">Parameter</th>
+        <th style="text-align:left;padding:10px 8px;color:#00a3e0;border-bottom:1px solid #143049">M17-60</th>
+        <th style="text-align:left;padding:10px 8px;color:#00a3e0;border-bottom:1px solid #143049">M17-48</th>
+        <th style="text-align:left;padding:10px 8px;color:#00a3e0;border-bottom:1px solid #143049">M17-40</th>
+      </tr></thead>
+      <tbody><tr><th>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr>
+<tr><th>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr>
+<tr><th>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+<tr><th>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr>
+<tr><th>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr>
+<tr><th>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr>
+<tr><th>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr>
+<tr><th>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody>
+    </table></div>
+</section>
+<section id="start">
+  <h2>Bring-up listing</h2>
+  <p>Control from Mac, PC, Raspberry Pi, Arduino, or ESP32 with a low-cost RS-485 adapter. High-level commands, self-calibration, LED status, trapezoid profiles, closed-loop control, and comprehensive error handling. Standard NEMA 17 mounting, 12–24 V, a robust protocol. Education and industry: robotics, CNC, automated testing, scientific instruments.</p>
+  <pre style="margin-top:12px"><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3("X", time_unit="seconds",
+                position_unit="degrees")
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+  <p style="margin-top:8px">pip3 install servomotor · Arduino library: Library Manager → “Servomotor”</p>
+</section>
+<section>
+  <h2>Markets</h2>
+  <div class="models">
+    <img src="../robotics_small.jpg" alt="">
+    <img src="../automation_small.jpg" alt="">
+    <img src="../test_rack_small.jpg" alt="">
+  </div>
+</section>
+<section id="about">
+  <h2>About</h2>
+  <p>Gearotons is a young startup making precision motion control accessible to makers, educators, and engineers. Founded in Shenzhen in 2022 by a Canadian entrepreneur. Firmware, libraries, and schematics are open source on GitHub.</p>
+  <p class="os" style="margin:12px 0">
+    <img src="../Open-source-hardware-logo.svg.png" alt="">
+    <img src="../Open_Source_Initiative.svg.png" alt="">
+  </p>
+  <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  <a href="https://gearotons.com" style="margin-left:12px">Documentation</a>
+  <a href="https://github.com/tomrodinger/servomotor" style="margin-left:12px">GitHub</a>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+/* product cutouts — no white studio rectangle */
+img[src*="transparent/"]{
+  background:transparent !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.12));
+}
+body.dark-cut img[src*="transparent/"],
+img.on-dark[src*="transparent/"]{
+  filter:drop-shadow(0 26px 50px rgba(0,0,0,.55));
+}
+img[src*="dimensions.png"]{
+  background:#fff;
+  border-radius:8px;
+  padding:8px;
+}
+
+/* C-safe-overflow */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video{max-width:100%;height:auto}
+pre,table{max-width:100%}
+pre{overflow-x:auto}
+td,th{word-break:break-word}
+body{margin:16px;font:16px/1.45 Times,"Times New Roman",serif;background:#fff;color:#000}img{max-width:100%;height:auto}table{border-collapse:collapse}td,th{border:1px solid #000;padding:4px 8px;text-align:left}pre{background:#f4f4f4;padding:12px;overflow:auto}</style>
+</head>
+<body>
+
+<p align="center">
+  <img src="../Gearotons_Logo_and_Gearotons_Name.png" alt="Gearotons" width="280">
+</p>
+<p align="center"><b>GEAROTONS</b><br>
+Shenzhen<br>
+Official Home Page</p>
+<hr>
+<p align="center"><b>M17 SERIES SERVOMOTORS</b><br>
+Affordable and Simple All-in-One Motion Control</p>
+<hr>
+<ul>
+  <li><a href="#about">A Message about the Company</a></li>
+  <li><a href="#features">Principal Characteristics of the M17</a></li>
+  <li><a href="#models">The Three Models, with Specifications</a></li>
+  <li><a href="#start">Instructions for the First Movement (Python)</a></li>
+  <li><a href="#apps">Applications</a></li>
+  <li><a href="https://gearotons.com/store">Shop — the Store</a></li>
+  <li><a href="https://gearotons.com">Documentation</a></li>
+  <li><a href="https://github.com/tomrodinger/servomotor">Source Code and Schematics (GitHub)</a></li>
+</ul>
+<hr>
+<p id="top">The M17 Series Servomotors are all-in-one motion control: motor, driver, motion controller, and encoder in a single compact package. RS-485 lets you daisy-chain any number of motors from one connection. Three models — M17-60, M17-48, M17-40 — share the same control characteristics at three torques.</p>
+<p>Control from Mac, PC, Raspberry Pi, Arduino, or ESP32 with a low-cost RS-485 adapter. High-level commands, self-calibration, LED status, trapezoid profiles, closed-loop control, and comprehensive error handling. Standard NEMA 17 mounting, 12–24 V, a robust protocol. Education and industry: robotics, CNC, automated testing, scientific instruments.</p>
+<p align="center"><img class="cutout" src="../transparent/one_motor_transparent_small.png" alt="M17" width="360"></p>
+<hr>
+<p id="features"><b>Principal Characteristics</b></p>
+<ul><li><b>All-in-one package</b> — Motor, driver, motion controller, and encoder in one compact body.</li><li><b>One bus, any number</b> — Daisy-chain motors on a single RS-485 connection.</li><li><b>High-level commands</b> — “Enable MOSFETs” and “Trapezoid move” — no timing-critical STEP/DIR.</li><li><b>NEMA 17 size</b> — Nearly the same size as a stepper with the same specs. No protrusions.</li><li><b>Standard mounting</b> — Standard NEMA 17 hole pattern and footprint.</li><li><b>12–24 V</b> — Wide voltage range for bench supplies and industrial rails.</li><li><b>32 kHz closed loop</b> — Built-in encoder and a PID loop running at 32 kHz.</li><li><b>Efficient vs. stepper</b> — Closed loop draws what the load needs — not a constant holding current.</li><li><b>Onboard protection</b> — Over-current, over-voltage, and over-temperature.</li><li><b>560 RPM</b> — Maximum speed, all three models.</li></ul>
+<hr>
+<p id="models"><b>The Three Models</b></p>
+<p><b>M17-60</b><br><img src='../M17-60_dimensions.png' alt='M17-60' width='280'><br>0.65 N·m, 38 W, 59.8 mm, 470 g</p><p><b>M17-48</b><br><img src='../M17-48_dimensions.png' alt='M17-48' width='280'><br>0.55 N·m, 32 W, 48.6 mm, 360 g</p><p><b>M17-40</b><br><img src='../M17-40_dimensions.png' alt='M17-40' width='280'><br>0.42 N·m, 25 W, 41.6 mm, 285 g</p>
+<table>
+  <tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr>
+  <tr><th>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr>
+<tr><th>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr>
+<tr><th>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+<tr><th>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr>
+<tr><th>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr>
+<tr><th>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr>
+<tr><th>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr>
+<tr><th>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr>
+</table>
+<hr>
+<p id="start"><b>A Simple Program</b></p>
+<pre>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3("X", time_unit="seconds",
+                position_unit="degrees")
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</pre>
+<p>pip3 install servomotor<br>Arduino library: Library Manager → “Servomotor”</p>
+<hr>
+<p id="apps"><b>Applications</b></p>
+<p>Robotics. CNC machines. Automated testing equipment. Scientific instruments. Automation. 3D printers. Education.</p>
+<p>
+  <img src="../robotics_small.jpg" alt="Robotics" width="220">
+  <img src="../automation_small.jpg" alt="Automation" width="220">
+  <img src="../test_rack_small.jpg" alt="Test rack" width="220">
+</p>
+<hr>
+<p id="about"><b>About the Company</b></p>
+<p>Gearotons is a young startup making precision motion control accessible to makers, educators, and engineers. Founded in Shenzhen in 2022 by a Canadian entrepreneur. Firmware, libraries, and schematics are open source on GitHub.</p>
+<p>
+  <img src="../Open-source-hardware-logo.svg.png" alt="OSH" height="48">
+  <img src="../Open_Source_Initiative.svg.png" alt="OSI" height="48">
+</p>
+<hr>
+<p align="center">
+  <a href="https://gearotons.com/store"><b>SHOP NOW</b></a><br>
+  If you have any comments about our WEB page, you may write the company. Due to the limited number of personnel, we may be unable to provide a direct response.
+</p>
+<p align="center">Copyright © 2022-2026 <b>Gearotons</b></p>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>v1 strip</title>
+<style>
+ html,body{margin:0;background:#888;}
+ .row{position:relative;width:1000px;height:330px;overflow:hidden;background:#fff;margin-bottom:3px;}
+ .row iframe{position:absolute;left:0;top:-150px;width:1000px;height:900px;border:0;}
+ .lab{position:absolute;right:6px;top:4px;z-index:9;font:11px monospace;color:#c00;background:#fff;padding:1px 4px;}
+</style>
+<div id="host"></div>
+<script>
+var qs=new URLSearchParams(location.search);
+var PAIR=parseInt(qs.get('pair')||'0',10);
+var TS=(qs.get('ts')||'0,0.15,0.35,0.5,0.65,0.85,1').split(',').map(Number);
+var host=document.getElementById('host');
+TS.forEach(function(t){
+  var d=document.createElement('div'); d.className='row';
+  var l=document.createElement('div'); l.className='lab'; l.textContent='pair '+PAIR+'  t='+t;
+  var f=document.createElement('iframe');
+  f.src='v1.html?motion=1&seek='+PAIR+','+t;
+  d.appendChild(f); d.appendChild(l); host.appendChild(d);
+});
+</script>

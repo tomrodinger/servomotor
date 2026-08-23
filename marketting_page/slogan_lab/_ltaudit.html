@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>ltaudit</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#222}
+  .row{display:flex;align-items:center}
+  .lab{width:56px;flex:none;color:#fff;font:11px monospace;text-align:right;padding-right:6px}
+  .cell{position:relative;overflow:hidden;background:#fff;color:#1d1d1f;padding:16px 22px;
+        outline:1px solid #f0f}
+  .fx-stage{position:absolute;inset:16px 22px;display:flex;align-items:center;justify-content:center;
+    font-size:34px;line-height:1.18;letter-spacing:-.02em;text-align:center;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;}
+  .fx-stage .fx-light{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+</style></head><body>
+<div id="strip"></div>
+<script src="engine.js"></script><script src="manifest.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
+];
+(async function(){
+  const q=new URLSearchParams(location.search);
+  for(const f of (window.SLOGAN_FX_FILES||[])){
+    await new Promise(r=>{const s=document.createElement('script');s.src=f+'?v='+Date.now();s.onload=r;s.onerror=r;document.head.appendChild(s);});
+  }
+  const fx=SloganFX.get(q.get('id'));
+  const strip=document.getElementById('strip');
+  if(!fx){strip.textContent='no such effect';return;}
+  const i=parseInt(q.get('i')||'9',10);
+  const ts=(q.get('ts')||'0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1').split(',').map(Number);
+  const W=parseInt(q.get('w')||'900',10), H=parseInt(q.get('h')||'150',10);
+  const th=fx.theme||{};
+  const bg=th.bg||'#ffffff', fg=th.fg||'#1d1d1f';
+  for(const t of ts){
+    const row=document.createElement('div');row.className='row';
+    const lab=document.createElement('div');lab.className='lab';lab.textContent=t;
+    const cell=document.createElement('div');cell.className='cell';
+    cell.style.width=W+'px';cell.style.height=H+'px';cell.style.background=bg;cell.style.color=fg;
+    const stage=document.createElement('div');
+    if(th.font)stage.style.fontFamily=th.font;
+    if(th.italic)stage.style.fontStyle='italic';
+    cell.appendChild(stage);row.appendChild(lab);row.appendChild(cell);strip.appendChild(row);
+    const p=SloganFX.mount(stage,fx,SLOGANS,{start:i});p.pause();p.seek(i,t);
+  }
+  document.title='ready';
+})();
+</script></body></html>

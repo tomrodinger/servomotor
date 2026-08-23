@@ -1,0 +1,25 @@
+<!doctype html><meta charset="utf-8"><title>v14 slogan strip</title>
+<style>
+  html,body{margin:0;background:#fff;font:11px/1.4 -apple-system,Helvetica,Arial,sans-serif;}
+  .row{position:relative;overflow:hidden;border-bottom:1px solid #e5e5e5;}
+  .row iframe{border:0;display:block;position:relative;}
+  .tag{position:absolute;left:6px;top:4px;z-index:9;color:#b00;font-weight:700;letter-spacing:.05em;}
+</style>
+<div id="out"></div>
+<script>
+var q=new URLSearchParams(location.search);
+var i=q.get('i')||'6';
+var list=(q.get('list')||'0,0.15,0.35,0.5,0.65,0.85,1').split(',');
+var W=parseInt(q.get('w')||'1440',10);
+var H=parseInt(q.get('h')||'300',10);
+var TOP=parseInt(q.get('top')||'200',10);
+var out=document.getElementById('out');
+list.forEach(function(t){
+  var d=document.createElement('div');d.className='row';d.style.width=W+'px';d.style.height=H+'px';
+  var s=document.createElement('span');s.className='tag';s.textContent='t='+t;
+  var f=document.createElement('iframe');
+  f.width=W;f.height=(TOP+H+40);f.style.top=(-TOP)+'px';f.scrolling='no';
+  f.src='v14.html?sl='+i+'&t='+t;
+  d.appendChild(s);d.appendChild(f);out.appendChild(d);
+});
+</script>

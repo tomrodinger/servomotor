@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons M17 — Design set C</title>
+<style>
+  :root { --bar: 56px; --rail: 220px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font: 13px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #111; color: #eee;
+  }
+  header {
+    height: var(--bar);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 16px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #333;
+  }
+  header strong { letter-spacing: .04em; }
+  header span { color: #888; }
+  .layout { display: grid; grid-template-columns: var(--rail) 1fr; height: calc(100% - var(--bar)); }
+  nav {
+    overflow: auto;
+    background: #161616;
+    border-right: 1px solid #333;
+    padding: 8px 0 24px;
+  }
+  nav button {
+    display: block; width: 100%;
+    text-align: left;
+    background: transparent; color: #ddd;
+    border: 0; border-left: 3px solid transparent;
+    padding: 7px 12px;
+    cursor: pointer; font: inherit;
+  }
+  nav button:hover { background: #222; }
+  nav button.on { background: #252525; border-left-color: #7AB648; color: #fff; }
+  nav .g {
+    padding: 12px 12px 4px;
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #777;
+  }
+  iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  @media (max-width: 700px) {
+    :root { --rail: 132px; }
+    nav button { font-size: 11px; padding: 6px 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <strong>Set C</strong>
+  <span id="label">v1 — Swiss Catalog</span>
+</header>
+<div class="layout">
+  <nav id="nav"></nav>
+  <iframe id="frame" title="Variant" src="v1.html"></iframe>
+</div>
+<script>
+const items = [
+  [1, "Swiss Catalog"],
+  [2, "Dark Atelier"],
+  [3, "Field Notes"],
+  [4, "Bench Notes"],
+  [5, "Instrument Lab"],
+  [6, "Kinetic Poster"],
+  [7, "Control Room"],
+  [8, "Object Room"],
+  [9, "Classroom Kit"],
+  [10, "Blueprint"],
+  [11, "NVIDIA"],
+  [12, "Apple"],
+  [13, "Google"],
+  [14, "Microsoft"],
+  [15, "Amazon"],
+  [16, "TSMC"],
+  [17, "SpaceX"],
+  [18, "Broadcom"],
+  [19, "Saudi Aramco"],
+  [20, "Tesla"],
+  [21, "Meta"],
+  [22, "Samsung"],
+  [23, "Micron"],
+  [24, "Berkshire"],
+  [25, "Eli Lilly"],
+  [26, "SK hynix"],
+  [27, "JPMorgan"],
+  [28, "AMD"],
+  [29, "Walmart"],
+  [30, "ASML"],
+  [31, "Visa"],
+  [32, "Johnson & Johnson"],
+  [33, "Intel"],
+  [34, "Exxon Mobil"],
+  [35, "Tencent"],
+  [36, "Mastercard"],
+  [37, "Applied Materials"],
+  [38, "AbbVie"],
+  [39, "Cisco"],
+  [40, "Caterpillar"],
+];
+const nav = document.getElementById("nav");
+const frame = document.getElementById("frame");
+const label = document.getElementById("label");
+function show(n, name) {
+  frame.src = "v" + n + ".html";
+  label.textContent = "v" + n + " — " + name;
+  [...nav.querySelectorAll("button")].forEach(b => {
+    b.classList.toggle("on", b.dataset.n === String(n));
+  });
+  history.replaceState(null, "", "#v" + n);
+}
+nav.innerHTML = '<div class="g">Originals</div>' +
+  items.slice(0,10).map(([n,name]) =>
+    `<button type="button" data-n="${n}">v${n} ${name}</button>`).join("") +
+  '<div class="g">Pastiches</div>' +
+  items.slice(10).map(([n,name]) =>
+    `<button type="button" data-n="${n}">v${n} ${name}</button>`).join("");
+nav.addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const n = +b.dataset.n;
+  const name = items.find(i => i[0] === n)[1];
+  show(n, name);
+});
+const hash = location.hash.match(/^#v(\d+)/);
+const start = hash ? +hash[1] : 1;
+const found = items.find(i => i[0] === start) || items[0];
+show(found[0], found[1]);
+</script>
+</body>
+</html>

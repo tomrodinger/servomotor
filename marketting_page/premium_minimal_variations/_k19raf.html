@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><title>raf probe</title>
+<style>html,body{margin:0;background:#0b0c0e;color:#cfe;font:13px/1.6 ui-monospace,Menlo,monospace}pre{padding:12px}</style>
+<pre id="o">…</pre>
+<script>
+var n=0,last=0,first=null,t0=Date.now();
+function tick(ts){n++;last=ts;if(first===null)first=ts;requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+setTimeout(function(){
+  document.getElementById('o').textContent=
+    'rAF callbacks in 6000ms of setTimeout time: '+n+'\n'+
+    'first rAF ts: '+(first===null?'never':first.toFixed(1))+'\n'+
+    'last  rAF ts: '+last.toFixed(1)+'\n'+
+    'rAF timestamp span: '+(first===null?'-':(last-first).toFixed(1))+' ms\n'+
+    'Date.now() span   : '+(Date.now()-t0)+' ms\n'+
+    'performance.now() : '+performance.now().toFixed(1);
+  document.title='READY';
+},6000);
+</script>

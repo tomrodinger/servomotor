@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>ovf</title>
+<style>html,body{margin:0;background:#fff;font:12px monospace;white-space:pre}
+iframe{border:0;display:block;height:700px}</style>
+<div id="out">pending</div>
+<div id="hold"></div>
+<script>
+var WIDTHS=[390,430,700,900,1440];
+var rows=[];
+function one(w,done){
+  var f=document.createElement('iframe');
+  f.style.width=w+'px';
+  f.src='/premium_minimal_variations/v4.html?anim=1&pause=1';
+  document.getElementById('hold').appendChild(f);
+  f.addEventListener('load',function(){
+    setTimeout(function(){
+      var d=f.contentDocument, win=f.contentWindow, S=win.__slogan;
+      var lock=d.querySelector('.sl-stage').offsetHeight;
+      var maxC=0, maxI=-1;
+      for(var i=0;i<S.items.length;i++){
+        S.goto(i);
+        var hh=Math.round(d.querySelector('.sl-cur').getBoundingClientRect().height);
+        if(hh>maxC){maxC=hh;maxI=i;}
+      }
+      /* can the user actually reach the beam's overshoot? */
+      var worst=0;
+      for(var k=0;k<S.items.length;k++){
+        for(var j=0;j<=10;j++){
+          S.seek(k,j/10);
+          var sw=d.documentElement.scrollWidth; if(sw>worst) worst=sw;
+        }
+      }
+      S.goto(1);
+      S.seek(0,1);
+      win.scrollTo(4000,0);
+      var sx=win.scrollX||d.documentElement.scrollLeft||0;
+      win.scrollTo(0,0);
+      rows.push('w='+w+' clientW='+d.documentElement.clientWidth+
+        ' lockedStageH='+lock+' tallestContent='+maxC+' (#'+maxI+')'+
+        ' fits='+(maxC<=lock)+
+        ' maxScrollWidthDuringSweep='+worst+
+        ' reachableScrollX='+sx);
+      done();
+    },350);
+  });
+}
+var n=0;
+(function next(){
+  if(n>=WIDTHS.length){ document.getElementById('out').textContent=rows.join('\n'); return; }
+  one(WIDTHS[n++], next);
+})();
+</script>

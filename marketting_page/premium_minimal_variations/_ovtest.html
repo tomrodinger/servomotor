@@ -1,0 +1,18 @@
+<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#fff;font:28px monospace}
+iframe{width:900px;height:1200px;border:0;display:block}</style>
+<div id="o">measuring…</div>
+<iframe id="f" src="http://127.0.0.1:8912/premium_minimal_variations/v13.html"></iframe>
+<script>
+setTimeout(function(){
+ var d=document.getElementById('f').contentDocument;
+ var de=d.documentElement;
+ var out='iw='+d.defaultView.innerWidth+' scrollW='+de.scrollWidth+' clientW='+de.clientWidth+'<br>';
+ var bad=[];
+ d.querySelectorAll('*').forEach(function(el){
+   var r=el.getBoundingClientRect();
+   if(r.right>de.clientWidth+1 && r.width>0){bad.push(el.tagName+'.'+(el.className&&el.className.baseVal===undefined?String(el.className).slice(0,30):'')+' right='+Math.round(r.right)+' w='+Math.round(r.width));}
+ });
+ out+='overflowing:'+bad.length+'<br>'+bad.slice(0,25).join('<br>');
+ document.getElementById('o').innerHTML=out;
+},4000);
+</script>

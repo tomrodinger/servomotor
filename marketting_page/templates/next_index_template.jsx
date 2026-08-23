@@ -44,11 +44,14 @@ export default function Home() {
             <p className={styles.subtitle}>From Education to Innovation</p>
             <Image
               src="/marketing/images/M17_series_overview.jpg"
-              alt="M17 Series Overview"
+              alt="The four M17 Series models side by side, tallest to shortest: M17-60, M17-48, M17-40 and M17-34"
               className={styles.heroImage}
               width={__WIDTH_M17_series_overview__}
               height={__HEIGHT_M17_series_overview__}
             />
+            <p className={styles.heroImageCaption}>
+              Four models, one footprint — M17-60 · M17-48 · M17-40 · M17-34
+            </p>
           </div>
         </header>
 
@@ -160,7 +163,7 @@ export default function Home() {
                 height={__HEIGHT_motor_back_small__}
               />
             </div>
-            <p>The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat and quickly to indicate that the bootloader is running rather than the application. The red LED will light up briefly to show communication on the bus and will indicate fatal error codes by flashing a certain number of times.</p>
+            <p>The servomotor has two status LEDs (Green and Red). The green LED flashes slowly to show a heart beat, flashes quickly to indicate that the bootloader is running rather than the application, and also lights up briefly while a packet is being received, so it flickers with communication on the bus. The red LED indicates fatal error codes by flashing a certain number of times.</p>
             <p>The servomotor has two buttons labelled "Reset" and "Test". The Reset button will reset the internal microcontroller and all state will go back to default values. The Test button will cause the motor to spin. Press briefly to let it spin one way and press for more than 0.3 seconds and release to let it spin the other way. Hold down for at least 2 seconds and release to cause the motor to go to closed loop mode. Hold down for more than 15 seconds and release to let the motor perform a calibration on itself. Note that it will spin during calibration and must be able to spin freely for calibration to be successful, so remove any loads before doing this operation.</p>
           </div>
         </section>
@@ -207,6 +210,7 @@ servomotor_command -c`}</code></pre>
             <h2>Technical Specifications</h2>
 
             <h3>Mechanical Specifications</h3>
+            <div className={styles.tableScroll}>
             <table className={styles.specsTable}>
               <thead>
                 <tr>
@@ -214,17 +218,19 @@ servomotor_command -c`}</code></pre>
                   <th>M17-60</th>
                   <th>M17-48</th>
                   <th>M17-40</th>
+                  <th>M17-34</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Dimensions (LxW)</td><td>42.2x42.2 mm</td><td>42.2x42.2 mm</td><td>42.2x42.2 mm</td></tr>
-                <tr><td>Height</td><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr>
-                <tr><td>Shaft Length</td><td>20.4 mm</td><td>20.4 mm</td><td>18.5 mm</td></tr>
-                <tr><td>Shaft Diameter</td><td>5 mm</td><td>5 mm</td><td>5 mm</td></tr>
-                <tr><td>Weight</td><td>470g</td><td>360g</td><td>285g</td></tr>
-                <tr><td>Protection Class</td><td>IP20</td><td>IP20</td><td>IP20</td></tr>
+                <tr><td>Dimensions (LxW)</td><td>42.2x42.2 mm</td><td>42.2x42.2 mm</td><td>42.2x42.2 mm</td><td>42.2x42.2 mm</td></tr>
+                <tr><td>Height</td><td>59.7 mm</td><td>48.7 mm</td><td>40.1 mm</td><td>33.5 mm</td></tr>
+                <tr><td>Shaft Length</td><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td></tr>
+                <tr><td>Shaft Diameter</td><td>5 mm</td><td>5 mm</td><td>5 mm</td><td>5 mm</td></tr>
+                <tr><td>Weight</td><td>470g</td><td>360g</td><td>285g</td><td>210g</td></tr>
+                <tr><td>Protection Class</td><td>IP20</td><td>IP20</td><td>IP20</td><td>IP20</td></tr>
               </tbody>
             </table>
+            </div>
 
             <div className={styles.dimensionImages}>
               <div className={styles.dimensionImageContainer}>
@@ -257,9 +263,20 @@ servomotor_command -c`}</code></pre>
                 />
                 <p className={styles.dimensionLabel}>M17-40</p>
               </div>
+              <div className={styles.dimensionImageContainer}>
+                <Image
+                  src="/marketing/images/M17-34_dimensions.png"
+                  alt="M17-34 Dimensions"
+                  className={styles.dimensionImage}
+                  width={__WIDTH_M17_34_dimensions__}
+                  height={__HEIGHT_M17_34_dimensions__}
+                />
+                <p className={styles.dimensionLabel}>M17-34</p>
+              </div>
             </div>
 
             <h3>Electrical Specifications</h3>
+            <div className={styles.tableScroll}>
             <table className={styles.specsTable}>
               <thead>
                 <tr>
@@ -267,18 +284,21 @@ servomotor_command -c`}</code></pre>
                   <th>M17-60</th>
                   <th>M17-48</th>
                   <th>M17-40</th>
+                  <th>M17-34</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Operating Voltage</td><td>12-24V</td><td>12-24V</td><td>12-24V</td></tr>
-                <tr><td>Rated Torque</td><td>0.65 N.m</td><td>0.55 N.m</td><td>0.42 N.m</td></tr>
-                <tr><td>Maximum Speed</td><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
-                <tr><td>Maximum Current</td><td>1.1A</td><td>1.1A</td><td>1.1A</td></tr>
-                <tr><td>Rated Power</td><td>38W</td><td>32W</td><td>25W</td></tr>
+                <tr><td>Operating Voltage</td><td>12-24V</td><td>12-24V</td><td>12-24V</td><td>12-24V</td></tr>
+                <tr><td>Rated Torque</td><td>0.65 N.m</td><td>0.55 N.m</td><td>0.42 N.m</td><td>0.28 N.m</td></tr>
+                <tr><td>Maximum Speed</td><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+                <tr><td>Maximum Current</td><td>1.1A</td><td>1.1A</td><td>1.1A</td><td>1.0A</td></tr>
+                <tr><td>Rated Power</td><td>26.4W</td><td>26.4W</td><td>26.4W</td><td>24.0W</td></tr>
               </tbody>
             </table>
+            </div>
 
             <h3>Operating Conditions</h3>
+            <div className={styles.tableScroll}>
             <table className={styles.conditionsTable}>
               <thead>
                 <tr>
@@ -293,6 +313,7 @@ servomotor_command -c`}</code></pre>
                 <tr><td>Installation Environment</td><td>Indoor use only</td></tr>
               </tbody>
             </table>
+            </div>
           </div>
         </section>
 

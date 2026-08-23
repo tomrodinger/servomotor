@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>v14 aur probe</title>
+<style>html,body{margin:0;background:#fff}
+.row{position:relative;overflow:hidden;border-bottom:1px solid #ddd}
+iframe{border:0;display:block;position:relative}
+.tag{position:absolute;left:6px;top:4px;z-index:9;color:#b00;font:700 11px/1.2 monospace}</style>
+<div id="out"></div>
+<script>
+var q=new URLSearchParams(location.search);
+var hide=q.get('hide')||'.sl-glow';           /* selector(s) to hide inside the page */
+var list=(q.get('list')||'0.15,0.3,0.5,0.7').split(',');
+var i=q.get('i')||'6', W=1440, H=parseInt(q.get('h')||'300',10), TOP=parseInt(q.get('top')||'200',10);
+var out=document.getElementById('out');
+list.forEach(function(t){
+  var d=document.createElement('div');d.className='row';d.style.width=W+'px';d.style.height=H+'px';
+  var s=document.createElement('span');s.className='tag';s.textContent='t='+t;
+  var f=document.createElement('iframe');
+  f.width=W;f.height=(TOP+H+40);f.style.top=(-TOP)+'px';f.scrolling='no';
+  f.src='v14.html?sl='+i+'&t='+t;
+  f.onload=function(){
+    var doc=f.contentDocument, st=doc.createElement('style');
+    st.textContent=hide+'{display:none!important}';
+    doc.head.appendChild(st);
+  };
+  d.appendChild(s);d.appendChild(f);out.appendChild(d);
+});
+</script>

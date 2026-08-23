@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8">
+<body style="font:16px monospace;padding:20px">
+<div id="o">measuring…</div>
+<iframe id="f" src="http://127.0.0.1:8912/premium_minimal_variations/v16.html" style="width:1440px;height:900px;border:1px solid #ccc"></iframe>
+<script>
+document.getElementById('f').onload=function(){
+ setTimeout(function(){
+  var d=this.contentDocument;
+  var out=[];
+  out.push('scrollHeight='+d.documentElement.scrollHeight);
+  out.push('scrollWidth='+d.documentElement.scrollWidth+' clientWidth='+d.documentElement.clientWidth);
+  var over=[];
+  d.querySelectorAll('*').forEach(function(el){
+    var r=el.getBoundingClientRect();
+    if(r.right>d.documentElement.clientWidth+1||r.left<-1){
+      over.push(el.tagName+'.'+el.className+' L'+Math.round(r.left)+' R'+Math.round(r.right));
+    }
+  });
+  out.push('OVERFLOW('+over.length+'): '+over.slice(0,25).join(' | '));
+  document.getElementById('o').textContent=out.join('\n');
+  document.getElementById('o').style.whiteSpace='pre-wrap';
+ }.bind(this),1500);
+};
+</script>

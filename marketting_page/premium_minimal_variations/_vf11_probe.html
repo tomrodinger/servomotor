@@ -1,0 +1,19 @@
+<!doctype html><meta charset=utf-8>
+<body style="margin:0;font:16px monospace">
+<div id=out style="height:300px;font-size:20px;padding:10px;background:#ffd">measuring…</div>
+<iframe id=f src="/premium_minimal_variations/v11.html" style="width:390px;height:900px;border:0"></iframe>
+<script>
+document.getElementById('f').onload=function(){
+ setTimeout(function(){
+  var d=f.contentDocument, w=f.contentWindow;
+  var lines=['scrollWidth='+d.documentElement.scrollWidth+' clientWidth='+d.documentElement.clientWidth+' bodyScrollW='+d.body.scrollWidth+' docHeight='+d.documentElement.scrollHeight];
+  var bad=[];
+  var all=d.body.querySelectorAll('*');
+  for(var i=0;i<all.length;i++){var r=all[i].getBoundingClientRect();
+    if(r.right>391.5||r.left<-1.5){ if(r.width>2) bad.push(all[i].tagName+'.'+(all[i].className||'')+' L'+Math.round(r.left)+' R'+Math.round(r.right)); }}
+  lines.push('OVERFLOW COUNT='+bad.length);
+  lines=lines.concat(bad.slice(0,25));
+  document.getElementById('out').textContent=lines.join(' | ');
+ },1500);
+};
+</script>

@@ -1,0 +1,36 @@
+<!doctype html><meta charset=utf-8>
+<style>html,body{margin:0;padding:0;background:#fff;font:13px/1.4 monospace}
+#f{width:900px;height:16000px;border:0;display:block;position:absolute;left:-99999px}
+#out{padding:10px;white-space:pre-wrap;font-size:15px}</style>
+<div id="out">loading…</div>
+<iframe id="f" src="../v5.html"></iframe>
+<script>
+const f=document.getElementById('f'),out=document.getElementById('out');
+setTimeout(()=>{
+  try{
+    const d=f.contentDocument,w=f.contentWindow;
+    const vw=d.documentElement.clientWidth;
+    let lines=['iframe clientWidth='+vw,
+      'documentElement.scrollWidth='+d.documentElement.scrollWidth,
+      'body.scrollWidth='+d.body.scrollWidth,
+      'doc height='+d.documentElement.scrollHeight];
+    const bad=[];
+    d.querySelectorAll('*').forEach(el=>{
+      const r=el.getBoundingClientRect();
+      if(r.width===0&&r.height===0) return;
+      const cs=w.getComputedStyle(el);
+      if(r.right>vw+1||r.left<-1){
+        // skip elements inside an overflow-x scroller
+        let p=el.parentElement,inScroller=false;
+        while(p){const pc=w.getComputedStyle(p);
+          if(pc.overflowX==='auto'||pc.overflowX==='scroll'){inScroller=true;break;}
+          p=p.parentElement;}
+        if(!inScroller) bad.push(el.tagName+'.'+(el.className&&el.className.toString().slice(0,40))+' L='+Math.round(r.left)+' R='+Math.round(r.right)+' W='+Math.round(r.width));
+      }
+    });
+    lines.push('OVERFLOWERS ('+bad.length+'):');
+    lines=lines.concat(bad.slice(0,40));
+    out.textContent=lines.join('\n');
+  }catch(e){out.textContent='ERR '+e;}
+},3000);
+</script>

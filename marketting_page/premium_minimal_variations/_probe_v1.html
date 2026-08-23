@@ -1,0 +1,45 @@
+<!doctype html><meta charset=utf-8><title>probe</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.45 ui-monospace,Menlo,monospace}
+#out{white-space:pre;padding:8px}
+iframe{position:absolute;left:-9999px;top:0;border:0}</style>
+<div id="out">running…</div>
+<script>
+var W = parseInt((new URLSearchParams(location.search)).get('w')||'1440',10);
+var f=document.createElement('iframe');
+f.width=W; f.height=1400; f.src='v1.html?motion=1&pause=1';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, S=w.__slogan;
+    var L=[]; L.push('viewport width reported by page: '+d.documentElement.clientWidth);
+    L.push('reducedMotion flag: '+(S.reducedMotion===true));
+    var slot=d.querySelector('.hslot'), lede=d.querySelector('.hero .lede'), h1=d.querySelector('.hero h1');
+    var hs=[],ls=[],ov=[];
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var r=slot.getBoundingClientRect(), lr=lede.getBoundingClientRect(), hr=h1.getBoundingClientRect();
+      hs.push(+r.height.toFixed(2)); ls.push(+lr.top.toFixed(2));
+      var maxR=0,minL=1e9, ws=d.querySelectorAll('.hslot .w');
+      for(var k=0;k<ws.length;k++){var b=ws[k].getBoundingClientRect(); if(b.width){maxR=Math.max(maxR,b.right);minL=Math.min(minL,b.left);}}
+      ov.push(i+': slotH='+r.height.toFixed(1)+' h1H='+hr.height.toFixed(1)+' ledeTop='+lr.top.toFixed(1)+' textL='+minL.toFixed(0)+' textR='+maxR.toFixed(0)+' docSW='+d.documentElement.scrollWidth);
+    }
+    L.push('unique slot heights: '+JSON.stringify(Array.from(new Set(hs))));
+    L.push('unique lede tops  : '+JSON.stringify(Array.from(new Set(ls))));
+    L.push('doc scrollWidth='+d.documentElement.scrollWidth+'  clientWidth='+d.documentElement.clientWidth+'  OVERFLOW='+(d.documentElement.scrollWidth>d.documentElement.clientWidth));
+    L.push('');
+    // mid-transition overflow / height check
+    var mh=[], mov=false;
+    for(var i=0;i<15;i++){ for(var t=0;t<=1.0001;t+=0.1){ S.seek(i,t);
+      mh.push(+slot.getBoundingClientRect().height.toFixed(2));
+      if(d.documentElement.scrollWidth>d.documentElement.clientWidth) mov=true;
+      var ws=d.querySelectorAll('.hslot .w');
+      for(var k=0;k<ws.length;k++){var b=ws[k].getBoundingClientRect(); if(b.width && (b.right> d.documentElement.clientWidth+0.5 || b.left<-0.5)) mov=true;}
+    }}
+    L.push('mid-transition unique slot heights: '+JSON.stringify(Array.from(new Set(mh))));
+    L.push('mid-transition overflow anywhere: '+mov);
+    L.push('');
+    L=L.concat(ov);
+    document.getElementById('out').textContent=L.join('\n');
+  },1200);
+};
+</script>

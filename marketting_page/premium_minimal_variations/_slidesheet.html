@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>sheet</title>
+<style>
+ body{margin:0;background:#1b1b1e;font:12px -apple-system,sans-serif;color:#bbb}
+ .row{padding:4px 8px 0}
+ iframe{width:660px;height:500px;border:0;display:block;background:#fff}
+</style>
+<div id="out"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const id = q.get('id');
+const i  = q.get('i') || '9';
+const ts = (q.get('ts') || '0,0.25,0.5,0.75,1').split(',');
+const out = document.getElementById('out');
+ts.forEach(t => {
+  const d = document.createElement('div'); d.className='row';
+  d.innerHTML = '<div>t = '+t+'</div>';
+  const f = document.createElement('iframe');
+  f.src = '/slogan_lab/index.html?only='+encodeURIComponent(id)+'&big=1&i='+i+'&t='+t;
+  d.appendChild(f); out.appendChild(d);
+});
+</script>

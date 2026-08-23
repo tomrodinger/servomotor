@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — M17 Series Servomotors — Statement Type</title>
+<style>
+  :root{
+    --green:#7AB648;
+    --black:#000;
+    --ink:#0b0b0c;
+    --grey:#6e6e73;
+    --mute:#96969b;
+    --hair:#e4e4e9;
+    --hair-dark:#262628;
+    --hair-green:rgba(0,0,0,.22);
+    --max:1120px;
+    --pad:32px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:#fff;
+    font-size:14px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  img{max-width:100%;height:auto;display:block;}
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--green);color:#fff;}
+  :focus-visible{outline:2px solid var(--green);outline-offset:3px;}
+
+  /* ---------------- Nav ---------------- */
+  nav{
+    position:sticky;top:0;z-index:200;
+    background:rgba(255,255,255,.84);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--hair);
+  }
+  .nav-inner{
+    max-width:var(--max);margin:0 auto;height:56px;
+    padding:0 var(--pad);
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand img{height:26px;width:auto;}
+  .brand span{
+    font-size:15px;font-weight:800;letter-spacing:-.02em;text-transform:uppercase;
+  }
+  .nav-links{display:flex;align-items:center;gap:26px;}
+  .nav-links a{
+    font-size:11.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--grey);
+    transition:color .2s ease;
+  }
+  .nav-links a:hover{color:var(--ink);}
+
+  /* ---------------- Buttons ---------------- */
+  .btn{
+    display:inline-block;border:1.5px solid var(--ink);border-radius:980px;
+    padding:11px 26px;
+    font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
+    transition:background .25s ease,color .25s ease,border-color .25s ease,transform .25s ease;
+  }
+  .btn:hover{background:var(--green);border-color:var(--green);color:#fff;}
+  .btn.small{padding:7px 17px;font-size:10.5px;letter-spacing:.12em;}
+  .btn.on-black{border-color:#fff;color:#fff;}
+  .btn.on-black:hover{background:var(--green);border-color:var(--green);color:#000;}
+  .btn.on-green{border-color:#000;color:#000;}
+  .btn.on-green:hover{background:#000;border-color:#000;color:#fff;}
+
+  .alink{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  }
+  .alink .arr{color:var(--green);transition:transform .25s ease;}
+  .alink:hover .arr{transform:translateX(5px);}
+  .on-dark .alink,.band-black .alink{color:#fff;}
+  .band-green .alink{color:#000;}
+  .band-green .alink .arr{color:rgba(0,0,0,.55);}
+
+  /* ---------------- Layout ---------------- */
+  section{padding:118px var(--pad);}
+  section[id]{scroll-margin-top:56px;}
+  .wrap{max-width:var(--max);margin:0 auto;}
+  .narrow{max-width:640px;}
+  .band-black{background:var(--black);color:#fff;}
+  .band-black .sub,.band-black p{color:#9b9ba1;}
+  .band-green{background:var(--green);color:#000;}
+  .band-green p{color:rgba(0,0,0,.72);}
+
+  /* ---------------- Type ---------------- */
+  .eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--grey);margin-bottom:26px;
+  }
+  .band-black .eyebrow{color:#77777d;}
+  .band-green .eyebrow{color:rgba(0,0,0,.72);}
+
+  .poster{
+    font-size:clamp(52px,11vw,150px);
+    font-weight:800;letter-spacing:-.045em;line-height:.92;
+    text-transform:uppercase;
+  }
+  .poster .lite{display:block;font-weight:700;color:var(--mute);}
+  .band-black .poster .lite{color:#5e5e64;}
+  .band-green .poster .lite{color:rgba(0,0,0,.55);}
+  .poster .grn{color:var(--green);}
+  .poster.md{font-size:clamp(46px,8.6vw,128px);}
+
+  h2.sec{
+    font-size:clamp(38px,6.4vw,84px);
+    font-weight:800;letter-spacing:-.045em;line-height:.94;text-transform:uppercase;
+  }
+  h2.sec.sm{font-size:clamp(34px,5.2vw,68px);}
+  h2.sec .lite{display:block;font-weight:700;color:var(--mute);}
+  .band-black h2.sec .lite{color:#5e5e64;}
+  h3{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+
+  .sub{
+    font-size:14px;color:var(--grey);max-width:520px;line-height:1.68;
+  }
+  .sub.wide{max-width:640px;}
+  .mt-s{margin-top:18px;}
+  .mt-m{margin-top:28px;}
+  .mt-l{margin-top:52px;}
+  .mt-xl{margin-top:84px;}
+
+  .kicker{
+    font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--green);
+  }
+
+  /* ---------------- Hero ---------------- */
+  .hero{padding-top:96px;padding-bottom:0;}
+  .hero-cta{margin-top:38px;display:flex;gap:26px;align-items:center;flex-wrap:wrap;}
+  .hero-lower{
+    display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:start;margin-top:40px;
+  }
+  .hero-lower>*{min-width:0;}
+  .hero-copy{padding-top:6px;}
+  .hero-models{list-style:none;margin-top:52px;max-width:420px;border-top:1px solid var(--hair);}
+  .hero-models li{
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    padding:13px 0;border-bottom:1px solid var(--hair);
+    font-size:12.5px;font-weight:600;letter-spacing:.02em;color:var(--grey);
+  }
+  .hero-models b{
+    color:var(--ink);font-weight:800;letter-spacing:.08em;font-size:12px;text-transform:uppercase;
+  }
+  .hero-img img{width:100%;max-width:520px;margin-left:auto;}
+  .statstrip{
+    border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    margin-top:66px;display:grid;grid-template-columns:repeat(4,1fr);
+  }
+  .statstrip div{padding:26px 20px 26px 0;}
+  .statstrip div + div{border-left:1px solid var(--hair);padding-left:26px;}
+  .statstrip .v{font-size:clamp(20px,2.4vw,30px);font-weight:800;letter-spacing:-.035em;line-height:1;}
+  .statstrip .k{
+    display:block;margin-top:10px;font-size:10.5px;font-weight:700;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--grey);
+  }
+
+  /* ---------------- Full-bleed statement bands ---------------- */
+  .statement{padding:132px var(--pad);}
+  .statement .sub{margin-top:34px;}
+  .bleed-img{margin-top:72px;margin-left:calc(-1 * var(--pad));margin-right:calc(-1 * var(--pad));}
+  .bleed-img img{width:100%;}
+
+  /* Labels sit under the four motors in the photo, which carries no printed names */
+  .photolabels{
+    margin:22px calc(-1 * var(--pad)) 0;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--hair-dark);
+  }
+  .photolabels div{
+    padding:16px 8px 0;text-align:center;
+  }
+  .photolabels b{
+    display:block;font-size:clamp(11px,1.15vw,14px);font-weight:800;letter-spacing:.06em;
+    text-transform:uppercase;color:#fff;
+  }
+  .photolabels span{
+    display:block;margin-top:5px;font-size:clamp(9.5px,.85vw,11px);font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:#77777d;
+  }
+
+  .modelrow{
+    margin-top:34px;max-width:640px;line-height:1.9;
+    font-size:12.5px;font-weight:600;letter-spacing:.01em;color:#8a8a90;
+  }
+
+  /* ---------------- Two-column split ---------------- */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center;}
+  .split>*,.split-4-6>*{min-width:0;}
+  .split.top{align-items:start;}
+  .split-4-6{display:grid;grid-template-columns:.85fr 1.15fr;gap:72px;align-items:center;}
+  .split-4-6.top{align-items:start;}
+
+  .factlist{list-style:none;margin-top:34px;}
+  .factlist li{
+    border-top:1px solid var(--hair);padding:16px 0;
+    display:grid;grid-template-columns:130px 1fr;gap:20px;align-items:baseline;
+  }
+  .factlist li:last-child{border-bottom:1px solid var(--hair);}
+  .factlist .l{
+    font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);
+  }
+  .factlist .r{font-size:14px;color:var(--ink);}
+  .band-black .factlist li{border-color:var(--hair-dark);}
+  .band-black .factlist .l{color:#77777d;}
+  .band-black .factlist .r{color:#e6e6ea;}
+
+  .frame{border:1px solid var(--hair);background:#fff;padding:20px;}
+
+  /* ---------------- Feature grid ---------------- */
+  .fgrid{
+    margin-top:70px;display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--hair);border-left:1px solid var(--hair);
+  }
+  .fgrid .f{
+    border-right:1px solid var(--hair);border-bottom:1px solid var(--hair);
+    padding:26px 24px 32px;
+  }
+  .fgrid .n{
+    font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--green);display:block;margin-bottom:16px;
+  }
+  .fgrid h3{margin-bottom:9px;}
+  .fgrid p{color:var(--grey);font-size:13px;line-height:1.6;}
+  .fgrid .f{transition:background .3s ease;}
+  .fgrid .f:hover{background:#fafafa;}
+
+  /* ---------------- Models ---------------- */
+  /* The torque ladder — same four-cell hairline strip as the hero stats */
+  .ladder{
+    margin-top:62px;display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--ink);border-bottom:1px solid var(--hair);
+  }
+  .ladder .lcol{padding:26px 24px 28px 0;}
+  .ladder .lcol + .lcol{border-left:1px solid var(--hair);padding-left:26px;}
+  .ladder .lm{
+    display:block;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--grey);
+  }
+  .ladder .lv{
+    display:block;margin-top:14px;
+    font-size:clamp(30px,3.5vw,50px);font-weight:800;letter-spacing:-.045em;line-height:1;
+  }
+  .ladder .lv i{
+    font-style:normal;font-size:.32em;font-weight:700;letter-spacing:.06em;
+    color:var(--green);margin-left:.3em;vertical-align:.42em;
+  }
+  .ladder .lk{
+    display:block;margin-top:12px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--grey);
+  }
+
+  .models{margin-top:58px;border-top:1px solid var(--hair);}
+  .mcol{
+    display:grid;grid-template-columns:270px 1fr;gap:48px;align-items:center;
+    border-bottom:1px solid var(--hair);padding:26px 0;
+  }
+  .mcol>*{min-width:0;}
+  .mcol .draw{background:#fff;border:1px solid var(--hair);padding:16px 20px;transition:border-color .35s ease;}
+  .mcol:hover .draw{border-color:var(--green);}
+  .mcol .draw img{width:100%;}
+  .mcol .name{font-size:clamp(30px,3.4vw,46px);font-weight:800;letter-spacing:-.045em;line-height:1;text-transform:uppercase;}
+  .mcol .tq{font-size:13.5px;color:var(--grey);margin-top:14px;line-height:1.7;}
+  .mcol .tq b{
+    display:block;color:var(--ink);font-weight:800;font-size:20px;letter-spacing:-.03em;margin-bottom:4px;
+  }
+  /* On a phone the drawing would shrink until the dimension callouts are unreadable,
+     so below 620px it scrolls sideways at a legible size, like the spec tables do. */
+  .drawhint{
+    display:none;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--grey);margin-top:12px;
+  }
+
+  .tablewrap{overflow-x:auto;margin-top:64px;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px;}
+  table.t2{min-width:0;}
+  tbody th{white-space:nowrap;}
+  caption{
+    text-align:left;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--grey);padding-bottom:16px;
+  }
+  th,td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--hair);}
+  thead th{
+    font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);
+    border-bottom:1px solid var(--ink);
+  }
+  tbody th{
+    font-weight:400;color:var(--grey);font-size:13px;width:26%;
+  }
+  tbody td{font-weight:600;}
+  tbody tr:hover td,tbody tr:hover th{background:#fafafa;}
+  .scrollhint{
+    font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);
+    margin-top:14px;
+  }
+  .capt{
+    font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);
+    margin-top:14px;
+  }
+  @media(min-width:901px){.scrollhint{display:none;}}
+
+  /* ---------------- Code ---------------- */
+  .codegrid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:64px;}
+  .code{border:1px solid var(--hair-dark);background:#0e0e10;overflow:hidden;text-align:left;}
+  .code .head{
+    display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--hair-dark);
+    font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#77777d;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .code .dot{width:9px;height:9px;border-radius:50%;background:#2f2f33;}
+  .code .head em{margin-left:8px;font-style:normal;}
+  .code pre{
+    padding:22px 22px 26px;overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12.5px;line-height:1.8;color:#f2f2f5;
+  }
+  .c-kw{color:#c98bff;}.c-fn{color:#7cc4ff;}.c-str{color:#a8d98a;}
+  .c-num{color:#ffb86c;}.c-com{color:#6e6e73;}.c-ty{color:#ffd479;}
+  .cmdline{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    border:1px solid var(--hair-dark);padding:11px 15px;color:#f2f2f5;display:inline-block;
+  }
+  .cmdline .p{color:var(--green);}
+
+  .steps{list-style:none;counter-reset:s;margin-top:26px;}
+  .steps li{
+    counter-increment:s;border-top:1px solid var(--hair-dark);padding:14px 0 14px 40px;position:relative;
+    color:#c9c9ce;font-size:13.5px;
+  }
+  .steps li:last-child{border-bottom:1px solid var(--hair-dark);}
+  .steps li::before{
+    content:counter(s,decimal-leading-zero);position:absolute;left:0;top:14px;
+    font-size:10.5px;font-weight:700;letter-spacing:.14em;color:var(--green);
+  }
+  .steps b{color:#fff;font-weight:700;}
+  code.inline{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    background:#151517;border:1px solid var(--hair-dark);padding:2px 7px;color:#f2f2f5;
+  }
+  .band-black a.txtlink{color:#fff;border-bottom:1px solid #45454a;transition:border-color .2s ease;}
+  .band-black a.txtlink:hover{border-color:var(--green);}
+  a.txtlink{color:var(--ink);border-bottom:1px solid var(--hair);transition:border-color .2s ease;}
+  a.txtlink:hover{border-color:var(--green);}
+
+  /* ---------------- Units / groups ---------------- */
+  .deflist{margin-top:52px;border-top:1px solid var(--hair);}
+  .deflist .row{
+    display:grid;grid-template-columns:170px 1fr;gap:24px;
+    border-bottom:1px solid var(--hair);padding:18px 0;
+  }
+  .deflist dt{
+    font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);
+    padding-top:2px;
+  }
+  .deflist dd{font-size:13.5px;color:var(--ink);}
+  .band-black .deflist{border-color:var(--hair-dark);}
+  .band-black .deflist .row{border-color:var(--hair-dark);}
+  .band-black .deflist dt{color:#77777d;}
+  .band-black .deflist dd{color:#e6e6ea;}
+
+  .taglist{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;}
+  .taglist span{
+    border:1px solid var(--hair);border-radius:980px;padding:7px 16px;
+    font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);
+  }
+  .band-black .taglist span{border-color:var(--hair-dark);color:#b6b6bb;}
+
+  /* ---------------- Applications ---------------- */
+  .photorow{
+    display:grid;grid-template-columns:repeat(3,1fr);margin-top:76px;
+    margin-left:calc(-1 * var(--pad));margin-right:calc(-1 * var(--pad));
+  }
+  .photorow figure{position:relative;overflow:hidden;background:#101012;}
+  .photorow img{width:100%;aspect-ratio:1/1;object-fit:cover;transition:transform .7s cubic-bezier(.2,.7,.3,1);filter:grayscale(.15);}
+  .photorow figure:hover img{transform:scale(1.05);}
+  .photorow figcaption{
+    position:absolute;left:0;bottom:0;right:0;padding:22px;
+    font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#fff;
+    background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,0));
+  }
+
+  /* ---------------- Final CTA ---------------- */
+  .cta-split{display:grid;grid-template-columns:1.1fr .9fr;gap:64px;align-items:end;margin-top:34px;}
+  .cta-split>*{min-width:0;}
+  .pricelist{list-style:none;border-top:1px solid rgba(0,0,0,.22);}
+  .pricelist li{
+    border-bottom:1px solid rgba(0,0,0,.22);padding:16px 0;
+    display:flex;justify-content:space-between;align-items:baseline;gap:18px;flex-wrap:wrap;
+  }
+  .pricelist .m{font-size:20px;font-weight:800;letter-spacing:-.035em;text-transform:uppercase;}
+  .pricelist .t{font-size:12.5px;font-weight:600;letter-spacing:.02em;color:rgba(0,0,0,.72);}
+
+  /* ---------------- OSS ---------------- */
+  .osslogos{display:flex;gap:38px;align-items:center;flex-wrap:wrap;margin-top:36px;}
+  .osslogos img{height:76px;width:auto;}
+
+  /* ---------------- Footer ---------------- */
+  footer{background:var(--black);color:#77777d;padding:64px var(--pad) 46px;font-size:12px;}
+  .foot-grid{
+    max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:44px;
+  }
+  footer h4{
+    font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#fff;margin-bottom:18px;
+  }
+  footer a{color:#9b9ba1;transition:color .2s ease;}
+  footer a:hover{color:var(--green);}
+  footer ul{list-style:none;}
+  footer li{padding:5px 0;}
+  .foot-legal{
+    max-width:var(--max);margin:56px auto 0;border-top:1px solid var(--hair-dark);padding-top:26px;
+    display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;line-height:1.7;
+  }
+  .foot-legal p{max-width:620px;}
+
+  /* ---------------- Reveal (degrades to visible) ---------------- */
+  .js .rv{opacity:0;transform:translateY(18px);}
+  .js .rv.in{opacity:1;transform:none;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.3,1);}
+
+  /* ---------------- Responsive ---------------- */
+  @media(min-width:1600px){
+    :root{--max:1280px;}
+    .hero-img img{max-width:600px;}
+    .mcol{grid-template-columns:320px 1fr;}
+  }
+  @media(max-width:1040px){
+    .fgrid{grid-template-columns:repeat(2,1fr);}
+    .ladder{grid-template-columns:repeat(2,1fr);}
+    .ladder .lcol{padding:22px 18px 24px 0;}
+    .ladder .lcol:nth-child(2n){border-left:1px solid var(--hair);padding-left:24px;}
+    .ladder .lcol:nth-child(2n+1){border-left:none;padding-left:0;}
+    .ladder .lcol:nth-child(n+3){border-top:1px solid var(--hair);}
+    .ladder .lv{font-size:clamp(32px,4.6vw,44px);}
+  }
+  @media(max-width:900px){
+    :root{--pad:24px;}
+    .hide-md{display:none;}
+    section{padding:84px var(--pad);}
+    .statement{padding:96px var(--pad);}
+    .split,.split-4-6,.cta-split{grid-template-columns:1fr;gap:44px;}
+    .codegrid{grid-template-columns:1fr;}
+    .mcol{grid-template-columns:1fr;gap:24px;padding:28px 0;}
+    .hero-lower{grid-template-columns:1fr;gap:40px;}
+    .hero-img img{margin:0 auto;max-width:420px;}
+    .statstrip{grid-template-columns:repeat(2,1fr);}
+    .statstrip div{padding:20px 16px 20px 0;}
+    .statstrip div:nth-child(2n){border-left:1px solid var(--hair);padding-left:22px;}
+    .statstrip div:nth-child(2n+1){border-left:none;padding-left:0;}
+    .statstrip div:nth-child(n+3){border-top:1px solid var(--hair);}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:34px;}
+    .photorow{grid-template-columns:1fr;}
+    .photorow img{aspect-ratio:16/10;}
+  }
+  @media(max-width:620px){
+    .fgrid{grid-template-columns:1fr;}
+    .deflist .row,.factlist li{grid-template-columns:1fr;gap:8px;}
+    .hero{padding-top:64px;}
+    .nav-links{gap:16px;}
+    .hide-sm{display:none;}
+    .hide-md{display:none;}
+    .osslogos img{height:58px;}
+    .foot-grid{grid-template-columns:1fr;}
+  }
+  @media(max-width:540px){
+    .ladder{grid-template-columns:1fr;}
+    .ladder .lcol:nth-child(n){
+      display:grid;grid-template-columns:1fr auto;column-gap:18px;align-items:center;
+      border-left:none;border-top:1px solid var(--hair);
+      padding:16px 0;
+    }
+    .ladder .lcol:nth-child(1){border-top:none;}
+    .ladder .lm{grid-column:1;grid-row:1;}
+    .ladder .lk{grid-column:1;grid-row:2;margin-top:6px;}
+    .ladder .lv{grid-column:2;grid-row:1 / span 2;margin-top:0;font-size:34px;}
+    .photolabels div{padding:14px 4px 0;}
+    .mcol .draw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .mcol .draw img{width:100%;min-width:660px;}
+    .drawhint{display:block;}
+  }
+  @media(max-width:430px){
+    .poster{font-size:clamp(40px,12.5vw,52px);}
+    h2.sec{font-size:clamp(32px,9vw,44px);}
+  }
+
+  /* ---------------- Poster slam (hero slogan cycler) ----------------
+     The page is built out of full-bleed black and green statement slabs. The
+     transition borrows exactly that: a slab rips across the hero, the headline
+     slams onto it in the band's own inverted palette, then the slab tears off
+     and leaves the type back in page colours. Black and green slabs alternate,
+     the way the bands alternate down the page. */
+  .slam-stage{display:block;position:relative;}
+  /* type is anchored to the TOP of the locked box, so the headline always starts
+     right under the eyebrow and long slogans grow downward into the poster whitespace */
+  .slam-cast{display:block;position:relative;z-index:2;will-change:transform;}
+  .slam-layer{display:block;position:absolute;top:0;left:0;width:100%;}
+  .slam-layer.slam-a{position:relative;}      /* holds height before JS locks it */
+  .slam-stage.ready .slam-layer{position:absolute;}
+  .slam-layer.slam-b,.slam-layer.slam-c{opacity:0;}
+  .slam-stage.ready .slam-layer.slam-b,
+  .slam-stage.ready .slam-layer.slam-c{opacity:1;}
+  .slam-layer.slam-c{z-index:2;}
+  .slam-inner{display:block;}
+  .poster .bd{display:block;}
+  /* each word is its own mass so the line lands slightly unevenly, like set type
+     dropping into a forme */
+  .slam-sw{display:inline-block;transform-origin:50% 74%;will-change:transform,opacity;}
+
+  /* the slab, sitting between the outgoing type and the incoming type.
+     It is wider than the viewport so it can rebound off the wall without ever
+     un-covering a strip of page, so it rides inside a box pinned to the
+     viewport edges — that box is what stops the page gaining scrollable width
+     while the slab is off to one side. */
+  .slam-bleed{
+    display:block;position:absolute;top:0;left:0;width:1px;height:1px;
+    z-index:1;overflow:hidden;pointer-events:none;
+  }
+  .slam-slab{
+    display:block;position:absolute;top:0;left:0;width:1px;height:100%;
+    opacity:0;
+    transform:translate3d(-99999px,0,0);
+    transform-origin:50% 50%;will-change:transform;
+  }
+  /* the inverted headline uses the page's own band palettes, value for value */
+  .slam-c.on-black .lite{color:#5e5e64;}
+  .slam-c.on-black .bd{color:#fff;}
+  .slam-c.on-green .lite{color:rgba(0,0,0,.55);}
+  .slam-c.on-green .bd{color:#000;}
+
+  .slam-measure{
+    position:absolute!important;left:0;top:0;z-index:-1;
+    visibility:hidden;pointer-events:none;
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.className+=' js';</script>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+      <span>Gearotons</span>
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="#models">Models</a>
+      <a class="hide-sm" href="#developers">Developers</a>
+      <a class="hide-sm" href="#protocol">Protocol</a>
+      <a class="hide-md" href="https://gearotons.com">Docs</a>
+      <a class="btn small" href="https://gearotons.com/store">Shop</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ 1. HERO ============ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="eyebrow">M17 Series Servomotors</p>
+    <h1 class="poster"><span class="slam-stage" id="slamStage" aria-live="off"><span class="slam-bleed" aria-hidden="true"><span class="slam-slab"></span></span><span class="slam-cast"><span class="slam-layer slam-a"><span class="slam-inner"><span class="lite">A motor, and everything</span><span class="bd">that usually surrounds it.</span></span></span><span class="slam-layer slam-b" aria-hidden="true"><span class="slam-inner"><span class="lite"></span><span class="bd"></span></span></span><span class="slam-layer slam-c" aria-hidden="true"><span class="slam-inner"><span class="lite"></span><span class="bd"></span></span></span></span></span></h1>
+    <div class="hero-lower">
+      <div class="hero-copy">
+        <p class="sub">Motor, driver, motion controller and encoder in one NEMA&nbsp;17 package. Daisy-chain as many as your machine needs on a single RS-485 bus, and drive every one of them from a single connection point.</p>
+        <div class="hero-cta">
+          <a class="btn" href="https://gearotons.com/store">Shop the M17</a>
+          <a class="alink" href="https://gearotons.com">Documentation <span class="arr">&rarr;</span></a>
+        </div>
+        <ul class="hero-models">
+          <li><b>M17&#8209;60</b><span>0.65 N&middot;m rated torque</span></li>
+          <li><b>M17&#8209;48</b><span>0.55 N&middot;m rated torque</span></li>
+          <li><b>M17&#8209;40</b><span>0.42 N&middot;m rated torque</span></li>
+          <li><b>M17&#8209;34</b><span>0.28 N&middot;m rated torque</span></li>
+        </ul>
+      </div>
+      <div class="hero-img rv">
+        <img src="../transparent/one_motor_transparent_small.png" alt="Gearotons M17 servomotor, three-quarter studio view">
+      </div>
+    </div>
+    <div class="statstrip">
+      <div><span class="v">NEMA 17</span><span class="k">Standard mount</span></div>
+      <div><span class="v">12&ndash;24 V</span><span class="k">Supply range</span></div>
+      <div><span class="v">Closed loop</span><span class="k">Built-in encoder</span></div>
+      <div><span class="v">32 kHz</span><span class="k">PID control loop</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. INTEGRATION — BLACK BAND ============ -->
+<section class="band-black statement" id="what">
+  <div class="wrap">
+    <p class="eyebrow">What it is</p>
+    <h2 class="poster"><span class="lite">Four parts.</span>One housing.</h2>
+    <p class="sub wide mt-m">A brushless motor, a motor driver, a motion control system and an encoder &mdash; integrated into a single compact unit, nearly the same size as a NEMA&nbsp;17 stepper of the same specification, with no protrusions. Available in four models &mdash; M17&#8209;60, M17&#8209;48, M17&#8209;40 and M17&#8209;34 &mdash; the series offers flexible torque and size options while keeping identical control characteristics.</p>
+  </div>
+  <div class="bleed-img rv">
+    <img src="../transparent/M17_series_overview_transparent.png" alt="The four M17 models side by side, tallest to shortest: M17-60, M17-48, M17-40 and M17-34">
+  </div>
+  <div class="photolabels">
+    <div><b>M17&#8209;60</b><span>59.7 mm</span></div>
+    <div><b>M17&#8209;48</b><span>48.7 mm</span></div>
+    <div><b>M17&#8209;40</b><span>40.1 mm</span></div>
+    <div><b>M17&#8209;34</b><span>33.5 mm</span></div>
+  </div>
+  <div class="wrap">
+    <p class="modelrow">Tallest to shortest, left to right. Identical 42.2 &times; 42.2 mm footprint and 5 mm shaft on every model.</p>
+  </div>
+</section>
+
+<!-- ============ 3. ONE BUS ============ -->
+<section id="bus">
+  <div class="wrap">
+    <div class="split-4-6 top">
+      <div>
+        <p class="eyebrow">One bus, many motors</p>
+        <h2 class="sec sm"><span class="lite">Add motors.</span>Not wiring.</h2>
+        <p class="sub mt-m">Every motor sits on the same RS-485 pair. One adapter, one connection point, one piece of software &mdash; whether the machine has two axes or twenty. Each unit carries a factory-assigned 64-bit unique address, and you can give it a short 1-byte alias so packets stay small.</p>
+        <ul class="factlist">
+          <li><span class="l">Interface</span><span class="r">RS-485, fixed at 230400 baud</span></li>
+          <li><span class="l">Motors per bus</span><span class="r">Any number, daisy-chained</span></li>
+          <li><span class="l">Addressing</span><span class="r">64-bit unique address, or a 1-byte alias <span style="white-space:nowrap;">(0&ndash;251)</span></span></li>
+          <li><span class="l">Broadcast</span><span class="r">Alias 255 talks to every motor at once</span></li>
+        </ul>
+      </div>
+      <div class="rv">
+        <div class="frame">
+          <img src="../connection_diagram.jpg" alt="Connection diagram: a controller with an RS485 adapter daisy-chained to several M17 motors">
+        </div>
+        <p class="capt">Typical wiring &mdash; controller, RS485 adapter, motors in a chain</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. ZERO STEP PULSES — BLACK BAND ============ -->
+<section class="band-black statement">
+  <div class="wrap">
+    <p class="eyebrow">High-level control</p>
+    <h2 class="poster">Zero step pulses.</h2>
+    <p class="sub wide mt-m">You send commands like <em style="color:#fff;font-style:normal;">Enable MOSFETs</em> and <em style="color:#fff;font-style:normal;">Trapezoid move</em>. The motor generates its own motion profile from there. No timing-critical DIR/STEP pulse train, no real-time loop hogging your controller, no separate driver board to wire up.</p>
+  </div>
+</section>
+
+<!-- ============ 5. FEATURES ============ -->
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow">Capabilities</p>
+    <h2 class="sec"><span class="lite">Sixteen reasons.</span>No footnotes.</h2>
+    <div class="fgrid">
+      <div class="f"><span class="n">01</span><h3>All in one</h3><p>Motor, motor driver, motion control system and encoder integrated in a single unit.</p></div>
+      <div class="f"><span class="n">02</span><h3>One controller</h3><p>Control any number of motors from one simple controller over a single RS-485 interface.</p></div>
+      <div class="f"><span class="n">03</span><h3>High-level commands</h3><p>&ldquo;Enable MOSFETs&rdquo;, &ldquo;Trapezoid move&rdquo; &mdash; no timing-critical DIR/STEP pulse generation.</p></div>
+      <div class="f"><span class="n">04</span><h3>Compact</h3><p>Nearly the same size as a NEMA 17 stepper of the same specification, with no protrusions.</p></div>
+      <div class="f"><span class="n">05</span><h3>Standard mount</h3><p>Standardised NEMA 17 mounting dimensions, so it drops into the space you already have.</p></div>
+      <div class="f"><span class="n">06</span><h3>12&ndash;24 volts</h3><p>A wide voltage range gives you flexible power options on the bench and in the machine.</p></div>
+      <div class="f"><span class="n">07</span><h3>True closed loop</h3><p>High-precision closed-loop control with a built-in encoder and a PID loop running at 32 kHz.</p></div>
+      <div class="f"><span class="n">08</span><h3>Efficient</h3><p>Much more power efficient in closed-loop control than a conventional stepper motor.</p></div>
+      <div class="f"><span class="n">09</span><h3>Protected</h3><p>Integrated over-current, over-voltage and over-temperature protection.</p></div>
+      <div class="f"><span class="n">10</span><h3>560 RPM</h3><p>Maximum speed reaches 560 RPM &mdash; identical across all four models.</p></div>
+      <div class="f"><span class="n">11</span><h3>No weight penalty</h3><p>Torque-to-weight ratio is the same as an equivalent stepper motor.</p></div>
+      <div class="f"><span class="n">12</span><h3>Any platform</h3><p>Compatible with Raspberry Pi, Arduino, ESP32, Mac and PC.</p></div>
+      <div class="f"><span class="n">13</span><h3>Documented</h3><p>Excellent documentation and tutorials to get you running fast.</p></div>
+      <div class="f"><span class="n">14</span><h3>AI-friendly docs</h3><p>Point your favourite AI assistant at the documentation and let it do the work.</p></div>
+      <div class="f"><span class="n">15</span><h3>Wide use</h3><p>Robotics, CNC, automation, scientific instruments, testing jigs, 3D printers and more.</p></div>
+      <div class="f"><span class="n">16</span><h3>Four sizes</h3><p>Pick the right torque and the right price for the application.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. 32 kHz — GREEN BAND ============ -->
+<section class="band-green statement">
+  <div class="wrap">
+    <p class="eyebrow">Closed loop</p>
+    <h2 class="poster"><span class="lite">32,000</span>Corrections a&nbsp;second.</h2>
+    <p class="sub wide mt-m" style="color:rgba(0,0,0,.74);">The built-in encoder feeds a PID control loop running at 32 kHz, so the motor knows where the shaft actually is instead of assuming. It holds position with high precision, draws far less power than a conventional stepper doing the same job, and still turns up to 560 RPM.</p>
+  </div>
+</section>
+
+<!-- ============ 7. MODELS + SPECS ============ -->
+<section id="models">
+  <div class="wrap">
+    <p class="eyebrow">Four models</p>
+    <h2 class="sec"><span class="lite">Same footprint.</span>Pick your torque.</h2>
+    <p class="sub mt-m">42.2 &times; 42.2 mm and a 5 mm shaft on all four. Only the height, the weight and the torque change &mdash; the control characteristics, the protocol and the code stay identical.</p>
+
+    <div class="ladder">
+      <div class="lcol">
+        <span class="lm">M17&#8209;60</span>
+        <span class="lv">0.65<i>N&middot;m</i></span>
+        <span class="lk">470 g &middot; 59.7 mm</span>
+      </div>
+      <div class="lcol">
+        <span class="lm">M17&#8209;48</span>
+        <span class="lv">0.55<i>N&middot;m</i></span>
+        <span class="lk">360 g &middot; 48.7 mm</span>
+      </div>
+      <div class="lcol">
+        <span class="lm">M17&#8209;40</span>
+        <span class="lv">0.42<i>N&middot;m</i></span>
+        <span class="lk">285 g &middot; 40.1 mm</span>
+      </div>
+      <div class="lcol">
+        <span class="lm">M17&#8209;34</span>
+        <span class="lv">0.28<i>N&middot;m</i></span>
+        <span class="lk">210 g &middot; 33.5 mm</span>
+      </div>
+    </div>
+
+    <div class="models">
+      <div class="mcol">
+        <div>
+          <p class="name">M17&#8209;60</p>
+          <p class="tq"><b>0.65 N&middot;m</b>Rated torque &middot; 26.4 W &middot; 470 g &middot; 59.7 mm</p>
+        </div>
+        <div class="draw"><img src="../M17-60_dimensions.png" alt="M17-60 dimension drawing"></div>
+        <p class="drawhint">Scroll the drawing sideways &rarr;</p>
+      </div>
+      <div class="mcol">
+        <div>
+          <p class="name">M17&#8209;48</p>
+          <p class="tq"><b>0.55 N&middot;m</b>Rated torque &middot; 26.4 W &middot; 360 g &middot; 48.7 mm</p>
+        </div>
+        <div class="draw"><img src="../M17-48_dimensions.png" alt="M17-48 dimension drawing"></div>
+        <p class="drawhint">Scroll the drawing sideways &rarr;</p>
+      </div>
+      <div class="mcol">
+        <div>
+          <p class="name">M17&#8209;40</p>
+          <p class="tq"><b>0.42 N&middot;m</b>Rated torque &middot; 26.4 W &middot; 285 g &middot; 40.1 mm</p>
+        </div>
+        <div class="draw"><img src="../M17-40_dimensions.png" alt="M17-40 dimension drawing"></div>
+        <p class="drawhint">Scroll the drawing sideways &rarr;</p>
+      </div>
+      <div class="mcol">
+        <div>
+          <p class="name">M17&#8209;34</p>
+          <p class="tq"><b>0.28 N&middot;m</b>Rated torque &middot; 24.0 W &middot; 210 g &middot; 33.5 mm</p>
+        </div>
+        <div class="draw"><img src="../M17-34_dimensions.png" alt="M17-34 dimension drawing"></div>
+        <p class="drawhint">Scroll the drawing sideways &rarr;</p>
+      </div>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Mechanical specifications</caption>
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col">M17-60</th><th scope="col">M17-48</th><th scope="col">M17-40</th><th scope="col">M17-34</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Dimensions (L&times;W)</th><td>42.2 &times; 42.2 mm</td><td>42.2 &times; 42.2 mm</td><td>42.2 &times; 42.2 mm</td><td>42.2 &times; 42.2 mm</td></tr>
+          <tr><th scope="row">Height</th><td>59.7 mm</td><td>48.7 mm</td><td>40.1 mm</td><td>33.5 mm</td></tr>
+          <tr><th scope="row">Shaft length</th><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td></tr>
+          <tr><th scope="row">Shaft diameter</th><td>5 mm</td><td>5 mm</td><td>5 mm</td><td>5 mm</td></tr>
+          <tr><th scope="row">Weight</th><td>470 g</td><td>360 g</td><td>285 g</td><td>210 g</td></tr>
+          <tr><th scope="row">Protection class</th><td>IP20</td><td>IP20</td><td>IP20</td><td>IP20</td></tr>
+        </tbody>
+      </table>
+      <p class="scrollhint">Scroll the table sideways &rarr;</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>Electrical specifications</caption>
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col">M17-60</th><th scope="col">M17-48</th><th scope="col">M17-40</th><th scope="col">M17-34</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Operating voltage</th><td>12&ndash;24 V</td><td>12&ndash;24 V</td><td>12&ndash;24 V</td><td>12&ndash;24 V</td></tr>
+          <tr><th scope="row">Rated torque</th><td>0.65 N&middot;m</td><td>0.55 N&middot;m</td><td>0.42 N&middot;m</td><td>0.28 N&middot;m</td></tr>
+          <tr><th scope="row">Maximum speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+          <tr><th scope="row">Maximum current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td><td>1.0 A</td></tr>
+          <tr><th scope="row">Rated power</th><td>26.4 W</td><td>26.4 W</td><td>26.4 W</td><td>24.0 W</td></tr>
+        </tbody>
+      </table>
+      <p class="scrollhint">Scroll the table sideways &rarr;</p>
+    </div>
+
+    <div class="tablewrap" style="margin-top:52px;">
+      <table class="t2">
+        <caption>Operating conditions</caption>
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col">Specification</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Operating temperature</th><td>0 &deg;C to +80 &deg;C</td></tr>
+          <tr><th scope="row">Storage temperature</th><td>&minus;20 &deg;C to +60 &deg;C</td></tr>
+          <tr><th scope="row">Humidity range</th><td>20 % to 80 % RH (non-condensing)</td></tr>
+          <tr><th scope="row">Installation environment</th><td>Indoor use only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-l"><a class="btn" href="https://gearotons.com/store">Shop the M17</a></div>
+  </div>
+</section>
+
+<!-- ============ 8. DEVELOPERS — BLACK ============ -->
+<section class="band-black" id="developers">
+  <div class="wrap">
+    <p class="eyebrow">Developers</p>
+    <h2 class="poster md"><span class="lite">Two libraries.</span>No driver code.</h2>
+    <p class="sub wide mt-m">Python and Arduino libraries speak the protocol for you, convert your units, and expose the motor as an object. Open the port, reset, enable, move &mdash; a complete rotation fits on one screen.</p>
+
+    <div class="codegrid">
+      <div class="code">
+        <div class="head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><em>spin.py</em></div>
+<pre><span class="c-kw">import</span> servomotor
+<span class="c-kw">from</span> servomotor <span class="c-kw">import</span> M3
+
+servomotor.<span class="c-fn">open_serial_port</span>()
+motor = <span class="c-fn">M3</span>(<span class="c-str">"X"</span>, time_unit=<span class="c-str">"seconds"</span>,
+                position_unit=<span class="c-str">"degrees"</span>)
+motor.<span class="c-fn">system_reset</span>()
+motor.<span class="c-fn">enable_mosfets</span>()
+motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <span class="c-num">2</span>)  <span class="c-com"># one revolution in 2 s</span></pre>
+      </div>
+      <div class="code">
+        <div class="head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><em>spin.ino</em></div>
+<pre><span class="c-kw">#include</span> <span class="c-str">&lt;Servomotor.h&gt;</span>
+
+<span class="c-ty">Servomotor</span> motor(<span class="c-str">'X'</span>, Serial1); <span class="c-com">// alias 'X' on the RS485 UART</span>
+
+<span class="c-kw">void</span> <span class="c-fn">setup</span>() {
+  motor.<span class="c-fn">setPositionUnit</span>(PositionUnit::SHAFT_ROTATIONS);
+  motor.<span class="c-fn">setTimeUnit</span>(TimeUnit::SECONDS);
+
+  motor.<span class="c-fn">systemReset</span>();
+  <span class="c-fn">delay</span>(<span class="c-num">1500</span>);                    <span class="c-com">// let the bootloader window pass</span>
+  motor.<span class="c-fn">enableMosfets</span>();
+  motor.<span class="c-fn">trapezoidMove</span>(<span class="c-num">1.0</span>, <span class="c-num">1.0</span>);  <span class="c-com">// one rotation in one second</span>
+}
+
+<span class="c-kw">void</span> <span class="c-fn">loop</span>() {}</pre>
+      </div>
+    </div>
+
+    <div class="split top mt-xl">
+      <div>
+        <h3 style="color:#fff;margin-bottom:16px;">Install</h3>
+        <p class="sub">Python, on Mac, PC or Raspberry Pi:</p>
+        <p class="mt-s"><span class="cmdline"><span class="p">$</span> pip3 install servomotor</span></p>
+        <p class="sub mt-m">Arduino, ESP32 and friends: open the Arduino IDE Library Manager and install <b style="color:#fff;">&ldquo;Servomotor&rdquo;</b>.</p>
+      </div>
+      <div>
+        <h3 style="color:#fff;margin-bottom:16px;">Five steps to first motion</h3>
+        <ol class="steps">
+          <li>Connect a low-cost <b>RS485 adapter</b> to your Mac, PC, Raspberry Pi, Arduino or ESP32.</li>
+          <li>Plug in the <b>included cable</b> and supply <b>12&ndash;24 V</b>.</li>
+          <li>Install the library &mdash; <code class="inline">pip3 install servomotor</code> or &ldquo;Servomotor&rdquo;.</li>
+          <li>Give the motor a <b>1-byte alias</b> (0&ndash;251) so your packets stay short.</li>
+          <li>Call <b>enable_mosfets()</b>, then <b>trapezoid_move()</b>, and watch the shaft turn.</li>
+        </ol>
+        <div class="mt-m"><a class="alink" href="https://tutorial.gearotons.com">Getting-started guide <span class="arr">&rarr;</span></a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 9. UNITS ============ -->
+<section id="units">
+  <div class="wrap">
+    <div class="split top">
+      <div>
+        <p class="eyebrow">Unit system</p>
+        <h2 class="sec"><span class="lite">Your units.</span>Its maths.</h2>
+        <p class="sub mt-m">The motors work in integer internal units so the motion maths stays fast. The Python and Arduino libraries convert automatically in both directions, so you write degrees, seconds, amps or fahrenheit &mdash; whatever suits the job &mdash; and never touch a scaling factor.</p>
+      </div>
+      <div>
+        <dl class="deflist" style="margin-top:0;">
+          <div class="row"><dt>Time</dt><dd>seconds, milliseconds, minutes, microseconds, timesteps</dd></div>
+          <div class="row"><dt>Position</dt><dd>shaft rotations, degrees, radians, encoder counts</dd></div>
+          <div class="row"><dt>Velocity</dt><dd>rotations per second, RPM, degrees per second, radians per second, counts per second, counts per timestep</dd></div>
+          <div class="row"><dt>Acceleration</dt><dd>rotations per second&sup2;, RPM per second, degrees per second&sup2;, radians per second&sup2;, counts per second&sup2;, counts per timestep&sup2;</dd></div>
+          <div class="row"><dt>Current</dt><dd>internal current units, milliamps, amps</dd></div>
+          <div class="row"><dt>Voltage</dt><dd>volts, millivolts</dd></div>
+          <div class="row"><dt>Temperature</dt><dd>celsius, fahrenheit, kelvin</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. PROTOCOL — BLACK ============ -->
+<section class="band-black" id="protocol">
+  <div class="wrap">
+    <p class="eyebrow">Communication protocol</p>
+    <h2 class="poster"><span class="lite">RS-485.</span>230400 baud.</h2>
+    <div class="split top mt-xl">
+      <div>
+        <p class="sub wide">A comprehensive command set covers motion control, configuration and status monitoring &mdash; and firmware updates travel over the same RS-485 bus, so a motor deep inside a machine never has to come out.</p>
+        <dl class="deflist">
+          <div class="row"><dt>Baud rate</dt><dd>Fixed at 230400</dd></div>
+          <div class="row"><dt>Topology</dt><dd>Any number of motors daisy-chained on one bus</dd></div>
+          <div class="row"><dt>Unique address</dt><dd>Factory-assigned 64-bit address on every motor</dd></div>
+          <div class="row"><dt>Alias</dt><dd>1-byte alias, 0&ndash;251, for short packets</dd></div>
+          <div class="row"><dt>Broadcast</dt><dd>Alias 255 addresses every motor</dd></div>
+          <div class="row"><dt>Firmware update</dt><dd>Supported over the RS-485 interface</dd></div>
+        </dl>
+      </div>
+      <div>
+        <h3 style="color:#fff;margin-bottom:6px;">Command groups</h3>
+        <div class="taglist">
+          <span>Basic control</span><span>Motion control</span><span>Configuration</span>
+          <span>Status &amp; monitoring</span><span>Device management</span>
+        </div>
+        <h3 style="color:#fff;margin:44px 0 14px;">Print the whole reference</h3>
+        <p><span class="cmdline"><span class="p">$</span> pip3 install servomotor</span></p>
+        <p class="mt-s"><span class="cmdline"><span class="p">$</span> servomotor_command -c</span></p>
+        <p class="sub mt-m">The living source of truth is <code class="inline">motor_commands.json</code> in the repository &mdash;
+          <a class="txtlink" href="https://github.com/tomrodinger/servomotor/blob/main/python_programs/servomotor/motor_commands.json">read it on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11. LEDS & BUTTONS ============ -->
+<section id="indicators">
+  <div class="wrap">
+    <div class="split-4-6">
+      <div class="rv">
+        <img src="../transparent/motor_back_transparent_small.png" alt="Rear of the M17 motor showing the spec label, QR codes, Reset and Test buttons and the two status LEDs" style="width:100%;max-width:330px;margin:0 auto;">
+      </div>
+      <div>
+        <p class="eyebrow">Indicators &amp; controls</p>
+        <h2 class="sec"><span class="lite">Two LEDs.</span>Two buttons.</h2>
+        <p class="sub mt-m">Everything you need to know about a motor is visible from the back of it &mdash; and you can spin it, reset it or calibrate it without writing a line of code.</p>
+        <ul class="factlist">
+          <li><span class="l">Green LED</span><span class="r">Flashes slowly as a heartbeat; flashes quickly when the bootloader is running rather than the application; and lights up briefly while a packet is being received, so it flickers with traffic on the bus.</span></li>
+          <li><span class="l">Red LED</span><span class="r">Indicates fatal error codes by flashing a certain number of times.</span></li>
+          <li><span class="l">Reset button</span><span class="r">Restarts the microcontroller and returns all state to defaults.</span></li>
+          <li><span class="l">Test button</span><span class="r">A brief press spins one way. Press for more than 0.3 s and release to spin the other way. Hold at least 2 s and release to enter closed-loop mode. Hold more than 15 s and release to run a self-calibration.</span></li>
+        </ul>
+        <p class="sub mt-m" style="color:var(--ink);border-left:2px solid var(--green);padding-left:16px;">The motor spins during calibration and must be able to turn freely &mdash; remove any load first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12. IN THE BOX ============ -->
+<section id="box" style="padding-top:0;">
+  <div class="wrap">
+    <div class="split top">
+      <div>
+        <p class="eyebrow">What you need</p>
+        <h2 class="sec sm"><span class="lite">Motor, cable,</span>Adapter.</h2>
+        <p class="sub mt-m">A cable is included with the motor. To talk to it you also need a low-cost RS485 adapter, sold separately &mdash; Gearotons sells a 3-in-1 adapter that plugs straight into a Mac, PC, Raspberry Pi, Arduino or ESP32 setup.</p>
+        <ul class="factlist">
+          <li><span class="l">Included</span><span class="r">M17 servomotor and a cable</span></li>
+          <li><span class="l">Sold separately</span><span class="r">Low-cost RS485 adapter &mdash; the Gearotons 3-in-1</span></li>
+          <li><span class="l">Works with</span><span class="r">Raspberry Pi, Arduino, ESP32, Mac and PC</span></li>
+        </ul>
+        <div class="mt-m"><a class="alink" href="https://gearotons.com/store">See the store <span class="arr">&rarr;</span></a></div>
+      </div>
+      <div class="rv">
+        <img src="../transparent/kit_with_three_motors_transparent_small.png" alt="Kit flat-lay: three M17 motors, the adapter PCB, cables and knobs" style="width:100%;max-width:400px;margin:0 auto;">
+        <img src="../transparent/adapter_and_wire_transparent_small.png" alt="The green Gearotons 3-in-1 RS485 adapter with its cable" style="width:100%;max-width:300px;margin:34px auto 0;">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 13. APPLICATIONS — BLACK ============ -->
+<section class="band-black statement" id="applications" style="padding-bottom:0;">
+  <div class="wrap">
+    <p class="eyebrow">Applications</p>
+    <h2 class="poster"><span class="lite">Lab bench.</span>Factory floor.</h2>
+    <p class="sub wide mt-m">The same motor, the same protocol and the same handful of lines of code work in a classroom demonstration and in a machine that runs all night.</p>
+  </div>
+  <div class="photorow">
+    <figure><img src="../robotics.jpg" alt="An M17 motor driving a large gear in a CNC and robotics assembly"><figcaption>Robotics &amp; CNC</figcaption></figure>
+    <figure><img src="../automation.jpg" alt="An M17 motor mounted inside an automation machine"><figcaption>Industrial automation</figcaption></figure>
+    <figure><img src="../test_rack.jpg" alt="Many M17 motors mounted in an automated test rack"><figcaption>Automated testing</figcaption></figure>
+  </div>
+  <div class="wrap" style="padding-top:56px;padding-bottom:112px;">
+    <div class="taglist">
+      <span>Robotics</span><span>CNC machines</span><span>Automated testing equipment</span>
+      <span>Scientific instruments</span><span>Industrial automation</span><span>3D printers</span>
+      <span>Education &amp; teaching labs</span><span>Test jigs</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14. OPEN SOURCE + 15. COMPANY ============ -->
+<section id="open">
+  <div class="wrap">
+    <div class="split top">
+      <div>
+        <p class="eyebrow">Open source</p>
+        <h2 class="sec"><span class="lite">Open.</span>All of it.</h2>
+        <p class="sub mt-m">All software, firmware and PCB design files are open source and published on GitHub. Read the code that runs on the motor, change it, or build on it.</p>
+        <div class="osslogos">
+          <img src="../Open_Source_Initiative.svg.png" alt="Open Source Initiative logo">
+          <img src="../Open-source-hardware-logo.svg.png" alt="Open Source Hardware logo">
+        </div>
+        <div class="mt-l"><a class="alink" href="https://github.com/tomrodinger/servomotor">View the repository <span class="arr">&rarr;</span></a></div>
+      </div>
+      <div>
+        <p class="eyebrow">The company</p>
+        <h2 class="sec"><span class="lite">Shenzhen,</span>Since 2022.</h2>
+        <p class="sub mt-m">Gearotons is an innovative startup committed to making precision motion control accessible to everyone &mdash; makers, educators and engineers alike. It was founded in Shenzhen in 2022 by a Canadian entrepreneur, and focuses on integrated servo motor systems that combine cost-effectiveness, high integration, ease of use and high performance. The M17 series is the first product.</p>
+        <p class="mt-m" style="font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:-.035em;line-height:1.15;">&ldquo;We believe in making the world better through technology.&rdquo;</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 16. FINAL CTA — GREEN ============ -->
+<section class="band-green statement" style="text-align:left;">
+  <div class="wrap">
+    <p class="eyebrow">Ready when you are</p>
+    <h2 class="poster"><span class="lite">Make it</span>Move.</h2>
+    <div class="cta-split">
+      <div>
+        <p class="sub wide" style="color:rgba(0,0,0,.74);">Affordable, simple, all-in-one motion control &mdash; from education to innovation. Four torque options, one protocol, open source from the firmware up.</p>
+        <div class="hero-cta">
+          <a class="btn on-green" href="https://gearotons.com/store">Shop the M17</a>
+          <a class="alink" href="https://gearotons.com">Documentation <span class="arr">&rarr;</span></a>
+        </div>
+      </div>
+      <ul class="pricelist">
+        <li><span class="m">M17&#8209;60</span><span class="t">0.65 N&middot;m &middot; 470 g &middot; 59.7 mm</span></li>
+        <li><span class="m">M17&#8209;48</span><span class="t">0.55 N&middot;m &middot; 360 g &middot; 48.7 mm</span></li>
+        <li><span class="m">M17&#8209;40</span><span class="t">0.42 N&middot;m &middot; 285 g &middot; 40.1 mm</span></li>
+        <li><span class="m">M17&#8209;34</span><span class="t">0.28 N&middot;m &middot; 210 g &middot; 33.5 mm</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h4>Gearotons</h4>
+      <p style="max-width:320px;line-height:1.75;">M17 Series Servomotors &mdash; affordable and simple all-in-one motion control, from education to innovation.</p>
+    </div>
+    <div>
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#models">Models &amp; specifications</a></li>
+        <li><a href="#protocol">Communication protocol</a></li>
+        <li><a href="#units">Unit system</a></li>
+        <li><a href="https://gearotons.com/store">Store</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Developers</h4>
+      <ul>
+        <li><a href="https://gearotons.com">Documentation</a></li>
+        <li><a href="https://tutorial.gearotons.com">Getting-started guide</a></li>
+        <li><a href="https://github.com/tomrodinger/servomotor">GitHub repository</a></li>
+        <li><a href="https://github.com/tomrodinger/servomotor/blob/main/python_programs/servomotor/motor_commands.json">motor_commands.json</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot-legal">
+    <p>&copy; 2026 Gearotons &middot; Green Eco Technology (Shenzhen) Company Limited &middot; Room C301E, 3F, Block CD, Tianjing Building, Shatou Street, Futian District, Shenzhen City, Guangdong Province, China.</p>
+    <p><a href="https://gearotons.com">gearotons.com</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var els=document.querySelectorAll('.rv');
+  if(!('IntersectionObserver' in window)){
+    for(var i=0;i<els.length;i++){els[i].classList.add('in');}
+    return;
+  }
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}
+    });
+  },{rootMargin:'0px 0px -8% 0px'});
+  els.forEach(function(el){io.observe(el);});
+})();
+</script>
+
+<!-- ============ POSTER SLAM — hero slogan cycler ============
+     The page is a stack of full-bleed black and green statement slabs. The
+     headline change borrows exactly that gesture: a slab rips in from the left
+     and bulldozes the old line off the right edge, stops dead against the wall,
+     the new headline is STAMPED onto it word by word — each hit rattling the
+     whole hero — and then the slab tears away to the right and leaves the type
+     standing in page colours. Black and green slabs alternate, the way the
+     bands alternate down the page.
+
+     Every value below is a pure function of one millisecond number, so
+     seek(i,t) renders exactly the frame the timer would have rendered. -->
+<script>
+(function(){
+  var SLOGANS=[
+    ["A motor, and everything","that usually surrounds it."],
+    ["The whole drive system.","Inside one motor."],
+    ["Four systems.","One motor."],
+    ["Motion control,","fully integrated."],
+    ["You wanted motion.","Not a wiring project."],
+    ["A motor that","needs nothing else."],
+    ["The whole motion system.","One motor."],
+    ["Everything that moves it,","inside it."],
+    ["Motion control.","All in one."],
+    ["Stepper, driver, controller, encoder.","One part number."],
+    ["Bolts in like a stepper.","Runs like a full servo."],
+    ["Four bolts. One cable.","A complete servo system."],
+    ["Servomotor:","stepper, driver, controller and encoder in one."],
+    ["No driver board. No encoder to mount.","It's all inside."],
+    ["Driver, controller and encoder","are no longer your problem."]
+  ];
+
+  var stage=document.getElementById('slamStage');
+  if(!stage){return;}
+  var h1=stage.parentNode;
+  var bleed=stage.querySelector('.slam-bleed');
+  var slab=stage.querySelector('.slam-slab');
+  var cast=stage.querySelector('.slam-cast');
+  var layA=stage.querySelector('.slam-a');
+  var layB=stage.querySelector('.slam-b');
+  var layC=stage.querySelector('.slam-c');
+  var innA=layA.querySelector('.slam-inner');
+  var innB=layB.querySelector('.slam-inner');
+  var innC=layC.querySelector('.slam-inner');
+
+  /* ---- the score, in milliseconds ----------------------------------------
+     0    slab launches from off-screen left, still empty, gaining speed
+     430  HIT — it reaches the wall and stops dead. The old line is gone.
+     520  first word stamps down. Each one lands harder than a shake decays,
+     845  so the hero rattles continuously for the whole hold.
+     900  TEAR — the slab rips off right, uncovering the type in page colours
+     1300 rest */
+  var DWELL=3162, TRANS=1300;
+  var HIT=430, W0=520, W1=845, TEAR=900, FLIGHT=230;
+
+  var idx=0, phase='dwell', acc=0, last=0, raf=0, running=false, hovered=false;
+  var stageLeft=0, stageW=0, stageH=0, vw=0, fs=52;
+  var bandW=0, slack=0, gap=0, edge=8, Xs=0, Xr=0, Xe=0;
+  var SHK=14;
+  var slabTop=0, slabH=0, hA=0, hC=0;
+  var wordsB=[], wordsC=[], impacts=[];
+  var reduced=false;
+  try{reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+
+  function clamp01(v){return v<0?0:(v>1?1:v);}
+  function mod(i){return ((i%SLOGANS.length)+SLOGANS.length)%SLOGANS.length;}
+
+  /* ---- real cubic-beziers, solved rather than approximated ---- */
+  function bez(x1,y1,x2,y2){
+    function c(a1,a2,t){var u=1-t;return 3*u*u*t*a1+3*u*t*t*a2+t*t*t;}
+    return function(p){
+      if(p<=0){return 0;} if(p>=1){return 1;}
+      var lo=0,hi=1,t=p,x,i;
+      for(i=0;i<16;i++){x=c(x1,x2,t);if(x<p){lo=t;}else{hi=t;}t=(lo+hi)*0.5;}
+      return c(y1,y2,t);
+    };
+  }
+  /* the slab is STILL GAINING SPEED when it hits the wall — that discontinuity
+     is the whole reason the stop reads as an impact rather than an arrival */
+  var EASE_RIP  =bez(.50,.02,.70,.28);
+  /* it has to break from a standstill to leave, so the tear accelerates first
+     and then coasts out — not the mirror of the entry */
+  var EASE_TEAR =bez(.36,.00,.30,1.00);
+  /* the old line being shoved off the edge: fast the instant it is touched */
+  var EASE_CRUSH=bez(.30,.00,.62,1.00);
+  /* a word falling the last inch onto the slab */
+  var EASE_STAMP=bez(.44,.03,.72,.24);
+
+  function buildLine(el,text,bucket,line){
+    while(el.firstChild){el.removeChild(el.firstChild);}
+    var parts=text.split(' ');
+    for(var i=0;i<parts.length;i++){
+      var w=document.createElement('span');
+      w.className='slam-sw';
+      w.textContent=parts[i];
+      el.appendChild(w);
+      if(i<parts.length-1){el.appendChild(document.createTextNode(' '));}
+      if(bucket){bucket.push({el:w,line:line});}
+    }
+  }
+  function fillLayer(inner,i,bucket){
+    var s=SLOGANS[mod(i)];
+    buildLine(inner.children[0],s[0],bucket,0);
+    buildLine(inner.children[1],s[1],bucket,1);
+  }
+  function plainLayer(inner,i){
+    var s=SLOGANS[mod(i)];
+    inner.children[0].textContent=s[0];
+    inner.children[1].textContent=s[1];
+  }
+
+  /* ---- lock the hero to the tallest of the fifteen ---- */
+  function layout(){
+    var probe=document.createElement('div');
+    probe.className='poster slam-measure';
+    probe.innerHTML='<span class="lite"></span><span class="bd"></span>';
+    stage.style.height='auto';
+    h1.appendChild(probe);
+    probe.style.width=stage.offsetWidth+'px';
+    var lite=probe.children[0], bd=probe.children[1], max=0;
+    for(var i=0;i<SLOGANS.length;i++){
+      buildLine(lite,SLOGANS[i][0],null,0);
+      buildLine(bd,SLOGANS[i][1],null,1);
+      var hgt=probe.offsetHeight;
+      if(hgt>max){max=hgt;}
+    }
+    h1.removeChild(probe);
+    stageH=Math.ceil(max);
+    stage.style.height=stageH+'px';
+    stage.classList.add('ready');
+
+    var r=stage.getBoundingClientRect();
+    stageLeft=r.left; stageW=r.width;
+    vw=document.documentElement.clientWidth;
+    fs=parseFloat(getComputedStyle(h1).fontSize)||52;
+
+    /* the slab is wider than the viewport so it can shake and rebound at the
+       wall without ever un-covering a strip of page */
+    slack=Math.round(vw*0.085);
+    bandW=vw+slack*2;
+    gap=Math.round(Math.max(18,vw*0.045));
+    edge=Math.round(Math.max(5,Math.min(13,fs*0.048)));
+    Xs=-bandW; Xr=-slack; Xe=vw;
+    SHK=Math.min(20,fs*0.128);
+    slab.style.width=(bandW+gap)+'px';
+    bleed.style.left=(-stageLeft)+'px';
+    bleed.style.width=vw+'px';
+  }
+
+  /* ---- everything that depends on WHICH pair is in flight ---- */
+  function pair(i){
+    idx=mod(i);
+    plainLayer(innA,idx);
+    wordsB=[]; wordsC=[];
+    fillLayer(innB,idx+1,wordsB);
+    fillLayer(innC,idx+1,wordsC);
+
+    /* black and green slabs alternate, exactly as the page's bands do */
+    var green=(idx%2)===1;
+    layC.className='slam-layer slam-c '+(green?'on-green':'on-black');
+    var body=green?'#7AB648':'#000';
+    var mark=green?'#000':'#7AB648';
+    var W=bandW+gap;
+    /* trailing bar | body | leading bar | clear air | a hairline running ahead
+       of the slab, the way every rule on this page runs ahead of a block */
+    slab.style.background='linear-gradient(90deg,'+
+      mark+' 0 '+edge+'px,'+
+      body+' '+edge+'px '+(bandW-edge)+'px,'+
+      mark+' '+(bandW-edge)+'px '+bandW+'px,'+
+      'rgba(0,0,0,0) '+bandW+'px '+(W-2)+'px,'+
+      mark+' '+(W-2)+'px '+W+'px)';
+
+    hA=innA.offsetHeight||0; hC=innC.offsetHeight||0;
+    var typeH=hA>hC?hA:hC;
+    /* the band clears the eyebrow above and the descenders below */
+    slabTop=-Math.round(fs*0.22);
+    slabH=Math.round(typeH+fs*0.60);
+    bleed.style.top=slabTop+'px';
+    bleed.style.height=slabH+'px';
+
+    var n=wordsC.length, k, w, heavy;
+    impacts=[{t:HIT,a:1.00},{t:TEAR,a:0.34}];
+    for(k=0;k<n;k++){
+      w=wordsC[k]; heavy=(w.line===1);
+      w.land=(n>1)?(W0+(W1-W0)*(k/(n-1))):W1;
+      w.amp=heavy?0.24:0.19;
+      w.dy=fs*(heavy?0.095:0.072);
+      w.bl=fs*(heavy?0.062:0.048);
+      w.hv=heavy?1.22:1;
+      if(wordsB[k]){wordsB[k].land=w.land;}
+      impacts.push({t:w.land,a:heavy?0.27:0.18});
+    }
+  }
+
+  /* ---- one word: stamps down onto the slab, splats, rings out ---- */
+  var _w={y:0,sx:1,sy:1,b:0,o:1};
+  function wordState(ms,w){
+    var u=(ms-(w.land-FLIGHT))/FLIGHT;
+    if(u<=0){_w.y=-w.dy;_w.sx=1+w.amp*0.34;_w.sy=1+w.amp;_w.b=w.bl;_w.o=0;return _w;}
+    if(u<1){
+      var f=EASE_STAMP(u), inv=1-f;
+      _w.o=u*u*3; if(_w.o>1){_w.o=1;}   /* hangs back, so nothing competes
+                                            with the old line at the wipe seam */
+      _w.y=-w.dy*inv;
+      /* stretched along the fall and barely wider across it, so a word in
+         flight never smears into the one that has already landed beside it */
+      _w.sx=1+w.amp*0.34*inv;
+      _w.sy=1+w.amp*inv;
+      _w.b=w.bl*inv*inv;
+      return _w;
+    }
+    var d=ms-w.land, g=Math.exp(-d/76);
+    _w.o=1; _w.b=0;
+    if(g<0.0015){_w.y=0;_w.sx=1;_w.sy=1;return _w;}
+    var a=d*0.043;
+    var c=Math.cos(a);
+    _w.sx=1+0.062*g*c*w.hv;   /* splats wide ...                */
+    _w.sy=1-0.088*g*c*w.hv;   /* ... and flat at the instant it lands */
+    _w.y=fs*0.030*g*Math.sin(a);
+    return _w;
+  }
+
+  /* ---- the whole frame, as a pure function of milliseconds ---- */
+  function frame(ms){
+    if(ms<0){ms=0;} if(ms>TRANS){ms=TRANS;}
+
+    /* impact shake: decaying impulses, summed so hits overlap like real ones */
+    var shx=0, shy=0, env=0, k, d, g, a;
+    for(k=0;k<impacts.length;k++){
+      d=ms-impacts[k].t;
+      if(d<=0){continue;}
+      g=Math.exp(-d/74);
+      if(g<0.003){continue;}
+      a=impacts[k].a*g;
+      env+=a;
+      shx+=a*SHK*Math.sin(d*0.112);
+      shy+=a*SHK*0.42*Math.cos(d*0.095);
+    }
+    var cap=SHK*1.7;
+    if(shx>cap){shx=cap;} if(shx<-cap){shx=-cap;}
+    if(shy>cap){shy=cap;} if(shy<-cap){shy=-cap;}
+    cast.style.transform='translate3d('+shx.toFixed(2)+'px,'+shy.toFixed(2)+'px,0)';
+
+    /* X is the viewport x of the slab body's TRAILING (left) edge */
+    var X;
+    if(ms<=HIT){
+      X=Xs+(Xr-Xs)*EASE_RIP(ms/HIT);
+    }else if(ms<TEAR){
+      d=ms-HIT; g=Math.exp(-d/95);
+      X=Xr+vw*0.014*g*Math.sin(d*0.030);   /* rebound off the wall */
+    }else{
+      X=Xr+(Xe-Xr)*EASE_TEAR((ms-TEAR)/(TRANS-TEAR));
+    }
+
+    /* clip edges are compensated for the shake, so the type stays in register
+       with the slab it is printed on — the slab is the thing being moved */
+    var c0=X-stageLeft-shx, c1=c0+bandW;
+    var far=(-2*vw).toFixed(0)+'px';
+    var big=(-2*fs).toFixed(0)+'px';
+
+    /* the outgoing line survives only ahead of the slab */
+    layA.style.clipPath=layA.style.webkitClipPath=
+      'inset('+big+' '+far+' '+big+' '+c1.toFixed(1)+'px)';
+    /* the incoming line, inverted, exists only ON the slab — vertically too,
+       so a word in flight cannot appear outside the band */
+    var vt=(slabTop-shy), vb=(hC-(slabTop+slabH)+shy);
+    layC.style.clipPath=layC.style.webkitClipPath=
+      'inset('+vt.toFixed(1)+'px '+(stageW-c1).toFixed(1)+'px '+vb.toFixed(1)+'px '+c0.toFixed(1)+'px)';
+    /* and in page colours once the slab has torn off it */
+    layB.style.clipPath=layB.style.webkitClipPath=
+      'inset('+big+' '+(stageW-c0).toFixed(1)+'px '+big+' '+far+')';
+
+    if(ms<=0||ms>=TRANS){
+      slab.style.opacity='0';
+      slab.style.transform='translate3d(-99999px,0,0)';
+    }else{
+      /* the slab recoils vertically on every hit. Vertically only: a
+         horizontal flex would slide its edges out of register with the clip */
+      var fy=Math.min(0.040,env*0.040);
+      slab.style.opacity='1';
+      slab.style.transform='translate3d('+X.toFixed(1)+'px,0,0) scaleY('+
+        (1-fy).toFixed(4)+')';
+    }
+
+    /* the old line is scraped right, squeezed and sheared as the slab overruns it */
+    var eo=ms<=HIT?EASE_CRUSH(ms/HIT):1;
+    innA.style.transform='translate3d('+(fs*0.075*eo).toFixed(2)+'px,'+(-fs*0.014*eo).toFixed(2)+
+      'px,0) scale('+(1-0.062*eo).toFixed(4)+','+(1+0.022*eo).toFixed(4)+') skewX('+
+      (-2.8*eo).toFixed(2)+'deg)';
+    innA.style.filter=eo>0.004?'blur('+(fs*0.034*eo).toFixed(2)+'px)':'none';
+
+    /* the incoming words — both copies in lockstep so the tear edge is seamless */
+    for(k=0;k<wordsC.length;k++){
+      var w=wordState(ms,wordsC[k]);
+      var tr='translate3d(0,'+w.y.toFixed(2)+'px,0) scale('+
+        w.sx.toFixed(4)+','+w.sy.toFixed(4)+')';
+      var fl=w.b>0.15?'blur('+w.b.toFixed(2)+'px)':'none';
+      var op=w.o>=1?'':w.o.toFixed(3);
+      var ec=wordsC[k].el;
+      ec.style.transform=tr; ec.style.filter=fl; ec.style.opacity=op;
+      if(wordsB[k]){
+        var eb=wordsB[k].el;
+        eb.style.transform=tr; eb.style.filter=fl; eb.style.opacity=op;
+      }
+    }
+  }
+
+  function settle(i){
+    pair(i);
+    phase='dwell'; acc=0;
+    frame(0);
+  }
+
+  function tick(ts){
+    if(!running){return;}
+    if(!last){last=ts;}
+    var dt=ts-last; last=ts;
+    if(dt<0||dt>250){dt=16;}
+    acc+=dt;
+    if(phase==='dwell'){
+      if(acc>=DWELL){acc-=DWELL;phase='trans';}
+      else{frame(0);}
+    }
+    if(phase==='trans'){
+      if(acc>=TRANS){settle(idx+1);}
+      else{frame(acc);}
+    }
+    raf=requestAnimationFrame(tick);
+  }
+  function start(){
+    if(reduced||running){return;}
+    if(document.hidden||hovered){return;}
+    running=true; last=0; raf=requestAnimationFrame(tick);
+  }
+  function stop(){
+    running=false;
+    if(raf){cancelAnimationFrame(raf);raf=0;}
+  }
+
+  h1.addEventListener('mouseenter',function(){hovered=true;stop();});
+  h1.addEventListener('mouseleave',function(){hovered=false;start();});
+  h1.addEventListener('focusin',function(){hovered=true;stop();});
+  h1.addEventListener('focusout',function(){hovered=false;start();});
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){stop();}else{start();}
+  });
+  /* the inline script runs before first paint, so the lock is already in place
+     by then; re-measure once on load in case anything settled late */
+  window.addEventListener('load',function(){
+    var was=running, at=(phase==='trans')?acc:0;
+    stop(); layout(); pair(idx); frame(at);
+    if(was){start();}
+  });
+  var rt=0;
+  window.addEventListener('resize',function(){
+    clearTimeout(rt);
+    rt=setTimeout(function(){
+      var was=running, at=(phase==='trans')?acc:0;
+      stop(); layout(); pair(idx); frame(at);
+      if(was){start();}
+    },150);
+  });
+
+  window.__slogan={
+    items:SLOGANS,
+    index:function(){return idx;},
+    pause:function(){stop();},
+    resume:function(){start();},
+    goto:function(i){stop();settle(i);},
+    seek:function(i,t){pair(i);phase='trans';acc=clamp01(t)*TRANS;frame(acc);}
+  };
+
+  layout();
+  settle(0);
+
+  /* debug params work regardless of reduced-motion (screenshot harnesses force it on) */
+  var q=window.location.search;
+  var mg=/[?&]slg=(-?\d+)/.exec(q);
+  var msq=/[?&]sls=(-?\d+)\s*,\s*([\d.]+)/.exec(q);
+  if(msq){stop();window.__slogan.seek(parseInt(msq[1],10),parseFloat(msq[2]));}
+  else if(mg){stop();window.__slogan.goto(parseInt(mg[1],10));}
+  else if(!reduced){start();}
+})();
+</script>
+
+</body>
+</html>

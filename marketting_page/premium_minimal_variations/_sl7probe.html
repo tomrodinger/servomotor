@@ -1,0 +1,90 @@
+<!doctype html><meta charset="utf-8"><title>v7 probe</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.45 ui-monospace,monospace;color:#111}
+iframe{width:var(--w,1440px);height:900px;border:0}
+pre{padding:10px;white-space:pre-wrap}</style>
+<pre id="out">measuring…</pre>
+<iframe id="f"></iframe>
+<script>
+var W = parseInt((location.search.match(/w=(\d+)/)||[0,1440])[1],10);
+document.documentElement.style.setProperty('--w', W+'px');
+var f=document.getElementById('f');
+f.src='http://127.0.0.1:8912/premium_minimal_variations/v7.html?__sl=0';
+f.onload=function(){
+ setTimeout(function(){
+  var d=f.contentDocument, w=f.contentWindow, L=[];
+  var h1=d.querySelector('h1.sl-h1'), S=w.__slogan.items;
+  L.push('iframe width='+W+'  h1.clientWidth='+h1.clientWidth);
+
+  /* plain control, laid out at the real column width */
+  var ctl=d.createElement('span');
+  ctl.style.cssText='position:absolute;left:0;right:0;top:0;visibility:hidden';
+  h1.appendChild(ctl);
+  function ctlLines(t,b){
+    ctl.innerHTML = b?'<strong></strong>':''; var host=b?ctl.firstChild:ctl;
+    host.textContent=t;
+    var r=d.createRange(); r.selectNodeContents(host);
+    var rects=r.getClientRects(), out=[];
+    for(var i=0;i<rects.length;i++){
+      var q=rects[i];
+      if(q.width<1) continue;
+      out.push({l:q.left, r:q.right, t:Math.round(q.top)});
+    }
+    /* merge rects that share a line */
+    var byTop={};
+    out.forEach(function(q){ var key=q.t; if(!byTop[key]) byTop[key]={l:q.l,r:q.r}; else {byTop[key].l=Math.min(byTop[key].l,q.l); byTop[key].r=Math.max(byTop[key].r,q.r);} });
+    var keys=Object.keys(byTop).sort(function(a,b){return a-b;});
+    return keys.map(function(k){ return byTop[k]; });
+  }
+  function realLines(k){
+    var host=h1.querySelectorAll('.sl-part')[k].querySelector('.sl-new .sl-in');
+    var ws=host.getElementsByClassName('sl-w'), byTop={};
+    for(var i=0;i<ws.length;i++){
+      var q=ws[i].getBoundingClientRect(), key=Math.round(q.top);
+      if(!byTop[key]) byTop[key]={l:q.left,r:q.right}; else {byTop[key].l=Math.min(byTop[key].l,q.left); byTop[key].r=Math.max(byTop[key].r,q.right);}
+    }
+    var keys=Object.keys(byTop).sort(function(a,b){return a-b;});
+    return keys.map(function(k){ return byTop[k]; });
+  }
+
+  var bad=[], worst=0;
+  for(var i=0;i<S.length;i++){
+    w.__slogan.goto(i);
+    for(var k=0;k<2;k++){
+      var a=ctlLines(S[i][k],k===1), b=realLines(k);
+      if(a.length!==b.length){ bad.push('LINECOUNT '+i+'/'+k+' plain='+a.length+' real='+b.length); continue; }
+      for(var j=0;j<a.length;j++){
+        var dl=Math.abs(a[j].l-b[j].l), dr=Math.abs(a[j].r-b[j].r);
+        if(Math.max(dl,dr)>worst) worst=Math.max(dl,dr);
+        if(dl>1.6||dr>1.6) bad.push('EDGE '+i+'/'+k+' line'+j+' dl='+dl.toFixed(2)+' dr='+dr.toFixed(2));
+      }
+    }
+  }
+  ctl.remove();
+  L.push('line-box mismatches vs plain text: '+(bad.length?('\n  '+bad.join('\n  ')):'none'));
+  L.push('worst line-edge delta vs plain: '+worst.toFixed(2)+'px');
+
+  /* height lock + overflow across rest states and all transition frames */
+  var hs=[], ov=[];
+  for(var i2=0;i2<S.length;i2++){ w.__slogan.goto(i2); hs.push(h1.offsetHeight); }
+  var uniq={}; hs.forEach(function(h){uniq[h]=1;});
+  L.push('h1 heights at rest, all 15: '+Object.keys(uniq).join(',')+'   (block='+hs[0]+')');
+  for(var i3=0;i3<S.length;i3++){
+    for(var t=0;t<=1.0001;t+=0.05){
+      w.__slogan.seek(i3,t);
+      if(d.documentElement.scrollWidth>d.documentElement.clientWidth) ov.push('OVF '+i3+'@'+t.toFixed(2)+' sw='+d.documentElement.scrollWidth);
+      if(h1.offsetHeight!==hs[0]) ov.push('H '+i3+'@'+t.toFixed(2)+'='+h1.offsetHeight);
+    }
+  }
+  L.push('doc clientWidth='+d.documentElement.clientWidth+' scrollWidth(rest)='+d.documentElement.scrollWidth);
+  L.push('overflow / height anomalies over 15x21 transition frames: '+(ov.length?ov.slice(0,12).join(' '):'none'));
+
+  /* seek determinism */
+  w.__slogan.seek(3,0.5); var s1=h1.querySelector('.sl-new').style.clipPath;
+  w.__slogan.seek(7,0.2); w.__slogan.seek(3,0.5);
+  var s2=h1.querySelector('.sl-new').style.clipPath;
+  L.push('seek idempotent: '+(s1===s2)+'  ('+s1+')');
+  L.push('index() after seek(3,.5) = '+w.__slogan.index());
+  document.getElementById('out').textContent=L.join('\n');
+ }, 500);
+};
+</script>

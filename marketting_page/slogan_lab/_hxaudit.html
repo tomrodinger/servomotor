@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>hx audit</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#444}
+#g{display:grid;grid-template-columns:repeat(2,650px);}
+.cell{position:relative;overflow:hidden;background:#fff;color:#1d1d1f;width:650px;height:240px;
+  padding:9px 11px;border:1px solid #444}
+.lab{position:absolute;left:2px;top:1px;font:11px monospace;color:#c00;z-index:99;background:#ffffffcc}
+.fx-stage{position:absolute;inset:9px 11px;display:flex;align-items:center;justify-content:center;
+  font-size:28.6px;line-height:1.18;letter-spacing:-.02em;text-align:center;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;}
+.fx-stage .fx-light{font-weight:300}
+.fx-stage .fx-bold{font-weight:650}
+</style></head><body>
+<div id="g"></div>
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
+];
+(async function(){
+  const q=new URLSearchParams(location.search);
+  for(const f of (window.SLOGAN_FX_FILES||[])){
+    await new Promise(res=>{const s=document.createElement('script');s.src=f+'?v='+Date.now();s.onload=res;s.onerror=res;document.head.appendChild(s);});
+  }
+  const id=q.get('id'), i=parseInt(q.get('i')||'0',10);
+  const fx=SloganFX.get(id);
+  const ts=(q.get('ts')||'0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1').split(',').map(Number);
+  const g=document.getElementById('g');
+  if(!fx){g.textContent='NO SUCH ID '+id;return;}
+  ts.forEach(t=>{
+    const c=document.createElement('div');c.className='cell';
+    const th=fx.theme||{};
+    if(th.bg)c.style.background=th.bg; if(th.fg)c.style.color=th.fg;
+    const lab=document.createElement('div');lab.className='lab';lab.textContent='t='+t;
+    const st=document.createElement('div');
+    if(th.font)st.style.fontFamily=th.font; if(th.italic)st.style.fontStyle='italic';
+    c.appendChild(lab);c.appendChild(st);g.appendChild(c);
+    const p=SloganFX.mount(st,fx,SLOGANS,{start:i});
+    p.pause(); p.seek(i,t);
+  });
+  document.title='ready';
+})();
+</script></body></html>

@@ -1,0 +1,34 @@
+<!doctype html><meta charset="utf-8"><title>q15 probe</title>
+<style>html,body{margin:0;font:13px/1.45 ui-monospace,Menlo,monospace;background:#fff}
+iframe{width:1440px;height:1000px;border:0;position:absolute;left:-4000px;top:0}
+#o{white-space:pre;padding:10px}</style>
+<iframe id="f" src="v15.html?sl=0"></iframe>
+<div id="o">loading…</div>
+<script>
+var W=[1440,900,390];
+var out=[];
+var f=document.getElementById('f');
+f.onload=function(){ setTimeout(run,300); };
+function run(){
+  var d=f.contentDocument, w=f.contentWindow;
+  for(var wi=0;wi<W.length;wi++){
+    f.style.width=W[wi]+'px';
+    w.dispatchEvent(new Event('resize'));
+    // force sync relayout: call goto which relayouts
+    var S=w.__slogan;
+    S.pause();
+    var hs=[],ov=[],hero=[];
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var h1=d.getElementById('hl');
+      hs.push(Math.round(h1.getBoundingClientRect().height));
+      hero.push(Math.round(h1.closest('.cell').getBoundingClientRect().height));
+      ov.push(d.documentElement.scrollWidth>d.documentElement.clientWidth?('OVF'+d.documentElement.scrollWidth+'/'+d.documentElement.clientWidth):'ok');
+    }
+    var uniq=function(a){return a.filter(function(v,k,s){return s.indexOf(v)===k;});};
+    out.push('W='+W[wi]+'  h1 heights: '+uniq(hs).join(',')+'   (all: '+hs.join(' ')+')');
+    out.push('        cell heights: '+uniq(hero).join(',')+'   overflow: '+uniq(ov).join(','));
+  }
+  document.getElementById('o').textContent=out.join('\n');
+}
+</script>

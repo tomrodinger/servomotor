@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8">
+<body style="font:13px monospace;padding:10px">
+<div id="o" style="white-space:pre-wrap">measuring…</div>
+<div id="fr"></div>
+<script>
+var widths=[360,390,414,768,1024,1280,1920];
+var out=[];var i=0;
+function next(){
+ if(i>=widths.length){document.getElementById('o').textContent=out.join('\n');return;}
+ var w=widths[i++];
+ var f=document.createElement('iframe');
+ f.style.cssText='width:'+w+'px;height:600px;border:0;position:absolute;left:-9999px;';
+ f.src='http://127.0.0.1:8912/premium_minimal_variations/v16.html';
+ f.onload=function(){setTimeout(function(){
+   var d=f.contentDocument, cw=d.documentElement.clientWidth;
+   var over=[];
+   d.querySelectorAll('body *').forEach(function(el){
+     var r=el.getBoundingClientRect();
+     if(r.width>0&&(r.right>cw+0.5||r.left<-0.5)) over.push(el.tagName+'.'+(el.className||'')+'[R'+Math.round(r.right)+']');
+   });
+   // scrollWidth check with overflow visible
+   d.body.style.overflowX='visible';
+   var sw=d.documentElement.scrollWidth;
+   out.push('w='+cw+' scrollWidth(overflow visible)='+sw+' h='+d.documentElement.scrollHeight+' overflowEls='+over.length+' :: '+over.slice(0,12).join(' '));
+   f.remove(); next();
+ },900);};
+ document.getElementById('fr').appendChild(f);
+}
+next();
+</script>

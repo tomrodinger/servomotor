@@ -1,0 +1,40 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.stagebox{position:relative;background:#FAF8F3;color:#191A1C;height:520px;padding:18px 22px;overflow:hidden}
+.fx-stage{position:absolute;inset:18px 22px;display:flex;align-items:center;justify-content:center;
+  font-size:60px;line-height:1.18;letter-spacing:-.02em;text-align:center}
+.fx-stage .fx-light{font-weight:300}
+.fx-stage .fx-bold{font-weight:650}
+pre{font:12px monospace;white-space:pre-wrap}
+</style>
+<div class="stagebox"><div id="s" class="fx-stage"></div></div>
+<pre id="out"></pre>
+<script src="engine.js"></script>
+<script src="effects/mechanical.js"></script>
+<script>
+var S=[["A motor, and everything","that usually surrounds it."],["The whole drive system.","Inside one motor."]];
+var p=SloganFX.mount(document.getElementById('s'), SloganFX.get('mechanical-word-odometer'), S, {start:0});
+p.seek(0,0.98);
+var lay=p.layer, lr=lay.getBoundingClientRect(), o=[];
+lay.querySelectorAll('span').forEach(function(f){
+  var r=f.getBoundingClientRect();
+  o.push(JSON.stringify({t:f.textContent,cls:f.className,l:Math.round(r.left-lr.left),w:Math.round(r.width),top:Math.round(r.top-lr.top),op:f.style.opacity}));
+});
+o.push('LAYERW '+lr.width+' canonBox '+JSON.stringify((function(){var r=p.canon.getBoundingClientRect();return [r.left-lr.left,r.width];})()));
+
+var w2=document.createElement('div');
+w2.style.cssText='position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;line-height:1.24em';
+['The whole drive system.','Inside one motor.'].forEach(function(txt,ci){
+  txt.split(/\s+/).forEach(function(t){
+    if(w2.childNodes.length){var g=document.createElement('span');g.style.whiteSpace='pre';g.textContent=' ';w2.appendChild(g);}
+    var sp=document.createElement('span');sp.className=ci?'fx-bold':'fx-light';sp.style.display='inline-block';sp.style.whiteSpace='nowrap';sp.textContent=t;w2.appendChild(sp);
+  });
+});
+lay.appendChild(w2);
+var r2=w2.getBoundingClientRect();
+w2.querySelectorAll('span').forEach(function(sp){var r=sp.getBoundingClientRect();o.push('MEAS '+JSON.stringify({t:sp.textContent,l:Math.round(r.left-lr.left),w:Math.round(r.width),c:Math.round(r.left-lr.left+r.width/2)}));});
+o.push('stagedrums '+JSON.stringify((p.layer._drums||[]).map(function(d){return [Math.round(d.x0),Math.round(d.y0),Math.round(d.x1),Math.round(d.y1),d.same];})));
+document.getElementById('out').textContent=o.join('\n');
+</script>

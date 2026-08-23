@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>v10 slogan probe (width-parameterised)</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.45 ui-monospace,monospace}
+iframe{border:0;display:block;position:absolute;left:-4000px;top:0}
+#out{white-space:pre;padding:8px}</style>
+<div id="out">working…</div>
+<iframe id="f" src="v10.html?sl=run"></iframe>
+<script>
+function q(k,d){var m=new RegExp('[?&]'+k+'=([^&]*)').exec(location.search);return m?decodeURIComponent(m[1]):d;}
+var W=parseInt(q('w','1440'),10), H=parseInt(q('h','1200'),10);
+var f=document.getElementById('f'), out=document.getElementById('out');
+f.width=W; f.height=H;
+f.onload=function(){
+  setTimeout(function(){
+    var w=f.contentWindow, d=w.document, S=w.__slogan;
+    if(!S){ out.textContent='NO __slogan'; return; }
+    S.pause();
+    var h1=d.querySelector('.hero h1'), para=d.querySelector('.hero p.body');
+    var L=['iframe layout width='+d.documentElement.clientWidth+'  reduced='+w.matchMedia('(prefers-reduced-motion: reduce)').matches+'  items='+S.items.length+'  start='+S.index()];
+    var hs={},tops={},ptops={},sw=0;
+    for(var i=0;i<S.items.length;i++){
+      S.goto(i);
+      var r=h1.getBoundingClientRect(), p=para.getBoundingClientRect();
+      hs[r.height.toFixed(2)]=1; tops[r.top.toFixed(2)]=1; ptops[p.top.toFixed(2)]=1;
+      if(d.documentElement.scrollWidth>sw) sw=d.documentElement.scrollWidth;
+      L.push(('  '+i).slice(-3)+' h1H='+r.height.toFixed(2)+' h1Top='+r.top.toFixed(2)+' paraTop='+p.top.toFixed(2)+' scrollW='+d.documentElement.scrollWidth);
+    }
+    var seekSW=0;
+    for(var j=0;j<S.items.length;j++){ for(var t=0;t<=1.0001;t+=0.125){ S.seek(j,t);
+      if(d.documentElement.scrollWidth>seekSW) seekSW=d.documentElement.scrollWidth; } }
+    L.push('DISTINCT h1 heights: '+Object.keys(hs).join(',')+'   h1 tops: '+Object.keys(tops).join(',')+'   paraTops: '+Object.keys(ptops).join(','));
+    L.push('max scrollWidth  rest='+sw+'  during any seek='+seekSW+'   clientW='+d.documentElement.clientWidth);
+    S.goto(0);
+    out.textContent=L.join('\n');
+  },500);
+};
+</script>

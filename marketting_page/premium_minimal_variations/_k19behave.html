@@ -1,0 +1,111 @@
+<!doctype html><meta charset="utf-8"><title>k19 behaviour</title>
+<style>
+ html,body{margin:0;background:#0b0c0e;color:#cfe;font:12px/1.5 ui-monospace,Menlo,monospace;}
+ pre{padding:10px;white-space:pre-wrap;}
+ .ok{color:#8f8;} .bad{color:#f77;}
+</style>
+<pre id="o">running…</pre>
+<script>
+var L=[];
+function log(s){L.push(s);document.getElementById('o').textContent=L.join('\n');}
+function mk(src,cb){
+  var f=document.createElement('iframe');
+  /* MUST be on-screen: the page pauses itself via IntersectionObserver, and an
+     iframe parked off-canvas reports isIntersecting=false in Chrome. */
+  f.style.cssText='position:fixed;right:0;bottom:0;width:900px;height:700px;border:0;opacity:.01;pointer-events:none;z-index:-1';
+  f.setAttribute('scrolling','no');
+  f.src=src;
+  f.onload=function(){cb(f);};
+  document.body.appendChild(f);
+  return f;
+}
+/* ---- A: reduced motion (Chrome is launched with --force-prefers-reduced-motion) ---- */
+mk('v19.html', function(f){
+  var w=f.contentWindow, S=w.__slogan;
+  log('A. reduced motion, plain page');
+  log('   matchMedia reduce      : '+w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  log('   __slogan exists        : '+!!S);
+  log('   index at load          : '+S.index());
+  var raf0=0, seen=0;
+  var origRaf=w.requestAnimationFrame;
+  // count how many rAF callbacks the page schedules over the next while
+  var t=Date.now();
+  setTimeout(function(){
+    log('   index after 3000ms     : '+S.index()+'  '+(S.index()===0?'[OK static]':'[BAD cycled]'));
+    log('   h1 text present        : '+JSON.stringify(f.contentDocument.getElementById('sloganH1').textContent.trim().slice(0,40)));
+    phaseB();
+  },3000);
+});
+
+function phaseB(){
+  /* ---- B: motion forced on -> must auto-cycle ---- */
+  mk('_k19drive.html?__sl=motion', function(f){
+    var w=f.contentWindow, S=w.__slogan, d=f.contentDocument;
+    log('');
+    log('B. ?__sl=motion (cycling enabled despite forced reduced motion)');
+    var i0=S.index();
+    log('   index at load          : '+i0);
+    setTimeout(function(){
+      var i1=S.index();
+      log('   index after 7000ms     : '+i1+'  '+(i1!==i0?'[OK advanced]':'[BAD stalled]'));
+      /* hover pause */
+      var h1=d.getElementById('sloganH1');
+      h1.dispatchEvent(new w.MouseEvent('mouseenter'));
+      var i2=S.index();
+      setTimeout(function(){
+        var i3=S.index();
+        log('   hover: index '+i2+' -> '+i3+'  '+(i2===i3?'[OK paused]':'[BAD kept cycling]'));
+        h1.dispatchEvent(new w.MouseEvent('mouseleave'));
+        setTimeout(function(){
+          var i4=S.index();
+          log('   after mouseleave       : '+i4+'  '+(i4!==i3?'[OK resumed]':'[BAD still paused]'));
+          /* hidden tab */
+          Object.defineProperty(d,'hidden',{configurable:true,get:function(){return true;}});
+          d.dispatchEvent(new w.Event('visibilitychange'));
+          var i5=S.index();
+          setTimeout(function(){
+            var i6=S.index();
+            log('   hidden: index '+i5+' -> '+i6+'  '+(i5===i6?'[OK paused]':'[BAD kept cycling]'));
+            Object.defineProperty(d,'hidden',{configurable:true,get:function(){return false;}});
+            d.dispatchEvent(new w.Event('visibilitychange'));
+            setTimeout(function(){
+              log('   after visible again    : '+S.index()+'  '+(S.index()!==i6?'[OK resumed]':'[BAD still paused]'));
+              phaseC();
+            },7000);
+          },7000);
+        },7000);
+      },7000);
+    },7000);
+  });
+}
+
+function phaseC(){
+  /* ---- C: seek determinism + idempotence ---- */
+  mk('v19.html', function(f){
+    var w=f.contentWindow, S=w.__slogan, d=f.contentDocument;
+    log('');
+    log('C. seek determinism');
+    S.pause();
+    function snap(){
+      var ws=d.querySelectorAll('#sloganH1 .sl-w'), a=[], i;
+      for(i=0;i<ws.length;i++) a.push(ws[i].style.transform+'|'+ws[i].style.opacity+'|'+ws[i].style.filter);
+      a.push('RULE:'+d.querySelector('.sl-rule i').style.transform+'|'+d.querySelector('.sl-rule').style.opacity);
+      return a.join(';;');
+    }
+    S.seek(4,0.42); var s1=snap();
+    S.seek(4,0.42); var s2=snap();
+    S.seek(9,0.8);  S.seek(4,0.42); var s3=snap();
+    S.goto(0);      S.seek(4,0.42); var s4=snap();
+    log('   repeat same seek       : '+(s1===s2?'[OK identical]':'[BAD differs]'));
+    log('   after other seek       : '+(s1===s3?'[OK identical]':'[BAD differs]'));
+    log('   after goto(0)          : '+(s1===s4?'[OK identical]':'[BAD differs]'));
+    log('   words in frame         : '+d.querySelectorAll('#sloganH1 .sl-w').length);
+    S.seek(4,0); var z0=snap(); S.goto(4); var g4=snap();
+    log('   index() after goto(7)  : '+(S.goto(7),S.index()));
+    log('   index() after seek(3,.5): '+(S.seek(3,0.5),S.index()));
+    log('   aria-live on h1        : '+d.getElementById('sloganH1').getAttribute('aria-live'));
+    log('   h1 never empty at t=.5 : '+(d.getElementById('sloganH1').textContent.trim().length>0));
+    document.title='READY';
+  });
+}
+</script>

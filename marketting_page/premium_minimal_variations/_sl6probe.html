@@ -1,0 +1,42 @@
+<!doctype html><meta charset="utf-8"><title>p</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.45 monospace}
+#f{width:1440px;height:900px;border:0;position:absolute;left:-4000px;top:0}
+#o{padding:10px;white-space:pre}</style>
+<iframe id="f" src="v6.html?slm=1"></iframe><div id="o">loading…</div>
+<script>
+var W=parseInt((/[?&]w=(\d+)/.exec(location.search)||[0,1440])[1],10);
+var f=document.getElementById('f');f.style.width=W+'px';
+f.onload=function(){setTimeout(run,500);};
+function run(){
+  var d=f.contentDocument,w=f.contentWindow,S=w.__slogan;
+  var out=[];
+  if(!S){document.getElementById('o').textContent='NO __slogan';return;}
+  var st=d.querySelector('.sl-stage'), h1=d.querySelector('.hero h1');
+  var hs=[],ds=[],ov=[];
+  for(var i=0;i<15;i++){
+    S.goto(i);
+    hs.push(Math.round(st.getBoundingClientRect().height));
+    ds.push(Math.round(d.documentElement.scrollHeight));
+    ov.push(d.documentElement.scrollWidth>d.documentElement.clientWidth?
+      ('OVF@'+i+' sw='+d.documentElement.scrollWidth+' cw='+d.documentElement.clientWidth):'');
+  }
+  S.pause();
+  function uniq(a){var s={};a.forEach(function(x){s[x]=1});return Object.keys(s);}
+  out.push('width='+W);
+  out.push('stage heights: '+hs.join(','));
+  out.push('UNIQUE stage h: '+uniq(hs).join(' | ')+'  -> '+(uniq(hs).length===1?'LOCKED OK':'*** SHIFT ***'));
+  out.push('doc heights uniq: '+uniq(ds).join(' | '));
+  out.push('overflow: '+(uniq(ov).length===1&&uniq(ov)[0]===''?'none':uniq(ov).join(' ')));
+  var bad=[];
+  for(var i=0;i<15;i++){
+    for(var tt=0;tt<=1.0001;tt+=0.1){
+      S.seek(i,tt);
+      if(d.documentElement.scrollWidth>d.documentElement.clientWidth) bad.push(i+'@'+tt.toFixed(1));
+      if(Math.round(st.getBoundingClientRect().height)!==hs[0]) bad.push('H'+i+'@'+tt.toFixed(1));
+    }
+  }
+  out.push('mid-transition problems: '+(bad.length?bad.join(','):'none'));
+  out.push('fontSize h1='+w.getComputedStyle(h1).fontSize);
+  document.getElementById('o').textContent=out.join('\n');
+}
+</script>

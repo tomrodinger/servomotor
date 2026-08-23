@@ -1,0 +1,55 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>probe</title>
+<style>
+ *{margin:0;padding:0;box-sizing:border-box}
+ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+ .stagebox{position:relative;background:#fff;color:#1d1d1f;height:434px;padding:18px 22px;overflow:hidden;width:1300px}
+ .fx-stage{position:absolute;inset:18px 22px;display:flex;align-items:center;justify-content:center;
+   font-size:57.2px;line-height:1.18;letter-spacing:-.02em;text-align:center}
+ .fx-stage .fx-light{font-weight:300}
+ .fx-stage .fx-bold{font-weight:650}
+ pre{font:12px monospace;white-space:pre-wrap}
+</style></head><body>
+<div class="stagebox"><div class="fx-stage" id="stage"></div></div>
+<pre id="out"></pre>
+<script src="engine.js"></script>
+<script src="effects/mechanical.js"></script>
+<script>
+const SLOGANS=[["A motor, and everything","that usually surrounds it."],["The whole drive system.","Inside one motor."],["Four systems.","One motor."],["Motion control,","fully integrated."],["You wanted motion.","Not a wiring project."],["A motor that","needs nothing else."],["The whole motion system.","One motor."],["Everything that moves it,","inside it."],["Motion control.","All in one."],["Stepper, driver, controller, encoder.","One part number."],["Bolts in like a stepper.","Runs like a full servo."],["Four bolts. One cable.","A complete servo system."],["Servomotor:","stepper, driver, controller and encoder in one."],["No driver board. No encoder to mount.","It's all inside."],["Driver, controller and encoder","are no longer your problem."]];
+const q=new URLSearchParams(location.search);
+const id=q.get('id'), i=parseInt(q.get('i')||'0',10);
+const fx=SloganFX.get(id);
+const stage=document.getElementById('stage');
+const th=fx.theme||{};
+if(th.bg) stage.parentElement.style.background=th.bg;
+if(th.fg) stage.parentElement.style.color=th.fg;
+if(th.font) stage.style.fontFamily=th.font;
+const p=SloganFX.mount(stage,fx,SLOGANS,{start:i});
+const lines=[];
+function rects(t){
+  p.seek(i,t);
+  const layer=stage.querySelector('.fx-layer');
+  const canon=stage.querySelector('.fx-canon');
+  const sr=stage.getBoundingClientRect();
+  const src = t<=0||t>=1 ? canon : layer;
+  // find text bounding box by walking leaf text nodes
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9,cnt=0;
+  const walker=document.createTreeWalker(src,NodeFilter.SHOW_TEXT);
+  let n; const rg=document.createRange();
+  while(n=walker.nextNode()){
+    if(!n.nodeValue.trim())continue;
+    const par=n.parentElement;
+    if(par && (par.offsetParent===null && getComputedStyle(par).position!=='fixed'))continue;
+    const cs=getComputedStyle(par);
+    if(cs.visibility==='hidden'||cs.opacity==='0')continue;
+    rg.selectNodeContents(n);
+    const r=rg.getBoundingClientRect();
+    if(!r.width&&!r.height)continue;
+    x0=Math.min(x0,r.left-sr.left);y0=Math.min(y0,r.top-sr.top);
+    x1=Math.max(x1,r.right-sr.left);y1=Math.max(y1,r.bottom-sr.top);cnt++;
+  }
+  lines.push(`t=${t}\tx:[${x0.toFixed(1)},${x1.toFixed(1)}] w=${(x1-x0).toFixed(1)}\ty:[${y0.toFixed(1)},${y1.toFixed(1)}] h=${(y1-y0).toFixed(1)}\tcy=${((y0+y1)/2).toFixed(1)}\tnodes=${cnt}`);
+}
+[0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1].forEach(rects);
+lines.push('stage w='+stage.getBoundingClientRect().width+' h='+stage.getBoundingClientRect().height);
+document.getElementById('out').textContent=lines.join('\n');
+</script></body></html>

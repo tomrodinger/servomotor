@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8"><title>p2probe</title>
+<style>html,body{margin:0;background:#fff;font:12px monospace}iframe{border:0;display:block;height:2400px}</style>
+<pre id="out">pending</pre>
+<script>
+var W=+((location.search.match(/w=(\d+)/)||[])[1]||1440);
+var f=document.createElement('iframe');
+f.width=W; f.style.width=W+'px';
+f.src='/premium_minimal_variations/v2.html?motion=1';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, L=[];
+    var S=w.__slogan;
+    if(!S){document.getElementById('out').textContent='NO HOOK';return;}
+    S.pause();
+    var stage=d.getElementById('slStage');
+    var lede=d.querySelector('.hero .lede');
+    var h1=d.querySelector('.hero h1');
+    L.push('viewport '+d.documentElement.clientWidth+' stageMinH '+stage.style.minHeight);
+    for(var i=0;i<S.items.length;i++){
+      S.goto(i);
+      var sr=stage.getBoundingClientRect(), lr=lede.getBoundingClientRect(), hr=h1.getBoundingClientRect();
+      var maxr=0, ns=d.querySelectorAll('.hero h1 .sl-layer:not(.is-hidden) .iw');
+      for(var k=0;k<ns.length;k++){var r=ns[k].getBoundingClientRect(); if(r.right>maxr)maxr=r.right;}
+      L.push('i='+i+' stageH='+sr.height.toFixed(1)+' h1H='+hr.height.toFixed(1)+' ledeTop='+lr.top.toFixed(1)
+        +' scrollW='+d.documentElement.scrollWidth+' bodyScrollW='+d.body.scrollWidth+' maxWordRight='+maxr.toFixed(1));
+    }
+    S.goto(0);
+    document.getElementById('out').textContent=L.join('\n');
+  },1200);
+};
+</script>

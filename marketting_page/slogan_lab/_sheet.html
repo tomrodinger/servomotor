@@ -1,0 +1,52 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>sheet</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0c0c0d;color:#eee;font-family:-apple-system,sans-serif}
+.cell{position:relative;border-bottom:2px solid #7AB648}
+.lab{position:absolute;left:4px;top:2px;z-index:9;font:700 13px monospace;color:#7AB648;background:#000;padding:1px 5px}
+.stagebox{position:relative;background:#fff;color:#1d1d1f;height:210px;padding:18px 22px;overflow:hidden}
+.fx-stage{position:absolute;inset:18px 22px;display:flex;align-items:center;justify-content:center;
+  font-size:44px;line-height:1.18;letter-spacing:-.02em;text-align:center}
+.fx-stage .fx-light{font-weight:300}
+.fx-stage .fx-bold{font-weight:650}
+</style></head><body>
+<div id="root"></div>
+<script src="engine.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
+];
+</script>
+<script src="effects/light.js"></script>
+<script>
+const q=new URLSearchParams(location.search);
+const id=q.get('only'); const i=parseInt(q.get('i')||'0',10);
+const ts=(q.get('ts')||'0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1').split(',').map(Number);
+const fx=SloganFX.get(id);
+const root=document.getElementById('root');
+ts.forEach(t=>{
+  const cell=document.createElement('div'); cell.className='cell';
+  const lab=document.createElement('div'); lab.className='lab'; lab.textContent=id+'  i='+i+'  t='+t;
+  const box=document.createElement('div'); box.className='stagebox';
+  const th=fx.theme||{}; if(th.bg)box.style.background=th.bg; if(th.fg)box.style.color=th.fg;
+  const stage=document.createElement('div'); if(th.font)stage.style.fontFamily=th.font; if(th.italic)stage.style.fontStyle='italic';
+  box.appendChild(stage); cell.appendChild(box); cell.appendChild(lab); root.appendChild(cell);
+  const p=SloganFX.mount(stage,fx,SLOGANS,{start:i});
+  p.seek(i,t);
+});
+window.__ready=true;
+</script></body></html>

@@ -3,32 +3,44 @@ NEMA 17 Servomotor Specifications
 Common specifications across all models:
 - Voltage range: 12-24V
 - Maximum Speed: 560 RPM
-- Maximum Current: 1.1A
 - Dimensions (LxW): 42.2 x 42.2 mm
+- Shaft Diameter: 5 mm
+- Shaft Length: 20.6 mm
+- Protection Class: IP20
 
 Model-specific specifications:
 
-M3-60:
+M17-60:
 - Torque: 0.65 Nm
 - Weight: 470g
-- Height: 59.8mm
-- Shaft Length: 20.4mm
+- Height: 59.7mm
+- Maximum Current: 1.1A
+- Rated Power: 26.4W
 
-M3-48:
+M17-48:
 - Torque: 0.55 Nm
 - Weight: 360g
-- Height: 48.6mm
-- Shaft Length: 20.4mm
+- Height: 48.7mm
+- Maximum Current: 1.1A
+- Rated Power: 26.4W
 
-M3-40:
+M17-40:
 - Torque: 0.42 Nm
 - Weight: 285g
-- Height: 41.6mm
-- Shaft Length: 18.5mm
+- Height: 40.1mm
+- Maximum Current: 1.1A
+- Rated Power: 26.4W
+
+M17-34:
+- Torque: 0.28 Nm
+- Weight: 210g
+- Height: 33.5mm
+- Maximum Current: 1.0A
+- Rated Power: 24.0W
 
 Additional Features:
 - All-in-one motor, driver, and motion controller
-- Compatible with Raspberry Pi, Arduino, PC, and Mac
+- Compatible with Raspberry Pi, Arduino, ESP32, PC, and Mac
 - Requires RS485 adapter (sold separately)
 - Includes wire
 

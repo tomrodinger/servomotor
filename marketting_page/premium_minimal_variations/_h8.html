@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>v8 slogan harness</title>
+<style>html,body{margin:0;padding:0;background:#fff}iframe{border:0;display:block}</style>
+<script>
+var q = new URLSearchParams(location.search);
+var w = q.get('w') || '1440';
+var h = q.get('h') || '760';
+var f = document.createElement('iframe');
+f.style.width = w + 'px';
+f.style.height = h + 'px';
+f.setAttribute('scrolling','no');
+f.src = 'v8.html';
+f.onload = function(){
+  var s = f.contentWindow.__slogan;
+  if(!s){ document.title = 'NO HOOK'; return; }
+  s.pause();
+  var mode = q.get('m') || 'goto';
+  var i = parseInt(q.get('i') || '0', 10);
+  if(mode === 'seek') s.seek(i, parseFloat(q.get('t') || '0'));
+  else if(mode === 'goto') s.goto(i);
+  else if(mode === 'none') { s.resume(); }
+  var d = f.contentDocument;
+  var txt = 'idx=' + s.index() +
+    ' stageH=' + d.querySelector('.sl-stage').getBoundingClientRect().height.toFixed(2) +
+    ' h1H=' + d.querySelector('.hero h1').getBoundingClientRect().height.toFixed(2) +
+    ' scrollW=' + d.documentElement.scrollWidth + ' clientW=' + d.documentElement.clientWidth;
+  document.title = txt;
+  if(q.get('dbg')){
+    var p = document.createElement('pre');
+    p.style.cssText = 'font:14px monospace;padding:8px;margin:0;background:#ffe;';
+    p.textContent = txt;
+    document.body.insertBefore(p, f);
+  }
+};
+document.body ? document.body.appendChild(f)
+              : window.addEventListener('DOMContentLoaded', function(){document.body.appendChild(f);});
+</script>

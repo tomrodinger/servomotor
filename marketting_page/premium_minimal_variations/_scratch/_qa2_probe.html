@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8">
+<style>body{font:16px/1.5 Menlo,monospace;margin:0;padding:16px;background:#fff}
+#out{white-space:pre-wrap} iframe{position:fixed;left:-9999px;top:0;border:0}</style>
+<div id="out">measuring…</div>
+<script>
+const widths=[360,390,414,768,900,1024,1180,1440,1920];
+const out=document.getElementById('out');
+let lines=[];
+function step(i){
+  if(i>=widths.length){out.textContent=lines.join('\n');return;}
+  const w=widths[i];
+  const f=document.createElement('iframe');
+  f.style.width=w+'px'; f.style.height='2000px'; f.src='v2.html';
+  document.body.appendChild(f);
+  f.onload=()=>{ setTimeout(()=>{
+    const d=f.contentDocument, de=d.documentElement;
+    let over=[];
+    d.querySelectorAll('*').forEach(el=>{
+      const r=el.getBoundingClientRect();
+      if(r.right>w+1.5||r.left<-1.5){
+        if(el.offsetParent!==null||el===d.body) over.push(el.tagName+(el.className&&typeof el.className==='string'?'.'+el.className.trim().split(/\s+/).join('.'):'')+' ['+Math.round(r.left)+'→'+Math.round(r.right)+']');
+      }
+    });
+    lines.push('w='+w+'  scrollW='+de.scrollWidth+'  docH='+de.scrollHeight+'  overflowers='+over.length);
+    over.slice(0,6).forEach(o=>lines.push('    '+o));
+    f.remove(); step(i+1);
+  },500);};
+}
+step(0);
+</script>

@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+  :root{
+    --green:#7AB648;
+    --green-dark:#639838;
+    --black:#0d0d0d;
+    --white:#ffffff;
+    --off:#f4f4f2;
+    --ink:#111111;
+    --angle:4.5rem;
+    --font: "Avenir Next", Avenir, "Helvetica Neue", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background:var(--white);
+    line-height:1.55;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;display:block;}
+  a{color:inherit;}
+
+  /* ============ BUTTONS ============ */
+  .btn{
+    display:inline-block;
+    font-weight:800;
+    font-size:1.05rem;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    text-decoration:none;
+    padding:1rem 2.2rem;
+    border:3px solid transparent;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+  }
+  .btn:active{transform:translate(0,0) !important; box-shadow:none !important;}
+  .btn-black{
+    background:var(--black);
+    color:var(--green);
+    box-shadow:6px 6px 0 rgba(0,0,0,.28);
+  }
+  .btn-black:hover{transform:translate(-3px,-3px); box-shadow:9px 9px 0 rgba(0,0,0,.32);}
+  .btn-green{
+    background:var(--green);
+    color:var(--black);
+    box-shadow:6px 6px 0 rgba(122,182,72,.30);
+  }
+  .btn-green:hover{transform:translate(-3px,-3px); box-shadow:9px 9px 0 rgba(122,182,72,.45); background:#8cc75a;}
+  .btn-outline-black{
+    background:transparent;
+    color:var(--black);
+    border-color:var(--black);
+  }
+  .btn-outline-black:hover{background:var(--black); color:var(--green);}
+  .btn-outline-white{
+    background:transparent;
+    color:var(--white);
+    border-color:var(--white);
+  }
+  .btn-outline-white:hover{background:var(--white); color:var(--black);}
+
+  .wrap{max-width:72rem;margin:0 auto;padding:0 1.5rem;}
+
+  /* ============ NAV ============ */
+  nav{
+    position:sticky;top:0;z-index:100;
+    background:var(--white);
+    border-bottom:4px solid var(--black);
+  }
+  .nav-inner{
+    max-width:72rem;margin:0 auto;padding:.7rem 1.5rem;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  }
+  .nav-brand{display:flex;align-items:center;gap:.7rem;text-decoration:none;}
+  .nav-brand img{height:2.6rem;width:auto;}
+  .nav-brand span{
+    font-weight:900;font-size:1.35rem;letter-spacing:-.02em;color:var(--black);
+  }
+  .nav-brand em{color:var(--green);font-style:normal;}
+  .nav-links{display:flex;align-items:center;gap:1.6rem;}
+  .nav-links a.plain{
+    text-decoration:none;font-weight:700;font-size:.95rem;color:var(--black);
+    border-bottom:3px solid transparent;padding-bottom:2px;
+    transition:border-color .15s ease;
+  }
+  .nav-links a.plain:hover{border-color:var(--green);}
+  .nav-shop{
+    background:var(--green);color:var(--black);
+    font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+    text-decoration:none;padding:.6rem 1.4rem;font-size:.9rem;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .nav-shop:hover{background:var(--black);color:var(--green);}
+  @media(max-width:44rem){ .nav-links a.plain{display:none;} }
+
+  /* ============ SECTION HEADINGS ============ */
+  .kicker{
+    display:inline-block;
+    font-weight:800;font-size:.85rem;letter-spacing:.22em;text-transform:uppercase;
+    padding:.35rem .9rem;margin-bottom:1.2rem;
+  }
+  h1,h2{font-weight:900;letter-spacing:-.03em;line-height:1.02;}
+  h2{font-size:clamp(2.2rem,5.5vw,3.6rem);margin-bottom:1rem;}
+  .lead{font-size:clamp(1.05rem,1.8vw,1.25rem);max-width:44rem;font-weight:500;}
+
+  /* ============ HERO (GREEN) ============ */
+  .hero{
+    background:var(--green);
+    color:var(--black);
+    padding:4.5rem 0 8rem;
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - var(--angle)), 0 100%);
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.15fr .85fr;gap:3rem;align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(2.6rem,6.5vw,4.6rem);
+    margin:0 0 1.3rem;
+  }
+  .hero h1 .flip{
+    background:var(--black);color:var(--green);
+    padding:.05em .18em;display:inline-block;
+    transform:rotate(-1.5deg);
+  }
+  .hero .lead{margin-bottom:2.2rem;}
+  .hero-ctas{display:flex;flex-wrap:wrap;gap:1rem;}
+  .hero-kicker{background:var(--black);color:var(--green);}
+  .hero-img{
+    background:var(--white);
+    padding:1.2rem;
+    border:5px solid var(--black);
+    box-shadow:14px 14px 0 var(--black);
+    transform:rotate(1.5deg);
+  }
+  .hero-img figcaption{
+    font-family:var(--mono);font-size:.8rem;font-weight:700;
+    padding-top:.8rem;text-align:center;color:var(--black);
+  }
+  @media(max-width:56rem){
+    .hero-grid{grid-template-columns:1fr;}
+    .hero-img{transform:none;box-shadow:9px 9px 0 var(--black);}
+  }
+
+  /* ============ STAT BAND (BLACK) ============ */
+  .stats{
+    background:var(--black);color:var(--white);
+    margin-top:calc(-1 * var(--angle));
+    padding:calc(var(--angle) + 3.5rem) 0 8rem;
+    clip-path:polygon(0 var(--angle), 100% 0, 100% 100%, 0 calc(100% - var(--angle)));
+  }
+  .stat-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;
+  }
+  .stat{
+    border:3px solid var(--green);
+    padding:1.6rem 1.4rem 1.4rem;
+    transition:background .15s ease;
+  }
+  .stat:hover{background:rgba(122,182,72,.12);}
+  .stat .num{
+    display:block;
+    font-weight:900;letter-spacing:-.04em;line-height:.95;
+    font-size:clamp(2.4rem,4.5vw,3.6rem);
+    color:var(--green);
+  }
+  .stat .num small{font-size:.45em;font-weight:900;letter-spacing:0;}
+  .stat .lbl{
+    display:block;margin-top:.7rem;
+    font-weight:700;font-size:.85rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--white);
+  }
+  @media(max-width:56rem){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
+
+  /* ============ FEATURES (WHITE) ============ */
+  .features{
+    background:var(--white);
+    margin-top:calc(-1 * var(--angle));
+    padding:calc(var(--angle) + 3.5rem) 0 6rem;
+  }
+  .features .kicker{background:var(--green);color:var(--black);}
+  .feat-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.8rem;
+  }
+  .feat{
+    border:3px solid var(--black);
+    padding:1.8rem 1.6rem;
+    position:relative;
+    background:var(--white);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .feat:hover{transform:translate(-4px,-4px); box-shadow:8px 8px 0 var(--green);}
+  .feat .n{
+    position:absolute;top:-1.1rem;left:1.2rem;
+    background:var(--black);color:var(--green);
+    font-weight:900;font-size:1rem;
+    padding:.15rem .7rem;letter-spacing:.05em;
+  }
+  .feat h3{font-weight:900;font-size:1.25rem;letter-spacing:-.02em;margin:.4rem 0 .6rem;line-height:1.15;}
+  .feat p{font-size:.98rem;}
+  @media(max-width:56rem){ .feat-grid{grid-template-columns:1fr 1fr;} }
+  @media(max-width:38rem){ .feat-grid{grid-template-columns:1fr;} }
+
+  /* ============ MODELS (BLACK) ============ */
+  .models{
+    background:var(--black);color:var(--white);
+    padding:6rem 0 8rem;
+    clip-path:polygon(0 var(--angle), 100% 0, 100% calc(100% - var(--angle)), 0 100%);
+    margin-top:calc(-1 * var(--angle) + 2rem);
+    padding-top:calc(var(--angle) + 4rem);
+  }
+  .models .kicker{background:var(--green);color:var(--black);}
+  .model-cards{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin:2.8rem 0 3.5rem;
+  }
+  .mcard{
+    background:var(--white);color:var(--black);
+    border:4px solid var(--green);
+    padding:1.4rem;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .mcard:hover{transform:translate(-4px,-4px); box-shadow:8px 8px 0 var(--green);}
+  .mcard img{background:var(--white);width:100%;height:auto;}
+  .mcard h3{font-weight:900;font-size:1.7rem;letter-spacing:-.02em;margin:.8rem 0 .1rem;}
+  .mcard .tq{
+    font-weight:900;font-size:2.2rem;letter-spacing:-.03em;color:var(--green-dark);line-height:1;
+  }
+  .mcard .tq small{font-size:.45em;font-weight:900;}
+  .mcard .sub{font-weight:700;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;margin-top:.5rem;color:#444;}
+  @media(max-width:56rem){ .model-cards{grid-template-columns:1fr;} }
+
+  .spec-scroll{overflow-x:auto;border:3px solid var(--green);}
+  table.specs{
+    border-collapse:collapse;width:100%;min-width:38rem;
+    font-size:.98rem;
+  }
+  .specs th,.specs td{padding:.85rem 1.1rem;text-align:left;border-bottom:1px solid #333;}
+  .specs thead th{
+    background:var(--green);color:var(--black);
+    font-weight:900;font-size:1.05rem;letter-spacing:.02em;
+  }
+  .specs tbody th{font-weight:700;color:#cfcfcf;white-space:nowrap;}
+  .specs td{font-weight:600;color:var(--white);font-family:var(--mono);font-size:.92rem;}
+  .specs tbody tr:hover{background:rgba(122,182,72,.10);}
+  .specs tbody tr:last-child th,.specs tbody tr:last-child td{border-bottom:none;}
+
+  /* ============ CODE / GET STARTED (WHITE) ============ */
+  .start{
+    background:var(--white);
+    margin-top:calc(-1 * var(--angle));
+    padding:calc(var(--angle) + 3.5rem) 0 6rem;
+  }
+  .start .kicker{background:var(--black);color:var(--green);}
+  .start-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:3rem;align-items:center;margin-top:1rem;}
+  .start ul{list-style:none;margin:1.6rem 0 2.2rem;}
+  .start li{
+    padding:.55rem 0 .55rem 2.2rem;position:relative;font-weight:600;font-size:1.05rem;
+  }
+  .start li::before{
+    content:"";position:absolute;left:0;top:.85rem;
+    width:1.1rem;height:1.1rem;background:var(--green);
+    clip-path:polygon(0 0, 100% 50%, 0 100%);
+  }
+  .install{
+    font-family:var(--mono);font-weight:700;font-size:.95rem;
+    background:var(--off);border:2px solid var(--black);
+    padding:.6rem .9rem;display:inline-block;margin-bottom:1.6rem;
+  }
+  .codebox{
+    background:var(--black);
+    border:4px solid var(--green);
+    box-shadow:12px 12px 0 var(--green);
+  }
+  .codebar{
+    display:flex;align-items:center;gap:.5rem;
+    background:var(--green);padding:.55rem .9rem;
+  }
+  .codebar i{width:.8rem;height:.8rem;border-radius:50%;background:var(--black);opacity:.85;}
+  .codebar span{margin-left:auto;font-family:var(--mono);font-weight:700;font-size:.8rem;color:var(--black);}
+  .codebox pre{
+    padding:1.4rem 1.5rem;overflow-x:auto;
+    font-family:var(--mono);font-size:.92rem;line-height:1.7;color:#eaeaea;
+  }
+  .codebox .kw{color:var(--green);font-weight:700;}
+  .codebox .st{color:#c8e6a8;}
+  .codebox .cm{color:#7f7f7f;}
+  .codebox .fn{color:#b5dd8e;}
+  @media(max-width:56rem){
+    .start-grid{grid-template-columns:1fr;}
+    .start-grid > *{min-width:0;}
+    .codebox{box-shadow:8px 8px 0 var(--green);}
+  }
+
+  /* ============ APPLICATIONS (GREEN) ============ */
+  .apps{
+    background:var(--green);color:var(--black);
+    clip-path:polygon(0 var(--angle), 100% 0, 100% calc(100% - var(--angle)), 0 100%);
+    padding:calc(var(--angle) + 3.5rem) 0 calc(var(--angle) + 4.5rem);
+  }
+  .apps .kicker{background:var(--black);color:var(--green);}
+  .app-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:2.6rem;
+  }
+  .app{
+    background:var(--white);
+    border:4px solid var(--black);
+    text-decoration:none;color:var(--black);
+    transition:transform .15s ease, box-shadow .15s ease;
+    display:block;
+  }
+  .app:hover{transform:translate(-4px,-4px);box-shadow:8px 8px 0 var(--black);}
+  .app img{width:100%;height:14rem;object-fit:cover;}
+  .app figcaption{
+    padding:.8rem 1rem;font-weight:900;font-size:1.05rem;letter-spacing:-.01em;
+    border-top:4px solid var(--black);
+    text-transform:uppercase;letter-spacing:.06em;font-size:.9rem;
+  }
+  .app-tags{display:flex;flex-wrap:wrap;gap:.7rem;margin-top:2rem;}
+  .app-tags span{
+    background:var(--black);color:var(--green);
+    font-weight:800;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;
+    padding:.45rem 1rem;
+  }
+  @media(max-width:56rem){ .app-grid{grid-template-columns:1fr;} .app img{height:16rem;} }
+
+  /* ============ OPEN SOURCE (WHITE) ============ */
+  .open{
+    background:var(--white);
+    margin-top:calc(-1 * var(--angle));
+    padding:calc(var(--angle) + 3.5rem) 0 6rem;
+  }
+  .open .kicker{background:var(--green);color:var(--black);}
+  .open-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:3rem;align-items:center;}
+  .open-logos{display:flex;align-items:center;gap:1.6rem;margin:1.8rem 0;}
+  .open-logos img{height:4.5rem;width:auto;}
+  .open-photo{
+    border:5px solid var(--black);
+    box-shadow:-12px 12px 0 var(--green);
+    transform:rotate(-1.2deg);
+    background:var(--white);
+  }
+  .open a.gh{
+    font-weight:800;color:var(--black);
+    border-bottom:3px solid var(--green);
+    text-decoration:none;transition:background .15s ease;
+  }
+  .open a.gh:hover{background:var(--green);}
+  @media(max-width:56rem){
+    .open-grid{grid-template-columns:1fr;}
+    .open-photo{transform:none;box-shadow:-8px 8px 0 var(--green);}
+  }
+
+  /* ============ FOOTER (BLACK) ============ */
+  footer{
+    background:var(--black);color:var(--white);
+    clip-path:polygon(0 var(--angle), 100% 0, 100% 100%, 0 100%);
+    padding:calc(var(--angle) + 4rem) 0 3rem;
+  }
+  .foot-cta{text-align:center;padding-bottom:3.5rem;border-bottom:1px solid #2c2c2c;margin-bottom:2.5rem;}
+  .foot-cta h2{
+    font-size:clamp(2.4rem,6vw,4.2rem);
+    margin-bottom:1.6rem;
+  }
+  .foot-cta h2 em{font-style:normal;color:var(--green);}
+  .foot-ctas{display:flex;justify-content:center;flex-wrap:wrap;gap:1rem;}
+  .foot-meta{
+    display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;
+    font-size:.9rem;color:#9a9a9a;
+  }
+  .foot-meta a{color:var(--green);text-decoration:none;font-weight:700;}
+  .foot-meta a:hover{text-decoration:underline;}
+  .foot-brand{display:flex;align-items:center;gap:.6rem;font-weight:900;font-size:1.1rem;color:var(--white);}
+  .foot-brand img{height:2rem;background:var(--white);padding:.15rem;border-radius:4px;}
+
+  /* narrow-screen angle taming */
+  @media(max-width:44rem){ :root{--angle:2.2rem;} }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="https://gearotons.com">
+      <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+      <span>GEAR<em>OTONS</em></span>
+    </a>
+    <div class="nav-links">
+      <a class="plain" href="#features">Features</a>
+      <a class="plain" href="#models">Models</a>
+      <a class="plain" href="#start">Get Started</a>
+      <a class="plain" href="#apps">Applications</a>
+      <a class="nav-shop" href="https://gearotons.com/store">Shop</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO (GREEN) ============ -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker hero-kicker">M17 Series Servomotors</span>
+      <h1>Motor. Driver. Controller. Encoder.<br><span class="flip">One package.</span></h1>
+      <p class="lead">Affordable and simple all-in-one motion control. Daisy-chain any number of motors on one RS-485 bus and drive them from a Mac, PC, Raspberry Pi, Arduino, or ESP32.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-black" href="https://gearotons.com/store">Shop Now</a>
+        <a class="btn btn-outline-black" href="https://gearotons.com">Documentation</a>
+      </div>
+    </div>
+    <figure class="hero-img">
+      <img src="../transparent/M17_series_overview_transparent_small.png" alt="The three M17 Series servomotors: M17-60, M17-48 and M17-40 side by side">
+      <figcaption>M17-60 · M17-48 · M17-40</figcaption>
+    </figure>
+  </div>
+</header>
+
+<!-- ============ STATS (BLACK) ============ -->
+<section class="stats">
+  <div class="wrap">
+    <div class="stat-grid">
+      <div class="stat">
+        <span class="num">32<small> kHz</small></span>
+        <span class="lbl">Closed-loop PID rate</span>
+      </div>
+      <div class="stat">
+        <span class="num">560<small> RPM</small></span>
+        <span class="lbl">Maximum speed</span>
+      </div>
+      <div class="stat">
+        <span class="num">12–24<small> V</small></span>
+        <span class="lbl">Wide voltage range</span>
+      </div>
+      <div class="stat">
+        <span class="num">0.65<small> N·m</small></span>
+        <span class="lbl">Rated torque (M17-60)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES (WHITE) ============ -->
+<section class="features" id="features">
+  <div class="wrap">
+    <span class="kicker">Why M17</span>
+    <h2>Everything a stepper isn't.</h2>
+    <p class="lead">Same NEMA 17 footprint. Same torque-to-weight ratio. None of the timing-critical wiring headaches.</p>
+    <div class="feat-grid">
+      <div class="feat">
+        <span class="n">01</span>
+        <h3>All-in-one package</h3>
+        <p>Motor, driver, motion controller, and encoder integrated in a body nearly the same size as a NEMA 17 stepper with the same specs — no protrusions.</p>
+      </div>
+      <div class="feat">
+        <span class="n">02</span>
+        <h3>One bus, endless motors</h3>
+        <p>Control any number of motors over a single RS-485 connection. One cable in, daisy-chain the rest.</p>
+      </div>
+      <div class="feat">
+        <span class="n">03</span>
+        <h3>High-level commands</h3>
+        <p>Say "Enable MOSFETs" or "Trapezoid move" — no timing-critical STEP/DIR signals to generate, ever.</p>
+      </div>
+      <div class="feat">
+        <span class="n">04</span>
+        <h3>True closed loop</h3>
+        <p>Built-in encoder with a PID loop running at 32 kHz for high-precision positioning — and much better power efficiency than a conventional stepper.</p>
+      </div>
+      <div class="feat">
+        <span class="n">05</span>
+        <h3>Protected by design</h3>
+        <p>Integrated over-current, over-voltage, and over-temperature protection with comprehensive error handling and LED status indicators.</p>
+      </div>
+      <div class="feat">
+        <span class="n">06</span>
+        <h3>AI-friendly docs</h3>
+        <p>Excellent documentation and tutorials, written so your favorite AI can do the heavy lifting for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODELS + SPECS (BLACK) ============ -->
+<section class="models" id="models">
+  <div class="wrap">
+    <span class="kicker">Three sizes</span>
+    <h2>Pick your torque.<br>Keep your footprint.</h2>
+    <p class="lead">All three models share the 42.2 × 42.2 mm NEMA 17 mounting pattern and identical control characteristics. Only the height — and the torque — changes.</p>
+
+    <div class="model-cards">
+      <div class="mcard">
+        <img src="../preview/public/marketing/images/M17-60_dimensions.png" alt="M17-60 CAD dimension drawing">
+        <h3>M17-60</h3>
+        <span class="tq">0.65<small> N·m</small></span>
+        <p class="sub">59.8 mm tall · 38 W · 470 g</p>
+      </div>
+      <div class="mcard">
+        <img src="../preview/public/marketing/images/M17-48_dimensions.png" alt="M17-48 CAD dimension drawing">
+        <h3>M17-48</h3>
+        <span class="tq">0.55<small> N·m</small></span>
+        <p class="sub">48.6 mm tall · 32 W · 360 g</p>
+      </div>
+      <div class="mcard">
+        <img src="../preview/public/marketing/images/M17-40_dimensions.png" alt="M17-40 CAD dimension drawing">
+        <h3>M17-40</h3>
+        <span class="tq">0.42<small> N·m</small></span>
+        <p class="sub">41.6 mm tall · 25 W · 285 g</p>
+      </div>
+    </div>
+
+    <div class="spec-scroll">
+      <table class="specs">
+        <thead>
+          <tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Operating Voltage</th><td>12–24 V</td><td>12–24 V</td><td>12–24 V</td></tr>
+          <tr><th>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr>
+          <tr><th>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+          <tr><th>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr>
+          <tr><th>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr>
+          <tr><th>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr>
+          <tr><th>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr>
+          <tr><th>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GET STARTED (WHITE) ============ -->
+<section class="start" id="start">
+  <div class="wrap">
+    <span class="kicker">Get started</span>
+    <h2>Spinning in six lines.</h2>
+    <div class="start-grid">
+      <div>
+        <ul>
+          <li>Works from Mac, PC, Raspberry Pi, Arduino, or ESP32</li>
+          <li>Only a low-cost RS485 adapter needed</li>
+          <li>Self-calibration and multiple operation modes built in</li>
+          <li>Trapezoid movement profiles out of the box</li>
+        </ul>
+        <span class="install">pip3 install servomotor</span>
+        <p style="font-weight:600;margin-bottom:2rem;">Prefer C++? The Arduino library is in the Library Manager — just search "Servomotor".</p>
+        <a class="btn btn-black" href="https://gearotons.com">Read the Docs</a>
+      </div>
+      <div class="codebox">
+        <div class="codebar"><i></i><i></i><i></i><span>spin.py</span></div>
+        <pre><code><span class="kw">import</span> servomotor
+<span class="kw">from</span> servomotor <span class="kw">import</span> M3
+
+servomotor.<span class="fn">open_serial_port</span>()
+motor = <span class="fn">M3</span>(<span class="st">"X"</span>, time_unit=<span class="st">"seconds"</span>,
+                position_unit=<span class="st">"degrees"</span>)
+motor.<span class="fn">system_reset</span>()
+motor.<span class="fn">enable_mosfets</span>()
+motor.<span class="fn">trapezoid_move</span>(360, 2)  <span class="cm"># one revolution in 2 s</span></code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APPLICATIONS (GREEN) ============ -->
+<section class="apps" id="apps">
+  <div class="wrap">
+    <span class="kicker">In the field</span>
+    <h2>Built for the lab, the line, and the classroom.</h2>
+    <div class="app-grid">
+      <figure class="app">
+        <img src="../robotics.jpg" alt="M17 servomotor in a CNC robotics metal assembly with a large gear">
+        <figcaption>Robotics &amp; CNC</figcaption>
+      </figure>
+      <figure class="app">
+        <img src="../automation.jpg" alt="M17 servomotor mounted in an automation machine">
+        <figcaption>Automation</figcaption>
+      </figure>
+      <figure class="app">
+        <img src="../test_rack.jpg" alt="M17 servomotors installed in an automated testing rack">
+        <figcaption>Automated Testing</figcaption>
+      </figure>
+    </div>
+    <div class="app-tags">
+      <span>Robotics</span><span>CNC machines</span><span>Automated testing</span>
+      <span>Scientific instruments</span><span>Automation</span><span>3D printers</span><span>Education</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OPEN SOURCE (WHITE) ============ -->
+<section class="open">
+  <div class="wrap open-grid">
+    <div>
+      <span class="kicker">Open source</span>
+      <h2>Nothing hidden.<br>Everything on GitHub.</h2>
+      <p class="lead">Gearotons is an innovative startup making precision motion control accessible to everyone — makers, educators, and engineers. Founded in Shenzhen in 2022 by a Canadian entrepreneur.</p>
+      <div class="open-logos">
+        <img src="../Open_Source_Initiative.svg.png" alt="Open Source Initiative logo">
+        <img src="../Open-source-hardware-logo.svg.png" alt="Open Source Hardware logo">
+      </div>
+      <p style="font-weight:600;">Firmware, libraries, and schematics are open source hardware and software — all on <a class="gh" href="https://github.com/tomrodinger/servomotor">github.com/tomrodinger/servomotor</a>.</p>
+    </div>
+    <figure class="open-photo">
+      <img src="../transparent/kit_with_three_motors_transparent_small.png" alt="Full M17 kit flat-lay: three motors, RS485 adapter PCB, cables and knobs">
+    </figure>
+  </div>
+</section>
+
+<!-- ============ FOOTER (BLACK) ============ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-cta">
+      <h2>Ready to make<br>things <em>move?</em></h2>
+      <div class="foot-ctas">
+        <a class="btn btn-green" href="https://gearotons.com/store">Shop Now</a>
+        <a class="btn btn-outline-white" href="https://gearotons.com">Documentation</a>
+      </div>
+    </div>
+    <div class="foot-meta">
+      <div class="foot-brand">
+        <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+        GEAROTONS
+      </div>
+      <div>
+        M17 Series Servomotors · <a href="https://gearotons.com">gearotons.com</a> · <a href="https://github.com/tomrodinger/servomotor">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

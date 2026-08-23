@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8">
+<style>body{background:#fff;color:#000;font:13px/1.5 monospace;padding:10px}
+iframe{width:360px;height:400px;border:1px solid #ccc}</style>
+<div id="out" style="white-space:pre-wrap">measuring…</div>
+<iframe id="f1" src="v17.html"></iframe>
+<script>
+var widths=[360,390,768,1024];
+var res=[];var i=0;
+function scrollableAncestor(el,d){
+  var p=el.parentElement;
+  while(p&&p!==d.documentElement){
+    var cs=getComputedStyle(p);
+    if(/auto|scroll|hidden/.test(cs.overflowX)&&p.scrollWidth>p.clientWidth+1) return true;
+    if(/auto|scroll/.test(cs.overflowX)) return true;
+    p=p.parentElement;
+  }
+  return false;
+}
+function step(){
+  if(i>=widths.length){document.getElementById('out').textContent=res.join('\n');return;}
+  var w=widths[i];var f=document.getElementById('f1');
+  f.style.width=w+'px';
+  setTimeout(function(){
+    var d=f.contentDocument;
+    var sw=d.documentElement.scrollWidth;var CW=d.documentElement.clientWidth;
+    var over=[];
+    d.querySelectorAll('body *').forEach(function(el){
+      var r=el.getBoundingClientRect();
+      if(r.right>CW+1 && !scrollableAncestor(el,d)){
+        over.push(el.tagName+'.'+((el.className||'')+'').slice(0,28)+' r='+Math.round(r.right)+' w='+Math.round(r.width));
+      }
+    });
+    res.push('=== '+w+' cw='+CW+' scrollWidth='+sw+' ===\n'+(over.length?over.slice(0,12).join('\n'):'no offenders'));
+    i++;step();
+  },400);
+}
+window.addEventListener('load',function(){setTimeout(step,600);});
+</script>

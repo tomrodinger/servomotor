@@ -1,0 +1,16 @@
+<!doctype html><meta charset=utf-8><body style="font:15px monospace;padding:10px;margin:0">
+<div id=o style="white-space:pre-wrap">loading</div>
+<iframe id=f src="v20.html" style="width:360px;height:120px;border:1px solid red"></iframe>
+<script>
+document.getElementById('f').onload=function(){
+  var d=this.contentDocument,out=[];
+  out.push('client='+d.documentElement.clientWidth+' scroll='+d.documentElement.scrollWidth);
+  var all=d.querySelectorAll('*'),bad=[];
+  for(var i=0;i<all.length;i++){var el=all[i];
+    if(el.closest('.tablewrap')||el.closest('pre')) continue;
+    var r=el.getBoundingClientRect();
+    if(r.right>361) bad.push(el.tagName+'.'+(el.className||'').split(' ')[0]+' sec='+((el.closest('section')||{}).id||'?')+' w='+Math.round(r.width)+' :: '+(el.textContent||'').replace(/\s+/g,' ').slice(0,36));}
+  out.push('BAD('+bad.length+')');
+  document.getElementById('o').textContent=out.concat(bad.slice(0,8)).join('\n');
+};
+</script>

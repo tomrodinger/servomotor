@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>m</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.5 monospace}
+iframe{border:0;display:block;position:absolute;left:0;top:0;opacity:0;pointer-events:none}
+#o{position:relative;z-index:5;background:#fff;white-space:pre;padding:6px}</style>
+<div id="o">loading…</div>
+<script>
+var W=parseInt((location.search.match(/w=(\d+)/)||[0,1440])[1],10);
+var f=document.createElement('iframe');
+f.width=W; f.height=1400; f.src='/premium_minimal_variations/v10.html';
+document.body.appendChild(f);
+f.onload=function(){
+  var w=f.contentWindow, d=f.contentDocument;
+  var S=w.__slogan, out=[];
+  if(!S){document.getElementById('o').textContent='NO __slogan';return;}
+  var h1=d.querySelector('.hero h1');
+  var body=d.querySelector('.hero p.body');
+  var stage=d.querySelector('.sl-stage');
+  var de=d.documentElement;
+  out.push('viewport '+W+'  scrollW '+de.scrollWidth+'  clientW '+de.clientWidth+
+           '  OVERFLOW='+(de.scrollWidth>de.clientWidth));
+  out.push('stage --sl-h = '+stage.style.getPropertyValue('--sl-h'));
+  for(var i=0;i<15;i++){
+    S.goto(i);
+    var r=h1.getBoundingClientRect(), b=body.getBoundingClientRect();
+    var maxR=0,minL=1e9;
+    var lines=d.querySelectorAll('.sl-layer.sl-cur .sl-line');
+    for(var k=0;k<lines.length;k++){var rr=lines[k].getBoundingClientRect();}
+    out.push(('i'+i).padEnd(4)+' h1.top='+r.top.toFixed(1).padStart(7)+
+             ' h1.h='+r.height.toFixed(1).padStart(7)+
+             ' bodyTop='+b.top.toFixed(1).padStart(8)+
+             ' docScrollW='+de.scrollWidth);
+  }
+  S.goto(0);
+  document.getElementById('o').textContent=out.join('\n');
+};
+</script>

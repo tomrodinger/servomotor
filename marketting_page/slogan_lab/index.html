@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — Slogan Transition Lab</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0c0c0d; --panel:#151517; --line:#26262a; --ink:#ececf0; --mut:#83838c;
+    --green:#7AB648;
+  }
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column;
+  }
+
+  header{
+    flex:none; background:var(--panel); border-bottom:2px solid var(--green);
+    padding:9px 14px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .brand{font-weight:700;font-size:13.5px;letter-spacing:-.01em;white-space:nowrap}
+  .brand span{color:var(--green)}
+  .brand em{font-style:normal;color:var(--mut);font-weight:500}
+  .grow{flex:1}
+  .ctl{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--mut)}
+  button,select{
+    background:#1e1e21;color:#c9c9d0;border:1px solid var(--line);border-radius:6px;
+    padding:6px 11px;font-size:11.5px;font-family:inherit;cursor:pointer;line-height:1;
+  }
+  button:hover,select:hover{background:#2a2a2e;color:#fff}
+  button.on{background:var(--green);border-color:var(--green);color:#0b0b0c;font-weight:700}
+  input[type=range]{width:150px;accent-color:var(--green)}
+  .count{font-variant-numeric:tabular-nums;color:var(--green);font-weight:700}
+
+  main{flex:1;overflow:auto;padding:14px}
+  .grid{
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fill,minmax(430px,1fr));
+  }
+  .tile{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    overflow:hidden; display:flex; flex-direction:column;
+    transition:border-color .15s, transform .15s;
+  }
+  .tile:hover{border-color:#3b3b41}
+  .tile.focus{border-color:var(--green)}
+  .thead{
+    display:flex;align-items:baseline;gap:9px;padding:9px 13px;border-bottom:1px solid var(--line);
+    font-size:12px;
+  }
+  .thead b{font-size:12.5px;font-weight:650}
+  .thead .fam{
+    color:var(--green);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid #2f4a1f;background:#16210f;border-radius:99px;padding:2px 7px;
+  }
+  .thead .blurb{color:var(--mut);font-size:11px;margin-left:auto;text-align:right;
+    max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .thead .idx{color:#55555c;font-variant-numeric:tabular-nums}
+
+  .stagebox{
+    position:relative; background:#fff; color:#1d1d1f;
+    min-height:190px; height:190px; padding:18px 22px; overflow:hidden;
+  }
+  .fx-stage{
+    position:absolute; inset:18px 22px; display:flex; align-items:center; justify-content:center;
+    font-size:26px; line-height:1.18; letter-spacing:-.02em; text-align:center;
+  }
+  .fx-stage .fx-light{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+  .tfoot{
+    display:flex;align-items:center;gap:8px;padding:7px 13px;border-top:1px solid var(--line);
+    font-size:11px;color:var(--mut);
+  }
+  .tfoot code{color:#9fb;font-size:10.5px}
+  .tfoot .sp{flex:1}
+  .tfoot button{padding:4px 9px;font-size:10.5px}
+
+  /* focus mode: one big tile */
+  body.focused .grid{grid-template-columns:1fr}
+  body.focused .tile{display:none}
+  body.focused .tile.focus{display:flex}
+  body.focused .tile.focus .stagebox{height:min(62vh,520px);min-height:320px}
+  body.focused .tile.focus .fx-stage{font-size:clamp(30px,4.4vw,60px)}
+
+  .empty{color:var(--mut);font-size:13px;padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> M17 &nbsp;<em>slogan transition lab</em></div>
+  <div class="ctl"><span class="count" id="n">0</span> effects</div>
+  <div class="ctl">
+    <select id="fam"><option value="">all families</option></select>
+  </div>
+  <div class="grow"></div>
+  <div class="ctl">
+    <button id="playAll" class="on">Pause all</button>
+    <button id="stepAll">Step</button>
+  </div>
+  <div class="ctl">
+    speed
+    <input type="range" id="speed" min="25" max="200" value="100">
+    <span id="speedv">1.00&times;</span>
+  </div>
+  <div class="ctl">
+    scrub
+    <input type="range" id="scrub" min="0" max="1000" value="1000">
+    <button id="live" class="on">Live</button>
+  </div>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">Loading effects…</div>
+</main>
+
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything",               "that usually surrounds it."],
+  ["The whole drive system.",               "Inside one motor."],
+  ["Four systems.",                         "One motor."],
+  ["Motion control,",                       "fully integrated."],
+  ["You wanted motion.",                    "Not a wiring project."],
+  ["A motor that",                          "needs nothing else."],
+  ["The whole motion system.",              "One motor."],
+  ["Everything that moves it,",             "inside it."],
+  ["Motion control.",                       "All in one."],
+  ["Stepper, driver, controller, encoder.", "One part number."],
+  ["Bolts in like a stepper.",              "Runs like a full servo."],
+  ["Four bolts. One cable.",                "A complete servo system."],
+  ["Servomotor:",                           "stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.", "It's all inside."],
+  ["Driver, controller and encoder",        "are no longer your problem."],
+];
+
+// load every effect file listed in the manifest, in order, then build the grid
+(async function () {
+  const files = window.SLOGAN_FX_FILES || [];
+  for (const f of files) {
+    await new Promise(res => {
+      const s = document.createElement('script');
+      s.src = f + '?v=' + Date.now();
+      s.onload = res;
+      s.onerror = () => { console.error('failed to load', f); res(); };
+      document.head.appendChild(s);
+    });
+  }
+  build();
+  applyUrlState();
+})();
+
+const players = [];
+let live = true;
+
+/* play only the tiles in (or near) the viewport */
+const vis = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    const rec = players.find(r => r.tile === e.target);
+    if (!rec) return;
+    if (e.isIntersecting && live) rec.p.play();
+    else rec.p.pause();
+  });
+}, { rootMargin: '200px 0px' });
+
+/* never animate a hidden tab */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) players.forEach(({ p }) => p.pause());
+  else if (live) players.forEach(({ p, tile }) => {
+    const r = tile.getBoundingClientRect();
+    if (r.bottom > -200 && r.top < innerHeight + 200) p.play();
+  });
+});
+
+function build() {
+  const all = SloganFX.all();
+  document.getElementById('empty').style.display = all.length ? 'none' : 'block';
+  document.getElementById('n').textContent = all.length;
+
+  const fams = [...new Set(all.map(e => e.family || 'Other'))].sort();
+  const famSel = document.getElementById('fam');
+  fams.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; famSel.appendChild(o); });
+
+  const grid = document.getElementById('grid');
+  all.forEach((fx, k) => {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.dataset.family = fx.family || 'Other';
+
+    const head = document.createElement('div');
+    head.className = 'thead';
+    head.innerHTML = `<span class="idx">${String(k + 1).padStart(2, '0')}</span>`
+      + `<b></b><span class="fam"></span><span class="blurb"></span>`;
+    head.querySelector('b').textContent = fx.name || fx.id;
+    head.querySelector('.fam').textContent = fx.family || 'Other';
+    head.querySelector('.blurb').textContent = fx.blurb || '';
+    tile.appendChild(head);
+
+    const box = document.createElement('div');
+    box.className = 'stagebox';
+    const th = fx.theme || {};
+    if (th.bg) box.style.background = th.bg;
+    if (th.fg) box.style.color = th.fg;
+    const stage = document.createElement('div');
+    if (th.font) stage.style.fontFamily = th.font;
+    if (th.italic) stage.style.fontStyle = 'italic';
+    box.appendChild(stage);
+    tile.appendChild(box);
+
+    const foot = document.createElement('div');
+    foot.className = 'tfoot';
+    foot.innerHTML = `<code>${fx.id}</code><span class="sp"></span>`
+      + `<button data-a="focus">Focus</button><button data-a="restart">Restart</button>`;
+    tile.appendChild(foot);
+    grid.appendChild(tile);
+
+    const p = SloganFX.mount(stage, fx, SLOGANS, { start: k % SLOGANS.length });
+    players.push({ p, tile, fx });
+    // Only animate what is on screen. With 70+ effects, running every tile's rAF loop at once
+    // pegs the CPU and every effect stutters, which makes good work look bad.
+    vis.observe(tile);
+
+    foot.addEventListener('click', e => {
+      const a = e.target.dataset.a;
+      if (a === 'restart') { p.goto(p.i); if (live) p.play(); }
+      if (a === 'focus') {
+        const on = tile.classList.contains('focus');
+        document.querySelectorAll('.tile').forEach(t => t.classList.remove('focus'));
+        document.body.classList.toggle('focused', !on);
+        if (!on) tile.classList.add('focus');
+      }
+    });
+  });
+
+  famSel.addEventListener('change', () => {
+    const v = famSel.value;
+    players.forEach(({ tile }) => {
+      tile.style.display = (!v || tile.dataset.family === v) ? '' : 'none';
+    });
+  });
+}
+
+document.getElementById('playAll').addEventListener('click', e => {
+  live = !live;
+  e.target.textContent = live ? 'Pause all' : 'Play all';
+  e.target.classList.toggle('on', live);
+  players.forEach(({ p }) => live ? p.play() : p.pause());
+  document.getElementById('live').classList.toggle('on', live);
+});
+
+document.getElementById('stepAll').addEventListener('click', () => {
+  players.forEach(({ p }) => { p.pause(); p.goto((p.i + 1) % SLOGANS.length); });
+  live = false;
+  const b = document.getElementById('playAll');
+  b.textContent = 'Play all'; b.classList.remove('on');
+});
+
+const speed = document.getElementById('speed');
+speed.addEventListener('input', () => {
+  const m = speed.value / 100;
+  document.getElementById('speedv').textContent = m.toFixed(2) + '×';
+  players.forEach(({ p, fx }) => {
+    p.duration = (fx.duration || 1000) / m;
+    p.dwell = (fx.dwell || 4500) / m;
+  });
+});
+
+const scrub = document.getElementById('scrub');
+scrub.addEventListener('input', () => {
+  live = false;
+  const b = document.getElementById('playAll');
+  b.textContent = 'Play all'; b.classList.remove('on');
+  document.getElementById('live').classList.remove('on');
+  const t = scrub.value / 1000;
+  players.forEach(({ p }) => p.seek(p.i, t));
+});
+document.getElementById('live').addEventListener('click', () => {
+  live = true;
+  document.getElementById('live').classList.add('on');
+  const b = document.getElementById('playAll');
+  b.textContent = 'Pause all'; b.classList.add('on');
+  players.forEach(({ p }) => p.play());
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { document.body.classList.remove('focused'); document.querySelectorAll('.tile').forEach(t => t.classList.remove('focus')); }
+});
+
+/* URL-driven freezing, so a headless screenshot can capture any exact frame:
+     ?t=0.5        freeze every tile mid-transition at progress 0.5
+     ?i=12         start every tile from slogan 12 (use with t)
+     ?only=ink-bleed   show just one effect
+     ?big=1        focus mode (one large tile)                                */
+function applyUrlState() {
+  const q = new URLSearchParams(location.search);
+  if (q.has('only')) {
+    const id = q.get('only');
+    players.forEach(({ tile, fx }) => tile.style.display = fx.id === id ? '' : 'none');
+  }
+  if (q.has('big')) {
+    document.body.classList.add('focused');
+    const target = q.has('only') ? players.find(p => p.fx.id === q.get('only')) : players[0];
+    if (target) target.tile.classList.add('focus');
+  }
+  if (q.has('t') || q.has('i')) {
+    const t = parseFloat(q.get('t') || '0');
+    const i = q.has('i') ? parseInt(q.get('i'), 10) : null;
+    players.forEach(({ p }) => { p.pause(); p.seek(i === null ? p.i : i, t); });
+    live = false;
+    const b = document.getElementById('playAll');
+    b.textContent = 'Play all'; b.classList.remove('on');
+    document.getElementById('live').classList.remove('on');
+  }
+}
+
+/* headless screenshot hook: freeze every tile at the same progress */
+window.__lab = {
+  seekAll: (t) => players.forEach(({ p }) => p.seek(p.i, t)),
+  gotoAll: (i) => players.forEach(({ p }) => p.goto(i)),
+  pauseAll: () => players.forEach(({ p }) => p.pause()),
+  ids: () => players.map(({ fx }) => fx.id),
+  only: (id) => players.forEach(({ tile, fx }) => tile.style.display = fx.id === id ? '' : 'none'),
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transparent cutouts — background check</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system, BlinkMacSystemFont, sans-serif; background:#222; color:#eee; padding:24px; }
+  h1 { font-size:18px; margin-bottom:4px; }
+  p  { font-size:13px; color:#aaa; margin-bottom:20px; }
+  .row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+  .cell { border-radius:10px; padding:18px; display:flex; align-items:center; justify-content:center; min-height:230px; }
+  .cell img { max-width:100%; max-height:260px; }
+  .dark  { background:#0c0f0c; }
+  .navy  { background:#071D49; }
+  .green { background:#7AB648; }
+  .grad  { background:linear-gradient(135deg,#f7c8d4,#c9d4f5,#c2ecd9); }
+  .label { font-size:13px; font-weight:600; margin:0 0 8px; color:#ddd; }
+</style>
+</head>
+<body>
+<h1>Transparent product cutouts on non-white backgrounds</h1>
+<p>Each row: near-black · deep navy · brand green · pastel gradient. Look for white halos, chewed-up edges, or missing parts (connectors, shafts).</p>
+<div id="grid"></div>
+<script>
+  const imgs = [
+    "one_motor", "M17_series_overview", "kit_with_three_motors",
+    "motor_back", "adapter_and_wire",
+  ];
+  const grid = document.getElementById("grid");
+  for (const stem of imgs) {
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = stem + "_transparent.png";
+    grid.appendChild(label);
+    const row = document.createElement("div");
+    row.className = "row";
+    for (const bg of ["dark","navy","green","grad"]) {
+      const cell = document.createElement("div");
+      cell.className = "cell " + bg;
+      const im = document.createElement("img");
+      im.src = "../transparent/" + stem + "_transparent_small.png";
+      cell.appendChild(im);
+      row.appendChild(cell);
+    }
+    grid.appendChild(row);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>html,body{margin:0}iframe{border:0;display:block}</style>
+<iframe id="f" src="v3.html" scrolling="no"></iframe>
+<pre id="out">pending</pre>
+<script>
+var W = parseInt((location.search.match(/w=(\d+)/)||[0,1440])[1],10);
+var f=document.getElementById('f');
+f.style.width=W+'px'; f.style.height='1200px';
+f.onload=function(){
+  setTimeout(function(){
+    try{
+      var w=f.contentWindow, s=w.__slogan; s.pause();
+      var h1=f.contentDocument.querySelector('.hero h1');
+      var info=s._info();
+      var heights=[];
+      for(var i=0;i<15;i++){ s.goto(i); heights.push(Math.round(h1.getBoundingClientRect().height)); }
+      s.goto(3);
+      var de=f.contentDocument.documentElement;
+      document.getElementById('out').textContent=JSON.stringify({
+        w:W, info:info, heights:heights,
+        h1w: Math.round(h1.getBoundingClientRect().width),
+        scrollW: de.scrollWidth, clientW: de.clientWidth
+      });
+    }catch(e){ document.getElementById('out').textContent='ERR '+e; }
+  }, 1200);
+};
+</script>

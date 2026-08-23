@@ -1,0 +1,30 @@
+1|NVIDIA|https://www.nvidia.com/en-us/
+2|Apple|https://www.apple.com/
+3|Alphabet (Google)|https://about.google/
+4|Microsoft|https://www.microsoft.com/en-us/
+5|Amazon|https://www.aboutamazon.com/
+6|TSMC|https://www.tsmc.com/english
+7|SpaceX|https://www.spacex.com/
+8|Broadcom|https://www.broadcom.com/
+9|Saudi Aramco|https://www.aramco.com/en
+10|Tesla|https://www.tesla.com/
+11|Meta|https://about.meta.com/
+12|Samsung|https://www.samsung.com/us/
+13|Micron|https://www.micron.com/
+14|Berkshire Hathaway|https://www.berkshirehathaway.com/
+15|Eli Lilly|https://www.lilly.com/
+16|SK hynix|https://www.skhynix.com/
+17|JPMorgan Chase|https://www.jpmorganchase.com/
+18|AMD|https://www.amd.com/en.html
+19|Walmart|https://corporate.walmart.com/
+20|ASML|https://www.asml.com/en
+21|Visa|https://usa.visa.com/
+22|Johnson & Johnson|https://www.jnj.com/
+23|Intel|https://www.intel.com/content/www/us/en/homepage.html
+24|Exxon Mobil|https://corporate.exxonmobil.com/
+25|Tencent|https://www.tencent.com/en-us/
+26|Mastercard|https://www.mastercard.us/en-us.html
+27|Applied Materials|https://www.appliedmaterials.com/us/en.html
+28|AbbVie|https://www.abbvie.com/
+29|Cisco|https://www.cisco.com/
+30|Caterpillar|https://www.caterpillar.com/en.html

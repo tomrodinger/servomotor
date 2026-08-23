@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>v10 keyline probe</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.4 ui-monospace,monospace}
+iframe{border:0;position:absolute;left:-4000px;top:0;width:1440px;height:1000px}
+#out{white-space:pre;padding:8px}</style>
+<div id="out">working…</div>
+<iframe id="f" src="v10.html?sl=run"></iframe>
+<script>
+var f=document.getElementById('f'), out=document.getElementById('out');
+f.onload=function(){setTimeout(function(){
+  var w=f.contentWindow,d=w.document,S=w.__slogan;
+  if(!S){out.textContent='NO __slogan';return;}
+  S.pause();
+  var kl=d.querySelector('.hero .keyline');
+  var L=['t     keylineMatrix                 klRect(w,h)   outPlate                     inPlate                       outWord0 op  inWordLast op'];
+  for(var t=0;t<=1.0001;t+=0.05){
+    S.seek(1,t);
+    var cs=w.getComputedStyle(kl);
+    var r=kl.getBoundingClientRect();
+    var o=d.querySelector('.sl-layer.sl-out'), n=d.querySelector('.sl-layer.sl-in');
+    var co=w.getComputedStyle(o), cn=w.getComputedStyle(n);
+    var ow=o.querySelectorAll('.sl-w'), nw=n.querySelectorAll('.sl-w');
+    L.push(t.toFixed(2)+'  '+cs.transform.padEnd(30)+' '+r.width.toFixed(1)+'x'+r.height.toFixed(1)+'  '+
+      (co.filter+' op'+w.getComputedStyle(ow[0]).opacity).padEnd(28)+' '+
+      (cn.filter+' op'+w.getComputedStyle(nw[nw.length-1]).opacity).padEnd(30)+
+      ' klOpacity='+cs.opacity);
+  }
+  out.textContent=L.join('\n');
+},500);};
+</script>

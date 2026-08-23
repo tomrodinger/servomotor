@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — Slogan Transitions Gallery</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0b0b0c;--panel:#151517;--line:#26262a;--ink:#ececf0;--mut:#83838c;--green:#7AB648}
+  body{background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 0 60px}
+  header{position:sticky;top:0;z-index:10;background:var(--panel);
+         border-bottom:2px solid var(--green);padding:10px 16px;
+         display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:13.5px}
+  .brand span{color:var(--green)}
+  .brand em{font-style:normal;color:var(--mut);font-weight:500}
+  .count{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums}
+  .grow{flex:1}
+  button,select,input{background:#1e1e21;color:#c9c9d0;border:1px solid var(--line);
+    border-radius:6px;padding:6px 11px;font-size:11.5px;font-family:inherit;cursor:pointer}
+  button:hover{background:#2a2a2e;color:#fff}
+  button.on{background:var(--green);border-color:var(--green);color:#0b0b0c;font-weight:700}
+  input[type=search]{cursor:text;min-width:190px}
+  a.lab{color:#9fd06a;font-size:11.5px;text-decoration:none;border-bottom:1px dotted}
+  a.lab:hover{color:#fff}
+
+  .fam-head{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--green);
+    padding:22px 16px 8px;font-weight:700}
+  .grid{display:grid;gap:14px;padding:0 16px;
+        grid-template-columns:repeat(auto-fill,minmax(390px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden;
+        transition:border-color .14s,transform .14s}
+  .card:hover{border-color:var(--green);transform:translateY(-2px)}
+  .card img{width:100%;display:block;background:#fff}
+  .cap{padding:8px 12px;display:flex;align-items:baseline;gap:8px;font-size:12px;
+       border-top:1px solid var(--line)}
+  .cap b{font-weight:650}
+  .cap code{color:#8fb96a;font-size:10px;margin-left:auto}
+  .cap .blurb{color:var(--mut);font-size:10.5px;width:100%;padding-top:3px}
+  .card a{color:inherit;text-decoration:none;display:block}
+  .none{color:var(--mut);padding:40px 16px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> M17 &nbsp;<em>slogan transitions</em></div>
+  <div class="count" id="n">0</div><span style="color:var(--mut);font-size:11.5px">effects</span>
+  <select id="fam"><option value="">all families</option></select>
+  <input type="search" id="q" placeholder="filter by name…">
+  <div class="grow"></div>
+  <a class="lab" href="index.html">open the live lab &rarr;</a>
+</header>
+
+<div id="out"></div>
+
+<script src="gifs/list.js"></script>
+<script>
+const GIFS = window.SLOGAN_GIFS || [];
+document.getElementById('n').textContent = GIFS.length;
+
+const fams = [...new Set(GIFS.map(g => g.family))].sort();
+const famSel = document.getElementById('fam');
+fams.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; famSel.appendChild(o); });
+
+function render() {
+  const fv = famSel.value;
+  const qv = document.getElementById('q').value.trim().toLowerCase();
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+  let shown = 0;
+
+  for (const fam of fams) {
+    if (fv && fam !== fv) continue;
+    const items = GIFS.filter(g => g.family === fam &&
+      (!qv || (g.name + ' ' + g.id + ' ' + g.blurb).toLowerCase().includes(qv)));
+    if (!items.length) continue;
+
+    const h = document.createElement('div');
+    h.className = 'fam-head';
+    h.textContent = fam + ' · ' + items.length;
+    out.appendChild(h);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    items.forEach(g => {
+      shown++;
+      const card = document.createElement('div');
+      card.className = 'card';
+      const a = document.createElement('a');
+      a.href = 'index.html?only=' + encodeURIComponent(g.id) + '&big=1';
+      a.title = 'open ' + g.name + ' live';
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.src = 'gifs/' + g.id + '.gif';
+      img.alt = g.name;
+      a.appendChild(img);
+      const cap = document.createElement('div');
+      cap.className = 'cap';
+      cap.innerHTML = '<b></b><code></code><div class="blurb"></div>';
+      cap.querySelector('b').textContent = g.name;
+      cap.querySelector('code').textContent = g.id;
+      cap.querySelector('.blurb').textContent = g.blurb;
+      a.appendChild(cap);
+      card.appendChild(a);
+      grid.appendChild(card);
+    });
+    out.appendChild(grid);
+  }
+  if (!shown) out.innerHTML = '<div class="none">Nothing matches that filter.</div>';
+}
+famSel.addEventListener('change', render);
+document.getElementById('q').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

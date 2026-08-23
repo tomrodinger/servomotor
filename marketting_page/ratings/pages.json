@@ -1,0 +1,135 @@
+{
+  "v1": {
+    "verdict": "keep",
+    "name": "Director's Cut",
+    "effect": "Keynote dissolve",
+    "tags": [],
+    "note": ""
+  },
+  "v2": {
+    "verdict": "discard",
+    "name": "Ivory & Ink",
+    "effect": "Ink bleed",
+    "tags": [],
+    "note": ""
+  },
+  "v3": {
+    "verdict": "discard",
+    "name": "Editorial Serif",
+    "effect": "Hot-metal slug",
+    "tags": [],
+    "note": ""
+  },
+  "v4": {
+    "name": "Midnight Inverse",
+    "effect": "Light sweep",
+    "tags": [],
+    "note": "I like the top part showing the slogans, transitions, and motor on the black background. Below that we should go to a white background I think.",
+    "verdict": "keep"
+  },
+  "v5": {
+    "verdict": "discard",
+    "name": "Swiss Grid",
+    "effect": "Hairline wipe",
+    "tags": [],
+    "note": ""
+  },
+  "v6": {
+    "verdict": "discard",
+    "name": "Mono Technical",
+    "effect": "Glyph scramble",
+    "tags": [],
+    "note": ""
+  },
+  "v7": {
+    "verdict": "discard",
+    "name": "Green Field",
+    "effect": "Field wipe",
+    "tags": [],
+    "note": ""
+  },
+  "v8": {
+    "verdict": "discard",
+    "name": "Asymmetric Split",
+    "effect": "Axis shear",
+    "tags": [],
+    "note": ""
+  },
+  "v9": {
+    "verdict": "discard",
+    "name": "Soft Neutral",
+    "effect": "Spring squash",
+    "tags": [],
+    "note": ""
+  },
+  "v10": {
+    "verdict": "discard",
+    "name": "Gallery",
+    "effect": "Museum dissolve",
+    "tags": [],
+    "note": ""
+  },
+  "v11": {
+    "verdict": "discard",
+    "name": "Blueprint",
+    "effect": "Leader-line draw",
+    "tags": [],
+    "note": ""
+  },
+  "v12": {
+    "verdict": "discard",
+    "name": "Big Numerals",
+    "effect": "Odometer roll",
+    "tags": [],
+    "note": ""
+  },
+  "v13": {
+    "verdict": "discard",
+    "name": "Graphite & Chrome",
+    "effect": "Specular sweep",
+    "tags": [],
+    "note": ""
+  },
+  "v14": {
+    "verdict": "discard",
+    "name": "Whisper Gradient",
+    "effect": "Aurora condense",
+    "tags": [],
+    "note": ""
+  },
+  "v15": {
+    "verdict": "discard",
+    "name": "Hairline Catalogue",
+    "effect": "Cell flip",
+    "tags": [],
+    "note": ""
+  },
+  "v16": {
+    "verdict": "discard",
+    "name": "Sage & Stone",
+    "effect": "Horizon slide",
+    "tags": [],
+    "note": ""
+  },
+  "v17": {
+    "name": "Terminal Minimal",
+    "effect": "Typed",
+    "tags": [],
+    "note": "I just like this upper part with the slogans and motor and key specs on a white background. stuff below should be on a white background except the code section, which should be in black.",
+    "verdict": "keep"
+  },
+  "v19": {
+    "verdict": "keep",
+    "name": "Scroll Choreography",
+    "effect": "Kinetic stagger",
+    "tags": [],
+    "note": ""
+  },
+  "v20": {
+    "verdict": "discard",
+    "name": "Statement Type",
+    "effect": "Poster slam",
+    "tags": [],
+    "note": ""
+  }
+}

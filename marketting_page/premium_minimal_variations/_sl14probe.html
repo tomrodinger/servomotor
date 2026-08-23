@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8"><title>sl14 probe</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;background:#fff}
+iframe{border:0;display:block;height:1400px}
+pre{white-space:pre-wrap}</style>
+<pre id="out">running…</pre>
+<iframe id="f"></iframe>
+<script>
+var q = new URLSearchParams(location.search);
+var W = +(q.get('w') || 1440);
+var WAIT = +(q.get('wait') || 0);      // ms to sit still before measuring (cycling test)
+var f = document.getElementById('f');
+f.style.width = W + 'px';
+f.src = 'v14.html';
+f.onload = function(){
+  setTimeout(function(){
+    var d = f.contentDocument, w = f.contentWindow, L = [];
+    var S = w.__slogan;
+    if(!S){ document.getElementById('out').textContent = 'NO __slogan'; return; }
+    var h1 = d.querySelector('.hero h1');
+    var stage = d.querySelector('.sl-stage');
+    L.push('viewport=' + w.innerWidth + ' reduced=' + (w.matchMedia('(prefers-reduced-motion: reduce)').matches));
+    L.push('index after ' + WAIT + 'ms idle = ' + S.index());
+    L.push('doc scrollWidth=' + d.documentElement.scrollWidth + ' clientWidth=' + d.documentElement.clientWidth +
+           '  body scrollWidth=' + d.body.scrollWidth);
+    S.pause();
+    var hs = [], tops = [], bots = [], overflow = [];
+    for (var i = 0; i < S.items.length; i++){
+      S.goto(i);
+      var r = h1.getBoundingClientRect();
+      var sr = stage.getBoundingClientRect();
+      hs.push(Math.round(r.height*100)/100);
+      tops.push(Math.round(r.top*100)/100);
+      var lede = d.querySelector('.hero .lede').getBoundingClientRect();
+      bots.push(Math.round(lede.top*100)/100);
+      // widest word/line box inside the h1
+      var maxR = -1e9, minL = 1e9, sw = d.querySelectorAll('.sl-layer.is-rest .sl-ink .sw');
+      for (var k = 0; k < sw.length; k++){
+        var b = sw[k].getBoundingClientRect();
+        if (b.right > maxR) maxR = b.right;
+        if (b.left  < minL) minL = b.left;
+      }
+      overflow.push(Math.round(minL) + '..' + Math.round(maxR));
+      L.push('  i=' + (i<10?' ':'') + i + '  h1H=' + hs[i] + '  h1Top=' + tops[i] +
+             '  ledeTop=' + bots[i] + '  inkX=' + overflow[i] +
+             '  docSW=' + d.documentElement.scrollWidth +
+             '  | ' + S.items[i][0] + ' / ' + S.items[i][1]);
+    }
+    function uniq(a){ var o={}; a.forEach(function(v){o[v]=1;}); return Object.keys(o); }
+    L.push('DISTINCT h1 heights: ' + uniq(hs).join(', '));
+    L.push('DISTINCT h1 tops:    ' + uniq(tops).join(', '));
+    L.push('DISTINCT lede tops:  ' + uniq(bots).join(', '));
+    L.push('stage locked height: ' + stage.style.height);
+    S.goto(6);
+    document.getElementById('out').textContent = L.join('\n');
+  }, WAIT + 400);
+};
+</script>

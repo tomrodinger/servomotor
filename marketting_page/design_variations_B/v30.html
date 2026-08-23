@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+table{border-collapse:collapse;width:100%}
+pre{overflow:auto;max-width:100%}
+
+body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;background:#fff;color:#1a1f71}
+.nav{background:#1a1f71;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:.7rem 3vw;position:sticky;top:0;z-index:20}
+.nav img{height:28px;background:#fff;border-radius:2px;padding:2px}
+.nav a{color:#fff;text-decoration:none;margin-left:1rem;font-size:.9rem;font-weight:500}
+.nav a.shop{background:#f7b600;color:#1a1f71;padding:.45rem 1rem;font-weight:700;border-radius:4px}
+.hero{background:linear-gradient(135deg,#1a1f71,#0f1350);color:#fff;padding:3.5rem 3vw;text-align:center}
+.hero h1{font-size:clamp(1.9rem,4vw,2.8rem);margin:0 0 .8rem}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;max-width:1100px;margin:-2rem auto 2rem;padding:0 3vw;position:relative;z-index:2}
+.step{background:#fff;border:1px solid #e0e3f0;padding:1.5rem 1.2rem;text-align:center;box-shadow:0 8px 24px rgba(26,31,113,.08)}
+.step .n{width:40px;height:40px;line-height:40px;border-radius:50%;background:#1a1f71;color:#fff;font-weight:700;margin:0 auto .8rem}
+.step h3{margin:0 0 .4rem;font-size:1rem}
+.step p{margin:0;font-size:.88rem;color:#444}
+.section{padding:2rem 3vw;max-width:1000px;margin:0 auto}
+table.specs th,table.specs td{border-bottom:1px solid #e0e3f0;padding:.55rem;text-align:left;font-size:.9rem}
+pre.code{background:#1a1f71;color:#f7e8b0;padding:1.1rem;font-size:.82rem}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.apps img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:8px}
+footer{background:#1a1f71;color:#fff;padding:2.5rem 3vw;text-align:center}
+footer a{color:#f7b600;margin:0 .7rem;font-weight:700}
+@media(max-width:800px){.steps,.apps{grid-template-columns:1fr}}
+
+
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="#top" style="display:flex;gap:.5rem;align-items:center;text-decoration:none;color:#fff;font-weight:700">
+    <img src="../Gearotons_Logo.png" alt="">Gearotons
+  </a>
+  <div>
+    <a href="#how">How it works</a><a href="#models">Models</a>
+    <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  </div>
+</header>
+<section class="hero" id="top">
+  <h1>Motion accepted everywhere your bus goes</h1>
+  <p style="max-width:36rem;margin:0 auto 1.2rem;opacity:.9">M17 Series — all-in-one servomotors. One protocol. Three torque tiers. Open source.</p>
+  <a href="https://gearotons.com/store" style="display:inline-block;background:#f7b600;color:#1a1f71;padding:.65rem 1.4rem;text-decoration:none;font-weight:700;border-radius:4px">Shop Now</a>
+  <a href="https://gearotons.com" style="margin-left:1rem;color:#f7b600;font-weight:600">Documentation</a>
+</section>
+<section class="steps" id="how">
+  <div class="step"><div class="n">1</div><h3>Mount</h3><p>NEMA 17 standard. Footprint 42.2 × 42.2 mm.</p></div>
+  <div class="step"><div class="n">2</div><h3>Wire</h3><p>Power 12–24 V. Daisy-chain RS-485.</p></div>
+  <div class="step"><div class="n">3</div><h3>Install</h3><p>pip3 install servomotor or Arduino library.</p></div>
+  <div class="step"><div class="n">4</div><h3>Move</h3><p>Trapezoid move — one revolution in seconds.</p></div>
+</section>
+<section class="section" id="features">
+  <h2>Included in every unit</h2>
+  <p>Motor + driver + motion controller + encoder · 32 kHz PID · over-current / voltage / temperature protection · max 560 RPM · hosts from Pi to PC</p>
+  <img src="../connection_diagram.jpg" alt="Connection" style="margin:1rem 0;border:1px solid #e0e3f0">
+</section>
+<section class="section" id="models">
+  <h2>Choose a tier</h2>
+  <p>M17-60 · 0.65 N·m · 38 W · 470 g &nbsp;·&nbsp; M17-48 · 0.55 N·m · 32 W · 360 g &nbsp;·&nbsp; M17-40 · 0.42 N·m · 25 W · 285 g</p>
+  <table class='specs'><thead><tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr></thead><tbody><tr><th scope='row'>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr><tr><th scope='row'>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr><tr><th scope='row'>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr><tr><th scope='row'>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr><tr><th scope='row'>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr><tr><th scope='row'>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr><tr><th scope='row'>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr><tr><th scope='row'>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody></table>
+</section>
+<section class="section" id="start">
+  <h2>Sample authorization — Python</h2>
+  <pre class='code'><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3(&quot;X&quot;, time_unit=&quot;seconds&quot;,
+                position_unit=&quot;degrees&quot;)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+</section>
+<section class="section" id="apps">
+  <h2>Accepted use cases</h2>
+  <div class="apps">
+    <img src="../robotics_small.jpg" alt="Robotics">
+    <img src="../automation_small.jpg" alt="Automation">
+    <img src="../test_rack_small.jpg" alt="Test">
+  </div>
+</section>
+<footer id="about">
+  <p>Gearotons · Shenzhen 2022 · Canadian founder · Open source</p>
+  <p>Affordable and Simple All-in-One Motion Control</p>
+  <p style="margin-top:1rem"><a href="https://gearotons.com/store">Shop Now</a><a href="https://gearotons.com">Docs</a><a href="https://github.com/tomrodinger/servomotor">GitHub</a></p>
+</footer>
+
+</body>
+</html>

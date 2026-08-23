@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons M17 — 10 Design Variations</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    display: flex; flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #111;
+  }
+  header {
+    background: #1a1a1a; color: #fff;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 14px; flex-wrap: wrap;
+    border-bottom: 2px solid #7AB648;
+  }
+  header .brand { font-weight: 700; font-size: 14px; white-space: nowrap; }
+  header .brand span { color: #7AB648; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button {
+    background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a;
+    padding: 6px 11px; border-radius: 6px; cursor: pointer;
+    font-size: 12.5px; line-height: 1; font-family: inherit;
+    transition: background .12s, color .12s;
+  }
+  nav button:hover { background: #3a3a3a; color: #fff; }
+  nav button.active {
+    background: #7AB648; border-color: #7AB648; color: #0c0c0c; font-weight: 700;
+  }
+  .hint { margin-left: auto; color: #666; font-size: 11.5px; white-space: nowrap; }
+  main { flex: 1; position: relative; background: #fff; }
+  iframe {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; display: none; background: #fff;
+  }
+  iframe.visible { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> M17 — design variations</div>
+  <nav id="tabs"></nav>
+  <div class="hint">tip: ← → arrow keys switch tabs</div>
+</header>
+<main id="frames"></main>
+<script>
+  const variants = [
+    ["1 · Clean Green SaaS",      "v1.html"],
+    ["2 · Dark Industrial",       "v2.html"],
+    ["3 · Swiss Datasheet",       "v3.html"],
+    ["4 · Bold Color Blocks",     "v4.html"],
+    ["5 · Soft & Friendly",       "v5.html"],
+    ["6 · Editorial Serif",       "v6.html"],
+    ["7 · Blueprint",             "v7.html"],
+    ["8 · Graphite + Orange",     "v8.html"],
+    ["9 · Developer Terminal",    "v9.html"],
+    ["10 · Premium Minimal",      "v10.html"],
+    ["11 · NVIDIA",               "v11.html"],
+    ["12 · Apple",                "v12.html"],
+    ["13 · Google",               "v13.html"],
+    ["14 · Microsoft",            "v14.html"],
+    ["15 · Amazon",               "v15.html"],
+    ["16 · TSMC",                 "v16.html"],
+    ["17 · SpaceX",               "v17.html"],
+    ["18 · Broadcom",             "v18.html"],
+    ["19 · Aramco",               "v19.html"],
+    ["20 · Tesla",                "v20.html"],
+    ["21 · Meta",                 "v21.html"],
+    ["22 · Samsung",              "v22.html"],
+    ["23 · Micron",               "v23.html"],
+    ["24 · Berkshire",            "v24.html"],
+    ["25 · Eli Lilly",            "v25.html"],
+    ["26 · SK hynix",             "v26.html"],
+    ["27 · JPMorgan",             "v27.html"],
+    ["28 · AMD",                  "v28.html"],
+    ["29 · Walmart",              "v29.html"],
+    ["30 · ASML",                 "v30.html"],
+    ["31 · Visa",                 "v31.html"],
+    ["32 · J&J",                  "v32.html"],
+    ["33 · Intel",                "v33.html"],
+    ["34 · ExxonMobil",           "v34.html"],
+    ["35 · Tencent",              "v35.html"],
+    ["36 · Mastercard",           "v36.html"],
+    ["37 · Applied Mat.",         "v37.html"],
+    ["38 · AbbVie",               "v38.html"],
+    ["39 · Cisco",                "v39.html"],
+    ["40 · Caterpillar",          "v40.html"],
+  ];
+  const tabs = document.getElementById("tabs");
+  const frames = document.getElementById("frames");
+  const buttons = [], iframes = [];
+  let current = -1;
+
+  variants.forEach(([label, src], i) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => show(i);
+    tabs.appendChild(b); buttons.push(b);
+    const f = document.createElement("iframe");
+    f.dataset.src = src; f.title = label;
+    frames.appendChild(f); iframes.push(f);
+  });
+
+  function show(i) {
+    if (i === current) return;
+    current = i;
+    buttons.forEach((b, j) => b.classList.toggle("active", j === i));
+    iframes.forEach((f, j) => {
+      if (j === i && !f.src) f.src = f.dataset.src;  // lazy-load
+      f.classList.toggle("visible", j === i);
+    });
+    location.hash = "v" + (i + 1);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") show((current + 1) % variants.length);
+    if (e.key === "ArrowLeft") show((current + variants.length - 1) % variants.length);
+  });
+
+  const fromHash = parseInt((location.hash.match(/^#v(\d+)$/) || [])[1]);
+  show(fromHash >= 1 && fromHash <= variants.length ? fromHash - 1 : 0);
+</script>
+</body>
+</html>

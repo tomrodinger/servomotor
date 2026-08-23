@@ -1,0 +1,16 @@
+<!doctype html><meta charset=utf-8>
+<style>html,body{margin:0;background:#fff;font:15px/1.5 monospace}
+#f{width:390px;height:30000px;border:0;position:absolute;left:-99999px}
+#out{padding:10px;white-space:pre-wrap}</style>
+<div id="out">loading…</div>
+<iframe id="f" src="../v5.html"></iframe>
+<script>
+setTimeout(()=>{const d=document.getElementById('f').contentDocument;
+let s=[];d.querySelectorAll('section[id]').forEach(e=>s.push(e.id+' top='+Math.round(e.getBoundingClientRect().top+ d.documentElement.scrollTop)));
+s.push('--- models grid ---');
+const m=d.querySelector('.models'); if(m) s.push('.models top='+Math.round(m.getBoundingClientRect().top)+' h='+Math.round(m.getBoundingClientRect().height));
+const dr=d.querySelector('.draws'); if(dr) s.push('.draws top='+Math.round(dr.getBoundingClientRect().top)+' h='+Math.round(dr.getBoundingClientRect().height));
+const t=d.querySelector('.spec-table'); if(t) s.push('.spec-table top='+Math.round(t.getBoundingClientRect().top));
+s.push('docH='+d.documentElement.scrollHeight);
+document.getElementById('out').textContent=s.join('\n');},3000);
+</script>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>audit2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#222;font-family:-apple-system,sans-serif}
+.row{display:flex;align-items:stretch;border-bottom:1px solid #444}
+.lab{flex:none;width:52px;color:#7AB648;font:700 13px monospace;padding:6px;background:#111}
+.stagebox{position:relative;background:#fff;color:#1d1d1f;height:150px;padding:14px 20px;overflow:hidden;flex:1}
+.fx-stage{position:absolute;inset:14px 20px;display:flex;align-items:center;justify-content:center;
+  font-size:26px;line-height:1.18;letter-spacing:-.02em;text-align:center;}
+.fx-stage .fx-light{font-weight:300}
+.fx-stage .fx-bold{font-weight:650}
+</style></head><body>
+<div id="host"></div>
+<script src="engine.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything",               "that usually surrounds it."],
+  ["The whole drive system.",               "Inside one motor."],
+  ["Four systems.",                         "One motor."],
+  ["Motion control,",                       "fully integrated."],
+  ["You wanted motion.",                    "Not a wiring project."],
+  ["A motor that",                          "needs nothing else."],
+  ["The whole motion system.",              "One motor."],
+  ["Everything that moves it,",             "inside it."],
+  ["Motion control.",                       "All in one."],
+  ["Stepper, driver, controller, encoder.", "One part number."],
+  ["Bolts in like a stepper.",              "Runs like a full servo."],
+  ["Four bolts. One cable.",                "A complete servo system."],
+  ["Servomotor:",                           "stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.", "It's all inside."],
+  ["Driver, controller and encoder",        "are no longer your problem."],
+];
+</script>
+<script src="effects/house-extra-2.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const id = q.get('only');
+const i = parseInt(q.get('i') || '0', 10);
+const TS = (q.get('ts') || '0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1').split(',').map(Number);
+const fx = SloganFX.get(id);
+const host = document.getElementById('host');
+TS.forEach(t => {
+  const row = document.createElement('div'); row.className = 'row';
+  const lab = document.createElement('div'); lab.className = 'lab'; lab.textContent = t;
+  const box = document.createElement('div'); box.className = 'stagebox';
+  const st = document.createElement('div');
+  box.appendChild(st); row.appendChild(lab); row.appendChild(box); host.appendChild(row);
+  const p = SloganFX.mount(st, fx, SLOGANS, { start: i });
+  p.pause(); p.seek(i, t);
+});
+</script>
+</body></html>

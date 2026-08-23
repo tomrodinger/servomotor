@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>html,body{margin:0;background:#fff;font:12px monospace}
+iframe{width:1440px;height:900px;border:0;display:block}</style>
+<div id="out">pending</div>
+<iframe id="f" src="/premium_minimal_variations/v4.html?anim=1&pause=1"></iframe>
+<script>
+var f=document.getElementById('f');
+f.addEventListener('load',function(){
+  var d=f.contentDocument, w=f.contentWindow;
+  var stage=d.querySelector('.sl-stage');
+  var line=d.querySelector('.sl-cur');
+  var rows=[];
+  rows.push('stageH='+stage.offsetHeight+' stageW='+stage.clientWidth);
+  for(var i=0;i<w.__slogan.items.length;i++){
+    w.__slogan.goto(i);
+    var cur=d.querySelector('.sl-cur');
+    rows.push(i+': h='+cur.offsetHeight+'  "'+w.__slogan.items[i][0]+' | '+w.__slogan.items[i][1]+'"');
+  }
+  rows.push('bodyScrollW='+d.body.scrollWidth+' docClientW='+d.documentElement.clientWidth);
+  document.getElementById('out').textContent=rows.join('\n');
+  document.title='done';
+});
+</script>

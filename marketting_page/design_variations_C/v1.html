@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+
+<style>
+
+/* product cutouts — no white studio rectangle */
+img[src*="transparent/"]{
+  background:transparent !important;
+  object-fit:contain !important;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.12));
+}
+body.dark-cut img[src*="transparent/"],
+img.on-dark[src*="transparent/"]{
+  filter:drop-shadow(0 26px 50px rgba(0,0,0,.55));
+}
+img[src*="dimensions.png"]{
+  background:#fff;
+  border-radius:8px;
+  padding:8px;
+}
+
+/* C-safe-overflow */
+html,body{max-width:100%;overflow-x:hidden}
+img,svg,video{max-width:100%;height:auto}
+pre,table{max-width:100%}
+pre{overflow-x:auto}
+td,th{word-break:break-word}
+
+
+:root{--g:#7AB648;--ink:#111;--rule:#111;--muted:#555;--bg:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font:16px/1.5 Helvetica,Arial,"Helvetica Neue",sans-serif;color:var(--ink);background:var(--bg)}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--ink)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #111}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+nav img{height:28px;width:auto}
+nav ul{display:flex;gap:22px;list-style:none;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+nav a{text-decoration:none}
+.shop{border:1px solid #111;padding:8px 14px;text-decoration:none;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.shop:hover,.btn:hover{background:var(--g);border-color:var(--g);color:#fff}
+.hero{padding:72px 0 48px;border-bottom:1px solid #111}
+.kicker{font-size:11px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-size:clamp(40px,8vw,88px);line-height:.9;font-weight:700;letter-spacing:-.04em;max-width:14ch}
+.hero .sub{margin-top:22px;max-width:46ch;color:var(--muted);font-size:17px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:end;margin-top:48px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:18px 32px;font-size:13px;border-top:1px solid #111;padding-top:18px}
+.meta b{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:500}
+section{padding:72px 0;border-bottom:1px solid #111}
+.secno{font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px}
+h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.03em;font-weight:700}
+.lead{max-width:62ch;margin:16px 0 36px;color:var(--muted)}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.feats li{list-style:none;border-top:1px solid #111;padding:18px 20px 18px 0;display:grid;grid-template-columns:48px 1fr;gap:16px}
+.feats em{font-style:normal;font-size:13px;letter-spacing:.08em}
+.feats strong{display:block;margin-bottom:4px}
+.models{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.models article{border-top:2px solid #111;padding-top:16px}
+.models h3{font-size:22px;margin:8px 0}
+.models dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;font-size:13px;margin:16px 0}
+.models dt{color:var(--muted)}
+pre{background:#111;color:#f2f2f0;padding:22px;overflow:auto;font:13px/1.55 Menlo,Consolas,monospace}
+.note{font-size:13px;color:var(--muted);margin-top:10px}
+.apps{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+.apps figure{position:relative;overflow:hidden;background:#f4f4f4}
+.apps img{width:100%;height:220px;object-fit:cover}
+.apps figcaption{font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:8px 0}
+.company{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.os{display:flex;gap:28px;align-items:center;margin-top:24px}
+.os img{height:52px;width:auto}
+footer{padding:48px 0 64px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
+.btn{display:inline-block;border:1px solid #111;padding:12px 20px;text-decoration:none;font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+@media(max-width:800px){
+  nav ul{display:none}
+  .hero-grid,.feats,.models,.company,.apps{grid-template-columns:1fr}
+  .apps img{height:180px}
+}
+
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a href="#top"><img src="../Gearotons_Logo.png" alt="Gearotons"></a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#models">Models</a></li>
+    <li><a href="#start">Start</a></li>
+    <li><a href="#apps">Use</a></li>
+  </ul>
+  <a class="shop" href="https://gearotons.com/store">Shop</a>
+</div></nav>
+<header class="hero" id="top"><div class="wrap">
+  <p class="kicker">Gearotons · M17 Series</p>
+  <h1>All-in-one motion, catalogued.</h1>
+  <p class="sub">Affordable and Simple All-in-One Motion Control. Motor, driver, controller, and encoder — one package, one RS-485 bus.</p>
+  <div class="hero-grid">
+    <img class="cutout" src="../transparent/M17_series_overview_transparent_small.png" alt="M17-60, M17-48, and M17-40">
+    <div>
+      <p>The M17 Series Servomotors are all-in-one motion control: motor, driver, motion controller, and encoder in a single compact package. RS-485 lets you daisy-chain any number of motors from one connection. Three models — M17-60, M17-48, M17-40 — share the same control characteristics at three torques.</p>
+      <div class="meta">
+        <div><b>Loop</b>32 kHz PID</div>
+        <div><b>Speed</b>560 RPM</div>
+        <div><b>Voltage</b>12–24 V</div>
+        <div><b>Mount</b>NEMA 17</div>
+      </div>
+    </div>
+  </div>
+</div></header>
+<section id="features"><div class="wrap">
+  <p class="secno">01 — Capabilities</p>
+  <h2>What is integrated.</h2>
+  <p class="lead">Control from Mac, PC, Raspberry Pi, Arduino, or ESP32 with a low-cost RS-485 adapter. High-level commands, self-calibration, LED status, trapezoid profiles, closed-loop control, and comprehensive error handling. Standard NEMA 17 mounting, 12–24 V, a robust protocol. Education and industry: robotics, CNC, automated testing, scientific instruments.</p>
+  <ul class="feats"><li><em>01</em><div><strong>All-in-one package</strong><span>Motor, driver, motion controller, and encoder in one compact body.</span></div></li><li><em>02</em><div><strong>One bus, any number</strong><span>Daisy-chain motors on a single RS-485 connection.</span></div></li><li><em>03</em><div><strong>High-level commands</strong><span>“Enable MOSFETs” and “Trapezoid move” — no timing-critical STEP/DIR.</span></div></li><li><em>04</em><div><strong>NEMA 17 size</strong><span>Nearly the same size as a stepper with the same specs. No protrusions.</span></div></li><li><em>05</em><div><strong>Standard mounting</strong><span>Standard NEMA 17 hole pattern and footprint.</span></div></li><li><em>06</em><div><strong>12–24 V</strong><span>Wide voltage range for bench supplies and industrial rails.</span></div></li><li><em>07</em><div><strong>32 kHz closed loop</strong><span>Built-in encoder and a PID loop running at 32 kHz.</span></div></li><li><em>08</em><div><strong>Efficient vs. stepper</strong><span>Closed loop draws what the load needs — not a constant holding current.</span></div></li></ul>
+</div></section>
+<section id="models"><div class="wrap">
+  <p class="secno">02 — Three bodies</p>
+  <h2>Same control. Three torques.</h2>
+  <p class="lead">Pick the stack height that matches the load. Footprint stays 42.2 × 42.2 mm.</p>
+  <div class="models"><article>
+          <p class="secno">Model</p>
+          <h3>M17-60</h3>
+          <img src="../M17-60_dimensions.png" alt="M17-60 dimensions">
+          <dl>
+            <dt>Torque</dt><dd>0.65 N·m</dd>
+            <dt>Power</dt><dd>38 W</dd>
+            <dt>Height</dt><dd>59.8 mm</dd>
+            <dt>Weight</dt><dd>470 g</dd>
+          </dl>
+        </article><article>
+          <p class="secno">Model</p>
+          <h3>M17-48</h3>
+          <img src="../M17-48_dimensions.png" alt="M17-48 dimensions">
+          <dl>
+            <dt>Torque</dt><dd>0.55 N·m</dd>
+            <dt>Power</dt><dd>32 W</dd>
+            <dt>Height</dt><dd>48.6 mm</dd>
+            <dt>Weight</dt><dd>360 g</dd>
+          </dl>
+        </article><article>
+          <p class="secno">Model</p>
+          <h3>M17-40</h3>
+          <img src="../M17-40_dimensions.png" alt="M17-40 dimensions">
+          <dl>
+            <dt>Torque</dt><dd>0.42 N·m</dd>
+            <dt>Power</dt><dd>25 W</dd>
+            <dt>Height</dt><dd>41.6 mm</dd>
+            <dt>Weight</dt><dd>285 g</dd>
+          </dl>
+        </article></div>
+  <div style="overflow:auto;margin-top:40px">
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr><th style="text-align:left;border-bottom:1px solid #111;padding:8px 8px 8px 0">Parameter</th>
+      <th style="text-align:left;border-bottom:1px solid #111;padding:8px">M17-60</th>
+      <th style="text-align:left;border-bottom:1px solid #111;padding:8px">M17-48</th>
+      <th style="text-align:left;border-bottom:1px solid #111;padding:8px">M17-40</th></tr></thead>
+      <tbody><tr><th>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr>
+<tr><th>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr>
+<tr><th>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+<tr><th>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr>
+<tr><th>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr>
+<tr><th>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr>
+<tr><th>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr>
+<tr><th>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody>
+    </table>
+  </div>
+</div></section>
+<section id="start"><div class="wrap">
+  <p class="secno">03 — First move</p>
+  <h2>One revolution, two seconds.</h2>
+  <p class="lead">Python on any desktop. The same ideas exist in the Arduino library.</p>
+  <pre><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3("X", time_unit="seconds",
+                position_unit="degrees")
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+  <p class="note">pip3 install servomotor · Arduino library: Library Manager → “Servomotor”</p>
+</div></section>
+<section id="apps"><div class="wrap">
+  <p class="secno">04 — Applications</p>
+  <h2>From the teaching bench to the test rack.</h2>
+  <div class="apps">
+    <figure><img src="../robotics_small.jpg" alt="Robotics assembly"><figcaption>Robotics · CNC</figcaption></figure>
+    <figure><img src="../automation_small.jpg" alt="Automation"><figcaption>Automation</figcaption></figure>
+    <figure><img src="../test_rack_small.jpg" alt="Test rack"><figcaption>Testing</figcaption></figure>
+  </div>
+</div></section>
+<section id="about"><div class="wrap company">
+  <div>
+    <p class="secno">05 — Open source</p>
+    <h2>Firmware, libraries, schematics.</h2>
+    <p class="lead">Gearotons is a young startup making precision motion control accessible to makers, educators, and engineers. Founded in Shenzhen in 2022 by a Canadian entrepreneur. Firmware, libraries, and schematics are open source on GitHub.</p>
+    <div class="cta-row">
+      <a class="btn" href="https://github.com/tomrodinger/servomotor">GitHub</a>
+      <a class="btn" href="https://gearotons.com">Documentation</a>
+    </div>
+    <div class="os">
+      <img src="../Open-source-hardware-logo.svg.png" alt="Open Source Hardware">
+      <img src="../Open_Source_Initiative.svg.png" alt="Open Source Initiative">
+    </div>
+  </div>
+  <img class="cutout" src="../transparent/kit_with_three_motors_transparent_small.png" alt="Full kit with three motors">
+</div></section>
+<footer><div class="wrap">
+  <p class="kicker">Gearotons</p>
+  <h2>Put an M17 on the bus.</h2>
+  <div class="cta-row">
+    <a class="btn" href="https://gearotons.com/store">Shop Now</a>
+    <a class="btn" href="https://gearotons.com">Documentation</a>
+  </div>
+  <p class="note">Founded in Shenzhen, 2022. Affordable and Simple All-in-One Motion Control.</p>
+</div></footer>
+
+</body>
+</html>

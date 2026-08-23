@@ -1,0 +1,58 @@
+<!doctype html><meta charset="utf-8"><title>k19 measure</title>
+<style>
+ html,body{margin:0;background:#0b0c0e;color:#cfe;font:12px/1.45 ui-monospace,Menlo,monospace;}
+ pre{padding:10px;white-space:pre;}
+ iframe{position:absolute;left:-99999px;top:0;border:0;}
+ .bad{color:#ff7b6b;}
+</style>
+<pre id="o">measuring…</pre>
+<script>
+var q=new URLSearchParams(location.search);
+var W=+(q.get('w')||1440);
+var f=document.createElement('iframe');
+f.style.width=W+'px'; f.style.height='1400px'; f.setAttribute('scrolling','no');
+f.src='v19.html';
+document.body.appendChild(f);
+f.onload=function(){
+  var d=f.contentDocument, w=f.contentWindow, S=w.__slogan;
+  var h1=d.getElementById('sloganH1');
+  var hero=d.getElementById('top');
+  var lines=[];
+  lines.push('layout width reported by page: '+d.documentElement.clientWidth);
+  lines.push('__slogan present: '+!!S+'   items: '+(S?S.items.length:'-'));
+  if(!S){document.getElementById('o').textContent=lines.join('\n');return;}
+  S.pause();
+  var h1h=[],heroh=[],ovf=[];
+  for(var i=0;i<15;i++){
+    S.goto(i);
+    h1h.push(h1.getBoundingClientRect().height);
+    heroh.push(hero.getBoundingClientRect().height);
+    ovf.push(d.documentElement.scrollWidth);
+  }
+  function uniq(a){var s={},o=[];a.forEach(function(v){v=Math.round(v*100)/100;if(!(v in s)){s[v]=1;o.push(v);}});return o;}
+  lines.push('h1   heights: '+uniq(h1h).join(' , ')+'   -> '+(uniq(h1h).length===1?'LOCKED':'*** VARIES ***'));
+  lines.push('hero heights: '+uniq(heroh).join(' , ')+'   -> '+(uniq(heroh).length===1?'LOCKED':'*** VARIES ***'));
+  lines.push('scrollWidth : '+uniq(ovf).join(' , ')+'   clientWidth: '+d.documentElement.clientWidth+
+             '   -> '+(Math.max.apply(null,ovf)<=d.documentElement.clientWidth?'NO H-OVERFLOW':'*** OVERFLOW ***'));
+  // mid-transition overflow + height check
+  var mh=[],mo=[];
+  for(var i=0;i<15;i++){
+    for(var t=0;t<=1.0001;t+=0.1){
+      S.seek(i,t);
+      mh.push(h1.getBoundingClientRect().height);
+      mo.push(d.documentElement.scrollWidth);
+      var hh=hero.getBoundingClientRect().height; mh.push(hh);
+    }
+  }
+  lines.push('mid-transition h1+hero heights: '+uniq(mh).join(' , '));
+  lines.push('mid-transition scrollWidth max: '+Math.max.apply(null,mo)+
+             '   -> '+(Math.max.apply(null,mo)<=d.documentElement.clientWidth?'NO H-OVERFLOW':'*** OVERFLOW ***'));
+  // per-slogan natural (unlocked) heights, to show the lock is the max
+  S.goto(0);
+  lines.push('--sl-h = '+h1.style.getPropertyValue('--sl-h'));
+  // reduced motion state
+  lines.push('prefers-reduced-motion matches: '+w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  document.getElementById('o').textContent=lines.join('\n');
+  document.title='READY';
+};
+</script>

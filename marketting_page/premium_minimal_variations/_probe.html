@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>html,body{margin:0}iframe{border:0}</style>
+<iframe id="f" src="./v9.html" style="width:1440px;height:900px"></iframe>
+<iframe id="g" src="./v9.html" style="width:390px;height:900px" scrolling="no"></iframe>
+<pre id="out">pending</pre>
+<script>
+var done=0,res=[];
+function chk(id){
+  var fr=document.getElementById(id), d=fr.contentDocument, w=fr.contentWindow, de=d.documentElement;
+  var vw=de.clientWidth, bad=0, worst='';
+  d.querySelectorAll('*').forEach(function(el){
+    var r=el.getBoundingClientRect();
+    if(r.right>vw+1||r.left<-1){ if(!el.closest('.tbl-scroll,pre,.code,figure')){bad++; if(!worst) worst=el.tagName+'.'+el.className+' l='+Math.round(r.left)+' r='+Math.round(r.right);} }
+  });
+  res.push(id+': clientW='+vw+' scrollW='+de.scrollWidth+' height='+de.scrollHeight+' nonScrollOverflow='+bad+' '+worst);
+  if(++done==2) document.getElementById('out').textContent=res.join('\n');
+}
+document.getElementById('f').onload=function(){chk('f')};
+document.getElementById('g').onload=function(){chk('g')};
+</script>

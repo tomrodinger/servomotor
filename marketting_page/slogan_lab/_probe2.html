@@ -1,0 +1,28 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>probe2</title>
+<style>body{margin:0;font:12px monospace}iframe{width:1300px;height:700px;border:0}
+pre{white-space:pre;padding:6px}</style></head><body>
+<iframe id="f"></iframe><pre id="out">…</pre>
+<script>
+const q=new URLSearchParams(location.search);
+const id=q.get('id')||'type-decode';
+const f=document.getElementById('f');
+f.src='index.html?only='+id+'&big=1&i='+(q.get('i')||'0')+'&t='+(q.get('t')||'0.02');
+f.onload=()=>setTimeout(()=>{
+  const d=f.contentDocument, L=[];
+  const stage=d.querySelector('.tile.focus .fx-stage');
+  const sr=stage.getBoundingClientRect();
+  L.push('stage rect w='+sr.width.toFixed(1)+' h='+sr.height.toFixed(1)+' top='+sr.top.toFixed(1));
+  const lay=d.querySelector('.tile.focus .fx-layer'), can=d.querySelector('.tile.focus .fx-canon');
+  [['layer',lay],['canon',can]].forEach(([n,e])=>{const b=e.getBoundingClientRect();
+    L.push(n+' rect top='+(b.top-sr.top).toFixed(1)+' h='+b.height.toFixed(1)+' left='+(b.left-sr.left).toFixed(1)+' w='+b.width.toFixed(1)+' vis='+e.style.visibility);});
+  can.querySelectorAll('span').forEach(e=>{const b=e.getBoundingClientRect();
+    L.push('canon "'+e.textContent.slice(0,10)+'" top='+(b.top-sr.top).toFixed(1)+' left='+(b.left-sr.left).toFixed(1)+' w='+b.width.toFixed(1)+' h='+b.height.toFixed(1));});
+  L.push('data-mh='+stage.dataset.mh+' layerH='+lay.getBoundingClientRect().height.toFixed(1));
+  let n=0;
+  lay.querySelectorAll('div').forEach(e=>{ if(!e.style.background)return; const b=e.getBoundingClientRect();
+    L.push('BAR bg='+e.style.background.slice(0,12)+' op='+e.style.opacity+' w='+b.width.toFixed(2)+' h='+b.height.toFixed(1)+' left='+(b.left-sr.left).toFixed(1)+' tf='+e.style.transform.slice(0,60));});
+  lay.querySelectorAll('span').forEach(e=>{ if(n++>4)return; const b=e.getBoundingClientRect();
+    L.push('fx "'+e.textContent.slice(0,10)+'" cssTop='+e.style.top+' top='+(b.top-sr.top).toFixed(1)+' left='+(b.left-sr.left).toFixed(1)+' h='+b.height.toFixed(1));});
+  document.getElementById('out').textContent=L.join('\n');
+},1200);
+</script></body></html>

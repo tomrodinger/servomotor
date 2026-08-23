@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>meas</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;white-space:pre;padding:8px}
+iframe{position:absolute;left:-9999px;top:0;width:var(--w);height:1400px;border:0}</style>
+<div id="o">…</div>
+<script>
+var W=parseInt((location.search.match(/w=(\d+)/)||[0,1440])[1],10);
+var f=document.createElement('iframe');
+f.style.setProperty('--w',W+'px');
+f.src='v11.html?motion=on&rest=0';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument,w=f.contentWindow,o=[];
+    var hl=d.getElementById('hl'), lede=d.querySelector('.lede'), eb=d.querySelector('.hero .eyebrow');
+    o.push('viewport '+W+'  lockH='+w.__slogan.height());
+    for(var i=0;i<15;i++){
+      w.__slogan['goto'](i);
+      var r=hl.getBoundingClientRect(), l=lede.getBoundingClientRect(), e=eb.getBoundingClientRect();
+      var lay=hl.querySelector('.hl-l.in').getBoundingClientRect();
+      o.push(('  '+i).slice(-3)+' hl top='+r.top.toFixed(1)+' h='+r.height.toFixed(1)+
+        ' | text top='+lay.top.toFixed(1)+' h='+lay.height.toFixed(1)+
+        ' | gapAboveText='+(lay.top-e.bottom).toFixed(1)+
+        ' | lede top='+l.top.toFixed(1)+
+        ' | scrollW='+d.documentElement.scrollWidth+'/'+d.documentElement.clientWidth);
+    }
+    document.getElementById('o').textContent=o.join('\n');
+  },600);
+};
+</script>

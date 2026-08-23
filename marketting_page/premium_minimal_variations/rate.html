@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rate the 20 page designs</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0b0b0c;--panel:#151517;--line:#26262a;--ink:#ececf0;--mut:#83838c;
+        --green:#7AB648;--red:#e0574f}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;display:flex;flex-direction:column;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+
+  header{flex:none;background:var(--panel);border-bottom:2px solid var(--green);
+         padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:13px}.brand span{color:var(--green)}
+  .brand em{font-style:normal;color:var(--mut);font-weight:500}
+  nav{display:flex;gap:3px;flex-wrap:wrap}
+  nav button{background:#242426;color:#c3c3c8;border:1px solid #333336;padding:5px 8px;
+    border-radius:5px;cursor:pointer;font-size:11.5px;line-height:1;font-family:inherit;position:relative}
+  nav button:hover{background:#333336;color:#fff}
+  nav button.active{outline:2px solid #fff;outline-offset:1px}
+  nav button.k{background:var(--green);border-color:var(--green);color:#0b0b0c;font-weight:700}
+  nav button.d{background:#4a2320;border-color:#5e2d29;color:#ffb0aa}
+  .grow{flex:1}
+  .stat{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stat b{color:var(--green)}.stat i{font-style:normal;color:var(--red)}
+  button.tool,select{background:#1e1e21;color:#c9c9d0;border:1px solid var(--line);border-radius:6px;
+    padding:5px 10px;font-size:11.5px;font-family:inherit;cursor:pointer}
+  button.tool:hover{background:#2a2a2e;color:#fff}
+  a.lnk{color:#9fd06a;font-size:11.5px;text-decoration:none}
+
+  .body{flex:1;display:flex;min-height:0}
+  main{flex:1;position:relative;background:#1a1a1c;min-width:0}
+  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+
+  aside{flex:none;width:310px;background:var(--panel);border-left:1px solid var(--line);
+        padding:13px;overflow:auto;display:flex;flex-direction:column;gap:11px}
+  aside h3{font-size:13.5px;font-weight:650}
+  aside h3 small{display:block;color:var(--mut);font-size:11.5px;font-weight:400;margin-top:2px}
+  .verdict{display:flex;gap:7px}
+  .verdict button{flex:1;padding:11px 0;border-radius:8px;font-size:13px;font-weight:700;
+    border:1px solid var(--line);background:#1e1e21;color:#c9c9d0;cursor:pointer;font-family:inherit}
+  .verdict button.on.keep{background:var(--green);border-color:var(--green);color:#0b0b0c}
+  .verdict button.on.toss{background:#4a2320;border-color:#5e2d29;color:#ffb0aa}
+  .lab{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--green);font-weight:700}
+  .tags{display:flex;flex-wrap:wrap;gap:5px}
+  .tags label{display:inline-flex;align-items:center;gap:4px;background:#1a1a1c;border:1px solid #2a2a2e;
+    border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:#b8b8c0}
+  .tags label.on{border-color:var(--green);color:#fff}
+  .tags input{accent-color:var(--green)}
+  textarea{width:100%;height:90px;background:#141416;color:#dcdce2;border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;font-family:inherit;font-size:12px;line-height:1.5;resize:vertical}
+  .hint{color:var(--mut);font-size:11.5px;line-height:1.5}
+  .saved{color:var(--green);font-size:11px;min-height:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> <em>rate the 20 designs</em></div>
+  <nav id="tabs"></nav>
+  <div class="grow"></div>
+  <div class="stat"><b id="nk">0</b> keep · <i id="nd">0</i> out · <span id="nr">0</span>/20</div>
+  <select id="w"><option value="">Desktop</option><option value="834">Tablet</option><option value="414">Phone</option></select>
+  <a class="lnk" id="open" href="#" target="_blank">open ↗</a>
+  <a class="lnk" href="../START_HERE.html">home ↗</a>
+</header>
+
+<div class="body">
+  <main><iframe id="fr" title="variant"></iframe></main>
+  <aside>
+    <h3 id="ttl">—<small id="sub"></small></h3>
+
+    <div class="verdict">
+      <button class="toss" id="bno">✕ Discard</button>
+      <button class="keep" id="byes">✓ Keep</button>
+    </div>
+    <div class="saved" id="saved"></div>
+
+    <div>
+      <div class="lab" style="margin-bottom:6px">What works here?</div>
+      <div class="tags" id="tags"></div>
+    </div>
+
+    <div>
+      <div class="lab" style="margin-bottom:6px">Notes</div>
+      <textarea id="note" placeholder="Anything specific — a section that works, something to drop, an idea to carry into the final page."></textarea>
+    </div>
+
+    <div class="hint">
+      Tick what you like even on pages you discard — I use the tags and notes to decide which
+      features go into the combined final page, not just which pages won.
+      <br><br><b>←</b> discard &nbsp; <b>→</b> keep &nbsp; <b>↑↓</b> move
+    </div>
+  </aside>
+</div>
+
+<script>
+const NAMES = ["Director's Cut","Ivory & Ink","Editorial Serif","Midnight Inverse","Swiss Grid",
+"Mono Technical","Green Field","Asymmetric Split","Soft Neutral","Gallery","Blueprint",
+"Big Numerals","Graphite & Chrome","Whisper Gradient","Hairline Catalogue","Sage & Stone",
+"Terminal Minimal","Magazine","Scroll Choreography","Statement Type"];
+const FX = ["Keynote dissolve","Ink bleed","Hot-metal slug","Light sweep","Hairline wipe",
+"Glyph scramble","Field wipe","Axis shear","Spring squash","Museum dissolve","Leader-line draw",
+"Odometer roll","Specular sweep","Aurora condense","Cell flip","Horizon slide","Typed","Page turn",
+"Kinetic stagger","Poster slam"];
+const TAGS = ["typography","colour palette","hero layout","the product photo","spec table",
+"section rhythm","whitespace","the code block","applications","footer","the transition",
+"overall feel"];
+
+let cur = 0, data = {};
+
+(async function () {
+  try { data = await (await fetch('/api/ratings/pages', { cache: 'no-store' })).json() || {}; }
+  catch (e) { data = {}; }
+  buildTabs(); buildTags();
+  const first = NAMES.findIndex((_, i) => !data['v' + (i + 1)]);
+  show(first < 0 ? 0 : first);
+})();
+
+function buildTabs() {
+  const n = document.getElementById('tabs');
+  NAMES.forEach((nm, i) => {
+    const b = document.createElement('button');
+    b.textContent = i + 1;
+    b.title = nm + ' — ' + FX[i];
+    b.onclick = () => show(i);
+    n.appendChild(b);
+  });
+}
+function buildTags() {
+  const box = document.getElementById('tags');
+  TAGS.forEach(t => {
+    const l = document.createElement('label');
+    const c = document.createElement('input');
+    c.type = 'checkbox'; c.value = t;
+    c.onchange = () => { l.classList.toggle('on', c.checked); collect(); };
+    l.appendChild(c); l.appendChild(document.createTextNode(t));
+    box.appendChild(l);
+  });
+}
+
+function key() { return 'v' + (cur + 1); }
+
+function show(i) {
+  cur = (i + NAMES.length) % NAMES.length;
+  const k = key();
+  document.getElementById('ttl').firstChild.textContent = (cur + 1) + '. ' + NAMES[cur];
+  document.getElementById('sub').textContent = 'transition: ' + FX[cur];
+  const w = document.getElementById('w').value;
+  const fr = document.getElementById('fr');
+  fr.src = 'v' + (cur + 1) + '.html';
+  fr.style.width = w ? w + 'px' : '100%';
+  fr.style.margin = w ? '0 auto' : '';
+  fr.style.display = 'block';
+  fr.style.position = w ? 'relative' : 'absolute';
+  document.getElementById('open').href = 'v' + (cur + 1) + '.html';
+
+  const d = data[k] || {};
+  document.getElementById('byes').classList.toggle('on', d.verdict === 'keep');
+  document.getElementById('bno').classList.toggle('on', d.verdict === 'discard');
+  document.getElementById('note').value = d.note || '';
+  document.querySelectorAll('#tags input').forEach(c => {
+    c.checked = (d.tags || []).includes(c.value);
+    c.parentElement.classList.toggle('on', c.checked);
+  });
+  paint();
+}
+
+function paint() {
+  const tabs = document.querySelectorAll('#tabs button');
+  NAMES.forEach((_, i) => {
+    const v = (data['v' + (i + 1)] || {}).verdict;
+    tabs[i].className = (v === 'keep' ? 'k' : v === 'discard' ? 'd' : '') + (i === cur ? ' active' : '');
+  });
+  const vals = Object.values(data);
+  const nk = vals.filter(v => v.verdict === 'keep').length;
+  const nd = vals.filter(v => v.verdict === 'discard').length;
+  document.getElementById('nk').textContent = nk;
+  document.getElementById('nd').textContent = nd;
+  document.getElementById('nr').textContent = nk + nd;
+}
+
+function collect(verdict) {
+  const k = key();
+  const d = data[k] || {};
+  if (verdict) d.verdict = verdict;
+  d.name = NAMES[cur];
+  d.effect = FX[cur];
+  d.tags = [...document.querySelectorAll('#tags input:checked')].map(c => c.value);
+  d.note = document.getElementById('note').value.trim();
+  data[k] = d;
+  paint(); save();
+}
+
+let t = 0;
+function save() {
+  clearTimeout(t);
+  t = setTimeout(async () => {
+    try {
+      await fetch('/api/ratings/pages', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      const s = document.getElementById('saved');
+      s.textContent = 'saved ✓';
+      setTimeout(() => { s.textContent = ''; }, 1200);
+    } catch (e) {}
+  }, 300);
+}
+
+document.getElementById('byes').onclick = () => { collect('keep'); show(cur + 1); };
+document.getElementById('bno').onclick = () => { collect('discard'); show(cur + 1); };
+document.getElementById('note').addEventListener('input', () => collect());
+document.getElementById('w').onchange = () => show(cur);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); collect('keep'); show(cur + 1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); collect('discard'); show(cur + 1); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); show(cur + 1); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); show(cur - 1); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html><meta charset="utf-8"><title>ovf3</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.35 monospace}
+#o{white-space:pre;padding:6px}
+iframe{width:var(--w,1400px);height:1200px;border:0;position:absolute;left:-9999px;top:0}</style>
+<div id="o">measuring…</div>
+<iframe id="f"></iframe>
+<script>
+var P = new URLSearchParams(location.search);
+var W = parseInt(P.get('w')||'1400',10);
+var f = document.getElementById('f');
+f.style.setProperty('--w', W+'px');
+f.style.width = W+'px';
+f.src = '/premium_minimal_variations/v3.html';
+var out=[];
+function log(s){out.push(s);document.getElementById('o').textContent=out.join('\n');}
+f.onload = function(){
+  setTimeout(run, 1200);
+};
+function m(d){
+  return {sw:d.documentElement.scrollWidth, cw:d.documentElement.clientWidth,
+          bsw:d.body.scrollWidth};
+}
+function offenders(d){
+  var cw=d.documentElement.clientWidth, res=[], all=d.querySelectorAll('*');
+  for(var i=0;i<all.length;i++){
+    var r=all[i].getBoundingClientRect();
+    if(r.width===0&&r.height===0) continue;
+    if(r.right>cw+0.5||r.left<-0.5){
+      res.push(all[i].tagName+'.'+(all[i].className||'')+' L='+r.left.toFixed(1)+' R='+r.right.toFixed(1));
+    }
+  }
+  return res.slice(0,12);
+}
+function run(){
+  var d=f.contentDocument, w=f.contentWindow;
+  var S=w.__slogan;
+  log('W='+W+'  RM='+w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var r=m(d); log('REST idx'+S.index()+': scrollW='+r.sw+' clientW='+r.cw+' bodyScrollW='+r.bsw);
+  log('offenders@rest: '+JSON.stringify(offenders(d)));
+  var h=[];
+  var worst=0, worstd='';
+  for(var i=0;i<15;i++){ S.goto(i); var hh=d.querySelector('.hero h1').getBoundingClientRect().height;
+    var rr=m(d); h.push(i+':'+hh.toFixed(1)+'/'+rr.sw);
+    if(rr.sw-rr.cw>worst){worst=rr.sw-rr.cw;worstd='goto'+i+' '+JSON.stringify(offenders(d));}
+  }
+  log('h1 height / scrollW per slogan:'); log('  '+h.join('  '));
+  var ts=[0,0.15,0.35,0.5,0.65,0.85,0.99];
+  var bad=[];
+  for(var i=0;i<15;i++) for(var k=0;k<ts.length;k++){
+    S.seek(i,ts[k]); var rr=m(d);
+    if(rr.sw>rr.cw+0.5){bad.push(i+'@'+ts[k]+' sw='+rr.sw);
+      if(rr.sw-rr.cw>worst){worst=rr.sw-rr.cw;worstd='seek'+i+','+ts[k]+' '+JSON.stringify(offenders(d));}}
+  }
+  log('mid-transition overflow frames ('+bad.length+'): '+bad.slice(0,14).join(' '));
+  log('WORST(+'+worst+'): '+worstd);
+  S.goto(3);
+}
+</script>

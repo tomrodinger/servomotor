@@ -1,0 +1,22 @@
+<!doctype html><meta charset="utf-8"><title>pr sheet</title>
+<style>
+html,body{margin:0;background:#111;color:#eee;font:11px system-ui}
+.g{display:grid;grid-template-columns:repeat(3,620px);gap:4px}
+.c{position:relative}
+.c i{position:absolute;left:2px;top:2px;z-index:9;background:#000;color:#0f0;padding:1px 4px;font-style:normal}
+iframe{width:620px;height:380px;border:0;display:block;background:#fff}
+</style>
+<div class="g" id="g"></div>
+<script>
+var q=new URLSearchParams(location.search);
+var id=q.get('id'), i=q.get('i')||'0';
+var TS=[0,0.02,0.15,0.3,0.5,0.7,0.85,0.98,1];
+var g=document.getElementById('g');
+TS.forEach(function(t){
+  var c=document.createElement('div');c.className='c';
+  c.innerHTML='<i>t='+t+'</i>';
+  var f=document.createElement('iframe');
+  f.src='index.html?only='+id+'&big=1&i='+i+'&t='+t;
+  c.appendChild(f);g.appendChild(c);
+});
+</script>

@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>sl14 sheet</title>
+<style>
+  html,body{margin:0;background:#1b1b1b;}
+  .row{position:relative;overflow:hidden;background:#fff;margin-bottom:5px;}
+  .row iframe{position:absolute;left:0;height:900px;border:0;}
+  .lab{position:absolute;left:6px;top:3px;z-index:9;font:700 12px ui-monospace,monospace;color:#b00;background:rgba(255,255,255,.75);padding:1px 5px;}
+</style>
+<script>
+  var q   = new URLSearchParams(location.search);
+  var i   = q.get('i') || '6';
+  var ts  = (q.get('t') || '0,0.15,0.35,0.5,0.65,0.85,1').split(',');
+  var W   = +(q.get('w')   || 1280);
+  var TOP = +(q.get('top') || 180);
+  var H   = +(q.get('h')   || 300);
+  var out = '';
+  for (var k = 0; k < ts.length; k++){
+    out += '<div class="row" style="height:'+H+'px;width:'+W+'px">'
+        +  '<span class="lab">i='+i+' t='+ts[k]+'</span>'
+        +  '<iframe scrolling="no" style="width:'+W+'px;top:'+(-TOP)+'px" src="v14.html?sl='+i+'&t='+ts[k]+'"></iframe>'
+        +  '</div>';
+  }
+  document.write(out);
+</script>

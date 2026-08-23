@@ -1,0 +1,41 @@
+<!doctype html><meta charset="utf-8"><title>sl13 probe</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.45 monospace;white-space:pre}
+#w{position:fixed;left:-9999px;top:0}</style>
+<div id="out">measuring…</div>
+<div id="w"></div>
+<script>
+var W=[[1440,900],[900,900],[390,800]];
+var lines=[];
+function run(k){
+  if(k>=W.length){document.getElementById('out').textContent=lines.join('\n');return;}
+  var w=W[k][0],h=W[k][1];
+  var f=document.createElement('iframe');
+  f.style.cssText='width:'+w+'px;height:'+h+'px;border:0';
+  f.src='v13.html?sl=0';
+  document.getElementById('w').appendChild(f);
+  f.onload=function(){
+    setTimeout(function(){
+      var d=f.contentDocument, win=f.contentWindow;
+      var S=win.__slogan;
+      var lede=d.querySelector('.lede'), specs=d.querySelector('.hero-specs'), sw=d.getElementById('sw');
+      var rows=[];
+      for(var i=0;i<15;i++){
+        S.goto(i);
+        var r=lede.getBoundingClientRect(), sp=specs.getBoundingClientRect(), sr=sw.getBoundingClientRect();
+        rows.push('  i='+(i<10?' ':'')+i+
+          ' swH='+sr.height.toFixed(1)+
+          ' ledeY='+r.top.toFixed(1)+
+          ' specY='+sp.top.toFixed(1)+
+          ' scrollW='+d.documentElement.scrollWidth+
+          ' bodyW='+d.body.scrollWidth+
+          ' clientW='+d.documentElement.clientWidth);
+      }
+      lines.push('=== width '+w+' ===');
+      lines=lines.concat(rows);
+      f.remove();
+      run(k+1);
+    },260);
+  };
+}
+run(0);
+</script>

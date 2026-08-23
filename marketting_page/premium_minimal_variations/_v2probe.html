@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>v2 probe</title>
+<style>body{font:13px/1.5 monospace;margin:0;background:#fff;color:#000}
+iframe{width:1440px;height:900px;border:0;position:absolute;left:-4000px;top:0}
+pre{padding:8px;white-space:pre-wrap}</style>
+<iframe id="f" src="v2.html?motion=1"></iframe>
+<pre id="o">loading…</pre>
+<script>
+var f=document.getElementById('f'),o=document.getElementById('o');
+var W=(new URLSearchParams(location.search)).get('w');
+if(W){f.style.width=W+'px';}
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, out=[];
+    var st=d.getElementById('slStage');
+    out.push('viewport '+w.innerWidth+'  minHeight='+st.style.minHeight);
+    var base=null, lede=d.querySelector('.hero .lede');
+    for(var i=0;i<15;i++){
+      w.__slogan.goto(i);
+      var r=st.getBoundingClientRect(), lr=lede.getBoundingClientRect();
+      var dh=d.documentElement.scrollWidth;
+      out.push(('  '+i).slice(-3)+'  stageTop='+r.top.toFixed(1)+' stageH='+r.height.toFixed(1)
+        +' ledeTop='+lr.top.toFixed(1)+' docScrollW='+dh+' bodyH='+d.body.scrollHeight);
+    }
+    out.push('index()='+w.__slogan.index()+'  items='+w.__slogan.items.length+' reduced='+w.__slogan.reduced);
+    o.textContent=out.join('\n');
+  },900);
+};
+</script>

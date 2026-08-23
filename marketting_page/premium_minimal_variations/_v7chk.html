@@ -1,0 +1,137 @@
+<!doctype html><meta charset="utf-8"><title>v7 geometry + behaviour check</title>
+<style>html,body{margin:0;background:#fff;font:12px monospace}
+#f{border:0;display:block}#o{white-space:pre;padding:8px}</style>
+<iframe id="f"></iframe>
+<pre id="o">pending</pre>
+<script>
+(function(){
+  var q=new URLSearchParams(location.search);
+  var W=+(q.get('w')||1440), MODE=q.get('mode')||'geom';
+  var out=[], f=document.getElementById('f');
+  f.style.width=W+'px'; f.style.height=(q.get('h')||1400)+'px';
+  function log(s){ out.push(s); document.getElementById('o').textContent=out.join('\n'); }
+  f.src = 'v7.html' + (MODE==='rm' ? '' : '?__play=1');
+  f.addEventListener('load', function(){ setTimeout(run, 400); }, {once:true});
+
+  function geom(w,d,api){
+    var hero=d.querySelector('.hero'), h1=d.querySelector('.hero h1');
+    var lede=d.querySelector('.hero .lede');
+    log('layout width reported by page: '+d.documentElement.clientWidth);
+    var hs=[], bad=[];
+    for(var i=0;i<15;i++){
+      api.goto(i);
+      var hh=hero.getBoundingClientRect().height;
+      var h1h=h1.getBoundingClientRect().height;
+      var lt=lede.getBoundingClientRect().top;
+      var ow=d.documentElement.scrollWidth, cw=d.documentElement.clientWidth;
+      // widest painted element inside the h1
+      var maxR=0,minL=1e9, ws=h1.getElementsByClassName('sl-w');
+      for(var j=0;j<ws.length;j++){ var r=ws[j].getBoundingClientRect();
+        if(r.width&&ws[j].offsetParent){ if(r.right>maxR)maxR=r.right; if(r.left<minL)minL=r.left; } }
+      hs.push([i,hh.toFixed(1),h1h.toFixed(1),lt.toFixed(1),ow+'/'+cw,minL.toFixed(0)+'..'+maxR.toFixed(0)].join(' '));
+      if(ow>cw) bad.push('slogan '+i+' OVERFLOW scrollWidth '+ow+' > '+cw);
+      if(minL<0||maxR>cw) bad.push('slogan '+i+' text outside viewport '+minL.toFixed(0)+'..'+maxR.toFixed(0));
+    }
+    log('idx heroH h1H ledeTop scrollW/clientW textL..R');
+    hs.forEach(function(s){log('  '+s);});
+    var uniqH={}, uniqL={};
+    hs.forEach(function(s){ var p=s.split(' '); uniqH[p[1]]=1; uniqL[p[3]]=1; });
+    log('distinct hero heights: '+Object.keys(uniqH).join(', ')+
+        '  ['+(Object.keys(uniqH).length===1?'PASS':'FAIL')+']');
+    log('distinct lede tops: '+Object.keys(uniqL).join(', ')+
+        '  ['+(Object.keys(uniqL).length===1?'PASS':'FAIL')+']');
+    // mid-transition must not change height either
+    var mh={};
+    for(var t=0;t<=1.001;t+=0.1){ api.seek(4,t); mh[hero.getBoundingClientRect().height.toFixed(1)]=1; }
+    for(var t2=0;t2<=1.001;t2+=0.1){ api.seek(12,t2); mh[hero.getBoundingClientRect().height.toFixed(1)]=1; }
+    log('hero heights seen mid-transition: '+Object.keys(mh).join(', ')+
+        '  ['+(Object.keys(mh).length===1?'PASS':'FAIL')+']');
+    log(bad.length? bad.join('\n') : 'no overflow at any of the 15  [PASS]');
+    document.title='done';
+  }
+
+  function behave(w,d,api){
+    var h1=d.querySelector('.hero h1');
+    log('prefers-reduced-motion: '+w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    log('aria-live: '+h1.getAttribute('aria-live')+'   old aria-hidden: '+d.querySelector('.sl-old').getAttribute('aria-hidden'));
+    log('h1 text: "'+h1.innerText.replace(/\s+/g,' ').trim()+'"');
+    var steps=[], si=0;
+    // WAIT must exceed DWELL+DUR in VIRTUAL time so an unblocked timer really runs.
+    var WAIT=20000;
+    function armed(label, prep, expectStuck, at){
+      prep(w,d,api);
+      setTimeout(function(){
+        var moved = api.index() !== at;
+        log(label+': start '+at+' -> '+api.index()+'  '+(moved?'TIMER RAN':'timer blocked')+
+            '  ['+(moved!==expectStuck?'PASS':'FAIL')+']');
+        next();
+      }, WAIT);
+    }
+    if(MODE==='rm'){
+      steps.push(function(){ api.resume(); api.goto(0);
+        armed('reduced motion: cycling must NOT start', function(){}, true, 0); });
+    } else {
+      steps.push(function(){
+        // diagnose the environment before trusting any of the blocking tests
+        var rafN=0, t0=w.Date.now();
+        (function tick(){ rafN++; if(rafN<600) w.requestAnimationFrame(tick); })();
+        api.resume(); api.goto(0);
+        setTimeout(function(){
+          log('env: document.hidden='+d.hidden+'  rAF ticks in 20s virtual='+rafN+
+              '  wall ms='+(w.Date.now()-t0)+'  newText="'+
+              d.querySelector('.sl-new').innerText.replace(/\s+/g,' ').trim()+'"');
+          next();
+        }, WAIT);
+      });
+      steps.push(function(){ api.resume(); api.goto(0);
+        armed('baseline (nothing blocking)', function(){}, false, 0); });
+      steps.push(function(){ api.resume(); api.goto(5);
+        armed('hover', function(w,d){ d.querySelector('.hero h1').dispatchEvent(new w.MouseEvent('mouseenter')); }, true, 5); });
+      steps.push(function(){ d.querySelector('.hero h1').dispatchEvent(new w.MouseEvent('mouseleave'));
+        api.resume(); api.goto(7);
+        armed('focus', function(w,d){ d.querySelector('.hero h1').dispatchEvent(new w.FocusEvent('focusin',{bubbles:true})); }, true, 7); });
+      steps.push(function(){ d.querySelector('.hero h1').dispatchEvent(new w.FocusEvent('focusout',{bubbles:true}));
+        api.resume(); api.goto(9);
+        armed('hidden tab', function(w,d){
+          try{Object.defineProperty(d,'hidden',{configurable:true,get:function(){return true;}});}catch(e){log(' (hidden fake failed)');}
+          d.dispatchEvent(new w.Event('visibilitychange')); }, true, 9); });
+      steps.push(function(){
+        try{Object.defineProperty(d,'hidden',{configurable:true,get:function(){return false;}});}catch(e){}
+        api.resume(); api.goto(11);
+        armed('pause()', function(w,d,api){ api.pause(); }, true, 11); });
+      steps.push(function(){ api.seek(3,0.42);
+        armed('frozen by seek()', function(){}, true, 3); });
+      steps.push(function(){ api.resume(); api.goto(2);
+        armed('resume() after all of that', function(){}, false, 2); });
+    }
+    function next(){ if(si<steps.length) steps[si++](); else done(); }
+    function done(){
+      if(MODE!=='rm'){
+        api.pause();
+        var sig=function(){ return [d.querySelector('.sl-band').style.transform,
+          d.querySelector('.sl-new').style.maskSize,
+          d.querySelector('.sl-hair').style.transform,
+          d.querySelector('.sl-inkwin').style.opacity].join('|'); };
+        api.seek(6,0.37); var a=sig();
+        api.seek(13,0.9); api.seek(1,0.1); api.seek(6,0.37); var b=sig();
+        log('seek idempotent: '+(a===b)+' ['+(a===b?'PASS':'FAIL')+']  '+a);
+        var xs=[]; for(var t=0;t<=1.0001;t+=0.125){ api.seek(6,t);
+          xs.push(+(/translate3d\((-?[\d.]+)px/.exec(d.querySelector('.sl-band').style.transform)||[0,0])[1]); }
+        var mono=xs.every(function(v,i){return i===0||v>=xs[i-1];});
+        log('band monotonic: '+mono+' ['+(mono?'PASS':'FAIL')+'] '+xs.map(function(v){return v.toFixed(0);}).join(' '));
+        api.seek(6,0); var o0=d.querySelector('.sl-old').style.clipPath;
+        api.seek(6,1); var n1=d.querySelector('.sl-new').style.maskSize;
+        log('t=0 old clip: '+o0+'   t=1 new mask: '+n1);
+      }
+      document.title='done';
+    }
+    next();
+  }
+
+  function run(){
+    var w=f.contentWindow, d=f.contentDocument, api=w.__slogan;
+    if(!api){ log('NO __slogan API'); document.title='done'; return; }
+    if(MODE==='geom') geom(w,d,api); else behave(w,d,api);
+  }
+})();
+</script>

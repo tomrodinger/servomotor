@@ -1,0 +1,68 @@
+<!doctype html><meta charset="utf-8"><title>v1 probe</title>
+<style>
+ body{margin:0;font:12px/1.35 monospace;background:#fff;color:#111}
+ #out{padding:8px;white-space:pre}
+ iframe{position:absolute;left:-4000px;top:0;border:0;height:1400px}
+ .bad{color:#c00;font-weight:700}
+</style>
+<div id="out">running…</div>
+<script>
+var WIDTHS=[1440,900,390];
+var out=document.getElementById('out'), log=[];
+function step(k){
+  if(k>=WIDTHS.length){ out.innerHTML=log.join('\n'); return; }
+  var W=WIDTHS[k];
+  var f=document.createElement('iframe');
+  f.width=W; f.style.width=W+'px';
+  f.src='v1.html?motion=1&pause=1';
+  f.onload=function(){
+    setTimeout(function(){
+      var d=f.contentDocument, w=f.contentWindow;
+      var h1=d.querySelector('.hero h1'), lede=d.querySelector('.hero .lede');
+      var S=w.__slogan, heights=[], ledeTops=[], ovf=[], slotH=[];
+      for(var i=0;i<15;i++){
+        S.goto(i);
+        heights.push(Math.round(h1.getBoundingClientRect().height*100)/100);
+        ledeTops.push(Math.round(lede.getBoundingClientRect().top*100)/100);
+        slotH.push(Math.round(d.querySelector('.hslot').getBoundingClientRect().height*100)/100);
+        var de=d.documentElement;
+        ovf.push(de.scrollWidth-de.clientWidth);
+        // widest painted word box vs viewport
+        var ws=d.querySelectorAll('.hero h1 .w'), mn=1e9, mx=-1e9;
+        for(var j=0;j<ws.length;j++){ var r=ws[j].getBoundingClientRect(); if(r.width===0) continue; if(r.left<mn)mn=r.left; if(r.right>mx)mx=r.right; }
+        ovf[i]=[ovf[i], Math.round(mn), Math.round(mx)];
+      }
+      // mid-transition overflow: seek across every pair at t=0.5
+      var seekOvf=0, seekMax=-1e9, seekMin=1e9;
+      for(var i=0;i<15;i++){
+        for(var tt=0;tt<=1.0001;tt+=0.25){
+          S.seek(i,tt);
+          var de2=d.documentElement;
+          seekOvf=Math.max(seekOvf, de2.scrollWidth-de2.clientWidth);
+          var ws2=d.querySelectorAll('.hero h1 .w');
+          for(var j=0;j<ws2.length;j++){ var r2=ws2[j].getBoundingClientRect(); if(r2.width===0||ws2[j].style.visibility==='hidden')continue; if(r2.left<seekMin)seekMin=r2.left; if(r2.right>seekMax)seekMax=r2.right; }
+        }
+      }
+      S.goto(0);
+      function uniq(a){var s={},r=[];for(var i=0;i<a.length;i++){if(!s[a[i]]){s[a[i]]=1;r.push(a[i]);}}return r;}
+      var uh=uniq(heights), ul=uniq(ledeTops), us=uniq(slotH);
+      var docOvf=uniq(ovf.map(function(x){return x[0];}));
+      var minL=Math.min.apply(null,ovf.map(function(x){return x[1];}));
+      var maxR=Math.max.apply(null,ovf.map(function(x){return x[2];}));
+      log.push('=== width '+W+' ===');
+      log.push(' h1 heights   : '+(uh.length===1?('LOCKED '+uh[0]):('<span class=bad>VARIES '+uh.join(',')+'</span>')));
+      log.push(' hslot heights: '+(us.length===1?('LOCKED '+us[0]):('<span class=bad>VARIES '+us.join(',')+'</span>')));
+      log.push(' lede top     : '+(ul.length===1?('LOCKED '+ul[0]):('<span class=bad>VARIES '+ul.join(',')+'</span>')));
+      log.push(' doc h-overflow (rest): '+(docOvf.length===1&&docOvf[0]===0?'0 OK':'<span class=bad>'+docOvf.join(',')+'</span>'));
+      log.push(' word box x-range rest : '+minL+' .. '+maxR+'  (viewport 0..'+W+') '+((minL>=0&&maxR<=W)?'OK':'<span class=bad>OVERFLOW</span>'));
+      log.push(' mid-transition doc h-overflow: '+(seekOvf===0?'0 OK':'<span class=bad>'+seekOvf+'</span>'));
+      log.push(' mid-transition x-range: '+Math.round(seekMin)+' .. '+Math.round(seekMax)+' '+((seekMin>=-1&&seekMax<=W+1)?'OK':'<span class=bad>OVERFLOW</span>'));
+      log.push('');
+      document.body.removeChild(f);
+      step(k+1);
+    },500);
+  };
+  document.body.appendChild(f);
+}
+step(0);
+</script>

@@ -1,0 +1,37 @@
+<!doctype html><meta charset="utf-8"><title>v14 measure</title>
+<style>html,body{margin:0}iframe{border:0;display:block}pre{font:12px/1.5 Menlo,monospace;white-space:pre-wrap}</style>
+<pre id="o">running…</pre>
+<script>
+var q=new URLSearchParams(location.search);
+var W=parseInt(q.get('w')||'1440',10);
+var f=document.createElement('iframe');
+f.width=W;f.height=1400;f.src='v14.html';f.scrolling='no';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument,w=f.contentWindow,out=[];
+    var S=w.__slogan;
+    if(!S){document.getElementById('o').textContent='NO __slogan';return;}
+    S.pause();
+    var h1=d.querySelector('.hero h1'), stage=d.querySelector('.sl-stage');
+    var hero=d.querySelector('.hero');
+    out.push('viewport '+d.documentElement.clientWidth+' | doc scrollW '+d.documentElement.scrollWidth+' bodyScrollW '+d.body.scrollWidth);
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var r=h1.getBoundingClientRect();
+      var sw=stage.getElementsByClassName('sw');
+      var maxR=-1e9,minL=1e9;
+      for(var k=0;k<sw.length;k++){var b=sw[k].getBoundingClientRect();if(b.right>maxR)maxR=b.right;if(b.left<minL)minL=b.left;}
+      out.push('i='+(i<10?' ':'')+i+
+        '  h1H='+r.height.toFixed(2)+
+        '  stageH='+stage.getBoundingClientRect().height.toFixed(2)+
+        '  h1Top='+r.top.toFixed(1)+
+        '  wordL='+minL.toFixed(1)+' wordR='+maxR.toFixed(1)+
+        '  docScrollW='+d.documentElement.scrollWidth+
+        '  lines='+(d.querySelector('.sl-layer.is-rest .sl-ink').getClientRects().length));
+    }
+    S.goto(6);
+    document.getElementById('o').textContent=out.join('\n');
+  },900);
+};
+</script>

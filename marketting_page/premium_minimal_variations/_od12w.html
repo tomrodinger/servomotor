@@ -1,0 +1,32 @@
+<!doctype html><meta charset="utf-8"><pre id="o">…</pre>
+<script>
+var f=document.createElement('iframe');f.width=1440;f.height=900;f.src='v12.html?motion=1&pause=1';
+f.style.cssText='position:absolute;left:-3000px';document.body.appendChild(f);
+f.onload=function(){setTimeout(function(){
+ var d=f.contentDocument,L=[];
+ var h1=d.querySelector('#top h1');
+ var m=d.createElement('h1');m.style.cssText='position:absolute;left:0;top:0;visibility:hidden;width:'+h1.clientWidth+'px';
+ h1.parentNode.appendChild(m);
+ function widths(cls){
+  var h='',i;for(i=0;i<10;i++)h+='<span class="odo-mw '+cls+'" id="q'+i+'">'+i+'</span>';
+  m.innerHTML='<span class="odo-l1">'+h+'</span>';
+  var r=[];for(i=0;i<10;i++)r.push(+d.getElementById('q'+i).getBoundingClientRect().width.toFixed(2));
+  return r;
+ }
+ L.push('digit widths .dg (w200): '+JSON.stringify(widths('dg')));
+ L.push('digit widths plain    : '+JSON.stringify(widths('')));
+ function adv(word,bold){
+  m.innerHTML=(bold?'<strong class="odo-l2">':'<span class="odo-l1">')+'<span class="odo-mw" id="qq">'+word+'</span>'+(bold?'</strong>':'</span>');
+  var sp=d.getElementById('qq'),node=sp.firstChild,rg=d.createRange(),sr=sp.getBoundingClientRect(),lf=[],a=[],j;
+  for(j=0;j<word.length;j++){rg.setStart(node,j);rg.setEnd(node,j+1);lf.push(rg.getBoundingClientRect().left);}
+  for(j=0;j<word.length;j++)a.push(+(((j<word.length-1?lf[j+1]:sr.right)-lf[j])).toFixed(2));
+  return a;
+ }
+ L.push('adv light Motion    = '+JSON.stringify(adv('Motion',false)));
+ L.push('adv light systems.  = '+JSON.stringify(adv('systems.',false)));
+ L.push('adv bold integrated.= '+JSON.stringify(adv('integrated.',true)));
+ L.push('adv bold One        = '+JSON.stringify(adv('One',true)));
+ m.parentNode.removeChild(m);
+ document.getElementById('o').textContent=L.join('\n');
+},900);};
+</script>

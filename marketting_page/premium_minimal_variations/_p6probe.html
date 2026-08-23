@@ -1,0 +1,48 @@
+<!doctype html><meta charset="utf-8"><title>v6 probe</title>
+<style>html,body{margin:0;background:#fff;font:12px ui-monospace,Menlo,monospace}
+#o{white-space:pre;padding:10px;line-height:1.45}
+iframe{position:absolute;left:-9999px;top:0;width:1440px;height:1200px;border:0}</style>
+<div id="o">measuring…</div>
+<iframe id="f" src="/premium_minimal_variations/v6.html?slm=1"></iframe>
+<script>
+var W = +(location.search.match(/w=(\d+)/)||[0,1440])[1];
+var f=document.getElementById('f'); f.style.width=W+'px';
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, out=[];
+    var S=w.__slogan;
+    out.push('WIN '+W+'  hasSlogan='+!!S);
+    if(!S){document.getElementById('o').textContent=out.join('\n');return;}
+    var stage=d.querySelector('.sl-stage');
+    var h1=d.querySelector('.hero h1');
+    var strip=d.querySelector('.strip');
+    var lede=d.querySelector('.hero .lede');
+    var cs=w.getComputedStyle(h1);
+    out.push('h1 font '+cs.fontSize+'  stageH '+w.getComputedStyle(stage).height);
+    var maxr=0, minr=1e9;
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var sr=stage.getBoundingClientRect(), lr=lede.getBoundingClientRect(), tr2=strip.getBoundingClientRect();
+      var t=d.querySelector('.sl-text').getBoundingClientRect();
+      var de=d.documentElement;
+      out.push(('  '+i).slice(-3)+'  stage '+sr.height.toFixed(1)+
+        '  textH '+t.height.toFixed(1)+' top '+(t.top-sr.top).toFixed(1)+
+        '  lede@'+lr.top.toFixed(1)+'  strip@'+tr2.top.toFixed(1)+
+        '  scrollW '+de.scrollWidth+'/'+de.clientWidth+
+        (de.scrollWidth>de.clientWidth?'  *OVERFLOW*':''));
+      maxr=Math.max(maxr,tr2.top); minr=Math.min(minr,tr2.top);
+    }
+    out.push('strip top spread = '+(maxr-minr).toFixed(2)+'px  '+((maxr-minr)<0.6?'LOCKED OK':'*** SHIFT ***'));
+    // seek sanity: does seek render deterministic overlay?
+    S.seek(3,0.5);
+    var ov=d.querySelector('.sl-ov');
+    out.push('seek(3,.5) overlay cells = '+(ov?ov.children.length:'NONE'));
+    var a=[]; for(var k=0;k<3;k++){S.seek(3,0.5); a.push(d.querySelectorAll('.sl-s')[10].textContent);}
+    out.push('determinism (same glyph 3x): '+JSON.stringify(a)+' '+(a[0]===a[1]&&a[1]===a[2]?'OK':'*** NONDETERMINISTIC ***'));
+    var sr2=stage.getBoundingClientRect(), tr3=strip.getBoundingClientRect();
+    out.push('during seek: stage '+sr2.height.toFixed(1)+' strip@'+tr3.top.toFixed(1));
+    out.push('scrollW during seek '+d.documentElement.scrollWidth+'/'+d.documentElement.clientWidth);
+    document.getElementById('o').textContent=out.join('\n');
+  },1200);
+};
+</script>

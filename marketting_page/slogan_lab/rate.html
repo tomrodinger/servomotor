@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rate the transitions</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0b0b0c;--panel:#151517;--line:#26262a;--ink:#ececf0;--mut:#83838c;
+        --green:#7AB648;--red:#e0574f}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;display:flex;flex-direction:column;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+
+  header{flex:none;background:var(--panel);border-bottom:2px solid var(--green);
+         padding:9px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:13.5px}.brand span{color:var(--green)}
+  .brand em{font-style:normal;color:var(--mut);font-weight:500}
+  .grow{flex:1}
+  .stat{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .stat b{color:var(--green)}
+  .stat i{font-style:normal;color:var(--red)}
+  .stat u{text-decoration:none;color:#e8b04b}
+  button,select{background:#1e1e21;color:#c9c9d0;border:1px solid var(--line);border-radius:6px;
+    padding:6px 11px;font-size:11.5px;font-family:inherit;cursor:pointer}
+  button:hover{background:#2a2a2e;color:#fff}
+  a.lnk{color:#9fd06a;font-size:11.5px;text-decoration:none}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:18px;gap:14px;overflow:auto}
+  .card{width:min(1100px,100%);background:var(--panel);border:1px solid var(--line);
+        border-radius:14px;overflow:hidden}
+  .meta{display:flex;align-items:baseline;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .meta b{font-size:15px;font-weight:650}
+  .meta .fam{color:var(--green);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid #2f4a1f;background:#16210f;border-radius:99px;padding:2px 7px}
+  .meta code{color:#8fb96a;font-size:11px}
+  .meta .n{margin-left:auto;color:var(--mut);font-size:12px;font-variant-numeric:tabular-nums}
+  /* the real hero is black, so transitions must be judged on black */
+  .stagebox{position:relative;background:#0A0B0C;color:#F5F5F7;height:330px;
+            padding:30px 40px;overflow:hidden}
+  .stagebox.onwhite{background:#fff;color:#1d1d1f}
+  .fx-stage{position:absolute;inset:26px 34px;display:flex;align-items:center;justify-content:center;
+            font-size:clamp(26px,3.4vw,46px);line-height:1.08;letter-spacing:-.03em;text-align:center}
+  .fx-stage .fx-light{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+  .fx-stage .fx-light,.fx-stage .fx-bold{display:block}
+  .blurb{padding:10px 16px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line)}
+
+  .acts{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .big{font-size:14px;font-weight:700;padding:11px 26px;border-radius:9px;border:1px solid var(--line)}
+  .keep{background:var(--green);border-color:var(--green);color:#0b0b0c}
+  .keep:hover{background:#8ac857;color:#0b0b0c}
+  .toss{background:#2a1a19;border-color:#4a2a28;color:#ffb0aa}
+  .toss:hover{background:#3a2220;color:#fff}
+  .fix{background:#332413;border-color:#5c4318;color:#f0c463}
+  .fix:hover{background:#443016;color:#ffe0a0}
+  .kbd{color:#5f5f68;font-size:11px}
+  .why{width:min(1100px,100%);display:flex;gap:8px;align-items:center}
+  .why input{flex:1;background:#141416;color:#dcdce2;border:1px solid var(--line);
+    border-radius:8px;padding:8px 11px;font-family:inherit;font-size:12.5px}
+  .why span{color:var(--mut);font-size:11.5px;white-space:nowrap}
+  .kbd b{color:#9a9aa3}
+
+  .strip{display:flex;flex-wrap:wrap;gap:3px;width:min(1100px,100%);max-height:92px;overflow:auto;
+         padding:8px;border:1px solid var(--line);border-radius:10px;background:#111113}
+  .dot{width:15px;height:15px;border-radius:4px;background:#26262a;cursor:pointer;flex:none}
+  .dot.k{background:var(--green)}
+  .dot.d{background:#5a2b28}
+  .dot.f{background:#a5761c}
+  .dot.cur{outline:2px solid #fff;outline-offset:1px}
+  .done{text-align:center;color:var(--mut);font-size:13px;line-height:1.7}
+  .done b{color:var(--green)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> <em>rate the transitions</em></div>
+  <div class="stat"><b id="nk">0</b> keep · <i id="nd">0</i> discard · <u id="nf">0</u> to fix · <span id="nr">0</span>/<span id="nt">0</span> rated</div>
+  <div class="grow"></div>
+  <select id="jump"><option value="">jump to…</option>
+    <option value="unrated">first unrated</option>
+    <option value="kept">first kept</option>
+    <option value="flagged">first flagged to fix</option></select>
+  <button id="replay">Replay</button>
+  <button id="slower">Slower</button>
+  <button id="bgw">On white</button>
+  <a class="lnk" href="gallery.html">gallery ↗</a>
+  <a class="lnk" href="../START_HERE.html">home ↗</a>
+</header>
+
+<main>
+  <div class="card">
+    <div class="meta">
+      <b id="nm">—</b><span class="fam" id="fm"></span><code id="id"></code>
+      <span class="n" id="pos"></span>
+    </div>
+    <div class="stagebox"><div id="stage"></div></div>
+    <div class="blurb" id="bl"></div>
+  </div>
+
+  <div class="acts">
+    <button class="big toss" id="no">✕ &nbsp;Discard</button>
+    <button class="big fix" id="fix">⚑ &nbsp;Fix it</button>
+    <button class="big keep" id="yes">✓ &nbsp;Keep</button>
+    <span class="kbd">&nbsp;&nbsp;<b>←</b> discard &nbsp; <b>→</b> keep &nbsp; <b>f</b> fix &nbsp; <b>space</b> replay &nbsp; <b>↑↓</b> move</span>
+  </div>
+
+  <div class="why">
+    <span>what's wrong (optional)</span>
+    <input id="why" placeholder="e.g. snaps at the start · text overlaps mid-way · goes blank · spacing wrong">
+  </div>
+
+  <div class="strip" id="strip"></div>
+  <div class="done" id="done"></div>
+</main>
+
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+const SLOGANS = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
+];
+
+let fx = [], cur = 0, player = null, ratings = {}, speed = 1;
+
+(async function () {
+  for (const f of (window.SLOGAN_FX_FILES || [])) {
+    await new Promise(r => { const s = document.createElement('script');
+      s.src = f + '?v=' + Date.now(); s.onload = r; s.onerror = r; document.head.appendChild(s); });
+  }
+  fx = SloganFX.all();
+  document.getElementById('nt').textContent = fx.length;
+  try {
+    const r = await fetch('/api/ratings/transitions', { cache: 'no-store' });
+    ratings = await r.json() || {};
+  } catch (e) { ratings = {}; }
+  buildStrip();
+  const first = fx.findIndex(e => !ratings[e.id]);
+  show(first < 0 ? 0 : first);
+})();
+
+function buildStrip() {
+  const s = document.getElementById('strip');
+  s.innerHTML = '';
+  fx.forEach((e, k) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.title = e.name || e.id;
+    d.onclick = () => show(k);
+    s.appendChild(d);
+  });
+}
+
+function paintStrip() {
+  const dots = document.querySelectorAll('.dot');
+  fx.forEach((e, k) => {
+    const v = ratings[e.id] && ratings[e.id].verdict;
+    dots[k].className = 'dot'
+      + (v === 'keep' ? ' k' : v === 'discard' ? ' d' : v === 'fix' ? ' f' : '')
+      + (k === cur ? ' cur' : '');
+  });
+  const vals = Object.values(ratings);
+  const nk = vals.filter(v => v.verdict === 'keep').length;
+  const nd = vals.filter(v => v.verdict === 'discard').length;
+  const nf = vals.filter(v => v.verdict === 'fix').length;
+  document.getElementById('nk').textContent = nk;
+  document.getElementById('nd').textContent = nd;
+  document.getElementById('nf').textContent = nf;
+  document.getElementById('nr').textContent = nk + nd + nf;
+  document.getElementById('done').innerHTML = (nk + nd + nf) >= fx.length
+    ? 'All rated — <b>' + nk + ' kept</b>, ' + nf + ' flagged for a fix. '
+      + 'Saved to <code>ratings/transitions.json</code>.'
+    : (nf ? nf + ' flagged for a fix — I will repair those and you can re-rate them.' : '');
+}
+
+function show(k) {
+  cur = (k + fx.length) % fx.length;
+  const e = fx[cur];
+  document.getElementById('nm').textContent = e.name || e.id;
+  document.getElementById('fm').textContent = e.family || 'Other';
+  document.getElementById('id').textContent = e.id;
+  document.getElementById('bl').textContent = e.blurb || '';
+  document.getElementById('pos').textContent = (cur + 1) + ' / ' + fx.length;
+  const stage = document.getElementById('stage');
+  if (player) player.destroy();
+  // the PAGE owns palette and font — an effect contributes motion only, so every transition is
+  // judged against the same canonical look
+  // deliberately NOT applying e.theme: the page owns the palette, an effect owns only the motion
+  player = SloganFX.mount(stage, e, SLOGANS, {
+    start: cur % SLOGANS.length,
+    dwell: 1500 / speed,
+    duration: (e.duration || 1000) / speed,
+  });
+  player.play();
+  document.getElementById('why').value = (ratings[e.id] && ratings[e.id].why) || '';
+  paintStrip();
+}
+
+function rate(v) {
+  const e = fx[cur];
+  const why = document.getElementById('why').value.trim();
+  ratings[e.id] = {
+    verdict: v, name: e.name || e.id, family: e.family || 'Other',
+    // only meaningful for 'fix', but keep it if it was typed
+    why: why || undefined,
+  };
+  paintStrip();
+  save();
+  // advance to the next thing still needing a verdict; a flagged one counts as handled for now
+  const next = fx.findIndex((x, k) => k > cur && !ratings[x.id]);
+  show(next >= 0 ? next : cur + 1);
+}
+
+let saveT = 0;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(() => {
+    fetch('/api/ratings/transitions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ratings),
+    }).catch(() => {});
+  }, 250);
+}
+
+document.getElementById('yes').onclick = () => rate('keep');
+document.getElementById('no').onclick = () => rate('discard');
+document.getElementById('fix').onclick = () => rate('fix');
+document.getElementById('replay').onclick = () => show(cur);
+document.getElementById('bgw').onclick = e => {
+  const box = document.querySelector('.stagebox');
+  const on = box.classList.toggle('onwhite');
+  e.target.textContent = on ? 'On black' : 'On white';
+};
+document.getElementById('slower').onclick = e => {
+  speed = speed === 1 ? 0.5 : 1;
+  e.target.textContent = speed === 1 ? 'Slower' : 'Normal speed';
+  show(cur);
+};
+document.getElementById('jump').onchange = e => {
+  const v = e.target.value; e.target.value = '';
+  if (v === 'unrated') { const i = fx.findIndex(x => !ratings[x.id]); if (i >= 0) show(i); }
+  if (v === 'kept') { const i = fx.findIndex(x => ratings[x.id] && ratings[x.id].verdict === 'keep'); if (i >= 0) show(i); }
+  if (v === 'flagged') { const i = fx.findIndex(x => ratings[x.id] && ratings[x.id].verdict === 'fix'); if (i >= 0) show(i); }
+};
+document.addEventListener('keydown', ev => {
+  // never hijack typing in the "what's wrong" box
+  if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'TEXTAREA')) {
+    if (ev.key === 'Enter') { ev.preventDefault(); rate('fix'); }
+    return;
+  }
+  if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); rate('fix'); }
+  if (ev.key === 'ArrowRight') { ev.preventDefault(); rate('keep'); }
+  if (ev.key === 'ArrowLeft') { ev.preventDefault(); rate('discard'); }
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); show(cur + 1); }
+  if (ev.key === 'ArrowUp') { ev.preventDefault(); show(cur - 1); }
+  if (ev.key === ' ') { ev.preventDefault(); show(cur); }
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { if (player) player.pause(); }
+  else if (player) player.play();
+});
+</script>
+</body>
+</html>

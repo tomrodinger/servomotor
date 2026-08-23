@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixed transitions — live demo</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0c0c0d;--panel:#151517;--line:#26262a;--ink:#ececf0;--mut:#83838c;--green:#7AB648}
+  body{background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 0 50px}
+  header{background:var(--panel);border-bottom:2px solid var(--green);padding:10px 16px;
+         display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:9}
+  .brand{font-weight:700;font-size:13.5px}.brand span{color:var(--green)}
+  .brand em{font-style:normal;color:var(--mut);font-weight:500}
+  .grow{flex:1}
+  button,select{background:#1e1e21;color:#c9c9d0;border:1px solid var(--line);border-radius:6px;
+    padding:6px 11px;font-size:11.5px;font-family:inherit;cursor:pointer}
+  button:hover{background:#2a2a2e;color:#fff}
+  button.on{background:var(--green);border-color:var(--green);color:#0b0b0c;font-weight:700}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px}
+  .stagebox{position:relative;background:#fff;color:#1d1d1f;border-radius:12px;
+            height:280px;overflow:hidden;padding:26px 34px;
+            transition:background-color .45s ease, color .45s ease}
+  .fx-stage{position:absolute;inset:26px 34px;display:flex;align-items:center;justify-content:center;
+            font-size:clamp(24px,3.4vw,44px);line-height:1.16;letter-spacing:-.022em;text-align:center}
+  /* Effects vary in whether they insert a <br> between the two halves — only 10 of 15 files do.
+     Forcing both halves to block gives every effect the same two-line headline shape, which is
+     what the real pages use, instead of some rendering as one long line. */
+  /* !important because several effects set display:inline-block inline on these spans for their
+     own transforms, which would otherwise win and collapse the headline onto one line. */
+  .fx-stage .fx-light,.fx-stage .fx-bold{font-weight:300}
+  .fx-stage .fx-bold{font-weight:650}
+  /* Two lines are guaranteed by the engine's canonical rest layer — nothing to enforce here. */
+  .fx-stage br{display:none}          /* the forced blocks already break the line */
+
+  .now{display:flex;gap:14px;align-items:baseline;margin:12px 2px 0;font-size:12.5px;color:var(--mut)}
+  .now b{color:var(--green);font-weight:700}
+  .now code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#9fd06a}
+
+  h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);
+     margin:26px 0 9px;font-weight:700}
+  textarea{width:100%;height:150px;background:#141416;color:#dcdce2;border:1px solid var(--line);
+    border-radius:9px;padding:11px 13px;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+    line-height:1.55;resize:vertical}
+  .row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:9px}
+  .hint{color:var(--mut);font-size:12px;line-height:1.5;margin-top:7px}
+  .pool{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;max-height:190px;overflow:auto;
+        border:1px solid var(--line);border-radius:9px;padding:9px}
+  .pool label{display:inline-flex;align-items:center;gap:5px;background:#1a1a1c;border:1px solid #2a2a2e;
+    border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:#b8b8c0}
+  .pool label.on{border-color:var(--green);color:#fff}
+  .pool input{accent-color:var(--green)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> M17 &nbsp;<em>mixed transitions — live demo</em></div>
+  <div class="grow"></div>
+  <button id="play" class="on">Pause</button>
+  <button id="next">Next now</button>
+  <label style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--mut);cursor:pointer"><input type="checkbox" id="ownpalette" style="accent-color:var(--green)"> let effects use their own palette</label>
+  <select id="pick">
+    <option value="sequential">cycle effects in order</option>
+    <option value="shuffle">shuffle effects</option>
+  </select>
+  <a href="index.html" style="color:#9fd06a;font-size:11.5px">back to lab &rarr;</a>
+</header>
+
+<div class="wrap">
+  <div class="stagebox"><div id="stage"></div></div>
+  <div class="now">
+    slogan <b id="nslog">1</b> / <span id="tslog">15</span>
+    &nbsp;·&nbsp; next transition: <b id="nfx">—</b> <code id="nfxid"></code>
+  </div>
+
+  <h2>The text is just data — edit it and watch</h2>
+  <textarea id="txt" spellcheck="false"></textarea>
+  <div class="row">
+    <button id="apply" class="on">Apply text</button>
+    <button id="reset">Reset to the 15</button>
+    <span class="hint">One slogan per line. Use <code style="color:#9fd06a">|</code> to split the light half from the bold half.</span>
+  </div>
+
+  <h2>The effect pool — tick as many as you like</h2>
+  <div class="pool" id="pool"></div>
+  <div class="row">
+    <button id="all">All</button><button id="none">None</button>
+    <button id="rand12">Random 12</button>
+    <span class="hint" id="poolcount"></span>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="manifest.js"></script>
+<script>
+const DEFAULT = [
+  ["A motor, and everything","that usually surrounds it."],
+  ["The whole drive system.","Inside one motor."],
+  ["Four systems.","One motor."],
+  ["Motion control,","fully integrated."],
+  ["You wanted motion.","Not a wiring project."],
+  ["A motor that","needs nothing else."],
+  ["The whole motion system.","One motor."],
+  ["Everything that moves it,","inside it."],
+  ["Motion control.","All in one."],
+  ["Stepper, driver, controller, encoder.","One part number."],
+  ["Bolts in like a stepper.","Runs like a full servo."],
+  ["Four bolts. One cable.","A complete servo system."],
+  ["Servomotor:","stepper, driver, controller and encoder in one."],
+  ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
+];
+
+let slogans = DEFAULT.map(s => s.slice());
+let pool = [], player = null, playing = true;
+
+(async function () {
+  for (const f of (window.SLOGAN_FX_FILES || [])) {
+    await new Promise(r => { const s = document.createElement('script');
+      s.src = f + '?v=' + Date.now(); s.onload = r; s.onerror = r; document.head.appendChild(s); });
+  }
+  buildPool();
+  document.getElementById('txt').value =
+    slogans.map(s => s[0] + ' | ' + s[1]).join('\n');
+  mount();
+})();
+
+function buildPool() {
+  const all = SloganFX.all();
+  const box = document.getElementById('pool');
+  // a varied starting selection rather than 96 at once
+  const seed = ['keynote-lift','ink-bleed','odometer','glyph-scramble','wipe-bar','slide-push',
+                'depth-flip','hx-spotlight','hx-rgb-split','kinetic-spring','print-stamp','light-scanner'];
+  all.forEach(fx => {
+    const l = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = fx.id;
+    cb.checked = seed.includes(fx.id);
+    cb.onchange = () => { l.classList.toggle('on', cb.checked); refreshPool(); };
+    l.appendChild(cb);
+    l.appendChild(document.createTextNode(fx.name || fx.id));
+    l.classList.toggle('on', cb.checked);
+    box.appendChild(l);
+  });
+  refreshPool(true);
+}
+
+function refreshPool(silent) {
+  const ids = [...document.querySelectorAll('#pool input:checked')].map(i => i.value);
+  pool = ids.map(id => SloganFX.get(id)).filter(Boolean);
+  if (!pool.length) pool = [SloganFX.all()[0]];
+  document.getElementById('poolcount').textContent = pool.length + ' effect(s) in rotation';
+  if (!silent) mount();
+}
+
+/* Only force the two halves onto separate lines when there IS exactly one of each. Effects that
+   split into per-word spans reuse the same class names, and forcing those to block stacks every
+   word vertically. */
+/* The PAGE defines the look — palette AND font. An effect defines motion only.
+   If effects were allowed to change the font, the same slogan would render differently depending
+   on which effect ran last, which breaks the whole point of a canonical rest state. Ticking
+   "let effects use their own palette" is an exploration mode, not the default. */
+function applyTheme(fx) {
+  const box = document.querySelector('.stagebox');
+  const stage = document.getElementById('stage');
+  const own = document.getElementById('ownpalette').checked;
+  const th = (own && fx && fx.theme) || {};
+  box.style.background = th.bg || '#ffffff';
+  box.style.color      = th.fg || '#1d1d1f';
+  stage.style.fontFamily = own ? (th.font || '') : '';
+  stage.style.fontStyle  = own && th.italic ? 'italic' : '';
+}
+
+function mount() {
+  const stage = document.getElementById('stage');
+  if (player) player.destroy();
+  document.getElementById('tslog').textContent = slogans.length;
+  const pickMode = document.getElementById('pick').value;
+  // Half the effects declare their own palette (many are designed for a dark stage). Without this
+  // they rendered dark-on-white or painted their own dark elements onto a white box, which is why
+  // the background looked wrong as the pool rotated.
+  applyTheme(SloganFX.effectFor(pool, 0, pickMode));
+  // onTick fires from inside the Player constructor, before `player` has been assigned — so it
+  // must not close over `player`. The engine hands us the index, and effectFor() resolves which
+  // effect that index maps to using exactly the same rule the Player uses.
+  player = SloganFX.mount(stage, pool, slogans, {
+    start: 0,
+    pick: pickMode,
+    onTick: (t, i) => {
+      document.getElementById('nslog').textContent = (i % slogans.length) + 1;
+      const fx = SloganFX.effectFor(pool, i, pickMode);
+      if (!fx) return;
+      if (fx.id !== mount._lastFx) { mount._lastFx = fx.id; applyTheme(fx); }
+      document.getElementById('nfx').textContent = fx.name || fx.id;
+      document.getElementById('nfxid').textContent = fx.id;
+    },
+  });
+  if (playing) player.play();
+}
+
+document.getElementById('play').onclick = e => {
+  playing = !playing;
+  e.target.textContent = playing ? 'Pause' : 'Play';
+  e.target.classList.toggle('on', playing);
+  playing ? player.play() : player.pause();
+};
+document.getElementById('next').onclick = () => {
+  player.pause();
+  player.goto((player.i + 1) % slogans.length);
+  if (playing) player.play();
+};
+document.getElementById('pick').onchange = mount;
+document.getElementById('ownpalette').onchange = () => { mount._lastFx = null; mount(); };
+document.getElementById('apply').onclick = () => {
+  const lines = document.getElementById('txt').value.split('\n')
+    .map(l => l.trim()).filter(Boolean)
+    .map(l => { const p = l.split('|'); return [ (p[0]||'').trim(), (p[1]||'').trim() ]; });
+  if (lines.length) { slogans = lines; mount(); }
+};
+document.getElementById('reset').onclick = () => {
+  slogans = DEFAULT.map(s => s.slice());
+  document.getElementById('txt').value = slogans.map(s => s[0] + ' | ' + s[1]).join('\n');
+  mount();
+};
+document.getElementById('all').onclick = () => {
+  document.querySelectorAll('#pool input').forEach(i => { i.checked = true; i.parentElement.classList.add('on'); });
+  refreshPool();
+};
+document.getElementById('none').onclick = () => {
+  const inputs = [...document.querySelectorAll('#pool input')];
+  inputs.forEach((i, k) => { i.checked = k === 0; i.parentElement.classList.toggle('on', k === 0); });
+  refreshPool();
+};
+document.getElementById('rand12').onclick = () => {
+  const inputs = [...document.querySelectorAll('#pool input')];
+  const keep = new Set();
+  while (keep.size < Math.min(12, inputs.length)) keep.add(Math.floor(Math.random() * inputs.length));
+  inputs.forEach((i, k) => { i.checked = keep.has(k); i.parentElement.classList.toggle('on', i.checked); });
+  refreshPool();
+};
+</script>
+</body>
+</html>

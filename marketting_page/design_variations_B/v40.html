@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+table{border-collapse:collapse;width:100%}
+pre{overflow:auto;max-width:100%}
+
+body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;background:#f5f5f5;color:#012169}
+.nav{background:#012169;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:.7rem 3vw;position:sticky;top:0;z-index:20}
+.nav .b{display:flex;gap:.5rem;align-items:center;text-decoration:none;font-weight:700}
+.nav img{height:28px}.nav a{color:#c5d0e8;text-decoration:none;margin-left:1rem;font-size:.88rem}
+.nav a.shop{background:#e31837;color:#fff;padding:.5rem 1.1rem;font-weight:700}
+.hero{background:#fff;padding:2.5rem 3vw;text-align:center;border-bottom:4px solid #e31837}
+.hero h1{font-size:clamp(1.7rem,3.5vw,2.4rem);margin:0 0 .6rem}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;padding:2rem 3vw;max-width:1100px;margin:0 auto}
+.tier{background:#fff;border:1px solid #d0d5e0;display:flex;flex-direction:column}
+.tier header{background:#012169;color:#fff;padding:1.2rem;text-align:center}
+.tier header.mid{background:#e31837}
+.tier .body{padding:1.5rem;flex:1}
+.tier .body .amt{font-size:2rem;font-weight:700;color:#012169;margin:.5rem 0}
+.tier ul{padding-left:1.1rem;font-size:.9rem;line-height:1.7}
+.tier footer{padding:1rem 1.5rem 1.5rem}
+.tier footer a{display:block;text-align:center;background:#012169;color:#fff;padding:.65rem;text-decoration:none;font-weight:700}
+.tier footer a.red{background:#e31837}
+.section{padding:1.5rem 3vw;max-width:1000px;margin:0 auto}
+.section h2{border-bottom:2px solid #012169;padding-bottom:.4rem}
+table.specs th,table.specs td{border:1px solid #d0d5e0;padding:.5rem;text-align:left;font-size:.88rem;background:#fff}
+table.specs thead{background:#012169;color:#fff}
+pre.code{background:#012169;color:#d0e0ff;padding:1.1rem;font-size:.82rem}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.apps img{width:100%;aspect-ratio:16/10;object-fit:cover}
+footer{background:#012169;color:#c5d0e8;padding:2.5rem 3vw;text-align:center}
+footer a{color:#fff;margin:0 .7rem;font-weight:700}
+@media(max-width:800px){.tiers,.apps{grid-template-columns:1fr}}
+
+
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a class="b" href="#top"><img src="../Gearotons_Logo.png" alt="">Gearotons</a>
+  <nav>
+    <a href="#tiers">Compare</a><a href="#models">Details</a>
+    <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  </nav>
+</header>
+<section class="hero" id="top">
+  <h1>Choose the M17 tier that fits your build</h1>
+  <p>Affordable and Simple All-in-One Motion Control — three clear product tiers, one open protocol.</p>
+</section>
+<section class="tiers" id="tiers">
+  <article class="tier">
+    <header><h2 style="margin:0;font-size:1.2rem">M17-40</h2><p style="margin:.3rem 0 0;opacity:.85;font-size:.85rem">Compact</p></header>
+    <div class="body">
+      <div class="amt">0.42 N·m</div>
+      <ul>
+        <li>25 W rated power</li>
+        <li>285 g weight</li>
+        <li>41.6 mm height</li>
+        <li>12–24 V · 560 RPM</li>
+        <li>Full all-in-one stack</li>
+      </ul>
+    </div>
+    <footer><a href="https://gearotons.com/store">Shop Now</a></footer>
+  </article>
+  <article class="tier">
+    <header class="mid"><h2 style="margin:0;font-size:1.2rem">M17-48</h2><p style="margin:.3rem 0 0;opacity:.9;font-size:.85rem">Most balanced</p></header>
+    <div class="body">
+      <div class="amt">0.55 N·m</div>
+      <ul>
+        <li>32 W rated power</li>
+        <li>360 g weight</li>
+        <li>48.6 mm height</li>
+        <li>12–24 V · 560 RPM</li>
+        <li>Full all-in-one stack</li>
+      </ul>
+    </div>
+    <footer><a class="red" href="https://gearotons.com/store">Shop Now</a></footer>
+  </article>
+  <article class="tier">
+    <header><h2 style="margin:0;font-size:1.2rem">M17-60</h2><p style="margin:.3rem 0 0;opacity:.85;font-size:.85rem">Highest torque</p></header>
+    <div class="body">
+      <div class="amt">0.65 N·m</div>
+      <ul>
+        <li>38 W rated power</li>
+        <li>470 g weight</li>
+        <li>59.8 mm height</li>
+        <li>12–24 V · 560 RPM</li>
+        <li>Full all-in-one stack</li>
+      </ul>
+    </div>
+    <footer><a href="https://gearotons.com/store">Shop Now</a></footer>
+  </article>
+</section>
+<section class="section" id="features">
+  <h2>Included with every tier</h2>
+  <ul>
+    <li>Motor + driver + motion controller + encoder</li>
+    <li>RS-485 daisy-chain · high-level trapezoid moves</li>
+    <li>32 kHz PID · NEMA 17 · footprint 42.2 × 42.2 mm</li>
+    <li>Works with Pi, Arduino, ESP32, Mac, PC</li>
+    <li>Open-source firmware and libraries</li>
+  </ul>
+</section>
+<section class="section" id="models">
+  <h2>Full disclosure table</h2>
+  <table class='specs'><thead><tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr></thead><tbody><tr><th scope='row'>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr><tr><th scope='row'>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr><tr><th scope='row'>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr><tr><th scope='row'>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr><tr><th scope='row'>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr><tr><th scope='row'>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr><tr><th scope='row'>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr><tr><th scope='row'>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody></table>
+</section>
+<section class="section" id="start">
+  <h2>Open an account with motion — Python</h2>
+  <p>pip3 install servomotor</p>
+  <pre class='code'><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3(&quot;X&quot;, time_unit=&quot;seconds&quot;,
+                position_unit=&quot;degrees&quot;)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+</section>
+<section class="section" id="apps">
+  <h2>Where builders put them to work</h2>
+  <div class="apps">
+    <img src="../robotics_small.jpg" alt="Robotics">
+    <img src="../automation_small.jpg" alt="Automation">
+    <img src="../test_rack_small.jpg" alt="Test">
+  </div>
+</section>
+<footer id="about">
+  <p>Gearotons · Shenzhen 2022 · Canadian founder · Open source hardware &amp; software</p>
+  <p style="margin-top:1rem"><a href="https://gearotons.com/store">Shop Now</a><a href="https://gearotons.com">Documentation</a><a href="https://github.com/tomrodinger/servomotor">GitHub</a></p>
+</footer>
+
+</body>
+</html>

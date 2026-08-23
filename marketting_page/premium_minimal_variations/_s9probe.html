@@ -1,0 +1,55 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>html,body{margin:0;background:#fff;font:12px/1.35 ui-monospace,monospace;color:#111}
+#o{padding:8px;white-space:pre}
+iframe{position:fixed;left:0;top:0;width:1440px;height:900px;border:0;visibility:hidden}</style>
+<div id="o">loading…</div>
+<iframe id="f" src="v9.html?motion=1&goto=0"></iframe>
+<script>
+var W = new URLSearchParams(location.search).get('w');
+if(W){ document.getElementById('f').style.width = W+'px'; }
+document.getElementById('f').onload = function(){
+  setTimeout(run, 700);
+};
+function run(){
+  var f = document.getElementById('f');
+  var d = f.contentDocument, w = f.contentWindow;
+  var out = [];
+  var api = w.__slogan;
+  if(!api){ document.getElementById('o').textContent = 'NO __slogan'; return; }
+  out.push('viewport ' + d.documentElement.clientWidth + '  reduced=' + api.reduced());
+  out.push('items=' + api.items.length + ' index=' + api.index());
+  var h1 = d.querySelector('.hero h1');
+  var lede = d.querySelector('.hero .lede');
+  var body = d.body;
+  api.pause();
+  var rows = [];
+  for(var i=0;i<15;i++){
+    api.goto(i);
+    var r = h1.getBoundingClientRect();
+    var l = lede.getBoundingClientRect();
+    rows.push([i, r.height.toFixed(2), r.top.toFixed(2), l.top.toFixed(2),
+               body.scrollWidth, d.documentElement.scrollWidth].join('\t'));
+  }
+  out.push('i\th1H\th1Top\tledeTop\tbodySW\tdocSW');
+  out.push(rows.join('\n'));
+  // overflow during transition (worst case sx stretch)
+  var maxSW = 0, worst='';
+  for(var i=0;i<15;i++){
+    for(var t=0;t<=1.001;t+=0.05){
+      api.seek(i, t);
+      var sw = d.documentElement.scrollWidth;
+      if(sw > maxSW){ maxSW = sw; worst = 'i='+i+' t='+t.toFixed(2); }
+    }
+  }
+  out.push('max docSW during all transitions = ' + maxSW + '  (' + worst + ')  clientW=' + d.documentElement.clientWidth);
+  // determinism: seek same frame twice, compare transforms
+  api.seek(3, 0.42);
+  var a = [].map.call(d.querySelectorAll('.slg .w'), function(e){return e.style.transform+'|'+e.style.opacity+'|'+e.style.filter;}).join(';');
+  api.seek(9, 0.7); api.goto(1);
+  api.seek(3, 0.42);
+  var b = [].map.call(d.querySelectorAll('.slg .w'), function(e){return e.style.transform+'|'+e.style.opacity+'|'+e.style.filter;}).join(';');
+  out.push('seek deterministic: ' + (a===b ? 'YES' : 'NO'));
+  out.push('a.len='+a.length+' b.len='+b.length);
+  document.getElementById('o').textContent = out.join('\n');
+}
+</script>

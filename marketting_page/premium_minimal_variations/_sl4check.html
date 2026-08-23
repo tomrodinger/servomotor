@@ -1,0 +1,40 @@
+<!doctype html><meta charset="utf-8"><title>v4 slogan check</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.45 ui-monospace,Menlo,monospace;color:#000}
+iframe{position:absolute;left:-4000px;top:0;border:0}
+pre{padding:10px;white-space:pre-wrap}</style>
+<iframe id="f" src="v4.html?anim=1&pause=1"></iframe>
+<pre id="out">running…</pre>
+<script>
+var W = parseInt((location.search.match(/w=(\d+)/)||[0,900])[1],10);
+var f = document.getElementById('f');
+f.style.width = W+'px'; f.style.height = '1400px';
+f.onload = function(){
+  setTimeout(function(){
+    var d = f.contentDocument, win = f.contentWindow;
+    var S = win.__slogan, h1 = d.querySelector('.hero h1'), lede = d.querySelector('.hero .lede');
+    var rows = [], i, hs = {};
+    if(!S){ document.getElementById('out').textContent='NO __slogan'; return; }
+    S.pause();
+    for(i=0;i<S.items.length;i++){
+      S.goto(i);
+      var hr = h1.getBoundingClientRect(), lr = lede.getBoundingClientRect();
+      var st = d.querySelector('.sl-stage');
+      var sw = st.querySelectorAll('.sl-line');
+      var maxR = 0, minL = 1e9, k, ws = d.querySelectorAll('.sl-cur .w');
+      for(k=0;k<ws.length;k++){ var r=ws[k].getBoundingClientRect(); if(r.right>maxR)maxR=r.right; if(r.left<minL)minL=r.left; }
+      rows.push(i+': h1H='+hr.height.toFixed(1)+' h1Top='+hr.top.toFixed(1)+
+                ' ledeTop='+lr.top.toFixed(1)+' textR='+maxR.toFixed(1)+' textL='+minL.toFixed(1));
+      hs[hr.height.toFixed(1)]=1;
+    }
+    var docW = d.documentElement.scrollWidth, cw = d.documentElement.clientWidth;
+    rows.push('--- distinct h1 heights: '+Object.keys(hs).join(',')); 
+    rows.push('--- doc scrollWidth='+docW+' clientWidth='+cw+'  viewport='+W);
+    rows.push('--- index()='+S.index()+' reduced='+(S.reducedMotion?1:0));
+    // seek determinism check
+    S.seek(3,0.42); var a = d.querySelector('.sl-core').style.transform;
+    S.seek(7,0.9);  S.seek(3,0.42); var b = d.querySelector('.sl-core').style.transform;
+    rows.push('--- seek idempotent: '+(a===b?'YES':'NO  ('+a+' vs '+b+')')+' ['+a+']');
+    document.getElementById('out').textContent = rows.join('\n');
+  }, 900);
+};
+</script>

@@ -1,0 +1,33 @@
+<!doctype html><meta charset="utf-8"><title>v3 info probe</title>
+<style>html,body{margin:0;background:#fff;font:12px monospace}
+#f{border:0;display:block}</style>
+<pre id="out">pending</pre>
+<script>
+var W = parseInt((/[?&]w=(\d+)/.exec(location.search)||[0,1440])[1],10);
+var f = document.createElement('iframe');
+f.id='f'; f.width=W; f.height=1400; f.setAttribute('scrolling','no');
+f.src='/premium_minimal_variations/v3.html';
+document.body.appendChild(f);
+f.onload = function(){
+  setTimeout(function(){
+    var d;
+    try{
+      var w = f.contentWindow;
+      w.__slogan.pause();
+      var info = w.__slogan._info();
+      var h1 = f.contentDocument.querySelector('.hero h1');
+      var doc = f.contentDocument;
+      info.h1rect = h1.getBoundingClientRect().toJSON ? h1.getBoundingClientRect().toJSON() : {w:h1.getBoundingClientRect().width,h:h1.getBoundingClientRect().height};
+      info.scrollW = doc.documentElement.scrollWidth;
+      info.clientW = doc.documentElement.clientWidth;
+      info.bodyScrollW = doc.body.scrollWidth;
+      var heights = [];
+      for(var i=0;i<15;i++){ w.__slogan.goto(i); w.__slogan.pause();
+        heights.push([i, Math.round(h1.getBoundingClientRect().height), Math.round(doc.documentElement.scrollWidth), Math.round(doc.querySelector('.hero .tt').getBoundingClientRect().top)]); }
+      info.perSlogan = heights;
+      d = JSON.stringify(info, null, 1);
+    }catch(e){ d = 'ERR ' + e; }
+    document.getElementById('out').textContent = d;
+  }, 900);
+};
+</script>

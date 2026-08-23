@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>wash probe</title>
+<style>
+html,body{margin:0;height:100%;background:#FBFAF7}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;
+  background:repeating-linear-gradient(128deg,rgba(38,35,31,.020) 0 1px,rgba(38,35,31,0) 1px 4px),
+             repeating-linear-gradient(38deg,rgba(38,35,31,.013) 0 1px,rgba(38,35,31,0) 1px 5px);}
+#host{position:relative;width:1120px;height:254px;margin:200px auto 0;}
+#w{position:absolute;top:-14%;height:128%;left:0;width:42%;opacity:0;
+  background:linear-gradient(90deg,rgba(138,106,56,0) 0%,rgba(138,106,56,.045) 26%,rgba(138,106,56,.115) 62%,rgba(138,106,56,.135) 78%,rgba(138,106,56,.02) 96%,rgba(138,106,56,0) 100%),
+             radial-gradient(60% 74% at 78% 52%,rgba(110,159,63,.075),rgba(110,159,63,0) 100%);
+  -webkit-mask-image:radial-gradient(78% 108% at 50% 50%,#000 42%,rgba(0,0,0,0) 100%);
+  mask-image:radial-gradient(78% 108% at 50% 50%,#000 42%,rgba(0,0,0,0) 100%);}
+</style>
+<div id="host"><div id="w"></div><div style="position:absolute;top:60px;left:100px;font:300 70px Optima,serif">Four systems.</div></div>
+<script>
+var w=document.getElementById('w');
+w.style.opacity='0.95';
+w.style.transform='translate3d(188%,0,0) scaleX(1.1)';
+</script>

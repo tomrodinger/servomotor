@@ -21,20 +21,31 @@ the browser gets is byte-for-byte the markup that was reviewed. React never pars
 mangle it. Scripts inside injected HTML do NOT execute, so the slogan engine is lifted out and run
 from a `useEffect` after mount.
 
-THREE adaptations are applied on the way out, because a standalone page and a page embedded in a
+FIVE adaptations are applied on the way out, because a standalone page and a page embedded in a
 store are not the same document:
 
   1. CSS SCOPING. The page's stylesheet is global — it styles `nav`, `footer`, `a`, `img`, `table`
      and 22 other bare elements. Dropped into the store as-is it would restyle the store's own
      Header, SiteFooter and cart. Every selector is therefore rewritten under `.mkt-root`, the
      wrapper this component renders. `html`/`body`/`:root` map onto that wrapper; `.js`, which the
-     reveal script puts on <html>, stays an ancestor.
+     reveal script puts on <html>, stays an ancestor. STORE_RESET handles the reverse leak for
+     bare element selectors.
 
-  2. THE PAGE'S OWN <nav> IS REMOVED, along with the script that recolours it on scroll. The store
+  2. COLLIDING CLASS NAMES ARE RENAMED. Scoping and STORE_RESET both miss the case where the store
+     and the page use the SAME class name — globals.css styles `.btn`, `.btn-primary` and `.card`,
+     and so does the page. See the comment at step 2b.
+
+  3. THE PAGE'S OWN <nav> IS REMOVED, along with the script that recolours it on scroll. The store
      renders a global <Header/> in `pages/_app.js`; keeping both would stack two navigation bars.
      The nav is `position:sticky`, so removing it costs no layout compensation.
 
-  3. ASSET PATHS. `../foo.png` becomes `/marketing/images/foo.png` and the file is copied.
+  4. ASSET PATHS. `../foo.png` becomes `/marketing/images/foo.png` and the file is copied.
+
+  5. SAME-SITE LINKS BECOME ROOT-RELATIVE, so a deployment other than production (staging) can be
+     clicked through. See step 4b.
+
+The emitted component also tears the engine down on unmount — this is a single-page app, and
+without that every navigation away from the homepage leaks a 60 fps rAF loop. See the effect.
 
 Everything else — markup, copy, layout, the slogan engine — ships unchanged.
 
@@ -91,6 +102,34 @@ STORE_RESET = """/* ---- injected by deploy_to_store.py ------------------------
 # with the scope inserted after them, or the rule stops matching.
 ANCESTORS = ("html", ".js", "html.js")
 
+# Page class names that also exist in the store's globals.css, mapped to a prefixed name.
+# Filled in by collide_rename(); see the comment there for why renaming beats another reset layer.
+RENAME = {}
+
+
+def store_global_classes():
+    """Class names the store's own globals.css styles."""
+    p = os.path.join(STORE, "styles", "globals.css")
+    if not os.path.exists(p):
+        return set()
+    css = re.sub(r"/\*.*?\*/", " ", open(p, encoding="utf-8").read(), flags=re.S)
+    return set(re.findall(r"\.([A-Za-z_][\w-]*)", re.sub(r"\{[^{}]*\}", " ", css)))
+
+
+def apply_rename(sel):
+    """Rewrite renamed class tokens inside one selector."""
+    for old_name, new_name in RENAME.items():
+        sel = re.sub(r"\.%s(?![-\w])" % re.escape(old_name), "." + new_name, sel)
+    return sel
+
+
+def rename_in_markup(html):
+    """Rewrite renamed class tokens, and ONLY inside class="..." attributes."""
+    def one(m):
+        toks = [RENAME.get(t, t) for t in m.group(1).split()]
+        return 'class="%s"' % " ".join(toks)
+    return re.sub(r'class="([^"]*)"', one, html)
+
 
 # --------------------------------------------------------------------------------------------
 # CSS scoping
@@ -115,6 +154,7 @@ def split_selectors(sel):
 
 def scope_one(sel):
     """Rewrite a single selector so it only matches inside the wrapper."""
+    sel = apply_rename(sel)
     if sel in (":root", "html", "body"):
         return SCOPE
     if sel == "*":
@@ -261,6 +301,38 @@ def main():
         notes.append("stripped the page's own <nav> and %d nav script(s); the store renders its own "
                      "<Header/>" % (before - len(scripts)))
 
+    # ---- 2b. rename class names that collide with the store's globals.css ---------------
+    # Scoping keeps the PAGE's rules off the store. STORE_RESET keeps the store's bare ELEMENT
+    # rules off the page. Neither covers the third case: the store's globals.css also styles
+    # utility CLASSES (.btn, .btn-primary, .card) and the page happens to use those same names.
+    # Scoping wins on the properties the page declares, but every property the store declares and
+    # the page does NOT is silently inherited from the store — verified live: the spec cards
+    # picked up a white background, a drop shadow, `overflow:hidden` and a hover shadow, and the
+    # hero CTA picked up a hover nudge. Nobody chose any of that.
+    #
+    # Renaming rather than adding another reset layer, because a reset has to enumerate every
+    # property the store might ever set, and gets it wrong the moment globals.css grows a line.
+    # A name the store does not style cannot be reached at all.
+    used = set()
+    for m in re.finditer(r'class="([^"]*)"', body):
+        used.update(m.group(1).split())
+    collisions = sorted(used & store_global_classes())
+    if collisions:
+        # Renaming touches markup and CSS but NOT the lifted JS, so a class the script selects by
+        # name would silently stop matching. Refuse rather than half-rename.
+        js_all = "\n".join(scripts)
+        risky = [c for c in collisions
+                 if re.search(r"""['"`]\.?%s(?![-\w])""" % re.escape(c), js_all)]
+        if risky:
+            print("!! %s collide with the store's globals.css but are referenced in the page's "
+                  "JS as strings — rename by hand, or the script will stop matching them: %s"
+                  % (len(risky), risky))
+            return 2
+        RENAME.update({c: "mkt-" + c for c in collisions})
+        body = rename_in_markup(body)
+        notes.append("renamed %d class(es) that collide with the store's globals.css: %s"
+                     % (len(collisions), ", ".join("%s->mkt-%s" % (c, c) for c in collisions)))
+
     # ---- 3. scope the stylesheet -------------------------------------------------------
     scoped = scope_css(style)
     css_problems = check_scoped(style, scoped)
@@ -397,11 +469,45 @@ export default function MarketingContent() {
   const ranRef = useRef(false);
 
   useEffect(() => {
-    if (ranRef.current) return;      // React 18 StrictMode mounts twice in dev
+    if (ranRef.current) return undefined;   // guard a double invoke with no cleanup between
     ranRef.current = true;
     // Left deliberately: `window.__marketingEffect` is the only way to tell "the effect never ran"
     // (a hydration failure) apart from "the engine threw" from outside the page.
     window.__marketingEffect = { ran: true, len: (MARKETING_SCRIPT || '').length };
+
+    // The lifted script starts a self-re-arming requestAnimationFrame loop and registers
+    // listeners on window and document. This is a single-page app: React unmounts this component
+    // on every client-side navigation away from the homepage, and without a teardown the loop and
+    // the listeners outlive it. Home -> Store -> Home three times leaves four players animating
+    // detached DOM at 60 fps, and only the newest is reachable to stop. So record what the script
+    // starts and undo exactly that. Listeners on elements INSIDE the injected markup need no
+    // cleanup — React removes those nodes and the listeners go with them.
+    const liveRaf = new Set();
+    const nativeRaf = window.requestAnimationFrame;
+    const nativeCancel = window.cancelAnimationFrame;
+    window.requestAnimationFrame = function (cb) {
+      const id = nativeRaf.call(window, function (t) { liveRaf.delete(id); return cb(t); });
+      liveRaf.add(id);
+      return id;
+    };
+    window.cancelAnimationFrame = function (id) {
+      liveRaf.delete(id);
+      return nativeCancel.call(window, id);
+    };
+
+    const targets = [window, document];
+    const added = [];
+    const prevAdd = new Map();
+    targets.forEach((t) => {
+      prevAdd.set(t, Object.prototype.hasOwnProperty.call(t, 'addEventListener')
+        ? t.addEventListener : null);
+      const inherited = t.addEventListener;
+      t.addEventListener = function () {
+        added.push([t, arguments]);
+        return inherited.apply(t, arguments);
+      };
+    });
+
     try {
       // eslint-disable-next-line no-new-func
       new Function(MARKETING_SCRIPT)();
@@ -410,6 +516,27 @@ export default function MarketingContent() {
       window.__marketingEffect.error = String((err && err.message) || err);
       console.error('[marketing] slogan engine failed to start:', err);
     }
+
+    return () => {
+      try {
+        if (window.__slogan && typeof window.__slogan.pause === 'function') {
+          window.__slogan.pause();
+        }
+      } catch (e) { /* the engine is going away regardless */ }
+      added.forEach(([t, args]) => {
+        try { t.removeEventListener.apply(t, args); } catch (e) { /* ignore */ }
+      });
+      targets.forEach((t) => {
+        const prev = prevAdd.get(t);
+        if (prev) { t.addEventListener = prev; } else { delete t.addEventListener; }
+      });
+      liveRaf.forEach((id) => { try { nativeCancel.call(window, id); } catch (e) { /* ignore */ } });
+      liveRaf.clear();
+      window.requestAnimationFrame = nativeRaf;
+      window.cancelAnimationFrame = nativeCancel;
+      window.__marketingEffect.cleanedUp = true;
+      ranRef.current = false;      // a remount is allowed to start it again
+    };
   }, []);
 
   return (

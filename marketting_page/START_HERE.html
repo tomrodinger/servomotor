@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons M17 — overnight build</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0b0b0c;--panel:#151517;--line:#26262a;--ink:#eceef0;--mut:#84848d;--green:#7AB648}
+  body{background:var(--bg);color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       padding:34px 24px 70px;line-height:1.5}
+  .wrap{max-width:1020px;margin:0 auto}
+  h1{font-size:26px;font-weight:300;letter-spacing:-.02em;margin-bottom:6px}
+  h1 b{font-weight:650}
+  h1 span{color:var(--green)}
+  .lede{color:var(--mut);font-size:14px;margin-bottom:30px;max-width:70ch}
+  h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);
+     margin:34px 0 12px;font-weight:700}
+  .cards{display:grid;gap:13px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--panel);
+         border:1px solid var(--line);border-radius:11px;padding:16px 18px;
+         transition:border-color .14s,transform .14s}
+  a.card:hover{border-color:var(--green);transform:translateY(-2px)}
+  a.card b{display:block;font-size:14.5px;font-weight:650;margin-bottom:5px}
+  a.card span{color:var(--mut);font-size:12.5px;display:block}
+  a.card .big{color:var(--green);font-size:22px;font-weight:700;float:right;
+              font-variant-numeric:tabular-nums;line-height:1}
+  ul{list-style:none;font-size:13.5px;color:#c4c4cc}
+  li{padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+  li b{color:var(--ink);font-weight:600;min-width:172px}
+  li span{color:var(--mut)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#a8cf80}
+  .note{background:#141a10;border:1px solid #2c3d1c;border-radius:9px;padding:13px 16px;
+        font-size:13px;color:#c6d8ae;margin-top:14px}
+  .grid20{display:grid;gap:7px;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));margin-top:4px}
+  .grid20 a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:7px;
+            padding:8px 10px;font-size:12px;text-decoration:none;color:#c9c9d1}
+  .grid20 a:hover{border-color:var(--green);color:#fff}
+  .grid20 a i{font-style:normal;color:var(--green);font-weight:700;margin-right:5px}
+  footer{margin-top:44px;color:#5a5a62;font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span>Gearotons</span> M17 — <b>overnight build</b></h1>
+  <p class="lede">Everything from the night of 20–21 Aug. Start with the transition gallery: it is the
+  fastest way to judge a lot of motion at once. Served from <code>marketting_page/</code> on port 8912.</p>
+
+  <h2>The combined final page</h2>
+  <div class="cards">
+    <a class="card" href="final/index.html">
+      <b>Final page — dark hero</b>
+      <span>v4's black hero (slogan, transition, motor) + v17's key-spec strip, on v1's white body
+      with the black code section. Headline cycles all 15 slogans on the shared engine.</span>
+    </a>
+    <a class="card" href="final/index-light-hero.html">
+      <b>Final page — light hero</b>
+      <span>Identical, but the hero is white. Same page, one attribute different — pick one.</span>
+    </a>
+  </div>
+
+  <h2>Rate things — this is what I need from you</h2>
+  <div class="cards">
+    <a class="card" href="premium_minimal_variations/rate.html">
+      <span class="big">20</span>
+      <b>Keep / discard the page designs</b>
+      <span>One design at a time with the live page beside it. Tick what works and leave notes —
+      I use the tags and notes to decide which features go into the combined final page.</span>
+    </a>
+    <a class="card" href="slogan_lab/rate.html">
+      <span class="big" id="ngif2">96</span>
+      <b>Keep / discard the transitions</b>
+      <span>One effect at a time, running live. Arrow keys to rate. Saves straight to
+      <code>ratings/transitions.json</code>.</span>
+    </a>
+  </div>
+
+  <h2>Browse</h2>
+  <div class="cards">
+    <a class="card" href="slogan_lab/gallery.html">
+      <span class="big" id="ngif">—</span>
+      <b>Transition gallery</b>
+      <span>Every effect as a looping GIF, grouped by family. Loads instantly. Click one to open it live.</span>
+    </a>
+    <a class="card" href="slogan_lab/index.html">
+      <b>Live effect lab</b>
+      <span>The same effects running for real, with pause, speed, a scrub slider that seeks every
+      effect at once, and click-to-focus.</span>
+    </a>
+    <a class="card" href="slogan_lab/mixed.html">
+      <b>Mixed transitions demo</b>
+      <span>One headline, a different effect on every swap. Edit the slogan text live and tick which
+      effects are in rotation.</span>
+    </a>
+    <a class="card" href="premium_minimal_variations/index.html">
+      <span class="big">20</span>
+      <b>The 20 page designs</b>
+      <span>Tabbed viewer with desktop / tablet / phone widths. Each page cycles your 15 slogans with
+      its own in-character transition.</span>
+    </a>
+    <a class="card" href="premium_minimal_variations/overview.html">
+      <b>Page contact sheet</b>
+      <span>All 20 designs side by side as full-page screenshots.</span>
+    </a>
+  </div>
+
+  <h2>The 20 pages, and the effect each one got</h2>
+  <div class="grid20" id="pages"></div>
+
+  <h2>Checks and tools</h2>
+  <div class="cards">
+    <a class="card" href="premium_minimal_variations/_selftest.html">
+      <b>Cycler self-test</b>
+      <span>Loads all 20 in iframes and asserts the spec: the hook exists, 15 slogans, seek works,
+      hero height never varies across slogans, no horizontal overflow.</span>
+    </a>
+  </div>
+  <div class="note">
+    <b>Run these from <code>marketting_page/</code>:</b><br>
+    <code>python3 -m http.server 8912</code> — serve everything (already running)<br>
+    <code>premium_minimal_variations/_audit.sh</code> — verify the four-motor specs on all 20 pages<br>
+    <code>python3 premium_minimal_variations/_reap.py</code> — kill orphaned headless Chrome (never
+    matches your real browser)<br>
+    <code>python3 slogan_lab/make_gifs.py</code> — re-export every effect to GIF<br>
+    <code>python3 slogan_lab/build_manifest.py</code> — after adding an effect file
+  </div>
+
+  <h2>What is in the repo</h2>
+  <ul>
+    <li><b>SLOGAN_CYCLER_SPEC.md</b><span>the 15 slogans, hard requirements, and the seek hook contract</span></li>
+    <li><b>UPDATE_4_MOTORS.md</b><span>the M17-34 spec delta, including the numbers that changed on the existing three</span></li>
+    <li><b>BRIEF.md</b><span>the complete M17 marketing fact inventory — reuse this rather than re-deriving it</span></li>
+    <li><b>slogan_lab/engine.js</b><span>the effect engine: every effect is a pure function of progress</span></li>
+    <li><b>slogan_lab/effects/*.js</b><span>one file per family; drop a new file in and rebuild the manifest</span></li>
+  </ul>
+
+  <footer>Built overnight. Nothing here is wired into the live site yet — the production page and the
+  e-commerce copy were updated separately for the four-motor range.</footer>
+</div>
+
+<script>
+const PAGES = [
+  ["Director's Cut","Keynote dissolve"],["Ivory & Ink","Ink bleed"],
+  ["Editorial Serif","Hot-metal slug"],["Midnight Inverse","Light sweep"],
+  ["Swiss Grid","Hairline wipe"],["Mono Technical","Glyph scramble"],
+  ["Green Field","Field wipe"],["Asymmetric Split","Axis shear"],
+  ["Soft Neutral","Spring squash"],["Gallery","Museum dissolve"],
+  ["Blueprint","Leader-line draw"],["Big Numerals","Odometer roll"],
+  ["Graphite & Chrome","Specular sweep"],["Whisper Gradient","Aurora condense"],
+  ["Hairline Catalogue","Cell flip"],["Sage & Stone","Horizon slide"],
+  ["Terminal Minimal","Typed"],["Magazine","Page turn"],
+  ["Scroll Choreography","Kinetic stagger"],["Statement Type","Poster slam"],
+];
+document.getElementById('pages').innerHTML = PAGES.map((p, i) =>
+  `<a href="premium_minimal_variations/v${i+1}.html" title="${p[0]} — ${p[1]}">`
+  + `<i>${i+1}</i>${p[0]}<br><span style="color:#7b7b84;font-size:11px">${p[1]}</span></a>`).join('');
+
+// how many GIFs exist, if the gallery list has been generated
+const s = document.createElement('script');
+s.src = 'slogan_lab/gifs/list.js';
+s.onload = () => {
+  const n = (window.SLOGAN_GIFS || []).length;
+  if (n) document.getElementById('ngif').textContent = n;
+};
+document.head.appendChild(s);
+</script>
+</body>
+</html>

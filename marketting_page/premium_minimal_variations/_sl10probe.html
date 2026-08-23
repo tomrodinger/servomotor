@@ -1,0 +1,42 @@
+<!doctype html><meta charset="utf-8"><title>v10 slogan probe</title>
+<style>html,body{margin:0;background:#fff;font:13px/1.5 ui-monospace,monospace}
+iframe{border:0;display:block}
+#out{white-space:pre;padding:10px}</style>
+<div id="out">working…</div>
+<iframe id="f" src="v10.html?sl=run" width="1440" height="900"></iframe>
+<script>
+var f=document.getElementById('f'), out=document.getElementById('out');
+f.onload=function(){
+  setTimeout(function(){
+    var w=f.contentWindow, d=w.document, S=w.__slogan;
+    if(!S){ out.textContent='NO __slogan'; return; }
+    S.pause();
+    var h1=d.querySelector('.hero h1');
+    var para=d.querySelector('.hero p.body');
+    var lines=[];
+    lines.push('reduced='+(w.matchMedia('(prefers-reduced-motion: reduce)').matches));
+    lines.push('items='+S.items.length+' start='+S.index());
+    for(var i=0;i<S.items.length;i++){
+      S.goto(i);
+      var r=h1.getBoundingClientRect(), p=para.getBoundingClientRect();
+      lines.push(('  '+i).slice(-3)+' h1H='+r.height.toFixed(2)+
+        ' h1Top='+r.top.toFixed(2)+' paraTop='+p.top.toFixed(2)+
+        ' scrollW='+d.documentElement.scrollWidth+' clientW='+d.documentElement.clientWidth+
+        ' | '+S.items[i][0]+' / '+S.items[i][1]);
+    }
+    // mid-transition overflow check
+    var maxSW=0;
+    for(var j=0;j<S.items.length;j++){
+      for(var t=0;t<=1.0001;t+=0.1){
+        S.seek(j,t);
+        var sw=d.documentElement.scrollWidth;
+        if(sw>maxSW) maxSW=sw;
+      }
+    }
+    lines.push('max scrollWidth during any seek = '+maxSW);
+    S.goto(0);
+    lines.push('after goto(0) index='+S.index());
+    out.textContent=lines.join('\n');
+  }, 400);
+};
+</script>

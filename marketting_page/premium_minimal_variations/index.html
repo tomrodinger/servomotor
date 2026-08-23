@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons M17 — 20 Premium Minimal variations</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    display:flex; flex-direction:column;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#0d0d0e; overflow:hidden;
+  }
+  header {
+    background:#151516; color:#fff;
+    display:flex; align-items:center; gap:14px;
+    padding:9px 14px; flex-wrap:wrap;
+    border-bottom:2px solid #7AB648; flex:none;
+  }
+  .brand { font-weight:700; font-size:13.5px; white-space:nowrap; letter-spacing:-.01em; }
+  .brand span { color:#7AB648; }
+  .brand em { font-style:normal; color:#78787e; font-weight:500; }
+  nav { display:flex; gap:4px; flex-wrap:wrap; }
+  nav button {
+    background:#242426; color:#c3c3c8; border:1px solid #333336;
+    padding:6px 10px; border-radius:6px; cursor:pointer;
+    font-size:12px; line-height:1; font-family:inherit; white-space:nowrap;
+    transition:background .12s, color .12s, border-color .12s;
+  }
+  nav button:hover { background:#333336; color:#fff; }
+  nav button.active { background:#7AB648; border-color:#7AB648; color:#0c0c0c; font-weight:700; }
+  .tools { margin-left:auto; display:flex; align-items:center; gap:10px; }
+  .seg { display:flex; border:1px solid #333336; border-radius:6px; overflow:hidden; }
+  .seg button {
+    background:#1d1d1f; color:#9a9aa0; border:0; border-radius:0;
+    padding:6px 11px; font-size:11.5px; cursor:pointer; font-family:inherit;
+  }
+  .seg button + button { border-left:1px solid #333336; }
+  .seg button.on { background:#3a3a3d; color:#fff; }
+  .open {
+    background:#1d1d1f; color:#9a9aa0; border:1px solid #333336; border-radius:6px;
+    padding:6px 11px; font-size:11.5px; cursor:pointer; font-family:inherit; text-decoration:none;
+  }
+  .open:hover { color:#fff; border-color:#4a4a4e; }
+  .hint { color:#5c5c62; font-size:11px; white-space:nowrap; }
+
+  .titlebar {
+    flex:none; background:#101011; color:#8b8b91;
+    padding:7px 16px; font-size:12px; border-bottom:1px solid #232326;
+    display:flex; gap:14px; align-items:baseline;
+  }
+  .titlebar b { color:#e6e6ea; font-weight:600; font-size:12.5px; }
+  .titlebar i { font-style:normal; color:#63636a; }
+
+  main { flex:1; position:relative; background:#1a1a1c; overflow:auto; display:flex; justify-content:center; }
+  .stage { position:relative; width:100%; height:100%; display:flex; justify-content:center; }
+  .stage.narrow { padding:0; }
+  iframe {
+    border:0; display:none; background:#fff; width:100%; height:100%;
+  }
+  iframe.visible { display:block; }
+  .stage.narrow iframe.visible { width:414px; max-width:100%; box-shadow:0 0 0 1px #2c2c30; }
+  .stage.mid    iframe.visible { width:834px; max-width:100%; box-shadow:0 0 0 1px #2c2c30; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span>Gearotons</span> M17 &nbsp;<em>20 variations on “Premium Minimal”</em></div>
+  <nav id="tabs"></nav>
+  <div class="tools">
+    <div class="seg" id="widths">
+      <button data-w="wide" class="on">Desktop</button>
+      <button data-w="mid">Tablet</button>
+      <button data-w="narrow">Phone</button>
+    </div>
+    <a class="open" id="openTab" href="#" target="_blank" rel="noopener">Open ↗</a>
+    <span class="hint">← → to switch</span>
+  </div>
+</header>
+<div class="titlebar"><b id="tName">—</b><i id="tNote"></i></div>
+<main><div class="stage" id="stage"></div></main>
+
+<script>
+  const variants = [
+    ["1 · Director’s Cut",        "v1.html",  "the baseline, refined and completed"],
+    ["2 · Ivory & Ink",           "v2.html",  "warm paper palette, humanist type"],
+    ["3 · Editorial Serif",       "v3.html",  "magazine feature, serif display, left-aligned"],
+    ["4 · Midnight Inverse",      "v4.html",  "all-dark page, one light break"],
+    ["5 · Swiss Grid",            "v5.html",  "flush-left 12-column, Helvetica, hairlines"],
+    ["6 · Mono Technical",        "v6.html",  "monospace labels, engineered feel"],
+    ["7 · Green Field",           "v7.html",  "brand green promoted to structure"],
+    ["8 · Asymmetric Split",      "v8.html",  "55/45 split, sticky left rail"],
+    ["9 · Soft Neutral",          "v9.html",  "rounded cards, warm friendly premium"],
+    ["10 · Gallery",              "v10.html", "museum whitespace, product as artwork"],
+    ["11 · Blueprint",            "v11.html", "graph paper, drafting annotations"],
+    ["12 · Big Numerals",         "v12.html", "the spec numbers are the design"],
+    ["13 · Graphite & Chrome",    "v13.html", "cool metallic industrial-premium"],
+    ["14 · Whisper Gradient",     "v14.html", "soft washes, glassy nav"],
+    ["15 · Hairline Catalogue",   "v15.html", "Braun-style bordered modular grid"],
+    ["16 · Sage & Stone",         "v16.html", "desaturated architectural calm"],
+    ["17 · Terminal Minimal",     "v17.html", "developer-first order and aesthetic"],
+    ["18 · Magazine",             "v18.html", "two columns, drop cap, pull quotes"],
+    ["19 · Scroll Choreography",  "v19.html", "baseline look plus tasteful motion"],
+    ["20 · Statement Type",       "v20.html", "poster typography, full-bleed bands"],
+    ["baseline · v10 original",   "_BASELINE_v10_premium_minimal.html", "the design these all descend from"],
+  ];
+  const tabs = document.getElementById("tabs");
+  const stage = document.getElementById("stage");
+  const tName = document.getElementById("tName");
+  const tNote = document.getElementById("tNote");
+  const openTab = document.getElementById("openTab");
+  const buttons = [], iframes = [];
+  let current = -1;
+
+  variants.forEach(([label, src, note], i) => {
+    const b = document.createElement("button");
+    b.textContent = label.split(" · ")[0];
+    b.title = label;
+    b.onclick = () => show(i);
+    tabs.appendChild(b); buttons.push(b);
+    const f = document.createElement("iframe");
+    f.dataset.src = src; f.title = label;
+    stage.appendChild(f); iframes.push(f);
+  });
+
+  function show(i) {
+    if (i === current) return;
+    current = i;
+    buttons.forEach((b, j) => b.classList.toggle("active", j === i));
+    iframes.forEach((f, j) => {
+      if (j === i && !f.src) f.src = f.dataset.src;
+      f.classList.toggle("visible", j === i);
+    });
+    tName.textContent = variants[i][0];
+    tNote.textContent = variants[i][2];
+    openTab.href = variants[i][1];
+    location.hash = "v" + (i + 1);
+  }
+
+  document.getElementById("widths").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...e.currentTarget.children].forEach(x => x.classList.toggle("on", x === b));
+    stage.className = "stage " + (b.dataset.w === "wide" ? "" : b.dataset.w);
+  });
+
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") show((current + 1) % variants.length);
+    if (e.key === "ArrowLeft")  show((current + variants.length - 1) % variants.length);
+  });
+
+  const fromHash = parseInt((location.hash.match(/^#v(\d+)$/) || [])[1]);
+  show(fromHash >= 1 && fromHash <= variants.length ? fromHash - 1 : 0);
+</script>
+</body>
+</html>

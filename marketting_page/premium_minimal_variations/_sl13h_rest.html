@@ -1,0 +1,16 @@
+<!doctype html><meta charset="utf-8"><title>sl13 rest</title>
+<style>
+html,body{margin:0;background:#888;font:11px/1.4 monospace}
+.f{position:relative;width:1440px;height:330px;overflow:hidden;margin:0 0 6px;background:#fff}
+.f iframe{position:absolute;left:0;top:-150px;width:1440px;height:900px;border:0}
+.lab{position:absolute;right:4px;top:2px;z-index:5;background:#000;color:#0f0;padding:1px 5px}
+</style>
+<div id="o"></div>
+<script>
+var idx=[0,2,9,11,12,13,14];
+var h='';
+idx.forEach(function(i){
+  h+='<div class="f"><span class="lab">rest '+i+'</span><iframe src="v13.html?sl='+i+'"></iframe></div>';
+});
+document.getElementById('o').innerHTML=h;
+</script>

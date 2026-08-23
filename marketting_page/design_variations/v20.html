@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+  /* ============================================================
+     v20 — Tesla-style stacked 100vh product panels
+     ============================================================ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+    color: #171a20;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; }
+
+  /* ---------------- Nav ---------------- */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    background: transparent;
+  }
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .wordmark img { height: 24px; width: auto; display: block; }
+  .wordmark span {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: #171a20;
+  }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-links a {
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    color: #171a20;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: background-color .3s ease;
+  }
+  .nav-links a:hover { background: rgba(23, 26, 32, 0.06); }
+
+  /* ---------------- Panels ---------------- */
+  .panel {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    background: #fff;
+    overflow: hidden;
+  }
+  .panel:nth-child(even) { background: #f5f6f7; }
+
+  .copy {
+    padding: 13vh 24px 0;
+    animation: fadeDown .8s ease both;
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .copy h1, .copy h2 {
+    font-size: 38px;
+    font-weight: 500;
+    letter-spacing: .4px;
+    line-height: 1.15;
+  }
+  .copy .sub {
+    margin-top: 8px;
+    font-size: 14.5px;
+    font-weight: 400;
+    color: #393c41;
+  }
+  .copy .caption {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: #5c5e62;
+  }
+  .copy .learn {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #393c41;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    transition: color .3s ease;
+  }
+  .copy .learn:hover { color: #171a20; }
+
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+    padding: 12px 24px;
+  }
+  .stage img {
+    max-width: min(92vw, 1080px);
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .bottom {
+    width: 100%;
+    padding: 0 24px 6vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+  }
+
+  /* Tesla-style stat trio */
+  .stats {
+    display: flex;
+    gap: 48px;
+    justify-content: center;
+  }
+  .stats div { min-width: 72px; }
+  .stats .v { font-size: 21px; font-weight: 500; color: #171a20; }
+  .stats .l {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .4px;
+    color: #5c5e62;
+    text-transform: uppercase;
+  }
+
+  /* Dual translucent pill CTAs */
+  .ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pill {
+    display: inline-block;
+    min-width: 264px;
+    padding: 11px 24px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background-color .3s ease, box-shadow .3s ease;
+  }
+  .pill.dark {
+    background: rgba(23, 26, 32, 0.8);
+    color: #f4f4f4;
+  }
+  .pill.dark:hover { background: rgba(23, 26, 32, 0.95); }
+  .pill.light {
+    background: rgba(244, 244, 244, 0.65);
+    color: #393c41;
+  }
+  .pill.light:hover {
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px rgba(23, 26, 32, 0.08) inset;
+  }
+
+  /* Chevron on first panel */
+  .chevron {
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    animation: bounce 2s infinite;
+    line-height: 0;
+  }
+  .chevron svg { display: block; }
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+    40% { transform: translate(-50%, 8px); }
+    60% { transform: translate(-50%, 4px); }
+  }
+
+  /* ---------------- Docs & Community panel ---------------- */
+  .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.75;
+    text-align: left;
+    color: #393c41;
+    display: inline-block;
+  }
+  .code .cm { color: #8e8e93; }
+  .code .kw { color: #2e7d32; }
+
+  .apps {
+    font-size: 12px;
+    letter-spacing: .5px;
+    color: #5c5e62;
+  }
+  .tiny-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 22px;
+    font-size: 12px;
+    color: #5c5e62;
+  }
+  .tiny-footer a {
+    color: #5c5e62;
+    text-decoration: none;
+    transition: color .3s ease;
+  }
+  .tiny-footer a:hover { color: #171a20; }
+
+  /* ---------------- Responsive ---------------- */
+  @media (max-width: 640px) {
+    nav { padding: 0 16px; }
+    .wordmark span { font-size: 12px; letter-spacing: 3px; }
+    .nav-links a { padding: 6px 8px; }
+    .nav-links a.hide-m { display: none; }
+    .copy { padding-top: 11vh; }
+    .copy h1, .copy h2 { font-size: 28px; }
+    .copy .sub { font-size: 13.5px; }
+    .stats { gap: 26px; }
+    .stats .v { font-size: 18px; }
+    .ctas { flex-direction: column; width: 100%; align-items: center; }
+    .pill { width: 100%; max-width: 400px; min-width: 0; }
+    .bottom { gap: 16px; padding-bottom: 7vh; }
+    .code { font-size: 11.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .chevron { animation: none; }
+    .copy { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="wordmark" href="https://gearotons.com">
+    <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+    <span>GEAROTONS</span>
+  </a>
+  <div class="nav-links">
+    <a class="hide-m" href="https://gearotons.com">Docs</a>
+    <a class="hide-m" href="https://github.com/tomrodinger/servomotor">GitHub</a>
+    <a href="https://gearotons.com/store">Shop</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ================= M17-60 ================= -->
+  <section class="panel" id="m17-60">
+    <div class="copy">
+      <h1>M17-60</h1>
+      <p class="sub">0.65 N·m &nbsp;·&nbsp; 560 RPM &nbsp;·&nbsp; 12–24 V</p>
+      <p class="caption">Motor, driver, motion controller and encoder — one NEMA 17 package</p>
+      <a class="learn" href="https://gearotons.com">Learn more</a>
+    </div>
+    <div class="stage">
+      <img src="../transparent/one_motor_transparent.png" alt="Gearotons M17-60 all-in-one servomotor">
+    </div>
+    <div class="bottom">
+      <div class="stats">
+        <div><div class="v">38 W</div><div class="l">Rated Power</div></div>
+        <div><div class="v">470 g</div><div class="l">Weight</div></div>
+        <div><div class="v">59.8 mm</div><div class="l">Height</div></div>
+      </div>
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com/store">Order Now</a>
+        <a class="pill light" href="https://gearotons.com">Learn More</a>
+      </div>
+    </div>
+    <a class="chevron" href="#m17-48" aria-label="Scroll to next panel">
+      <svg width="30" height="16" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 2 L15 13 L28 2" stroke="#171a20" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </section>
+
+  <!-- ================= M17-48 ================= -->
+  <section class="panel" id="m17-48">
+    <div class="copy">
+      <h2>M17-48</h2>
+      <p class="sub">0.55 N·m &nbsp;·&nbsp; 560 RPM &nbsp;·&nbsp; 12–24 V</p>
+      <p class="caption">Closed-loop control with built-in encoder and a 32 kHz PID loop</p>
+      <a class="learn" href="https://gearotons.com">Learn more</a>
+    </div>
+    <div class="stage">
+      <img src="../transparent/M17_series_overview_transparent.png" loading="lazy"
+           alt="M17 series family — the M17-48 is the middle of three sizes">
+    </div>
+    <div class="bottom">
+      <div class="stats">
+        <div><div class="v">32 W</div><div class="l">Rated Power</div></div>
+        <div><div class="v">360 g</div><div class="l">Weight</div></div>
+        <div><div class="v">48.6 mm</div><div class="l">Height</div></div>
+      </div>
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com/store">Order Now</a>
+        <a class="pill light" href="https://gearotons.com">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= M17-40 ================= -->
+  <section class="panel" id="m17-40">
+    <div class="copy">
+      <h2>M17-40</h2>
+      <p class="sub">0.42 N·m &nbsp;·&nbsp; 560 RPM &nbsp;·&nbsp; 12–24 V</p>
+      <p class="caption">Over-current, over-voltage and over-temperature protection built in</p>
+      <a class="learn" href="https://gearotons.com">Learn more</a>
+    </div>
+    <div class="stage">
+      <img src="../transparent/motor_back_transparent.png" loading="lazy"
+           alt="Back of the compact M17 motor with printed specifications and Get Started QR code">
+    </div>
+    <div class="bottom">
+      <div class="stats">
+        <div><div class="v">25 W</div><div class="l">Rated Power</div></div>
+        <div><div class="v">285 g</div><div class="l">Weight</div></div>
+        <div><div class="v">41.6 mm</div><div class="l">Height</div></div>
+      </div>
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com/store">Order Now</a>
+        <a class="pill light" href="https://gearotons.com">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Full Kit ================= -->
+  <section class="panel" id="kit">
+    <div class="copy">
+      <h2>Full Kit</h2>
+      <p class="sub">Three motors &nbsp;·&nbsp; RS485 adapter &nbsp;·&nbsp; cables &amp; knobs</p>
+      <p class="caption">Daisy-chain any number of motors on one RS485 bus — no timing-critical STEP/DIR</p>
+      <a class="learn" href="https://gearotons.com">Learn more</a>
+    </div>
+    <div class="stage">
+      <img src="../transparent/kit_with_three_motors_transparent.png" loading="lazy"
+           alt="Full kit flat-lay: three M17 motors, RS485 adapter, cables and knobs">
+    </div>
+    <div class="bottom">
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com/store">Order Now</a>
+        <a class="pill light" href="https://gearotons.com">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RS485 Adapter ================= -->
+  <section class="panel" id="adapter">
+    <div class="copy">
+      <h2>RS485 Adapter</h2>
+      <p class="sub">3-in-1 &nbsp;·&nbsp; USB &nbsp;·&nbsp; Raspberry Pi &nbsp;·&nbsp; Arduino</p>
+      <p class="caption">Control from any platform — Mac, PC, Raspberry Pi, Arduino or ESP32</p>
+      <a class="learn" href="https://gearotons.com">Learn more</a>
+    </div>
+    <div class="stage">
+      <img src="../transparent/adapter_and_wire_transparent.png" loading="lazy"
+           alt="Gearotons 3-in-1 RS485 adapter PCB with cable">
+    </div>
+    <div class="bottom">
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com/store">Order Now</a>
+        <a class="pill light" href="https://gearotons.com">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Docs & Community ================= -->
+  <section class="panel" id="docs">
+    <div class="copy">
+      <h2>Docs &amp; Community</h2>
+      <p class="sub">Precision motion control, open to everyone.</p>
+      <a class="learn" href="https://github.com/tomrodinger/servomotor">Firmware, libraries and schematics on GitHub</a>
+    </div>
+    <div class="stage">
+      <pre class="code"><span class="cm"># pip3 install servomotor</span>
+<span class="kw">import</span> servomotor
+<span class="kw">from</span> servomotor <span class="kw">import</span> M3
+
+servomotor.open_serial_port()
+motor = M3(<span class="cm">"X"</span>, time_unit=<span class="cm">"seconds"</span>,
+                position_unit=<span class="cm">"degrees"</span>)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  <span class="cm"># one revolution in 2 s</span></pre>
+    </div>
+    <div class="bottom">
+      <div class="ctas">
+        <a class="pill dark" href="https://gearotons.com">Documentation</a>
+        <a class="pill light" href="https://github.com/tomrodinger/servomotor">GitHub</a>
+      </div>
+      <p class="apps">Robotics · CNC · Automated testing · Scientific instruments · 3D printers · Education</p>
+      <div class="tiny-footer">
+        <span>Gearotons © 2026</span>
+        <span>Founded in Shenzhen, 2022</span>
+        <a href="https://gearotons.com/store">Shop</a>
+        <a href="https://gearotons.com">Documentation</a>
+        <a href="https://github.com/tomrodinger/servomotor">GitHub</a>
+        <span>Open source hardware &amp; software</span>
+        <span>Arduino library: “Servomotor”</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

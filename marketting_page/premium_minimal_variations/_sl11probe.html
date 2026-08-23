@@ -1,0 +1,95 @@
+<!doctype html><meta charset="utf-8"><title>probe</title>
+<style>
+body{margin:0;font-family:ui-monospace,monospace;font-size:12px;background:#fff;color:#111;}
+.box{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+     font-weight:300;letter-spacing:-.032em;line-height:1.03;position:absolute;left:-9999px;top:0;}
+.box strong{font-weight:600;}
+.w{display:inline-block;white-space:nowrap;}
+.c{display:inline-block;}
+#out{white-space:pre;padding:8px;line-height:1.45;}
+</style>
+<div id="out"></div>
+<script>
+var SLOGANS=[
+["A motor, and everything","that usually surrounds it."],
+["The whole drive system.","Inside one motor."],
+["Four systems.","One motor."],
+["Motion control,","fully integrated."],
+["You wanted motion.","Not a wiring project."],
+["A motor that","needs nothing else."],
+["The whole motion system.","One motor."],
+["Everything that moves it,","inside it."],
+["Motion control.","All in one."],
+["Stepper, driver, controller, encoder.","One part number."],
+["Bolts in like a stepper.","Runs like a full servo."],
+["Four bolts. One cable.","A complete servo system."],
+["Servomotor:","stepper, driver, controller and encoder in one."],
+["No driver board. No encoder to mount.","It's all inside."],
+["Driver, controller and encoder","are no longer your problem."]];
+
+function words(parent,text,split){
+  var parts=text.split(' ');
+  for(var i=0;i<parts.length;i++){
+    if(i)parent.appendChild(document.createTextNode(' '));
+    var s=document.createElement('span'); s.className='w';
+    s.textContent=parts[i];
+    parent.appendChild(s);
+  }
+}
+function splitWords(el,fs){
+  var ws=el.getElementsByClassName('w'),i,j,base=-0.032*fs,plain=[],ns=[];
+  for(i=0;i<ws.length;i++)plain.push(ws[i].getBoundingClientRect().width);
+  for(i=0;i<ws.length;i++){
+    var t=ws[i].textContent, n=t.length; ns.push(n);
+    ws[i].textContent='';
+    for(j=0;j<n;j++){
+      var c=document.createElement('span'); c.className='c'; c.textContent=t[j];
+      ws[i].appendChild(c);
+    }
+    ws[i].style.letterSpacing=base+'px';
+  }
+  for(i=0;i<ws.length;i++){
+    var got=ws[i].getBoundingClientRect().width;
+    ws[i].style.letterSpacing=(base-(got-plain[i])/ns[i])+'px';
+  }
+}
+function build(el,sl,split,fs){
+  el.innerHTML='';
+  words(el,sl[0],split);
+  el.appendChild(document.createElement('br'));
+  var b=document.createElement('strong'); words(b,sl[1],split); el.appendChild(b);
+  if(split)splitWords(el,fs);
+}
+function lines(el){
+  var ws=el.getElementsByClassName('w'), seen={}, n=0;
+  for(var i=0;i<ws.length;i++){
+    var k=Math.round(ws[i].getBoundingClientRect().bottom);
+    if(!seen[k]){seen[k]=1;n++;}
+  }
+  return n;
+}
+function widths(el){
+  var ws=el.getElementsByClassName('w'), a=[];
+  for(var i=0;i<ws.length;i++)a.push(ws[i].getBoundingClientRect().width);
+  return a;
+}
+var out=[];
+[[558,84],[358,39],[420,52],[700,84]].forEach(function(cfg){
+  var W=cfg[0],FS=cfg[1];
+  var el=document.createElement('div'); el.className='box';
+  el.style.width=W+'px'; el.style.fontSize=FS+'px';
+  document.body.appendChild(el);
+  out.push('=== width '+W+'  font '+FS+' ===');
+  for(var i=0;i<SLOGANS.length;i++){
+    build(el,SLOGANS[i],false,FS); var l0=lines(el), w0=widths(el), h0=el.getBoundingClientRect().height;
+    build(el,SLOGANS[i],true ,FS); var l1=lines(el), w1=widths(el), h1=el.getBoundingClientRect().height;
+    var md=0,tot=0;
+    for(var k=0;k<w0.length;k++){var d=Math.abs(w1[k]-w0[k]); if(d>md)md=d; tot+=w1[k]-w0[k];}
+    out.push(('  '+i).slice(-4)+'  lines '+l0+'/'+l1+(l0!==l1?'  <<< WRAP DIFF':'')+
+      '  h '+h0.toFixed(1)+'/'+h1.toFixed(1)+
+      '  maxWordDelta '+md.toFixed(3)+'  sumDelta '+tot.toFixed(3));
+  }
+  document.body.removeChild(el);
+});
+document.getElementById('out').textContent=out.join('\n');
+</script>

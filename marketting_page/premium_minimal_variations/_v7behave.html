@@ -1,0 +1,121 @@
+<!doctype html><meta charset="utf-8"><title>v7 behaviour probe</title>
+<style>html,body{margin:0;background:#fff;font:13px monospace}#f{border:0;width:1200px;height:800px}
+#o{white-space:pre;padding:8px}</style>
+<iframe id="f"></iframe>
+<pre id="o">pending</pre>
+<script>
+/* Runs under --virtual-time-budget, where every pending setTimeout fires
+   essentially at once. That makes "the timer is blocked" a DETERMINISTIC test:
+   arm the dwell timer via goto(i), let the whole virtual budget elapse, and if
+   the index has not moved off i then no timer ever ran. Conversely, when nothing
+   blocks it, the index runs away. No wall-clock waiting is involved. */
+(function(){
+  var out=[], f=document.getElementById('f');
+  function log(s){ out.push(s); document.getElementById('o').textContent=out.join('\n'); }
+  var mode = new URLSearchParams(location.search).get('mode') || 'motion';
+
+  f.src = (mode==='rm') ? 'v7.html' : 'v7.html?__play=1';
+  f.addEventListener('load', function(){ setTimeout(run, 300); }, {once:true});
+
+  function run(){
+    var w=f.contentWindow, d=f.contentDocument, api=w.__slogan;
+    var h1=d.querySelector('.hero h1');
+    var rm = w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    log('mode='+mode+'  prefers-reduced-motion matches: '+rm);
+    log('h1 text at load: "'+d.querySelector('.sl-new').innerText.replace(/\s+/g,' ').trim()+'"');
+    log('h1 has real text with JS running: '+(h1.innerText.trim().length>0));
+    log('aria-live on h1: '+h1.getAttribute('aria-live'));
+    log('.sl-old aria-hidden: '+d.querySelector('.sl-old').getAttribute('aria-hidden'));
+
+    function armed(label, prep, expectStuck, at){
+      prep(w,d,api);
+      // goto() arms the dwell timer; the budget then flushes every timer there is
+      setTimeout(function(){
+        var moved = api.index() !== at;
+        log(label+': index started '+at+', ended '+api.index()+
+            '  -> '+(moved?'TIMER RAN':'timer blocked')+
+            '  ['+(moved!==expectStuck ? 'PASS' : 'FAIL')+']');
+        next();
+      }, 0);
+    }
+
+    var steps = [];
+    // baseline: with nothing blocking, the timer must run away
+    steps.push(function(){
+      api.resume();
+      api.goto(0);
+      armed('baseline (nothing blocking)', function(){}, false, 0);
+    });
+    if(mode==='rm'){
+      steps.length = 0;
+      steps.push(function(){
+        api.goto(0);
+        armed('reduced motion', function(){}, true, 0);
+      });
+    } else {
+      steps.push(function(){
+        api.resume(); api.goto(5);
+        armed('hover on headline', function(w,d){
+          d.querySelector('.hero h1').dispatchEvent(new w.MouseEvent('mouseenter'));
+        }, true, 5);
+      });
+      steps.push(function(){
+        var h=f.contentDocument.querySelector('.hero h1');
+        h.dispatchEvent(new f.contentWindow.MouseEvent('mouseleave'));
+        api.resume(); api.goto(7);
+        armed('keyboard focus on headline', function(w,d){
+          d.querySelector('.hero h1').dispatchEvent(new w.FocusEvent('focusin',{bubbles:true}));
+        }, true, 7);
+      });
+      steps.push(function(){
+        var h=f.contentDocument.querySelector('.hero h1');
+        h.dispatchEvent(new f.contentWindow.FocusEvent('focusout',{bubbles:true}));
+        api.resume(); api.goto(9);
+        armed('hidden tab', function(w,d){
+          try{ Object.defineProperty(d,'hidden',{configurable:true,get:function(){return true;}}); }catch(e){ log('  (could not fake document.hidden: '+e+')'); }
+          d.dispatchEvent(new w.Event('visibilitychange'));
+        }, true, 9);
+      });
+      steps.push(function(){
+        var d=f.contentDocument;
+        try{ Object.defineProperty(d,'hidden',{configurable:true,get:function(){return false;}}); }catch(e){}
+        api.resume(); api.goto(11);
+        armed('__slogan.pause()', function(w,d,api){ api.pause(); }, true, 11);
+      });
+      steps.push(function(){
+        api.seek(3,0.42);
+        armed('frozen by seek()', function(){}, true, 3);
+      });
+    }
+
+    var si=0;
+    function next(){ if(si<steps.length) steps[si++](); else done(); }
+    function done(){
+      if(mode!=='rm'){
+        // seek determinism, independent of any clock
+        var d2=f.contentDocument;
+        api.seek(6,0.37);
+        var a=[d2.querySelector('.sl-band').style.transform,
+               d2.querySelector('.sl-new').style.maskSize,
+               d2.querySelector('.sl-hair').style.transform].join('|');
+        api.seek(13,0.9); api.seek(1,0.1); api.seek(6,0.37);
+        var b=[d2.querySelector('.sl-band').style.transform,
+               d2.querySelector('.sl-new').style.maskSize,
+               d2.querySelector('.sl-hair').style.transform].join('|');
+        log('seek(6,0.37) idempotent after other seeks: '+(a===b)+'  ['+(a===b?'PASS':'FAIL')+']');
+        log('  frame: '+a);
+        // monotonic: band must advance with t
+        var xs=[];
+        for(var t=0;t<=1.0001;t+=0.125){
+          api.seek(6,t);
+          xs.push(+(/translate3d\((-?[\d.]+)px/.exec(d2.querySelector('.sl-band').style.transform)||[0,0])[1]);
+        }
+        var mono=xs.every(function(v,i){ return i===0 || v>=xs[i-1]; });
+        log('band x monotonic across t: '+mono+' ['+(mono?'PASS':'FAIL')+']  '+xs.map(function(v){return v.toFixed(0);}).join(' '));
+      }
+      document.title='done';
+    }
+    next();
+  }
+})();
+</script>

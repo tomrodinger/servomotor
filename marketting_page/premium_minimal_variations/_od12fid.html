@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8"><title>fidelity</title><pre id="o">…</pre>
+<script>
+var qp={};(location.search||'').replace(/^\?/,'').split('&').forEach(function(kv){if(!kv)return;var a=kv.split('=');qp[a[0]]=decodeURIComponent(a[1]||'');});
+var W=parseInt(qp.w||'1440',10);
+var f=document.createElement('iframe');f.width=W;f.height=1000;f.src='v12.html?motion=1&pause=1';
+f.style.cssText='position:absolute;left:-4000px;border:0';document.body.appendChild(f);
+var L=[];function P(s){L.push(s);document.getElementById('o').textContent=L.join('\n');}
+f.onload=function(){setTimeout(function(){
+ var d=f.contentDocument,w=f.contentWindow,S=w.__slogan;
+ if(!S){P('NO __slogan');return;}
+ var h1=d.querySelector('#top h1');
+ var m=d.createElement('h1');
+ m.style.cssText='position:absolute;left:0;top:0;visibility:hidden;width:'+h1.clientWidth+'px';
+ h1.parentNode.appendChild(m);
+ var faces=d.querySelectorAll('.odo-face');
+ // computed weights of live drum cells
+ S.goto(0);
+ var l1c=faces[1].firstChild.querySelector('.odo-c'),
+     l2c=faces[1].lastChild.querySelector('.odo-c');
+ P('computed weight line1 cell = '+w.getComputedStyle(l1c).fontWeight+'   line2 cell = '+w.getComputedStyle(l2c).fontWeight);
+ P('h1 weight='+w.getComputedStyle(h1).fontWeight+'  fontSize='+w.getComputedStyle(h1).fontSize);
+ P('');
+ function drumWidth(lineEl){
+   var ws=lineEl.querySelectorAll('.odo-w'); if(!ws.length)return null;
+   var a=1e9,b=-1e9,i,r;
+   for(i=0;i<ws.length;i++){r=ws[i].getBoundingClientRect();if(r.left<a)a=r.left;if(r.right>b)b=r.right;}
+   return b-a;
+ }
+ function plainWidth(txt,bold){
+   m.innerHTML=(bold?'<strong style="display:block;white-space:nowrap"><span id="pw">':'<span style="display:block;white-space:nowrap"><span id="pw">')+
+     txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>'+(bold?'</strong>':'</span>');
+   return d.getElementById('pw').getBoundingClientRect().width;
+ }
+ var worst=0;
+ for(var i=0;i<15;i++){
+   S.goto(i);
+   var pair=S.items[i];
+   var fa=d.querySelectorAll('.odo-face')[ (i===0?1:1) ]; // face holding the rest state
+   // find whichever face has visible cells: after goto, faceB holds it
+   var fB=d.querySelectorAll('.odo-face')[1];
+   var d1=drumWidth(fB.firstChild), d2=drumWidth(fB.lastChild);
+   var p1=plainWidth(pair[0],false), p2=plainWidth(pair[1],true);
+   // only compare when the line did not wrap (single visual row)
+   var wrapped1=fB.firstChild.getBoundingClientRect().height>parseFloat(w.getComputedStyle(h1).fontSize)*1.4;
+   var wrapped2=fB.lastChild.getBoundingClientRect().height>parseFloat(w.getComputedStyle(h1).fontSize)*1.4;
+   var e1=wrapped1?'(wrapped)':(d1-p1).toFixed(2), e2=wrapped2?'(wrapped)':(d2-p2).toFixed(2);
+   if(!wrapped1)worst=Math.max(worst,Math.abs(d1-p1));
+   if(!wrapped2)worst=Math.max(worst,Math.abs(d2-p2));
+   P(i+'  L1 drum-plain='+e1+'   L2 drum-plain='+e2);
+ }
+ P('');
+ P('worst unwrapped line width error = '+worst.toFixed(2)+'px');
+ m.parentNode.removeChild(m);
+ S.goto(0);
+ P('DONE');
+},1000);};
+</script>

@@ -1,0 +1,45 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>probe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#fff;font-family:monospace}
+.stagebox{position:relative;background:#fff;color:#1d1d1f;height:520px;padding:18px 22px;overflow:hidden}
+.fx-stage{position:absolute;inset:18px 22px;display:flex;align-items:center;justify-content:center;
+  font-size:57px;line-height:1.18;letter-spacing:-.02em;text-align:center;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.fx-stage .fx-light{font-weight:300}
+.fx-stage .fx-bold{font-weight:650}
+#out{font-size:13px;white-space:pre;padding:8px}
+</style></head><body>
+<div class="stagebox" style="width:1300px"><div id="s"></div></div>
+<pre id="out"></pre>
+<script src="engine.js"></script>
+<script src="effects/type.js"></script>
+<script>
+const SLOG=[["A motor, and everything","that usually surrounds it."],
+["The whole drive system.","Inside one motor."]];
+const q=new URLSearchParams(location.search);
+const id=q.get('id')||'type-decode';
+const stage=document.getElementById('s');
+const fx=SloganFX.get(id);
+const p=SloganFX.mount(stage,fx,SLOG,{start:0});
+const L=[];
+function rects(t){
+  p.seek(0,t);
+  const sr=stage.getBoundingClientRect();
+  const rows=[];
+  if(t<=0||t>=1){
+    stage.querySelectorAll('.fx-canon span').forEach(e=>{const b=e.getBoundingClientRect();
+      rows.push([e.textContent.slice(0,12),b.left-sr.left,b.top-sr.top,b.width,b.height].join(' | '));});
+  } else {
+    const lay=stage.querySelector('.fx-layer');
+    const kids=lay.querySelectorAll('span,div');
+    let n=0;
+    kids.forEach(e=>{ if(n>6)return; if(!e.textContent.trim())return;
+      const b=e.getBoundingClientRect();
+      rows.push([e.textContent.slice(0,12),(b.left-sr.left).toFixed(1),(b.top-sr.top).toFixed(1),b.width.toFixed(1),b.height.toFixed(1)].join(' | ')); n++;});
+  }
+  L.push('t='+t+'  stage='+sr.width.toFixed(1)+'x'+sr.height.toFixed(1)+'\n  '+rows.join('\n  '));
+}
+rects(0);rects(0.02);rects(0.98);rects(1);
+document.getElementById('out').textContent=L.join('\n');
+</script></body></html>

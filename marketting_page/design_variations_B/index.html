@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Variations B — M17 (pass 2 structural)</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Helvetica,Arial,sans-serif;background:#111;color:#eee;height:100vh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1rem;background:#1a1a1a;border-bottom:1px solid #333;flex-wrap:wrap;gap:.5rem}
+header h1{margin:0;font-size:1rem;font-weight:600}
+header .meta{font-size:.75rem;opacity:.7}
+.controls button{background:#333;color:#fff;border:1px solid #555;padding:.4rem .8rem;cursor:pointer;margin-left:.3rem;border-radius:4px}
+.controls button:hover{background:#444}
+.layout{display:grid;grid-template-columns:220px 1fr;flex:1;min-height:0}
+.tabs{overflow-y:auto;border-right:1px solid #333;background:#161616;padding:.4rem}
+.tab{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;background:transparent;border:0;border-left:3px solid transparent;color:#bbb;padding:.45rem .6rem;cursor:pointer;margin-bottom:1px}
+.tab:hover{background:#222;color:#fff}
+.tab.active{background:#2a2a2a;border-left-color:#7AB648;color:#fff}
+.tab .num{font-size:.7rem;opacity:.6;font-weight:700}
+.tab .lab{font-size:.82rem}
+.frame-wrap{min-height:0}
+iframe{width:100%;height:100%;border:0;background:#fff}
+@media(max-width:700px){.layout{grid-template-columns:1fr}.tabs{display:flex;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid #333}.tab{min-width:100px}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>M17 Design Variations B — pass 2</h1>
+    <div class="meta">40 structurally distinct pages · Round 1 original · Round 2 company pastiches</div>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">← Prev</button>
+    <button type="button" id="next">Next →</button>
+    <button type="button" id="open">Open tab</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="tabs" id="tabs"><button type="button" class="tab" data-src="v1.html" data-n="1"><span class="num">v1</span><span class="lab">Precision Lab</span></button><button type="button" class="tab" data-src="v2.html" data-n="2"><span class="num">v2</span><span class="lab">Dark Command</span></button><button type="button" class="tab" data-src="v3.html" data-n="3"><span class="num">v3</span><span class="lab">Editorial Serif</span></button><button type="button" class="tab" data-src="v4.html" data-n="4"><span class="num">v4</span><span class="lab">Soft Consumer</span></button><button type="button" class="tab" data-src="v5.html" data-n="5"><span class="num">v5</span><span class="lab">Blueprint Grid</span></button><button type="button" class="tab" data-src="v6.html" data-n="6"><span class="num">v6</span><span class="lab">Bold Poster</span></button><button type="button" class="tab" data-src="v7.html" data-n="7"><span class="num">v7</span><span class="lab">Swiss Grid</span></button><button type="button" class="tab" data-src="v8.html" data-n="8"><span class="num">v8</span><span class="lab">Warm Workshop</span></button><button type="button" class="tab" data-src="v9.html" data-n="9"><span class="num">v9</span><span class="lab">Neon Arcade</span></button><button type="button" class="tab" data-src="v10.html" data-n="10"><span class="num">v10</span><span class="lab">Luxury Minimal</span></button><button type="button" class="tab" data-src="v11.html" data-n="11"><span class="num">v11</span><span class="lab">NVIDIA-style</span></button><button type="button" class="tab" data-src="v12.html" data-n="12"><span class="num">v12</span><span class="lab">Apple-style</span></button><button type="button" class="tab" data-src="v13.html" data-n="13"><span class="num">v13</span><span class="lab">Google-style</span></button><button type="button" class="tab" data-src="v14.html" data-n="14"><span class="num">v14</span><span class="lab">Microsoft-style</span></button><button type="button" class="tab" data-src="v15.html" data-n="15"><span class="num">v15</span><span class="lab">Amazon-style</span></button><button type="button" class="tab" data-src="v16.html" data-n="16"><span class="num">v16</span><span class="lab">TSMC-style</span></button><button type="button" class="tab" data-src="v17.html" data-n="17"><span class="num">v17</span><span class="lab">Broadcom-style</span></button><button type="button" class="tab" data-src="v18.html" data-n="18"><span class="num">v18</span><span class="lab">SpaceX-style</span></button><button type="button" class="tab" data-src="v19.html" data-n="19"><span class="num">v19</span><span class="lab">Aramco-style</span></button><button type="button" class="tab" data-src="v20.html" data-n="20"><span class="num">v20</span><span class="lab">Meta-style</span></button><button type="button" class="tab" data-src="v21.html" data-n="21"><span class="num">v21</span><span class="lab">Tesla-style</span></button><button type="button" class="tab" data-src="v22.html" data-n="22"><span class="num">v22</span><span class="lab">Samsung-style</span></button><button type="button" class="tab" data-src="v23.html" data-n="23"><span class="num">v23</span><span class="lab">Berkshire-style</span></button><button type="button" class="tab" data-src="v24.html" data-n="24"><span class="num">v24</span><span class="lab">Eli Lilly-style</span></button><button type="button" class="tab" data-src="v25.html" data-n="25"><span class="num">v25</span><span class="lab">Micron-style</span></button><button type="button" class="tab" data-src="v26.html" data-n="26"><span class="num">v26</span><span class="lab">Walmart-style</span></button><button type="button" class="tab" data-src="v27.html" data-n="27"><span class="num">v27</span><span class="lab">JPMorgan-style</span></button><button type="button" class="tab" data-src="v28.html" data-n="28"><span class="num">v28</span><span class="lab">SK Hynix-style</span></button><button type="button" class="tab" data-src="v29.html" data-n="29"><span class="num">v29</span><span class="lab">AMD-style</span></button><button type="button" class="tab" data-src="v30.html" data-n="30"><span class="num">v30</span><span class="lab">Visa-style</span></button><button type="button" class="tab" data-src="v31.html" data-n="31"><span class="num">v31</span><span class="lab">ASML-style</span></button><button type="button" class="tab" data-src="v32.html" data-n="32"><span class="num">v32</span><span class="lab">ExxonMobil-style</span></button><button type="button" class="tab" data-src="v33.html" data-n="33"><span class="num">v33</span><span class="lab">J&amp;J-style</span></button><button type="button" class="tab" data-src="v34.html" data-n="34"><span class="num">v34</span><span class="lab">Tencent-style</span></button><button type="button" class="tab" data-src="v35.html" data-n="35"><span class="num">v35</span><span class="lab">Intel-style</span></button><button type="button" class="tab" data-src="v36.html" data-n="36"><span class="num">v36</span><span class="lab">Mastercard-style</span></button><button type="button" class="tab" data-src="v37.html" data-n="37"><span class="num">v37</span><span class="lab">AbbVie-style</span></button><button type="button" class="tab" data-src="v38.html" data-n="38"><span class="num">v38</span><span class="lab">Applied Materials-style</span></button><button type="button" class="tab" data-src="v39.html" data-n="39"><span class="num">v39</span><span class="lab">Cisco-style</span></button><button type="button" class="tab" data-src="v40.html" data-n="40"><span class="num">v40</span><span class="lab">Bank of America-style</span></button></nav>
+  <div class="frame-wrap"><iframe id="frame" title="Variant preview" src="v1.html"></iframe></div>
+</div>
+<script>
+(function(){
+  const tabs=[...document.querySelectorAll('.tab')];
+  const frame=document.getElementById('frame');
+  let idx=0;
+  function show(i){
+    idx=(i+tabs.length)%tabs.length;
+    tabs.forEach((t,n)=>t.classList.toggle('active',n===idx));
+    frame.src=tabs[idx].dataset.src;
+    tabs[idx].scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+  tabs.forEach((t,i)=>t.addEventListener('click',()=>show(i)));
+  document.getElementById('prev').onclick=()=>show(idx-1);
+  document.getElementById('next').onclick=()=>show(idx+1);
+  document.getElementById('open').onclick=()=>window.open(tabs[idx].dataset.src,'_blank');
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft')show(idx-1);
+    if(e.key==='ArrowRight')show(idx+1);
+  });
+  show(0);
+})();
+</script>
+</body>
+</html>

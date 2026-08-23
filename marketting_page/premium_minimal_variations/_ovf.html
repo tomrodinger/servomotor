@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>ovf</title>
+<style>html,body{margin:0}iframe{width:390px;height:3000px;border:0}</style>
+<iframe id="f" src="http://127.0.0.1:8912/premium_minimal_variations/v13.html"></iframe>
+<div id="out">pending</div>
+<script>
+document.getElementById('f').onload=function(){
+ setTimeout(function(){
+  var d=this.contentDocument||document.getElementById('f').contentDocument;
+  var vw=d.documentElement.clientWidth;
+  var res=['clientWidth='+vw,'scrollWidth='+d.documentElement.scrollWidth,'bodyScroll='+d.body.scrollWidth];
+  var bad=[];
+  d.querySelectorAll('*').forEach(function(el){
+    var r=el.getBoundingClientRect();
+    if(r.width>0&&r.right>vw+1){bad.push(el.tagName+'.'+(el.className&&el.className.baseVal===undefined?el.className:'')+' right='+Math.round(r.right)+' w='+Math.round(r.width));}
+  });
+  res.push('OVERFLOWERS='+bad.length);
+  document.getElementById('out').textContent=res.join(' | ')+' :: '+bad.slice(0,25).join(' ;; ');
+ },1200);
+};
+</script>

@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><title>sl13 strip</title>
+<style>
+html,body{margin:0;background:#666;font:11px/1.3 monospace}
+.f{position:relative;overflow:hidden;margin:0 0 5px;background:#fff}
+.f iframe{position:absolute;left:0;border:0}
+.lab{position:absolute;right:4px;top:2px;z-index:5;background:#000;color:#0f0;padding:1px 5px}
+</style>
+<div id="o"></div>
+<script>
+var p=(location.hash||'#').slice(1).split(',');
+var i=parseInt(p[0],10)||0;
+var W=parseInt(p[1],10)||1440;
+var CH=parseInt(p[2],10)||300;
+var OFF=parseInt(p[3],10)||160;
+var ts=[0.15,0.28,0.4,0.5,0.62,0.75,0.85];
+var h='';
+ts.forEach(function(t){
+  h+='<div class="f" style="width:'+W+'px;height:'+CH+'px">'+
+     '<span class="lab">'+i+'&rarr;'+((i+1)%15)+'  t='+t+'</span>'+
+     '<iframe style="width:'+W+'px;height:900px;top:-'+OFF+'px" src="v13.html?sl='+i+'&amp;t='+t+'"></iframe></div>';
+});
+document.getElementById('o').innerHTML=h;
+</script>

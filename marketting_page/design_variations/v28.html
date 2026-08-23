@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+  /* ============ RESET / BASE ============ */
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    background:#000;
+    color:#d6d6d6;
+    font-family: Bahnschrift, "Avenir Next", "Avenir", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  img { max-width:100%; display:block; }
+  a { color:#7AB648; text-decoration:none; }
+  ::selection { background:#7AB648; color:#000; }
+
+  h1,h2,h3,h4 {
+    color:#fff;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    line-height:1.15;
+  }
+
+  .wrap { max-width:1200px; margin:0 auto; padding:0 24px; }
+  section { position:relative; }
+
+  /* ============ BUTTONS (AMD outline system) ============ */
+  .btn {
+    display:inline-block;
+    padding:14px 34px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    border:1px solid #fff;
+    color:#fff;
+    background:transparent;
+    border-radius:2px;
+    transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover { background:#fff; color:#000; }
+  .btn-green {
+    border-color:#7AB648;
+    color:#7AB648;
+  }
+  .btn-green:hover {
+    background:#7AB648;
+    color:#000;
+    box-shadow:0 0 24px rgba(122,182,72,.45);
+  }
+  .btn-small { padding:9px 22px; font-size:13px; }
+
+  .textlink {
+    color:#7AB648;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:.02em;
+    display:inline-block;
+    transition:color .2s ease, transform .2s ease;
+  }
+  .textlink::after { content:" \203A"; font-weight:700; }
+  .textlink:hover { color:#a3d97a; transform:translateX(3px); }
+
+  /* ============ NAV ============ */
+  header.nav {
+    position:sticky; top:0; z-index:100;
+    background:rgba(0,0,0,.88);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid #1e1e1e;
+  }
+  .nav-inner {
+    max-width:1200px; margin:0 auto; padding:0 24px;
+    height:64px;
+    display:flex; align-items:center; gap:32px;
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; }
+  .nav-logo img { height:34px; width:auto; background:#fff; border-radius:6px; padding:2px; }
+  .nav-logo span {
+    color:#fff; font-weight:700; font-size:19px; letter-spacing:.02em;
+  }
+  .nav-links { display:flex; gap:26px; margin-left:auto; align-items:center; }
+  .nav-links a.nl {
+    color:#c9c9c9; font-size:14px; font-weight:600; letter-spacing:.03em;
+    transition:color .15s ease;
+  }
+  .nav-links a.nl:hover { color:#7AB648; }
+  @media (max-width:820px){ .nav-links a.nl { display:none; } }
+
+  /* ============ HERO ============ */
+  .hero {
+    position:relative;
+    min-height:92vh;
+    display:flex;
+    align-items:center;
+    overflow:hidden;
+    background:#000;
+  }
+
+  /* --- light-trail visual field (right side) --- */
+  .hero-visual {
+    position:absolute; inset:0;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  /* deep ambient washes */
+  .wash {
+    position:absolute;
+    filter:blur(60px);
+    opacity:.8;
+  }
+  .wash-1 {
+    right:-18%; top:-25%; width:75%; height:120%;
+    background:radial-gradient(ellipse 55% 45% at 60% 45%, rgba(122,182,72,.16), transparent 65%);
+  }
+  .wash-2 {
+    right:-5%; bottom:-30%; width:55%; height:90%;
+    background:radial-gradient(ellipse 50% 45% at 55% 50%, rgba(32,190,170,.11), transparent 65%);
+  }
+
+  /* trail cluster — rotated so arcs sweep diagonally across the right */
+  .trails {
+    position:absolute;
+    right:-12vw; top:50%;
+    width:120vh; height:120vh;
+    min-width:760px; min-height:760px;
+    transform:translateY(-54%) rotate(-24deg);
+    animation:trailDrift 14s ease-in-out infinite alternate;
+  }
+  @keyframes trailDrift {
+    from { transform:translateY(-54%) rotate(-24deg); }
+    to   { transform:translateY(-50%) rotate(-21deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .trails, .fiber, .glowpulse { animation:none !important; }
+  }
+
+  /* each arc = thin ring drawn by radial-gradient, cut to a segment by a conic mask */
+  .arc {
+    position:absolute;
+    left:50%; top:50%;
+    width:var(--s); height:var(--s);
+    margin-left:calc(var(--s) / -2);
+    margin-top:calc(var(--s) / -2);
+    border-radius:50%;
+    background:radial-gradient(closest-side,
+      transparent calc(var(--r) - var(--w)),
+      var(--c) calc(var(--r) - var(--w) * .35),
+      var(--c2, var(--c)) var(--r),
+      transparent calc(var(--r) + var(--w)));
+    -webkit-mask:conic-gradient(from var(--a),
+      transparent 0deg,
+      #000 calc(var(--span) * .22),
+      #000 calc(var(--span) * .78),
+      transparent var(--span),
+      transparent 360deg);
+    mask:conic-gradient(from var(--a),
+      transparent 0deg,
+      #000 calc(var(--span) * .22),
+      #000 calc(var(--span) * .78),
+      transparent var(--span),
+      transparent 360deg);
+  }
+  .arc.sharp { filter:blur(.6px); }
+  .arc.soft  { filter:blur(10px); }
+  .arc.halo  { filter:blur(26px); }
+
+  /* fiber bundle: concentric arcs at slightly different radii = flowing light fibers */
+  .a1  { --s:118%; --r:49%; --w:1.4%; --a:200deg; --span:150deg; --c:rgba(190,240,140,.95); --c2:rgba(122,182,72,.9); }
+  .a2  { --s:112%; --r:49%; --w:1.1%; --a:214deg; --span:140deg; --c:rgba(122,182,72,.85); --c2:rgba(60,210,185,.8); }
+  .a3  { --s:104%; --r:49%; --w:0.9%; --a:190deg; --span:165deg; --c:rgba(160,220,110,.8); }
+  .a4  { --s:95%;  --r:49%; --w:1.2%; --a:222deg; --span:120deg; --c:rgba(58,208,182,.75); --c2:rgba(122,182,72,.75); }
+  .a5  { --s:87%;  --r:49%; --w:0.8%; --a:205deg; --span:135deg; --c:rgba(122,182,72,.7); }
+  .a6  { --s:80%;  --r:49%; --w:0.7%; --a:232deg; --span:110deg; --c:rgba(210,245,170,.65); }
+  .a7  { --s:71%;  --r:49%; --w:1.0%; --a:196deg; --span:150deg; --c:rgba(46,190,166,.55); --c2:rgba(122,182,72,.6); }
+  .a8  { --s:63%;  --r:49%; --w:0.7%; --a:218deg; --span:120deg; --c:rgba(122,182,72,.5); }
+  .a9  { --s:55%;  --r:49%; --w:0.6%; --a:206deg; --span:140deg; --c:rgba(170,225,120,.45); }
+  /* wide soft glow bands hugging the bundle */
+  .g1  { --s:116%; --r:49%; --w:4.5%; --a:202deg; --span:150deg; --c:rgba(122,182,72,.35); --c2:rgba(60,210,185,.28); }
+  .g2  { --s:96%;  --r:49%; --w:5%;   --a:214deg; --span:135deg; --c:rgba(122,182,72,.3); }
+  .g3  { --s:72%;  --r:49%; --w:5.5%; --a:200deg; --span:145deg; --c:rgba(46,190,166,.22); --c2:rgba(122,182,72,.25); }
+  .h1x { --s:110%; --r:49%; --w:9%;   --a:205deg; --span:150deg; --c:rgba(122,182,72,.28); }
+  .h2x { --s:82%;  --r:49%; --w:10%;  --a:212deg; --span:135deg; --c:rgba(40,200,175,.2); }
+
+  /* straight fibers streaking off diagonally */
+  .fiber {
+    position:absolute;
+    height:2px;
+    background:linear-gradient(90deg, transparent, var(--fc), transparent);
+    transform:rotate(-26deg);
+    animation:fiberShift 11s ease-in-out infinite alternate;
+  }
+  @keyframes fiberShift {
+    from { opacity:.55; }
+    to   { opacity:1; }
+  }
+  .f1 { right:-6%; top:20%; width:52%; --fc:rgba(200,240,160,.8); filter:blur(.5px); }
+  .f2 { right:-10%; top:31%; width:60%; --fc:rgba(122,182,72,.6); filter:blur(1.5px); height:3px; animation-delay:-4s; }
+  .f3 { right:-4%; top:64%; width:44%; --fc:rgba(60,210,185,.5); filter:blur(1px); animation-delay:-7s; }
+  .f4 { right:-8%; top:26%; width:58%; --fc:rgba(122,182,72,.35); filter:blur(9px); height:8px; }
+
+  /* bright ignition point where the fibers converge */
+  .glowpulse {
+    position:absolute;
+    right:9%; top:34%;
+    width:180px; height:180px;
+    background:radial-gradient(circle, rgba(220,255,180,.55), rgba(122,182,72,.28) 35%, transparent 70%);
+    filter:blur(14px);
+    border-radius:50%;
+    animation:pulse 6s ease-in-out infinite alternate;
+  }
+  @keyframes pulse { from { opacity:.6; } to { opacity:1; } }
+
+  /* left fade so text stays readable */
+  .hero-fade {
+    position:absolute; inset:0;
+    background:linear-gradient(90deg, #000 0%, #000 32%, rgba(0,0,0,.55) 55%, rgba(0,0,0,0) 78%);
+  }
+  .hero-fade-btm {
+    position:absolute; left:0; right:0; bottom:0; height:140px;
+    background:linear-gradient(180deg, transparent, #000);
+  }
+
+  .hero-content {
+    position:relative; z-index:2;
+    max-width:1200px; margin:0 auto; padding:90px 24px;
+    width:100%;
+  }
+  .hero-eyebrow {
+    color:#7AB648;
+    font-size:14px; font-weight:700;
+    letter-spacing:.28em; text-transform:uppercase;
+    margin-bottom:20px;
+  }
+  .hero h1 {
+    font-size:clamp(42px, 6.2vw, 76px);
+    max-width:11ch;
+    margin-bottom:24px;
+  }
+  .hero h1 em { font-style:normal; color:#7AB648; }
+  .hero p.sub {
+    color:#9a9a9a;
+    font-size:clamp(16px, 1.6vw, 19px);
+    max-width:46ch;
+    margin-bottom:38px;
+  }
+  .hero-ctas { display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+
+  @media (max-width:860px){
+    .hero { min-height:80vh; }
+    .trails { opacity:.5; right:-45vw; }
+    .glowpulse { opacity:.5; }
+    .hero-fade { background:linear-gradient(90deg, rgba(0,0,0,.85), rgba(0,0,0,.6)); }
+  }
+
+  /* ============ SECTION SCAFFOLD ============ */
+  .sec { padding:96px 0; }
+  .sec-head { text-align:center; max-width:760px; margin:0 auto 56px; }
+  .sec-head h2 { font-size:clamp(28px, 3.6vw, 42px); margin-bottom:14px; }
+  .sec-head p { color:#9a9a9a; font-size:17px; }
+  .kicker {
+    color:#7AB648; font-size:13px; font-weight:700;
+    letter-spacing:.26em; text-transform:uppercase;
+    display:block; margin-bottom:14px;
+  }
+
+  /* ============ 3 DARK MEDIA CARDS ============ */
+  .cards3 {
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:24px;
+  }
+  @media (max-width:920px){ .cards3 { grid-template-columns:1fr; max-width:520px; margin:0 auto; } }
+  .dcard {
+    background:#0a0a0a;
+    border:1px solid #333;
+    border-radius:8px;
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    transition:border-color .25s ease, transform .25s ease, box-shadow .25s ease;
+  }
+  .dcard:hover {
+    border-color:#7AB648;
+    transform:translateY(-4px);
+    box-shadow:0 18px 50px rgba(122,182,72,.12);
+  }
+  .dcard-art { height:160px; position:relative; overflow:hidden; }
+  .dcard-art::after {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg, transparent 55%, #0a0a0a);
+  }
+  .art-1 {
+    background:
+      radial-gradient(circle at 78% 18%, rgba(220,255,180,.5), transparent 26%),
+      radial-gradient(ellipse 70% 40% at 70% 30%, rgba(122,182,72,.45), transparent 65%),
+      conic-gradient(from 210deg at 85% 10%, transparent 0deg, rgba(122,182,72,.35) 40deg, transparent 90deg),
+      linear-gradient(115deg, transparent 42%, rgba(122,182,72,.18) 46%, transparent 50%, transparent 58%, rgba(60,210,185,.2) 62%, transparent 66%),
+      #050805;
+  }
+  .art-2 {
+    background:
+      radial-gradient(circle at 50% 120%, rgba(122,182,72,.55), transparent 55%),
+      radial-gradient(circle at 50% 118%, rgba(220,255,180,.35), transparent 30%),
+      repeating-conic-gradient(from 0deg at 50% 130%, rgba(122,182,72,.22) 0deg 2deg, transparent 2deg 14deg),
+      #050805;
+  }
+  .art-3 {
+    background:
+      radial-gradient(circle at 22% 30%, rgba(60,210,185,.4), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(122,182,72,.4), transparent 45%),
+      repeating-linear-gradient(90deg, rgba(122,182,72,.12) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(0deg, rgba(122,182,72,.12) 0 1px, transparent 1px 34px),
+      #050805;
+  }
+  .dcard-body { padding:26px 26px 30px; display:flex; flex-direction:column; gap:12px; flex:1; }
+  .dcard-body h3 { font-size:21px; }
+  .dcard-body p { color:#9a9a9a; font-size:15px; flex:1; }
+
+  /* ============ WHY (3 text columns, no cards) ============ */
+  .why { text-align:center; }
+  .why-cols {
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:48px; margin-top:56px;
+  }
+  @media (max-width:860px){ .why-cols { grid-template-columns:1fr; gap:40px; max-width:480px; margin-left:auto; margin-right:auto; } }
+  .why-col h3 { font-size:20px; margin-bottom:12px; }
+  .why-col h3::after {
+    content:""; display:block; width:36px; height:2px;
+    background:#7AB648; margin:14px auto 0;
+  }
+  .why-col p { color:#9a9a9a; font-size:15px; }
+  .why-cta { margin-top:72px; }
+
+  /* ============ TRUST BAND ============ */
+  .trust {
+    border-top:1px solid #1c1c1c;
+    border-bottom:1px solid #1c1c1c;
+    padding:44px 0;
+  }
+  .trust-inner {
+    display:flex; align-items:center; justify-content:center;
+    gap:28px 44px; flex-wrap:wrap;
+  }
+  .trust-label {
+    color:#666; font-size:13px; font-weight:700;
+    letter-spacing:.24em; text-transform:uppercase;
+  }
+  .trust-logo {
+    color:#bdbdbd; font-size:19px; font-weight:700; letter-spacing:.01em;
+    transition:color .2s ease;
+    white-space:nowrap;
+  }
+  .trust-logo:hover { color:#fff; }
+  .trust-dot { color:#3a3a3a; font-size:18px; }
+
+  /* ============ MODELS / SPEC TABLE ============ */
+  .models-photo {
+    max-width:860px; margin:0 auto 56px;
+  }
+  .models-photo img {
+    width:100%;
+    filter:
+      drop-shadow(0 26px 45px rgba(0,0,0,.65))
+      drop-shadow(0 0 42px rgba(122,182,72,.22));
+  }
+  .table-scroll { overflow-x:auto; border:1px solid #333; border-radius:8px; background:#0a0a0a; }
+  table.specs {
+    width:100%; border-collapse:collapse; min-width:620px;
+    font-size:15px;
+  }
+  table.specs th, table.specs td {
+    padding:15px 22px; text-align:left;
+  }
+  table.specs thead th {
+    color:#fff; font-size:16px; letter-spacing:.02em;
+    border-bottom:2px solid #7AB648;
+    background:#0e0e0e;
+  }
+  table.specs thead th:not(:first-child){ color:#7AB648; }
+  table.specs tbody th {
+    color:#c9c9c9; font-weight:600;
+  }
+  table.specs tbody td { color:#9a9a9a; font-variant-numeric:tabular-nums; }
+  table.specs tbody tr { border-bottom:1px solid #1e1e1e; transition:background .15s ease; }
+  table.specs tbody tr:last-child { border-bottom:none; }
+  table.specs tbody tr:hover { background:#101410; }
+  .models-cta { text-align:center; margin-top:44px; }
+
+  /* ============ CODE / GET STARTED ============ */
+  .started {
+    display:grid; grid-template-columns:1fr 1.15fr; gap:56px; align-items:center;
+  }
+  @media (max-width:920px){ .started { grid-template-columns:1fr; } }
+  .started h2 { font-size:clamp(28px,3.4vw,40px); margin-bottom:18px; }
+  .started p { color:#9a9a9a; font-size:16px; margin-bottom:18px; }
+  .pipline {
+    display:inline-block;
+    font-family:"SF Mono", Menlo, Consolas, ui-monospace, monospace;
+    font-size:14px; color:#7AB648;
+    background:#0a0a0a; border:1px solid #333; border-radius:6px;
+    padding:10px 16px; margin-bottom:26px;
+  }
+  .ide {
+    background:#0a0a0a;
+    border:1px solid #333;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 24px 70px rgba(122,182,72,.08);
+  }
+  .ide-bar {
+    display:flex; align-items:center; gap:8px;
+    padding:12px 16px;
+    background:#111;
+    border-bottom:1px solid #292929;
+  }
+  .ide-dot { width:11px; height:11px; border-radius:50%; background:#333; }
+  .ide-dot.g { background:#7AB648; }
+  .ide-name {
+    margin-left:10px;
+    color:#8a8a8a; font-size:12.5px;
+    font-family:"SF Mono", Menlo, Consolas, ui-monospace, monospace;
+  }
+  .ide pre {
+    padding:24px 22px;
+    overflow-x:auto;
+    font-family:"SF Mono", Menlo, Consolas, ui-monospace, monospace;
+    font-size:14px; line-height:1.75;
+    color:#c9d1c3;
+  }
+  .tk-kw { color:#3cd2b9; }
+  .tk-fn { color:#a3d97a; }
+  .tk-str { color:#e0c880; }
+  .tk-num { color:#d8a0e0; }
+  .tk-cm { color:#5f6b58; font-style:italic; }
+
+  /* ============ APPLICATIONS ============ */
+  .apps-row {
+    display:flex; flex-wrap:wrap; justify-content:center;
+    gap:14px; margin-top:8px;
+  }
+  .app-chip {
+    border:1px solid #333; border-radius:8px;
+    padding:12px 24px;
+    color:#c9c9c9; font-weight:600; font-size:15px;
+    transition:border-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .app-chip:hover { border-color:#7AB648; color:#7AB648; box-shadow:0 0 18px rgba(122,182,72,.15); }
+
+  /* ============ OPEN SOURCE ============ */
+  .open {
+    border-top:1px solid #1c1c1c;
+    text-align:center;
+  }
+  .open p.blurb { color:#9a9a9a; max-width:640px; margin:0 auto 30px; font-size:16px; }
+
+  /* ============ FOOTER CTA + FOOTER ============ */
+  .final-cta {
+    text-align:center;
+    padding:110px 24px;
+    position:relative; overflow:hidden;
+  }
+  .final-cta::before {
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(ellipse 60% 70% at 50% 115%, rgba(122,182,72,.22), transparent 70%),
+      radial-gradient(ellipse 30% 40% at 50% 118%, rgba(220,255,180,.15), transparent 70%);
+    pointer-events:none;
+  }
+  .final-cta h2 { font-size:clamp(30px,4.2vw,50px); margin-bottom:16px; position:relative; }
+  .final-cta p { color:#9a9a9a; margin-bottom:38px; font-size:17px; position:relative; }
+  .final-cta .btns { display:flex; gap:18px; justify-content:center; flex-wrap:wrap; position:relative; }
+
+  footer {
+    border-top:1px solid #1c1c1c;
+    padding:44px 0 54px;
+  }
+  .foot-inner {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:24px; flex-wrap:wrap;
+  }
+  .foot-brand { display:flex; align-items:center; gap:10px; }
+  .foot-brand img { height:28px; background:#fff; border-radius:5px; padding:2px; }
+  .foot-brand span { color:#fff; font-weight:700; font-size:16px; }
+  .foot-links { display:flex; gap:24px; flex-wrap:wrap; }
+  .foot-links a { color:#8a8a8a; font-size:14px; transition:color .15s ease; }
+  .foot-links a:hover { color:#7AB648; }
+  .foot-fine { color:#555; font-size:13px; margin-top:26px; }
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="https://gearotons.com">
+      <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+      <span>GEAROTONS</span>
+    </a>
+    <nav class="nav-links">
+      <a class="nl" href="#models">Models</a>
+      <a class="nl" href="#why">Why Gearotons</a>
+      <a class="nl" href="#start">Get Started</a>
+      <a class="nl" href="#open">Open Source</a>
+      <a class="btn btn-green btn-small" href="https://gearotons.com/store">Shop Now</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-visual" aria-hidden="true">
+    <div class="wash wash-1"></div>
+    <div class="wash wash-2"></div>
+    <div class="trails">
+      <div class="arc halo h1x"></div>
+      <div class="arc halo h2x"></div>
+      <div class="arc soft g1"></div>
+      <div class="arc soft g2"></div>
+      <div class="arc soft g3"></div>
+      <div class="arc sharp a1"></div>
+      <div class="arc sharp a2"></div>
+      <div class="arc sharp a3"></div>
+      <div class="arc sharp a4"></div>
+      <div class="arc sharp a5"></div>
+      <div class="arc sharp a6"></div>
+      <div class="arc sharp a7"></div>
+      <div class="arc sharp a8"></div>
+      <div class="arc sharp a9"></div>
+    </div>
+    <div class="fiber f4"></div>
+    <div class="fiber f1"></div>
+    <div class="fiber f2"></div>
+    <div class="fiber f3"></div>
+    <div class="glowpulse"></div>
+    <div class="hero-fade"></div>
+    <div class="hero-fade-btm"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">M17 Series Servomotors</div>
+    <h1>Build What&rsquo;s Next with <em>M17</em></h1>
+    <p class="sub">Motor, driver, motion controller, and encoder — integrated in one compact NEMA&nbsp;17 package. Daisy-chain any number of motors on a single RS&#8209;485 bus and command them all from one connection.</p>
+    <div class="hero-ctas">
+      <a class="btn" href="https://gearotons.com">Learn More</a>
+      <a class="textlink" href="https://gearotons.com/store">Shop Now</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 DARK CARDS ================= -->
+<section class="sec">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="kicker">Everything Included</span>
+      <h2>One Package. Full Motion Control.</h2>
+      <p>No external drivers, no timing-critical STEP/DIR wiring, no separate encoders. Send a high-level command; the M17 does the rest.</p>
+    </div>
+    <div class="cards3">
+      <article class="dcard">
+        <div class="dcard-art art-1" aria-hidden="true"></div>
+        <div class="dcard-body">
+          <h3>High-Level Command Protocol</h3>
+          <p>Commands like &ldquo;Enable MOSFETs&rdquo; and &ldquo;Trapezoid move&rdquo; replace pulse trains. Excellent, AI-friendly documentation means your favorite assistant can write the code for you.</p>
+          <a class="textlink" href="https://gearotons.com">Read the Docs</a>
+        </div>
+      </article>
+      <article class="dcard">
+        <div class="dcard-art art-2" aria-hidden="true"></div>
+        <div class="dcard-body">
+          <h3>Python &amp; Arduino Libraries</h3>
+          <p>Drive motors from Mac, PC, Raspberry Pi, Arduino, or ESP32 with a low-cost RS&#8209;485 adapter. Install with pip or straight from the Arduino Library Manager.</p>
+          <a class="textlink" href="https://gearotons.com">Get the Library</a>
+        </div>
+      </article>
+      <article class="dcard">
+        <div class="dcard-art art-3" aria-hidden="true"></div>
+        <div class="dcard-body">
+          <h3>Closed-Loop Precision</h3>
+          <p>A built-in encoder and a PID loop running at 32&nbsp;kHz keep every move on target — with far better power efficiency than a conventional stepper.</p>
+          <a class="textlink" href="#models">See the Specs</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHY GEAROTONS ================= -->
+<section class="sec why" id="why">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:0;">
+      <span class="kicker">Why Gearotons</span>
+      <h2>Engineered to Disappear into Your Design</h2>
+    </div>
+    <div class="why-cols">
+      <div class="why-col">
+        <h3>Stepper-Size Footprint</h3>
+        <p>Nearly the same size as a NEMA&nbsp;17 stepper with matching specs — no protrusions, standard NEMA&nbsp;17 mounting, and the same torque-to-weight ratio you already design around.</p>
+      </div>
+      <div class="why-col">
+        <h3>One Bus, Any Scale</h3>
+        <p>A robust RS&#8209;485 protocol lets you control any number of motors from a single connection point, at 12&ndash;24&nbsp;V, with comprehensive error handling on every packet.</p>
+      </div>
+      <div class="why-col">
+        <h3>Protected by Default</h3>
+        <p>Integrated over-current, over-voltage, and over-temperature protection, plus self-calibration, LED status indicators, and multiple operation modes out of the box.</p>
+      </div>
+    </div>
+    <div class="why-cta">
+      <a class="btn btn-green" href="#models">Explore the M17 Series &rsaquo;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST BAND ================= -->
+<section class="trust">
+  <div class="wrap">
+    <div class="trust-inner">
+      <span class="trust-label">Works With</span>
+      <span class="trust-logo">Raspberry&nbsp;Pi</span><span class="trust-dot">&middot;</span>
+      <span class="trust-logo">Arduino</span><span class="trust-dot">&middot;</span>
+      <span class="trust-logo">ESP32</span><span class="trust-dot">&middot;</span>
+      <span class="trust-logo">Python</span><span class="trust-dot">&middot;</span>
+      <span class="trust-logo">Mac</span><span class="trust-dot">&middot;</span>
+      <span class="trust-logo">PC</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MODELS / SPECS ================= -->
+<section class="sec" id="models">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="kicker">Three Models</span>
+      <h2>Match Torque to Task</h2>
+      <p>M17-60, M17-48, and M17-40 share one footprint, one protocol, and one control library — pick the torque and budget that fit.</p>
+    </div>
+    <div class="models-photo">
+      <img src="../transparent/M17_series_overview_transparent.png" alt="M17-60, M17-48, and M17-40 servomotors side by side">
+    </div>
+    <div class="table-scroll">
+      <table class="specs">
+        <thead>
+          <tr>
+            <th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th>Operating Voltage</th><td>12&ndash;24&nbsp;V</td><td>12&ndash;24&nbsp;V</td><td>12&ndash;24&nbsp;V</td></tr>
+          <tr><th>Rated Torque</th><td>0.65&nbsp;N&middot;m</td><td>0.55&nbsp;N&middot;m</td><td>0.42&nbsp;N&middot;m</td></tr>
+          <tr><th>Maximum Speed</th><td>560&nbsp;RPM</td><td>560&nbsp;RPM</td><td>560&nbsp;RPM</td></tr>
+          <tr><th>Maximum Current</th><td>1.1&nbsp;A</td><td>1.1&nbsp;A</td><td>1.1&nbsp;A</td></tr>
+          <tr><th>Rated Power</th><td>38&nbsp;W</td><td>32&nbsp;W</td><td>25&nbsp;W</td></tr>
+          <tr><th>Height</th><td>59.8&nbsp;mm</td><td>48.6&nbsp;mm</td><td>41.6&nbsp;mm</td></tr>
+          <tr><th>Footprint</th><td>42.2&nbsp;&times;&nbsp;42.2&nbsp;mm</td><td>42.2&nbsp;&times;&nbsp;42.2&nbsp;mm</td><td>42.2&nbsp;&times;&nbsp;42.2&nbsp;mm</td></tr>
+          <tr><th>Weight</th><td>470&nbsp;g</td><td>360&nbsp;g</td><td>285&nbsp;g</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="models-cta">
+      <a class="btn" href="https://gearotons.com/store">Shop Now</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GET STARTED / CODE ================= -->
+<section class="sec" id="start">
+  <div class="wrap">
+    <div class="started">
+      <div>
+        <span class="kicker">Get Started</span>
+        <h2>From Unboxing to Motion in Minutes</h2>
+        <p>Open a serial port, reset, enable, move. High-level commands and sensible units — seconds and degrees — mean your first revolution is a few lines away.</p>
+        <span class="pipline">pip3 install servomotor</span>
+        <p>Prefer Arduino? Find &ldquo;Servomotor&rdquo; in the Library Manager.</p>
+        <a class="textlink" href="https://gearotons.com">Read the Docs</a>
+      </div>
+      <div class="ide">
+        <div class="ide-bar" aria-hidden="true">
+          <span class="ide-dot g"></span><span class="ide-dot"></span><span class="ide-dot"></span>
+          <span class="ide-name">first_move.py</span>
+        </div>
+        <pre><code><span class="tk-kw">import</span> servomotor
+<span class="tk-kw">from</span> servomotor <span class="tk-kw">import</span> M3
+
+servomotor.<span class="tk-fn">open_serial_port</span>()
+motor = <span class="tk-fn">M3</span>(<span class="tk-str">"X"</span>, time_unit=<span class="tk-str">"seconds"</span>,
+                position_unit=<span class="tk-str">"degrees"</span>)
+motor.<span class="tk-fn">system_reset</span>()
+motor.<span class="tk-fn">enable_mosfets</span>()
+motor.<span class="tk-fn">trapezoid_move</span>(<span class="tk-num">360</span>, <span class="tk-num">2</span>)  <span class="tk-cm"># one revolution in 2 s</span></code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APPLICATIONS ================= -->
+<section class="sec" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="kicker">Applications</span>
+      <h2>From Classroom to Factory Floor</h2>
+    </div>
+    <div class="apps-row">
+      <span class="app-chip">Robotics</span>
+      <span class="app-chip">CNC Machines</span>
+      <span class="app-chip">Automated Testing</span>
+      <span class="app-chip">Scientific Instruments</span>
+      <span class="app-chip">Automation</span>
+      <span class="app-chip">3D Printers</span>
+      <span class="app-chip">Education</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OPEN SOURCE ================= -->
+<section class="sec open" id="open">
+  <div class="wrap">
+    <span class="kicker">Open Source Hardware &amp; Software</span>
+    <h2 style="font-size:clamp(26px,3.2vw,38px); margin-bottom:18px;">Built in the Open</h2>
+    <p class="blurb">Gearotons is an innovative startup making precision motion control accessible to everyone — makers, educators, and engineers. Founded in Shenzhen in 2022 by a Canadian entrepreneur. Firmware, libraries, and schematics are open source on GitHub.</p>
+    <a class="textlink" href="https://github.com/tomrodinger/servomotor">View on GitHub</a>
+  </div>
+</section>
+
+<!-- ================= FINAL CTA ================= -->
+<section class="final-cta">
+  <h2>Ready to Move?</h2>
+  <p>Affordable and simple all-in-one motion control. Three sizes. One bus. Zero drivers.</p>
+  <div class="btns">
+    <a class="btn btn-green" href="https://gearotons.com/store">Shop Now</a>
+    <a class="btn" href="https://gearotons.com">Documentation</a>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-inner">
+      <div class="foot-brand">
+        <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+        <span>GEAROTONS</span>
+      </div>
+      <div class="foot-links">
+        <a href="https://gearotons.com/store">Store</a>
+        <a href="https://gearotons.com">Documentation</a>
+        <a href="https://github.com/tomrodinger/servomotor">GitHub</a>
+        <a href="#models">M17 Series</a>
+      </div>
+    </div>
+    <p class="foot-fine">Gearotons &middot; M17 Series Servomotors &middot; Open source hardware and software.</p>
+  </div>
+</footer>
+
+</body>
+</html>

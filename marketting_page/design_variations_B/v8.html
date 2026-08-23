@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+table{border-collapse:collapse;width:100%}
+pre{overflow:auto;max-width:100%}
+
+body{font-family:Georgia,Times,serif;background:#c4a574;color:#2a1f14;
+  background-image:radial-gradient(rgba(80,50,20,.06) 1px,transparent 1px);background-size:12px 12px}
+.tape-nav{position:sticky;top:0;z-index:20;background:#f5e6c8;border-bottom:3px dashed #8b6914;
+  display:flex;justify-content:space-between;align-items:center;padding:.6rem 3vw;transform:rotate(-.3deg)}
+.tape-nav img{height:36px}.tape-nav a{font-family:Avenir,Helvetica,Arial,sans-serif;text-decoration:none;margin-left:.9rem;font-weight:700;font-size:.88rem}
+.tape-nav a.shop{background:#7AB648;color:#fff;padding:.45rem .9rem;border-radius:3px}
+.wall{padding:2rem 3vw;display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:center;align-items:flex-start}
+.polaroid{background:#fffef8;padding:.7rem .7rem 1.5rem;box-shadow:3px 4px 12px rgba(40,25,10,.25);max-width:260px}
+.polaroid img{width:100%;aspect-ratio:1;object-fit:cover;background:#eee}
+.polaroid figcaption{font-family:Avenir,Helvetica,Arial,sans-serif;font-size:.82rem;margin-top:.6rem;text-align:center}
+.r1{transform:rotate(-3deg)}.r2{transform:rotate(2.5deg)}.r3{transform:rotate(-1.5deg)}.r4{transform:rotate(4deg)}.r5{transform:rotate(-2deg)}
+.note{background:#fff9c4;padding:1.2rem 1.4rem;max-width:320px;box-shadow:2px 3px 8px rgba(0,0,0,.15);transform:rotate(1.5deg);
+  font-family:Avenir,Helvetica,Arial,sans-serif;font-size:.95rem}
+.note h1{font-family:Georgia,serif;font-size:1.6rem;margin:0 0 .5rem}
+.paper{background:#f5e6c8;margin:1rem 4vw 2rem;padding:2rem;box-shadow:0 4px 16px rgba(40,25,10,.2);border:1px solid #b8955a}
+.paper h2{margin-top:0}
+table.specs{font-family:Avenir,Helvetica,Arial,sans-serif;font-size:.85rem;background:#fffef8}
+table.specs th,table.specs td{border:1px solid #c4a574;padding:.5rem;text-align:left}
+pre.code{background:#2a1f14;color:#e8d5a8;padding:1rem;font-size:.82rem;font-family:Menlo,monospace}
+footer{background:#2a1f14;color:#f5e6c8;padding:2.5rem 4vw;margin-top:1rem}
+footer a{color:#7AB648;margin-right:1rem;font-family:Avenir,Helvetica,Arial,sans-serif;font-weight:700}
+@media(max-width:600px){.polaroid{max-width:100%}.r1,.r2,.r3,.r4,.r5{transform:none}}
+
+
+</style>
+</head>
+<body>
+
+<header class="tape-nav">
+  <a href="#top"><img src="../Gearotons_Logo_and_Gearotons_Name.png" alt="Gearotons"></a>
+  <div>
+    <a href="#wall">Photos</a><a href="#models">Models</a>
+    <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  </div>
+</header>
+<div class="wall" id="top">
+  <div class="note">
+    <h1>Workshop notes</h1>
+    <p><strong>M17 Series</strong> — all-in-one servomotors. Affordable and Simple All-in-One Motion Control.</p>
+    <p>Motor + driver + controller + encoder. RS-485 daisy-chain. 12–24 V. Open source.</p>
+    <p style="margin-top:1rem"><a href="https://gearotons.com/store" style="background:#7AB648;color:#fff;padding:.5rem 1rem;text-decoration:none;font-weight:700;border-radius:3px">Shop Now</a></p>
+  </div>
+  <figure class="polaroid r1"><img src="../one_motor_small.jpg" alt=""><figcaption>Single motor study</figcaption></figure>
+  <figure class="polaroid r2"><img src="../kit_with_three_motors_small.jpg" alt=""><figcaption>Full kit flat-lay</figcaption></figure>
+  <figure class="polaroid r3"><img src="../adapter_and_wire_small.jpg" alt=""><figcaption>RS-485 adapter</figcaption></figure>
+  <figure class="polaroid r4" id="wall"><img src="../robotics_small.jpg" alt=""><figcaption>Robotics build</figcaption></figure>
+  <figure class="polaroid r5"><img src="../automation_small.jpg" alt=""><figcaption>Automation cell</figcaption></figure>
+  <figure class="polaroid r1"><img src="../test_rack_small.jpg" alt=""><figcaption>Test rack</figcaption></figure>
+  <figure class="polaroid r2"><img src="../motor_back_small.jpg" alt=""><figcaption>Back label &amp; buttons</figcaption></figure>
+  <div class="note" style="transform:rotate(-2deg);background:#e8f5d8">
+    <h2 style="margin:0 0 .5rem;font-size:1.2rem">Features scrap</h2>
+    <ul style="margin:0;padding-left:1.1rem;font-size:.9rem">
+      <li>High-level trapezoid moves</li>
+      <li>NEMA 17 standard mount</li>
+      <li>32 kHz closed-loop PID</li>
+      <li>Pi / Arduino / ESP32 / PC</li>
+      <li>Over-current / voltage / temp protect</li>
+    </ul>
+  </div>
+</div>
+<section class="paper" id="models">
+  <h2>Model comparison (workshop clipboard)</h2>
+  <p style="font-family:Avenir,Helvetica,Arial,sans-serif">M17-60 · 0.65 N·m · 38 W · 470 g &nbsp;|&nbsp; M17-48 · 0.55 N·m · 32 W · 360 g &nbsp;|&nbsp; M17-40 · 0.42 N·m · 25 W · 285 g</p>
+  <table class='specs'><thead><tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr></thead><tbody><tr><th scope='row'>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr><tr><th scope='row'>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr><tr><th scope='row'>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr><tr><th scope='row'>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr><tr><th scope='row'>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr><tr><th scope='row'>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr><tr><th scope='row'>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr><tr><th scope='row'>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody></table>
+</section>
+<section class="paper" id="start">
+  <h2>First spin (Python)</h2>
+  <p style="font-family:Avenir,Helvetica,Arial,sans-serif">pip3 install servomotor</p>
+  <pre class='code'><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3(&quot;X&quot;, time_unit=&quot;seconds&quot;,
+                position_unit=&quot;degrees&quot;)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+</section>
+<footer id="about">
+  <h2 style="margin-top:0">Open source bench</h2>
+  <p>Gearotons — founded Shenzhen 2022 by a Canadian entrepreneur. Firmware &amp; libraries on GitHub.</p>
+  <p><a href="https://gearotons.com/store">Shop Now</a><a href="https://gearotons.com">Documentation</a><a href="https://github.com/tomrodinger/servomotor">GitHub</a></p>
+  <div style="display:flex;gap:.8rem;margin-top:1rem">
+    <img src="../Open_Source_Initiative.svg.png" alt="OSI" style="height:36px">
+    <img src="../Open-source-hardware-logo.svg.png" alt="OSHW" style="height:36px">
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gearotons — M17 Series Servomotors</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;max-width:100%;overflow-x:hidden}
+body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+table{border-collapse:collapse;width:100%}
+pre{overflow:auto;max-width:100%}
+
+body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;background:#fff;color:#2e2f32}
+.nav{background:#0071dc;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:.7rem 3vw;position:sticky;top:0;z-index:20}
+.nav img{height:32px;background:#fff;border-radius:50%;padding:2px}
+.nav a{color:#fff;text-decoration:none;margin-left:1rem;font-weight:600;font-size:.9rem}
+.nav a.shop{background:#ffc220;color:#2e2f32;padding:.5rem 1.1rem;border-radius:999px}
+.hero{background:#e6f1fc;padding:2.5rem 3vw;display:grid;grid-template-columns:1.2fr .8fr;gap:2rem;align-items:center}
+.hero h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 .8rem;color:#0071dc}
+.hero .price-ish{font-size:1.1rem;font-weight:700}
+.aisles{padding:2rem 3vw}
+.aisles h2{margin:0 0 1rem}
+.aisle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.aisle{background:#f5f6f8;border-radius:12px;overflow:hidden;text-align:center;padding-bottom:1rem}
+.aisle img{width:100%;aspect-ratio:1;object-fit:cover}
+.aisle h3{margin:.8rem 0 .3rem;font-size:1rem}
+.aisle p{margin:0;font-size:.85rem;opacity:.8;padding:0 .5rem}
+.section{padding:1.5rem 3vw}
+.models{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.models article{border:2px solid #0071dc;border-radius:12px;padding:1.2rem}
+.models h3{color:#0071dc;margin:0 0 .4rem}
+table.specs th,table.specs td{border:1px solid #e0e0e0;padding:.5rem;text-align:left;font-size:.88rem}
+pre.code{background:#2e2f32;color:#ffc220;padding:1rem;border-radius:8px;font-size:.82rem}
+footer{background:#041e42;color:#fff;padding:2.5rem 3vw;text-align:center}
+footer a{color:#ffc220;margin:0 .7rem;font-weight:700}
+@media(max-width:800px){.hero,.aisle-grid,.models{grid-template-columns:1fr}}
+
+
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <a href="#top" style="display:flex;gap:.5rem;align-items:center;text-decoration:none;color:#fff;font-weight:800">
+    <img src="../Gearotons_Logo.png" alt="">Gearotons
+  </a>
+  <div>
+    <a href="#aisles">Shop aisles</a><a href="#models">Models</a>
+    <a class="shop" href="https://gearotons.com/store">Shop Now</a>
+  </div>
+</header>
+<section class="hero" id="top">
+  <div>
+    <h1>Roll back complexity. Keep the torque.</h1>
+    <p>M17 Series all-in-one servomotors — motor, driver, controller, encoder together. Daisy-chain over RS-485. Three sizes for torque and budget.</p>
+    <p class="price-ish">Affordable and Simple All-in-One Motion Control</p>
+    <p style="margin-top:1rem">
+      <a href="https://gearotons.com/store" style="background:#ffc220;color:#2e2f32;padding:.65rem 1.3rem;border-radius:999px;text-decoration:none;font-weight:800">Shop Now</a>
+      <a href="https://gearotons.com" style="margin-left:.8rem;color:#0071dc;font-weight:600">Documentation</a>
+    </p>
+  </div>
+  <img src="../kit_with_three_motors_small.jpg" alt="Kit" style="border-radius:12px">
+</section>
+<section class="aisles" id="aisles">
+  <h2>Aisles — pick your project</h2>
+  <div class="aisle-grid">
+    <div class="aisle"><img src="../robotics_small.jpg" alt=""><h3>Robotics</h3><p>Closed-loop axes for arms and drives</p></div>
+    <div class="aisle"><img src="../automation_small.jpg" alt=""><h3>CNC &amp; automation</h3><p>Machines that need honest motion</p></div>
+    <div class="aisle"><img src="../test_rack_small.jpg" alt=""><h3>Test equipment</h3><p>Racks of repeatable motion</p></div>
+    <div class="aisle"><img src="../kit_with_three_motors_small.jpg" alt=""><h3>Education</h3><p>Open docs for classrooms</p></div>
+  </div>
+</section>
+<section class="section" id="features">
+  <h2>Why shoppers pick M17</h2>
+  <ul>
+    <li>All-in-one package — fewer boxes, less wiring</li>
+    <li>One RS-485 bus for any number of motors</li>
+    <li>High-level Python and Arduino commands</li>
+    <li>NEMA 17 mounting · 12–24 V · 560 RPM max · 32 kHz PID</li>
+  </ul>
+</section>
+<section class="section" id="models">
+  <h2>Compare models</h2>
+  <div class="models">
+    <article><h3>M17-60</h3><p><strong>0.65 N·m</strong><br>38 W · 470 g · 59.8 mm</p></article>
+    <article><h3>M17-48</h3><p><strong>0.55 N·m</strong><br>32 W · 360 g · 48.6 mm</p></article>
+    <article><h3>M17-40</h3><p><strong>0.42 N·m</strong><br>25 W · 285 g · 41.6 mm</p></article>
+  </div>
+  <div style="margin-top:1.5rem"><table class='specs'><thead><tr><th>Parameter</th><th>M17-60</th><th>M17-48</th><th>M17-40</th></tr></thead><tbody><tr><th scope='row'>Operating Voltage</th><td>12–24V</td><td>12–24V</td><td>12–24V</td></tr><tr><th scope='row'>Rated Torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td></tr><tr><th scope='row'>Maximum Speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr><tr><th scope='row'>Maximum Current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td></tr><tr><th scope='row'>Rated Power</th><td>38 W</td><td>32 W</td><td>25 W</td></tr><tr><th scope='row'>Height</th><td>59.8 mm</td><td>48.6 mm</td><td>41.6 mm</td></tr><tr><th scope='row'>Footprint</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr><tr><th scope='row'>Weight</th><td>470 g</td><td>360 g</td><td>285 g</td></tr></tbody></table></div>
+</section>
+<section class="section" id="start">
+  <h2>Get started</h2>
+  <p>pip3 install servomotor</p>
+  <pre class='code'><code>import servomotor
+from servomotor import M3
+
+servomotor.open_serial_port()
+motor = M3(&quot;X&quot;, time_unit=&quot;seconds&quot;,
+                position_unit=&quot;degrees&quot;)
+motor.system_reset()
+motor.enable_mosfets()
+motor.trapezoid_move(360, 2)  # one revolution in 2 s</code></pre>
+</section>
+<footer id="about">
+  <p>Open source · Gearotons · Shenzhen 2022 · Canadian founder</p>
+  <p style="margin-top:1rem"><a href="https://gearotons.com/store">Shop Now</a><a href="https://gearotons.com">Docs</a><a href="https://github.com/tomrodinger/servomotor">GitHub</a></p>
+</footer>
+
+</body>
+</html>

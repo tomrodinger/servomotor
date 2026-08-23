@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>p9</title>
+<style>html,body{margin:0}iframe{width:1440px;height:1400px;border:0}
+pre{position:fixed;left:0;top:0;z-index:9;background:#fff;font:13px/1.4 monospace;padding:8px;border:1px solid #000}</style>
+<iframe id="f" src="v9.html?motion=1&goto=4"></iframe>
+<pre id="out">…</pre>
+<script>
+setTimeout(function(){
+  var d=document.getElementById('f').contentDocument, w=document.getElementById('f').contentWindow;
+  var h1=d.querySelector('.hero h1'), stage=d.querySelector('.slg'), probe=d.querySelector('.slg-probe');
+  var L=[];
+  L.push('h1 fontSize='+getComputedStyle(h1).fontSize+' w='+h1.offsetWidth+' h='+h1.offsetHeight);
+  L.push('stage h='+stage.offsetHeight+' styleH='+stage.style.height);
+  if(w.__slogan) L.push('__slogan idx='+w.__slogan.index());
+  probe.style.display='block';
+  var mx=0;
+  w.__slogan.items.forEach(function(p,i){
+    probe.innerHTML='<span class="ln">'+p[0]+'</span><span class="ln"><strong>'+p[1]+'</strong></span>';
+    var hh=probe.offsetHeight; if(hh>mx)mx=hh;
+    L.push(i+': h='+hh+' w='+probe.scrollWidth);
+  });
+  probe.style.display='none';
+  L.push('MAX='+mx);
+  L.push('doc scrollW='+d.documentElement.scrollWidth+' clientW='+d.documentElement.clientWidth);
+  document.getElementById('out').textContent=L.join('\n');
+},2600);
+</script>

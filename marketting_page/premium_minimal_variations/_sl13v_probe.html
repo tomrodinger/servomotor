@@ -1,0 +1,46 @@
+<!doctype html><meta charset="utf-8"><title>v13 probe</title>
+<style>
+ body{margin:0;font:12px/1.45 ui-monospace,Menlo,monospace;background:#fff;color:#111}
+ iframe{position:absolute;left:-99999px;top:0;border:0}
+ pre{margin:0;padding:8px;white-space:pre}
+</style>
+<pre id="out">measuring…</pre>
+<script>
+var qs={};(location.search||'').replace(/^\?/,'').split('&').forEach(function(kv){if(!kv)return;var p=kv.split('=');qs[p[0]]=decodeURIComponent(p[1]||'')});
+var W=parseInt(qs.w||'1440',10), H=parseInt(qs.h||'900',10);
+var f=document.createElement('iframe');
+f.width=W;f.height=H;f.style.width=W+'px';f.style.height=H+'px';
+f.src='v13.html?anim=1&sl=0';
+document.body.appendChild(f);
+f.onload=function(){
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow, L=[];
+    L.push('width='+W+'  innerWidth='+w.innerWidth+'  clientWidth='+d.documentElement.clientWidth);
+    var stage=d.getElementById('sw');
+    var hero=d.querySelector('.hero');
+    var lede=d.querySelector('.lede');
+    var S=w.__slogan;
+    L.push('reduced='+(S.reduced?'YES':'no'));
+    for(var i=0;i<15;i++){
+      S.goto(i);
+      var sr=stage.getBoundingClientRect(), hr=hero.getBoundingClientRect(), lr=lede.getBoundingClientRect();
+      L.push(('  '+i).slice(-3)+'  stageH='+sr.height.toFixed(2)+
+        '  heroH='+hr.height.toFixed(2)+
+        '  ledeTop='+lr.top.toFixed(2)+
+        '  scrollW='+d.documentElement.scrollWidth+
+        '  bodyScrollW='+d.body.scrollWidth+
+        '  clientW='+d.documentElement.clientWidth+
+        (d.documentElement.scrollWidth>d.documentElement.clientWidth?'  <<< OVERFLOW':''));
+    }
+    // mid-transition overflow check
+    for(var j=0;j<15;j++){
+      var worst=0;
+      for(var t=0;t<=1.0001;t+=0.1){ S.seek(j,t); worst=Math.max(worst,d.documentElement.scrollWidth); }
+      if(worst>d.documentElement.clientWidth) L.push('seek overflow at pair '+j+': '+worst);
+    }
+    S.goto(0);
+    L.push('mid-transition overflow scan done');
+    document.getElementById('out').textContent=L.join('\n');
+  },600);
+};
+</script>
