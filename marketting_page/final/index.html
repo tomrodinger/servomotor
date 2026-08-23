@@ -1,0 +1,3719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gearotons — M17 Series Servomotors — Director's Cut</title>
+<style>
+  :root{
+    /* ---- palette (unchanged from the baseline) ---- */
+    --green:#7AB648;
+    --black:#0b0b0c;
+    --ink:#1d1d1f;
+    --grey:#6e6e73;
+    --hairline:#e8e8ed;
+    --mist:#f5f5f7;
+
+    /* ---- modular type scale, 17px base, ratio 1.25 ---- */
+    --fs-micro:12.5px;
+    --fs-caption:13px;
+    --fs-small:15px;
+    --fs-body:17px;
+    --fs-lede:clamp(18.5px,1.55vw,21px);
+    --fs-h4:19px;
+    --fs-h3:21px;
+    --fs-h2:clamp(31px,4.9vw,60px);
+    --fs-h1:clamp(36px,6.9vw,86px);
+
+    /* ---- spacing scale, 8px grid ---- */
+    --s1:8px;  --s2:16px; --s3:24px; --s4:36px;
+    --s5:52px; --s6:72px; --s7:96px; --s8:122px;
+
+    --max:1080px;
+    --narrow:660px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:#fff;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    font-size:var(--fs-body);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  img{max-width:100%;height:auto;display:block;}
+  a{color:inherit;text-decoration:none;}
+  a:focus-visible,summary:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:6px;}
+
+  /* ================= NAV ================= */
+  nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(255,255,255,.82);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:1px solid var(--hairline);
+  }
+  .nav-inner{
+    max-width:var(--max);margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    padding:0 24px;height:56px;
+  }
+  .nav-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.01em;}
+  .nav-brand img{height:28px;width:auto;}
+  .nav-links{display:flex;align-items:center;gap:26px;font-size:14px;color:var(--grey);}
+  .nav-links a{transition:color .2s ease;}
+  .nav-links a:hover{color:var(--ink);}
+
+  /* ================= BUTTONS / LINKS ================= */
+  .btn{
+    display:inline-block;
+    border:1.5px solid var(--ink);
+    border-radius:980px;
+    padding:11px 28px;
+    font-size:var(--fs-small);font-weight:500;letter-spacing:-.01em;
+    color:var(--ink);white-space:nowrap;
+    transition:background .25s ease,color .25s ease,border-color .25s ease;
+  }
+  .btn:hover{background:var(--green);border-color:var(--green);color:#fff;}
+  .btn.small{padding:7px 18px;font-size:13px;}
+  .btn.inverse{border-color:#fff;color:#fff;}
+  .btn.inverse:hover{background:var(--green);border-color:var(--green);color:#fff;}
+  .arrow-link{
+    font-size:var(--fs-body);font-weight:500;color:var(--ink);
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .arrow-link .arr{color:var(--green);font-weight:600;transition:transform .25s ease;}
+  .arrow-link:hover .arr{transform:translateX(5px);}
+  .dark .arrow-link{color:#fff;}
+
+  /* ================= SECTION SHELL ================= */
+  section{padding:var(--s8) 24px;scroll-margin-top:56px;}
+  .wrap{max-width:var(--max);margin:0 auto;}
+  .center{text-align:center;}
+  .band{background:var(--mist);}
+  .dark{background:var(--black);color:#fff;}
+  .dark .lede,.dark .note{color:#a1a1a6;}
+  .dark .eyebrow{color:#86868b;}
+
+  .eyebrow{
+    font-size:var(--fs-caption);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--grey);margin-bottom:20px;
+  }
+  h1{font-size:var(--fs-h1);font-weight:300;letter-spacing:-.032em;line-height:1.03;text-wrap:balance;}
+  h2{font-size:var(--fs-h2);font-weight:300;letter-spacing:-.026em;line-height:1.07;text-wrap:balance;}
+  h1 strong,h2 strong{font-weight:600;}
+  h3{font-size:var(--fs-h3);font-weight:600;letter-spacing:-.015em;line-height:1.25;}
+  h4{font-size:var(--fs-h4);font-weight:600;letter-spacing:-.012em;line-height:1.3;}
+  .lede{
+    font-size:var(--fs-lede);color:var(--grey);font-weight:400;letter-spacing:-.011em;
+    max-width:var(--narrow);margin:var(--s3) auto 0;line-height:1.48;
+  }
+  .lede.wide{max-width:780px;}
+  .note{font-size:var(--fs-small);color:var(--grey);margin-top:var(--s4);}
+  .note em{font-style:italic;}
+  .keyline{width:56px;height:2px;background:var(--green);border-radius:1px;margin:0 auto;}
+
+  /* ================= HERO ================= */
+  .hero{padding-top:108px;padding-bottom:var(--s8);}
+  .cta-row{margin-top:var(--s4);display:flex;gap:26px;justify-content:center;align-items:center;flex-wrap:wrap;}
+  .hero-img{max-width:540px;margin:var(--s6) auto 0;}
+
+  /* ---- stat strip ---- */
+  .stats{
+    margin-top:var(--s6);
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--hairline);
+  }
+  .stats > div{padding:var(--s3) 14px var(--s1);}
+  .stats > div + div{border-left:1px solid var(--hairline);}
+  .stats .v{font-size:clamp(20px,2.2vw,26px);font-weight:500;letter-spacing:-.02em;line-height:1.15;}
+  .stats .k{display:block;margin-top:6px;font-size:var(--fs-caption);color:var(--grey);letter-spacing:.01em;}
+  .dark .stats{border-color:#2c2c2e;}
+  .dark .stats > div + div{border-color:#2c2c2e;}
+  .dark .stats .k{color:#86868b;}
+
+  /* ================= GENERIC BLOCKS ================= */
+  .block{margin-top:var(--s7);}
+  .block-sm{margin-top:var(--s5);}
+
+  /* four-part integration row */
+  .quad{
+    margin-top:var(--s7);
+    display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+    text-align:left;border-top:1px solid var(--hairline);
+  }
+  .quad > div{padding:var(--s3) var(--s3) 0 0;}
+  .quad > div + div{border-left:1px solid var(--hairline);padding-left:var(--s3);}
+  .quad .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:var(--green);margin-bottom:10px;}
+  .quad h4{margin-bottom:6px;}
+  .quad p{font-size:var(--fs-small);color:var(--grey);line-height:1.5;}
+
+  /* three small points */
+  .triad{
+    margin-top:var(--s6);display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    text-align:left;border-top:1px solid var(--hairline);
+  }
+  .triad > div{padding:var(--s3) var(--s3) 0 0;font-size:var(--fs-small);color:var(--grey);line-height:1.5;}
+  .triad > div + div{border-left:1px solid var(--hairline);padding-left:var(--s3);}
+  .triad strong{display:block;color:var(--ink);font-weight:600;font-size:var(--fs-body);margin-bottom:6px;letter-spacing:-.01em;}
+
+  /* framed figure (line-art / diagrams on white) */
+  .figure{margin-top:var(--s6);}
+  .frame{
+    max-width:800px;margin:0 auto;
+    border:1px solid var(--hairline);border-radius:22px;overflow:hidden;background:#fff;
+  }
+  .frame img{width:100%;}
+  figcaption{font-size:var(--fs-small);color:var(--grey);margin-top:var(--s3);}
+
+  /* ================= FEATURES ================= */
+  .feature-grid{
+    margin-top:var(--s7);
+    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s6) var(--s5);
+    text-align:left;
+  }
+  .feature .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:var(--green);margin-bottom:12px;}
+  .feature h3{margin-bottom:10px;}
+  .feature p{color:var(--grey);font-size:16px;line-height:1.55;}
+
+  /* ================= MODELS ================= */
+  .overview-img{margin:var(--s6) auto 0;max-width:100%;}
+  .overview-img img{margin:0 auto;}
+  .overview-img figcaption{text-align:center;margin-top:var(--s3);}
+  /* four-up model comparison — the columns sit under the four motors in the photo */
+  .model-grid{
+    margin-top:var(--s5);display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--hairline);
+  }
+  .model-col{padding:var(--s4) var(--s2) var(--s2);}
+  .model-col + .model-col{border-left:1px solid var(--hairline);}
+  .model-col .model{font-size:21px;font-weight:600;letter-spacing:-.02em;}
+  .model-col .torque{font-size:clamp(34px,3.5vw,42px);font-weight:300;letter-spacing:-.035em;line-height:1;margin-top:14px;white-space:nowrap;}
+  .model-col .torque small{font-size:16px;font-weight:400;color:var(--grey);letter-spacing:0;}
+  .model-col .cap{font-size:var(--fs-caption);color:var(--grey);margin-top:9px;letter-spacing:.02em;}
+  .model-col ul{list-style:none;margin-top:var(--s3);}
+  .model-col li{font-size:14.5px;color:var(--grey);padding:6px 0;}
+  .model-col li b{color:var(--ink);font-weight:600;}
+
+  /* ---- tables ---- */
+  .scroller{
+    margin-top:var(--s5);overflow-x:auto;-webkit-overflow-scrolling:touch;
+  }
+  table{border-collapse:collapse;width:100%;min-width:740px;text-align:left;}
+  caption{
+    text-align:left;font-size:var(--fs-caption);font-weight:600;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--grey);padding-bottom:var(--s2);
+  }
+  th,td{padding:14px 18px;font-size:var(--fs-small);border-bottom:1px solid var(--hairline);}
+  thead th{
+    font-size:var(--fs-caption);font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--grey);border-bottom:1px solid var(--ink);padding-bottom:12px;
+  }
+  tbody th{font-weight:400;color:var(--grey);padding-left:0;}
+  tbody td{font-weight:500;}
+  tbody tr:hover td,tbody tr:hover th{background:var(--mist);}
+  thead th:first-child{padding-left:0;}
+
+  .scroll-hint{display:none;font-size:var(--fs-caption);color:var(--grey);margin-top:10px;text-align:left;}
+
+  /* ---- dimension drawings ---- */
+  /* all four drawings are plotted at one CAD scale, so they must RENDER at one scale too:
+     each image is sized by --dk = its own natural width / the widest (1734px). The shared
+     42.2 mm face then measures the same in every drawing, and only the body gets shorter. */
+  .dims{margin-top:var(--s7);--dbase:min(820px,100%);}
+  .dim-row{border-top:1px solid var(--hairline);padding-top:var(--s3);margin-top:var(--s5);}
+  .dim-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);font-size:var(--fs-small);}
+  .dim-head b{font-weight:600;letter-spacing:-.01em;}
+  .dim-head span{color:var(--grey);}
+  .dim-media{margin-top:var(--s3);}
+  .dim-row img{display:block;margin:0 auto;width:calc(var(--dbase) * var(--dk,1));max-width:none;height:auto;}
+
+  /* ---- definition list ---- */
+  .dl{margin-top:var(--s6);border-top:1px solid var(--hairline);text-align:left;}
+  .dl-row{
+    display:grid;grid-template-columns:250px 1fr;gap:var(--s3);
+    padding:18px 0;border-bottom:1px solid var(--hairline);align-items:baseline;
+  }
+  .dl-row dt{font-size:var(--fs-small);color:var(--grey);}
+  .dl-row dd{font-size:var(--fs-body);font-weight:500;letter-spacing:-.01em;}
+
+  /* ---- unit chips ---- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    border:1px solid var(--hairline);border-radius:980px;
+    padding:5px 14px;font-size:13.5px;color:var(--ink);font-weight:500;
+    transition:border-color .2s ease,color .2s ease;
+  }
+  .chips a.chip:hover{border-color:var(--green);color:var(--green);}
+  .chip.ghost{color:var(--grey);font-weight:400;}
+
+  /* ================= CODE ================= */
+  .code-grid{margin-top:var(--s6);display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);text-align:left;}
+  .code-card{
+    background:#161617;border:1px solid #2c2c2e;border-radius:20px;overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .code-head{display:flex;align-items:center;gap:8px;padding:13px 20px;border-bottom:1px solid #2c2c2e;}
+  .dot{width:11px;height:11px;border-radius:50%;background:#3a3a3c;display:inline-block;}
+  .code-head span.file{margin-left:8px;font-size:12px;color:#86868b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .code-card pre{
+    padding:24px 24px 28px;overflow-x:auto;flex:1;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:13px;line-height:1.75;color:#f5f5f7;
+  }
+  .c-kw{color:#c98bff;} .c-fn{color:#7cc4ff;} .c-str{color:#a8d98a;}
+  .c-num{color:#ffb86c;} .c-com{color:#6e6e73;} .c-ty{color:#7cc4ff;}
+  .install{margin-top:var(--s4);font-size:var(--fs-small);color:#a1a1a6;}
+  .install code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;
+    color:#f5f5f7;background:#1c1c1e;border:1px solid #2c2c2e;border-radius:8px;padding:5px 12px;
+    display:inline-block;
+  }
+  .guide{
+    margin:var(--s6) auto 0;max-width:760px;text-align:left;
+    border:1px solid #2c2c2e;border-radius:22px;padding:var(--s4) var(--s4) var(--s3);
+  }
+  .guide h4{color:#fff;margin-bottom:var(--s3);}
+  .guide ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px var(--s4);}
+  .guide li{font-size:var(--fs-small);color:#a1a1a6;padding-left:20px;position:relative;line-height:1.5;}
+  .guide li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--green);}
+  .guide .arrow-link{margin-top:var(--s4);font-size:var(--fs-small);}
+
+  /* light terminal block */
+  .term{
+    margin:var(--s5) auto 0;max-width:520px;text-align:left;
+    background:var(--mist);border:1px solid var(--hairline);border-radius:16px;
+    padding:20px 22px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13.5px;line-height:1.9;color:var(--ink);overflow-x:auto;
+  }
+  .term .p{color:var(--green);user-select:none;}
+  .term .c{color:var(--grey);}
+
+  /* ================= CARDS ================= */
+  .card-2{margin-top:var(--s6);display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);text-align:left;}
+  .card{border:1px solid var(--hairline);border-radius:22px;padding:var(--s4);}
+  .card h4{margin-bottom:var(--s3);}
+  .card dl{display:grid;gap:14px;}
+  .card dt{font-size:var(--fs-small);font-weight:600;letter-spacing:-.01em;}
+  .card dd{font-size:var(--fs-small);color:var(--grey);line-height:1.5;margin-top:2px;}
+  .card .split{display:grid;grid-template-columns:auto 1fr;gap:4px var(--s2);align-items:baseline;}
+  .card .split dt{white-space:nowrap;}
+
+  .prod-2{margin-top:var(--s6);display:grid;grid-template-columns:1fr 1fr;gap:var(--s5);align-items:end;}
+  .prod-2 img{margin:0 auto;max-height:340px;width:auto;}
+  .prod-2 figcaption{text-align:center;}
+
+  .back-img{max-width:310px;margin:var(--s6) auto 0;}
+
+  /* ================= APPLICATIONS ================= */
+  .app-grid{margin-top:var(--s6);display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .app-card{border-radius:20px;overflow:hidden;background:var(--mist);text-align:left;}
+  .app-card img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform .55s ease;}
+  .app-card:hover img{transform:scale(1.035);}
+  .app-card figcaption{padding:16px 20px;font-size:var(--fs-small);font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0;}
+
+  /* ================= OPEN SOURCE / COMPANY ================= */
+  .oss-logos{display:flex;gap:36px;justify-content:center;align-items:center;margin-top:var(--s5);flex-wrap:wrap;}
+  .oss-logos img{height:86px;width:auto;}
+  .divider{height:1px;background:var(--hairline);margin:var(--s8) auto;max-width:var(--max);}
+  .quote{
+    font-size:clamp(21px,2.4vw,27px);font-weight:300;letter-spacing:-.02em;line-height:1.35;
+    max-width:640px;margin:var(--s5) auto 0;
+  }
+  .quote span{display:block;margin-top:var(--s2);font-size:var(--fs-caption);letter-spacing:.14em;
+    text-transform:uppercase;font-weight:600;color:var(--green);}
+
+  /* ================= FOOTER ================= */
+  footer{border-top:1px solid var(--hairline);padding:var(--s5) 24px var(--s6);font-size:var(--fs-caption);color:var(--grey);}
+  .foot-inner{max-width:var(--max);margin:0 auto;display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;}
+  .foot-inner a{transition:color .2s ease;}
+  .foot-inner a:hover{color:var(--ink);}
+  .legal{max-width:var(--max);margin:var(--s4) auto 0;font-size:var(--fs-micro);color:var(--grey);line-height:1.6;}
+
+  /* ================= REVEAL ================= */
+  .js .reveal{opacity:0;transform:translateY(16px);}
+  .js .reveal.in{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.22,.61,.36,1);}
+  @media(prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .js .reveal{opacity:1;transform:none;}
+    *{transition:none!important;}
+  }
+
+  /* ================= HERO SLOGAN CYCLER =================
+     "Keynote dissolve + weight morph". The outgoing line lifts, thins, blurs and dissolves;
+     the incoming one rises into the frame and its weight settles up to the final weight last
+     of all. Every glyph copy is metrically corrected (scaleX) onto the final-weight box, so
+     the morph reads as strokes thickening in place rather than a ghosted crossfade.
+     Nothing here restyles the headline: at rest the markup renders exactly as before. */
+  .hero h1{position:relative;}
+  .hslot{display:block;position:relative;}
+  .slg{display:block;}
+  .hslot.locked .slg{
+    position:absolute;left:0;right:0;top:0;bottom:0;
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .hmeasure{position:absolute;left:0;right:0;top:0;visibility:hidden;pointer-events:none;}
+  .hmeasure .slg{position:static;display:block;}
+  .ln{display:block;}
+  /* one word = a metric box (the final-weight copy) with lighter copies stacked behind it */
+  .w{position:relative;display:inline-block;white-space:nowrap;will-change:transform,opacity,filter;}
+  .wg{position:absolute;left:0;top:0;white-space:nowrap;transform-origin:left center;}
+  .ws{position:relative;}
+  /* the page's own 56px green keyline, used as a cut marker: it draws and retracts on each change */
+  .hcut{
+    position:absolute;left:50%;bottom:-15px;width:56px;height:2px;margin-left:-28px;
+    background:var(--green);border-radius:1px;opacity:0;transform:scaleX(0);
+    transform-origin:center;pointer-events:none;
+  }
+
+  /* ================= RESPONSIVE ================= */
+  /* four columns stop reading as columns before the content column does — go 2x2 early */
+  @media(max-width:1100px){
+    .model-grid{grid-template-columns:repeat(2,1fr);}
+    .model-col{padding-left:var(--s3);padding-right:var(--s3);}
+    .model-col:nth-child(3){border-left:none;}
+    .model-col:nth-child(n+3){border-top:1px solid var(--hairline);}
+    .model-col .torque{font-size:clamp(38px,4.6vw,50px);}
+    .model-col .model{font-size:23px;}
+    .model-col li{font-size:var(--fs-small);}
+  }
+  @media(max-width:980px){
+    section{padding:var(--s7) 22px;}
+    .hero{padding-top:80px;}
+    .feature-grid{grid-template-columns:repeat(2,1fr);gap:var(--s5) var(--s4);}
+    .code-grid{grid-template-columns:1fr;}
+    .guide ul{grid-template-columns:1fr;}
+    .divider{margin:var(--s7) auto;}
+    .dl-row{grid-template-columns:190px 1fr;}
+    .guide{max-width:100%;}
+  }
+  @media(max-width:760px){
+    .nav-links .hide-sm{display:none;}
+    .quad{grid-template-columns:repeat(2,1fr);}
+    .quad > div:nth-child(3){border-left:none;padding-left:0;}
+    .quad > div:nth-child(n+3){border-top:1px solid var(--hairline);margin-top:var(--s3);padding-top:var(--s3);}
+    .triad{grid-template-columns:1fr;}
+    .triad > div + div{border-left:none;padding-left:0;border-top:1px solid var(--hairline);margin-top:var(--s3);padding-top:var(--s3);}
+    .card-2{grid-template-columns:1fr;}
+    .prod-2{grid-template-columns:1fr;gap:var(--s5);}
+    .app-grid{grid-template-columns:1fr;}
+    .oss-logos img{height:58px;}
+    .scroll-hint{display:block;}
+    .dim-hint{display:none;}
+    /* same fade the drawings use, so a table cut off mid-value reads as scrollable, not broken */
+    .scroller{
+      -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);
+      mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);
+    }
+  }
+  @media(max-width:560px){
+    section{padding:var(--s6) 20px;}
+    .feature-grid{grid-template-columns:1fr;gap:var(--s5);}
+    .model-grid{grid-template-columns:1fr;}
+    .model-col{padding-left:0;padding-right:0;}
+    .model-col + .model-col{border-left:none;border-top:1px solid var(--hairline);}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .stats > div{padding:18px 12px;}
+    .stats > div:nth-child(3),.stats > div:nth-child(4){border-top:1px solid var(--hairline);}
+    .stats > div:nth-child(3){border-left:none;}
+    .dark .stats > div:nth-child(3),.dark .stats > div:nth-child(4){border-top-color:#2c2c2e;}
+    .dl-row{grid-template-columns:1fr;gap:6px;padding:16px 0;}
+    .cta-row{gap:18px;}
+    .card{padding:var(--s3);}
+    .card .split{grid-template-columns:1fr;gap:0;}
+    .card .split dt{white-space:normal;margin-top:14px;}
+    .card .split dt:first-child{margin-top:0;}
+    .guide{padding:var(--s3);}
+    .quad{grid-template-columns:1fr;}
+    .quad > div + div{border-left:none;padding-left:0;border-top:1px solid var(--hairline);margin-top:var(--s3);padding-top:var(--s3);}
+    .quad > div:nth-child(n+3){margin-top:var(--s3);}
+    .dim-head{flex-direction:column;align-items:flex-start;gap:2px;}
+    .dim-head b{white-space:nowrap;}
+    .dims{--dbase:620px;}
+    .dim-media{
+      overflow-x:auto;-webkit-overflow-scrolling:touch;
+      -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);
+      mask-image:linear-gradient(90deg,#000 calc(100% - 40px),transparent);
+    }
+    .dim-hint{display:block;margin-top:0;margin-bottom:calc(var(--s3) * -1);}
+    .code-card pre{
+      -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);
+      mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);
+    }
+    .install .sep{display:none;}
+    .install .alt{display:block;margin-top:12px;}
+  }
+
+/* ---------- final page: dark hero (v4) + v17 key-spec strip, white body (v1) ---------- */
+.hero-final{
+  --hero-bg:#0A0B0C; --hero-ink:#F5F5F7; --hero-mut:#9A9AA1; --hero-line:#26262A;
+  background:var(--hero-bg); color:var(--hero-ink);
+  padding:104px 24px 0; text-align:center; position:relative;
+}
+.hero-final[data-hero="light"]{
+  --hero-bg:#FFFFFF; --hero-ink:#1d1d1f; --hero-mut:#6e6e73; --hero-line:#e8e8ed;
+}
+.hero-final .wrap{max-width:1080px;margin:0 auto}
+.hero-final .eyebrow{
+  font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--hero-mut);margin-bottom:26px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;   /* v17 micro-label */
+}
+.hero-final h1{
+  font-size:clamp(38px,6.4vw,74px);font-weight:300;letter-spacing:-.03em;line-height:1.06;
+  margin:0 auto;max-width:16em;
+}
+.hero-final h1 .fx-light{font-weight:300;display:block}
+.hero-final h1 .fx-bold{font-weight:650;display:block}
+#slogan-stage{position:relative;display:block}
+.hero-final .lede{
+  font-size:clamp(16px,1.9vw,20px);color:var(--hero-mut);max-width:44em;
+  margin:26px auto 0;line-height:1.5;
+}
+.hero-final .hero-cta{margin-top:34px;display:flex;gap:22px;justify-content:center;align-items:center;flex-wrap:wrap}
+.hero-final .btn-primary{
+  display:inline-block;background:#7AB648;color:#0b0b0c;font-weight:650;font-size:15px;
+  border-radius:980px;padding:12px 30px;text-decoration:none;transition:background .2s ease;
+}
+.hero-final .btn-primary:hover{background:#8ac857}
+.hero-final .arrow-link{color:var(--hero-ink);font-size:15px;text-decoration:none;display:inline-flex;gap:6px;align-items:center}
+.hero-final .arrow-link .arr{color:#7AB648;transition:transform .22s ease}
+.hero-final .arrow-link:hover .arr{transform:translateX(4px)}
+.hero-final .hero-img{max-width:560px;margin:56px auto 0}
+.hero-final .hero-img img{width:100%;height:auto;display:block;
+  filter:drop-shadow(0 30px 52px rgba(0,0,0,.55))}
+.hero-final[data-hero="light"] .hero-img img{filter:drop-shadow(0 22px 38px rgba(0,0,0,.16))}
+.keyspec{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:64px auto 0;max-width:940px;
+  border-top:1px solid var(--hero-line);
+}
+.keyspec div{padding:20px 12px 26px;border-right:1px solid var(--hero-line)}
+.keyspec div:last-child{border-right:0}
+.keyspec b{display:block;font-size:19px;font-weight:600;letter-spacing:-.01em}
+.keyspec span{
+  display:block;margin-top:5px;color:var(--hero-mut);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+}
+@media(max-width:760px){
+  .hero-final{padding-top:64px}
+  .keyspec{grid-template-columns:repeat(2,1fr)}
+  .keyspec div:nth-child(2){border-right:0}
+  .keyspec div:nth-child(1),.keyspec div:nth-child(2){border-bottom:1px solid var(--hero-line)}
+}
+
+/* the nav sits over the hero, so it has to follow the hero's palette */
+.hero-dark nav{
+  background:rgba(10,11,12,.78);
+  border-bottom:1px solid #1f2023;
+}
+.hero-dark nav a,
+.hero-dark .nav-brand{color:#EDEDF0}
+.hero-dark .nav-links a{color:#9A9AA1}
+.hero-dark .nav-links a:hover{color:#fff}
+.hero-dark .nav-links a.btn.small,
+.hero-dark nav .btn{border-color:#4a4b50;color:#EDEDF0}
+.hero-dark nav .btn:hover{background:#7AB648;border-color:#7AB648;color:#0b0b0c}
+/* once past the hero the page is white again, so the nav reverts */
+.hero-dark nav.past{
+  background:rgba(255,255,255,.85);
+  border-bottom:1px solid #e8e8ed;
+}
+.hero-dark nav.past a,
+.hero-dark nav.past .nav-brand{color:#1d1d1f}
+.hero-dark nav.past .nav-links a{color:#6e6e73}
+.hero-dark nav.past .btn{border-color:#1d1d1f;color:#1d1d1f}
+@media(prefers-reduced-motion:reduce){
+  .hero-final .arrow-link .arr{transition:none}
+}
+
+</style>
+</head>
+<body class="hero-dark">
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#top">
+      <img src="../Gearotons_Logo.png" alt="Gearotons logo">
+      Gearotons
+    </a>
+    <div class="nav-links">
+      <a class="hide-sm" href="#overview">Overview</a>
+      <a class="hide-sm" href="#models">Models</a>
+      <a class="hide-sm" href="#developers">Developers</a>
+      <a class="hide-sm" href="#protocol">Protocol</a>
+      <a class="btn small" href="https://gearotons.com/store">Shop</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ========================= HERO ========================= -->
+
+<section class="hero-final" id="top" data-hero="dark">
+  <div class="wrap">
+    <p class="eyebrow">M17 Series Servomotors</p>
+    <h1 aria-live="off"><span id="slogan-stage"><span class="fx-light">A motor, and everything</span><span class="fx-bold">that usually surrounds it.</span></span></h1>
+    <p class="lede">Motor, driver, motion controller and encoder — gathered into a single NEMA&nbsp;17
+      body. You speak in degrees and seconds; it resolves the rest.</p>
+    <div class="hero-cta">
+      <a class="btn-primary" href="https://gearotons.com/store">Shop the M17 Series</a>
+      <a class="arrow-link" href="https://9o.at/M17_1.3">Read the documentation <span class="arr">&rarr;</span></a>
+    </div>
+    <div class="hero-img">
+      <img src="../transparent/one_motor_transparent_small.png"
+           alt="Gearotons M17 servomotor, three-quarter view">
+    </div>
+    <!-- v17's key-spec strip -->
+    <div class="keyspec">
+      <div><b>NEMA 17</b><span>standard mount</span></div>
+      <div><b>12&ndash;24 V</b><span>supply range</span></div>
+      <div><b>Closed loop</b><span>built-in encoder</span></div>
+      <div><b>Four sizes</b><span>0.28 &ndash; 0.65 N&middot;m</span></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ========================= INTEGRATION ========================= -->
+<section class="center" id="overview" style="padding-top:0;">
+  <div class="wrap">
+    <div class="keyline"></div>
+    <p class="eyebrow" style="margin-top:var(--s6);">The integration</p>
+    <h2>Four systems.<br><strong>One housing.</strong></h2>
+    <p class="lede wide">A conventional axis is four purchases: a motor, a driver board, a controller and an encoder — then the brackets, the wiring and the tuning that hold them together. The M17 arrives as one part, already talking to itself.</p>
+
+    <div class="quad reveal">
+      <div>
+        <span class="num">01</span>
+        <h4>Motor</h4>
+        <p>Compact, with no protrusions — nearly the size of a NEMA 17 stepper of the same specification.</p>
+      </div>
+      <div>
+        <span class="num">02</span>
+        <h4>Driver</h4>
+        <p>On board, with integrated over-current, over-voltage and over-temperature protection.</p>
+      </div>
+      <div>
+        <span class="num">03</span>
+        <h4>Motion controller</h4>
+        <p>Trapezoid profiles, multiple operation modes and self-calibration, executed inside the motor.</p>
+      </div>
+      <div>
+        <span class="num">04</span>
+        <h4>Encoder</h4>
+        <p>Closed-loop position feedback into a PID control loop running at 32&nbsp;kHz.</p>
+      </div>
+    </div>
+
+    <p class="note">Same torque-to-weight ratio as an equivalent stepper &mdash; and much more power efficient in closed-loop control.</p>
+  </div>
+</section>
+
+<!-- ========================= ONE BUS ========================= -->
+<section class="center" id="bus">
+  <div class="wrap">
+    <p class="eyebrow">One bus</p>
+    <h2>One bus.<br><strong>Every axis.</strong></h2>
+    <p class="lede">Motors daisy-chain along a single RS-485 pair and answer at one connection point. The tenth motor connects exactly like the first.</p>
+
+    <figure class="figure reveal">
+      <div class="frame">
+        <img src="../connection_diagram.jpg" alt="Connection diagram: a computer with software, a USB cable to an RS485 adapter, two M17 motors daisy-chained on the RS485 pair, and a 12-24 V power supply" width="2048" height="2048">
+      </div>
+      <figcaption>A computer, a low-cost RS485 adapter, a 12&ndash;24&nbsp;V supply &mdash; and any number of motors on the same pair of wires.</figcaption>
+    </figure>
+
+    <div class="triad reveal">
+      <div><strong>Any number of motors</strong>Chain them along one interface instead of running a driver per axis.</div>
+      <div><strong>One connection point</strong>A single controller speaks to the whole machine.</div>
+      <div><strong>Any platform</strong>Mac, PC, Raspberry&nbsp;Pi, Arduino and ESP32, with only a low-cost adapter between.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= FEATURES ========================= -->
+<section class="center" id="features">
+  <div class="wrap">
+    <p class="eyebrow">Why M17</p>
+    <h2>Fewer parts.<br><strong>Better motion.</strong></h2>
+    <p class="lede">Every decision in this motor removes something you would otherwise have to buy, wire or write.</p>
+
+    <div class="feature-grid">
+      <div class="feature reveal">
+        <span class="num">01</span>
+        <h3>Truly integrated</h3>
+        <p>Motor, motor driver, motion control system and encoder in a single unit — compact, with no protrusions.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">02</span>
+        <h3>One interface, every motor</h3>
+        <p>Control any number of motors from one simple controller over a single RS-485 interface.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">03</span>
+        <h3>High-level commands</h3>
+        <p>Say &ldquo;Enable MOSFETs&rdquo; and &ldquo;Trapezoid move&rdquo;. No timing-critical DIR/STEP pulse generation on your side.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">04</span>
+        <h3>Closed loop at 32 kHz</h3>
+        <p>High-precision closed-loop control with a built-in encoder and a PID control loop running at 32&nbsp;kHz.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">05</span>
+        <h3>Efficient by design</h3>
+        <p>Much more power efficient in closed-loop control than a conventional stepper, at the same torque-to-weight ratio.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">06</span>
+        <h3>Protected</h3>
+        <p>Integrated over-current, over-voltage and over-temperature protection, with comprehensive error handling.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">07</span>
+        <h3>Familiar mounting, flexible power</h3>
+        <p>Standardised NEMA 17 mounting dimensions, a wide 12&ndash;24&nbsp;V range, and a maximum speed of 560&nbsp;RPM.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">08</span>
+        <h3>Works with what you own</h3>
+        <p>Raspberry Pi, Arduino, ESP32, Mac and PC — all it takes is a low-cost RS485 adapter.</p>
+      </div>
+      <div class="feature reveal">
+        <span class="num">09</span>
+        <h3>Documentation for humans and AI</h3>
+        <p>Excellent documentation and tutorials to get running fast — AI-friendly, so you can point your favourite assistant at it and let it do the work.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= MODELS ========================= -->
+<section class="center" id="models">
+  <div class="wrap">
+    <p class="eyebrow">Four models</p>
+    <h2>Four heights.<br><strong>One language.</strong></h2>
+    <p class="lede wide">M17&#8209;60, M17&#8209;48, M17&#8209;40 and M17&#8209;34 share a footprint, a bus and a command set. Only the stack gets shorter and the torque steps down &mdash; 0.65 to 0.28&nbsp;N&middot;m &mdash; so you match the machine, and the budget, without rewriting a line.</p>
+
+    <figure class="overview-img reveal">
+      <img src="../transparent/M17_series_overview_transparent.png" alt="The four M17 models side by side, tallest to shortest: M17-60, M17-48, M17-40 and M17-34" width="2893" height="1416">
+      <figcaption>Tallest to shortest: M17&#8209;60, M17&#8209;48, M17&#8209;40, M17&#8209;34. Identical 42.2 × 42.2&nbsp;mm NEMA&nbsp;17 face, identical 5&nbsp;mm shaft.</figcaption>
+    </figure>
+
+    <div class="model-grid">
+      <div class="model-col">
+        <p class="model">M17&#8209;60</p>
+        <p class="torque">0.65 <small>N&middot;m</small></p>
+        <p class="cap">Rated torque</p>
+        <ul>
+          <li><b>59.7 mm</b> height</li>
+          <li><b>470 g</b> weight</li>
+          <li><b>26.4 W</b> rated power</li>
+        </ul>
+      </div>
+      <div class="model-col">
+        <p class="model">M17&#8209;48</p>
+        <p class="torque">0.55 <small>N&middot;m</small></p>
+        <p class="cap">Rated torque</p>
+        <ul>
+          <li><b>48.7 mm</b> height</li>
+          <li><b>360 g</b> weight</li>
+          <li><b>26.4 W</b> rated power</li>
+        </ul>
+      </div>
+      <div class="model-col">
+        <p class="model">M17&#8209;40</p>
+        <p class="torque">0.42 <small>N&middot;m</small></p>
+        <p class="cap">Rated torque</p>
+        <ul>
+          <li><b>40.1 mm</b> height</li>
+          <li><b>285 g</b> weight</li>
+          <li><b>26.4 W</b> rated power</li>
+        </ul>
+      </div>
+      <div class="model-col">
+        <p class="model">M17&#8209;34</p>
+        <p class="torque">0.28 <small>N&middot;m</small></p>
+        <p class="cap">Rated torque</p>
+        <ul>
+          <li><b>33.5 mm</b> height</li>
+          <li><b>210 g</b> weight</li>
+          <li><b>24.0 W</b> rated power</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="scroller">
+      <table>
+        <caption>Electrical specifications</caption>
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col">M17-60</th><th scope="col">M17-48</th><th scope="col">M17-40</th><th scope="col">M17-34</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Operating voltage</th><td>12–24 V</td><td>12–24 V</td><td>12–24 V</td><td>12–24 V</td></tr>
+          <tr><th scope="row">Rated torque</th><td>0.65 N·m</td><td>0.55 N·m</td><td>0.42 N·m</td><td>0.28 N·m</td></tr>
+          <tr><th scope="row">Maximum speed</th><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td><td>560 RPM</td></tr>
+          <tr><th scope="row">Maximum current</th><td>1.1 A</td><td>1.1 A</td><td>1.1 A</td><td>1.0 A</td></tr>
+          <tr><th scope="row">Rated power</th><td>26.4 W</td><td>26.4 W</td><td>26.4 W</td><td>24.0 W</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="scroll-hint">Scroll the table sideways to compare all four models.</p>
+
+    <div class="scroller">
+      <table>
+        <caption>Mechanical specifications</caption>
+        <thead>
+          <tr><th scope="col">Parameter</th><th scope="col">M17-60</th><th scope="col">M17-48</th><th scope="col">M17-40</th><th scope="col">M17-34</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Dimensions (L×W)</th><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td><td>42.2 × 42.2 mm</td></tr>
+          <tr><th scope="row">Height</th><td>59.7 mm</td><td>48.7 mm</td><td>40.1 mm</td><td>33.5 mm</td></tr>
+          <tr><th scope="row">Shaft length</th><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td><td>20.6 mm</td></tr>
+          <tr><th scope="row">Shaft diameter</th><td>5 mm</td><td>5 mm</td><td>5 mm</td><td>5 mm</td></tr>
+          <tr><th scope="row">Weight</th><td>470 g</td><td>360 g</td><td>285 g</td><td>210 g</td></tr>
+          <tr><th scope="row">Protection class</th><td>IP20</td><td>IP20</td><td>IP20</td><td>IP20</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="scroll-hint">Scroll the table sideways to compare all four models.</p>
+
+    <div class="dims">
+      <p class="eyebrow" style="margin-bottom:0;">Dimension drawings</p>
+      <p class="scroll-hint dim-hint">Scroll a drawing sideways to read the dimensions.</p>
+      <div class="dim-row reveal">
+        <div class="dim-head"><b>M17-60</b><span>59.7 mm high · 20.6 mm shaft · 470 g</span></div>
+        <div class="dim-media"><img style="--dk:1.0" src="../M17-60_dimensions.png" alt="M17-60 dimension drawing, side and front views with millimetre dimensions" width="1734" height="686"></div>
+      </div>
+      <div class="dim-row reveal">
+        <div class="dim-head"><b>M17-48</b><span>48.7 mm high · 20.6 mm shaft · 360 g</span></div>
+        <div class="dim-media"><img style="--dk:0.95156" src="../M17-48_dimensions.png" alt="M17-48 dimension drawing, side and front views with millimetre dimensions" width="1650" height="702"></div>
+      </div>
+      <div class="dim-row reveal">
+        <div class="dim-head"><b>M17-40</b><span>40.1 mm high · 20.6 mm shaft · 285 g</span></div>
+        <div class="dim-media"><img style="--dk:0.90888" src="../M17-40_dimensions.png" alt="M17-40 dimension drawing, side and front views with millimetre dimensions" width="1576" height="710"></div>
+      </div>
+      <div class="dim-row reveal">
+        <div class="dim-head"><b>M17-34</b><span>33.5 mm high · 20.6 mm shaft · 210 g</span></div>
+        <div class="dim-media"><img style="--dk:0.85928" src="../M17-34_dimensions.png" alt="M17-34 dimension drawing, side and front views with millimetre dimensions" width="1490" height="728"></div>
+      </div>
+    </div>
+
+    <div class="cta-row" style="margin-top:var(--s7);">
+      <a class="btn" href="https://gearotons.com/store">Choose your model</a>
+      <a class="arrow-link" href="https://9o.at/M17_1.3">Full documentation <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= OPERATING CONDITIONS ========================= -->
+<section class="center" id="conditions" style="padding-top:0;">
+  <div class="wrap">
+    <div class="keyline"></div>
+    <p class="eyebrow" style="margin-top:var(--s6);">Operating conditions</p>
+    <h2>Simple limits.<br><strong>Clearly stated.</strong></h2>
+
+    <dl class="dl">
+      <div class="dl-row"><dt>Operating temperature</dt><dd>0 °C to +80 °C</dd></div>
+      <div class="dl-row"><dt>Storage temperature</dt><dd>−20 °C to +60 °C</dd></div>
+      <div class="dl-row"><dt>Humidity range</dt><dd>20 % to 80 % RH (non-condensing)</dd></div>
+      <div class="dl-row"><dt>Installation environment</dt><dd>Indoor use only</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ========================= DEVELOPERS (DARK) ========================= -->
+<section class="dark center" id="developers">
+  <div class="wrap">
+    <p class="eyebrow">Getting started</p>
+    <h2>Install, import,<br><strong>move.</strong></h2>
+    <p class="lede">Two first-party libraries, one command each to install, and the same three calls in either language. The libraries speak the protocol so you can write intent.</p>
+
+    <div class="code-grid">
+      <div class="code-card reveal">
+        <div class="code-head">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="file">spin.py</span>
+        </div>
+<pre><span class="c-kw">import</span> servomotor
+<span class="c-kw">from</span> servomotor <span class="c-kw">import</span> M3
+
+servomotor.<span class="c-fn">open_serial_port</span>()
+motor = <span class="c-fn">M3</span>(<span class="c-str">"X"</span>, time_unit=<span class="c-str">"seconds"</span>,
+                position_unit=<span class="c-str">"degrees"</span>)
+motor.<span class="c-fn">system_reset</span>()
+motor.<span class="c-fn">enable_mosfets</span>()
+motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <span class="c-num">2</span>)  <span class="c-com"># one revolution in 2 s</span></pre>
+      </div>
+
+      <div class="code-card reveal">
+        <div class="code-head">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="file">spin.ino</span>
+        </div>
+<pre><span class="c-kw">#include</span> <span class="c-str">&lt;Servomotor.h&gt;</span>
+
+<span class="c-com">// alias 'X' on the RS485 UART</span>
+<span class="c-ty">Servomotor</span> motor(<span class="c-str">'X'</span>, Serial1);
+
+<span class="c-kw">void</span> <span class="c-fn">setup</span>() {
+  motor.<span class="c-fn">setPositionUnit</span>(PositionUnit::SHAFT_ROTATIONS);
+  motor.<span class="c-fn">setTimeUnit</span>(TimeUnit::SECONDS);
+
+  motor.<span class="c-fn">systemReset</span>();
+  <span class="c-fn">delay</span>(<span class="c-num">1500</span>);  <span class="c-com">// let the bootloader window pass</span>
+  motor.<span class="c-fn">enableMosfets</span>();
+  motor.<span class="c-fn">trapezoidMove</span>(<span class="c-num">1.0</span>, <span class="c-num">1.0</span>);  <span class="c-com">// one rotation in 1 s</span>
+}
+
+<span class="c-kw">void</span> <span class="c-fn">loop</span>() {}</pre>
+      </div>
+    </div>
+
+    <p class="install"><code>pip3 install servomotor</code><span class="sep">&emsp;&middot;&emsp;</span><span class="alt">Arduino IDE Library Manager: &ldquo;Servomotor&rdquo;</span></p>
+
+    <div class="guide reveal">
+      <h4>The getting-started guide</h4>
+      <ul>
+        <li>Step-by-step setup instructions</li>
+        <li>Detailed communication protocol documentation</li>
+        <li>Programming examples and code snippets</li>
+        <li>Description of error codes</li>
+        <li>Troubleshooting tips and best practices</li>
+      </ul>
+      <a class="arrow-link" href="https://tutorial.gearotons.com">Open the guide <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= UNITS ========================= -->
+<section class="center" id="units">
+  <div class="wrap">
+    <p class="eyebrow">Unit system</p>
+    <h2>Your units.<br><strong>Not ours.</strong></h2>
+    <p class="lede wide">The motors work in integer internal units so the motion maths stays fast. The Python and Arduino libraries convert automatically — so you write degrees, or RPM, or milliamps, or whatever you already think in.</p>
+
+    <dl class="dl">
+      <div class="dl-row"><dt>Time</dt><dd class="chips"><span class="chip">seconds</span><span class="chip">milliseconds</span><span class="chip">minutes</span><span class="chip">microseconds</span><span class="chip">timesteps</span></dd></div>
+      <div class="dl-row"><dt>Position</dt><dd class="chips"><span class="chip">shaft rotations</span><span class="chip">degrees</span><span class="chip">radians</span><span class="chip">encoder counts</span></dd></div>
+      <div class="dl-row"><dt>Velocity</dt><dd class="chips"><span class="chip">rotations per second</span><span class="chip">RPM</span><span class="chip">degrees per second</span><span class="chip">radians per second</span><span class="chip">counts per second</span><span class="chip">counts per timestep</span></dd></div>
+      <div class="dl-row"><dt>Acceleration</dt><dd class="chips"><span class="chip">rotations per second²</span><span class="chip">RPM per second</span><span class="chip">degrees per second²</span><span class="chip">radians per second²</span><span class="chip">counts per second²</span><span class="chip">counts per timestep²</span></dd></div>
+      <div class="dl-row"><dt>Current</dt><dd class="chips"><span class="chip">internal current units</span><span class="chip">milliamps</span><span class="chip">amps</span></dd></div>
+      <div class="dl-row"><dt>Voltage</dt><dd class="chips"><span class="chip">volts</span><span class="chip">millivolts</span></dd></div>
+      <div class="dl-row"><dt>Temperature</dt><dd class="chips"><span class="chip">celsius</span><span class="chip">fahrenheit</span><span class="chip">kelvin</span></dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ========================= PROTOCOL ========================= -->
+<section class="center" id="protocol" style="padding-top:0;">
+  <div class="wrap">
+    <div class="keyline"></div>
+    <p class="eyebrow" style="margin-top:var(--s6);">Communication protocol</p>
+    <h2>One protocol.<br><strong>Fully documented.</strong></h2>
+    <p class="lede">RS-485 at a fixed 230400 baud. Every motor is individually addressable — permanently, and then conveniently.</p>
+
+    <div class="stats reveal">
+      <div><p class="v">230400</p><span class="k">Fixed baud rate</span></div>
+      <div><p class="v">64-bit</p><span class="k">Factory unique address</span></div>
+      <div><p class="v">0&ndash;251</p><span class="k">One-byte alias</span></div>
+      <div><p class="v">255</p><span class="k">Broadcast alias</span></div>
+    </div>
+
+    <p class="lede wide" style="margin-top:var(--s6);">Every motor carries a factory-assigned 64-bit unique address, so it can always be reached individually. Give it a one-byte alias to keep packets short. A comprehensive command set covers motion control, configuration and status monitoring — and firmware updates travel over the same RS-485 interface.</p>
+
+    <div class="block-sm">
+      <div class="chips" style="justify-content:center;">
+        <span class="chip">Basic Control</span>
+        <span class="chip">Motion Control</span>
+        <span class="chip">Configuration</span>
+        <span class="chip">Status &amp; Monitoring</span>
+        <span class="chip">Device Management</span>
+      </div>
+    </div>
+
+    <div class="term">
+      <div><span class="p">$</span> pip3 install servomotor</div>
+      <div><span class="p">$</span> servomotor_command -c</div>
+      <div class="c"># prints the complete command reference</div>
+    </div>
+
+    <div style="margin-top:var(--s5);">
+      <a class="arrow-link" href="https://github.com/tomrodinger/servomotor/blob/main/python_programs/servomotor/motor_commands.json">Read motor_commands.json <span class="arr">&rarr;</span></a>
+    </div>
+    <p class="note">The living source of truth for every command the motor understands.</p>
+  </div>
+</section>
+
+<!-- ========================= LEDS & BUTTONS ========================= -->
+<section class="center" id="indicators">
+  <div class="wrap">
+    <p class="eyebrow">Indicators &amp; controls</p>
+    <h2>Two LEDs.<br><strong>Two buttons.</strong></h2>
+    <p class="lede">The motor tells you what it is doing before you open a terminal — and will spin on its own, on request.</p>
+
+    <div class="back-img reveal">
+      <img src="../transparent/motor_back_transparent_small.png" alt="Rear of the M17 motor showing the specification label, QR codes, status LEDs and the Reset and Test buttons" width="1018" height="1200">
+    </div>
+
+    <div class="card-2">
+      <div class="card reveal">
+        <h4>Status LEDs</h4>
+        <dl>
+          <div><dt>Green</dt><dd>Flashes slowly as a heartbeat, and quickly when the bootloader is running rather than the application. It also lights briefly while a packet is being received, so it flickers with traffic on the bus.</dd></div>
+          <div><dt>Red</dt><dd>Flashes a certain number of times to indicate fatal error codes.</dd></div>
+        </dl>
+      </div>
+      <div class="card reveal">
+        <h4>Reset &amp; Test buttons</h4>
+        <dl class="split">
+          <dt>Reset</dt><dd>Restarts the microcontroller and returns all state to defaults.</dd>
+          <dt>Test · brief press</dt><dd>Spins the motor one way.</dd>
+          <dt>Test · &gt; 0.3 s, release</dt><dd>Spins the motor the other way.</dd>
+          <dt>Test · hold ≥ 2 s, release</dt><dd>Enters closed-loop mode.</dd>
+          <dt>Test · hold &gt; 15 s, release</dt><dd>Runs a self-calibration.</dd>
+        </dl>
+      </div>
+    </div>
+
+    <p class="note"><em>The motor spins during calibration and must be able to turn freely — remove any load first.</em></p>
+  </div>
+</section>
+
+<!-- ========================= WHAT YOU NEED ========================= -->
+<section class="center" id="kit">
+  <div class="wrap">
+    <p class="eyebrow">What you need</p>
+    <h2>One cable.<br><strong>One adapter.</strong></h2>
+    <p class="lede">A cable comes with the motor. Add a low-cost RS485 adapter — ours is a 3-in-1 — and the machine on your desk can start moving.</p>
+
+    <div class="prod-2">
+      <figure class="reveal">
+        <img src="../transparent/kit_with_three_motors_transparent_small.png" alt="Kit flat-lay: three M17 motors, the adapter PCB, cables and knobs" width="905" height="1200">
+        <figcaption>Three motors, cables, adapter and accessories.</figcaption>
+      </figure>
+      <figure class="reveal">
+        <img src="../transparent/adapter_and_wire_transparent_small.png" alt="The green Gearotons 3-in-1 RS485 adapter with its cable" width="1200" height="1191">
+        <figcaption>The Gearotons 3-in-1 RS485 adapter, sold separately.</figcaption>
+      </figure>
+    </div>
+
+    <div class="triad reveal">
+      <div><strong>In the box</strong>A cable is included with every motor.</div>
+      <div><strong>Sold separately</strong>A low-cost RS485 adapter. Gearotons sells a 3-in-1.</div>
+      <div><strong>Your side of the wire</strong>Raspberry Pi, Arduino, ESP32, Mac or PC.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= APPLICATIONS ========================= -->
+<section class="center" id="applications" style="padding-top:0;">
+  <div class="wrap">
+    <div class="keyline"></div>
+    <p class="eyebrow" style="margin-top:var(--s6);">Applications</p>
+    <h2>At home in the lab.<br><strong>At work on a line.</strong></h2>
+    <p class="lede">The same motor teaches a first robotics lesson and holds position on a machine that runs all night.</p>
+
+    <div class="app-grid">
+      <figure class="app-card reveal">
+        <img src="../robotics.jpg" alt="An M17 motor in a CNC and robotics metal assembly driving a large gear" width="1524" height="1524">
+        <figcaption>Robotics &amp; CNC machines</figcaption>
+      </figure>
+      <figure class="app-card reveal">
+        <img src="../automation.jpg" alt="An M17 motor mounted inside an industrial automation machine" width="1491" height="1491">
+        <figcaption>Industrial automation</figcaption>
+      </figure>
+      <figure class="app-card reveal">
+        <img src="../test_rack.jpg" alt="A rack of M17 motors in automated test equipment" width="1417" height="1417">
+        <figcaption>Automated test equipment</figcaption>
+      </figure>
+    </div>
+
+    <p class="note">Also at work in scientific instruments, 3D printers, test jigs, and education and teaching labs.</p>
+  </div>
+</section>
+
+<!-- ========================= OPEN SOURCE + COMPANY ========================= -->
+<section class="band center" id="company">
+  <div class="wrap">
+    <p class="eyebrow">Open by default</p>
+    <h2>Open source.<br><strong>Down to the PCB.</strong></h2>
+    <p class="lede">All software, firmware and PCB design files are published on GitHub. Read them, fork them, build on them.</p>
+    <div class="oss-logos reveal">
+      <img src="../Open_Source_Initiative.svg.png" alt="Open Source Initiative logo" width="1920" height="2518">
+      <img src="../Open-source-hardware-logo.svg.png" alt="Open Source Hardware logo" width="1920" height="2018">
+    </div>
+    <div style="margin-top:var(--s5);">
+      <a class="arrow-link" href="https://github.com/tomrodinger/servomotor">View the repository <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="wrap center">
+    <p class="eyebrow">The company</p>
+    <h2>Founded in 2022.<br><strong>One simple belief.</strong></h2>
+    <p class="lede wide">Gearotons is an innovative startup committed to making precision motion control accessible to everyone — makers, educators and engineers alike. Founded in 2022 by a Canadian entrepreneur, it focuses on integrated servo motor systems that combine cost-effectiveness, high integration, ease of use and high performance. The M17 Series is our first product.</p>
+    <blockquote class="quote">
+      &ldquo;We believe in making the world better through technology.&rdquo;
+      <span>Gearotons</span>
+    </blockquote>
+  </div>
+</section>
+
+<!-- ========================= FOOTER CTA ========================= -->
+<section class="center" id="buy">
+  <div class="wrap">
+    <p class="eyebrow">M17 Series Servomotors</p>
+    <h2>Pick your torque.<br><strong>Start moving.</strong></h2>
+    <p class="lede">Four models. One bus. Motor, driver, controller and encoder already in the same housing.</p>
+    <div class="cta-row">
+      <a class="btn" href="https://gearotons.com/store">Shop the M17 Series</a>
+      <a class="arrow-link" href="https://tutorial.gearotons.com">Getting started guide <span class="arr">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-inner">
+    <span>&copy; 2026 Gearotons. All rights reserved.</span>
+    <div class="foot-links">
+      <a href="https://gearotons.com">gearotons.com</a>
+      <a href="https://gearotons.com/store">Store</a>
+      <a href="https://tutorial.gearotons.com">Getting started</a>
+      <a href="https://github.com/tomrodinger/servomotor">GitHub</a>
+    </div>
+  </div>
+  <p class="legal">Gearotons is a trading name of Green Eco Technology (Shenzhen) Company Limited · Room C301E, 3F, Block CD, Tianjing Building, Shatou Street, Futian District, Shenzhen City, Guangdong Province, China.</p>
+</footer>
+
+<script>
+(function(){
+  var d=document.documentElement;
+  if(!('IntersectionObserver' in window))return;
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  d.className+=' js';
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}
+    });
+  },{rootMargin:'0px 0px -8% 0px',threshold:0.05});
+  var els=document.querySelectorAll('.reveal');
+  for(var i=0;i<els.length;i++){io.observe(els[i]);}
+})();
+</script>
+
+<!-- ================= HERO SLOGAN CYCLER — keynote dissolve + weight morph ================= -->
+
+
+<script>
+/* Slogan FX engine.
+ *
+ * Every effect is a PURE FUNCTION OF PROGRESS. The engine owns time; an effect only ever answers
+ * "what does the transition from A to B look like at progress t?". That buys three things:
+ * deterministic screenshots, a scrub slider in the lab, and frame-exact GIF export.
+ *
+ * An effect is an object:
+ *   {
+ *     id:      'ink-bleed',                 // unique, kebab-case
+ *     name:    'Ink Bleed',                 // shown in the lab
+ *     family:  'Reveal',                    // grouping in the lab
+ *     blurb:   'New line soaks into paper', // one line
+ *     duration: 1100,                       // ms, transition length
+ *     dwell:    4500,                       // ms, optional, time at rest before the next one
+ *     theme:   { bg, fg, accent, font, weightLight, weightBold, italic }, // optional look for the tile
+ *     setup(stage, ctx)                     // build the DOM for one A->B transition
+ *     frame(stage, t, ctx)                  // place everything for progress t in [0,1]
+ *     rest(stage, ctx)                      // optional: settled state (defaults to frame(...,1))
+ *   }
+ *
+ * ctx = { from:{light,bold}, to:{light,bold}, i, next, W, H, reduced }
+ *
+ * Helpers on SloganFX (chars(), words(), lerp(), ease.*) are there so effects stay short.
+ */
+(function (global) {
+  'use strict';
+
+  var REGISTRY = [];
+
+  var ease = {
+    linear: function (t) { return t; },
+    inQuad: function (t) { return t * t; },
+    outQuad: function (t) { return t * (2 - t); },
+    inOutQuad: function (t) { return t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t; },
+    inCubic: function (t) { return t * t * t; },
+    outCubic: function (t) { return (--t) * t * t + 1; },
+    inOutCubic: function (t) { return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1; },
+    inQuart: function (t) { return t * t * t * t; },
+    outQuart: function (t) { return 1 - (--t) * t * t * t; },
+    inQuint: function (t) { return t * t * t * t * t; },
+    inExpo: function (t) { return t === 0 ? 0 : Math.pow(2, 10 * t - 10); },
+    inOutQuart: function (t) { return t < .5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t; },
+    outQuint: function (t) { return 1 + (--t) * t * t * t * t; },
+    outExpo: function (t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); },
+    inOutExpo: function (t) {
+      if (t === 0 || t === 1) return t;
+      return t < .5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
+    },
+    outBack: function (t) { var c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); },
+    outElastic: function (t) {
+      if (t === 0 || t === 1) return t;
+      return Math.pow(2, -10 * t) * Math.sin((t * 10 - .75) * (2 * Math.PI / 3)) + 1;
+    },
+    outBounce: function (t) {
+      var n = 7.5625, d = 2.75;
+      if (t < 1 / d) return n * t * t;
+      if (t < 2 / d) return n * (t -= 1.5 / d) * t + .75;
+      if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + .9375;
+      return n * (t -= 2.625 / d) * t + .984375;
+    },
+  };
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  /* map t from [a,b] onto [0,1], clamped — the workhorse for staggering */
+  function span(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+  /* Split a line into per-character spans. Spaces become non-collapsing spans so widths hold. */
+  function chars(text, cls) {
+    var frag = document.createDocumentFragment();
+    var out = [];
+    for (var i = 0; i < text.length; i++) {
+      var s = document.createElement('span');
+      s.className = 'fx-ch' + (cls ? ' ' + cls : '');
+      s.style.display = 'inline-block';
+      s.style.whiteSpace = 'pre';
+      s.textContent = text[i];
+      frag.appendChild(s);
+      out.push(s);
+    }
+    return { frag: frag, nodes: out };
+  }
+
+  /* Split into word spans (spaces kept inside the preceding word span so wrapping behaves). */
+  function words(text, cls) {
+    var frag = document.createDocumentFragment();
+    var out = [];
+    var parts = text.split(/(\s+)/);
+    for (var i = 0; i < parts.length; i++) {
+      if (!parts[i]) continue;
+      if (/^\s+$/.test(parts[i])) {
+        var sp = document.createElement('span');
+        sp.style.whiteSpace = 'pre';
+        sp.textContent = parts[i];
+        frag.appendChild(sp);
+        continue;
+      }
+      var s = document.createElement('span');
+      s.className = 'fx-w' + (cls ? ' ' + cls : '');
+      s.style.display = 'inline-block';
+      s.textContent = parts[i];
+      frag.appendChild(s);
+      out.push(s);
+    }
+    return { frag: frag, nodes: out };
+  }
+
+  /* Per-character spans, but grouped inside inline-block words so lines never break mid-word.
+     Returns {frag, nodes} where nodes is the flat character list in reading order — so an effect
+     can stagger across characters exactly as with chars(), while wrapping stays sane. */
+  function charWords(text, cls) {
+    var frag = document.createDocumentFragment();
+    var nodes = [];
+    var parts = text.split(/(\s+)/);
+    for (var p = 0; p < parts.length; p++) {
+      if (!parts[p]) continue;
+      if (/^\s+$/.test(parts[p])) {
+        var gap = document.createElement('span');
+        gap.style.whiteSpace = 'pre';
+        gap.textContent = parts[p];
+        frag.appendChild(gap);
+        continue;
+      }
+      var word = document.createElement('span');
+      word.className = 'fx-word';
+      word.style.display = 'inline-block';
+      word.style.whiteSpace = 'nowrap';
+      for (var i = 0; i < parts[p].length; i++) {
+        var s = document.createElement('span');
+        s.className = 'fx-ch' + (cls ? ' ' + cls : '');
+        s.style.display = 'inline-block';
+        s.textContent = parts[p][i];
+        word.appendChild(s);
+        nodes.push(s);
+      }
+      frag.appendChild(word);
+    }
+    return { frag: frag, nodes: nodes };
+  }
+
+  /* For per-character effects that morph A into B (scramble, odometer, flip...).
+   *
+   * Naively padding both whole strings to equal length breaks words across lines, because every
+   * character becomes its own inline-block. This aligns them WORD BY WORD instead: you get a list
+   * of word groups, each holding equal-length character pairs, so a group can be an inline-block
+   * that wraps as a unit. Shorter side is space-padded; missing words become all-spaces.
+   *
+   * returns [ { pairs:[[chA,chB],...] }, ... ]
+   */
+  function alignWords(a, b) {
+    var wa = a.split(/\s+/).filter(Boolean);
+    var wb = b.split(/\s+/).filter(Boolean);
+    var n = Math.max(wa.length, wb.length);
+    var groups = [];
+    for (var i = 0; i < n; i++) {
+      var x = wa[i] || '', y = wb[i] || '';
+      var m = Math.max(x.length, y.length);
+      var pairs = [];
+      // Pad with '' rather than ' '. A pad cell must occupy NO width: padding "One" out to
+      // match "controller," with real spaces rendered as eight blank cells, which showed up
+      // as badly spaced words at rest. Consumers treat '' and ' ' alike as blank.
+      for (var j = 0; j < m; j++) pairs.push([x[j] || '', y[j] || '']);
+      groups.push({ pairs: pairs });
+    }
+    return groups;
+  }
+
+  function el(tag, cls, css) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (css) for (var k in css) n.style[k] = css[k];
+    return n;
+  }
+
+  /* ---------------------------------------------------------------- Player */
+
+  /* `effect` may be a single effect OR an array of them. With an array, each transition uses a
+   * different effect — the slogans and the transition style are independent choices.
+   *
+   * The effect for transition i is a PURE FUNCTION OF i (sequential by default, or a hash of i when
+   * opts.pick === 'shuffle'). That is deliberate: it keeps seek(i, t) reproducible, so a mixed
+   * player is still screenshottable and GIF-exportable exactly like a single-effect one. Picking at
+   * random per cycle would break determinism and with it every verification tool here.
+   */
+  function Player(stage, effect, slogans, opts) {
+    opts = opts || {};
+    this.stage = stage;
+    this.pool = Array.isArray(effect) ? effect.slice() : [effect];
+    if (!this.pool.length) throw new Error('SloganFX.mount: no effect given');
+    this.pick = opts.pick || 'sequential';
+    this.slogans = slogans;
+    this.i = opts.start || 0;
+    this.playing = false;
+    this.raf = null;
+    this.t0 = 0;
+    this.phase = 'rest';          // 'rest' | 'run'
+    this.reduced = !!opts.reduced;
+    this.optDwell = opts.dwell || null;
+    this.optDuration = opts.duration || null;
+    this._selectFx();
+    this.onTick = opts.onTick || null;
+    stage.classList.add('fx-stage');
+    stage.setAttribute('aria-live', 'off');
+
+    /* CANONICAL REST STATE.
+     *
+     * A slogan's parked appearance must be a function of (text, font) ALONE — never of whichever
+     * effect happens to be running. Effects build wildly different DOM (per-character inline
+     * blocks, drums, stacked layers), so letting them own the endpoints meant the same slogan
+     * rendered with different spacing, and sometimes on a different number of lines, depending on
+     * what ran last. That is what makes mixed transitions look broken.
+     *
+     * So the engine owns two layers:
+     *   .fx-canon  — plain two-line text, engine-rendered, shown whenever t is 0 or 1
+     *   .fx-layer  — handed to the effect as its stage, shown only while 0 < t < 1
+     *
+     * Every transition therefore starts at canonical A and ends at canonical B, and any effect
+     * can follow any other.
+     */
+    stage.innerHTML = '';
+    this.layer = el('div', 'fx-layer');
+    this.layer.style.cssText = 'position:absolute;left:0;top:0;right:0;bottom:0';
+    this.canon = el('div', 'fx-canon');
+    this.canon.style.cssText = 'position:absolute;left:0;top:0;right:0;bottom:0;' +
+      'display:flex;align-items:center;justify-content:center;text-align:center';
+    var box = el('div');
+    this.canonA = el('span', 'fx-light');
+    this.canonB = el('span', 'fx-bold');
+    this.canonA.style.display = 'block';
+    this.canonB.style.display = 'block';
+    box.appendChild(this.canonA);
+    box.appendChild(this.canonB);
+    this.canon.appendChild(box);
+    stage.appendChild(this.layer);
+    stage.appendChild(this.canon);
+
+    this._build();
+    this._render(1);
+  }
+
+  /* show the canonical text for one slogan pair and hide the effect's own DOM */
+  Player.prototype._showCanon = function (pair) {
+    this.canonA.textContent = pair.light;
+    this.canonB.textContent = pair.bold;
+    this.canon.style.visibility = 'visible';
+    this.layer.style.visibility = 'hidden';
+  };
+
+  Player.prototype._showEffect = function () {
+    this.canon.style.visibility = 'hidden';
+    this.layer.style.visibility = 'visible';
+  };
+
+  /* choose the effect for the CURRENT transition, and adopt its own timing */
+  Player.prototype._selectFx = function () {
+    var n = this.pool.length, k;
+    if (n === 1) k = 0;
+    else if (this.pick === 'shuffle') {
+      var h = Math.sin(this.i * 78.233 + 12.9898) * 43758.5453;
+      k = Math.floor((h - Math.floor(h)) * n) % n;
+    } else k = ((this.i % n) + n) % n;
+    this.fx = this.pool[k];
+    this.fxIndex = k;
+    this.dwell = this.optDwell || this.fx.dwell || 3200;
+    this.duration = this.optDuration || this.fx.duration || 1000;
+  };
+
+  Player.prototype._ctx = function () {
+    var a = this.slogans[this.i % this.slogans.length];
+    var b = this.slogans[(this.i + 1) % this.slogans.length];
+    return {
+      from: { light: a[0], bold: a[1] },
+      to: { light: b[0], bold: b[1] },
+      i: this.i,
+      next: (this.i + 1) % this.slogans.length,
+      W: this.layer.clientWidth || this.stage.clientWidth,
+      H: this.layer.clientHeight || this.stage.clientHeight,
+      reduced: this.reduced,
+      ease: ease, lerp: lerp, span: span, clamp: clamp,
+      chars: chars, words: words, charWords: charWords, alignWords: alignWords, el: el,
+    };
+  };
+
+  Player.prototype._build = function () {
+    this._selectFx();
+    this.ctx = this._ctx();
+    this.layer.innerHTML = '';
+    if (this.fx.setup) this.fx.setup(this.layer, this.ctx);
+    this._enforceTwoLines();
+  };
+
+  /* The canonical layer is always two lines. If the effect's own layer renders one, the headline
+   * snaps 2->1 at the start of every transition and 1->2 at the end. Effects keep the two halves
+   * as sibling spans, so force those to block — but only where a parent holds EXACTLY one of each.
+   * More than one means the effect tagged individual words with the same classes, and forcing
+   * those would stack every word on its own line.
+   */
+  Player.prototype._enforceTwoLines = function () {
+    var marked = this.layer.querySelectorAll('.fx-light, .fx-bold');
+    var parents = [];
+    for (var i = 0; i < marked.length; i++) {
+      var par = marked[i].parentElement;
+      if (par && parents.indexOf(par) === -1) parents.push(par);
+    }
+    for (var j = 0; j < parents.length; j++) {
+      var kids = Array.prototype.slice.call(parents[j].children);
+      var L = [], B = [];
+      for (var k = 0; k < kids.length; k++) {
+        if (kids[k].classList.contains('fx-light')) L.push(kids[k]);
+        if (kids[k].classList.contains('fx-bold')) B.push(kids[k]);
+      }
+      if (L.length === 1 && B.length === 1) {
+        L[0].style.display = 'block';
+        B[0].style.display = 'block';
+      }
+    }
+  };
+
+  Player.prototype._render = function (t) {
+    // Endpoints belong to the engine, not the effect: t<=0 is canonical A, t>=1 is canonical B.
+    // The effect only ever draws the middle. This is what lets any effect follow any other.
+    if (t <= 0) {
+      this._showCanon(this.ctx.from);
+      if (this.onTick) this.onTick(0, this.i);
+      return;
+    }
+    if (t >= 1) {
+      this._showCanon(this.ctx.to);
+      if (this.onTick) this.onTick(1, this.i);
+      return;
+    }
+    this._showEffect();
+    // A throw inside frame() used to leave the stage frozen in its setup state — every frame
+    // identical, which looks like a boring effect rather than a crash. One missing easing name
+    // silently killed an entire effect that way. Surface it loudly instead, once per effect.
+    try {
+      this.fx.frame(this.layer, t, this.ctx);
+    } catch (err) {
+      if (!this._blewUp) {
+        this._blewUp = true;
+        console.error('[SloganFX] effect "' + this.fx.id + '" threw in frame(): ' + err.message, err);
+      }
+    }
+    if (this.onTick) this.onTick(t, this.i);
+  };
+
+  /* Deterministic: show the transition i -> i+1 frozen at progress t. */
+  Player.prototype.seek = function (i, t) {
+    this.pause();
+    this.i = ((i % this.slogans.length) + this.slogans.length) % this.slogans.length;
+    this._build();
+    this._render(clamp(t, 0, 1));
+  };
+
+  Player.prototype.goto = function (i) {
+    this.pause();
+    this.i = ((i % this.slogans.length) + this.slogans.length) % this.slogans.length;
+    this._build();
+    this._render(0);
+  };
+
+  Player.prototype.play = function () {
+    if (this.playing || this.reduced) return;
+    this.playing = true;
+    this.phase = 'rest';
+    this.t0 = performance.now();
+    var self = this;
+    var step = function (now) {
+      if (!self.playing) return;
+      var dt = now - self.t0;
+      if (self.phase === 'rest') {
+        if (dt >= self.dwell) { self.phase = 'run'; self.t0 = now; }
+        else self._render(0);
+      } else {
+        var t = clamp(dt / self.duration, 0, 1);
+        self._render(t);
+        if (t >= 1) {
+          self.i = (self.i + 1) % self.slogans.length;
+          self._build();
+          self.phase = 'rest';
+          self.t0 = now;
+        }
+      }
+      self.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  };
+
+  Player.prototype.pause = function () {
+    this.playing = false;
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = null;
+  };
+
+  Player.prototype.destroy = function () { this.pause(); this.stage.innerHTML = ''; };
+
+  /* ---------------------------------------------------------------- API */
+
+  var SloganFX = {
+    ease: ease, lerp: lerp, clamp: clamp, span: span,
+    chars: chars, words: words, charWords: charWords, alignWords: alignWords, el: el,
+    register: function (fx) {
+      if (!fx || !fx.id || typeof fx.frame !== 'function') {
+        console.error('SloganFX.register: effect needs at least {id, frame}', fx);
+        return;
+      }
+      if (REGISTRY.some(function (e) { return e.id === fx.id; })) {
+        console.warn('SloganFX: duplicate id ignored:', fx.id);
+        return;
+      }
+      REGISTRY.push(fx);
+    },
+    all: function () { return REGISTRY.slice(); },
+    get: function (id) { return REGISTRY.filter(function (e) { return e.id === id; })[0]; },
+    mount: function (stage, effect, slogans, opts) { return new Player(stage, effect, slogans, opts); },
+    /* effect that WILL run for transition i of a given pool — same rule the Player uses */
+    effectFor: function (pool, i, pick) {
+      var n = pool.length;
+      if (n <= 1) return pool[0];
+      if (pick === 'shuffle') {
+        var h = Math.sin(i * 78.233 + 12.9898) * 43758.5453;
+        return pool[Math.floor((h - Math.floor(h)) * n) % n];
+      }
+      return pool[((i % n) + n) % n];
+    },
+  };
+
+  global.SloganFX = SloganFX;
+})(window);
+
+/* --- effects/_reference.js --- */
+/* Reference effects — the models new effects should be written against.
+ * Each is a pure function of progress t. No timers, no setTimeout, no CSS animations:
+ * if it isn't a function of t it can't be seeked, screenshotted, or exported to GIF.
+ */
+(function () {
+  var FX = window.SloganFX, E = FX.ease, span = FX.span, lerp = FX.lerp;
+
+  /* Two stacked layers is the most common structure: old on top, new underneath.
+     `.fx-line` is absolutely positioned so the two never affect each other's layout. */
+  function twoLayer(stage, ctx, split) {
+    stage.innerHTML = '';
+    var wrap = FX.el('div', 'fx-wrap', {
+      position: 'relative', width: '100%', height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    });
+    function line(s) {
+      var d = FX.el('div', 'fx-line', {
+        position: 'absolute', left: '0', right: '0', textAlign: 'center',
+        willChange: 'transform,opacity,filter',
+      });
+      var a = FX.el('span', 'fx-light'); a.textContent = s.light + ' ';
+      var b = FX.el('span', 'fx-bold'); b.textContent = s.bold;
+      if (split) { d.appendChild(a); d.appendChild(FX.el('br')); d.appendChild(b); }
+      else { d.appendChild(a); d.appendChild(b); }
+      wrap.appendChild(d);
+      return d;
+    }
+    var out = line(ctx.from), inn = line(ctx.to);
+    stage.appendChild(wrap);
+    return { out: out, in: inn };
+  }
+
+  /* ---- 1. Keynote-style dissolve with a lift and a blur -------------------- */
+  FX.register({
+    id: 'keynote-lift',
+    name: 'Keynote Lift',
+    family: 'Dissolve',
+    blurb: 'Outgoing lifts and blurs away; incoming rises into focus.',
+    duration: 1000,
+    setup: function (stage, ctx) { stage._l = twoLayer(stage, ctx, true); },
+    frame: function (stage, t, ctx) {
+      var L = stage._l;
+      var a = E.inOutCubic(span(t, 0, .55));
+      var b = E.outCubic(span(t, .35, 1));
+      L.out.style.opacity = String(1 - a);
+      L.out.style.transform = 'translateY(' + (-14 * a) + 'px) scale(' + (1 - .012 * a) + ')';
+      L.out.style.filter = 'blur(' + (6 * a) + 'px)';
+      L.in.style.opacity = String(b);
+      L.in.style.transform = 'translateY(' + (16 * (1 - b)) + 'px) scale(' + (1 - .012 * (1 - b)) + ')';
+      L.in.style.filter = 'blur(' + (6 * (1 - b)) + 'px)';
+    },
+  });
+
+  /* ---- 2. Per-character glyph scramble, settling left to right ------------
+     Uses alignWords so each word is an inline-block that wraps as a unit — a naive per-character
+     split lets the browser break a word in half mid-transition, which looks broken. */
+  /* One row of character cells, morphing rowA -> rowB. Used by the per-character effects so the
+     headline keeps its two-line shape all the way through the transition. */
+  function buildRow(parent, aText, bText, cls, sink) {
+    var row = FX.el('div', cls, { display: 'block' });
+    var groups = FX.alignWords(aText, bText);
+    groups.forEach(function (g, gi) {
+      var w = FX.el('span', null, { display: 'inline-block', whiteSpace: 'nowrap' });
+      g.pairs.forEach(function (pr) {
+        var c = FX.el('span', null, { display: 'inline-block', whiteSpace: 'pre' });
+        c.textContent = pr[0];
+        c._a = pr[0]; c._b = pr[1];
+        w.appendChild(c);
+        sink.push(c);
+      });
+      row.appendChild(w);
+      if (gi < groups.length - 1) {
+        var sp = FX.el('span', null, { whiteSpace: 'pre' });
+        sp.textContent = ' ';
+        row.appendChild(sp);
+      }
+    });
+    parent.appendChild(row);
+    return row;
+  }
+
+  var GLYPHS = '#$%&*+=<>/\\|@01_-';
+  FX.register({
+    id: 'glyph-scramble',
+    name: 'Glyph Scramble',
+    family: 'Type',
+    blurb: 'Characters churn through symbols and settle left to right.',
+    duration: 1300,
+    theme: { font: 'ui-monospace, SFMono-Regular, Menlo, monospace' },
+    setup: function (stage, ctx) {
+      stage.innerHTML = '';
+      var wrap = FX.el('div', 'fx-wrap', {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100%', width: '100%',
+      });
+      var d = FX.el('div', null, { textAlign: 'center' });
+      stage._cells = [];
+      // Two rows, matching the canonical two-line headline. Merging the halves into one string
+      // made the line snap 2->1 at the start of the transition and back at the end.
+      buildRow(d, ctx.from.light, ctx.to.light, 'fx-light', stage._cells);
+      buildRow(d, ctx.from.bold, ctx.to.bold, 'fx-bold', stage._cells);
+      wrap.appendChild(d); stage.appendChild(wrap);
+      stage._rnd = function (k, s) { var x = Math.sin(k * 12.9898 + s * 78.233) * 43758.5453; return x - Math.floor(x); };
+    },
+    frame: function (stage, t) {
+      var n = stage._cells.length;
+      for (var k = 0; k < n; k++) {
+        var c = stage._cells[k];
+        var lead = (k / n) * 0.55;
+        var p = span(t, lead, lead + 0.45);
+        if (p >= 1) { c.textContent = c._b; c.style.opacity = '1'; }
+        else if (p <= 0) { c.textContent = c._a; c.style.opacity = '1'; }
+        else if (!(c._a || '').trim() && !(c._b || '').trim()) { c.textContent = ''; }
+        else {
+          c.textContent = GLYPHS[Math.floor(stage._rnd(k, Math.floor(p * 9)) * GLYPHS.length)];
+          c.style.opacity = String(lerp(0.45, 1, p));
+        }
+      }
+    },
+  });
+
+  /* ---- 3. Mechanical odometer roll, per character ------------------------- */
+  function buildDrumRow(parent, aText, bText, cls, sink) {
+    var row = FX.el('div', cls, { display: 'block' });
+    var groups = FX.alignWords(aText, bText);
+    groups.forEach(function (g, gi) {
+      var w = FX.el('span', null, { display: 'inline-block', whiteSpace: 'nowrap' });
+      g.pairs.forEach(function (pr) {
+        var cell = FX.el('span', null, {
+          display: 'inline-block', overflow: 'hidden', verticalAlign: 'top',
+          height: '1.18em', lineHeight: '1.18em', whiteSpace: 'pre',
+        });
+        var strip = FX.el('span', null, { display: 'block', willChange: 'transform' });
+        var top = FX.el('span', null, { display: 'block', height: '1.18em', whiteSpace: 'pre' });
+        var bot = FX.el('span', null, { display: 'block', height: '1.18em', whiteSpace: 'pre' });
+        top.textContent = pr[0]; bot.textContent = pr[1];
+        strip.appendChild(top); strip.appendChild(bot);
+        cell.appendChild(strip);
+        w.appendChild(cell);
+        sink.push(strip);
+      });
+      row.appendChild(w);
+      if (gi < groups.length - 1) {
+        var sp = FX.el('span', null, { whiteSpace: 'pre', display: 'inline-block' });
+        sp.textContent = ' ';
+        row.appendChild(sp);
+      }
+    });
+    parent.appendChild(row);
+  }
+
+  FX.register({
+    id: 'odometer',
+    name: 'Odometer Roll',
+    family: 'Mechanical',
+    blurb: 'Every character rolls vertically to its replacement, like a counter drum.',
+    duration: 1200,
+    setup: function (stage, ctx) {
+      stage.innerHTML = '';
+      var wrap = FX.el('div', 'fx-wrap', {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        height: '100%', width: '100%',
+      });
+      var d = FX.el('div', null, { textAlign: 'center' });
+      stage._drums = [];
+      // two rows so the headline keeps its canonical two-line shape mid-transition
+      buildDrumRow(d, ctx.from.light, ctx.to.light, 'fx-light', stage._drums);
+      buildDrumRow(d, ctx.from.bold, ctx.to.bold, 'fx-bold', stage._drums);
+      wrap.appendChild(d); stage.appendChild(wrap);
+    },
+    frame: function (stage, t) {
+      var n = stage._drums.length;
+      for (var k = 0; k < n; k++) {
+        var lead = (k / n) * 0.45;
+        var p = E.outBack(span(t, lead, lead + 0.5));
+        stage._drums[k].style.transform = 'translateY(' + (-p * 1.18) + 'em)';
+      }
+    },
+  });
+
+  /* ---- 4. Ink soaking into paper (mask-driven) ---------------------------- */
+  FX.register({
+    id: 'ink-bleed',
+    name: 'Ink Bleed',
+    family: 'Reveal',
+    blurb: 'The new line soaks up through the paper; the old one blots away.',
+    duration: 1400,
+    theme: { bg: '#FBFAF7', fg: '#26231F', accent: '#6E9F3F',
+             font: 'Optima, "Avenir Next", Palatino, Georgia, serif' },
+    setup: function (stage, ctx) { stage._l = twoLayer(stage, ctx, true); },
+    frame: function (stage, t, ctx) {
+      var L = stage._l;
+      var a = E.inOutQuad(span(t, 0, .5));
+      var b = E.outCubic(span(t, .3, 1));
+      // outgoing: bleeds outward and fades, as if the paper drank it
+      L.out.style.opacity = String(1 - a);
+      L.out.style.filter = 'blur(' + (5 * a) + 'px) saturate(' + (1 - .5 * a) + ')';
+      L.out.style.transform = 'scale(' + (1 + .02 * a) + ')';
+      // incoming: an irregular wet edge rising from the baseline
+      var pct = Math.round(b * 130) - 15;
+      L.in.style.opacity = String(Math.min(1, b * 1.25));
+      L.in.style.filter = 'blur(' + (2.2 * (1 - b)) + 'px)';
+      L.in.style.webkitMaskImage = L.in.style.maskImage =
+        'radial-gradient(120% 78% at 50% 108%, #000 ' + Math.max(0, pct - 22) + '%, ' +
+        'rgba(0,0,0,.55) ' + pct + '%, transparent ' + (pct + 16) + '%)';
+    },
+    rest: function (stage) {
+      var L = stage._l;
+      L.out.style.opacity = '0';
+      L.in.style.opacity = '1';
+      L.in.style.filter = 'none';
+      L.in.style.webkitMaskImage = L.in.style.maskImage = 'none';
+    },
+  });
+})();
+
+/* --- effects/depth.js --- */
+/* Family: 3D — real perspective, real solids.
+ *
+ * Every effect here is a pure function of progress: the geometry of a cube, a hinge, a folded
+ * sheet is computed from t and written straight into transforms. Nothing animates itself, so any
+ * frame can be seeked, screenshotted or exported.
+ *
+ * House rules used throughout:
+ *   - one perspective camera per stage (`scene`), everything under it in one preserve-3d chain
+ *   - faces that must read as *solid* get the tile background painted on them plus a shading
+ *     overlay driven by the face normal — depth without lighting looks like flat text on a skew
+ *   - both slogans are measured and forced to the same block height, so hinges and cube edges sit
+ *     exactly on the shared centre line no matter how many lines each slogan wraps to
+ */
+(function () {
+  'use strict';
+
+  var FX = window.SloganFX, E = FX.ease, span = FX.span, clamp = FX.clamp;
+  var D2R = Math.PI / 180;
+
+  var PAPER = { bg: '#F5F3EE', fg: '#1B1A17' };
+  var NIGHT = { bg: '#0C0E12', fg: '#EDF0F4' };
+  var WHITE = { bg: '#FFFFFF', fg: '#1D1D1F' };
+
+  /* ---------------------------------------------------------------- scaffolding */
+
+  /* A perspective camera filling the stage, with a centred 3D box inside it. */
+  function scene(stage, persp, po) {
+    stage.innerHTML = '';
+    var cam = FX.el('div', 'fx-cam', {
+      position: 'relative', width: '100%', height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      perspective: (persp || 1100) + 'px',
+      perspectiveOrigin: po || '50% 50%',
+      /* Any full-width solid tilted TOWARD the lens projects wider than the layer that holds it:
+         the flip's paper leaf ran right out to the card border mid-fall, and the cube's face by
+         about nine pixels a side. Clip the camera to the layer, which is the frame the whole family
+         is supposed to live inside. Text never reaches the edge, so only the solids are trimmed —
+         and a sheet of paper cut off by the frame is what a sheet of paper does. */
+      overflow: 'hidden',
+    });
+    var box = FX.el('div', 'fx-box', {
+      position: 'relative', width: '100%',
+      transformStyle: 'preserve-3d', willChange: 'transform',
+    });
+    cam.appendChild(box);
+    stage.appendChild(cam);
+    return { cam: cam, box: box };
+  }
+
+  /* Fill a container with one slogan: light line over bold line.
+   *
+   * The two halves MUST be blocks, not spans separated by a <br>. The engine forces any parent
+   * holding exactly one .fx-light and one .fx-bold to display them as blocks — so a <br> as well
+   * left an empty third line box between them. That inflated every measurement here: `equalize`
+   * read a two-line height while the text actually rendered three lines tall, so the ink overflowed
+   * its own face. On the cube it merely pushed the lines apart; on the flip, the unfold and the
+   * hinge (a -webkit-mask clips to the element box) the top of the light line and the bottom of the
+   * bold line were sliced clean off. Blocks, no <br>: the layer now measures what it draws and
+   * matches the canonical two-line rest state exactly.
+   */
+  function fill(inner, s, split) {
+    var a = FX.el('span', 'fx-light'), b = FX.el('span', 'fx-bold');
+    a.textContent = s.light;
+    b.textContent = s.bold;
+    if (split === false) {
+      inner.appendChild(a);
+      inner.appendChild(document.createTextNode(' '));
+    } else {
+      a.style.display = 'block';
+      b.style.display = 'block';
+      inner.appendChild(a);
+    }
+    inner.appendChild(b);
+    return inner;
+  }
+
+  /* One slogan as a full-width, vertically centred layer of the 3D box. */
+  function layer(box, s, opt) {
+    opt = opt || {};
+    var face = FX.el('div', 'fx-line', {
+      position: 'absolute', left: '0', right: '0', top: '0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      backfaceVisibility: 'hidden',
+      willChange: 'transform,opacity,filter',
+    });
+    if (opt.bg) face.style.background = opt.bg;
+    if (opt.p3d) face.style.transformStyle = 'preserve-3d';
+    var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
+    if (opt.p3d) inner.style.transformStyle = 'preserve-3d';
+    fill(inner, s, opt.split);
+    face.appendChild(inner);
+    box.appendChild(face);
+    return { face: face, inner: inner };
+  }
+
+  /* Same, but split into per-word inline-blocks that can each be posed in 3D. */
+  function wordLayer(box, s, opt) {
+    var L = layer(box, { light: '', bold: '' }, opt);
+    L.inner.innerHTML = '';
+    var w1 = FX.words(s.light, 'fx-light'), w2 = FX.words(s.bold, 'fx-bold');
+    L.inner.appendChild(w1.frag);
+    L.inner.appendChild(FX.el('br'));
+    L.inner.appendChild(w2.frag);
+    L.nodes = w1.nodes.concat(w2.nodes);
+    L.nodes.forEach(function (n) {
+      n.style.backfaceVisibility = 'hidden';
+      n.style.willChange = 'transform';
+    });
+    return L;
+  }
+
+  /* Measure both slogans, give the box and every layer one shared height. Hinges, cube edges and
+     fold lines all key off this, so a 1-line and a 3-line slogan still meet on the same axis. */
+  function equalize(box, faces) {
+    var h = 0, i;
+    for (i = 0; i < faces.length; i++) h = Math.max(h, faces[i].offsetHeight);
+    h = Math.max(Math.round(h), 40);              // hidden tiles measure 0 — keep the maths sane
+    box.style.height = h + 'px';
+    for (i = 0; i < faces.length; i++) { faces[i].style.height = h + 'px'; faces[i].style.top = '0'; }
+    return h;
+  }
+
+  /* Width of the actual ink inside a container, not of the full-width block that holds it. Both
+     halves are block-level so offsetWidth is always the layer width; a range over the contents
+     reports the union of the line boxes, which is what "how wide is this slogan" means. */
+  function inkWidth(node) {
+    var r = document.createRange();
+    r.selectNodeContents(node);
+    var w = r.getBoundingClientRect().width;
+    r.detach && r.detach();
+    return w || node.offsetWidth || 0;
+  }
+
+  /* A shading plane over a face: cheap, convincing lighting for a solid. */
+  function shade(parent, color) {
+    var s = FX.el('div', null, {
+      position: 'absolute', left: '0', top: '0', right: '0', bottom: '0',
+      background: color || '#000', opacity: '0', pointerEvents: 'none',
+    });
+    parent.appendChild(s);
+    return s;
+  }
+
+  /* Lambert-ish key light: surface normal · light, normalised so a face square to the lamp is
+     unshaded and a face turned away sits on the ambient floor. */
+  function lit(dot) { return .30 + .70 * clamp(dot / .83, 0, 1); }
+
+  /* ============================================================ 1. Cube Roll ==== */
+  /* Old and new are two faces of one solid. The cube makes a quarter turn about its horizontal
+     axis, hits the stop and rocks once. Both faces carry the page colour so the corner between
+     them reads as a real edge. */
+  FX.register({
+    id: 'depth-cube',
+    name: 'Cube Roll',
+    family: '3D',
+    blurb: 'Old and new are two faces of one solid; it rolls a quarter turn and rocks to a stop.',
+    duration: 1150,
+    dwell: 4200,
+    setup: function (stage, ctx) {
+      var sc = scene(stage, 1500);
+      var A = layer(sc.box, ctx.from, { bg: WHITE.bg });
+      var B = layer(sc.box, ctx.to, { bg: WHITE.bg });
+      var H = equalize(sc.box, [A.face, B.face]);
+      A.face.style.transform = 'translateZ(' + (H / 2) + 'px)';
+      B.face.style.transform = 'rotateX(90deg) translateZ(' + (H / 2) + 'px)';
+      /* Whichever face is toward the camera sits H/2 IN FRONT of the box origin, so with the box
+         at z=0 the resting slogan was magnified by 1500/(1500-H/2) — measurably 4% wider than the
+         canonical text at both t=0 and t=1, i.e. a visible pop on entry and exit. Park the solid
+         half a face deeper so the front face lands exactly on the camera's zero plane. */
+      stage._s = { box: sc.box, A: A.face, B: B.face, z: H / 2,
+                   shA: shade(A.face), shB: shade(B.face) };
+    },
+    frame: function (stage, t) {
+      var s = stage._s;
+      var k = span(t, .62, 1);
+      /* quarter turn on a sine ease — a heavy object starting and stopping — then one damped
+         rock as it lands on its stop */
+      var m = span(t, .03, .92);
+      var ang = 90 * (.5 - .5 * Math.cos(Math.PI * m))
+              + Math.sin(k * Math.PI * 2) * Math.pow(1 - k, 1.8) * 5.5;
+      var r = ang * D2R;
+      var dip = Math.sin(Math.PI * t);              // the whole solid pulls back as it turns
+      s.box.style.transform = 'translateZ(' + (-s.z - 80 * dip) + 'px) rotateX(' + (-ang) + 'deg)';
+      s.A.style.opacity = String(clamp(1 - span(t, .93, 1), 0, 1));
+      s.B.style.opacity = '1';
+      /* one directional light from above and in front, so the two faces never share a tone:
+         the outgoing face tips down into shadow exactly as the incoming face turns into the key */
+      s.shA.style.opacity = String(1 - lit(-.55 * Math.sin(r) + .83 * Math.cos(r)));
+      s.shB.style.opacity = String(1 - lit(.55 * Math.cos(r) + .83 * Math.sin(r)));
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.box.style.transform = 'translateZ(' + (-s.z) + 'px) rotateX(-90deg)';
+      s.A.style.opacity = '0';
+      s.B.style.opacity = '1';
+      s.shA.style.opacity = '.70';
+      s.shB.style.opacity = '0';
+    },
+  });
+
+  /* ============================================================ 2. Page Flip ==== */
+  /* Split-flap board. The upper leaf is hinged on the centre line: its front carries the top half
+     of the old slogan, its back the bottom half of the new one. Behind it sit the new top half and
+     the old bottom half, so the mid-transition frame is the classic spliced hybrid. */
+  FX.register({
+    id: 'depth-flip',
+    name: 'Page Flip',
+    family: '3D',
+    blurb: 'A leaf hinged on the centre line falls through half a turn, split-flap style.',
+    duration: 1250,
+    dwell: 4300,
+    theme: { bg: PAPER.bg, fg: PAPER.fg },
+    setup: function (stage, ctx) {
+      var sc = scene(stage, 1150);
+      /* static backing: new top half above the hinge, old bottom half below it */
+      var topNew = layer(sc.box, ctx.to, { bg: PAPER.bg });
+      var botOld = layer(sc.box, ctx.from, { bg: PAPER.bg });
+      var H = equalize(sc.box, [topNew.face, botOld.face]);
+      var half = Math.round(H / 2);
+      topNew.face.style.clipPath = 'inset(0 0 ' + (H - half) + 'px 0)';
+      botOld.face.style.clipPath = 'inset(' + half + 'px 0 0 0)';
+      topNew.face.style.transform = 'translateZ(-2px)';
+      botOld.face.style.transform = 'translateZ(-2px)';
+      var castShadow = shade(botOld.face);
+      castShadow.style.top = half + 'px';
+      castShadow.style.background = 'linear-gradient(180deg, rgba(0,0,0,.5), rgba(0,0,0,0) 62%)';
+
+      /* the leaf: half the block tall, hinged along its bottom edge */
+      var leaf = FX.el('div', null, {
+        position: 'absolute', left: '0', right: '0', top: '0', height: half + 'px',
+        transformOrigin: '50% 100%', transformStyle: 'preserve-3d', willChange: 'transform',
+      });
+      function side(s, offset, flipped) {
+        var f = FX.el('div', null, {
+          position: 'absolute', left: '0', top: '0', right: '0', bottom: '0',
+          backfaceVisibility: 'hidden',
+          transform: flipped ? 'rotateX(180deg)' : 'none',
+        });
+        var clip = FX.el('div', null, {
+          position: 'absolute', left: '0', top: '0', right: '0', bottom: '0',
+          clipPath: 'inset(0)', background: PAPER.bg,
+        });
+        var line = FX.el('div', null, {
+          position: 'absolute', left: '0', right: '0', top: offset + 'px', height: H + 'px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        });
+        var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
+        fill(inner, s);
+        line.appendChild(inner);
+        clip.appendChild(line);
+        f.appendChild(clip);
+        leaf.appendChild(f);
+        return { face: f, shade: shade(clip) };
+      }
+      var front = side(ctx.from, 0, false);         // old, top half
+      var back = side(ctx.to, -half, true);         // new, bottom half (mirrored twice = upright)
+      sc.box.appendChild(leaf);
+      stage._s = { leaf: leaf, front: front, back: back, cast: castShadow };
+    },
+    frame: function (stage, t) {
+      var s = stage._s;
+      /* gravity: the leaf accelerates all the way down, hits its stop and rebounds once.
+         It falls TOWARD the viewer, so it is always in front of the static halves behind it. */
+      var rb = span(t, .86, 1);
+      var th = 180 * E.inQuad(span(t, 0, .86)) - Math.sin(rb * Math.PI * 2) * (1 - rb) * 8;
+      var c = Math.cos(th * D2R);
+      s.leaf.style.transform = 'rotateX(' + (-th) + 'deg)';
+      s.front.shade.style.opacity = String(clamp(.58 * (1 - c), 0, .88));
+      s.back.shade.style.opacity = String(clamp(.58 * (1 + c), 0, .88));
+      s.cast.style.opacity = String(clamp((th - 55) / 115, 0, 1) * .34 * (1 - span(t, .90, 1)));
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.leaf.style.transform = 'rotateX(180deg)';
+      s.front.shade.style.opacity = '.9';
+      s.back.shade.style.opacity = '0';
+      s.cast.style.opacity = '0';
+    },
+  });
+
+  /* A gradient that dims the far edge of a door by `k` (0 = untouched, 1 = fully receded). At k=0
+     it is a flat opaque black, i.e. exactly no mask at all — which is what the endpoints need. */
+  function edgeMask(deg, k) {
+    k = clamp(k, 0, 1);
+    if (k < .001) return 'none';
+    var start = Math.round(100 - 60 * k);
+    return 'linear-gradient(' + deg + 'deg,#000 0%,#000 ' + start + '%,rgba(0,0,0,' +
+      (1 - .66 * k).toFixed(3) + ') 100%)';
+  }
+
+  /* ============================================================ 3. Door Hinge === */
+  /* Two doors on opposite jambs. The old one swings shut into the depth of the frame, the new one
+     swings out of the depth toward you and settles with a hair of overshoot. A gradient mask pulls
+     the receding edge into the page so the depth reads even in a still. */
+  FX.register({
+    id: 'depth-hinge',
+    name: 'Door Hinge',
+    family: '3D',
+    blurb: 'The old line swings shut on the left jamb; the new one swings open from the right.',
+    duration: 1200,
+    dwell: 4400,
+    setup: function (stage, ctx) {
+      var sc = scene(stage, 900);
+      var A = layer(sc.box, ctx.from);
+      var B = layer(sc.box, ctx.to);
+      equalize(sc.box, [A.face, B.face]);
+      A.face.style.transformOrigin = '0% 50%';
+      B.face.style.transformOrigin = '100% 50%';
+      stage._s = { cam: sc.cam, A: A.face, B: B.face };
+    },
+    frame: function (stage, t) {
+      var s = stage._s;
+      var o = E.inOutCubic(span(t, 0, .58));                 // old: accelerates shut
+      var i = E.outQuart(span(t, .26, 1));                   // new: decelerates open
+      var settle = Math.sin(span(t, .70, 1) * Math.PI) * (1 - span(t, .70, 1)) * 7;
+
+      var oa = 80 * o;
+      s.A.style.transform = 'rotateY(' + oa + 'deg) translateZ(' + (-14 * o) + 'px)';
+      /* Three things used to gang up on the middle of this transition and leave it near-empty:
+         a long opacity fade, a mask that erased three quarters of the panel, and an incoming door
+         that took until t=.62 to reach full strength. Now the doors hold their ink — the depth is
+         carried by the turn and by a mask that DIMS the receding edge rather than deleting it —
+         and the handover is a short, hard crossfade in the middle instead of a long dip. */
+      s.A.style.opacity = String(clamp(1 - span(t, .38, .60), 0, 1));
+      /* The far edge of a turning door sinks into the page, but never to nothing. The gradient has
+         to be an IDENTITY when the door is square to the camera: it used to fade the right-hand 40%
+         to 34% ink at every t including zero, so "…surrounds it." sat visibly grey at the top of
+         every transition and snapped back to black when the engine handed over to the canon. Both
+         the depth of the fade and how far it reaches now scale with the turn, so at t->0 (o=0) and
+         t->1 (i=1) the mask is flat black. */
+      s.A.style.webkitMaskImage = s.A.style.maskImage = edgeMask(90, o);
+
+      var ia = -78 * (1 - i) + settle;
+      s.B.style.transform = 'rotateY(' + ia + 'deg) translateZ(' + (-14 * (1 - i)) + 'px)';
+      s.B.style.opacity = String(clamp(span(t, .34, .52), 0, 1));
+      s.B.style.webkitMaskImage = s.B.style.maskImage = edgeMask(270, 1 - i);
+
+      /* the camera drifts across the doorway, so the two hinges never look symmetrical */
+      s.cam.style.perspectiveOrigin = (50 + 16 * (E.inOutCubic(t) - .5) * 2) + '% 50%';
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.A.style.opacity = '0';
+      s.B.style.opacity = '1';
+      s.B.style.transform = 'none';
+      s.B.style.webkitMaskImage = s.B.style.maskImage = 'none';
+      s.cam.style.perspectiveOrigin = '66% 50%';
+    },
+  });
+
+  /* ============================================================ 4. Depth Dolly == */
+  /* A move down a tunnel: the old line rushes the lens and blows past it, the new one comes up out
+     of the dark, word by word, with the far words trailing the near ones. */
+  FX.register({
+    id: 'depth-dolly',
+    name: 'Depth Dolly',
+    family: '3D',
+    blurb: 'The old line rushes past the lens; the new one climbs out of depth, word by word.',
+    duration: 1400,
+    dwell: 4200,
+    theme: { bg: NIGHT.bg, fg: NIGHT.fg },
+    setup: function (stage, ctx) {
+      var PERSP = 800;
+      var sc = scene(stage, PERSP);
+      var A = layer(sc.box, ctx.from, { p3d: true });
+      var B = wordLayer(sc.box, ctx.to, { p3d: true });
+      equalize(sc.box, [A.face, B.face]);
+      /* How far the outgoing line may rush the lens depends on how wide it already is. A flat
+         640px of travel magnified it 5x, which is fine for "Four systems." and ran the longest
+         slogan clean off both edges of the tile — a sharp, half-legible line sliced by the frame.
+         Measure the ink and let it grow only until it fills the frame, so the rush is as big as
+         each slogan can afford and never a pixel bigger. Blur and the fade carry the speed. */
+      var room = Math.max(1, (ctx.W || sc.cam.offsetWidth) - 8);
+      var fit = clamp(room / Math.max(24, inkWidth(A.inner)), 1.06, 2.4);
+      stage._s = { A: A.face, B: B.face, w: B.nodes, persp: PERSP, fit: fit };
+    },
+    frame: function (stage, t) {
+      var s = stage._s;
+
+      /* outgoing: straight at the camera, accelerating, smeared by its own speed */
+      var o = E.inQuad(span(t, 0, .55));
+      var grow = 1 + (s.fit - 1) * o;
+      var oz = s.persp * (1 - 1 / grow);
+      s.A.style.transform = 'translateZ(' + oz + 'px) rotateX(' + (-5 * o) + 'deg)';
+      s.A.style.opacity = String(clamp(1 - Math.pow(span(t, .06, .50), 1.3), 0, 1));
+      s.A.style.filter = 'blur(' + (22 * o * o) + 'px)';
+
+      /* incoming: out of the dark, decelerating, with a residual tilt that levels off */
+      var p = E.outCubic(span(t, .12, 1));
+      s.B.style.transform = 'translateZ(' + (-1500 * (1 - p)) + 'px) rotateX(' + (9 * (1 - p)) + 'deg)';
+      s.B.style.opacity = String(clamp(span(t, .12, .46), 0, 1));
+
+      /* per-word parallax: each word sits a little deeper and arrives a little later */
+      var n = s.w.length;
+      for (var k = 0; k < n; k++) {
+        var u = n > 1 ? k / (n - 1) : 0;
+        var q = E.outCubic(span(t, .12 + u * .22, .74 + u * .26));
+        var z = -260 * (1 - q);
+        s.w[k].style.transform = 'translateZ(' + z + 'px)';
+        s.w[k].style.filter = 'blur(' + (3.4 * (1 - q)) + 'px)';
+        s.w[k].style.opacity = String(clamp(.25 + .75 * q, 0, 1));
+      }
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.A.style.opacity = '0';
+      s.B.style.opacity = '1';
+      s.B.style.transform = 'none';
+      s.w.forEach(function (n) { n.style.transform = 'none'; n.style.filter = 'none'; n.style.opacity = '1'; });
+    },
+  });
+
+  /* Give every word in a wordLayer a wave phase derived from WHERE IT SITS, not from its index.
+   *
+   * Index-based staggering desynchronises the two slogans whenever they have different word counts:
+   * the outgoing sentence's fourth word and the incoming sentence's fourth word then hit their
+   * edge-on 90-degree instant at different times, and since both are backface-hidden there, the
+   * screen briefly shows NEITHER — a word simply missing from an otherwise settled line (i=0 lost
+   * "system." at t=.5 and "motor." at t=.7). Phase by row and horizontal centre instead and the
+   * turn becomes a real sweep across the block: whatever old word and whatever new word share a
+   * patch of the line turn together, so the pair hands over on the spot and no hole opens.
+   */
+  function phaseByPlace(L) {
+    var w = L.face.offsetWidth || L.inner.offsetWidth || 1;
+    L.nodes.forEach(function (n) {
+      var row = n.classList.contains('fx-bold') ? 1 : 0;
+      var cx = n.offsetLeft + n.offsetWidth / 2;
+      n._u = (row + clamp(cx / w, 0, 1)) / 2;
+    });
+  }
+
+  /* ============================================================ 5. Word Helix === */
+  /* Every word is a card on a vertical spindle set behind the line. Cards turn in sequence, so the
+     turn travels along the sentence as a wave; the old face leaves as the new face arrives on the
+     back of the same rotation. Backfaces are hidden, so exactly one of the pair is ever readable. */
+  FX.register({
+    id: 'depth-helix',
+    name: 'Word Helix',
+    family: '3D',
+    blurb: 'Each word turns on its own spindle; the turn travels along the line as a wave.',
+    duration: 1450,
+    dwell: 4600,
+    setup: function (stage, ctx) {
+      var sc = scene(stage, 1000);
+      var A = wordLayer(sc.box, ctx.from, { p3d: true });
+      var B = wordLayer(sc.box, ctx.to, { p3d: true });
+      var H = equalize(sc.box, [A.face, B.face]);
+      phaseByPlace(A);
+      phaseByPlace(B);
+      stage._s = { A: A.nodes, B: B.nodes, r: clamp(H * .45, 26, 96), rise: H * .22 };
+    },
+    frame: function (stage, t) {
+      var s = stage._s, r = s.r;
+
+      function pose(nodes, incoming) {
+        var n = nodes.length;
+        for (var k = 0; k < n; k++) {
+          var u = nodes[k]._u;
+          var lead = u * .40;
+          var p = E.inOutCubic(span(t, lead, lead + .60));
+          /* both lines turn the same way: old 0 -> -180, new +180 -> 0 */
+          var th = incoming ? 180 * (1 - p) : -180 * p;
+          var y = incoming ? s.rise * (1 - p) : -s.rise * p;
+          nodes[k].style.transform =
+            'translate3d(0,' + y + 'px,' + (-r) + 'px) rotateY(' + th + 'deg) translateZ(' + r + 'px)';
+          nodes[k].style.opacity = incoming
+            ? String(clamp(span(p, .04, .28), 0, 1))
+            : String(clamp(1 - span(p, .72, .96), 0, 1));
+        }
+      }
+      pose(s.A, false);
+      pose(s.B, true);
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.A.forEach(function (n) { n.style.opacity = '0'; });
+      s.B.forEach(function (n) { n.style.transform = 'none'; n.style.opacity = '1'; });
+    },
+  });
+
+  /* ============================================================ 6. Paper Unfold = */
+  /* The slogans are sheets of paper scored into six horizontal panels. The old sheet concertinas
+     shut and drops back; the new one opens out of its fold, panel after panel, with the valleys
+     shaded. Panel positions are integrated along the zigzag each frame, so the pack stays centred
+     however far it is folded. */
+  var PANELS = 6;
+
+  function foldPose(panels, h, phi, H, max) {
+    /* Walk the concertina: each panel advances h*cos(phi) down the page and h*sin(phi) in depth,
+       alternating direction. Returns per-panel centre offsets, then re-centres the whole pack. */
+    var y = 0, z = 0, ys = [], zs = [], k, c, d;
+    for (k = 0; k < panels.length; k++) {
+      var a = phi[k];
+      d = (k % 2 === 0) ? 1 : -1;
+      c = h * Math.cos(a);
+      var q = h * Math.sin(a) * d;
+      ys.push(y + c / 2); zs.push(z + q / 2);
+      y += c; z += q;
+    }
+    var zmin = Math.min.apply(null, zs), zmax = Math.max.apply(null, zs), zc = (zmin + zmax) / 2;
+    var pad = (H - y) / 2;
+    for (k = 0; k < panels.length; k++) {
+      d = (k % 2 === 0) ? 1 : -1;
+      var natural = panels[k]._top + panels[k]._h / 2;
+      panels[k].style.transform =
+        'translate3d(0,' + (ys[k] + pad - natural) + 'px,' + (zs[k] - zc) + 'px) ' +
+        'rotateX(' + (d * phi[k] / D2R) + 'deg)';
+      /* Lighting that also does the hiding. A closed pack is only ~30% of the block tall, so any
+         ink still showing on it is a squashed, unreadable smear — and with two sheets crossfading
+         through that beat it was two smears on top of each other. Ramp the shading with the CUBE of
+         how far the pack is folded: barely there while the sheet is still readable, near-total at
+         full fold, where the alternating white sheen and dark valley read as the banded edge of
+         folded paper. Nothing is legible there, so nothing is double-exposed. */
+      var ob = Math.pow(clamp(phi[k] / max, 0, 1), 3);
+      panels[k]._shade.style.opacity = String((d > 0 ? .10 : .86) * ob);
+      panels[k]._sheen.style.opacity = String((d > 0 ? .94 : 0) * ob);
+    }
+  }
+
+  FX.register({
+    id: 'depth-unfold',
+    name: 'Paper Unfold',
+    family: '3D',
+    blurb: 'The old line concertinas shut; the new one opens out of its folds, panel by panel.',
+    duration: 1500,
+    dwell: 4600,
+    theme: { bg: PAPER.bg, fg: PAPER.fg },
+    setup: function (stage, ctx) {
+      var sc = scene(stage, 1250);
+      /* measure both slogans with throwaway layers, then rebuild each as panels */
+      var mA = layer(sc.box, ctx.from), mB = layer(sc.box, ctx.to);
+      var H = equalize(sc.box, [mA.face, mB.face]);
+      sc.box.removeChild(mA.face); sc.box.removeChild(mB.face);
+
+      var h = Math.max(8, Math.round(H / PANELS));
+      H = h * PANELS;                       // integer panels: no hairline seams when flat
+      sc.box.style.height = H + 'px';
+
+      function sheet(s) {
+        var wrap = FX.el('div', null, {
+          position: 'absolute', left: '0', right: '0', top: '0', height: H + 'px',
+          transformStyle: 'preserve-3d', willChange: 'transform,opacity',
+        });
+        var panels = [];
+        for (var k = 0; k < PANELS; k++) {
+          var p = FX.el('div', null, {
+            position: 'absolute', left: '0', right: '0', top: (k * h) + 'px', height: h + 'px',
+            clipPath: 'inset(0)', background: PAPER.bg, transformOrigin: '50% 50%',
+            willChange: 'transform',
+          });
+          var line = FX.el('div', null, {
+            position: 'absolute', left: '0', right: '0', top: (-k * h) + 'px', height: H + 'px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          });
+          var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
+          fill(inner, s);
+          line.appendChild(inner);
+          p.appendChild(line);
+          p._shade = shade(p);
+          p._sheen = shade(p, PAPER.bg);
+          p._top = k * h; p._h = h;
+          wrap.appendChild(p);
+          panels.push(p);
+        }
+        sc.box.appendChild(wrap);
+        return { wrap: wrap, panels: panels };
+      }
+      var A = sheet(ctx.from), B = sheet(ctx.to);
+      stage._s = { A: A, B: B, h: h, H: H, phiA: [], phiB: [] };
+    },
+    frame: function (stage, t) {
+      var s = stage._s, k;
+      /* 88 degrees squashed the whole pack to a 3%-tall hairline, and the two sheets used to
+         cross-fade slowly THROUGH that hairline — so the middle of the transition was a grey line
+         carrying two different slogans printed on top of each other. Three changes: the pack never
+         folds past 62 degrees, so a closed pack is a visible banded slab of paper roughly half of
+         the block tall rather than a line; foldPose blacks the valleys out and whitens the peaks as
+         the fold deepens, so the closed pack carries no legible ink at all; and the handover is a
+         short crossfade that happens WHILE both sheets are folded. Either side of that beat exactly
+         one sheet is open and readable, and nothing is ever double-exposed. */
+      var MAX = 62 * D2R;
+
+      /* closing: a ripple runs down the old sheet, which then sinks away */
+      for (k = 0; k < PANELS; k++) {
+        var lead = (k / PANELS) * .08;
+        s.phiA[k] = MAX * E.inQuad(span(t, lead, lead + .24));
+      }
+      foldPose(s.A.panels, s.h, s.phiA, s.H, MAX);
+      var o = E.inOutCubic(span(t, .04, .36));
+      s.A.wrap.style.transform = 'translateZ(' + (-190 * o) + 'px) rotateX(' + (-9 * o) + 'deg)';
+      s.A.wrap.style.opacity = String(clamp(1 - span(t, .27, .33), 0, 1));
+
+      /* opening: the same ripple in reverse, arriving from behind */
+      for (k = 0; k < PANELS; k++) {
+        var lead2 = .30 + (k / PANELS) * .12;
+        s.phiB[k] = MAX * (1 - E.outCubic(span(t, lead2, lead2 + .44)));
+      }
+      foldPose(s.B.panels, s.h, s.phiB, s.H, MAX);
+      var i = E.outCubic(span(t, .28, 1));
+      s.B.wrap.style.transform = 'translateZ(' + (-180 * (1 - i)) + 'px) rotateX(' + (8 * (1 - i)) + 'deg)';
+      s.B.wrap.style.opacity = String(clamp(span(t, .27, .33), 0, 1));
+    },
+    rest: function (stage) {
+      var s = stage._s;
+      s.A.wrap.style.opacity = '0';
+      s.B.wrap.style.opacity = '1';
+      s.B.wrap.style.transform = 'none';
+      s.B.panels.forEach(function (p) {
+        p.style.transform = 'none'; p._shade.style.opacity = '0'; p._sheen.style.opacity = '0';
+      });
+    },
+  });
+})();
+
+/* --- effects/dissolve.js --- */
+/* Dissolve family — six ways for one line to stop existing and another to arrive.
+ *
+ * House rules (see engine.js): every effect is a PURE FUNCTION OF PROGRESS. No timers, no CSS
+ * animations, no wall clock. frame(stage, t) must paint the identical picture for the same
+ * (i, t) every single time, frame(...,0) is the FROM line at rest, frame(...,1) the TO line.
+ *
+ *   dissolve-focus-pull   per-word depth of field; a rack focus through a crowd of words
+ *   dissolve-luminance    bright glyphs burn out first, new ones rise out of the black
+ *   dissolve-word-wash    word-by-word crossfade sweeping in reading order
+ *   dissolve-rack         whole-line defocus that refocuses PAST sharp and settles back
+ *   dissolve-develop      photographic print: grain, latent image, contrast comes up
+ *   dissolve-chromatic    CMY channels separate, drift, and snap back into registration
+ */
+(function () {
+  'use strict';
+
+  var FX = window.SloganFX, E = FX.ease, span = FX.span, lerp = FX.lerp, clamp = FX.clamp;
+  var NS = 'http://www.w3.org/2000/svg';
+  var UID = 0;
+
+  /* ------------------------------------------------------------------ tiny helpers */
+
+  /* Everything is authored against a 26px stage (the grid tile size) and scaled from there,
+     so blur radii and offsets stay proportional in the big focus-mode tile too. */
+  function unit(stage) {
+    var f = parseFloat(getComputedStyle(stage).fontSize);
+    return (f && isFinite(f) ? f : 26) / 26;
+  }
+
+  /* Deterministic pseudo-random from an index — never Math.random(), the lab must be seekable. */
+  function hash(i, s) {
+    var x = Math.sin(i * 127.1 + (s || 0) * 311.7 + 0.37) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  /* 0 -> 1 -> 0 over [0,1]; the shape of a flash, a bloom, an overshoot. */
+  function hump(x) { return Math.sin(Math.PI * clamp(x, 0, 1)); }
+
+  function mix(a, b, t) {
+    return 'rgb(' + Math.round(lerp(a[0], b[0], t)) + ',' +
+                    Math.round(lerp(a[1], b[1], t)) + ',' +
+                    Math.round(lerp(a[2], b[2], t)) + ')';
+  }
+
+  function wrapEl(extra) {
+    var css = {
+      position: 'relative', width: '100%', height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    };
+    if (extra) for (var k in extra) css[k] = extra[k];
+    return FX.el('div', 'fx-wrap', css);
+  }
+
+  /* Absolutely positioned so the two lines never influence each other's layout. Flex static
+     position keeps each one vertically centred whether it wraps to two lines or four. */
+  function lineEl() {
+    return FX.el('div', 'fx-line', {
+      position: 'absolute', left: '0', right: '0', textAlign: 'center',
+      willChange: 'transform,opacity,filter',
+    });
+  }
+
+  function gap(text) {
+    var sp = FX.el('span', null, { whiteSpace: 'pre' });
+    sp.textContent = text;
+    return sp;
+  }
+
+  /* light line / bold line, as one flat text block.
+     Two BLOCK spans, and deliberately no <br> between them: the engine forces a lone
+     .fx-light/.fx-bold pair to display:block so the effect matches its canonical two-line layer,
+     and a <br> sitting between two blocks opens an extra empty line box. That extra line is a
+     whole line-height of drift against the canon — the headline jumps apart at t->0 and snaps
+     back together at t->1. */
+  function fillPlain(node, s) {
+    var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+    var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+    node.appendChild(a); node.appendChild(b);
+    return [];
+  }
+
+  /* Same two block halves, but each one's text handed to a splitter. The split pieces live inside
+     an inline-block so the half can be measured and width-matched to the canon (see fitLine). */
+  function fillSplit(node, s, split) {
+    var out = [], fits = [];
+    var defs = [['fx-light', s.light], ['fx-bold', s.bold]];
+    for (var k = 0; k < 2; k++) {
+      var half = FX.el('span', defs[k][0], { display: 'block' });
+      var inner = FX.el('span', 'fx-fit', { display: 'inline-block' });
+      var made = split(defs[k][1]);
+      inner.appendChild(made.frag);
+      half.appendChild(inner);
+      node.appendChild(half);
+      out = out.concat(made.nodes);
+      fits.push({ half: half, inner: inner, text: defs[k][1] });
+    }
+    node._fits = fits;
+    return out;
+  }
+
+  /* ...split into inline-block words (wrapping stays word-safe) */
+  function fillWords(node, s) {
+    return fillSplit(node, s, function (txt) { return FX.words(txt); });
+  }
+
+  /* ...split per character, but grouped inside inline-block words so nothing breaks mid-word */
+  function fillChars(node, s) {
+    return fillSplit(node, s, function (txt) { return FX.charWords(txt); });
+  }
+
+  /* Cutting a line into word or character boxes throws away the kerning between the pieces, so the
+     split copy sets ~0.8% wider than the engine's canonical single-string line (~1.6% for a
+     per-character split). That is a visible spread at t->0 and t->1 — the headline breathes out as
+     the effect takes over and sucks back in when it hands back. Measure the unsplit string once at
+     setup and scale the split copy back onto exactly that width.
+     Pure geometry, measured once, so frame(t) stays a pure function of t. Skipped when the half
+     wraps (one horizontal scale is the wrong correction then) or when the ratio is implausible
+     (a font still loading). */
+  function fitLine(line) {
+    var fits = line._fits;
+    if (!fits) return;
+    for (var i = 0; i < fits.length; i++) {
+      var f = fits[i];
+      f.inner.style.transform = 'none';
+      var avail = f.half.getBoundingClientRect().width;
+      var ref = FX.el('span', null, {
+        position: 'absolute', left: '-9999px', top: '0',
+        visibility: 'hidden', whiteSpace: 'pre',
+      });
+      ref.textContent = f.text;
+      f.half.appendChild(ref);
+      var r = ref.getBoundingClientRect();
+      f.half.removeChild(ref);
+      var box = f.inner.getBoundingClientRect();
+      if (r.width < 1 || box.width < 1) continue;          // nothing to measure
+      if (r.width > avail + 0.5) continue;                  // canon wraps here too
+      if (box.height > r.height * 1.6) continue;            // the split copy wrapped
+      var k = r.width / box.width;
+      if (k > 0.9 && k < 1.1) f.inner.style.transform = 'scaleX(' + k.toFixed(5) + ')';
+    }
+  }
+
+  /* Two stacked layers, built by whichever filler is passed in. */
+  function build(stage, ctx, filler) {
+    stage.innerHTML = '';
+    var wrap = wrapEl();
+    var o = lineEl(), n = lineEl();
+    var ow = filler(o, ctx.from), nw = filler(n, ctx.to);
+    wrap.appendChild(o); wrap.appendChild(n);
+    stage.appendChild(wrap);
+    fitLine(o); fitLine(n);
+    stage._u = unit(stage);
+    return { wrap: wrap, out: o, in: n, outParts: ow, inParts: nw };
+  }
+
+  /* =================================================================== 1. Focus Pull
+     A rack focus through a crowd: every word sits at its own depth, so the old line falls out
+     of focus in a scattered wave (near words bloom big and soft first) while the new one comes
+     up out of the bokeh in a different scatter. Blur, scale and brightness move together the
+     way a real out-of-focus highlight does — it spreads AND it lifts. */
+  FX.register({
+    id: 'dissolve-focus-pull',
+    name: 'Focus Pull',
+    family: 'Dissolve',
+    blurb: 'Words sit at different depths; the lens racks from the old line to the new.',
+    duration: 1300,
+    setup: function (stage, ctx) { stage._L = build(stage, ctx, fillWords); },
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u, i, w, d, lead, p, f, q, soft;
+
+      for (i = 0; i < L.outParts.length; i++) {
+        w = L.outParts[i];
+        d = hash(i, 1);                                   // this word's depth
+        lead = 0.22 * d;
+        p = E.inQuad(span(t, lead, lead + 0.38));          // defocus
+        f = E.outCubic(span(t, lead + 0.10, lead + 0.44)); // fade trails the blur
+        w.style.filter = 'blur(' + (8 * u * p).toFixed(2) + 'px) brightness(' + (1 + 0.28 * p).toFixed(3) + ')';
+        w.style.opacity = (1 - f).toFixed(3);
+        w.style.transform = 'translateY(' + (-4 * u * p).toFixed(2) + 'px) scale(' + (1 + 0.10 * p).toFixed(4) + ')';
+      }
+
+      /* The incoming words sit at their own depths too, but the band is kept tight enough that no
+         word is still absent once the old line has gone: the deepest word starts at 0.40 and is
+         already carrying opacity while the shallowest is settling. A wider spread looked lovely on
+         paper and gave a mid-transition frame where half the words simply were not there yet. */
+      for (i = 0; i < L.inParts.length; i++) {
+        w = L.inParts[i];
+        d = hash(i, 2);
+        lead = 0.18 + 0.22 * d;
+        q = E.outCubic(span(t, lead, lead + 0.44));
+        soft = 1 - q;
+        w.style.filter = 'blur(' + (8 * u * soft).toFixed(2) + 'px) brightness(' + (1 + 0.32 * soft).toFixed(3) + ')';
+        w.style.opacity = E.outQuad(span(t, lead, lead + 0.28)).toFixed(3);
+        w.style.transform = 'translateY(' + (6 * u * soft).toFixed(2) + 'px) scale(' + (1 - 0.09 * soft).toFixed(4) + ')';
+      }
+    },
+    rest: function (stage) {
+      var L = stage._L, i;
+      for (i = 0; i < L.outParts.length; i++) { L.outParts[i].style.opacity = '0'; }
+      for (i = 0; i < L.inParts.length; i++) {
+        var w = L.inParts[i];
+        w.style.opacity = '1'; w.style.filter = 'none'; w.style.transform = 'none';
+      }
+    },
+  });
+
+  /* =================================================================== 2. Luminance Dissolve
+     A film dissolve keyed on brightness: the hottest glyphs blow out to white and leave first,
+     the shadows hold on longest. The incoming line does the reverse — it comes up out of the
+     black, darkest first, each character flashing once as it reaches full value.
+     Themed dark, because a luminance dissolve is only legible against black. */
+  var LU_FG = [244, 245, 247], LU_WHITE = [255, 255, 255], LU_DARK = [92, 96, 106];
+  FX.register({
+    id: 'dissolve-luminance',
+    name: 'Luminance Burn',
+    family: 'Dissolve',
+    blurb: 'Bright glyphs blow out and go first; the new line rises out of the shadows.',
+    duration: 1500,
+    dwell: 4200,
+    theme: { bg: '#0A0A0C', fg: '#F4F5F7', accent: '#7AB648' },
+    setup: function (stage, ctx) { stage._L = build(stage, ctx, fillChars); },
+    /* Two clocks per glyph, and the split is what keeps this legible.
+     *
+     * The BURN clock is wide open — 0.30 of spread — and it drives everything you actually read as
+     * luminance keying: which glyph blows out to white first, flares, softens, swells. The
+     * PRESENCE clock (plain opacity) is deliberately narrow, 0.10 of spread, so each line comes and
+     * goes as a body.
+     *
+     * Both on the wide clock is what this effect used to do, and it meant that around the middle
+     * each line was missing a random half of its characters at the same instant: two half-eaten
+     * strings on top of each other, which reads as nothing at all. Now the mid frame is an ordinary
+     * crossfade of two whole lines — you can read both — while the flashing still runs glyph by
+     * glyph across them. */
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u, i, c, lum, lead, go, p, g, q, qe, fl;
+
+      for (i = 0; i < L.outParts.length; i++) {
+        c = L.outParts[i];
+        lum = hash(i, 3);
+        lead = 0.30 * (1 - lum);                       // burn: the bright ones are already leaving
+        go = 0.18 + 0.06 * (1 - lum);                  // presence: the line leaves as a body
+        q = span(t, go, go + 0.26);
+        p = span(t, lead, lead + 0.32);
+        g = hump(p);
+        c.style.color = mix(LU_FG, LU_WHITE, E.outQuad(clamp(p * 1.6, 0, 1)));
+        c.style.textShadow = p <= 0 ? 'none'
+          : '0 0 ' + (17 * u * g).toFixed(1) + 'px rgba(255,255,255,' + (0.80 * g).toFixed(3) + '), ' +
+            '0 0 ' + (42 * u * g).toFixed(1) + 'px rgba(150,215,110,' + (0.28 * g).toFixed(3) + ')';
+        c.style.opacity = (1 - E.inQuad(q)).toFixed(3);
+        // blur rides the PRESENCE clock, not the burn clock: a glyph that is still at full opacity
+        // but already 6px soft is a hole in the line, which is what made the middle unreadable.
+        c.style.filter = 'blur(' + (2.2 * u * E.inQuad(q)).toFixed(2) + 'px)';
+        c.style.transform = 'scale(' + (1 + 0.07 * E.outQuad(p)).toFixed(4) + ')';
+      }
+
+      for (i = 0; i < L.inParts.length; i++) {
+        c = L.inParts[i];
+        lum = hash(i, 4);
+        lead = 0.30 + 0.32 * lum;                      // flash: the shadows come up first
+        go = 0.26 + 0.06 * lum;
+        q = span(t, go, go + 0.30);
+        qe = E.outCubic(q);
+        fl = hump(span(t, lead, lead + 0.30));
+        c.style.color = mix(LU_DARK, LU_FG, E.outQuad(clamp(q * 1.5, 0, 1)));
+        c.style.opacity = qe.toFixed(3);
+        c.style.textShadow = fl <= 0 ? 'none'
+          : '0 0 ' + (14 * u * fl).toFixed(1) + 'px rgba(186,240,140,' + (0.50 * fl).toFixed(3) + ')';
+        c.style.filter = 'blur(' + (3.2 * u * (1 - qe)).toFixed(2) + 'px)';
+        c.style.transform = 'scale(' + lerp(1.06, 1, qe).toFixed(4) + ')';
+      }
+    },
+    rest: function (stage) {
+      var L = stage._L, i, c;
+      for (i = 0; i < L.outParts.length; i++) L.outParts[i].style.opacity = '0';
+      for (i = 0; i < L.inParts.length; i++) {
+        c = L.inParts[i];
+        c.style.opacity = '1'; c.style.color = ''; c.style.textShadow = 'none';
+        c.style.filter = 'none'; c.style.transform = 'none';
+      }
+    },
+  });
+
+  /* =================================================================== 3. Word Wash
+     A crossfade that respects reading order: each word is swapped in place, left to right, the
+     old one sinking and softening a beat before the new one washes up under it. The incoming
+     word arrives slightly wide (scaleX) and contracts as it sharpens, like a wet edge drying. */
+  FX.register({
+    id: 'dissolve-word-wash',
+    name: 'Word Wash',
+    family: 'Dissolve',
+    blurb: 'Word by word, left to right: the old sinks away as the new washes up.',
+    duration: 1150,
+    setup: function (stage, ctx) { stage._L = build(stage, ctx, fillWords); },
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u, i, w, n, lead, p, q;
+
+      n = Math.max(1, L.outParts.length);
+      for (i = 0; i < L.outParts.length; i++) {
+        w = L.outParts[i];
+        lead = (i / n) * 0.42;
+        p = E.inOutQuad(span(t, lead, lead + 0.40));
+        w.style.opacity = (1 - p).toFixed(3);
+        w.style.filter = 'blur(' + (4.5 * u * p).toFixed(2) + 'px)';
+        w.style.transform = 'translateY(' + (-7 * u * p).toFixed(2) + 'px) scale(' + (1 - 0.05 * p).toFixed(4) + ')';
+      }
+
+      n = Math.max(1, L.inParts.length);
+      for (i = 0; i < L.inParts.length; i++) {
+        w = L.inParts[i];
+        lead = 0.18 + (i / n) * 0.42;
+        q = E.outQuint(span(t, lead, lead + 0.40));
+        w.style.opacity = E.outQuad(span(t, lead, lead + 0.26)).toFixed(3);
+        w.style.filter = 'blur(' + (5.5 * u * (1 - q)).toFixed(2) + 'px)';
+        w.style.transform =
+          'translateY(' + (11 * u * (1 - q)).toFixed(2) + 'px) ' +
+          'scale(' + (1 + 0.055 * (1 - q)).toFixed(4) + ', ' + (1 - 0.02 * (1 - q)).toFixed(4) + ')';
+      }
+    },
+    rest: function (stage) {
+      var L = stage._L, i;
+      for (i = 0; i < L.outParts.length; i++) L.outParts[i].style.opacity = '0';
+      for (i = 0; i < L.inParts.length; i++) {
+        var w = L.inParts[i];
+        w.style.opacity = '1'; w.style.filter = 'none'; w.style.transform = 'none';
+      }
+    },
+  });
+
+  /* =================================================================== 4. Rack Overshoot
+     One lens, one line, one continuous pull. The old line goes soft and washes out; the new one
+     comes up out of the haze and — this is the point — travels PAST correct focus into an
+     over-sharp, over-contrasty frame before easing back. The whole stage breathes a little,
+     the way a real lens changes magnification as it focuses. */
+  FX.register({
+    id: 'dissolve-rack',
+    name: 'Rack Overshoot',
+    family: 'Dissolve',
+    blurb: 'A single lens pull that refocuses past sharp, then relaxes into it.',
+    duration: 1200,
+    setup: function (stage, ctx) { stage._L = build(stage, ctx, fillPlain); },
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u;
+
+      /* The old line holds its density while it goes soft — a defocused line is still a line, and
+         fading it out at the same time as blurring it left the middle of the pull with almost no
+         ink on the stage at all. It only starts to leave once the new one is already coming up. */
+      var a = E.inOutQuad(span(t, 0, 0.52));
+      L.out.style.filter =
+        'blur(' + (7 * u * a).toFixed(2) + 'px) contrast(' + (1 - 0.42 * a).toFixed(3) + ') ' +
+        'brightness(' + (1 + 0.18 * a).toFixed(3) + ')';
+      L.out.style.opacity = (1 - E.inQuad(span(t, 0.22, 0.66))).toFixed(3);
+      L.out.style.transform = 'scale(' + (1 + 0.055 * a).toFixed(4) + ')';
+
+      var b = E.outQuart(span(t, 0.20, 0.86));
+      var s = hump(span(t, 0.66, 0.94));                // the overshoot past sharp
+      L.in.style.filter =
+        'blur(' + (9 * u * (1 - b)).toFixed(2) + 'px) ' +
+        'contrast(' + (lerp(0.72, 1, b) + 0.52 * s).toFixed(3) + ') ' +
+        'brightness(' + (lerp(1.16, 1, b) - 0.05 * s).toFixed(3) + ')';
+      L.in.style.opacity = E.outQuad(span(t, 0.20, 0.64)).toFixed(3);
+      L.in.style.textShadow = s <= 0 ? 'none' : '0 0 ' + (0.85 * u * s).toFixed(2) + 'px currentColor';
+      L.in.style.transform = 'scale(' + (lerp(0.955, 1, b) + 0.014 * s).toFixed(4) + ')';
+
+      L.wrap.style.transform = 'scale(' + (1 + 0.020 * hump(t)).toFixed(4) + ')';
+    },
+    rest: function (stage) {
+      var L = stage._L;
+      L.wrap.style.transform = 'none';
+      L.out.style.opacity = '0';
+      L.in.style.opacity = '1';
+      L.in.style.filter = 'none';
+      L.in.style.textShadow = 'none';
+      L.in.style.transform = 'none';
+    },
+  });
+
+  /* =================================================================== 5. Darkroom
+     A print coming up in the developer. The old line breaks apart into grain (an SVG turbulence
+     displacement whose amplitude is driven straight off t); the new one arrives as a flat,
+     low-contrast latent image buried in that same grain, and contrast, density and detail come
+     up together while the grain veil settles back out of sight. */
+  function dispFilter(id, seed) {
+    var svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('width', '0'); svg.setAttribute('height', '0');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.position = 'absolute'; svg.style.width = '0'; svg.style.height = '0';
+    svg.style.overflow = 'hidden';
+    var f = document.createElementNS(NS, 'filter');
+    f.setAttribute('id', id);
+    f.setAttribute('x', '-30%'); f.setAttribute('y', '-40%');
+    f.setAttribute('width', '160%'); f.setAttribute('height', '180%');
+    f.setAttribute('color-interpolation-filters', 'sRGB');
+    var turb = document.createElementNS(NS, 'feTurbulence');
+    turb.setAttribute('type', 'fractalNoise');
+    turb.setAttribute('baseFrequency', '0.62 0.82');
+    turb.setAttribute('numOctaves', '3');
+    turb.setAttribute('seed', String(seed));
+    turb.setAttribute('result', 'grain');
+    var disp = document.createElementNS(NS, 'feDisplacementMap');
+    disp.setAttribute('in', 'SourceGraphic');
+    disp.setAttribute('in2', 'grain');
+    disp.setAttribute('scale', '0');
+    disp.setAttribute('xChannelSelector', 'R');
+    disp.setAttribute('yChannelSelector', 'G');
+    f.appendChild(turb); f.appendChild(disp); svg.appendChild(f);
+    return { svg: svg, disp: disp };
+  }
+
+  var GRAIN_URI = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E\")";
+
+  FX.register({
+    id: 'dissolve-develop',
+    name: 'Darkroom',
+    family: 'Dissolve',
+    blurb: 'The old line breaks into grain; the new one develops up out of it.',
+    duration: 1600,
+    dwell: 4600,
+    theme: { bg: '#F5F1E8', fg: '#221E1A', accent: '#7AB648' },
+    setup: function (stage, ctx) {
+      var L = build(stage, ctx, fillPlain);
+      var ids = ['fxdev' + (++UID), 'fxdev' + (++UID)];
+      var fo = dispFilter(ids[0], 4), fi = dispFilter(ids[1], 11);
+      stage.appendChild(fo.svg); stage.appendChild(fi.svg);
+      L.dispOut = fo.disp; L.dispIn = fi.disp;
+      L.urlOut = 'url(#' + ids[0] + ')'; L.urlIn = 'url(#' + ids[1] + ')';
+      L.veil = FX.el('div', null, {
+        position: 'absolute', inset: '-10%', pointerEvents: 'none',
+        backgroundImage: GRAIN_URI, backgroundRepeat: 'repeat',
+        mixBlendMode: 'multiply', opacity: '0', willChange: 'opacity',
+      });
+      L.wrap.appendChild(L.veil);
+      stage._L = L;
+    },
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u;
+
+      /* outgoing: dries out, breaks into grain, gone */
+      var a = E.inQuad(span(t, 0, 0.58));
+      L.dispOut.setAttribute('scale', (17 * u * a).toFixed(2));
+      L.out.style.filter = L.urlOut + ' blur(' + (1.8 * u * a).toFixed(2) + 'px) ' +
+        'contrast(' + (1 - 0.55 * a).toFixed(3) + ') brightness(' + (1 + 0.16 * a).toFixed(3) + ')';
+      L.out.style.opacity = (1 - E.inOutQuad(span(t, 0.05, 0.62))).toFixed(3);
+
+      /* incoming: latent image first — flat, pale, still full of grain — then density comes up */
+      var b = E.outQuart(span(t, 0.26, 0.94));
+      var soft = 1 - b;
+      L.dispIn.setAttribute('scale', (19 * u * soft).toFixed(2));
+      L.in.style.filter = L.urlIn + ' blur(' + (1.4 * u * soft).toFixed(2) + 'px) ' +
+        'contrast(' + lerp(0.28, 1, E.outCubic(span(t, 0.40, 1))).toFixed(3) + ') ' +
+        'brightness(' + lerp(1.30, 1, E.outCubic(span(t, 0.36, 1))).toFixed(3) + ')';
+      L.in.style.opacity = E.outQuad(span(t, 0.26, 0.66)).toFixed(3);
+
+      /* the bath itself: grain strongest right where the image is weakest */
+      L.veil.style.opacity = (0.62 * hump(span(t, 0.02, 0.98))).toFixed(3);
+    },
+    rest: function (stage) {
+      var L = stage._L;
+      L.out.style.opacity = '0';
+      L.dispIn.setAttribute('scale', '0');
+      L.in.style.opacity = '1';
+      L.in.style.filter = 'none';
+      L.veil.style.opacity = '0';
+    },
+  });
+
+  /* =================================================================== 6. Chromatic
+     Cyan, magenta and yellow plates, multiplied together. In register they read as clean black
+     text; out of register you get the full print-shop misregistration — colour fringes ghosting
+     apart. The old line's plates fly apart and fade; the new line's converge from the opposite
+     directions, cross very slightly past zero, and settle. */
+  var CH_INK = [17, 17, 20];                          // the page's own ink, = theme.fg
+  var CH_INK_CSS = 'rgb(17,17,20)';
+  var CH_PAPER = [255, 255, 255];                     // multiply's identity: a blank plate
+  var PLATES = [
+    { rgb: [0, 229, 255], out: [-1.00, -0.34], in: [0.82, 0.62], sc: 0.994 },
+    { rgb: [255, 0, 212], out: [0.92, -0.52], in: [-0.90, 0.44], sc: 1.000 },
+    { rgb: [255, 232, 0], out: [0.10, 1.00], in: [0.04, -1.05], sc: 1.008 },
+  ];
+
+  FX.register({
+    id: 'dissolve-chromatic',
+    name: 'Chromatic Registration',
+    family: 'Dissolve',
+    blurb: 'CMY plates drift out of register, swap the line, and snap back to black.',
+    duration: 1250,
+    theme: { bg: '#FFFFFF', fg: '#111114' },
+    setup: function (stage, ctx) {
+      stage.innerHTML = '';
+      var wrap = wrapEl({ background: '#FFFFFF', isolation: 'isolate' });
+
+      function plates(s) {
+        var list = [];
+        for (var p = 0; p < PLATES.length; p++) {
+          var d = lineEl();
+          d.style.color = p < 2 ? 'rgb(255,255,255)' : CH_INK_CSS;
+          d.style.mixBlendMode = 'multiply';
+          fillPlain(d, s);
+          wrap.appendChild(d);
+          list.push(d);
+        }
+        return list;
+      }
+      var o = plates(ctx.from), n = plates(ctx.to);
+      stage.appendChild(wrap);
+      stage._u = unit(stage);
+      stage._L = { wrap: wrap, out: o, in: n };
+    },
+    frame: function (stage, t) {
+      var L = stage._L, u = stage._u, p, P, d, sep, sc, fade;
+
+      /* outgoing: plates slip apart, each fading as it goes.
+         A line in perfect register is ONE impression, not three. Three independently anti-aliased
+         glyphs never multiply back to a neutral edge, so holding all three plates inked while they
+         sit on top of each other gave the settled line a coloured rim (and, with neutral ink, a
+         visibly heavier one) that the canonical line does not have. So the press is inked in two
+         beats: the two colour plates lift off blank paper first — white is multiply's identity, so
+         they contribute nothing until they do — and only then does the key plate turn from the
+         page's ink to yellow. The composite is black through both beats; the reverse pair of beats
+         (r1, r2 below) puts the new line back down to a single ink impression. */
+      var a = E.inQuad(span(t, 0, 0.62));
+      var aFade = E.inOutQuad(span(t, 0.10, 0.60));
+      var s1 = span(t, 0.005, 0.06), s2 = span(t, 0.05, 0.12);
+      for (p = 0; p < 3; p++) {
+        P = PLATES[p]; d = L.out[p];
+        sep = 14 * u * a;
+        sc = lerp(1, P.sc, a * 2.2);
+        d.style.color = p < 2 ? mix(CH_PAPER, P.rgb, s1) : mix(CH_INK, P.rgb, s2);
+        d.style.transform =
+          'translate(' + (P.out[0] * sep).toFixed(2) + 'px,' + (P.out[1] * sep).toFixed(2) + 'px) ' +
+          'scale(' + sc.toFixed(4) + ')';
+        d.style.filter = 'blur(' + (2.6 * u * a).toFixed(2) + 'px)';
+        d.style.opacity = (1 - aFade).toFixed(3);
+      }
+
+      /* incoming: converge from the other side, cross a hair past register, settle */
+      /* The wobble has to be OVER before the engine takes the frame back: any separation left at
+         t=0.98 is a colour fringe that vanishes on the swap to canon. It lands by 0.94. */
+      var b = E.outExpo(span(t, 0.28, 0.90));
+      var over = hump(span(t, 0.66, 0.94)) * 0.09;      // the little cross-over wobble
+      fade = E.outQuad(span(t, 0.26, 0.62));
+      var r1 = span(t, 0.80, 0.89), r2 = span(t, 0.88, 0.97);   // key plate first, then the colours
+      for (p = 0; p < 3; p++) {
+        P = PLATES[p]; d = L.in[p];
+        sep = 17 * u * ((1 - b) - over);
+        sc = lerp(P.sc, 1, b);
+        d.style.color = p < 2 ? mix(P.rgb, CH_PAPER, r2) : mix(P.rgb, CH_INK, r1);
+        d.style.transform =
+          'translate(' + (P.in[0] * sep).toFixed(2) + 'px,' + (P.in[1] * sep).toFixed(2) + 'px) ' +
+          'scale(' + sc.toFixed(4) + ')';
+        d.style.filter = 'blur(' + (2.8 * u * Math.abs(1 - b)).toFixed(2) + 'px)';
+        d.style.opacity = fade.toFixed(3);
+      }
+    },
+    rest: function (stage) {
+      var L = stage._L, p;
+      for (p = 0; p < 3; p++) {
+        L.out[p].style.opacity = '0';
+        L.in[p].style.opacity = '1';
+        L.in[p].style.transform = 'none';
+        L.in[p].style.filter = 'none';
+      }
+    },
+  });
+})();
+
+/* --- effects/glitch.js --- */
+/* Glitch family — digital artefacts, kept on a short leash.
+ *
+ * Six effects, all PURE FUNCTIONS OF PROGRESS: no timers, no CSS animations, no Math.random,
+ * no wall clock. Every "random" quantity comes from hash(a,b), and every stepped, jumpy
+ * quantity comes from quantising t itself, so frame(i, t) draws the identical picture forever.
+ *
+ *   glitch-rgb        the line separates into R/G/B passes that change over out of step
+ *   glitch-tear       horizontal bands slip sideways and snap back, handing over as they go
+ *   glitch-lock       the picture loses vertical hold, rolls two frames, holds, and locks
+ *   glitch-mosh       macroblocks drift off their motion vectors and update one region at a time
+ *   glitch-crt        the line collapses to a lit scanline and blooms back out as the new one
+ *   glitch-blocks     the line coarsens into DCT blocks, re-quantises, and sharpens into the new one
+ *
+ * THE HOUSE RULE HERE IS: NO DEAD FRAMES. Glitch effects fail by going to noise. At every t the
+ * stage holds either legible text, or text plainly in the middle of becoming other text, or —
+ * for one of the six, for a couple of frames — a deliberate lit scanline that is itself the
+ * picture. Amplitudes are therefore deliberately small, and wherever two lines are on stage at
+ * once they are separated (in colour, in a band, in a block, or vertically) rather than
+ * superimposed, because two texts printed over each other is exactly the unreadable smear the
+ * rule is about. This is a premium product page: the artefacts read as a signal fault, not as
+ * a broken page.
+ */
+(function () {
+  'use strict';
+
+  var FX = window.SloganFX, E = FX.ease, span = FX.span, lerp = FX.lerp, clamp = FX.clamp;
+  var ACC = '#7AB648';                                     // Gearotons green
+
+  /* ------------------------------------------------------------------ helpers */
+
+  /* deterministic hash noise in [0,1) — never Math.random() */
+  function hash(a, b) {
+    var x = Math.sin((a + 1) * 127.1 + (b + 1) * 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  function shash(a, b) { return hash(a, b) * 2 - 1; }
+
+  /* smooth 0 -> 1 -> 0 over [0,1]; p shapes how flat it is at the ends */
+  function bump(t, p) {
+    var v = Math.sin(Math.PI * clamp(t, 0, 1));
+    return p === undefined ? v : Math.pow(v, p);
+  }
+
+  /* triangular window: 1 at c, 0 at c +- w. "this thing happens HERE and nowhere else" */
+  function near(t, c, w) { return clamp(1 - Math.abs(t - c) / w, 0, 1); }
+
+  /* quantise progress into n discrete frames — this is what makes a jitter look digital
+     rather than wobbly, and it stays a pure function of t. */
+  function stepq(t, n) { return Math.floor(clamp(t, 0, 0.9999) * n); }
+
+  function snap(v, q) { return Math.round(v / q) * q; }
+
+  /* A stage-filling container. `bg` paints an opaque floor so mix-blend-mode has something
+     defined to blend against, and `isolation` keeps that blending inside this box. */
+  function wrapper(stage, bg) {
+    stage.innerHTML = '';
+    var w = FX.el('div', 'gl-wrap', {
+      position: 'relative', width: '100%', height: '100%', overflow: 'hidden',
+      isolation: 'isolate',
+    });
+    if (bg) {
+      w.appendChild(FX.el('div', null, {
+        position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', background: bg,
+      }));
+    }
+    stage.appendChild(w);
+    return w;
+  }
+
+  /* One copy of a slogan, centred in whatever box `css` describes. Used both for full-stage
+     layers and for the little windows that bands and macroblocks look through. `_inner` is the
+     text itself, so a caller can move the window and the content independently. */
+  function face(s, css) {
+    var box = FX.el('div', 'gl-line', {
+      position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      willChange: 'transform, opacity',
+    });
+    if (css) for (var k in css) box.style[k] = css[k];
+    var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
+    /* Two BLOCK halves and no <br>. The engine forces .fx-light/.fx-bold siblings to block
+       after setup(); a <br> between two blocks then becomes an anonymous line box of its own,
+       so the layer drew THREE lines where the canon draws two — every transition opened and
+       closed with the headline jumping apart and back. Declaring block here also means the
+       geometry setup() measures (tear rows, block coverage) is the geometry that renders. */
+    var a = FX.el('span', 'fx-light', { display: 'block' }); a.textContent = s.light;
+    var b = FX.el('span', 'fx-bold', { display: 'block' }); b.textContent = s.bold;
+    inner.appendChild(a); inner.appendChild(b);
+    box.appendChild(inner);
+    box._inner = inner;
+    return box;
+  }
+  var FULL = { top: '0', left: '0', right: '0', bottom: '0' };
+
+  /* Window onto the full-stage line, offset so the text stays put while the window moves. */
+  function peep(s, x0, y0, W, H) {
+    return face(s, { left: (-x0) + 'px', top: (-y0) + 'px', width: W + 'px', height: H + 'px' });
+  }
+
+  function scanlines(w, pitch, alpha) {
+    var s = FX.el('div', null, {
+      position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', pointerEvents: 'none',
+      background: 'repeating-linear-gradient(180deg,'
+        + ' rgba(0,0,0,' + alpha + ') 0px, rgba(0,0,0,' + alpha + ') 1px,'
+        + ' rgba(0,0,0,0) 1px, rgba(0,0,0,0) ' + pitch + 'px)',
+      opacity: '0', mixBlendMode: 'multiply', willChange: 'opacity',
+    });
+    w.appendChild(s);
+    return s;
+  }
+
+  function size(stage, ctx) {
+    return {
+      W: Math.max(120, ctx.W || stage.clientWidth || 380),
+      H: Math.max(60, ctx.H || stage.clientHeight || 150),
+    };
+  }
+
+  /* =============================================================== 1. channel split ======
+   * Three coloured copies of the line, screen-blended, so perfectly registered they add back
+   * to white — that is the rest state. As they shear apart they change over ONE CHANNEL AT A
+   * TIME, red then green then blue, and the shear kicks widest at exactly that moment so the
+   * cut happens under cover of the split.
+   *
+   * The stagger is deliberately tight — 35 milliseconds end to end. A generous, readable
+   * stagger was the first thing tried and it is the wrong answer: for a fifth of a second you
+   * are looking at two different sentences printed on top of each other in the same place,
+   * which is precisely the unreadable smear this family must not produce. Two frames of
+   * channel disagreement is what a real desync looks like anyway. A plain white copy
+   * crossfades in at the very ends so the resting frames are clean rather than fringed by
+   * three-way antialiasing.
+   */
+  var CHAN = ['#FF3B30', '#2BFF8C', '#4C7DFF'];
+  var CHAN_DIR = [-1, 0.28, 1];
+  var CHAN_SWAP = [0.465, 0.482, 0.50];
+
+  FX.register({
+    id: 'glitch-rgb',
+    name: 'Channel Split',
+    family: 'Glitch',
+    blurb: 'Red, green and blue passes shear apart, change line out of step, and re-register.',
+    duration: 1150,
+    dwell: 4300,
+    theme: { bg: '#0B0C0E', fg: '#F5F6F8' },
+    setup: function (stage, ctx) {
+      var w = wrapper(stage, '#0B0C0E');
+      var G = { ch: [] };
+      G.baseA = face(ctx.from, FULL); w.appendChild(G.baseA);
+      G.baseB = face(ctx.to, FULL); w.appendChild(G.baseB);
+      for (var k = 0; k < 3; k++) {
+        var host = FX.el('div', null, {
+          position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
+          mixBlendMode: 'screen', color: CHAN[k], willChange: 'transform, opacity',
+        });
+        var a = face(ctx.from, FULL), b = face(ctx.to, FULL);
+        host.appendChild(a); host.appendChild(b);
+        w.appendChild(host);
+        G.ch.push({ host: host, a: a, b: b });
+      }
+      G.sl = scanlines(w, 3, 0.45);
+      stage._g = G;
+    },
+    frame: function (stage, t) {
+      var G = stage._g;
+      var env = bump(t, 0.7);
+      /* The clean white copy owns the first and last few hundredths outright. The old gate
+         (env * 3.4) was already at half strength by t = 0.02, so the very first frame after
+         the canon showed a dimmed, three-way-fringed headline — a visible snap in brightness
+         and in registration at both ends. Ramp it as a window on t instead. */
+      var gate = Math.min(span(t, 0.03, 0.13), span(1 - t, 0.03, 0.13));
+      var s = stepq(t, 11);
+      var amp = 0.55 + 0.45 * hash(s, 3);         // the shear jumps between frames, digital
+      var kick = 1 + 1.2 * near(t, 0.483, 0.10);  // widest exactly where the lines change over
+      for (var k = 0; k < 3; k++) {
+        var c = G.ch[k];
+        var dx = (CHAN_DIR[k] * 9 + shash(k, s) * 4) * env * amp * kick;
+        var dy = shash(k + 5, s) * 1.5 * env * amp;
+        c.host.style.transform = 'translate(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px)';
+        // each channel dips as it flips, so the cut reads as a flicker rather than a pop
+        c.host.style.opacity = String(gate * (1 - 0.45 * near(t, CHAN_SWAP[k], 0.035)));
+
+        var nw = t >= CHAN_SWAP[k];
+        c.a.style.opacity = nw ? '0' : '1';
+        c.b.style.opacity = nw ? '1' : '0';
+      }
+      G.baseA.style.opacity = String(t < 0.5 ? 1 - gate : 0);
+      G.baseB.style.opacity = String(t < 0.5 ? 0 : 1 - gate);
+      G.sl.style.opacity = String(env * 0.4);
+    },
+    rest: function (stage) {
+      var G = stage._g;
+      G.baseA.style.opacity = '0';
+      G.baseB.style.opacity = '1';
+      G.ch.forEach(function (c) {
+        c.host.style.opacity = '0';
+        c.host.style.transform = 'none';
+        c.a.style.opacity = '0';
+        c.b.style.opacity = '1';
+      });
+      G.sl.style.opacity = '0';
+    },
+  });
+
+  /* =================================================================== 2. scanline tear ==
+   * The picture is cut into thin bands, each a window onto its own full copy of the line, so
+   * an undisturbed stack is seamless. Two amplitudes are at work:
+   *
+   *   - a couple of pixels of per-band jitter, all the way through, which is the texture of a
+   *     signal that has stopped being sure of itself;
+   *   - three big tears, where whole SLABS of the picture slide apart and snap back.
+   *
+   * Where the tears sit is the whole game. The first version cut wherever the band grid fell
+   * and slid the halves apart, which chops every glyph through the waist and leaves a frame
+   * that is unreadable in the plain sense of the word — the exact hole this family must not
+   * produce. So setup() MEASURES the two lines and puts the tears in the whitespace: above
+   * the light line, in the gap between the lines, and below the bold line. A tear then slides
+   * whole, intact lines of type against each other, which is both more legible and more like
+   * real tearing than shredded glyphs ever were.
+   *
+   * The handover rides the middle tear: each slab swaps text within a few hundredths of t
+   * around 0.5, so for a beat the top line is the new slogan and the bottom line is still the
+   * old one. Both are fully legible; nothing is ever superimposed.
+   */
+  var TEAR_SWAP = [0.474, 0.482, 0.512, 0.520];      // per slab: top gap, line 1, line 2, foot
+  var TEAR_D0 = [-0.55, -1, 1, 0.55];                // the big changeover tear
+  var TEAR_D1 = [0.70, 0.90, -0.60, -0.90];          // a smaller one before it
+  var TEAR_D2 = [-0.80, 0.65, -0.95, 0.70];          // and one after
+  FX.register({
+    id: 'glitch-tear',
+    name: 'Scanline Tear',
+    family: 'Glitch',
+    blurb: 'The picture tears along the gaps between the lines, slides, and snaps back.',
+    duration: 1050,
+    dwell: 4200,
+    theme: { bg: '#FBFBF9', fg: '#16171A' },
+    setup: function (stage, ctx) {
+      var d = size(stage, ctx);
+      var w = wrapper(stage, '#FBFBF9');
+
+      /* measure where the type actually is — font, wrapping and stage height all move it */
+      var probe = face(ctx.from, FULL);
+      probe.style.visibility = 'hidden';
+      w.appendChild(probe);
+      var base = w.getBoundingClientRect();
+      var H = Math.max(40, Math.round(base.height || d.H));
+      var rl = probe._inner.firstChild.getBoundingClientRect();
+      var rb = probe._inner.lastChild.getBoundingClientRect();
+      w.removeChild(probe);
+
+      function row(y) { return clamp(Math.round(y), 4, H - 4); }
+      var cuts = [
+        row(rl.top - base.top - 5),                                  // above the light line
+        row(((rl.bottom - base.top) + (rb.top - base.top)) / 2),     // between the two lines
+        row(rb.bottom - base.top + 5),                               // below the bold line
+      ];
+
+      /* band grid, with the three tear rows forced to be band boundaries so no band ever
+         straddles a cut and gets dragged in two directions at once */
+      var n = clamp(Math.round(H / 14), 8, 30);
+      var edges = [];
+      for (var k = 0; k <= n; k++) edges.push(Math.round(k * H / n));
+      edges = edges.concat(cuts).sort(function (p, q) { return p - q; });
+
+      stage._b = [];
+      for (var e = 1; e < edges.length; e++) {
+        var y0 = edges[e - 1], y1 = edges[e];
+        if (y1 - y0 < 2) continue;
+        var band = FX.el('div', null, {
+          position: 'absolute', left: '0', right: '0',
+          top: y0 + 'px', height: (y1 - y0) + 'px', overflow: 'hidden',
+          willChange: 'transform',
+        });
+        var fa = face(ctx.from, { left: '0', right: '0', top: (-y0) + 'px', height: H + 'px' });
+        var fb = face(ctx.to, { left: '0', right: '0', top: (-y0) + 'px', height: H + 'px' });
+        var isRow = cuts.indexOf(y0) >= 0;
+        var seam = FX.el('div', null, {
+          position: 'absolute', left: '9%', right: '9%', top: '0', height: '1px',
+          background: ACC, opacity: '0', pointerEvents: 'none',
+        });
+        band.appendChild(fa); band.appendChild(fb);
+        if (isRow) band.appendChild(seam);
+        w.appendChild(band);
+        var mid = (y0 + y1) / 2;
+        stage._b.push({
+          el: band, a: fa, b: fb, seam: isRow ? seam : null,
+          slab: (mid > cuts[0] ? 1 : 0) + (mid > cuts[1] ? 1 : 0) + (mid > cuts[2] ? 1 : 0),
+          k: stage._b.length,
+        });
+      }
+      stage._reach = clamp(d.W * 0.028, 13, 34);
+      stage._sl = scanlines(w, 3, 0.16);
+    },
+    frame: function (stage, t) {
+      var B = stage._b, n = B.length;
+      var reach = stage._reach;
+      var ends = Math.min(span(t, 0, 0.05), span(1 - t, 0, 0.06));   // pristine at both rests
+      var s = stepq(t, 12);
+
+      // three tear events; each slides the four slabs by its own set of directions
+      var e0 = Math.pow(near(t, 0.50, 0.11), 0.55);
+      var e1 = Math.pow(near(t, 0.22, 0.07), 0.55) * 0.38;
+      var e2 = Math.pow(near(t, 0.78, 0.07), 0.55) * 0.33;
+
+      for (var i = 0; i < n; i++) {
+        var b = B[i], sl = b.slab;
+        var big = (TEAR_D0[sl] * e0 + TEAR_D1[sl] * e1 + TEAR_D2[sl] * e2) * reach;
+        /* A few pixels of jitter, but CORRELATED down the stack rather than independent per
+           band: neighbouring bands take almost the same offset, so a glyph shears like a
+           picture on a wobbly signal instead of being minced into unrelated slivers. The
+           quantised frame counter `s` is what keeps it digital. */
+        var micro = Math.sin(b.k * 0.62 + s * 2.3) * 3.4 * ends;
+        b.el.style.transform = 'translateX(' + snap(big + micro, 2) + 'px)';
+        var nw = t >= TEAR_SWAP[sl];
+        b.a.style.opacity = nw ? '0' : '1';
+        b.b.style.opacity = nw ? '1' : '0';
+        if (b.seam) b.seam.style.opacity = String(clamp(Math.abs(big) / (reach * 0.5), 0, 1) * 0.55);
+      }
+      stage._sl.style.opacity = String(ends * bump(t, 0.6) * 0.35);
+    },
+    rest: function (stage) {
+      stage._b.forEach(function (b) {
+        b.el.style.transform = 'none';
+        b.a.style.opacity = '0'; b.b.style.opacity = '1';
+        if (b.seam) b.seam.style.opacity = '0';
+      });
+      stage._sl.style.opacity = '0';
+    },
+  });
+
+  /* ==================================================================== 3. signal lock ===
+   * Vertical hold, lost and regained. Four stage-height frames are stacked in one column —
+   * old, old, new, new — and the column rolls up through them: two frames in one burst, a
+   * held beat on the new line so there is always a clean readable frame in the middle of the
+   * transition, then one last slip that decelerates into the lock. Lit tear bars sit at every
+   * frame join and are faded by how far the roll is from a whole frame, so they blaze while
+   * the picture is slipping and are invisible the instant it is steady — including at t=0 and
+   * t=1, where a bar parked on the stage edge would otherwise read as a stray rule.
+   */
+  FX.register({
+    id: 'glitch-lock',
+    name: 'Signal Lock',
+    family: 'Glitch',
+    blurb: 'The picture loses vertical hold, rolls, holds a beat, and locks on the new line.',
+    duration: 1500,
+    dwell: 4400,
+    theme: { bg: '#0A0B0D', fg: '#EFF1F3' },
+    setup: function (stage, ctx) {
+      var d = size(stage, ctx);
+      var w = wrapper(stage, '#0A0B0D');
+      var col = FX.el('div', null, {
+        position: 'absolute', left: '0', right: '0', top: '0', height: (4 * d.H) + 'px',
+        willChange: 'transform',
+      });
+      var seams = [];
+      for (var j = 0; j < 4; j++) {
+        col.appendChild(face(j < 2 ? ctx.from : ctx.to, {
+          left: '0', right: '0', top: (j * d.H) + 'px', height: d.H + 'px',
+        }));
+        if (j > 0) {
+          var bar = FX.el('div', null, {
+            position: 'absolute', left: '0', right: '0',
+            top: (j * d.H - 1) + 'px', height: '3px', opacity: '0',
+            background: 'linear-gradient(180deg, rgba(122,182,72,.15), #CFEFA6 45%, rgba(122,182,72,.15))',
+            boxShadow: '0 0 14px rgba(122,182,72,.7)', willChange: 'opacity',
+          });
+          col.appendChild(bar);
+          seams.push(bar);
+        }
+      }
+      w.appendChild(col);
+      stage._g = { col: col, seams: seams, H: d.H, sl: scanlines(w, 3, 0.45) };
+    },
+    frame: function (stage, t) {
+      var G = stage._g, H = G.H;
+      /* Three shoves with a held beat after each, the last one decelerating into the lock.
+         The holds are not decoration: a picture caught halfway between two frames is the one
+         state where the stage is mostly empty, so the roll spends as little time there as it
+         can and parks on whole, readable frames in between. */
+      var pos = E.inOutCubic(span(t, 0.08, 0.24))
+              + E.inOutCubic(span(t, 0.32, 0.46))
+              + E.outCubic(span(t, 0.60, 0.92));
+
+      var envJ = Math.min(span(t, 0, 0.05), span(1 - t, 0, 0.10));
+      var s = stepq(t, 18);
+      var jy = shash(1, s) * 0.04 * H * envJ;
+      var jx = snap(shash(2, s) * 5 * envJ, 2);
+      var sx = 1 + (hash(3, s) > 0.72 ? 0.02 : 0) * envJ;
+
+      G.col.style.transform =
+        'translate(' + jx + 'px,' + (-pos * H + jy).toFixed(2) + 'px) scaleX(' + sx.toFixed(4) + ')';
+
+      var slip = clamp(Math.abs(pos - Math.round(pos)) * 5, 0, 1);
+      for (var i = 0; i < G.seams.length; i++) G.seams[i].style.opacity = String(slip);
+      G.sl.style.opacity = String(envJ * 0.4);
+    },
+    rest: function (stage) {
+      var G = stage._g;
+      G.col.style.transform = 'translateY(' + (-3 * G.H) + 'px)';
+      G.seams.forEach(function (b) { b.style.opacity = '0'; });
+      G.sl.style.opacity = '0';
+    },
+  });
+
+  /* ======================================================================= 4. datamosh ===
+   * Every macroblock is a window onto its own copy of the line, so an untouched grid is a
+   * perfect picture. Each block updates at its own moment, sweeping roughly left to right,
+   * and drifts a few pixels off its motion vector as it does — old pixels persisting beside
+   * new ones is exactly what a dropped keyframe looks like. A fifth of the blocks are stuck
+   * and update late. Nothing is ever empty: every block always holds one line or the other,
+   * so a mid-transition frame is a mosaic of two readable texts rather than a hole.
+   */
+  FX.register({
+    id: 'glitch-mosh',
+    name: 'Datamosh',
+    family: 'Glitch',
+    blurb: 'Macroblocks drift off their motion vectors and update region by region.',
+    duration: 1200,
+    dwell: 4300,
+    theme: { bg: '#F2F2EF', fg: '#191A1D' },
+    setup: function (stage, ctx) {
+      var d = size(stage, ctx);
+      var w = wrapper(stage, '#F2F2EF');
+      var cols = clamp(Math.round(d.W / 68), 5, 13);
+      var rows = clamp(Math.round(d.H / 42), 3, 8);
+      stage._m = [];
+      for (var r = 0; r < rows; r++) {
+        for (var c = 0; c < cols; c++) {
+          var x0 = Math.round(c * d.W / cols), x1 = Math.round((c + 1) * d.W / cols);
+          var y0 = Math.round(r * d.H / rows), y1 = Math.round((r + 1) * d.H / rows);
+          var blk = FX.el('div', null, {
+            position: 'absolute', left: x0 + 'px', top: y0 + 'px',
+            width: (x1 - x0) + 'px', height: (y1 - y0) + 'px',
+            overflow: 'hidden', willChange: 'transform',
+          });
+          var fa = peep(ctx.from, x0, y0, d.W, d.H);
+          var fb = peep(ctx.to, x0, y0, d.W, d.H);
+          blk.appendChild(fa); blk.appendChild(fb);
+          w.appendChild(blk);
+          var id = r * cols + c;
+          var f = (c / Math.max(1, cols - 1)) * 0.62
+                + (r / Math.max(1, rows - 1)) * 0.22
+                + hash(id, 1) * 0.16;
+          var sw = 0.22 + f * 0.42;
+          if (hash(id, 7) > 0.82) sw = 0.68 + hash(id, 8) * 0.10;   // stuck blocks
+          stage._m.push({
+            el: blk, a: fa, b: fb, sw: sw,
+            vx: shash(id, 2), vy: shash(id, 3) * 0.35,
+          });
+        }
+      }
+    },
+    frame: function (stage, t) {
+      var M = stage._m;
+      for (var i = 0; i < M.length; i++) {
+        var m = M[i];
+        var v = Math.pow(near(t, m.sw, 0.2), 0.7);        // drift only around its own update
+        m.el.style.transform = v > 0
+          ? 'translate(' + snap(m.vx * 13 * v, 3) + 'px,' + snap(m.vy * 13 * v, 3) + 'px)'
+          : 'none';
+        var nw = t >= m.sw;
+        m.a.style.opacity = nw ? '0' : '1';
+        m.b.style.opacity = nw ? '1' : '0';
+      }
+    },
+    rest: function (stage) {
+      stage._m.forEach(function (m) {
+        m.el.style.transform = 'none';
+        m.a.style.opacity = '0'; m.b.style.opacity = '1';
+      });
+    },
+  });
+
+  /* ============================================================================ 5. CRT ===
+   * Power cycle. The old line is squeezed down to a lit scanline and the new one blooms back
+   * out of it, overshooting once before it settles. The short window where no text is on
+   * stage is not empty: it is the beam itself, full width, blown out and glowing, which is
+   * the one place in this family where covering the text completely is the point. The beam is
+   * gated tightly around the changeover so the frames on either side still hold a squashed
+   * but readable line, and the phosphor brightness decays as the picture re-forms.
+   */
+  FX.register({
+    id: 'glitch-crt',
+    name: 'CRT Collapse',
+    family: 'Glitch',
+    blurb: 'The line collapses to a lit scanline and blooms back out as the next one.',
+    duration: 1250,
+    dwell: 4400,
+    theme: { bg: '#07080A', fg: '#EDEFF2' },
+    setup: function (stage, ctx) {
+      var w = wrapper(stage, '#07080A');
+      var a = face(ctx.from, FULL), b = face(ctx.to, FULL);
+      a._inner.style.willChange = b._inner.style.willChange = 'transform, filter';
+      w.appendChild(a); w.appendChild(b);
+      var glow = FX.el('div', null, {
+        position: 'absolute', top: '0', left: '0', right: '0', bottom: '0', pointerEvents: 'none',
+        background: 'radial-gradient(110% 22% at 50% 50%, rgba(190,228,255,.30), rgba(0,0,0,0) 70%)',
+        opacity: '0', willChange: 'opacity',
+      });
+      var beam = FX.el('div', null, {
+        position: 'absolute', left: '-3%', right: '-3%', top: '50%', height: '3px',
+        marginTop: '-1.5px', borderRadius: '2px',
+        background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.4) 9%,'
+          + ' #FFFFFF 34%, #FFFFFF 66%, rgba(255,255,255,.4) 91%, rgba(255,255,255,0) 100%)',
+        boxShadow: '0 0 16px rgba(206,239,166,.8), 0 0 44px rgba(122,182,72,.35)',
+        opacity: '0', pointerEvents: 'none', willChange: 'transform, opacity',
+      });
+      w.appendChild(glow); w.appendChild(beam);
+      stage._g = { a: a, b: b, beam: beam, glow: glow, sl: scanlines(w, 3, 0.5) };
+    },
+    frame: function (stage, t) {
+      var G = stage._g;
+
+      var o = E.inCubic(span(t, 0.06, 0.34));                 // old line collapsing
+      G.a.style.opacity = String(1 - span(t, 0.26, 0.34));
+      G.a._inner.style.transform =
+        'scale(' + (1 + 0.14 * o).toFixed(3) + ',' + (1 - 0.99 * o).toFixed(4) + ')';
+      G.a._inner.style.filter = 'brightness(' + (1 + 2.2 * o).toFixed(2) + ')'
+        + ' blur(' + (0.8 * o).toFixed(2) + 'px)';
+
+      var n = E.outBack(span(t, 0.36, 0.90));                 // new line blooming back
+      G.b.style.opacity = String(span(t, 0.36, 0.42));
+      G.b._inner.style.transform =
+        'scale(' + (1 + 0.12 * (1 - n)).toFixed(3) + ',' + (0.02 + 0.98 * n).toFixed(4) + ')';
+      var hot = 1 - E.outCubic(span(t, 0.36, 0.82));
+      G.b._inner.style.filter = 'brightness(' + (1 + 1.7 * hot).toFixed(2) + ')'
+        + ' blur(' + (1 * hot).toFixed(2) + 'px)';
+
+      var beam = Math.pow(near(t, 0.36, 0.17), 0.65);
+      G.beam.style.opacity = String(beam);
+      G.beam.style.transform = 'scaleY(' + (0.5 + 1.6 * beam).toFixed(3) + ')';
+      G.glow.style.opacity = String(beam * 0.85);
+      G.sl.style.opacity = String(bump(t, 0.7) * 0.35);
+    },
+    rest: function (stage) {
+      var G = stage._g;
+      G.a.style.opacity = '0';
+      G.b.style.opacity = '1';
+      G.b._inner.style.transform = 'none';
+      G.b._inner.style.filter = 'none';
+      G.beam.style.opacity = '0';
+      G.glow.style.opacity = '0';
+      G.sl.style.opacity = '0';
+    },
+  });
+
+  /* ================================================================== 6. DCT blocking ====
+   * A progressive-JPEG teardown and rebuild, measured for real. setup() rasterises both lines
+   * once to an offscreen canvas — same font, same measured glyph positions as the live DOM —
+   * and integrates the coverage into three block pyramids, coarse, medium and fine, so every
+   * cell knows how much ink the old line puts in it and how much the new one does.
+   *
+   * Measuring real ink matters. Using each character's layout box instead turns any word into
+   * one solid bar, and the whole effect collapses into featureless grey slabs — an unreadable
+   * mid-transition, which is the one thing this family is not allowed to produce. With true
+   * coverage the counters, the gaps between words and the descenders all survive quantisation,
+   * so even the coarsest frame is recognisably a line of type.
+   *
+   * frame() then walks a single "detail" scalar from sharp text down to coarse blocks and back
+   * up, crossfading the pyramid levels, while a separate morph slider lerps every cell from the
+   * old coverage to the new one. Alphas are posterised, because banding is what makes it read
+   * as quantisation rather than as a blur.
+   */
+  FX.register({
+    id: 'glitch-blocks',
+    name: 'Compression Bloom',
+    family: 'Glitch',
+    blurb: 'The line coarsens into DCT blocks, re-quantises, and sharpens back as the new one.',
+    duration: 1400,
+    dwell: 4500,
+    theme: { bg: '#FAFAF7', fg: '#17181B' },
+    setup: function (stage, ctx) {
+      var d = size(stage, ctx);
+      var w = wrapper(stage, '#FAFAF7');
+
+      /* the two sharp lines, built per character so we can measure real glyph positions;
+         charWords keeps each word an inline-block, so nothing ever breaks mid-word */
+      function sharp(s) {
+        var box = FX.el('div', 'gl-line', {
+          position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          willChange: 'opacity, filter',
+        });
+        var inner = FX.el('div', null, { width: '100%', textAlign: 'center' });
+        // block halves, no <br> — see face(): the raster below measures these boxes, so the
+        // layout it samples has to be the final one, not a pre-enforcement one
+        var lt = FX.el('span', 'fx-light', { display: 'block' }), ca = FX.charWords(s.light);
+        lt.appendChild(ca.frag);
+        var bd = FX.el('span', 'fx-bold', { display: 'block' }), cb = FX.charWords(s.bold);
+        bd.appendChild(cb.frag);
+        inner.appendChild(lt); inner.appendChild(bd);
+        box.appendChild(inner); w.appendChild(box);
+        return { box: box, groups: [{ host: lt, nodes: ca.nodes }, { host: bd, nodes: cb.nodes }] };
+      }
+      var A = sharp(ctx.from), B = sharp(ctx.to);
+
+      var base = w.getBoundingClientRect();
+      var Wp = Math.max(16, Math.round(base.width || d.W));
+      var Hp = Math.max(16, Math.round(base.height || d.H));
+      var SC = 0.5;                                          // blocks are coarse; half res is plenty
+      var cvW = Math.max(8, Math.round(Wp * SC)), cvH = Math.max(8, Math.round(Hp * SC));
+
+      /* draw one line into an offscreen canvas at its real on-screen glyph positions */
+      function raster(groups) {
+        var cv = document.createElement('canvas');
+        cv.width = cvW; cv.height = cvH;
+        var g = cv.getContext('2d');
+        if (!g) return null;
+        g.textBaseline = 'top';
+        g.fillStyle = '#000';
+        for (var gi = 0; gi < groups.length; gi++) {
+          var grp = groups[gi];
+          var cs = window.getComputedStyle(grp.host);
+          var fs = parseFloat(cs.fontSize) || 26;
+          g.font = (cs.fontStyle || 'normal') + ' ' + (cs.fontWeight || '400') + ' '
+                 + (fs * SC) + 'px ' + cs.fontFamily;
+          for (var i = 0; i < grp.nodes.length; i++) {
+            var n = grp.nodes[i];
+            if (!n.textContent || !n.textContent.trim()) continue;
+            var r = n.getBoundingClientRect();
+            if (!r.width) continue;
+            // the span is a line box; the em box sits inside it with half-leading above
+            g.fillText(n.textContent,
+              (r.left - base.left) * SC,
+              (r.top - base.top + (r.height - fs) / 2) * SC);
+          }
+        }
+        try { return g.getImageData(0, 0, cvW, cvH).data; } catch (e) { return null; }
+      }
+      var pxA = raster(A.groups), pxB = raster(B.groups);
+
+      function cover(px, cols, rows) {
+        var cov = [], cnt = [], i;
+        for (i = 0; i < cols * rows; i++) { cov.push(0); cnt.push(0); }
+        if (!px) return cov;
+        for (var y = 0; y < cvH; y++) {
+          var rr = Math.min(rows - 1, Math.floor(y / cvH * rows));
+          for (var x = 0; x < cvW; x++) {
+            var idx = rr * cols + Math.min(cols - 1, Math.floor(x / cvW * cols));
+            cov[idx] += px[(y * cvW + x) * 4 + 3];
+            cnt[idx]++;
+          }
+        }
+        for (i = 0; i < cov.length; i++) cov[i] = cnt[i] ? cov[i] / (cnt[i] * 255) : 0;
+        return cov;
+      }
+
+      var levels = [];
+      [Hp / 8, Hp / 13, Hp / 20].forEach(function (cell) {
+        var cols = Math.max(2, Math.round(Wp / cell)), rows = Math.max(2, Math.round(Hp / cell));
+        var cw = Wp / cols, ch = Hp / rows;
+        var ca = cover(pxA, cols, rows), cb = cover(pxB, cols, rows);
+        var host = FX.el('div', null, {
+          position: 'absolute', top: '0', left: '0', right: '0', bottom: '0',
+          opacity: '0', pointerEvents: 'none', willChange: 'opacity',
+        });
+        var cells = [];
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var i = r * cols + c;
+            if (ca[i] < 0.012 && cb[i] < 0.012) continue;     // blank paper stays blank
+            var box = FX.el('div', null, {
+              position: 'absolute',
+              left: (c * cw).toFixed(2) + 'px', top: (r * ch).toFixed(2) + 'px',
+              width: (cw + 0.5).toFixed(2) + 'px', height: (ch + 0.5).toFixed(2) + 'px',
+              background: 'currentColor', opacity: '0', willChange: 'opacity',
+            });
+            host.appendChild(box);
+            cells.push({ el: box, a: ca[i], b: cb[i], last: -1 });
+          }
+        }
+        w.appendChild(host);
+        levels.push({ host: host, cells: cells });
+      });
+
+      stage._g = { A: A.box, B: B.box, L: levels };
+    },
+    frame: function (stage, t) {
+      var G = stage._g;
+      // 3 = sharp text, 2 = fine blocks, 1 = medium, 0 = coarse. One trip down and back.
+      var D = lerp(3, 0.8, bump(t, 1.4));
+      var m = E.inOutCubic(span(t, 0.32, 0.68));            // old coverage -> new coverage
+      var txt = clamp(D - 2, 0, 1);
+
+      var early = t < 0.5;
+      G.A.style.opacity = String(early ? txt : 0);
+      G.B.style.opacity = String(early ? 0 : txt);
+      var soft = (1 - txt) * 1.6;
+      G.A.style.filter = early ? 'blur(' + soft.toFixed(2) + 'px)' : 'none';
+      G.B.style.filter = early ? 'none' : 'blur(' + soft.toFixed(2) + 'px)';
+
+      for (var j = 0; j < 3; j++) {
+        var lv = G.L[j];
+        var o = clamp(1 - Math.abs(D - j), 0, 1);
+        lv.host.style.opacity = String(o);
+        if (o <= 0) continue;                               // invisible: don't touch its cells
+        for (var i = 0; i < lv.cells.length; i++) {
+          var c = lv.cells[i];
+          var v = clamp(lerp(c.a, c.b, m) * 2.35, 0, 1);
+          v = Math.round(Math.pow(v, 0.8) * 6) / 6;         // quantised, so it bands
+          if (v !== c.last) { c.last = v; c.el.style.opacity = String(v); }
+        }
+      }
+    },
+    rest: function (stage) {
+      var G = stage._g;
+      G.A.style.opacity = '0';
+      G.B.style.opacity = '1';
+      G.A.style.filter = G.B.style.filter = 'none';
+      G.L.forEach(function (lv) { lv.host.style.opacity = '0'; });
+    },
+  });
+})();
+
+</script>
+
+<script>
+/* ---- slogan cycler on the shared engine -------------------------------------------------
+   Uses the canonical rest state, so every transition starts and ends on the same two-line
+   rendering of the text, and any effect can follow any other. The pool is whatever Tom kept. */
+(function () {
+  var POOL = ["glyph-scramble", "depth-cube", "depth-hinge", "depth-dolly", "dissolve-rack", "dissolve-chromatic", "glitch-tear"];
+  var SLOGANS = [["A motor, and everything", "that usually surrounds it."], ["The whole drive system.", "Inside one motor."], ["Four systems.", "One motor."], ["Motion control,", "fully integrated."], ["You wanted motion.", "Not a wiring project."], ["A motor that", "needs nothing else."], ["The whole motion system.", "One motor."], ["Everything that moves it,", "inside it."], ["Motion control.", "All in one."], ["Stepper, driver, controller, encoder.", "One part number."], ["Bolts in like a stepper.", "Runs like a full servo."], ["Four bolts. One cable.", "A complete servo system."], ["Servomotor:", "stepper, driver, controller and encoder in one."], ["No driver board. No encoder to mount.", "It's all inside."], ["Driver, controller and encoder", "are no longer your problem."]];
+  var stage = document.getElementById('slogan-stage');
+  if (!stage || !window.SloganFX) return;
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Lock the headline to the tallest slogan BEFORE mounting, so the page never jumps as it
+     cycles. Measured from the real h1 so the lock matches the live type exactly. */
+  function lock() {
+    var h1 = stage.parentNode, prev = stage.innerHTML, max = 0;
+    var probe = document.createElement('span');
+    probe.style.cssText = 'display:block;visibility:hidden;position:static';
+    stage.style.height = 'auto';
+    stage.appendChild(probe);
+    for (var i = 0; i < SLOGANS.length; i++) {
+      probe.innerHTML = '<span class="fx-light" style="display:block">' + SLOGANS[i][0] +
+                        '</span><span class="fx-bold" style="display:block">' + SLOGANS[i][1] + '</span>';
+      max = Math.max(max, probe.getBoundingClientRect().height);
+    }
+    stage.removeChild(probe);
+    stage.innerHTML = prev;
+    stage.style.height = Math.ceil(max) + 'px';
+  }
+
+  var pool = POOL.map(function (id) { return SloganFX.get(id); }).filter(Boolean);
+  if (!pool.length) pool = [SloganFX.all()[0]];
+
+  lock();
+  var player = SloganFX.mount(stage, pool, SLOGANS, { start: 0, pick: 'sequential' });
+  if (!reduce) player.play();
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) player.pause(); else if (!reduce) player.play();
+  });
+  stage.addEventListener('mouseenter', function () { player.pause(); });
+  stage.addEventListener('mouseleave', function () { if (!reduce) player.play(); });
+  var rt = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt);
+    rt = setTimeout(function () { lock(); }, 160);
+  });
+  window.__slogan = player;
+})();
+</script>
+
+<script>
+/* swap the nav back to the light palette once the dark hero has scrolled away */
+(function(){
+  var nav=document.querySelector('nav'), hero=document.querySelector('.hero-final');
+  if(!nav||!hero||!window.IntersectionObserver) return;
+  new IntersectionObserver(function(e){
+    nav.classList.toggle('past', !e[0].isIntersecting);
+  },{rootMargin:'-60px 0px 0px 0px'}).observe(hero);
+})();
+</script>
+</body>
+</html>
