@@ -115,8 +115,17 @@
      fold lines all key off this, so a 1-line and a 3-line slogan still meet on the same axis. */
   function equalize(box, faces) {
     var h = 0, i;
-    for (i = 0; i < faces.length; i++) h = Math.max(h, faces[i].offsetHeight);
-    h = Math.max(Math.round(h), 40);              // hidden tiles measure 0 — keep the maths sane
+    for (i = 0; i < faces.length; i++) {
+      var r = faces[i].getBoundingClientRect();       // fractional, unlike offsetHeight
+      h = Math.max(h, r.height);
+    }
+    /* NOT rounded. offsetHeight is already an integer, but the natural content height is not:
+       two 49.68px rows make 99.36, and forcing the block to a whole 99 leaves it a third of a
+       pixel short of the canonical block. The scene is flex-centred, so a block of the wrong
+       height is centred at the wrong place, and the whole family handed over to the canonical
+       text a pixel out — the twitch Tom noticed on the typewriter, in a different file. Use the
+       measured height and let the browser place it exactly where it places the canon. */
+    h = Math.max(h, 40);                          // hidden tiles measure 0 — keep the maths sane
     box.style.height = h + 'px';
     for (i = 0; i < faces.length; i++) { faces[i].style.height = h + 'px'; faces[i].style.top = '0'; }
     return h;

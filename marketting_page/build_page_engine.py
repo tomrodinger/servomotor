@@ -139,11 +139,14 @@ def main():
         return 2
 
     pool_line = "  var POOL = %s;" % json.dumps(keep)
-    new_cyc = re.sub(r"^  var POOL = \[.*?\];", pool_line.replace("\\", "\\\\"),
-                     cyc[0].group(2), count=1, flags=re.M | re.S)
-    if new_cyc == cyc[0].group(2):
+    pat = re.compile(r"^  var POOL = \[.*?\];", re.M | re.S)
+    if not pat.search(cyc[0].group(2)):
         print("  !! could not find the POOL line in the cycler")
         return 2
+    # A no-op substitution is the NORMAL case on a rebuild where the pool has not changed. Treating
+    # "the text came back identical" as failure aborted the build and left the page carrying the
+    # previous engine, while the deploy that followed happily shipped it.
+    new_cyc = pat.sub(lambda m: pool_line, cyc[0].group(2), count=1)
 
     # replace by position, largest offset first, so the earlier offsets stay valid
     out = page

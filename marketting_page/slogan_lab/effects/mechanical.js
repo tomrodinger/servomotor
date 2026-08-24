@@ -857,6 +857,12 @@
 
       /* permanent per-glyph misalignment, fixed for the life of this transition */
       stage._new.nodes.forEach(function (nd, k) {
+        /* Per-letter misalignment, the thing that makes a struck line look hand-set rather than
+           typeset. It is applied only WHILE the key is striking and is rolled off to nothing as
+           the letter settles — see frame(). It used to persist at rest, which meant every letter
+           finished a fraction of a millimetre from where the canonical layer draws it, and the
+           whole line twitched into place the instant the transition ended. A typewriter's letters
+           are struck one at a time; they do not move again afterwards. */
         nd._rot = (h1(k, 4) - 0.5) * 1.7;
         nd._dy = (h1(k, 5) - 0.5) * 0.055;
       });
@@ -896,9 +902,9 @@
           var e = E.outBack(u);
           nd.style.opacity = String(Math.min(1, u * 3));
           nd.style.transform =
-            'translateY(' + (nd._dy + (1 - e) * -0.10) + 'em) ' +
+            'translateY(' + ((nd._dy - 0.10) * (1 - e)) + 'em) ' +
             'scale(' + lerp(1.55, 1, e) + ') ' +
-            'rotate(' + (nd._rot + (h1(k, 6) - 0.5) * 7 * (1 - e)) + 'deg)';
+            'rotate(' + ((nd._rot + (h1(k, 6) - 0.5) * 7) * (1 - e)) + 'deg)';
         }
         nd.style.display = 'inline-block';
       }
@@ -947,7 +953,7 @@
       N.box.style.transform = 'translate(0px,0px)';
       N.nodes.forEach(function (nd) {
         nd.style.opacity = '1';
-        nd.style.transform = 'translateY(' + nd._dy + 'em) scale(1) rotate(' + nd._rot + 'deg)';
+        nd.style.transform = 'none';        // settled means settled: exactly the canonical position
       });
       var l = pos.length - 1;
       if (l >= 0) {

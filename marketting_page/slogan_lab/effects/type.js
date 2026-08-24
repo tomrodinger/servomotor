@@ -201,8 +201,17 @@
              where the long one does: the effect left-aligned each wrapped line while the canon
              centred it, 53px out at the start and 66px at the end. Revealing rather than inserting
              costs nothing and is correct at every width. */
+          /* A BLOCK row, not an inline-block.
+             An inline-block sits on the line's baseline, and the strut below it grows the line box
+             by about 4.5px — so this block came out 9px taller than the canonical two rows, the
+             flex centring put it ~4.5px higher, and the ink inside landed a whole pixel above
+             where the canonical layer draws it. At the swap every letter dropped by that pixel:
+             the line visibly settled after the transition was already over. A block row is exactly
+             line-height tall, which is what the canonical rows are. The inline-block was only ever
+             there so the row could shrink-wrap for a width lock, and that lock went when
+             characters started being hidden with visibility instead of display. */
           var inner = FX.el('span', null, {
-            display: 'inline-block', textAlign: 'center', verticalAlign: 'top',
+            display: 'block', textAlign: 'center',
             whiteSpace: 'normal', fontWeight: String(part[1]),
           });
           units = units.concat(typeUnits(inner, part[0], part[1]));
@@ -218,10 +227,18 @@
       var a = block(ctx.from.light, ctx.from.bold);
       var b = block(ctx.to.light, ctx.to.bold);
 
-      /* zero-width block caret: takes no layout space, so it can never push a wrap */
+      /* Zero-width block caret: takes no layout space, so it can never push a wrap — and now no
+         VERTICAL space either. Sitting on the baseline with vertical-align:-0.19em, it hung below
+         the row's descender and grew that line box by 1.05px. The block is flex-centred, so a row
+         1px taller lifted the whole headline about a pixel above where the canonical layer draws
+         it, and at the swap every letter dropped by that pixel — Tom saw the line settle after the
+         transition was over. Top-aligned the caret is shorter than the strut and cannot grow the
+         box; `position:relative` then puts it back where it looked right, because a relative
+         offset is painted, not laid out. */
       var cur = FX.el('span', null, {
         display: 'inline-block', width: '0.58em', height: '1.04em', marginRight: '-0.58em',
-        background: 'currentColor', verticalAlign: '-0.19em', borderRadius: '1px',
+        position: 'relative', top: '0.19em',
+        background: 'currentColor', verticalAlign: 'top', borderRadius: '1px',
         willChange: 'opacity',
       });
 
@@ -387,7 +404,7 @@
     blurb: 'Selection sweeps word by word swapping each in place; the line then re-justifies.',
     duration: 2100,
     dwell: 4000,
-    theme: { bg: '#FFFFFF', fg: '#16181D', accent: '#FFD84A' },
+    theme: { bg: '#FFFFFF', fg: '#16181D', accent: '#7AB648' },
     setup: function (stage, ctx) {
       stage.innerHTML = '';
       var A = measure(stage, ctx.from.light, ctx.from.bold, 'word');
@@ -445,7 +462,10 @@
         }
         var hl = FX.el('div', null, {
           position: 'absolute', left: '0', top: '0', width: '1px',
-          height: Math.ceil(slot.h + 2 * padY) + 'px', background: '#FFD84A',
+          /* Gearotons green, not the editor yellow it started as: this runs on the product
+             page and a selection colour is the most saturated thing on the screen while it
+             sweeps, so it has to be a brand colour rather than a generic highlighter. */
+          height: Math.ceil(slot.h + 2 * padY) + 'px', background: '#7AB648',
           transformOrigin: '0 0', zIndex: '1', willChange: 'transform',
         });
         L.appendChild(hl);
@@ -496,7 +516,13 @@
         var vis = hw * (1 - coll);
         o.hl.style.transform = 'translate(' + (hx + hw - vis).toFixed(2) + 'px,' + hy.toFixed(2) + 'px)'
           + ' scaleX(' + Math.max(0.0001, vis).toFixed(3) + ')';
-        o.hl.style.opacity = vis > 0.4 ? '1' : '0';
+        /* A word being DELETED has no replacement to ride the re-justify with, so its selection
+           stayed parked at the old slot while the rest of the line closed up around it — a lone
+           block of colour sitting past the end of the new line. Fade it out with the word it is
+           deleting instead. Only noticeable once the highlight became brand green rather than a
+           pale editor yellow, which is a fair argument that it was always slightly wrong. */
+        var lone = o.b ? 1 : (1 - roll);
+        o.hl.style.opacity = vis > 0.4 ? String(lone.toFixed(3)) : '0';
 
         /* Old rolls out as the new rolls in — and the two must not both be legible in the same
            slot, or the swap reads as one word printed on top of another. So they cross-fade

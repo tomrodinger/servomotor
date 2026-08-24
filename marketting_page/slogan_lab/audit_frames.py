@@ -132,6 +132,20 @@ def audit_effect(page, box, fx, pair, save_dir=None):
         if ink is None and bright < 0.005 and cov < 0.02:
             blanks.append(t)
 
+    # THE SETTLE. The endpoint checks above compare t=0.008 and t=0.992 against canonical, which is
+    # coarse enough to miss the thing a person notices most: the headline twitching into place as
+    # the engine hands over. Tom caught two of those by eye that this audit had passed --
+    # type-backspace sitting a pixel high, and the typewriter's letters keeping a per-letter
+    # misalignment at rest. So measure the LAST effect frame against the canonical frame it is
+    # replaced by, and separately ask whether shifting it a pixel would fit better: a real
+    # positional error shows as a lower residual at +-1px, anti-aliasing does not.
+    settle_e, _ = at(0.999)
+    base = pix_diff(settle_e, canon_b)
+    up = pix_diff(np.roll(settle_e, -1, axis=0), canon_b)
+    dn = pix_diff(np.roll(settle_e, 1, axis=0), canon_b)
+    rec["settle"] = round(base, 5)
+    rec["settleShift"] = -1 if up < base * 0.9 else (1 if dn < base * 0.9 else 0)
+
     e0, ink_e0 = at(EARLY[1])
     e1, _ = at(EARLY[2])
     l0, ink_l0 = at(LATE[2])

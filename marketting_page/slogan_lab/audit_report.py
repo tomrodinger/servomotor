@@ -20,6 +20,9 @@ COV = 0.060         # this fraction of the stage visibly differs from the canoni
 FLASH_ABS = 0.30    # this fraction of the stage went near-white
 FLASH_REL = 4.0     # ...or this many times the canonical frame's own bright coverage
 GROUND_SHIFT = 0.25 # the stage's own colour moved this far from the canonical frame's
+SETTLE = 0.0045     # last effect frame vs the canonical frame it hands over to. The floor is the
+                    # antialiasing difference between a composited layer and a plain one, ~0.0030
+                    # on effects nobody has ever complained about; above this it is a real twitch.
 
 
 def defects(r):
@@ -53,6 +56,12 @@ def defects(r):
             out.append(("FLASH", 50.0 + fl * 40,
                         "%.0f%% of the stage near-white at t=%s (canon %.0f%%)"
                         % (fl * 100, r.get("flashAt"), base * 100)))
+
+    st = r.get("settle")
+    if st is not None and (st > SETTLE or r.get("settleShift")):
+        why = "shifted %+dpx" % r["settleShift"] if r.get("settleShift") else "residual %.4f" % st
+        out.append(("SETTLE", 45.0 + st * 500,
+                    "the headline twitches at the hand-over (%s)" % why))
 
     bl = r.get("blankFrames") or []
     if len(bl) >= 3:

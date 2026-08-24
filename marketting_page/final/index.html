@@ -2035,8 +2035,17 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
      fold lines all key off this, so a 1-line and a 3-line slogan still meet on the same axis. */
   function equalize(box, faces) {
     var h = 0, i;
-    for (i = 0; i < faces.length; i++) h = Math.max(h, faces[i].offsetHeight);
-    h = Math.max(Math.round(h), 40);              // hidden tiles measure 0 — keep the maths sane
+    for (i = 0; i < faces.length; i++) {
+      var r = faces[i].getBoundingClientRect();       // fractional, unlike offsetHeight
+      h = Math.max(h, r.height);
+    }
+    /* NOT rounded. offsetHeight is already an integer, but the natural content height is not:
+       two 49.68px rows make 99.36, and forcing the block to a whole 99 leaves it a third of a
+       pixel short of the canonical block. The scene is flex-centred, so a block of the wrong
+       height is centred at the wrong place, and the whole family handed over to the canonical
+       text a pixel out — the twitch Tom noticed on the typewriter, in a different file. Use the
+       measured height and let the browser place it exactly where it places the canon. */
+    h = Math.max(h, 40);                          // hidden tiles measure 0 — keep the maths sane
     box.style.height = h + 'px';
     for (i = 0; i < faces.length; i++) { faces[i].style.height = h + 'px'; faces[i].style.top = '0'; }
     return h;
@@ -7041,6 +7050,12 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
 
       /* permanent per-glyph misalignment, fixed for the life of this transition */
       stage._new.nodes.forEach(function (nd, k) {
+        /* Per-letter misalignment, the thing that makes a struck line look hand-set rather than
+           typeset. It is applied only WHILE the key is striking and is rolled off to nothing as
+           the letter settles — see frame(). It used to persist at rest, which meant every letter
+           finished a fraction of a millimetre from where the canonical layer draws it, and the
+           whole line twitched into place the instant the transition ended. A typewriter's letters
+           are struck one at a time; they do not move again afterwards. */
         nd._rot = (h1(k, 4) - 0.5) * 1.7;
         nd._dy = (h1(k, 5) - 0.5) * 0.055;
       });
@@ -7080,9 +7095,9 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
           var e = E.outBack(u);
           nd.style.opacity = String(Math.min(1, u * 3));
           nd.style.transform =
-            'translateY(' + (nd._dy + (1 - e) * -0.10) + 'em) ' +
+            'translateY(' + ((nd._dy - 0.10) * (1 - e)) + 'em) ' +
             'scale(' + lerp(1.55, 1, e) + ') ' +
-            'rotate(' + (nd._rot + (h1(k, 6) - 0.5) * 7 * (1 - e)) + 'deg)';
+            'rotate(' + ((nd._rot + (h1(k, 6) - 0.5) * 7) * (1 - e)) + 'deg)';
         }
         nd.style.display = 'inline-block';
       }
@@ -7131,7 +7146,7 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
       N.box.style.transform = 'translate(0px,0px)';
       N.nodes.forEach(function (nd) {
         nd.style.opacity = '1';
-        nd.style.transform = 'translateY(' + nd._dy + 'em) scale(1) rotate(' + nd._rot + 'deg)';
+        nd.style.transform = 'none';        // settled means settled: exactly the canonical position
       });
       var l = pos.length - 1;
       if (l >= 0) {
@@ -9187,8 +9202,17 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
              where the long one does: the effect left-aligned each wrapped line while the canon
              centred it, 53px out at the start and 66px at the end. Revealing rather than inserting
              costs nothing and is correct at every width. */
+          /* A BLOCK row, not an inline-block.
+             An inline-block sits on the line's baseline, and the strut below it grows the line box
+             by about 4.5px — so this block came out 9px taller than the canonical two rows, the
+             flex centring put it ~4.5px higher, and the ink inside landed a whole pixel above
+             where the canonical layer draws it. At the swap every letter dropped by that pixel:
+             the line visibly settled after the transition was already over. A block row is exactly
+             line-height tall, which is what the canonical rows are. The inline-block was only ever
+             there so the row could shrink-wrap for a width lock, and that lock went when
+             characters started being hidden with visibility instead of display. */
           var inner = FX.el('span', null, {
-            display: 'inline-block', textAlign: 'center', verticalAlign: 'top',
+            display: 'block', textAlign: 'center',
             whiteSpace: 'normal', fontWeight: String(part[1]),
           });
           units = units.concat(typeUnits(inner, part[0], part[1]));
@@ -9204,10 +9228,18 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
       var a = block(ctx.from.light, ctx.from.bold);
       var b = block(ctx.to.light, ctx.to.bold);
 
-      /* zero-width block caret: takes no layout space, so it can never push a wrap */
+      /* Zero-width block caret: takes no layout space, so it can never push a wrap — and now no
+         VERTICAL space either. Sitting on the baseline with vertical-align:-0.19em, it hung below
+         the row's descender and grew that line box by 1.05px. The block is flex-centred, so a row
+         1px taller lifted the whole headline about a pixel above where the canonical layer draws
+         it, and at the swap every letter dropped by that pixel — Tom saw the line settle after the
+         transition was over. Top-aligned the caret is shorter than the strut and cannot grow the
+         box; `position:relative` then puts it back where it looked right, because a relative
+         offset is painted, not laid out. */
       var cur = FX.el('span', null, {
         display: 'inline-block', width: '0.58em', height: '1.04em', marginRight: '-0.58em',
-        background: 'currentColor', verticalAlign: '-0.19em', borderRadius: '1px',
+        position: 'relative', top: '0.19em',
+        background: 'currentColor', verticalAlign: 'top', borderRadius: '1px',
         willChange: 'opacity',
       });
 
@@ -9373,7 +9405,7 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
     blurb: 'Selection sweeps word by word swapping each in place; the line then re-justifies.',
     duration: 2100,
     dwell: 4000,
-    theme: { bg: '#FFFFFF', fg: '#16181D', accent: '#FFD84A' },
+    theme: { bg: '#FFFFFF', fg: '#16181D', accent: '#7AB648' },
     setup: function (stage, ctx) {
       stage.innerHTML = '';
       var A = measure(stage, ctx.from.light, ctx.from.bold, 'word');
@@ -9431,7 +9463,10 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
         }
         var hl = FX.el('div', null, {
           position: 'absolute', left: '0', top: '0', width: '1px',
-          height: Math.ceil(slot.h + 2 * padY) + 'px', background: '#FFD84A',
+          /* Gearotons green, not the editor yellow it started as: this runs on the product
+             page and a selection colour is the most saturated thing on the screen while it
+             sweeps, so it has to be a brand colour rather than a generic highlighter. */
+          height: Math.ceil(slot.h + 2 * padY) + 'px', background: '#7AB648',
           transformOrigin: '0 0', zIndex: '1', willChange: 'transform',
         });
         L.appendChild(hl);
@@ -9482,7 +9517,13 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
         var vis = hw * (1 - coll);
         o.hl.style.transform = 'translate(' + (hx + hw - vis).toFixed(2) + 'px,' + hy.toFixed(2) + 'px)'
           + ' scaleX(' + Math.max(0.0001, vis).toFixed(3) + ')';
-        o.hl.style.opacity = vis > 0.4 ? '1' : '0';
+        /* A word being DELETED has no replacement to ride the re-justify with, so its selection
+           stayed parked at the old slot while the rest of the line closed up around it — a lone
+           block of colour sitting past the end of the new line. Fade it out with the word it is
+           deleting instead. Only noticeable once the highlight became brand green rather than a
+           pale editor yellow, which is a fair argument that it was always slightly wrong. */
+        var lone = o.b ? 1 : (1 - roll);
+        o.hl.style.opacity = vis > 0.4 ? String(lone.toFixed(3)) : '0';
 
         /* Old rolls out as the new rolls in — and the two must not both be legible in the same
            slot, or the swap reads as one word printed on top of another. So they cross-fade

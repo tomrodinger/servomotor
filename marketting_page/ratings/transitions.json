@@ -285,7 +285,7 @@
     "family": "Liquid"
   },
   "liquid-mercury": {
-    "verdict": "fix",
+    "verdict": "keep",
     "name": "Mercury Beads",
     "family": "Liquid"
   },
@@ -322,7 +322,8 @@
   "mechanical-typewriter": {
     "verdict": "fix",
     "name": "Carriage Return",
-    "family": "Mechanical"
+    "family": "Mechanical",
+    "why": "The letters move by about a pixel after the transition to get to their canonical position. It is a sudden tiny jerk. would be better if they just were typed out one by one accurately in their final position."
   },
   "mechanical-slide-rule": {
     "verdict": "keep",
@@ -422,7 +423,8 @@
   "type-backspace": {
     "verdict": "fix",
     "name": "Backspace & Retype",
-    "family": "Type"
+    "family": "Type",
+    "why": "The letters drop by about a pixel after the transition to get to their canonical position."
   },
   "type-decode": {
     "verdict": "keep",

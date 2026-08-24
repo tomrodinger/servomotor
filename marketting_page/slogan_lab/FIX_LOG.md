@@ -511,3 +511,64 @@ registration goes, so the effect can never be picked.
 
 Result: **85 registered, 85 in the pool, none of the 11 discards present**, verified in a browser.
 The page's inlined engine grows 118 KB -> 430 KB, which is the honest cost of keeping 85 effects.
+
+---
+
+# Round 10 — Tom's three comments, and a check that would have caught them
+
+His notes came back in the rater's `why` field (not `note`, which is why the first read showed them
+empty). `liquid-mercury` passed. Three left:
+
+**`type-find`** — "the yellow highlight, I would like it if it were green instead to go with my page
+better." Now Gearotons green `#7AB648`. Switching it made a second thing obvious: a word being
+DELETED has no replacement to ride the re-justify with, so its selection stayed parked at its old
+slot while the line closed up around it — a lone block of colour past the end of the new line. Pale
+yellow hid that; brand green did not. It now fades out with the word it is deleting.
+
+**`type-backspace`** — "the letters drop by about a pixel after the transition." They did, and it
+was a real 1px, not a rendering artefact: shifting the last effect frame down one pixel fitted the
+canonical frame better than not shifting it. The cause was the caret. It is a zero-WIDTH caret, but
+not a zero-HEIGHT one: sitting on the baseline at `vertical-align:-0.19em` it hung below the row's
+descender and grew that line box by 1.05px. The block is flex-centred, so one row a pixel taller
+lifted the whole headline a pixel above the canonical text. Top-aligned it is shorter than the strut
+and cannot grow the box, and `position:relative` puts it back where it looked right — a relative
+offset is painted, not laid out. The effect's block is now 115.32/99.36, the canon's 115.32/99.36,
+to the hundredth of a pixel.
+
+**`mechanical-typewriter`** — "the letters move by about a pixel... would be better if they just
+were typed out one by one accurately in their final position." The per-letter misalignment that
+makes a struck line look hand-set rather than typeset was being applied permanently: `_dy` and
+`_rot` stayed on every glyph at rest, so each letter finished a fraction off the canonical position
+and the line twitched as a whole when the engine took over. The jitter now rolls off to nothing as
+each letter settles, exactly as he asked. Residual 0.00427 -> 0.00260, which is *below* `wipe-iris`,
+an effect nobody has complained about.
+
+## A new check, because he found this twice and the audit did not
+
+`audit_frames.py` now measures **the settle**: the last effect frame (t=0.999) against the canonical
+frame it hands over to, plus a shift test — if the residual drops when the frame is moved a pixel,
+it is a real positional error rather than anti-aliasing. That is precisely what he was seeing, and
+the endpoint checks at t=0.008/0.992 were too coarse to catch it.
+
+Running it over all 96 found the same fault in **nine more effects**, eight of them a true -1px:
+
+- The whole **depth family** (cube, flip, hinge, dolly, helix) shared one cause: `equalize()` rounded
+  the block height to a whole pixel, but two 49.68px rows are 99.36, so the block came out a third
+  of a pixel short of the canon and the flex centring put it in the wrong place. It now uses the
+  measured fractional height. All five clean.
+- **`odometer`** and **`kinetic-gravity`** are still out at pair 12 only. An attempt to snap the
+  odometer's drum travel to whole pixels made it *worse* — its cell geometry is in em throughout and
+  a px translate fights it — so that was reverted rather than left as a half-fix. Both are recorded
+  here rather than shipped as fixed.
+- **`mechanical-split-flap`** and **`wipe-blinds`** also show it, and both are effects Tom discarded,
+  so they never reach the page.
+
+**92 of 96 clean under the new, stricter check**; of the 85 that actually ship, 83.
+
+## A build guard that misfired, and shipped the wrong thing for one deploy
+
+`build_page_engine.py` treated "the POOL substitution came back identical" as a failure. On a
+rebuild where the pool has not changed that is the NORMAL case, so it aborted, left the page
+carrying the previous engine — and the deploy that ran straight afterwards happily shipped it. It
+now fails only if the POOL line is absent. Caught by diffing the deployed bundle for the fixes it
+was supposed to contain, which is a check worth keeping in the habit.
