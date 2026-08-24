@@ -63,6 +63,25 @@
     return { box: box, wrap: wrap };
   }
 
+  /* The pre-image of a colour under contrast(c).
+   *
+   * contrast maps every channel v -> (v - 0.5) * c + 0.5, which is fine for the ink and wrong for
+   * the GROUND: a near-black stage at 0.04 is dragged to pure black the moment the contrast rises,
+   * so the whole panel visibly darkens for the length of the transition and snaps back at the end.
+   * Pre-distorting the ground by the inverse means the filter lands it exactly back on the stage
+   * colour, and the only thing the contrast is doing is what it is there for — thresholding the
+   * blurred ink into beads. */
+  function preContrast(rgb, c) {
+    var m = /rgba?\(([^)]+)\)/.exec(rgb || '');
+    if (!m || !(c > 0)) return rgb;
+    var p = m[1].split(',');
+    function inv(v) {
+      var x = ((parseFloat(v) / 255 - 0.5) / c + 0.5) * 255;
+      return Math.max(0, Math.min(255, Math.round(x)));
+    }
+    return 'rgb(' + inv(p[0]) + ',' + inv(p[1]) + ',' + inv(p[2]) + ')';
+  }
+
   function absLine(wrap) {
     var d = FX.el('div', 'fx-line', {
       position: 'absolute', left: '0', right: '0', textAlign: 'center',
@@ -208,6 +227,7 @@
     setup: function (stage, ctx) {
       var g = gooWrap(stage, ctx.sc.paper);
       stage._box = g.box;
+      stage._paper = ctx.sc.paper;
       stage._out = charLayer(g.wrap, ctx.from);
       stage._in = charLayer(g.wrap, ctx.to);
       stage._layers = [stage._out, stage._in];
@@ -232,8 +252,9 @@
          the only real discontinuity found in the whole set. Holding the filter on costs a
          blur(0px) that never renders differently, and the pop is gone.
          The effect layer is hidden at t<=0 and t>=1, so this never touches the canonical frames. */
-      stage._box.style.filter =
-        'blur(' + n3(6.5 * g) + 'px) contrast(' + n3(1 + 13 * g) + ')';
+      var gc = 1 + 13 * g;
+      stage._box.style.filter = 'blur(' + n3(6.5 * g) + 'px) contrast(' + n3(gc) + ')';
+      stage._box.style.background = preContrast(stage._paper, gc);   // hold the ground still
 
       /* Ink swells before it melts. Without this the 300-weight row is too thin to survive the
          contrast threshold and vanishes instead of going gooey. */
@@ -435,6 +456,7 @@
     setup: function (stage, ctx) {
       var g = gooWrap(stage, ctx.sc.paper);
       stage._box = g.box;
+      stage._paper = ctx.sc.paper;
       /* ONE glyph per cell, not two.
        *
        * Holding both glyphs in one inline-grid cell made every cell as wide as the WIDER of the
@@ -476,13 +498,23 @@
          glow that swells the strokes so they survive the threshold instead of being erased by it.
          Both also fatten the strokes, so both are gated OFF near the edges, where the frame has
          to be indistinguishable from the engine's plain canonical text. */
-      var g = Math.pow(Math.sin(Math.PI * t), 1.35);
-      var lit = g > 0.06;
-      stage._box.style.filter = lit
-        ? 'blur(' + n3(4.6 * g) + 'px) contrast(' + n3(1 + 6.5 * g) + ')' : 'none';
+      /* A narrow HUMP, not a half-sine. sin(pi*t)^1.35 is already at half strength by t=0.2 and
+         does not drop back under it until t=0.8, so the blur and the contrast were smearing the
+         WHOLE line for two thirds of the transition — the frames in between were unreadable white
+         worms. That contradicted this effect's own design note above, which says only a slice is
+         ever molten: the per-cell wave was doing its job, but a global filter was melting
+         everything regardless of where the wave had got to. A gaussian centred on the swap is
+         spent by t~0.25 and t~0.75, so the line reads at both ends of the melt and the beads are
+         an event rather than a state. */
+      var g = Math.exp(-Math.pow((t - 0.5) / 0.17, 2));
+      var c = 1 + 6.5 * g;
+      /* filter always applied, at identity when g is small: toggling `filter` on and off creates
+         and destroys a stacking context and the type shifts a fraction of a pixel as it does */
+      stage._box.style.filter = 'blur(' + n3(4.6 * g) + 'px) contrast(' + n3(c) + ')';
+      stage._box.style.background = preContrast(stage._paper, c);
       var sw = n3(4.4 * Math.pow(g, 0.7));
-      stage._L.el.style.textShadow = lit
-        ? '0 0 ' + sw + 'px currentColor, 0 0 ' + sw + 'px currentColor' : 'none';
+      stage._L.el.style.textShadow =
+        '0 0 ' + sw + 'px currentColor, 0 0 ' + sw + 'px currentColor';
 
       for (var k = 0; k < n; k++) {
         var c = cells[k];

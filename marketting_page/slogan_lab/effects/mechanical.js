@@ -931,7 +931,15 @@
       /* The caret is a full-line-height bar of ink sitting outside the text, so at the endpoints
          it both widens and heightens the ink box against a canonical frame that has no caret at
          all. Squared so it is gone, not merely faint, by the time the engine takes over. */
-      stage._caret.style.opacity = String((last < 0 ? 0.58 : 0.5) * chrome * chrome);
+      /* ...and while the carriage is CROSSING it is a lone tick in empty space: the old line has
+         already rolled away and the first key has not struck yet, so a bar of ink slides across
+         the middle of a blank stage attached to nothing. Fade it through the crossing, so it
+         leaves the end of the old line and arrives at the head of the new one without being
+         visible in between — which is also what you see on a real machine, where the thing your
+         eye follows is the carriage, not the print point. */
+      var crossing = last < 0 ? Math.sin(Math.PI * clamp(sh, 0, 1)) : 0;
+      stage._caret.style.opacity =
+        String((last < 0 ? 0.58 : 0.5) * chrome * chrome * (1 - crossing));
     },
     rest: function (stage) {
       var N = stage._new, pos = stage._pos;

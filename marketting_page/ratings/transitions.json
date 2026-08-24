@@ -1,0 +1,483 @@
+{
+  "keynote-lift": {
+    "verdict": "keep",
+    "name": "Keynote Lift",
+    "family": "Dissolve"
+  },
+  "glyph-scramble": {
+    "verdict": "keep",
+    "name": "Glyph Scramble",
+    "family": "Type"
+  },
+  "odometer": {
+    "verdict": "keep",
+    "name": "Odometer Roll",
+    "family": "Mechanical"
+  },
+  "ink-bleed": {
+    "verdict": "discard",
+    "name": "Ink Bleed",
+    "family": "Reveal"
+  },
+  "depth-cube": {
+    "verdict": "keep",
+    "name": "Cube Roll",
+    "family": "3D"
+  },
+  "depth-flip": {
+    "verdict": "keep",
+    "name": "Page Flip",
+    "family": "3D"
+  },
+  "depth-hinge": {
+    "verdict": "keep",
+    "name": "Door Hinge",
+    "family": "3D"
+  },
+  "depth-dolly": {
+    "verdict": "keep",
+    "name": "Depth Dolly",
+    "family": "3D"
+  },
+  "depth-helix": {
+    "verdict": "keep",
+    "name": "Word Helix",
+    "family": "3D"
+  },
+  "depth-unfold": {
+    "verdict": "keep",
+    "name": "Paper Unfold",
+    "family": "3D"
+  },
+  "dissolve-focus-pull": {
+    "verdict": "keep",
+    "name": "Focus Pull",
+    "family": "Dissolve"
+  },
+  "dissolve-luminance": {
+    "verdict": "keep",
+    "name": "Luminance Burn",
+    "family": "Dissolve"
+  },
+  "dissolve-word-wash": {
+    "verdict": "keep",
+    "name": "Word Wash",
+    "family": "Dissolve"
+  },
+  "dissolve-rack": {
+    "verdict": "keep",
+    "name": "Rack Overshoot",
+    "family": "Dissolve"
+  },
+  "dissolve-develop": {
+    "verdict": "keep",
+    "name": "Darkroom",
+    "family": "Dissolve"
+  },
+  "dissolve-chromatic": {
+    "verdict": "keep",
+    "name": "Chromatic Registration",
+    "family": "Dissolve"
+  },
+  "glitch-rgb": {
+    "verdict": "keep",
+    "name": "Channel Split",
+    "family": "Glitch"
+  },
+  "glitch-tear": {
+    "verdict": "keep",
+    "name": "Scanline Tear",
+    "family": "Glitch"
+  },
+  "glitch-lock": {
+    "verdict": "keep",
+    "name": "Signal Lock",
+    "family": "Glitch"
+  },
+  "glitch-mosh": {
+    "verdict": "keep",
+    "name": "Datamosh",
+    "family": "Glitch"
+  },
+  "glitch-crt": {
+    "verdict": "keep",
+    "name": "CRT Collapse",
+    "family": "Glitch"
+  },
+  "glitch-blocks": {
+    "verdict": "keep",
+    "name": "Compression Bloom",
+    "family": "Glitch"
+  },
+  "hy-dimension-line": {
+    "verdict": "keep",
+    "name": "Dimension Line",
+    "family": "Technical"
+  },
+  "hy-vernier": {
+    "verdict": "keep",
+    "name": "Vernier Slide",
+    "family": "Technical"
+  },
+  "hy-origami": {
+    "verdict": "keep",
+    "name": "Origami Panels",
+    "family": "Fold"
+  },
+  "hy-lens-focus": {
+    "verdict": "keep",
+    "name": "Lens Focus",
+    "family": "Optical"
+  },
+  "hy-smoke": {
+    "verdict": "keep",
+    "name": "Smoke Drift",
+    "family": "Organic"
+  },
+  "hy-louvre": {
+    "verdict": "keep",
+    "name": "Louvre Turn",
+    "family": "Architecture"
+  },
+  "hy-bar-morph": {
+    "verdict": "keep",
+    "name": "Bar Morph",
+    "family": "Data"
+  },
+  "hy-flip-clock": {
+    "verdict": "keep",
+    "name": "Flip Clock",
+    "family": "Mechanical"
+  },
+  "hx-spotlight": {
+    "verdict": "keep",
+    "name": "Spotlight Pan",
+    "family": "Light"
+  },
+  "hx-neon-flicker": {
+    "verdict": "keep",
+    "name": "Neon Flicker",
+    "family": "Light"
+  },
+  "hx-bloom": {
+    "verdict": "keep",
+    "name": "Overexpose Bloom",
+    "family": "Light"
+  },
+  "hx-letterpress": {
+    "verdict": "discard",
+    "name": "Letterpress",
+    "family": "Print"
+  },
+  "hx-riso": {
+    "verdict": "keep",
+    "name": "Riso Registration",
+    "family": "Print"
+  },
+  "hx-tear": {
+    "verdict": "keep",
+    "name": "Paper Tear",
+    "family": "Print"
+  },
+  "hx-rgb-split": {
+    "verdict": "keep",
+    "name": "Channel Split",
+    "family": "Glitch"
+  },
+  "hx-crt": {
+    "verdict": "keep",
+    "name": "CRT Collapse",
+    "family": "Glitch"
+  },
+  "hx-signal-lock": {
+    "verdict": "keep",
+    "name": "Signal Lock",
+    "family": "Glitch"
+  },
+  "hx-spring-stagger": {
+    "verdict": "keep",
+    "name": "Spring Stagger",
+    "family": "Kinetic"
+  },
+  "hx-gravity-drop": {
+    "verdict": "keep",
+    "name": "Gravity Drop",
+    "family": "Kinetic"
+  },
+  "hx-magnet": {
+    "verdict": "keep",
+    "name": "Magnetic Snap",
+    "family": "Kinetic"
+  },
+  "kinetic-spring": {
+    "verdict": "keep",
+    "name": "Spring Stagger",
+    "family": "Kinetic"
+  },
+  "kinetic-gravity": {
+    "verdict": "keep",
+    "name": "Gravity Drop",
+    "family": "Kinetic"
+  },
+  "kinetic-magnet": {
+    "verdict": "keep",
+    "name": "Magnetic Snap",
+    "family": "Kinetic"
+  },
+  "kinetic-pendulum": {
+    "verdict": "keep",
+    "name": "Pendulum Swing",
+    "family": "Kinetic"
+  },
+  "kinetic-whip": {
+    "verdict": "keep",
+    "name": "Inertial Whip",
+    "family": "Kinetic"
+  },
+  "kinetic-domino": {
+    "verdict": "keep",
+    "name": "Domino Chain",
+    "family": "Kinetic"
+  },
+  "light-specular": {
+    "verdict": "keep",
+    "name": "Specular Sweep",
+    "family": "Light"
+  },
+  "light-neon": {
+    "verdict": "keep",
+    "name": "Neon Flicker",
+    "family": "Light"
+  },
+  "light-spotlight": {
+    "verdict": "keep",
+    "name": "Spotlight Pan",
+    "family": "Light"
+  },
+  "light-bloom": {
+    "verdict": "keep",
+    "name": "Bloom",
+    "family": "Light"
+  },
+  "light-shadow": {
+    "verdict": "discard",
+    "name": "Long Shadow",
+    "family": "Light"
+  },
+  "light-scanner": {
+    "verdict": "keep",
+    "name": "Scanner Beam",
+    "family": "Light"
+  },
+  "liquid-goo-merge": {
+    "verdict": "keep",
+    "name": "Goo Merge",
+    "family": "Liquid"
+  },
+  "liquid-ripple-wave": {
+    "verdict": "keep",
+    "name": "Ripple Wave",
+    "family": "Liquid"
+  },
+  "liquid-stretch-snap": {
+    "verdict": "keep",
+    "name": "Stretch & Snap",
+    "family": "Liquid"
+  },
+  "liquid-mercury": {
+    "verdict": "fix",
+    "name": "Mercury Beads",
+    "family": "Liquid"
+  },
+  "liquid-drip": {
+    "verdict": "keep",
+    "name": "Drip",
+    "family": "Liquid"
+  },
+  "liquid-shear-wobble": {
+    "verdict": "keep",
+    "name": "Shear Wobble",
+    "family": "Liquid"
+  },
+  "mechanical-split-flap": {
+    "verdict": "discard",
+    "name": "Split-Flap Board",
+    "family": "Mechanical"
+  },
+  "mechanical-flip-cards": {
+    "verdict": "discard",
+    "name": "Flip Cards",
+    "family": "Mechanical"
+  },
+  "mechanical-word-odometer": {
+    "verdict": "keep",
+    "name": "Word Odometer",
+    "family": "Mechanical"
+  },
+  "mechanical-dot-matrix": {
+    "verdict": "discard",
+    "name": "Dot-Matrix Sign",
+    "family": "Mechanical"
+  },
+  "mechanical-typewriter": {
+    "verdict": "fix",
+    "name": "Carriage Return",
+    "family": "Mechanical"
+  },
+  "mechanical-slide-rule": {
+    "verdict": "keep",
+    "name": "Vernier Lock",
+    "family": "Mechanical"
+  },
+  "print-letterpress": {
+    "verdict": "keep",
+    "name": "Letterpress",
+    "family": "Print"
+  },
+  "print-riso": {
+    "verdict": "discard",
+    "name": "Risograph",
+    "family": "Print"
+  },
+  "print-stamp": {
+    "verdict": "keep",
+    "name": "Rubber Stamp",
+    "family": "Print"
+  },
+  "print-inkjet": {
+    "verdict": "keep",
+    "name": "Inkjet Passes",
+    "family": "Print"
+  },
+  "print-tear": {
+    "verdict": "keep",
+    "name": "Paper Tear",
+    "family": "Print"
+  },
+  "print-fold": {
+    "verdict": "discard",
+    "name": "Crease Fold",
+    "family": "Print"
+  },
+  "shatter-glass": {
+    "verdict": "keep",
+    "name": "Glass Fracture",
+    "family": "Shatter"
+  },
+  "shatter-slices": {
+    "verdict": "keep",
+    "name": "Strip Blast",
+    "family": "Shatter"
+  },
+  "shatter-particles": {
+    "verdict": "keep",
+    "name": "Particle Field",
+    "family": "Shatter"
+  },
+  "shatter-sand": {
+    "verdict": "keep",
+    "name": "Sand Pour",
+    "family": "Shatter"
+  },
+  "shatter-crumble": {
+    "verdict": "keep",
+    "name": "Crumble Sweep",
+    "family": "Shatter"
+  },
+  "shatter-implode": {
+    "verdict": "keep",
+    "name": "Implosion",
+    "family": "Shatter"
+  },
+  "slide-push": {
+    "verdict": "keep",
+    "name": "Hard Push",
+    "family": "Slide"
+  },
+  "slide-conveyor": {
+    "verdict": "keep",
+    "name": "Word Conveyor",
+    "family": "Slide"
+  },
+  "slide-ticker": {
+    "verdict": "keep",
+    "name": "Ticker Roll",
+    "family": "Slide"
+  },
+  "slide-raked": {
+    "verdict": "keep",
+    "name": "Raked Slide",
+    "family": "Slide"
+  },
+  "slide-elastic": {
+    "verdict": "keep",
+    "name": "Elastic Whip",
+    "family": "Slide"
+  },
+  "slide-carousel": {
+    "verdict": "keep",
+    "name": "Drum Carousel",
+    "family": "Slide"
+  },
+  "type-backspace": {
+    "verdict": "fix",
+    "name": "Backspace & Retype",
+    "family": "Type"
+  },
+  "type-decode": {
+    "verdict": "keep",
+    "name": "Decode Inward",
+    "family": "Type"
+  },
+  "type-find": {
+    "verdict": "fix",
+    "name": "Find & Replace",
+    "family": "Type",
+    "why": "the yellow highlight, I would like it if it were green instead to go with my page better"
+  },
+  "type-shuffle": {
+    "verdict": "keep",
+    "name": "Letter Shuffle",
+    "family": "Type"
+  },
+  "type-redact": {
+    "verdict": "discard",
+    "name": "Redacted",
+    "family": "Type"
+  },
+  "type-stencil": {
+    "verdict": "keep",
+    "name": "Stencil Refill",
+    "family": "Type"
+  },
+  "wipe-bar": {
+    "verdict": "discard",
+    "name": "Bar Wipe",
+    "family": "Wipe"
+  },
+  "wipe-gradient": {
+    "verdict": "keep",
+    "name": "Gradient Sweep",
+    "family": "Wipe"
+  },
+  "wipe-iris": {
+    "verdict": "keep",
+    "name": "Iris",
+    "family": "Wipe"
+  },
+  "wipe-columns": {
+    "verdict": "keep",
+    "name": "Word Columns",
+    "family": "Wipe"
+  },
+  "wipe-blade": {
+    "verdict": "keep",
+    "name": "Blade",
+    "family": "Wipe"
+  },
+  "wipe-blinds": {
+    "verdict": "discard",
+    "name": "Venetian Blind",
+    "family": "Wipe"
+  }
+}

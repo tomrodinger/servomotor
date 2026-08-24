@@ -313,12 +313,21 @@
     this.canonA.textContent = pair.light;
     this.canonB.textContent = pair.bold;
     this.canon.style.visibility = 'visible';
+    /* opacity AS WELL AS visibility, because `visibility: hidden` is the one form of hiding a
+       DESCENDANT can override: any element inside that sets `visibility: visible` reappears, even
+       though this layer is hidden. type-backspace does exactly that to reveal typed characters
+       without disturbing the layout, and the result was its own text drawn on top of the canonical
+       frame at t=1 — 0.8% of the stage, including a caret the canon does not have. A parent at
+       opacity 0 cannot be overridden from inside, and unlike display:none it keeps the layer laid
+       out, so effects that measure their own geometry still can. */
     this.layer.style.visibility = 'hidden';
+    this.layer.style.opacity = '0';
   };
 
   Player.prototype._showEffect = function () {
     this.canon.style.visibility = 'hidden';
     this.layer.style.visibility = 'visible';
+    this.layer.style.opacity = '1';
   };
 
   /* choose the effect for the CURRENT transition, and adopt its own timing */

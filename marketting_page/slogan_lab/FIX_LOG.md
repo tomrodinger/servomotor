@@ -444,3 +444,70 @@ round 1: flip to `multiply` with dark ink when `ctx.sc.dark` is false. It is a r
 re-implementation of four effects and was not worth doing speculatively overnight.
 
 The 96 GIFs in `gifs/` were re-exported from the fixed effects.
+
+---
+
+# Round 9 — Tom's verdicts, 2026-08-24
+
+All 96 rated: **81 keep, 11 discard, 4 fix**. The four flagged for fixing carried no notes, so the
+defect in each had to be found by looking. They all PASSED the frame audit, which is the point —
+these are faults the endpoint metrics cannot see.
+
+Looking meant `strip.py`, a new tool that stacks the frames of one transition into a single tall
+image **as the rater draws it**. `filmstrip.html` could not be used: it applies each effect's
+`theme`, and `rate.html` deliberately does not ("the page owns the palette, an effect owns only the
+motion"), so a filmstrip shows an effect in monospace on cream paper that Tom saw in the page's own
+sans on near-black.
+
+**`type-find` — the type was being mangled.** Each replacement word was scaled horizontally to fit
+the slot of the word it replaced, `clamp(a.w / b.w, 0.52, 1.85)`. An 85% stretch turns "one motor."
+into a different, much heavier face; a 48% squeeze makes "The" look like a condensed cut. Half the
+transition was set in fonts the page does not own. Removing the scale alone makes words collide,
+which is why it was there — so instead each word now **re-justifies as it swaps** rather than the
+whole line re-justifying at the end. The line is then only ever ragged at the boundary between the
+part already replaced and the part not yet reached, which is what an editor doing a find-and-replace
+actually looks like.
+
+**`mechanical-typewriter` — a caret adrift on an empty stage.** During the carriage return the old
+line has rolled away and the first key has not struck, and a bar of ink slid across the middle of a
+blank stage attached to nothing. It now fades through the crossing, leaving the end of the old line
+and arriving at the head of the new one.
+
+**`liquid-mercury` — two faults.** The melt used `sin(pi*t)^1.35`, already at half strength by
+t=0.2 and not back under it until t=0.8, so a *global* blur+contrast smeared the whole line for two
+thirds of the transition — unreadable white worms. That contradicted the effect's own design note,
+which says only a slice is ever molten: the per-cell wave was working, a global filter was melting
+everything regardless. A gaussian centred on the swap is spent by t~0.25 and t~0.75. Separately the
+contrast was dragging the near-black ground to pure black for the length of the transition; the
+ground is now pre-distorted by the inverse of the contrast so the filter lands it exactly back on
+the stage colour. Both goo effects got that treatment.
+
+**`type-backspace` — the headline vanished, and a regression of mine.** The erase finished at
+t=0.34 and the retype did not begin until t=0.39: 0.13s during which the entire headline was gone
+and the only thing on the hero was a blinking caret. Closed to a single frame.
+
+The second fault was mine, from the night before. I had changed it to hide characters with
+`visibility` so the block keeps its settled layout — and `visibility: hidden` is the one form of
+hiding a DESCENDANT can override. Every typed character setting `visibility: visible` reappeared
+through the engine's hidden layer, so at t=1 the effect's own text and caret were drawn on top of
+the canonical frame: 0.8% of the stage, including a caret the canon does not have.
+
+**The engine now closes that hole for good.** `_showCanon` sets the layer to `opacity: 0` as well as
+`visibility: hidden`. A parent at opacity 0 cannot be overridden from inside, and unlike
+`display: none` it keeps the layer laid out, so effects that measure their own geometry still can.
+Only one effect was exploiting the gap, but any future one could have.
+
+After all four: every endpoint back to **0.0000% difference from canonical**, and a full re-sweep of
+all 96 at pairs 0 and 12 still **96 clean / 0 defects**.
+
+## Shipping Tom's decisions
+
+`build_page_engine.py` rebuilds the engine inlined in `final/index.html` from `slogan_lab/`, reading
+the verdicts out of `ratings/transitions.json`. It drops the `FX.register({...})` block of every
+discarded effect by brace matching — a regex cannot, since effect bodies contain braces inside
+strings, comments and regexes — and rewrites the cycler's POOL to exactly what was kept. Helper
+functions of discarded effects stay, because they are often shared with kept ones; only the
+registration goes, so the effect can never be picked.
+
+Result: **85 registered, 85 in the pool, none of the 11 discards present**, verified in a browser.
+The page's inlined engine grows 118 KB -> 430 KB, which is the honest cost of keeping 85 effects.

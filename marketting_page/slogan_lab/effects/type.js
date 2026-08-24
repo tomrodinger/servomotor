@@ -233,9 +233,14 @@
     },
     frame: function (stage, t) {
       var A = stage._A, B = stage._B, wB = stage._wB, nA = A.length;
-      var tp = span(t, 0.02, 0.34);          // erase
-      var tq = span(t, 0.39, 0.97);          // type
-      var typing = t >= 0.365;               // the two blocks swap while the page is empty
+      /* The retype starts the instant the erase finishes. There used to be a 0.05 gap between
+         them — 0.13s on a 2.6s transition — during which the whole headline was gone and the only
+         thing on the hero was a caret blinking on an empty stage. It reads as the page having
+         broken rather than as a pause. The blocks still swap while nothing is showing, but that
+         window is now a single frame instead of eight. */
+      var tp = span(t, 0.02, 0.34);          // erase, done at 0.34
+      var tq = span(t, 0.35, 0.97);          // type, starts immediately after
+      var typing = t >= 0.345;               // the two blocks swap in the one frame between
       var last = null, i;
 
       stage._hA.style.visibility = typing ? 'hidden' : 'visible';
@@ -412,9 +417,17 @@
           op.ca = ca; op.ia = ia; op.ah = a.h;
         }
         if (b) {
-          /* the replacement lives in the OLD word's slot until the re-justify */
-          op.sx = a ? clamp(a.w / Math.max(1, b.w), 0.52, 1.85) : 1;
-          op.cx = a ? (a.w - b.w * op.sx) / 2 : 0;      // centre it in the slot when clamped
+          /* The replacement lives in the OLD word's slot until the re-justify — but at its own
+             natural width, CENTRED in that slot, not stretched to fill it.
+             It used to scale horizontally by clamp(a.w / b.w, 0.52, 1.85), which keeps the line's
+             geometry perfectly stable and mangles the type doing it: an 85% stretch turns
+             "one motor." into a different, much heavier face, and a 48% squeeze makes "The" look
+             like a condensed cut. Half the transition was set in fonts the page does not own.
+             Letting each word keep its own width costs a little raggedness mid-sweep, which is
+             what a real find-and-replace looks like before it re-justifies, and is the thing this
+             effect is imitating. */
+          op.sx = 1;
+          op.cx = a ? (a.w - b.w) / 2 : 0;              // centred in the old slot until it moves
           var cb = FX.el('div', null, {
             position: 'absolute', left: slot.x + 'px', top: slot.y + 'px',
             width: Math.ceil(b.w + 2) + 'px', height: Math.ceil(Math.max(b.h, slot.h)) + 'px',
@@ -464,7 +477,14 @@
           roll = E.inOutCubic(span(t, l + 0.07, l + 0.21));
           coll = E.inOutCubic(span(t, l + 0.23, l + 0.34));
         }
-        var rf = o.ins ? 1 : E.inOutCubic(span(t, rs, rs + 0.20));
+        /* Each word RE-JUSTIFIES AS IT SWAPS, rather than the whole line re-justifying at the
+           end. Holding every replacement in its predecessor's slot until t=0.66 is what forced
+           the old horizontal scaling: without it, words of different length pile into each other
+           for two thirds of the transition. Moving each word to its final position on its own
+           roll means the line is only ever ragged at the boundary between the part already
+           replaced and the part not yet reached — which is exactly what an editor doing a
+           find-and-replace looks like, and is the thing this effect is imitating. */
+        var rf = o.ins ? 1 : roll;
 
         /* selection rectangle: grows from the left, collapses to the right */
         hx = o.slot.x - o.padX; hw = (o.slot.w + 2 * o.padX) * grow; hy = o.slot.y - o.padY;
