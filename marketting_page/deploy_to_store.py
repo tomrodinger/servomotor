@@ -482,11 +482,30 @@ export default function MarketingContent() {
     // detached DOM at 60 fps, and only the newest is reachable to stop. So record what the script
     // starts and undo exactly that. Listeners on elements INSIDE the injected markup need no
     // cleanup — React removes those nodes and the listeners go with them.
+    //
+    // `inEngine` is what makes "exactly that" true. The interception below is GLOBAL — while this
+    // component is mounted it replaces window.requestAnimationFrame and both addEventListeners —
+    // so without a discriminator it also records frames and listeners belonging to anything else
+    // that happens to register while the homepage is up: gtag.js finishing its async load, a
+    // context provider, the store Header. Cleanup would then remove a BYSTANDER's listener and
+    // cancel its pending frame, off-page, silently, while that component is still mounted and
+    // still expecting them. Tracking is therefore gated on `inEngine`, which is true only during
+    // the engine's own synchronous start-up and inside callbacks the engine itself scheduled —
+    // so the self-re-arming loop stays fully tracked (each tracked frame re-arms with the flag
+    // set) while nothing else is ever touched.
+    // Pinned by tests/components/MarketingContent.test.js in the store repo.
+    let inEngine = false;
     const liveRaf = new Set();
     const nativeRaf = window.requestAnimationFrame;
     const nativeCancel = window.cancelAnimationFrame;
     window.requestAnimationFrame = function (cb) {
-      const id = nativeRaf.call(window, function (t) { liveRaf.delete(id); return cb(t); });
+      if (!inEngine) return nativeRaf.call(window, cb);   // bystander: hand it straight through
+      const id = nativeRaf.call(window, function (t) {
+        liveRaf.delete(id);
+        const outer = inEngine;
+        inEngine = true;                                  // anything this frame schedules is ours
+        try { return cb(t); } finally { inEngine = outer; }
+      });
       liveRaf.add(id);
       return id;
     };
@@ -503,18 +522,24 @@ export default function MarketingContent() {
         ? t.addEventListener : null);
       const inherited = t.addEventListener;
       t.addEventListener = function () {
-        added.push([t, arguments]);
+        if (inEngine) added.push([t, arguments]);
         return inherited.apply(t, arguments);
       };
     });
 
     try {
       // eslint-disable-next-line no-new-func
+      inEngine = true;
       new Function(MARKETING_SCRIPT)();
       window.__marketingEffect.ok = true;
     } catch (err) {
       window.__marketingEffect.error = String((err && err.message) || err);
       console.error('[marketing] slogan engine failed to start:', err);
+    } finally {
+      // Must run even if the engine threw halfway through: leaving the flag set would make every
+      // later registration on the page — by anyone — look like the engine's, which is the exact
+      // bug the flag exists to prevent.
+      inEngine = false;
     }
 
     return () => {
