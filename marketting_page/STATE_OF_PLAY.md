@@ -156,6 +156,35 @@ Practical consequences: **re-`stat` a file rather than trusting an mtime read ea
 session**, check `git log` on `marketting_page` before assuming a file is as you left it, and
 before committing, attribute every change you are about to stage.
 
+## The repo will not push, and why
+
+`git push origin main` fails with **HTTP 408** from this machine. Ten commits are committed and
+safe locally; only the first two of the twelve reached GitHub.
+
+The cause is size: `marketting_page` carries ~160 MB of design galleries, thumbnails, research
+screenshots and 96 GIFs, and commit `2385010` introduces them all at once. The remaining pack is
+~133 MB and the server times out receiving it.
+
+What was tried, so nobody repeats it:
+
+- pushing commit by commit — works for the small ones, fails on `2385010`
+- `http.postBuffer` at 500 MB, `http.version HTTP/1.1`, long `lowSpeedTime` — no effect
+- SSH instead of HTTPS — no key is configured on this machine (`Permission denied (publickey)`)
+- pre-uploading the blobs on a scratch branch `_push_chunks`, in 12 MB batches, which **all
+  succeeded** — every blob is now on the server, verified by matching SHAs. It did not shrink the
+  `main` push, which is the part I do not have an explanation for.
+
+`_push_chunks` was left on the remote deliberately: it holds those ~100 MB of objects, so a retry
+from a faster connection has less to send. Delete it once `main` is up:
+
+    git push origin --delete _push_chunks
+
+The realistic options are: retry from a better connection, or decide the galleries do not belong in
+git — `design_variations/`, `premium_minimal_variations/thumbs/` and
+`design_variations/research/shots/` are ~80 MB of them and are a record of a finished exercise, not
+inputs to the page. Removing them from history would need coordinating with the other AI, which has
+these commits locally too.
+
 ## What is not done
 
 - `premium_minimal_variations/rate.html` has Tom's page verdicts (`ratings/pages.json`); v4 and v17
