@@ -31,6 +31,10 @@
  * mounted, parked, and then driven one _render(t) at a time. That is what makes the audit
  * reproducible — two runs of the same effect at the same t are the same pixels.
  */
+/* Copied verbatim from final/index.html. The harness had only the first 14 of the page's 15,
+   so the transitions into and out of the last slogan were never audited by anything —
+   audit_frames.py, audit_extra.py and strip.py all drive this one file. If the page's list
+   changes, change it here too, or the audit silently stops covering the page. */
 const SLOGANS = [
   ["A motor, and everything","that usually surrounds it."],
   ["The whole drive system.","Inside one motor."],
@@ -46,6 +50,7 @@ const SLOGANS = [
   ["Four bolts. One cable.","A complete servo system."],
   ["Servomotor:","stepper, driver, controller and encoder in one."],
   ["No driver board. No encoder to mount.","It's all inside."],
+  ["Driver, controller and encoder","are no longer your problem."],
 ];
 
 const stage = document.getElementById('stage');

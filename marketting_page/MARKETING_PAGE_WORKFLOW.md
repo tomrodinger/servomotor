@@ -154,7 +154,7 @@ unreferenced first).
 
 ### What the deploy changes on the way out
 
-A standalone page and a page embedded in a store are not the same document, so three adaptations are
+A standalone page and a page embedded in a store are not the same document, so five adaptations are
 applied. Everything else — markup, copy, layout, the slogan engine — ships byte-for-byte.
 
 1. **The CSS is scoped under `.mkt-root`.** The page's stylesheet is global: it styles `nav`,
@@ -201,7 +201,7 @@ new component ships its CSS inline and does not import the module.
 ### Verifying a deploy
 
 Run the store locally (`npx next dev -p 3555` in the store dir) and compare against the standalone
-page. Last verified 2026-08-23: all 15 sections pixel-identical (19611 px), computed styles matching,
+page. Last verified 2026-08-23: all 14 sections pixel-identical (19611 px), computed styles matching,
 slogan engine live.
 
 **Gotcha that will cost you an hour if you forget it:** Chrome does not run

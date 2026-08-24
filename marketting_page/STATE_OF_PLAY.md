@@ -21,10 +21,10 @@ live on Tom's Amplify staging server.
 |---|---|
 | The page | `final/index.html`, hand-edited, 14 sections, dark hero + white body |
 | Facts on it | checked against their sources by `check_facts.py` — 64 facts, currently clean |
-| Slogan transitions | 96 built, **85 shipping**, 11 discarded by Tom |
-| Transition quality | 92/96 pass the full audit; of the 85 that ship, **83** pass |
-| Store component | `AI_testing/selling_web_site/components/MarketingContent.js`, 510 KB |
-| Store tests | `tests/components/MarketingContent.test.js` — 6 tests, passing |
+| Slogan transitions | 96 built, **85 shipping**, 11 discarded by Tom. 15 slogans, all audited |
+| Transition quality | 92/96 pass (`slogan_lab/_audit/FINAL_settle.json`); of the 85 that ship, **83** |
+| Store component | `AI_testing/selling_web_site/components/MarketingContent.js`, ~516 KB |
+| Store tests | `tests/unit/marketingContent.test.js` is the one to run after a deploy; `tests/components/MarketingContent.test.js` pins the teardown. Both pass |
 
 ## The pipeline, end to end
 
@@ -56,8 +56,8 @@ overwrite the hand-authored page itself. Its `copy_to_ecommerce()` half is NOT o
 
 ## What the deployer changes on the way out, and why
 
-A standalone page and a page inside a store are not the same document. Six adaptations, all in
-`deploy_to_store.py` with the reasoning at each one:
+A standalone page and a page inside a store are not the same document. **Five** adaptations, plus a
+teardown, all in `deploy_to_store.py` with the reasoning at each one:
 
 1. **CSS scoped under `.mkt-root`** — the page styles bare `nav`, `footer`, `a`, `img`, `table`;
    unscoped it restyles the store's Header, SiteFooter and cart.
@@ -109,6 +109,12 @@ field, not `note`** — that cost a wrong first read.
     python3 slogan_lab/strip.py <id> --frames 11              # frames stacked as the RATER draws them
 
 They need the static server up (`python3 serve.py`, port 8912) and use Playwright + Chromium.
+Always pass `--out`: the default is `_audit/report.json` and a second run silently overwrites the
+first. A 96-effect two-pair `--quick` sweep is about 3-6 minutes; all fourteen pairs is about 40.
+
+**The audit JSONs are gitignored** (`slogan_lab/.gitignore`), so a fresh clone has none of them and
+cannot check any quality claim here without re-running a sweep. The ~50 on this disk are the only
+evidence behind the numbers in FIX_LOG, and `git clean` would take them.
 
 The **settle** check is the one that matters most and was added last: it compares the final effect
 frame against the canonical frame it hands over to, and shift-tests it, because a 1px twitch at the
@@ -154,6 +160,13 @@ before committing, attribute every change you are about to stage.
 
 - `premium_minimal_variations/rate.html` has Tom's page verdicts (`ratings/pages.json`); v4 and v17
   carry notes about which sections should be white vs black that have **not** been acted on.
+- **A CSP decision is already recorded in the OTHER repo** and constrains this one:
+  `AI_testing/selling_web_site/CLAUDE.md` notes that `MARKETING_SCRIPT` runs through
+  `new Function(...)`, which needs `'unsafe-eval'`; the CSP is Report-Only today, and the script is
+  to be emitted as a real file (`/marketing/marketing.js`) the next time the generator is touched.
+  Anyone editing `deploy_to_store.py` from this document alone would never learn that.
+- **`components/MarketingContent.js.bak` is written once and never refreshed** — the deployer only
+  creates it if it is absent. It is not a rollback point after the second deploy; git is.
 - The store's `styles/Marketing.module.css` is stale and unused — the component ships its CSS
   inline. It is left alone deliberately so the deploy cannot clobber a hand edit.
 - Nothing here has been pushed to the live production site. Staging only.

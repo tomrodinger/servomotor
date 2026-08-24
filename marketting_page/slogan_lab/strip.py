@@ -28,6 +28,9 @@ def main():
     ap.add_argument("--frames", type=int, default=12)
     ap.add_argument("--pair", type=int, default=0)
     ap.add_argument("--white", action="store_true")
+    ap.add_argument("--width", type=int, default=0,
+                    help="stage width in px; audit_frames.py has this and strip.py did not, so a "
+                         "defect that only shows at 680px could be measured but not looked at")
     ap.add_argument("--out", default=os.path.join(ROOT, "_audit", "strips"))
     a = ap.parse_args()
 
@@ -40,6 +43,8 @@ def main():
         page = b.new_page(viewport={"width": 1400, "height": 520})
         page.goto(URL, wait_until="load")
         page.evaluate("() => window.__ready")
+        if a.width:
+            page.evaluate("w => setWidth(w)", a.width)
         if a.white:
             page.evaluate("() => setWhite(true)")
         box = page.locator("#box")
@@ -55,7 +60,9 @@ def main():
             sheet = Image.new("RGB", (w, h * len(tiles) + len(tiles) - 1), (60, 60, 66))
             for k, im in enumerate(tiles):
                 sheet.paste(im, (0, k * (h + 1)))
-            p = os.path.join(a.out, "%s_p%d%s.png" % (fid, a.pair, "_white" if a.white else ""))
+            p = os.path.join(a.out, "%s_p%d%s%s.png" % (fid, a.pair,
+                                                        "_w%d" % a.width if a.width else "",
+                                                        "_white" if a.white else ""))
             sheet.save(p)
             print("  %s  (%d frames, %dx%d)" % (p, len(tiles), sheet.width, sheet.height))
         b.close()
