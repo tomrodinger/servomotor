@@ -493,7 +493,7 @@ export default function MarketingContent() {
     // the engine's own synchronous start-up and inside callbacks the engine itself scheduled —
     // so the self-re-arming loop stays fully tracked (each tracked frame re-arms with the flag
     // set) while nothing else is ever touched.
-    // Pinned by tests/components/MarketingContent.test.js in the store repo.
+    // Pinned by tests/components/MarketingContent.test.js.
     let inEngine = false;
     const liveRaf = new Set();
     const nativeRaf = window.requestAnimationFrame;

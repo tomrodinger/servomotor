@@ -1,5 +1,9 @@
 # Marketing page: hand-authored, with facts under source control
 
+> **New here?** Read [`STATE_OF_PLAY.md`](STATE_OF_PLAY.md) first — it is the resume point
+> for the whole marketing page and the slogan transitions. This document is the *rules*;
+> that one is the *state*.
+
 **Decided 2026-08-22 by Tom.** The template generator is retired as the way the page is *designed*.
 The page is now hand-edited HTML. In exchange, every FACT on it stays tied to a single source of
 truth, and no hand edit is allowed to silently diverge from that source.
@@ -115,6 +119,12 @@ one. Human judgement still owns the rest.
    feature list.
 
 ## 6. Deploying to the e-commerce store
+
+**`python3 build_page_engine.py`** comes first, and only when the effects or the keep list have
+changed. It rebuilds the slogan engine inlined in `final/index.html` from `slogan_lab/`, reading
+the verdicts out of `ratings/transitions.json` and physically stripping the `FX.register` block
+of every discarded effect, so a discarded effect cannot be picked even by accident. Everything
+else on the page is hand-edited and this never touches it.
 
 **`python3 deploy_to_store.py`** ships `final/index.html` into the local store working tree at
 `../../AI_testing/selling_web_site`. Use `--dry-run` to build into `preview/` and touch nothing else.

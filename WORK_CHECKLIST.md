@@ -1,5 +1,20 @@
 # Servomotor — Work Checklist & Resumption Guide
 
+## Marketing page + slogan transitions — SHIPPED to staging, 2026-08-24
+
+Resume point: **`marketting_page/STATE_OF_PLAY.md`**. Rules for editing the page:
+`marketting_page/MARKETING_PAGE_WORKFLOW.md`. Full transition bug-hunt record:
+`marketting_page/slogan_lab/FIX_LOG.md`.
+
+The page is hand-authored in `marketting_page/final/index.html` and deployed with
+`python3 deploy_to_store.py` (never `generate_webpage.py` — it would publish the old design and now
+refuses without a flag). 85 of 96 slogan transitions ship; Tom discarded 11 and his verdicts live in
+`marketting_page/ratings/transitions.json`.
+
+Open, small: `odometer` and `kinetic-gravity` settle ~1px out on one slogan pair; three
+additive-light effects are invisible on the rater's "On white" toggle; Tom's page-level notes on v4
+and v17 in `ratings/pages.json` (which sections should be white vs black) have not been acted on.
+
 **Purpose:** a durable checklist of everything in flight, so work can resume even
 after the chat context is cleared. Update the checkboxes as items are finished.
 

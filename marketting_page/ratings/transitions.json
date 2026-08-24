@@ -320,7 +320,7 @@
     "family": "Mechanical"
   },
   "mechanical-typewriter": {
-    "verdict": "fix",
+    "verdict": "keep",
     "name": "Carriage Return",
     "family": "Mechanical",
     "why": "The letters move by about a pixel after the transition to get to their canonical position. It is a sudden tiny jerk. would be better if they just were typed out one by one accurately in their final position."
@@ -421,7 +421,7 @@
     "family": "Slide"
   },
   "type-backspace": {
-    "verdict": "fix",
+    "verdict": "keep",
     "name": "Backspace & Retype",
     "family": "Type",
     "why": "The letters drop by about a pixel after the transition to get to their canonical position."
@@ -432,7 +432,7 @@
     "family": "Type"
   },
   "type-find": {
-    "verdict": "fix",
+    "verdict": "keep",
     "name": "Find & Replace",
     "family": "Type",
     "why": "the yellow highlight, I would like it if it were green instead to go with my page better"
