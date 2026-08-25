@@ -1,3 +1,9 @@
 
 # regenerable audit output (hundreds of KB of JSON per run)
 _audit/
+
+# ...except the one run the docs cite. STATE_OF_PLAY quotes "92 of 96 clean" and FIX_LOG's numbers
+# come from sweeps like it; without a committed copy a fresh clone cannot check any of that without
+# re-running a Playwright sweep, and a plausible-looking neighbour (FINAL2_allpairs.json) reports
+# 96/96 because it predates the stricter settle check. Keep the cited one, ignore the rest.
+!_audit/FINAL_settle.json

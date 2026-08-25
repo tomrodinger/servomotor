@@ -112,9 +112,12 @@ They need the static server up (`python3 serve.py`, port 8912) and use Playwrigh
 Always pass `--out`: the default is `_audit/report.json` and a second run silently overwrites the
 first. A 96-effect two-pair `--quick` sweep is about 3-6 minutes; all fourteen pairs is about 40.
 
-**The audit JSONs are gitignored** (`slogan_lab/.gitignore`), so a fresh clone has none of them and
-cannot check any quality claim here without re-running a sweep. The ~50 on this disk are the only
-evidence behind the numbers in FIX_LOG, and `git clean` would take them.
+**The audit JSONs are gitignored** (`slogan_lab/.gitignore`) with one exception: the run this
+document cites, `_audit/FINAL_settle.json`, IS committed, so "92 of 96" can be checked from a fresh
+clone with `python3 slogan_lab/audit_report.py slogan_lab/_audit/FINAL_settle.json`. The other ~100
+files exist only on this disk and `git clean -x` would take them; they are all regenerable by
+re-running a sweep. Do not reach for a neighbour like `FINAL2_allpairs.json` to check a number —
+it predates the settle check and reports 96/96.
 
 The **settle** check is the one that matters most and was added last: it compares the final effect
 frame against the canonical frame it hands over to, and shift-tests it, because a 1px twitch at the
