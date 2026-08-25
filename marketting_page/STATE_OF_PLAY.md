@@ -156,34 +156,33 @@ Practical consequences: **re-`stat` a file rather than trusting an mtime read ea
 session**, check `git log` on `marketting_page` before assuming a file is as you left it, and
 before committing, attribute every change you are about to stage.
 
-## The repo will not push, and why
+## Pushing is slow, and once failed for hours
 
-`git push origin main` fails with **HTTP 408** from this machine. Ten commits are committed and
-safe locally; only the first two of the twelve reached GitHub.
+Everything is pushed. Getting there took a while and the next person should know why, because it
+will happen again.
 
-The cause is size: `marketting_page` carries ~160 MB of design galleries, thumbnails, research
-screenshots and 96 GIFs, and commit `2385010` introduces them all at once. The remaining pack is
-~133 MB and the server times out receiving it.
+`marketting_page` carries ~160 MB of design galleries, thumbnails, research screenshots and 96
+GIFs, nearly all of it introduced in one commit (`2385010`). The resulting pack is ~133 MB, and
+`git push` returned **HTTP 408** repeatedly over a period of hours — the server timing out while
+receiving it. The same push then went through unchanged the following morning, so the deciding
+factor was the connection, not the repository.
 
-What was tried, so nobody repeats it:
+Things that did NOT help, so nobody repeats them: `http.postBuffer` at 500 MB,
+`http.version HTTP/1.1`, a long `http.lowSpeedTime`, and pushing commit by commit (that works for
+the small ones and still fails on `2385010`). SSH is not an option on this machine — no key is
+configured. Pre-uploading the blobs on a scratch branch in 12 MB batches did get every object onto
+the server, verified by matching SHAs, but did not shrink the `main` push; that branch has been
+deleted.
 
-- pushing commit by commit — works for the small ones, fails on `2385010`
-- `http.postBuffer` at 500 MB, `http.version HTTP/1.1`, long `lowSpeedTime` — no effect
-- SSH instead of HTTPS — no key is configured on this machine (`Permission denied (publickey)`)
-- pre-uploading the blobs on a scratch branch `_push_chunks`, in 12 MB batches, which **all
-  succeeded** — every blob is now on the server, verified by matching SHAs. It did not shrink the
-  `main` push, which is the part I do not have an explanation for.
+If it stalls again: **run the push in the background and leave it alone**, rather than retrying. A
+foreground command will be killed by a timeout long before a push this size completes, which makes
+a slow push look like a failed one.
 
-`_push_chunks` was left on the remote deliberately: it holds those ~100 MB of objects, so a retry
-from a faster connection has less to send. Delete it once `main` is up:
-
-    git push origin --delete _push_chunks
-
-The realistic options are: retry from a better connection, or decide the galleries do not belong in
-git — `design_variations/`, `premium_minimal_variations/thumbs/` and
-`design_variations/research/shots/` are ~80 MB of them and are a record of a finished exercise, not
-inputs to the page. Removing them from history would need coordinating with the other AI, which has
-these commits locally too.
+The durable fix, if it becomes annoying, is to stop keeping ~80 MB of finished-exercise galleries
+in git — `design_variations/`, `premium_minimal_variations/thumbs/` and
+`design_variations/research/shots/`. They are a record of a decision already made, not inputs to
+the page. Rewriting them out of history needs coordinating with the other AI, which has these
+commits locally too.
 
 ## What is not done
 
