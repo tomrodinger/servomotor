@@ -1,6 +1,6 @@
 
 # regenerable audit output (hundreds of KB of JSON per run)
-_audit/
+_audit/*
 
 # ...except the one run the docs cite. STATE_OF_PLAY quotes "92 of 96 clean" and FIX_LOG's numbers
 # come from sweeps like it; without a committed copy a fresh clone cannot check any of that without
