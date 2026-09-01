@@ -148,7 +148,7 @@ Another AI owns `AI_testing/selling_web_site` and **edits files on the marketing
 On 2026-08-23/24 it made four changes to this work, all of them correct:
 
 - `deploy_to_store.py` — root-relative same-site links, so Amplify staging can be clicked through.
-- `final/index.html` — documentation links pointed at `https://9o.at/M17_1.3`.
+- `final/index.html` — documentation links point at `https://9o.at/M17_1.5` (bumped from `M17_1.3` on 2026-09-01).
 - `deploy_to_store.py` — **gated the teardown harness on an `inEngine` flag.** My interception of
   `requestAnimationFrame` and `addEventListener` was global while the component was mounted, so on
   unmount it would cancel a *bystander's* pending frame and remove a bystander's listener — gtag,
