@@ -306,7 +306,7 @@
   .prod-2 img{margin:0 auto;max-height:340px;width:auto;}
   .prod-2 figcaption{text-align:center;}
 
-  .back-img{max-width:310px;margin:var(--s6) auto 0;}
+  .back-img{max-width:350px;margin:var(--s6) auto 0;}
 
   /* ================= APPLICATIONS ================= */
   .app-grid{margin-top:var(--s6);display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
@@ -564,7 +564,7 @@
       <a class="arrow-link" href="https://9o.at/M17_1.5">Read the documentation <span class="arr">&rarr;</span></a>
     </div>
     <div class="hero-img">
-      <img src="../transparent/one_motor_transparent_small.png"
+      <img src="../transparent/one_motor_transparent_small.webp" fetchpriority="high"
            alt="Gearotons M17 servomotor, three-quarter view">
     </div>
     <!-- v17's key-spec strip -->
@@ -622,7 +622,7 @@
 
     <figure class="figure reveal">
       <div class="frame">
-        <img src="../connection_diagram.jpg" alt="Connection diagram: a computer with software, a USB cable to an RS485 adapter, two M17 motors daisy-chained on the RS485 pair, and a 12-24 V power supply" width="2048" height="2048">
+        <img src="../connection_diagram.webp" alt="Connection diagram: a computer with software, a USB cable to an RS485 adapter, two M17 motors daisy-chained on the RS485 pair, and a 12-24 V power supply" width="2048" height="2048" loading="lazy">
       </div>
       <figcaption>A computer, a low-cost RS485 adapter, a 12&ndash;24&nbsp;V supply &mdash; and any number of motors on the same pair of wires.</figcaption>
     </figure>
@@ -700,7 +700,7 @@
     <p class="lede wide">M17&#8209;60, M17&#8209;48, M17&#8209;40 and M17&#8209;34 share a footprint, a bus and a command set. Only the stack gets shorter and the torque steps down &mdash; 0.65 to 0.28&nbsp;N&middot;m &mdash; so you match the machine, and the budget, without rewriting a line.</p>
 
     <figure class="overview-img reveal">
-      <img src="../transparent/M17_series_overview_transparent.png" alt="The four M17 models side by side, tallest to shortest: M17-60, M17-48, M17-40 and M17-34" width="2893" height="1416">
+      <img src="../transparent/M17_series_overview_transparent.webp" alt="The four M17 models side by side, tallest to shortest: M17-60, M17-48, M17-40 and M17-34" width="2893" height="1416" loading="lazy">
       <figcaption>Tallest to shortest: M17&#8209;60, M17&#8209;48, M17&#8209;40, M17&#8209;34. Identical 42.2 × 42.2&nbsp;mm NEMA&nbsp;17 face, identical 5&nbsp;mm shaft.</figcaption>
     </figure>
 
@@ -787,19 +787,19 @@
       <p class="scroll-hint dim-hint">Scroll a drawing sideways to read the dimensions.</p>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-60</b><span>59.7 mm high · 20.6 mm shaft · 470 g</span></div>
-        <div class="dim-media"><img style="--dk:1.0" src="../M17-60_dimensions.png" alt="M17-60 dimension drawing, side and front views with millimetre dimensions" width="1734" height="686"></div>
+        <div class="dim-media"><img style="--dk:1.0" src="../M17-60_dimensions.webp" alt="M17-60 dimension drawing, side and front views with millimetre dimensions" width="1734" height="686" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-48</b><span>48.7 mm high · 20.6 mm shaft · 360 g</span></div>
-        <div class="dim-media"><img style="--dk:0.95156" src="../M17-48_dimensions.png" alt="M17-48 dimension drawing, side and front views with millimetre dimensions" width="1650" height="702"></div>
+        <div class="dim-media"><img style="--dk:0.95156" src="../M17-48_dimensions.webp" alt="M17-48 dimension drawing, side and front views with millimetre dimensions" width="1650" height="702" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-40</b><span>40.1 mm high · 20.6 mm shaft · 285 g</span></div>
-        <div class="dim-media"><img style="--dk:0.90888" src="../M17-40_dimensions.png" alt="M17-40 dimension drawing, side and front views with millimetre dimensions" width="1576" height="710"></div>
+        <div class="dim-media"><img style="--dk:0.90888" src="../M17-40_dimensions.webp" alt="M17-40 dimension drawing, side and front views with millimetre dimensions" width="1576" height="710" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-34</b><span>33.5 mm high · 20.6 mm shaft · 210 g</span></div>
-        <div class="dim-media"><img style="--dk:0.85928" src="../M17-34_dimensions.png" alt="M17-34 dimension drawing, side and front views with millimetre dimensions" width="1490" height="728"></div>
+        <div class="dim-media"><img style="--dk:0.85928" src="../M17-34_dimensions.webp" alt="M17-34 dimension drawing, side and front views with millimetre dimensions" width="1490" height="728" loading="lazy"></div>
       </div>
     </div>
 
@@ -957,7 +957,7 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
     <p class="lede">The motor tells you what it is doing before you open a terminal — and will spin on its own, on request.</p>
 
     <div class="back-img reveal">
-      <img src="../transparent/motor_back_transparent_small.png" alt="Rear of the M17 motor showing the specification label, QR codes, status LEDs and the Reset and Test buttons" width="1018" height="1200">
+      <img src="../transparent/motor_back_transparent_small.webp" alt="Rear of the M17 motor showing the specification label, QR codes, status LEDs and the Reset and Test buttons" width="700" height="806" loading="lazy">
     </div>
 
     <div class="card-2">
@@ -993,11 +993,11 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
 
     <div class="prod-2">
       <figure class="reveal">
-        <img src="../transparent/kit_with_three_motors_transparent_small.png" alt="Kit flat-lay: three M17 motors, the adapter PCB, cables and knobs" width="905" height="1200">
+        <img src="../transparent/kit_with_three_motors_transparent_small.webp" alt="Kit flat-lay: three M17 motors, the adapter PCB, cables and knobs" width="905" height="1200" loading="lazy">
         <figcaption>Three motors, cables, adapter and accessories.</figcaption>
       </figure>
       <figure class="reveal">
-        <img src="../transparent/adapter_and_wire_transparent_small.png" alt="The green Gearotons 3-in-1 RS485 adapter with its cable" width="1200" height="1191">
+        <img src="../transparent/adapter_and_wire_transparent_small.webp" alt="The green Gearotons 3-in-1 RS485 adapter with its cable" width="1200" height="1191" loading="lazy">
         <figcaption>The Gearotons 3-in-1 RS485 adapter, sold separately.</figcaption>
       </figure>
     </div>
@@ -1020,15 +1020,15 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
 
     <div class="app-grid">
       <figure class="app-card reveal">
-        <img src="../robotics.jpg" alt="An M17 motor in a CNC and robotics metal assembly driving a large gear" width="1524" height="1524">
+        <img src="../robotics.webp" alt="An M17 motor in a CNC and robotics metal assembly driving a large gear" width="1524" height="1524" loading="lazy">
         <figcaption>Robotics &amp; CNC machines</figcaption>
       </figure>
       <figure class="app-card reveal">
-        <img src="../automation.jpg" alt="An M17 motor mounted inside an industrial automation machine" width="1491" height="1491">
+        <img src="../automation.webp" alt="An M17 motor mounted inside an industrial automation machine" width="1491" height="1491" loading="lazy">
         <figcaption>Industrial automation</figcaption>
       </figure>
       <figure class="app-card reveal">
-        <img src="../test_rack.jpg" alt="A rack of M17 motors in automated test equipment" width="1417" height="1417">
+        <img src="../test_rack.webp" alt="A rack of M17 motors in automated test equipment" width="1417" height="1417" loading="lazy">
         <figcaption>Automated test equipment</figcaption>
       </figure>
     </div>
@@ -1044,8 +1044,8 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
     <h2>Open source.<br><strong>Down to the PCB.</strong></h2>
     <p class="lede">All software, firmware and PCB design files are published on GitHub. Read them, fork them, build on them.</p>
     <div class="oss-logos reveal">
-      <img src="../Open_Source_Initiative.svg.png" alt="Open Source Initiative logo" width="1920" height="2518">
-      <img src="../Open-source-hardware-logo.svg.png" alt="Open Source Hardware logo" width="1920" height="2018">
+      <img src="../Open_Source_Initiative.svg.webp" alt="Open Source Initiative logo" width="1920" height="2518" loading="lazy">
+      <img src="../Open-source-hardware-logo.svg.webp" alt="Open Source Hardware logo" width="1920" height="2018" loading="lazy">
     </div>
     <div style="margin-top:var(--s5);">
       <a class="arrow-link" href="https://github.com/tomrodinger/servomotor">View the repository <span class="arr">&rarr;</span></a>
