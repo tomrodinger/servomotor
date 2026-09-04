@@ -25,6 +25,8 @@ live on Tom's Amplify staging server.
 | Transition quality | 92/96 pass (`slogan_lab/_audit/FINAL_settle.json`); of the 85 that ship, **83** |
 | Store component | `AI_testing/selling_web_site/components/MarketingContent.js`, ~516 KB |
 | Store tests | `tests/unit/marketingContent.test.js` is the one to run after a deploy; `tests/components/MarketingContent.test.js` pins the teardown. Both pass |
+| Images | **all 15 are WebP as of 2026-09-04** — page 9.34 MB → 2.71 MB. PNG/JPG masters kept; only the `.webp` is referenced. Encoder settings, the cut-out traps and the label-retouch method are in `MARKETING_PAGE_WORKFLOW.md` §7. Don't re-encode without reading it |
+| Rear-label photo | replaced 2026-09-04 from `*154555.jpg` — the old one cut off the motor body. Its slot is `.back-img{max-width:350px}`, asset 700 px wide (2× retina). The two numbers move together |
 
 ## The pipeline, end to end
 

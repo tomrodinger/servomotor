@@ -110,6 +110,14 @@ one. Human judgement still owns the rest.
    cutouts; previous versions kept as `.bak`.
    *If the hardware labels are revised in production, re-shoot and drop the retouch.*
 
+   **SUPERSEDED 2026-09-04.** Tom: the 2026-08-22 image "looks a little strange to me" — it was
+   cropped so tight it cut off the motor body. Re-done from
+   `Pictures/servomotor3/M17-60 motor/*154555.jpg`, a fuller shot of the same older unit, so the
+   same three label edits were needed (`M3-60`→`M17-60`, `12-30 V`→`12-24 V`, and the rotated
+   `+12-30V`→`+12-24V` above the connector — that third one is small, sideways and easy to miss).
+   No image model this time and none needed: see §7. Previous versions kept as `.bak2`, since
+   `.bak` was already taken by the 2026-08-22 round.
+
 4. **Duplicate intro — FIXED.** `marketting_page/introduction.txt` was a byte-identical copy of the
    datasheet's. It is now a **symlink** to `../servomotor_datasheets/introduction.txt`, so there is
    one file and one source, and `generate_webpage.py` still reads it. The pre-four-motor original is
@@ -211,3 +219,91 @@ every `.reveal` section stays blank. This is not a bug in the page. Check
 `document.visibilityState` before concluding anything, and force the tab to the front (take a
 screenshot) before reading state. `window.__marketingEffect` in the generated component exists to
 tell "the effect never ran" apart from "the engine threw".
+
+---
+
+## 7. The images — 2026-09-04
+
+The homepage served **9.34 MB across 27 requests**, ~15 s on a 5 Mbps connection. It now serves
+**2.71 MB**. Everything below was measured on the actual files; re-verify rather than trust.
+
+### Encoding
+
+Two settings, and which one you use depends on the image:
+
+```bash
+cwebp -q 90 -alpha_q 100 -m 6 IN.png -o OUT.webp   # photographs
+cwebp -lossless -z 9        IN.png -o OUT.webp     # line art, logos
+```
+
+- `-alpha_q 100` is **not optional**. Most of these are cut-outs on transparency and a lossy
+  alpha reads as a halo against the white page.
+- Lossless wins outright on the four `M17-*_dimensions.png` and the two open-source logos —
+  smaller *and* bit-identical. There is no trade-off to weigh there.
+- Measured against the masters (flattened onto white first — see below), the lossy files run
+  **38.7–47.6 dB PSNR** with every alpha channel bit-exact.
+- `adapter_and_wire` is the low one at 38.7 dB and that is its ceiling, not a setting problem:
+  q95 buys 1.1 dB for 88 KB and still does not reach 40. Checked side by side at 100% on the
+  QR-and-fine-white-text region; there is nothing to see. **Leave it at q90.**
+
+**Measurement gotcha:** compare SSIM/PSNR only after flattening both images onto white
+(`magick IN -background white -alpha remove -alpha off`). Transparent pixels hold undefined RGB,
+and comparing raw makes even a *lossless* re-encode score 0.88 SSIM and look damaged.
+
+Masters are kept; only the `.webp` is referenced. `deploy_to_store.py` already handles WebP — its
+asset regex includes it, no change needed. `Gearotons_Logo.png` stays PNG: the store uses it
+elsewhere and the deployer guards it.
+
+Below-the-fold images carry `loading="lazy"`; the hero (`one_motor`) must **not** — it is the LCP
+element and lazy-loading it measurably slows the page. It carries `fetchpriority="high"` instead.
+
+### Cutting a product photo out of its background
+
+`rembg` (what `transparent/make_transparent.py` uses) is **not installed** in the system python.
+For these studio shots it isn't needed — the background is exactly `255,255,255`, so a flood fill
+from the frame corners gives the silhouette, and white *enclosed* by the motor (silkscreen text,
+connector, screw heads) stays opaque for free. Two traps:
+
+1. **A flood fill will not drop a cast shadow.** The unit sits on a white floor and throws a soft
+   contact shadow. A plain `-trim` bbox includes it and the fill keeps it as a near-opaque grey
+   mass: invisible on the white page, obvious anywhere else, and it shrinks the motor ~4% inside a
+   fixed-width slot. Below the body, take the silhouette from the motor's own darkness instead —
+   measured on the M17-60 shot, the button tab reads **35–116** and the shadow **140–250**, so they
+   separate cleanly — then refill holes, or the cut punches out the white "Reset"/"Test".
+2. **A specular highlight on the lower chamfer can exceed the white threshold and reach the
+   outline**, letting the fill run up it and slit the mask. Close the slits, then refill holes.
+
+Downscale on *premultiplied* alpha and un-premultiply after, or you get a white fringe.
+
+### Retouching label text without an image model
+
+The 2026-08-22 round used `google/gemini-3-pro-image` via OpenRouter. The 2026-09-04 round used no
+model at all and the result is more faithful: **every replacement glyph is transplanted from
+elsewhere in the same photograph** (the `1` from the voltage row, the `7` and `4` from `470 g`, the
+rotated `2` from the connector legend itself), so typeface, print grain, focus and silkscreen sheen
+match by construction — and the QR codes and the untouched spec figures stay bit-identical, which is
+the whole reason the earlier round had to composite the QR back by hand.
+
+Placement comes from a least-squares fit of Arial Bold metrics to the glyphs already on the label.
+Worth knowing before you re-derive it: the label **is** Arial Bold, the spec block sits at ~0.46
+scale, the rotated connector legend is the same face at **0.875×** that, and the whole label is
+rotated ~**1.4° in plane** so baselines rise to the right. Fitting that put residuals at 2–4 px on
+a 2928 px source, i.e. sub-pixel in the shipped asset.
+
+Two things that bit, in case they bite again:
+
+- Erase rectangles clip neighbours. On this label the `M` and the hyphen sit 2–5 px from the glyph
+  being replaced. Erase generously and put the untouched glyphs *back* at their measured positions.
+- Paste with the exact matte composite `out = P + (1-a)·(cur - Bsrc)`, not a feathered mask over a
+  background estimate. The masked version painted background over the `V` that the wider `4` abuts
+  in `+12-24V`. The exact form leaves a neighbour standing wherever `a = 0`.
+
+Verify containment afterwards by diffing against the source: the 2026-09-04 retouch changed 0.33%
+of the frame, and the QR codes plus torque/speed/current/weight came back byte-identical.
+
+### The slot
+
+`.back-img` is **350px**, not the 310px it was. The new photo includes some motor body, so the spec
+label rendered ~13% smaller at 310px; 350px puts it back where it read before. The asset is
+**700px** wide to stay 2× on retina. If that photo is ever re-cropped tighter, revisit both numbers
+together.
