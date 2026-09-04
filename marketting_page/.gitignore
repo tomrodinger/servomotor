@@ -58,3 +58,5 @@ marketing.css
 *.temp
 
 preview/
+# scratch dir for transparent/retouch_motor_back_label.py and cutout_motor_back.py
+transparent/_label_work/

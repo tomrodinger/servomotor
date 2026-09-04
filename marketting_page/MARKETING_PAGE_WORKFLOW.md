@@ -301,6 +301,19 @@ Two things that bit, in case they bite again:
 Verify containment afterwards by diffing against the source: the 2026-09-04 retouch changed 0.33%
 of the frame, and the QR codes plus torque/speed/current/weight came back byte-identical.
 
+### The two scripts
+
+Both live in `transparent/` and both are **reproducible** — re-running them regenerates the shipped
+assets byte for byte (verified 2026-09-04):
+
+    python3 transparent/retouch_motor_back_label.py   # the three label edits, full resolution
+    python3 transparent/cutout_motor_back.py          # matte, trim, and the 700px display asset
+
+They write into `transparent/_label_work/` (gitignored) and do **not** touch the installed assets;
+copy the two PNGs over by hand when you are happy with them. `retouch_motor_back_label.py` carries
+the measured glyph boxes for this photograph at the top — point it at a different shot and those
+need re-measuring, which the fitting code will tell you loudly via its residuals.
+
 ### The slot
 
 `.back-img` is **350px**, not the 310px it was. The new photo includes some motor body, so the spec
