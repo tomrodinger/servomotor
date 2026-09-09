@@ -82,6 +82,11 @@ then ask: *"Find my motors, then move the one on the bench to 90 degrees and tel
 Details and the full tool list: [Gearotons/servomotor-mcp](https://github.com/Gearotons/servomotor-mcp).
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Gearotons/servomotor-mcp/main/docs/demo-terminal-replay.gif" alt="Claude Code driving a real M17 over MCP: find the motor, turn it two rotations, back, read the encoder" width="800">
+</p>
+<p align="center"><a href="https://github.com/Gearotons/servomotor-mcp/releases/download/v0.3.1/M17-claude-code-demo.mp4">▶ 50-second video: the real motor and this session side by side</a> (recorded 2026-09-09 on a bench M17).</p>
+
+<p align="center">
   <img src="https://gearotons.com/marketing/images/connection_diagram.webp" alt="Wiring: computer, USB to RS-485 adapter, two daisy-chained M17 motors, 12–24 V supply" width="560">
 </p>
 
