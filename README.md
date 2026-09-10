@@ -21,7 +21,7 @@ All sizes: 12–24 V, up to ~1.1 A, up to 560 RPM, closed-loop 32 kHz control, R
 64-bit unique ID + one-byte alias per motor, standard NEMA-17 mount. Indoor use (IP20).
 
 **Buy one:** [gearotons.com](https://gearotons.com) (from $20; ships worldwide from Shenzhen).
-**Documentation:** [tutorial.gearotons.com](https://tutorial.gearotons.com) ·
+**Documentation:** [9o.at/M17_1.5](https://9o.at/M17_1.5) ·
 [Datasheet (PDF)](servomotor_datasheets/datasheet_latest_en.pdf) ·
 [Python API](API_documentation/M17_servomotor_Python_API_documentation.md) ·
 [Arduino API](API_documentation/M17_servomotor_Arduino_API_documentation.md)
