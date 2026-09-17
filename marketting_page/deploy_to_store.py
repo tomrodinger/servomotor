@@ -358,6 +358,14 @@ def main():
         body = body.replace(ref, web)
         scoped = scoped.replace(ref, web)
 
+    # Store-only responsive hero delivery: the standalone source retains its image URL.
+    hero = "/marketing/images/one_motor_transparent_small.webp"
+    encoded = "%2Fmarketing%2Fimages%2Fone_motor_transparent_small.webp"
+    candidates = ", ".join(f"/_next/image?url={encoded}&amp;w={width}&amp;q=75 {width}w"
+                           for width in (384, 640, 750, 1080))
+    body = body.replace(f'src="{hero}"',
+                        f'src="{hero}" srcset="{candidates}" sizes="(max-width: 768px) calc(100vw - 48px), 50vw"')
+
     # ---- 4b. make same-site links root-relative -----------------------------------------
     # The standalone page is written with absolute https://gearotons.com/... URLs because it
     # can be published on its own. Inside the store those are wrong: they pin the visitor to

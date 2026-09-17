@@ -147,7 +147,7 @@
   }
   .quad > div{padding:var(--s3) var(--s3) 0 0;}
   .quad > div + div{border-left:1px solid var(--hairline);padding-left:var(--s3);}
-  .quad .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:var(--green);margin-bottom:10px;}
+  .quad .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:#3f6b25;margin-bottom:10px;}
   .quad h4{margin-bottom:6px;}
   .quad p{font-size:var(--fs-small);color:var(--grey);line-height:1.5;}
 
@@ -175,7 +175,7 @@
     display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s6) var(--s5);
     text-align:left;
   }
-  .feature .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:var(--green);margin-bottom:12px;}
+  .feature .num{display:block;font-size:var(--fs-caption);font-weight:600;letter-spacing:.12em;color:#3f6b25;margin-bottom:12px;}
   .feature h3{margin-bottom:10px;}
   .feature p{color:var(--grey);font-size:16px;line-height:1.55;}
 
@@ -265,7 +265,7 @@
     font-size:13px;line-height:1.75;color:#f5f5f7;
   }
   .c-kw{color:#c98bff;} .c-fn{color:#7cc4ff;} .c-str{color:#a8d98a;}
-  .c-num{color:#ffb86c;} .c-com{color:#6e6e73;} .c-ty{color:#7cc4ff;}
+  .c-num{color:#ffb86c;} .c-com{color:#a1a1a6;} .c-ty{color:#7cc4ff;}
   .install{margin-top:var(--s4);font-size:var(--fs-small);color:#a1a1a6;}
   .install code{
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;
@@ -324,7 +324,7 @@
     max-width:640px;margin:var(--s5) auto 0;
   }
   .quote span{display:block;margin-top:var(--s2);font-size:var(--fs-caption);letter-spacing:.14em;
-    text-transform:uppercase;font-weight:600;color:var(--green);}
+    text-transform:uppercase;font-weight:600;color:#3f6b25;}
 
   /* ================= FOOTER ================= */
   footer{border-top:1px solid var(--hairline);padding:var(--s5) 24px var(--s6);font-size:var(--fs-caption);color:var(--grey);}
@@ -531,6 +531,8 @@
   .hero-final .arrow-link .arr{transition:none}
 }
 
+
+.scroller:focus-visible,.dim-media:focus-visible,pre:focus-visible{outline:2px solid #3f6b25;outline-offset:3px;}
 </style>
 </head>
 <body class="hero-dark">
@@ -747,7 +749,7 @@
       </div>
     </div>
 
-    <div class="scroller">
+    <div class="scroller" tabindex="0" role="region" aria-label="Scrollable specifications">
       <table>
         <caption>Electrical specifications</caption>
         <thead>
@@ -764,7 +766,7 @@
     </div>
     <p class="scroll-hint">Scroll the table sideways to compare all four models.</p>
 
-    <div class="scroller">
+    <div class="scroller" tabindex="0" role="region" aria-label="Scrollable specifications">
       <table>
         <caption>Mechanical specifications</caption>
         <thead>
@@ -787,19 +789,19 @@
       <p class="scroll-hint dim-hint">Scroll a drawing sideways to read the dimensions.</p>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-60</b><span>59.7 mm high · 20.6 mm shaft · 470 g</span></div>
-        <div class="dim-media"><img style="--dk:1.0" src="../M17-60_dimensions.webp" alt="M17-60 dimension drawing, side and front views with millimetre dimensions" width="1734" height="686" loading="lazy"></div>
+        <div class="dim-media" tabindex="0" role="region" aria-label="Dimension drawing"><img style="--dk:1.0" src="../M17-60_dimensions.webp" alt="M17-60 dimension drawing, side and front views with millimetre dimensions" width="1734" height="686" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-48</b><span>48.7 mm high · 20.6 mm shaft · 360 g</span></div>
-        <div class="dim-media"><img style="--dk:0.95156" src="../M17-48_dimensions.webp" alt="M17-48 dimension drawing, side and front views with millimetre dimensions" width="1650" height="702" loading="lazy"></div>
+        <div class="dim-media" tabindex="0" role="region" aria-label="Dimension drawing"><img style="--dk:0.95156" src="../M17-48_dimensions.webp" alt="M17-48 dimension drawing, side and front views with millimetre dimensions" width="1650" height="702" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-40</b><span>40.1 mm high · 20.6 mm shaft · 285 g</span></div>
-        <div class="dim-media"><img style="--dk:0.90888" src="../M17-40_dimensions.webp" alt="M17-40 dimension drawing, side and front views with millimetre dimensions" width="1576" height="710" loading="lazy"></div>
+        <div class="dim-media" tabindex="0" role="region" aria-label="Dimension drawing"><img style="--dk:0.90888" src="../M17-40_dimensions.webp" alt="M17-40 dimension drawing, side and front views with millimetre dimensions" width="1576" height="710" loading="lazy"></div>
       </div>
       <div class="dim-row reveal">
         <div class="dim-head"><b>M17-34</b><span>33.5 mm high · 20.6 mm shaft · 210 g</span></div>
-        <div class="dim-media"><img style="--dk:0.85928" src="../M17-34_dimensions.webp" alt="M17-34 dimension drawing, side and front views with millimetre dimensions" width="1490" height="728" loading="lazy"></div>
+        <div class="dim-media" tabindex="0" role="region" aria-label="Dimension drawing"><img style="--dk:0.85928" src="../M17-34_dimensions.webp" alt="M17-34 dimension drawing, side and front views with millimetre dimensions" width="1490" height="728" loading="lazy"></div>
       </div>
     </div>
 
@@ -839,7 +841,7 @@
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           <span class="file">spin.py</span>
         </div>
-<pre><span class="c-kw">import</span> servomotor
+<pre tabindex="0" role="region" aria-label="Code example"><span class="c-kw">import</span> servomotor
 <span class="c-kw">from</span> servomotor <span class="c-kw">import</span> M3
 
 servomotor.<span class="c-fn">open_serial_port</span>()
@@ -855,7 +857,7 @@ motor.<span class="c-fn">trapezoid_move</span>(<span class="c-num">360</span>, <
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           <span class="file">spin.ino</span>
         </div>
-<pre><span class="c-kw">#include</span> <span class="c-str">&lt;Servomotor.h&gt;</span>
+<pre tabindex="0" role="region" aria-label="Code example"><span class="c-kw">#include</span> <span class="c-str">&lt;Servomotor.h&gt;</span>
 
 <span class="c-com">// alias 'X' on the RS485 UART</span>
 <span class="c-ty">Servomotor</span> motor(<span class="c-str">'X'</span>, Serial1);
