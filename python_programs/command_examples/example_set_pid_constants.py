@@ -35,9 +35,9 @@ try:
         time.sleep(0.1)
     time.sleep(0.3)                     # settle after the mode change so the zero is clean
     motor.zero_position()
-    # The gains apply immediately (even mid-move) and are NOT validated; there is no
-    # read-back command, so keep your own record of what you set. Nothing persists:
-    # any reset or power cycle restores the firmware defaults.
+    # The gains apply immediately (even mid-move); effective coefficients may be
+    # limited internally. Firmware 0.16.0.0+ provides get_pid_constants() to read
+    # back the raw values. Reset or power cycling restores firmware defaults.
     motor.set_pid_constants(PID_P, PID_I, PID_D)
     print(f"PID constants set: P={PID_P} I={PID_I} D={PID_D}")
     motor.trapezoid_move(1.0, 2.0)      # small safe move to watch it track: 1 rotation in 2 s

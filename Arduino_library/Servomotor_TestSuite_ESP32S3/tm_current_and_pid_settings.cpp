@@ -664,9 +664,9 @@ void tm_current_and_pid_settings(void) {
     //    main.c:1438), so a reset returns the machine to the factory tuning.
     //
     //    HONEST LIMITATION, stated because it changes what may be claimed:
-    //    neither setting has a getter, and with the output stage off neither has
-    //    any observable physical effect, so "restored" cannot be read back
-    //    directly here. What IS observable, and what is asserted, is that the
+    //    this legacy module does not use the PID getter added in 0.16.0.0;
+    //    current limits still have no getter. Direct PID reset/readback tests
+    //    live in ../test_get_pid_constants.cpp. What IS observable, and what is asserted, is that the
     //    reset restores the factory ACCEPTANCE ENVELOPE and leaves no residue:
     //    the ceiling is exactly where it was before a refusal (a rejected
     //    attempt neither widens nor narrows it), the full documented range is

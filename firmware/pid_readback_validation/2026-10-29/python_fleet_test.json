@@ -1,0 +1,1413 @@
+{
+  "port": "/dev/cu.usbserial-113220",
+  "expected_count": 27,
+  "devices": [
+    {
+      "address": "04245C407D26CCD0",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffed0cc267d405c240430f4cf0ade",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffed0cc267d405c240430f4cf0ade",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fed0cc267d405c240430",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fed0cc267d405c240430",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "04245C407D26CCD0",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 71,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409616.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 1.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.641
+    },
+    {
+      "address": "04B9C4C9EE48531B",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe1b5348eec9c4b9043062978a63",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe1b5348eec9c4b9043062978a63",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe1b5348eec9c4b90430",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe1b5348eec9c4b90430",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "04B9C4C9EE48531B",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409620.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -68.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.612
+    },
+    {
+      "address": "0C729700C8B96AC7",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffec76ab9c80097720c3010635970",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffec76ab9c80097720c3010635970",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fec76ab9c80097720c30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fec76ab9c80097720c30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "0C729700C8B96AC7",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409618.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 2.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.593
+    },
+    {
+      "address": "14B7D892AA0389E9",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffee98903aa92d8b71430f556c28b",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffee98903aa92d8b71430f556c28b",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fee98903aa92d8b71430",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fee98903aa92d8b71430",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "14B7D892AA0389E9",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409605.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -1.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.597
+    },
+    {
+      "address": "1994E7FE82D86D4C",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe4c6dd882fee7941930669e7f1b",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe4c6dd882fee7941930669e7f1b",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe4c6dd882fee7941930",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe4c6dd882fee7941930",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "1994E7FE82D86D4C",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 67,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409586.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -82.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.768
+    },
+    {
+      "address": "1CAE7F40D3E498E3",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffee398e4d3407fae1c303c3670bc",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffee398e4d3407fae1c303c3670bc",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fee398e4d3407fae1c30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fee398e4d3407fae1c30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "1CAE7F40D3E498E3",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 68,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409615.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -28.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 17.037
+    },
+    {
+      "address": "221424C29C1AE3C6",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffec6e31a9cc224142230c18e4511",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffec6e31a9cc224142230c18e4511",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fec6e31a9cc224142230",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fec6e31a9cc224142230",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "221424C29C1AE3C6",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 67,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409624.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -11.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.988
+    },
+    {
+      "address": "229E210595ADAAFB",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffefbaaad9505219e2230cb0a7dba",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffefbaaad9505219e2230cb0a7dba",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fefbaaad9505219e2230",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fefbaaad9505219e2230",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "229E210595ADAAFB",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 68,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409617.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 39.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.906
+    },
+    {
+      "address": "240871D6E400D46B",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe6bd400e4d67108243072ceac85",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe6bd400e4d67108243072ceac85",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe6bd400e4d671082430",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe6bd400e4d671082430",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "240871D6E400D46B",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 67,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409578.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -5.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 17.039
+    },
+    {
+      "address": "2D288D9C0725A642",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe42a625079c8d282d302e07a27f",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe42a625079c8d282d302e07a27f",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe42a625079c8d282d30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe42a625079c8d282d30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "2D288D9C0725A642",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 66,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409590.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 22.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 17.006
+    },
+    {
+      "address": "2ED2D58D7744DD46",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe46dd44778dd5d22e30ceadd035",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe46dd44778dd5d22e30ceadd035",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe46dd44778dd5d22e30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe46dd44778dd5d22e30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "2ED2D58D7744DD46",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409569.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 0.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 17.035
+    },
+    {
+      "address": "3566EFBA6451C0BA",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffebac05164baef663530e39bfef5",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffebac05164baef663530e39bfef5",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17febac05164baef663530",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17febac05164baef663530",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "3566EFBA6451C0BA",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409614.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 0.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.682
+    },
+    {
+      "address": "36C545790836B394",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe94b336087945c536307b3245d0",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe94b336087945c536307b3245d0",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe94b336087945c53630",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe94b336087945c53630",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "36C545790836B394",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409560.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 12.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.67
+    },
+    {
+      "address": "3FE34E10207A6E5B",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe5b6e7a20104ee33f305f1656ec",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe5b6e7a20104ee33f305f1656ec",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe5b6e7a20104ee33f30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe5b6e7a20104ee33f30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "3FE34E10207A6E5B",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 71,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409601.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 0.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.688
+    },
+    {
+      "address": "538BA7B758215751",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe51572158b7a78b53307115a5c3",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe51572158b7a78b53307115a5c3",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe51572158b7a78b5330",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe51572158b7a78b5330",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "538BA7B758215751",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 70,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409585.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 52.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.676
+    },
+    {
+      "address": "5E2E8161CF1D2624",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe24261dcf61812e5e30e5703a9f",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe24261dcf61812e5e30e5703a9f",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe24261dcf61812e5e30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe24261dcf61812e5e30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "5E2E8161CF1D2624",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 71,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409529.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 5.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.652
+    },
+    {
+      "address": "67EF1D6AC2921A2A",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe2a1a92c26a1def6730407af559",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe2a1a92c26a1def6730407af559",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe2a1a92c26a1def6730",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe2a1a92c26a1def6730",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "67EF1D6AC2921A2A",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409601.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -24.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.651
+    },
+    {
+      "address": "69BD35E368A525D6",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffed625a568e335bd693029205288",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffed625a568e335bd693029205288",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fed625a568e335bd6930",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fed625a568e335bd6930",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "69BD35E368A525D6",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409565.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -9.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.619
+    },
+    {
+      "address": "6BF6BF3044B6A143",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe43a1b64430bff66b3013bc31fb",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe43a1b64430bff66b3013bc31fb",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe43a1b64430bff66b30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe43a1b64430bff66b30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "6BF6BF3044B6A143",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409626.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 15.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.424
+    },
+    {
+      "address": "90691FD33073F4CD",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffecdf47330d31f6990302606ee65",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffecdf47330d31f6990302606ee65",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fecdf47330d31f699030",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fecdf47330d31f699030",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "90691FD33073F4CD",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409595.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -4.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.402
+    },
+    {
+      "address": "9474B90381CC1317",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe1713cc8103b9749430c7d21efb",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe1713cc8103b9749430c7d21efb",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe1713cc8103b9749430",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe1713cc8103b9749430",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "9474B90381CC1317",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 74,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409593.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 51.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.486
+    },
+    {
+      "address": "962C7FC2F220000B",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe0b0020f2c27f2c96305d8ba2dd",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe0b0020f2c27f2c96305d8ba2dd",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe0b0020f2c27f2c9630",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe0b0020f2c27f2c9630",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "962C7FC2F220000B",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 73,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409601.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 0.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.462
+    },
+    {
+      "address": "A6FC1C0BD24024E4",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffee42440d20b1cfca6309c315256",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffee42440d20b1cfca6309c315256",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fee42440d20b1cfca630",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fee42440d20b1cfca630",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "A6FC1C0BD24024E4",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 73,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409618.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 2.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.438
+    },
+    {
+      "address": "DBC90AF071C2DC56",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe56dcc271f00ac9db302c07e86e",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe56dcc271f00ac9db302c07e86e",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe56dcc271f00ac9db30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe56dcc271f00ac9db30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "DBC90AF071C2DC56",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409609.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -29.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.414
+    },
+    {
+      "address": "E846EF4F7B2E28EF",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffeef282e7b4fef46e8301d93a1f9",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffeef282e7b4fef46e8301d93a1f9",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17feef282e7b4fef46e830",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17feef282e7b4fef46e830",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "E846EF4F7B2E28EF",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409619.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -17.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.418
+    },
+    {
+      "address": "F87E9B73958AFE60",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe60fe8a95739b7ef830a26aa3ff",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe60fe8a95739b7ef830a26aa3ff",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe60fe8a95739b7ef830",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe60fe8a95739b7ef830",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "F87E9B73958AFE60",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409603.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": -4.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.463
+    },
+    {
+      "address": "FBE10AA9188D2E3F",
+      "passed": true,
+      "checks": 553,
+      "round_trips": 263,
+      "wire_samples": [
+        {
+          "crc32": true,
+          "request": "1ffe3f2e8d18a90ae1fb30a6e60728",
+          "response": "27fd0067452301efcdab8998badcfee89f97ad"
+        },
+        {
+          "crc32": true,
+          "request": "1ffe3f2e8d18a90ae1fb30a6e60728",
+          "response": "27fd00d00700000500000098ab0200dc2979b8"
+        },
+        {
+          "crc32": false,
+          "request": "17fe3f2e8d18a90ae1fb30",
+          "response": "1ffc0067452301efcdab8998badcfe"
+        },
+        {
+          "crc32": false,
+          "request": "17fe3f2e8d18a90ae1fb30",
+          "response": "1ffc00d00700000500000098ab0200"
+        }
+      ],
+      "product": "M17",
+      "unique_id": "FBE10AA9188D2E3F",
+      "firmware": [
+        [
+          1,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "motion_reads": 72,
+      "motion_endpoints": [
+        {
+          "commanded": 409599.0,
+          "measured": 409601.0
+        },
+        {
+          "commanded": 1.0,
+          "measured": 9.0
+        }
+      ],
+      "cleanup_passed": true,
+      "elapsed_seconds": 16.413
+    }
+  ],
+  "passed": true,
+  "broadcast_silent": true,
+  "elapsed_seconds": 451.91
+}

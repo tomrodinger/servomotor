@@ -37,6 +37,83 @@ Each command packet follows this structure:
 
 Responses from devices follow a similar format: they start with the size byte, and are followed by an address byte, which is set to eitiher `253` (RESPONSE_CHARACTER_CRC32_ENABLED) to indicate a reply from a device with a CRC32 checksum appended, or to `252` (RESPONSE_CHARACTER_CRC32_DISABLED) to indicate a reply from a device which does not have the 4-byte CRC32.
 
+### Get PID constants — command 48 (`0x30`)
+
+Released in firmware **0.16.0.0** (also present in development build **0.15.12.1**). The request has **no payload**.
+The success response contains a zero status/error byte followed by exactly
+12 payload bytes. Each gain is an unsigned 32-bit little-endian integer:
+
+| Payload offset | Width | Value |
+|---|---|---|
+| 0 | 4 bytes | P, raw configured proportional gain |
+| 4 | 4 bytes | I, raw configured integral gain |
+| 8 | 4 bytes | D, raw configured derivative gain |
+
+These are the last values supplied to `Set PID constants` (43), or the compiled
+defaults loaded at startup. All raw `uint32` values, including `0xffffffff`,
+round-trip unchanged. The existing setter caps **working** gains at `INT32_MAX`,
+can further cap I for overflow safety, and scales/quantizes D for derivative
+averaging. Readback returns the original requested D and raw gains before those
+limits; it does not report the derived effective coefficients. The setter's
+behavior is unchanged.
+
+The triplet is snapshotted coherently using a short interrupt-masked read in the
+serialized foreground command handler. Reading does not alter PID state, motion
+queues, position, or output enablement and is supported while moving. Gains
+remain RAM-only: reset or power cycling restores product defaults, including
+P=2000, I=5, D=175000 on M17. Broadcast produces no reply. Any non-empty request
+payload raises the existing `ERROR_COMMAND_SIZE_WRONG` (51); existing fatal-error
+handling applies. Response byte 2 is the status/error code, not an echoed command
+ID. Keep one request outstanding on the bus at a time, as with existing reads.
+
+For alias `X` (`0x58`), the complete packets with CRC32 enabled are:
+
+```text
+Request:  0f 58 30 df 79 a6 a0
+Response: 27 fd 00 d0 07 00 00 05 00 00 00 98 ab 02 00 dc 29 79 b8
+```
+
+That response contains the M17 startup defaults. With CRC32 disabled, the same
+transaction is:
+
+```text
+Request:  07 58 30
+Response: 1f fc 00 d0 07 00 00 05 00 00 00 98 ab 02 00
+```
+
+The generated Python method is `p, i, d = motor.get_pid_constants()`; the
+generated Arduino method is `getPidConstantsResponse gains = motor.getPidConstants()`
+with `uint32_t` fields `kP`, `kI`, and `kD`. Neither applies unit conversion.
+Earlier firmware has no handler for command 48; check `Get firmware version`
+before using it on existing devices.
+
+To build the development firmware using the existing toolchain:
+
+```sh
+cd firmware
+make PRODUCT_NAME=M17
+```
+
+This creates `build/servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware` for the current
+M17 hardware/software-compatibility configuration in `VERSIONS`. This change
+adds only PID readback, its bindings and tests; it adds no flash persistence.
+Use the existing `python_programs/upgrade_firmware.py` updater with that file
+for a bench reflash. The same updater can restore the previous compatible
+`.firmware` file if rollback is needed; keep its product and software
+compatibility code matched to the device.
+Development-build validation on 2026-10-29 tested 0.15.12.1 on 27 M17 motors (hardware 1.5,
+software compatibility code 3). All passed raw gain round trips, exact wire-byte
+checks with and without CRC32, malformed-request and framing recovery, broadcast
+silence, reset defaults, and readback during a slow 45-degree move and return.
+The Python fleet test recorded 14,931 checks, 7,101 gain triplets, 108 captured
+wire exchanges, and 1,902 reads during motion. Both generated Arduino getter overloads also passed the native C++ hardware
+test on all 27 motors. Physical power cycling was not part of this run. Evidence is under
+[`firmware/pid_readback_validation/2026-10-29`](../firmware/pid_readback_validation/2026-10-29/);
+the exact 0.16.0.0 release-image canary results are retained separately in
+[`firmware/pid_readback_validation/2026-10-29_release_0.16.0.0`](../firmware/pid_readback_validation/2026-10-29_release_0.16.0.0/).
+Reproduction commands are in
+[`python_programs/TEST_SUMMARY.md`](../python_programs/TEST_SUMMARY.md#pid-readback-hardware-validation).
+
 ## Command Processing Flow
 
 1. **Initialization**: 

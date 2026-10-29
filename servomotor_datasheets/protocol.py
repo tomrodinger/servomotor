@@ -24,6 +24,7 @@ class CodeBox(Flowable):
         self.height = line_count * 10 + 20  # line height + padding
         
     def wrap(self, availWidth, availHeight):
+        self.width = min(self.width, availWidth)
         return (self.width, self.height)
         
     def draw(self):

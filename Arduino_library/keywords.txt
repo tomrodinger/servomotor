@@ -9,6 +9,7 @@ multiMoveList_t	KEYWORD1
 multiMoveListConverted_t	KEYWORD1
 getComprehensivePositionResponseConverted	KEYWORD1
 getMaxPidErrorResponseConverted	KEYWORD1
+getPidConstantsResponse	KEYWORD1
 
 # Methods (KEYWORD2)
 setAlias	KEYWORD2
@@ -84,6 +85,7 @@ identify	KEYWORD2
 getTemperature	KEYWORD2
 getTemperatureRaw	KEYWORD2
 setPidConstants	KEYWORD2
+getPidConstants	KEYWORD2
 setMaxAllowablePositionDeviation	KEYWORD2
 setMaxAllowablePositionDeviationRaw	KEYWORD2
 getDebugValues	KEYWORD2

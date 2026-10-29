@@ -1,0 +1,250 @@
+Successfully opened the serial port: /dev/cu.usbserial-113220
+Saved the serial device name to: /private/tmp/servomotor-pid-config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+MOTOR 1/27 04245C407D26CCD0
+  04245C407D26CCD0 pass 1/1: defaults and raw round trips
+  04245C407D26CCD0: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  04245C407D26CCD0: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  04245C407D26CCD0: 45-degree move and return with live readback
+RESULT 04245C407D26CCD0: PASS (553 checks)
+MOTOR 2/27 04B9C4C9EE48531B
+  04B9C4C9EE48531B pass 1/1: defaults and raw round trips
+  04B9C4C9EE48531B: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  04B9C4C9EE48531B: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  04B9C4C9EE48531B: 45-degree move and return with live readback
+RESULT 04B9C4C9EE48531B: PASS (553 checks)
+MOTOR 3/27 0C729700C8B96AC7
+  0C729700C8B96AC7 pass 1/1: defaults and raw round trips
+  0C729700C8B96AC7: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  0C729700C8B96AC7: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  0C729700C8B96AC7: 45-degree move and return with live readback
+RESULT 0C729700C8B96AC7: PASS (553 checks)
+MOTOR 4/27 14B7D892AA0389E9
+  14B7D892AA0389E9 pass 1/1: defaults and raw round trips
+  14B7D892AA0389E9: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  14B7D892AA0389E9: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  14B7D892AA0389E9: 45-degree move and return with live readback
+RESULT 14B7D892AA0389E9: PASS (553 checks)
+MOTOR 5/27 1994E7FE82D86D4C
+  1994E7FE82D86D4C pass 1/1: defaults and raw round trips
+  1994E7FE82D86D4C: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  1994E7FE82D86D4C: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  1994E7FE82D86D4C: 45-degree move and return with live readback
+RESULT 1994E7FE82D86D4C: PASS (553 checks)
+MOTOR 6/27 1CAE7F40D3E498E3
+  1CAE7F40D3E498E3 pass 1/1: defaults and raw round trips
+  1CAE7F40D3E498E3: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  1CAE7F40D3E498E3: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  1CAE7F40D3E498E3: 45-degree move and return with live readback
+RESULT 1CAE7F40D3E498E3: PASS (553 checks)
+MOTOR 7/27 221424C29C1AE3C6
+  221424C29C1AE3C6 pass 1/1: defaults and raw round trips
+  221424C29C1AE3C6: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  221424C29C1AE3C6: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  221424C29C1AE3C6: 45-degree move and return with live readback
+RESULT 221424C29C1AE3C6: PASS (553 checks)
+MOTOR 8/27 229E210595ADAAFB
+  229E210595ADAAFB pass 1/1: defaults and raw round trips
+  229E210595ADAAFB: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  229E210595ADAAFB: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  229E210595ADAAFB: 45-degree move and return with live readback
+RESULT 229E210595ADAAFB: PASS (553 checks)
+MOTOR 9/27 240871D6E400D46B
+  240871D6E400D46B pass 1/1: defaults and raw round trips
+  240871D6E400D46B: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  240871D6E400D46B: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  240871D6E400D46B: 45-degree move and return with live readback
+RESULT 240871D6E400D46B: PASS (553 checks)
+MOTOR 10/27 2D288D9C0725A642
+  2D288D9C0725A642 pass 1/1: defaults and raw round trips
+  2D288D9C0725A642: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  2D288D9C0725A642: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  2D288D9C0725A642: 45-degree move and return with live readback
+RESULT 2D288D9C0725A642: PASS (553 checks)
+MOTOR 11/27 2ED2D58D7744DD46
+  2ED2D58D7744DD46 pass 1/1: defaults and raw round trips
+  2ED2D58D7744DD46: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  2ED2D58D7744DD46: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  2ED2D58D7744DD46: 45-degree move and return with live readback
+RESULT 2ED2D58D7744DD46: PASS (553 checks)
+MOTOR 12/27 3566EFBA6451C0BA
+  3566EFBA6451C0BA pass 1/1: defaults and raw round trips
+  3566EFBA6451C0BA: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  3566EFBA6451C0BA: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  3566EFBA6451C0BA: 45-degree move and return with live readback
+RESULT 3566EFBA6451C0BA: PASS (553 checks)
+MOTOR 13/27 36C545790836B394
+  36C545790836B394 pass 1/1: defaults and raw round trips
+  36C545790836B394: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  36C545790836B394: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  36C545790836B394: 45-degree move and return with live readback
+RESULT 36C545790836B394: PASS (553 checks)
+MOTOR 14/27 3FE34E10207A6E5B
+  3FE34E10207A6E5B pass 1/1: defaults and raw round trips
+  3FE34E10207A6E5B: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  3FE34E10207A6E5B: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  3FE34E10207A6E5B: 45-degree move and return with live readback
+RESULT 3FE34E10207A6E5B: PASS (553 checks)
+MOTOR 15/27 538BA7B758215751
+  538BA7B758215751 pass 1/1: defaults and raw round trips
+  538BA7B758215751: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  538BA7B758215751: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  538BA7B758215751: 45-degree move and return with live readback
+RESULT 538BA7B758215751: PASS (553 checks)
+MOTOR 16/27 5E2E8161CF1D2624
+  5E2E8161CF1D2624 pass 1/1: defaults and raw round trips
+  5E2E8161CF1D2624: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  5E2E8161CF1D2624: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  5E2E8161CF1D2624: 45-degree move and return with live readback
+RESULT 5E2E8161CF1D2624: PASS (553 checks)
+MOTOR 17/27 67EF1D6AC2921A2A
+  67EF1D6AC2921A2A pass 1/1: defaults and raw round trips
+  67EF1D6AC2921A2A: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  67EF1D6AC2921A2A: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  67EF1D6AC2921A2A: 45-degree move and return with live readback
+RESULT 67EF1D6AC2921A2A: PASS (553 checks)
+MOTOR 18/27 69BD35E368A525D6
+  69BD35E368A525D6 pass 1/1: defaults and raw round trips
+  69BD35E368A525D6: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  69BD35E368A525D6: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  69BD35E368A525D6: 45-degree move and return with live readback
+RESULT 69BD35E368A525D6: PASS (553 checks)
+MOTOR 19/27 6BF6BF3044B6A143
+  6BF6BF3044B6A143 pass 1/1: defaults and raw round trips
+  6BF6BF3044B6A143: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  6BF6BF3044B6A143: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  6BF6BF3044B6A143: 45-degree move and return with live readback
+RESULT 6BF6BF3044B6A143: PASS (553 checks)
+MOTOR 20/27 90691FD33073F4CD
+  90691FD33073F4CD pass 1/1: defaults and raw round trips
+  90691FD33073F4CD: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  90691FD33073F4CD: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  90691FD33073F4CD: 45-degree move and return with live readback
+RESULT 90691FD33073F4CD: PASS (553 checks)
+MOTOR 21/27 9474B90381CC1317
+  9474B90381CC1317 pass 1/1: defaults and raw round trips
+  9474B90381CC1317: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  9474B90381CC1317: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  9474B90381CC1317: 45-degree move and return with live readback
+RESULT 9474B90381CC1317: PASS (553 checks)
+MOTOR 22/27 962C7FC2F220000B
+  962C7FC2F220000B pass 1/1: defaults and raw round trips
+  962C7FC2F220000B: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  962C7FC2F220000B: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  962C7FC2F220000B: 45-degree move and return with live readback
+RESULT 962C7FC2F220000B: PASS (553 checks)
+MOTOR 23/27 A6FC1C0BD24024E4
+  A6FC1C0BD24024E4 pass 1/1: defaults and raw round trips
+  A6FC1C0BD24024E4: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  A6FC1C0BD24024E4: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  A6FC1C0BD24024E4: 45-degree move and return with live readback
+RESULT A6FC1C0BD24024E4: PASS (553 checks)
+MOTOR 24/27 DBC90AF071C2DC56
+  DBC90AF071C2DC56 pass 1/1: defaults and raw round trips
+  DBC90AF071C2DC56: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  DBC90AF071C2DC56: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  DBC90AF071C2DC56: 45-degree move and return with live readback
+RESULT DBC90AF071C2DC56: PASS (553 checks)
+MOTOR 25/27 E846EF4F7B2E28EF
+  E846EF4F7B2E28EF pass 1/1: defaults and raw round trips
+  E846EF4F7B2E28EF: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  E846EF4F7B2E28EF: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  E846EF4F7B2E28EF: 45-degree move and return with live readback
+RESULT E846EF4F7B2E28EF: PASS (553 checks)
+MOTOR 26/27 F87E9B73958AFE60
+  F87E9B73958AFE60 pass 1/1: defaults and raw round trips
+  F87E9B73958AFE60: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  F87E9B73958AFE60: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  F87E9B73958AFE60: 45-degree move and return with live readback
+RESULT F87E9B73958AFE60: PASS (553 checks)
+MOTOR 27/27 FBE10AA9188D2E3F
+  FBE10AA9188D2E3F pass 1/1: defaults and raw round trips
+  FBE10AA9188D2E3F: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  FBE10AA9188D2E3F: malformed requests and reset recovery
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+  FBE10AA9188D2E3F: 45-degree move and return with live readback
+RESULT FBE10AA9188D2E3F: PASS (553 checks)
+Closed the serial port
+27/27 motors passed
+PASSED

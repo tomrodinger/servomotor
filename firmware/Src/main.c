@@ -67,8 +67,8 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t major;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 15
-#define BUGFIX_FIRMWARE_VERSION 12
+#define MINOR_FIRMWARE_VERSION 16
+#define BUGFIX_FIRMWARE_VERSION 0
 #define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
@@ -987,6 +987,25 @@ void process_packet(void)
             print_debug_string(buf);
             set_pid_constants(pid_constants.p, pid_constants.i, pid_constants.d);
             rs485_transmit_no_error_packet(is_broadcast); // nothing will be transmitted if is_broadcast is true
+        }
+        break;
+    case GET_PID_CONSTANTS_COMMAND:
+        check_payload_size_is_zero(payload_size);
+        rs485_done_with_this_packet();
+        if(!is_broadcast) {
+            uint32_t p, i, d;
+            get_pid_constants(&p, &i, &d);
+            struct __attribute__((__packed__)) {
+                uint8_t header[3]; // this part will be filled in by rs485_finalize_and_transmit_packet()
+                uint32_t p;
+                uint32_t i;
+                uint32_t d;
+                uint32_t crc32; // this part will be filled in by rs485_finalize_and_transmit_packet()
+            } get_pid_constants_reply;
+            get_pid_constants_reply.p = p;
+            get_pid_constants_reply.i = i;
+            get_pid_constants_reply.d = d;
+            rs485_finalize_and_transmit_packet(&get_pid_constants_reply, sizeof(get_pid_constants_reply));
         }
         break;
     case SET_MAX_ALLOWABLE_POSITION_DEVIATION:

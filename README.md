@@ -107,6 +107,20 @@ The command set is data-driven: every firmware command is defined once in
 [`motor_commands.json`](python_programs/servomotor/motor_commands.json) and the Python library, the Arduino library and the MCP server are generated
 from it, so they always agree.
 
+## Firmware 0.16.0.0
+
+This backward-compatible M17 release adds **Get PID constants (command 48)**.
+It returns the configured raw P, I and D values without changing controller or
+motion state. With the updated Python bindings in this repository:
+
+```python
+p, i, d = m.get_pid_constants()
+```
+
+The release image targets **M17 hardware 1.5, software compatibility code 3**.
+See the [release notes](firmware/firmware_releases/servomotor_M17_fw0.16.0.0_scc3_hw1.5.release_notes.txt)
+for the wire contract, upgrade/rollback commands, client requirements and test evidence.
+
 ## Where the M17 is not the right tool
 
 Direct-drive torque tops out at 0.65 N·m (gear it or go up a frame size for more), it is IP20 and

@@ -26,8 +26,21 @@ class CodeBox(Flowable):
         self.height = line_count * 10 + 20  # line height + padding
         
     def wrap(self, availWidth, availHeight):
+        self.width = min(self.width, availWidth)
         return (self.width, self.height)
         
+    def split(self, availWidth, availHeight):
+        # The canonical Arduino example is longer than one page. Preserve all
+        # source lines and split the display block at page boundaries.
+        capacity = int((availHeight - 20) // 10)
+        if capacity < 1:
+            return []
+        width = min(self.width, availWidth)
+        if capacity >= len(self.lines):
+            return [self]
+        return [CodeBox('\n'.join(self.lines[:capacity]), width),
+                CodeBox('\n'.join(self.lines[capacity:]), width)]
+
     def draw(self):
         # Draw background
         self.canv.setFillColor(colors.Color(0.95, 0.95, 0.95))

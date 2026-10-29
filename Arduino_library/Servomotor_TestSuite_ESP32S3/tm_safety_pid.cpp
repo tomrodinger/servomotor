@@ -126,7 +126,8 @@ void tm_safety_pid(void) {
 
     // Set the known-good gains. The firmware applies them immediately and does no
     // command-time validation; the observable contract here is a clean round-trip
-    // plus a still-responsive device (no readback command exists).
+    // plus a still-responsive device. Direct readback is covered separately by
+    // test_get_pid_constants.cpp; Get PID constants (48) was added in 0.16.0.0.
     printf("Setting good PID constants (%u, %u, %u)...\n", GOOD_KP, GOOD_KI, GOOD_KD);
     motor->setPidConstants(GOOD_KP, GOOD_KI, GOOD_KD);
     TEST_RESULT("Set PID Constants (good) No Comm Error", motor->getError() == 0);

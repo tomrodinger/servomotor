@@ -1,0 +1,46 @@
+[Motor] Initialized with standard addressing, Alias: 255
+[Motor] Use Unique ID: 0xa6fc1c0bd24024e4
+[Motor] getProductInfo called.
+[Motor] systemReset called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] setPidConstants called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+[Motor] getNQueuedItems called.
+[Motor] systemReset called.
+[Motor] getPidConstants called.
+[Motor] getPidConstants called (by unique ID).
+[Motor] getStatus called.
+A6FC1C0BD24024E4 PASSED

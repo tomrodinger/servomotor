@@ -160,3 +160,9 @@ The generated Arduino documentation includes:
 7. **Command Grouping by Functionality** - Commands organized by categories for easy navigation
 8. **Error Handling Guide** - Detailed explanation of how the servomotor handles error conditions
 9. **Error Codes Reference** - Complete listing of all error codes
+### Release metadata check
+
+Run `python3 test_firmware_selection.py` in this directory (with the same
+ReportLab environment as the generator). It verifies that latest-firmware
+selection accepts only actual `.firmware` files and ignores checksum/release-note
+sidecars and directories, even when their names contain newer version numbers.

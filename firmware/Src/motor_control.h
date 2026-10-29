@@ -217,6 +217,7 @@ int64_t get_motor_position(void);
 int64_t get_hall_position(void);
 uint16_t get_motor_status_flags(void);
 void set_pid_constants(uint32_t p, uint32_t i, uint32_t d);
+void get_pid_constants(uint32_t *p, uint32_t *i, uint32_t *d);
 void get_max_PID_error(int32_t *_min_PID_error, int32_t *_max_PID_error);
 uint8_t is_calibration_data_available(void);
 uint8_t process_calibration_data(void);

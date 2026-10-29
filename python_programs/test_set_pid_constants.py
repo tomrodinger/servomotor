@@ -5,9 +5,10 @@ Per-command test for "Set PID constants" (cmd 43).
 Cmd 43 takes three u32 fields (kP, kI, kD) and returns a success
 response. The firmware applies the new constants immediately (it
 recomputes the PID parameter bundle inside __disable_irq()/__enable_irq()
-so the very next control-loop iteration uses them). There is no readback
-command, and the firmware does no command-time validation of the values,
-so this test asserts the *observable* control-behaviour difference:
+so the very next control-loop iteration uses them). This test retains the
+legacy behavioural checks; firmware 0.16.0.0+ also provides readback, covered
+by test_get_pid_constants.py. Here we assert the *observable* control-behaviour
+difference:
 
   1. The command is accepted with no fatal error (round-trip works).
   2. With a known-good set of PID constants the motor enters closed loop

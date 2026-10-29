@@ -1,0 +1,19 @@
+{
+  "firmware": "firmware/firmware_releases/servomotor_M17_fw0.15.12.1_scc3_hw1.5.firmware",
+  "sha256": "5dcc68e7630489bd83c34471a77fcd9cdd87b9e93dd8c87700b5cabc6f1aa2b2",
+  "size_bytes": 37761,
+  "version": "0.15.12.1",
+  "product": "M17",
+  "hardware_version": "1.5",
+  "software_compatibility_code": 3,
+  "command_name": "Get PID constants",
+  "command_id": 48,
+  "base_commit": "1e3ceec02270aa7b0b50bb9c563d050cba0cc057",
+  "source_sha256": {
+    "firmware/Src/main.c": "c02cfbd1756cbc4679e39d2190528b0e959348886cd270b0ada58644a09203c5",
+    "firmware/Src/motor_control.c": "f16d0d6b8f657354e9c3e46213ee66a411acd9f07516ad8aa5709f63d836f0eb",
+    "firmware/Src/motor_control.h": "9ef6958db23d1d906676bcf54dfea6805c99470c7e404e9e10f007abf6dab9da",
+    "firmware/Src/commands.h": "464a083b3130ca8030a4c68617017f633c86c77d170684b5b8e9ee11dd2ad2c4"
+  },
+  "rollback_firmware": "firmware/firmware_releases/servomotor_M17_fw0.15.12.0_scc3_hw1.5.firmware"
+}

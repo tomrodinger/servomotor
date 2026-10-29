@@ -20,6 +20,8 @@ extract() {  # $1 = pattern of the function's first line, $2 = output file
     [ -s "$2" ] || { echo "EXTRACTION FAILED for $1"; exit 1; }
 }
 extract '^void recompute_pid_parameters_and_set_pwm_voltage' "$WORK/recompute.c"
+extract '^void set_pid_constants' "$WORK/set_pid.c"
+extract '^void get_pid_constants' "$WORK/get_pid.c"
 extract '^int32_t PID_controller\(' "$WORK/pid.c"
 # pull the overflow-safety and clamp-policy #defines out of the firmware so both sides
 # use the shipped values (a firmware change to INTEGRAL_TERM_AUTHORITY_SHIFT etc. must
@@ -35,6 +37,7 @@ cat > "$WORK/harness.c" <<'EOF'
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 /* ---- firmware environment stubs / constants (M17 values) ---- */
 #include "pid_defines.h"   /* PID_ERROR_INPUT_CLAMP, INTEGRAL_TERM_AUTHORITY_SHIFT,
@@ -77,11 +80,17 @@ static struct pid_debug_data_struct *pid_debug_data = (void*)&calibration;
 
 /* ---- the extracted firmware code, verbatim ---- */
 #include "recompute.c"
+#include "set_pid.c"
+#include "get_pid.c"
 #include "pid.c"
 
 void fw_set_pid_constants(uint32_t p, uint32_t i, uint32_t d, uint16_t v) {
-    pid_p = p; pid_i = i; pid_d = d;
-    recompute_pid_parameters_and_set_pwm_voltage(v, v);
+    max_motor_pwm_voltage = v;
+    max_motor_regen_pwm_voltage = v;
+    set_pid_constants(p, i, d);
+    uint32_t rp, ri, rd;
+    get_pid_constants(&rp, &ri, &rd);
+    assert(rp == p && ri == i && rd == d);
 }
 
 /* ---- independent model: hardened step2 semantics (kept in sync with
@@ -199,6 +208,17 @@ int main(void) {
             else if (r % 7 == 1) e = (int64_t)(xr() % 200001) - 100000;
             else if (r % 7 == 2) e = (int64_t)(xr() >> 20) - (1LL << 43);
             else                 e = (int64_t)(xr() % 2001) - 1000;
+            /* Poll between control ticks, including after mid-motion gain changes.
+             * Readback must preserve raw gains and ALL accumulated PID state. */
+            int32_t old_i = integral_term, old_prev = previous_error;
+            int32_t old_lpf = low_pass_filtered_error_change;
+            int32_t old_min = min_PID_error, old_max = max_PID_error;
+            uint32_t rp, ri, rd;
+            get_pid_constants(&rp, &ri, &rd);
+            assert(rp == pid_p && ri == pid_i && rd == pid_d);
+            assert(integral_term == old_i && previous_error == old_prev);
+            assert(low_pass_filtered_error_change == old_lpf);
+            assert(min_PID_error == old_min && max_PID_error == old_max);
             int32_t a = PID_controller(e);
             int32_t b = sim_pid(e);
             n++;

@@ -12,9 +12,12 @@
 //   2. Max allowable position deviation (no direct readback -> observed
 //      indirectly: a tiny limit makes a normal closed-loop move latch fatal
 //      error 45, and after reset the same move is clean).
-//   3. PID constants (no direct readback -> observed indirectly: after setting
+//   3. PID constants (legacy behavioural check: after setting
 //      them weak and resetting, a closed-loop move still physically lands on
 //      target, proving the strong boot defaults are back).
+//
+// Direct PID readback in firmware 0.16.0.0+ is covered by
+// ../test_get_pid_constants.cpp; this module retains its motion-based proof.
 //
 // GROUND TRUTH (all cited inline):
 //   * firmware/Src/motor_control.c:163-164  boot defaults are static-initialised

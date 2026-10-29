@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-29",
+  "port": "/dev/cu.usbserial-113220",
+  "motor_count": 27,
+  "firmware_version": "0.15.12.1",
+  "firmware_sha256": "5dcc68e7630489bd83c34471a77fcd9cdd87b9e93dd8c87700b5cabc6f1aa2b2",
+  "upgrades_verified": 27,
+  "python_motors_passed": 27,
+  "python_checks": 14931,
+  "raw_gain_triplets": 7101,
+  "reads_during_motion": 1902,
+  "captured_wire_exchanges": 108,
+  "broadcast_silent": true,
+  "cpp_motors_passed": 27,
+  "cpp_getter_overloads_tested": 2,
+  "host_test_modules_passed": 13,
+  "pid_simulation_samples_passed": 6500000,
+  "physical_power_cycle_tested": false,
+  "reset_defaults_tested": true,
+  "final_state": {
+    "pid": [
+      2000,
+      5,
+      175000
+    ],
+    "status": [
+      0,
+      0
+    ],
+    "queue_depth": 0,
+    "alias": "X"
+  },
+  "test_source_sha256": {
+    "python_programs/test_get_pid_constants.py": "c97b1b90ffa619dbb788ec1f1d6097493f688eb5a0abd3d9ac66b0b0d9bae4ae",
+    "python_programs/test_get_pid_constants_fleet.py": "37bfc332a3f7d5c63c66a0d08437084f5c0d43299dcb9b603d5dc8388f30aa79",
+    "Arduino_library/test_get_pid_constants.cpp": "ec1cd646b0a31ff7f7067333fd02cc7e7c7766f76236d66bfc14333585f65643"
+  },
+  "reports": [
+    "firmware_manifest.json",
+    "inventory_before.json",
+    "upgrade_report.json",
+    "python_fleet_test.json",
+    "cpp_fleet_test.json",
+    "repeated_motion_test.json",
+    "final_verification.json",
+    "host_tests.log"
+  ]
+}

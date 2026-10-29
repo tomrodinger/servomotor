@@ -2354,6 +2354,23 @@ void set_pid_constants(uint32_t p, uint32_t i, uint32_t d)
 }
 
 
+void get_pid_constants(uint32_t *p, uint32_t *i, uint32_t *d)
+{
+    // Command handlers run serially in the main loop. Snapshot the raw user gains,
+    // following the same short interrupt-masking convention as the other getters.
+    // Working coefficients may be limited or scaled; reads must not recompute them
+    // because that would change the integrator and derivative-filter state.
+    __disable_irq();
+    uint32_t current_p = pid_p;
+    uint32_t current_i = pid_i;
+    uint32_t current_d = pid_d;
+    __enable_irq();
+    *p = current_p;
+    *i = current_i;
+    *d = current_d;
+}
+
+
 struct __attribute__((__packed__)) pid_debug_data_struct {
     int32_t error;
     int32_t proportional_term;

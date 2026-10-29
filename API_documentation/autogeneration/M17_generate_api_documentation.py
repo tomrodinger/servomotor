@@ -495,7 +495,9 @@ class APIDocumentationGenerator:
         
         try:
             # List all firmware files
-            firmware_files = os.listdir(self.firmware_dir_path)
+            firmware_files = [f for f in os.listdir(self.firmware_dir_path)
+                              if f.endswith('.firmware') and
+                              os.path.isfile(os.path.join(self.firmware_dir_path, f))]
             
             for product in valid_products:
                 # Find all firmware files for this product

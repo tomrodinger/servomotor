@@ -600,7 +600,7 @@ void tm_repeated_command_idempotence(void) {
     // 5. THE SETTERS. The property that makes a setter safe to retry is that
     //    it ASSIGNS rather than accumulates. Two of them can be read straight
     //    back through Get debug values (45), which allows an exact claim; the
-    //    rest have no getter at all and are probed behaviourally, one
+    //    remaining settings in this legacy module are probed behaviourally, one
     //    application against two.
     // =====================================================================
     printf("\n--- 5a. the limit setters, read back exactly ---\n");
@@ -658,7 +658,7 @@ void tm_repeated_command_idempotence(void) {
         tfhReset(m);
     }
 
-    printf("\n--- 5b. the setters with no getter, probed behaviourally ---\n");
+    printf("\n--- 5b. the legacy behavioural setter probes ---\n");
     {
         // Deviation limit. Applied once and then twice; the observable is the
         // fault a move well past the window raises (error 45,
@@ -711,8 +711,9 @@ void tm_repeated_command_idempotence(void) {
                     fenceTwice.replyErr == fenceOnce.replyErr);
         addRow("Set safety limits", 30, "IDEMPOTENT", "identical refusal for 1 and 2 applications");
 
-        // PID constants, motor current limits and Identify have no readback and
-        // no effect that is observable with the output stage off. The honest
+        // This legacy probe does not query PID readback (added in 0.16.0.0);
+        // direct tests live in ../test_get_pid_constants.cpp. Current limits
+        // and Identify still have no readback here. The honest
         // claim for them is the weaker one, stated as such: a repeat is accepted
         // and disturbs nothing else. That still catches the realistic failure --
         // a second application being refused, or corrupting shared state.

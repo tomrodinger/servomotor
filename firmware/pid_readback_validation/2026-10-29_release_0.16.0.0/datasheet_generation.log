@@ -1,0 +1,29 @@
+
+=== Generating 'en' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_en.pdf, datasheet_latest_en.pdf
+
+=== Generating 'de' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_de.pdf, datasheet_latest_de.pdf
+Translations complete for 'de'
+
+=== Generating 'fr' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_fr.pdf, datasheet_latest_fr.pdf
+Translations complete for 'fr'
+
+=== Generating 'es' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_es.pdf, datasheet_latest_es.pdf
+Translations complete for 'es'
+
+=== Generating 'it' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_it.pdf, datasheet_latest_it.pdf
+Translations complete for 'it'
+
+=== Generating 'pt' datasheet ===
+Success: Datasheet generated successfully.
+Generated files: datasheet_v1.11_pt.pdf, datasheet_latest_pt.pdf
+Translations complete for 'pt'

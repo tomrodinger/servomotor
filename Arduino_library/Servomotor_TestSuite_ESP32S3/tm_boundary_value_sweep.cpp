@@ -433,7 +433,7 @@ static void ladderPidConstants(Servomotor* m) {
     for (int i = 0; i < PID_RUNGS; i++) {
         m->setPidConstants(gains[i], gains[i], gains[i]);
         int e = m->getError();
-        if (g_trial == 0) g_readback[PID_BASE + i] = -1;   // no readback exists
+        if (g_trial == 0) g_readback[PID_BASE + i] = -1;   // legacy sweep does not query Get PID constants (48)
         uint8_t eff = recordRung(m, e, 0, false);
         if (g_trial == 0) {
             printf("   set PID constants (%lu, %lu, %lu) -> code %2u\n",

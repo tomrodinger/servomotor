@@ -1,0 +1,56 @@
+[
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_en.pdf",
+    "pages": 14,
+    "getter_page": 6,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_de.pdf",
+    "pages": 15,
+    "getter_page": 7,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_fr.pdf",
+    "pages": 15,
+    "getter_page": 7,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_es.pdf",
+    "pages": 15,
+    "getter_page": 7,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_it.pdf",
+    "pages": 15,
+    "getter_page": 7,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "servomotor_datasheets/datasheet_v1.11_pt.pdf",
+    "pages": 15,
+    "getter_page": 7,
+    "missing_arduino_lines": [],
+    "out_of_page_words": []
+  },
+  {
+    "file": "API_documentation/M17_servomotor_Python_API_documentation.pdf",
+    "pages": 120,
+    "getter_page": 51,
+    "correct_release_image": true
+  },
+  {
+    "file": "API_documentation/M17_servomotor_Arduino_API_documentation.pdf",
+    "pages": 83,
+    "getter_page": 43,
+    "correct_release_image": true
+  }
+]

@@ -1,0 +1,901 @@
+{
+  "port": "/dev/cu.usbserial-113220",
+  "total": 27,
+  "rounds": [
+    {
+      "round": 1,
+      "received_bytes": 432,
+      "valid_unique_replies": 27,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 2,
+      "received_bytes": 432,
+      "valid_unique_replies": 27,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 3,
+      "received_bytes": 423,
+      "valid_unique_replies": 24,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 4,
+      "received_bytes": 420,
+      "valid_unique_replies": 26,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 5,
+      "received_bytes": 405,
+      "valid_unique_replies": 23,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 6,
+      "received_bytes": 432,
+      "valid_unique_replies": 27,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 7,
+      "received_bytes": 397,
+      "valid_unique_replies": 22,
+      "new_ids": [],
+      "total": 27
+    },
+    {
+      "round": 8,
+      "received_bytes": 432,
+      "valid_unique_replies": 27,
+      "new_ids": [],
+      "total": 27
+    }
+  ],
+  "devices": [
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "04245C407D26CCD0",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1255,
+        298464907360652496,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 298464907360652496
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "04B9C4C9EE48531B",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1289,
+        340519618408370971,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 340519618408370971
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "0C729700C8B96AC7",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1000,
+        896945305423538887,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 896945305423538887
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "14B7D892AA0389E9",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1232,
+        1492899925925792233,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 1492899925925792233
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "1994E7FE82D86D4C",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1299,
+        1843353227804306764,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 1843353227804306764
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "1CAE7F40D3E498E3",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1285,
+        2066729195419244771,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 2066729195419244771
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "221424C29C1AE3C6",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1331,
+        2455628115085026246,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 2455628115085026246
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "229E210595ADAAFB",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1185,
+        2494467551479573243,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 2494467551479573243
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "240871D6E400D46B",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1187,
+        2596450352941290603,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 2596450352941290603
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "2D288D9C0725A642",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1241,
+        3254006432049505858,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 3254006432049505858
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "2ED2D58D7744DD46",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1203,
+        3373993874422029638,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 3373993874422029638
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "3566EFBA6451C0BA",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1249,
+        3848026515460702394,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 3848026515460702394
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "36C545790836B394",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1194,
+        3946637034591269780,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 3946637034591269780
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "3FE34E10207A6E5B",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1245,
+        4603609075274116699,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 4603609075274116699
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "538BA7B758215751",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1274,
+        6020089732810233681,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 6020089732810233681
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "5E2E8161CF1D2624",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1317,
+        6786503945580520996,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 6786503945580520996
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "67EF1D6AC2921A2A",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1227,
+        7489237049708517930,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 7489237049708517930
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "69BD35E368A525D6",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1189,
+        7619305395410249174,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 7619305395410249174
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "6BF6BF3044B6A143",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1193,
+        7779615620361265475,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 7779615620361265475
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "90691FD33073F4CD",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1171,
+        10405883405927707853,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 10405883405927707853
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "9474B90381CC1317",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1259,
+        10697378439625446167,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 10697378439625446167
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "962C7FC2F220000B",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1011,
+        10821164479927025675,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 10821164479927025675
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "A6FC1C0BD24024E4",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1325,
+        12032523141524759780,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 12032523141524759780
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "DBC90AF071C2DC56",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1267,
+        15837201592442084438,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 15837201592442084438
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "E846EF4F7B2E28EF",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1238,
+        16737328189817104623,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 16737328189817104623
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "F87E9B73958AFE60",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1282,
+        17905920089204129376,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 17905920089204129376
+    },
+    {
+      "port": "/dev/cu.usbserial-113220",
+      "unique_id": "FBE10AA9188D2E3F",
+      "alias": 88,
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1305,
+        18149799694657465919,
+        0
+      ],
+      "firmware_version": [
+        [
+          0,
+          12,
+          15,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "verified_uid": 18149799694657465919
+    }
+  ]
+}

@@ -1,0 +1,524 @@
+Running 13 host-only test(s) (no hardware needed)
+============================================================
+
+--- test_host_command_description_accuracy.py ---
+=== test_host_command_description_accuracy ===
+  ok   : 'Enable MOSFETs' exists in motor_commands.json
+  ok   : 'Enable MOSFETs' description mentions the current-sensor check
+  ok   : 'Enable MOSFETs' says explicitly that M17 performs no current-sensor check
+  ok   : 'Go to closed loop' exists in motor_commands.json
+  ok   : 'Go to closed loop' description mentions the current-sensor check
+  ok   : 'Go to closed loop' says explicitly that M17 performs no current-sensor check
+  ok   : no description claims the current-sensor check unconditionally (offenders: none)
+
+test_host_command_description_accuracy: 7/7 checks passed
+test_host_command_description_accuracy PASSED
+[0;32mtest_host_command_description_accuracy.py PASSED[0m
+
+--- test_host_command_encoding.py ---
+=== test_host_command_encoding ===
+  ok   : no-input command -> empty payload
+  ok   : go_to_position [1000, 5000] (i32,u32)
+  ok   : go_to_position negative i32 [-1, 0]
+  ok   : go_to_position i32/u32 extremes
+  ok   : set_maximum_motor_current [390, 390] (u16,u16)
+  ok   : set_pid_constants [1, 256, 65536] (u32 x3)
+  ok   : set_safety_limits [-1, 1] (i64,i64)
+  ok   : test_mode [5] (u8)
+  ok   : set_device_alias int 88 (u8_alias)
+  ok   : set_device_alias str 'X' (u8_alias)
+  ok   : ping buf10 from bytes
+  ok   : ping buf10 from str
+Here is a list item: [100, 200]
+Here is a list item: [300, 400]
+  ok   : multimove list_2d encoding
+  ok   : encode/decode first byte round-trip (3)
+  ok   : encode/decode first byte round-trip (7)
+  ok   : encode/decode first byte round-trip (15)
+  ok   : encode/decode first byte round-trip (64)
+  ok   : encode/decode first byte round-trip (126)
+  ok   : encode_first_byte sets the LSB
+  ok   : encoded first byte is valid format
+  ok   : even byte is an invalid first byte
+  ok   : addressed packet size byte
+  ok   : addressed packet length (with CRC32)
+  ok   : addressed packet alias byte
+  ok   : addressed packet command byte
+  ok   : broadcast packet header
+  ok   : broadcast packet length
+  ok   : no-CRC packet is exactly size|alias|cmd
+  ok   : extended-addressing size byte
+  ok   : extended-addressing marker byte
+  ok   : extended-addressing unique ID (little-endian)
+  ok   : extended-addressing command byte
+  ok   : extended-size first byte is the 127 marker
+  ok   : extended-size encodes total length 205
+  ok   : extended-size total bytes written
+  ok   : extended-size payload preserved
+
+test_host_command_encoding: 36/36 checks passed
+test_host_command_encoding PASSED
+[0;32mtest_host_command_encoding.py PASSED[0m
+
+--- test_host_crc32.py ---
+=== test_host_crc32 ===
+  ok   : calculate_crc32(0 bytes)
+  ok   : calculate_crc32(9 bytes)
+  ok   : calculate_crc32(43 bytes)
+  ok   : calculate_crc32(32 bytes)
+  ok   : calculate_crc32(256 bytes)
+  ok   : _micropython_crc32(0 bytes)
+  ok   : _micropython_crc32(9 bytes)
+  ok   : _micropython_crc32(43 bytes)
+  ok   : _micropython_crc32(32 bytes)
+  ok   : _micropython_crc32(256 bytes)
+  ok   : package calculate_crc32 agrees (0 bytes)
+  ok   : communication.calculate_crc32 agrees (0 bytes)
+  ok   : package calculate_crc32 agrees (9 bytes)
+  ok   : communication.calculate_crc32 agrees (9 bytes)
+  ok   : package calculate_crc32 agrees (43 bytes)
+  ok   : communication.calculate_crc32 agrees (43 bytes)
+  ok   : package calculate_crc32 agrees (32 bytes)
+  ok   : communication.calculate_crc32 agrees (32 bytes)
+  ok   : package calculate_crc32 agrees (256 bytes)
+  ok   : communication.calculate_crc32 agrees (256 bytes)
+  ok   : crc32(0 bytes) is unsigned 32-bit
+  ok   : crc32(9 bytes) is unsigned 32-bit
+  ok   : crc32(43 bytes) is unsigned 32-bit
+  ok   : crc32(32 bytes) is unsigned 32-bit
+  ok   : crc32(256 bytes) is unsigned 32-bit
+  ok   : bytearray input matches bytes input
+
+test_host_crc32: 26/26 checks passed
+test_host_crc32 PASSED
+[0;32mtest_host_crc32.py PASSED[0m
+
+--- test_host_data_file_integrity.py ---
+
+1. error_codes.json internal consistency
+  PASS  every error entry has a numeric code
+  PASS  error codes are unique
+  PASS  error codes are contiguous starting at 0
+  PASS  every error entry has an enum name
+  PASS  error enum names are unique
+  PASS  every error enum is spelled ERROR_*
+
+2. error_codes.json agrees with the firmware's error_text.h
+        (using common_source_files/error_text.h, 56 entries)
+  PASS  the firmware text table has an entry for every error code
+
+3. every ERROR_* raised in the firmware is defined in the JSON
+        (40 distinct ERROR_* symbols raised in firmware)
+  PASS  every error the firmware can raise is defined in error_codes.json
+
+4. motor_commands.json internal consistency
+  PASS  every command has a numeric ID
+  PASS  command IDs are unique
+  PASS  every command has a name
+  PASS  command names are unique
+  PASS  every command has Input and Output entries
+
+5. motor_commands.json covers the firmware's command IDs
+        (48 command #defines found in firmware/Src/commands.h)
+  PASS  every public firmware command ID appears in motor_commands.json
+  PASS  the internal-only command allowlist has no stale entries
+
+6. descriptions are real, and their error references exist
+  PASS  every command has a substantive description
+  PASS  no description contains a placeholder marker
+  PASS  every numeric error reference in a description is a real code
+  PASS  every ERROR_* symbol named in a description is defined
+
+19 passed, 0 failed
+
+PASSED
+[0;32mtest_host_data_file_integrity.py PASSED[0m
+
+--- test_host_get_command_id.py ---
+=== test_host_get_command_id ===
+  ok   : motor_commands.json loaded
+  ok   : get_command_id('Disable MOSFETs') == 0
+  ok   : get_command_id('Enable MOSFETs') == 1
+  ok   : get_command_id('Trapezoid move') == 2
+  ok   : get_command_id('Set maximum velocity') == 3
+  ok   : get_command_id('Go to position') == 4
+  ok   : get_command_id('Set maximum acceleration') == 5
+  ok   : get_command_id('Start calibration') == 6
+  ok   : get_command_id('Capture hall sensor data') == 7
+  ok   : get_command_id('Reset time') == 8
+  ok   : get_command_id('Get current time') == 9
+  ok   : get_command_id('Time sync') == 10
+  ok   : get_command_id('Get n queued items') == 11
+  ok   : get_command_id('Emergency stop') == 12
+  ok   : get_command_id('Zero position') == 13
+  ok   : get_command_id('Homing') == 14
+  ok   : get_command_id('Get hall sensor position') == 15
+  ok   : get_command_id('Get status') == 16
+  ok   : get_command_id('Go to closed loop') == 17
+  ok   : get_command_id('Get product specs') == 18
+  ok   : get_command_id('Move with acceleration') == 19
+  ok   : get_command_id('Detect devices') == 20
+  ok   : get_command_id('Set device alias') == 21
+  ok   : get_command_id('Get product info') == 22
+  ok   : get_command_id('Firmware upgrade') == 23
+  ok   : get_command_id('Get product description') == 24
+  ok   : get_command_id('Get firmware version') == 25
+  ok   : get_command_id('Move with velocity') == 26
+  ok   : get_command_id('System reset') == 27
+  ok   : get_command_id('Set maximum motor current') == 28
+  ok   : get_command_id('Multimove') == 29
+  ok   : get_command_id('Set safety limits') == 30
+  ok   : get_command_id('Ping') == 31
+  ok   : get_command_id('Control hall sensor statistics') == 32
+  ok   : get_command_id('Get hall sensor statistics') == 33
+  ok   : get_command_id('Get position') == 34
+  ok   : get_command_id('Read multipurpose buffer') == 35
+  ok   : get_command_id('Test mode') == 36
+  ok   : get_command_id('Get comprehensive position') == 37
+  ok   : get_command_id('Get supply voltage') == 38
+  ok   : get_command_id('Get max PID error') == 39
+  ok   : get_command_id('Vibrate') == 40
+  ok   : get_command_id('Identify') == 41
+  ok   : get_command_id('Get temperature') == 42
+  ok   : get_command_id('Set PID constants') == 43
+  ok   : get_command_id('Set max allowable position deviation') == 44
+  ok   : get_command_id('Get debug values') == 45
+  ok   : get_command_id('CRC32 control') == 46
+  ok   : get_command_id('Get communication statistics') == 47
+  ok   : get_command_id('Get PID constants') == 48
+  ok   : CommandEnum values are 0..N-1 contiguous
+  ok   : get_command_id('this command does not exist') is None
+
+test_host_get_command_id: 52/52 checks passed
+test_host_get_command_id PASSED
+[0;32mtest_host_get_command_id.py PASSED[0m
+
+--- test_host_getch.py ---
+=== test_host_getch ===
+  ok   : getch module imports
+  ok   : module exposes 'getch' callable
+  ok   : module exposes 'raw_mode' callable
+  ok   : getch() raised cleanly on non-TTY input
+
+test_host_getch: 4/4 checks passed
+test_host_getch PASSED
+[0;32mtest_host_getch.py PASSED[0m
+
+--- test_host_import_smoke.py ---
+=== test_host_import_smoke ===
+  ok   : package 'servomotor' imported
+  ok   : M3 class imported
+  ok   : M3(integer alias) stores the alias
+  ok   : M3(single-char alias 'X') resolves to ASCII 88
+  ok   : M3() no-alias construction works
+  ok   : M3() leaves the alias unset (None)
+  ok   : M3 instance has _time_unit
+  ok   : M3 instance has _position_unit
+  ok   : M3 instance has _velocity_unit
+  ok   : M3 instance has _current_unit
+  ok   : M3 has callable method 'disable_mosfets'
+  ok   : M3 has callable method 'enable_mosfets'
+  ok   : M3 has callable method 'go_to_position'
+  ok   : M3 has callable method 'move_with_velocity'
+  ok   : M3 has callable method 'move_with_acceleration'
+  ok   : M3 has callable method 'homing'
+  ok   : M3 has callable method 'ping'
+  ok   : M3 has callable method 'get_temperature'
+  ok   : M3 has callable method 'get_status'
+  ok   : M3 has callable method 'get_comprehensive_position'
+  ok   : M3 has callable method 'system_reset'
+  ok   : M3 has callable method 'set_device_alias'
+  ok   : M3 has callable method 'multimove'
+  ok   : M3 has callable method 'get_firmware_version'
+  ok   : get_command_id('Disable MOSFETs')
+  ok   : get_command_id('Go to position')
+  ok   : get_command_id('Ping')
+  ok   : get_command_id('Get temperature')
+  ok   : get_command_id('System reset')
+  ok   : get_command_id of an unknown command is None
+  ok   : registered_commands table is populated
+  ok   : registered_data_types table is populated
+  ok   : platform detection is consistent
+  ok   : ALL_ALIAS constant
+  ok   : RESPONSE_CHARACTER_CRC32_ENABLED constant
+  ok   : RESPONSE_CHARACTER_CRC32_DISABLED constant
+  ok   : PROTOCOL_VERSION is defined
+  ok   : package exposes calculate_crc32
+
+test_host_import_smoke: 38/38 checks passed
+test_host_import_smoke PASSED
+[0;32mtest_host_import_smoke.py PASSED[0m
+
+--- test_host_pid_constants.py ---
+=== test_host_pid_constants ===
+  ok   : catalog ID
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=True gains=(2000, 5, 175000)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=True gains=(0, 0, 0)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=True gains=(1, 256, 65536)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=True gains=(2147483647, 2147483648, 4294967295)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=True gains=(4294967295, 4294967295, 4294967295)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : broadcast completes
+  ok   : broadcast sends no reply
+  ok   : non-empty payload raises existing size error
+  ok   : invalid request sends no gains
+  ok   : non-empty payload raises existing size error
+  ok   : invalid request sends no gains
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=False gains=(2000, 5, 175000)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=False gains=(0, 0, 0)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=False gains=(1, 256, 65536)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=False gains=(2147483647, 2147483648, 4294967295)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : firmware success
+  ok   : firmware wire bytes CRC=False gains=(4294967295, 4294967295, 4294967295)
+  ok   : generated Python method decodes firmware reply
+  ok   : getter sends fresh empty-payload command
+  ok   : broadcast completes
+  ok   : broadcast sends no reply
+  ok   : non-empty payload raises existing size error
+  ok   : invalid request sends no gains
+  ok   : non-empty payload raises existing size error
+  ok   : invalid request sends no gains
+  ok   : wrong reply payload length
+  ok   : wrong reply payload length
+  ok   : bad CRC rejected
+
+test_host_pid_constants: 56/56 checks passed
+test_host_pid_constants PASSED
+[0;32mtest_host_pid_constants.py PASSED[0m
+
+--- test_host_port_resolution.py ---
+=== test_host_port_resolution ===
+Saved the serial device name to: /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+  ok   : -p outranks env var and saved file (got EXPLICIT_PORT)
+Using the serial port named by SERVOMOTOR_PORT: ENV_PORT
+Saved the serial device name to: /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+  ok   : $SERVOMOTOR_PORT outranks the saved file (got ENV_PORT)
+Using the saved serial port: SAVED_PORT
+(saved at /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt)
+  ok   : saved file used when no -p and no env var (got SAVED_PORT)
+No serial port specified with -p, no SERVOMOTOR_PORT set, and no saved default.
+Will let the user select the serial port from a menu
+Saved the serial device name to: /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+  ok   : menu used when nothing else is available
+Will let the user select the serial port from a menu
+Saved the serial device name to: /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+  ok   : -P forces the menu despite env var and saved file
+Using the saved serial port: SAVED_PORT
+(saved at /var/folders/dj/plb4pn3s4k133bwc856301b80000gn/T/servomotor-cfg-lma1u6al/servomotor/serial_device.txt)
+  ok   : empty $SERVOMOTOR_PORT is ignored (got SAVED_PORT)
+  ok   : XDG_CONFIG_HOME is honoured (/tmp/xdg-example/servomotor)
+  ok   : config dir is per-user, not inside the package (/Users/tom/Library/Application Support/servomotor)
+  ok   : config dir is platform-appropriate (/Users/tom/Library/Application Support/servomotor)
+  ok   : save_port() reports success
+  ok   : saved file lands in the config dir
+  ok   : read_saved_port() round-trips
+WARNING: Could not save the serial port name to: /dev/null/cannot/exist/servomotor/serial_device.txt
+         Reason: [Errno 20] Not a directory: '/dev/null/cannot'
+         This is harmless. The port is open and this program will continue.
+         Pass -p to name the port each time, or set SERVOMOTOR_PORT.
+  ok   : save_port() returns False instead of raising
+
+test_host_port_resolution: 13/13 checks passed
+test_host_port_resolution PASSED
+[0;32mtest_host_port_resolution.py PASSED[0m
+
+--- test_host_response_decoding.py ---
+=== test_host_response_decoding ===
+  ok   : decode i16 +300
+  ok   : decode i16 -300
+  ok   : decode i16 max 32767
+  ok   : decode i16 min -32768
+  ok   : decode i64 +12345
+  ok   : decode i64 -1
+  ok   : decode u64 large value
+  ok   : decode u8 200
+  ok   : decode status (u16, u8)
+  ok   : decode firmware version (u32_version_number, u8)
+  ok   : decode detect-devices (unique ID, alias)
+  ok   : decode null-terminated string
+  ok   : decode buf10 echo
+  ok   : decode product info (6 mixed fields)
+  ok   : short payload is rejected
+  ok   : trailing extra bytes are rejected
+  ok   : get_response success (empty payload)
+  ok   : get_response strips the no-error byte
+  ok   : get_response + interpret round-trip
+  ok   : fatal error code raises FatalError
+  ok   : get_response success without CRC32
+  ok   : get_response decodes an extended-size packet
+  ok   : corrupted CRC32 raises CommunicationError
+  ok   : invalid first byte raises CommunicationError
+  ok   : empty serial read raises TimeoutError
+
+test_host_response_decoding: 25/25 checks passed
+test_host_response_decoding PASSED
+[0;32mtest_host_response_decoding.py PASSED[0m
+
+--- test_host_terminal_formatting.py ---
+=== test_host_terminal_formatting ===
+  ok   : terminal_formatting module imports the expected symbols
+  ok   : STYLE.has_color is a bool
+  ok   : STYLE.has_unicode is a bool
+  ok   : format_success returns a str
+  ok   : format_success preserves the message
+  ok   : format_error returns a str
+  ok   : format_error preserves the message
+  ok   : format_warning returns a str
+  ok   : format_warning preserves the message
+  ok   : format_info returns a str
+  ok   : format_info preserves the message
+  ok   : format_debug returns a str
+  ok   : format_debug preserves the message
+  ok   : format_text(sample) returns a str containing the message
+
+test_host_terminal_formatting: 14/14 checks passed
+test_host_terminal_formatting PASSED
+[0;32mtest_host_terminal_formatting.py PASSED[0m
+
+--- test_host_test_suite_hygiene.py ---
+
+Scanning 119 module(s) in Arduino_library/Servomotor_TestSuite_ESP32S3
+
+1. command-number citations in comments are correct
+  PASS  every command-number citation matches motor_commands.json
+
+2. every module has exactly one entry point
+  PASS  every module defines exactly one void tm_xxx(void)
+  PASS  entry point names are unique across modules
+
+3. every module is registered, so none is silently never run
+  PASS  every module's entry point is declared in test_registry.h
+  PASS  every module appears in the TF_TESTS table
+
+4. every registry entry points at a real function
+  PASS  the TF_TESTS table is parseable
+  PASS  every TF_TESTS entry names a function that exists
+  PASS  registry test names are unique
+        (119 registered, 119 module files)
+
+5. no module is hostile to the shared 35-motor rack
+  PASS  no unexpected module writes a device alias
+  PASS  no module sends the hang-forever test modes 10..13
+
+10 passed, 0 failed
+
+PASSED
+[0;32mtest_host_test_suite_hygiene.py PASSED[0m
+
+--- test_host_unit_parity.py ---
+
+1. the unit lists are well formed
+  PASS  the acceleration unit list is non-empty
+  PASS  the acceleration unit list has no duplicates
+  PASS  every acceleration unit name is a plain lowercase identifier
+  PASS  the current unit list is non-empty
+  PASS  the current unit list has no duplicates
+  PASS  every current unit name is a plain lowercase identifier
+  PASS  the position unit list is non-empty
+  PASS  the position unit list has no duplicates
+  PASS  every position unit name is a plain lowercase identifier
+  PASS  the temperature unit list is non-empty
+  PASS  the temperature unit list has no duplicates
+  PASS  every temperature unit name is a plain lowercase identifier
+  PASS  the time unit list is non-empty
+  PASS  the time unit list has no duplicates
+  PASS  every time unit name is a plain lowercase identifier
+  PASS  the velocity unit list is non-empty
+  PASS  the velocity unit list has no duplicates
+  PASS  every velocity unit name is a plain lowercase identifier
+  PASS  the voltage unit list is non-empty
+  PASS  the voltage unit list has no duplicates
+  PASS  every voltage unit name is a plain lowercase identifier
+
+2. every unit has a conversion factor
+  PASS  every unit named in the lists has a conversion factor
+  PASS  no conversion factor refers to a unit that is not listed
+  PASS  no conversion factor is zero (it would collapse every value)
+
+3. the default unit for each type is the FIRST in its list
+  PASS  the servomotor library imports
+  PASS  the default time unit is 'seconds'
+  PASS  the default position unit is 'shaft_rotations'
+  PASS  the default velocity unit is 'rotations_per_second'
+  PASS  the default acceleration unit is 'rotations_per_second_squared'
+  PASS  the default voltage unit is 'volts'
+  PASS  the default temperature unit is 'celsius'
+
+4. the Arduino library carries the same factors
+  PASS  the Arduino generated conversion source is present
+        (29 CONVERSION_FACTOR_* constants found)
+  PASS  every non-unity JSON factor also exists in the Arduino library
+  PASS  every shared factor agrees to float precision
+
+5. the Arduino enums list the same units, in the same order
+  PASS  the Arduino TimeUnit lists the same units in the same order
+  PASS  the Arduino PositionUnit lists the same units in the same order
+  PASS  the Arduino VelocityUnit lists the same units in the same order
+  PASS  the Arduino AccelerationUnit lists the same units in the same order
+  PASS  the Arduino CurrentUnit lists the same units in the same order
+  PASS  the Arduino VoltageUnit lists the same units in the same order
+  PASS  the Arduino TemperatureUnit lists the same units in the same order
+
+6. conversions round-trip
+  PASS  every scale-factor unit round-trips exactly
+
+7. the temperature offsets are mutually consistent
+  PASS  each temperature offset is the negation of its inverse
+  PASS  the kelvin offset is 273.15
+  PASS  the fahrenheit offset is 32
+
+45 passed, 0 failed
+
+PASSED
+[0;32mtest_host_unit_parity.py PASSED[0m
+
+============================================================
+Host test summary:
+  [0;32mPASS[0m  test_host_command_description_accuracy.py
+  [0;32mPASS[0m  test_host_command_encoding.py
+  [0;32mPASS[0m  test_host_crc32.py
+  [0;32mPASS[0m  test_host_data_file_integrity.py
+  [0;32mPASS[0m  test_host_get_command_id.py
+  [0;32mPASS[0m  test_host_getch.py
+  [0;32mPASS[0m  test_host_import_smoke.py
+  [0;32mPASS[0m  test_host_pid_constants.py
+  [0;32mPASS[0m  test_host_port_resolution.py
+  [0;32mPASS[0m  test_host_response_decoding.py
+  [0;32mPASS[0m  test_host_terminal_formatting.py
+  [0;32mPASS[0m  test_host_test_suite_hygiene.py
+  [0;32mPASS[0m  test_host_unit_parity.py
+13 passed, 0 failed, 13 total

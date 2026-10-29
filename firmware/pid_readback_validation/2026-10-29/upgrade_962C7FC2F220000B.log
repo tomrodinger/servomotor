@@ -1,0 +1,49 @@
+Using extended addressing with unique ID: 0x962C7FC2F220000B
+Using firmware protocol: new
+Using bootloader protocol: new
+Reading firmware file from: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/firmware_releases/servomotor_M17_fw0.15.12.1_scc3_hw1.5.firmware
+The firmware file, including the header contents, has size: 37761
+This firmware is for a device with model [b'M17     '] and firmware compatibility code [3]
+The firmware size after padding zeros to make the firmware size divisible by 4 is: 37752
+The upgrade_firmware progran has tested that binascii.crc32() and zlib.crc32() produced the same result. In the future we can eliminate usage of ascii.crc32 because it is slightly slower.
+Firmware size is 9437 32-bit values. Firmware CRC32 is 0x14F1205C.
+Will write this many bytes: 37756
+
+FLASH MEMORY MAP:
+----------------------------------------------------------------------
+Pages 0 to 4    | Factory settings and bootloader
+Pages 5 to 23   | This firmware
+Pages 24 to 30  | Currently unused and available for future firmware
+Page 31         | Non volatile settings storage
+----------------------------------------------------------------------
+This chip has a total of 32 flash memory pages
+Page size: 2048 bytes
+
+Successfully opened the serial port: /dev/cu.usbserial-113220
+Saved the serial device name to: /private/tmp/servomotor-pid-config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+Now entering the loop where we will write the firmware pages.
+Note that the factory settings and bootloader occupies the first 5 pages and we won't overwrite them.
+This chip has a total of 32 pages in its flash memory.
+The last page is used for settings storage and won't be used for firmware.
+Firmware page number 6 written successfully. 35708 bytes still need to be written.
+Firmware page number 7 written successfully. 33660 bytes still need to be written.
+Firmware page number 8 written successfully. 31612 bytes still need to be written.
+Firmware page number 9 written successfully. 29564 bytes still need to be written.
+Firmware page number 10 written successfully. 27516 bytes still need to be written.
+Firmware page number 11 written successfully. 25468 bytes still need to be written.
+Firmware page number 12 written successfully. 23420 bytes still need to be written.
+Firmware page number 13 written successfully. 21372 bytes still need to be written.
+Firmware page number 14 written successfully. 19324 bytes still need to be written.
+Firmware page number 15 written successfully. 17276 bytes still need to be written.
+Firmware page number 16 written successfully. 15228 bytes still need to be written.
+Firmware page number 17 written successfully. 13180 bytes still need to be written.
+Firmware page number 18 written successfully. 11132 bytes still need to be written.
+Firmware page number 19 written successfully. 9084 bytes still need to be written.
+Firmware page number 20 written successfully. 7036 bytes still need to be written.
+Firmware page number 21 written successfully. 4988 bytes still need to be written.
+Firmware page number 22 written successfully. 2940 bytes still need to be written.
+Firmware page number 23 written successfully. 892 bytes still need to be written.
+Size left after append: 2048
+Firmware page number 24 written successfully. 0 bytes still need to be written.

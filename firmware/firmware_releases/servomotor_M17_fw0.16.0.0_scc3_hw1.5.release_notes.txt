@@ -1,0 +1,76 @@
+Gearotons M17 firmware 0.16.0.0
+Prepared 2026-10-29
+
+Target
+  Product M17, hardware 1.5, software compatibility code 3.
+  Image: servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware
+  SHA-256: see the adjacent .firmware.sha256 file and release manifest.
+  This release bundle contains the M17 image only.
+
+Version choice
+  The four fields are major.minor.bugfix.development.
+  0.16.0.0 adds a backward-compatible command, so the minor version advances
+  from 15 to 16 and the bugfix/development fields return to zero.
+  Development build 0.15.12.1 was the pre-release test build. Only three
+  version bytes differ between that tested image and this release image.
+  The wire protocol and software compatibility code remain unchanged.
+
+Added: Get PID constants, command 48 (0x30)
+  Request: no input payload.
+  Success payload: P, I, D as three unsigned 32-bit little-endian values,
+  exactly 12 payload bytes, using the normal response status and CRC framing.
+  Returns the configured raw values accepted by Set PID constants (43),
+  including the original unshifted D. Working coefficients may be clamped
+  or scaled internally; this getter returns the requested/raw values.
+  Reading snapshots the triplet coherently and changes no controller state,
+  queued motion, position or output enablement. Works during motion.
+  Broadcast requests produce no reply. A nonempty input payload raises the
+  existing ERROR_COMMAND_SIZE_WRONG (51), following normal error handling.
+  Gains remain RAM-only; reset restores M17 defaults P=2000, I=5, D=175000.
+
+Clients
+  Python: p, i, d = motor.get_pid_constants()
+  Arduino/C++: getPidConstantsResponse gains = motor.getPidConstants();
+  C++ fields: gains.kP, gains.kI, gains.kD. A unique-ID overload is available.
+  Use the updated bindings from this source tree, or a package containing
+  command 48. This firmware preparation does not publish Python or Arduino
+  packages. Existing commands and clients retain their current wire format.
+
+Wire example for alias X, CRC32 enabled, showing the default M17 gains
+  Request:  0f 58 30 df 79 a6 a0
+  Response: 27 fd 00 d0 07 00 00 05 00 00 00 98 ab 02 00 dc 29 79 b8
+  Response byte 2 is the status/error code, not an echoed command ID.
+
+Build from the repository root
+  make -C firmware PRODUCT_NAME=M17
+
+Upgrade one motor by its unique ID (substitute PORT and UID)
+  python3 python_programs/upgrade_firmware.py -p PORT -a UID \
+    firmware/firmware_releases/servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware
+  Keep the bus quiet for at least 1.5 seconds after the final reset, then
+  query firmware version and PID constants. Use unique IDs on shared-alias
+  racks. The updater retains the bootloader and nonvolatile settings pages.
+
+Rollback using the same updater and compatible previous stable image
+  python3 python_programs/upgrade_firmware.py -p PORT -a UID \
+    firmware/firmware_releases/servomotor_M17_fw0.15.12.0_scc3_hw1.5.firmware
+  The old image has no PID getter. Use firmware version/status to verify it.
+
+Validation and reproduction
+  The 0.15.12.1 development image passed the Python and native C++ hardware
+  tests on 27 M17s: 14,931 Python checks, 7,101 gain triplets, 108 exact wire
+  exchanges and 1,902 in-flight reads. Cases cover zero/range edges, raw D,
+  both CRC modes, bad-CRC rejection, fragmented/partial requests, malformed
+  payload errors, broadcast silence, reset defaults, and slow motion/retuning.
+  Development evidence: firmware/pid_readback_validation/2026-10-29/
+  The exact 0.16.0.0 image passed a full canary run: 553 checks, 263 gain
+  triplets and 70 reads during motion, plus both native C++ getter overloads.
+  All 13 host test modules passed; the documentation firmware-selection
+  regression test also passed. API PDFs/Markdown and six translated datasheets
+  were regenerated and checked.
+  Exact release-image evidence:
+    firmware/pid_readback_validation/2026-10-29_release_0.16.0.0/
+  Test commands and options: python_programs/TEST_SUMMARY.md
+  Native C++ build/run commands: Arduino_library/README.md
+  Reset is tested; physical power cycling is not part of these bench runs.
+  No immediate-target command or other proposed tuning features are included.

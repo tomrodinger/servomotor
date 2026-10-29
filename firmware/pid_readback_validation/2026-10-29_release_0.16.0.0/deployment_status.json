@@ -1,0 +1,7 @@
+{
+  "release_image_count": 1,
+  "validated_development_image_count": 26,
+  "all_motors_healthy_and_disabled": true,
+  "fleet_reflash_executed": false,
+  "fleet_reflash_approval": "Automatic approval review rejected the fleet deployment because the current request covers release preparation and documentation; separate user approval is required for the remaining 26 motors."
+}

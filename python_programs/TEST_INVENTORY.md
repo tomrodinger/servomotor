@@ -1,5 +1,11 @@
 # Test Inventory & Assessment
 
+This is the original test-landscape snapshot. For current coverage, use
+`TEST_SUMMARY.md` and `run_host_tests.py`. Firmware 0.16.0.0 adds PID readback,
+covered by `test_get_pid_constants.py`, its fleet runner,
+`test_host_pid_constants.py`, and the native Arduino-library test. Historical
+counts and gap descriptions below describe the earlier snapshot.
+
 Snapshot of the test programs that exist today for exercising the motor, plus a
 gap analysis. Purpose: decide what test coverage is needed before refactoring
 the Python library for MicroPython compatibility.

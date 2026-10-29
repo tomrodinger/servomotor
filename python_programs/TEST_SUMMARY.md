@@ -30,6 +30,7 @@
 | `test_get_hall_sensor_statistics.py` | Per-command test for 'Get hall sensor statistics' (cmd 33): boot-zero state pre-enable; after control=1 the 10 fields decode as 3 max + 3 min + 3 sum + measurementCount with min<=max, sum/n inside [min,max], and the count grows; across consecutive reads min is non-increasing, max is non-decreasing, sum is non-decreasing; control=1 again resets the accumulators. | `servomotor`    | No       | Yes              |
 | `test_get_max_pid_error.py` | Per-command test for 'Get max PID error' (cmd 39): sentinel [INT32_MAX, INT32_MIN] before closed loop, real min<=max range after a closed-loop move, and read-then-reset semantics (second read returns a different window). | `servomotor`    | No       | Yes              |
 | `test_get_n_queued_items.py` | Per-command test for 'Get n queued items' (cmd 11): queue is 0 at rest, rises when moves are queued, never exceeds 32, and drains back to 0. | `servomotor`    | No       | Yes              |
+| `test_get_pid_constants.py` | Per-command hardware test for 'Get PID constants' (48): defaults, full-u32 round trips, exact wire bytes and CRC modes, reset/state preservation. Optional --motion and --protocol-edge-cases test live retuning and malformed-request recovery. | `servomotor` | No | Yes |
 | `test_get_position.py` | Per-command test for 'Get position' (cmd 34): reads desired position consistently across units and confirms it tracks a commanded move. | `servomotor`    | No       | Yes              |
 | `test_get_product_description.py` | Per-command test for 'Get product description' (cmd 24): returns a non-empty printable-ASCII string after stripping the trailing NUL, identical across reads. | `servomotor`    | No       | Yes              |
 | `test_get_product_info.py`                                                     | Per-command test for 'Get product info' (cmd 22): detects the device and validates the product-info fields and consistency.               | `servomotor`    | No       | Yes              |
@@ -399,3 +400,59 @@ python test_trigger_framing_error.py -p /dev/ttyUSB0 --verbose
 4. Report PASSED if all devices successfully trigger and clear framing errors
 
 This test validates the firmware's ability to detect communication framing errors and recover from them properly, ensuring robust error handling in real-world deployment scenarios.
+
+## PID readback hardware validation
+
+The getter is released in firmware 0.16.0.0 and is also available in the
+validated 0.15.12.1 development build. The single-motor test resets the
+selected motor, exercises zero, boundary and random raw gains with outputs off,
+checks the actual request/reply bytes with CRC enabled and disabled, and verifies
+that reset restores product defaults. It leaves CRC enabled, the queue empty,
+startup gains restored and outputs disabled. Use a unique ID on a shared-alias
+rack. `--motion` performs a slow 45-degree move and return on an unloaded M17,
+reading and changing nearby safe gains in flight. `--protocol-edge-cases` adds
+bad-CRC rejection, fragmented/partial-request recovery, and deliberately fatal
+nonempty-payload cases followed by reset recovery.
+
+From the repository root:
+
+```sh
+python3 python_programs/test_get_pid_constants.py \
+  -p /dev/cu.usbserial-113220 -a 04245C407D26CCD0 \
+  --samples 256 --motion --protocol-edge-cases --report /tmp/pid-single.json
+
+python3 python_programs/test_get_pid_constants_fleet.py \
+  -p /dev/cu.usbserial-113220 \
+  --inventory firmware/pid_readback_validation/2026-10-29/inventory_before.json \
+  --expected-count 27 --samples 256 --motion --protocol-edge-cases \
+  --report /tmp/pid-fleet.json
+```
+
+The fleet runner uses the inventory's unique IDs, requires the expected count,
+stops on a failure, writes incremental JSON evidence, checks that a broadcast
+getter is silent, and then verifies addressed reads still work on every motor.
+It is an explicit rack runner, separate from the ordinary single-motor test list.
+The native C++ hardware test and build command are documented in
+`Arduino_library/README.md`; it tests both generated Arduino getter overloads.
+Host-only protocol tests remain in `test_host_pid_constants.py`, and
+`c_test_programs/test_pid_differential.sh` polls the real getter between 6.5 million
+PID samples to check controller state preservation without hardware.
+
+On 2026-10-29, all 27 M17 hardware-1.5/scc-3 motors on the recorded rack were
+updated to 0.15.12.1. The Python fleet test passed 14,931 checks, 7,101 raw gain
+triplets, 108 exact wire exchanges, and 1,902 reads during motion, including the
+rack-wide broadcast-silence check. Reports, per-device results, captured wire
+bytes, the firmware SHA-256 and upgrade logs are saved under
+`firmware/pid_readback_validation/2026-10-29/`. Reset was exercised; physical
+power cycling was not part of this run.
+
+The native C++ hardware test also passed on all 27 motors, exercising both
+`getPidConstants()` and `getPidConstants(uniqueId)` with defaults, raw range
+edges, unshifted D, queue/status preservation and reset cleanup.
+
+Release-image verification: the 0.16.0.0 binary differs from that validated
+development image only in three version bytes. The exact release image passed
+the full 553-check canary run (263 gain triplets and 70 in-flight reads) and both
+native C++ getter overloads. Its evidence is recorded separately under
+`firmware/pid_readback_validation/2026-10-29_release_0.16.0.0/`; the earlier
+27-motor development-build results above are retained with their original version.

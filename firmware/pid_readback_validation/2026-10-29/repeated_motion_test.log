@@ -1,0 +1,96 @@
+Successfully opened the serial port: /dev/cu.usbserial-113220
+Saved the serial device name to: /private/tmp/servomotor-pid-config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+  04245C407D26CCD0 pass 1/2: defaults and raw round trips
+  04245C407D26CCD0: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  04245C407D26CCD0: 45-degree move and return with live readback
+  04245C407D26CCD0 pass 2/2: defaults and raw round trips
+  04245C407D26CCD0: CRC modes and exact wire bytes
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+! The outgoing message did not have a CRC32 appended but the response coming back did have a CRC32 appended
+  04245C407D26CCD0: 45-degree move and return with live readback
+Closed the serial port
+{
+  "address": "04245C407D26CCD0",
+  "passed": true,
+  "checks": 61,
+  "round_trips": 14,
+  "wire_samples": [
+    {
+      "crc32": true,
+      "request": "1ffed0cc267d405c240430f4cf0ade",
+      "response": "27fd0067452301efcdab8998badcfee89f97ad"
+    },
+    {
+      "crc32": true,
+      "request": "1ffed0cc267d405c240430f4cf0ade",
+      "response": "27fd00d00700000500000098ab0200dc2979b8"
+    },
+    {
+      "crc32": false,
+      "request": "17fed0cc267d405c240430",
+      "response": "1ffc0067452301efcdab8998badcfe"
+    },
+    {
+      "crc32": false,
+      "request": "17fed0cc267d405c240430",
+      "response": "1ffc00d00700000500000098ab0200"
+    },
+    {
+      "crc32": true,
+      "request": "1ffed0cc267d405c240430f4cf0ade",
+      "response": "27fd0067452301efcdab8998badcfee89f97ad"
+    },
+    {
+      "crc32": true,
+      "request": "1ffed0cc267d405c240430f4cf0ade",
+      "response": "27fd00d00700000500000098ab0200dc2979b8"
+    },
+    {
+      "crc32": false,
+      "request": "17fed0cc267d405c240430",
+      "response": "1ffc0067452301efcdab8998badcfe"
+    },
+    {
+      "crc32": false,
+      "request": "17fed0cc267d405c240430",
+      "response": "1ffc00d00700000500000098ab0200"
+    }
+  ],
+  "product": "M17",
+  "unique_id": "04245C407D26CCD0",
+  "firmware": [
+    [
+      1,
+      12,
+      15,
+      0
+    ],
+    0
+  ],
+  "motion_reads": 126,
+  "motion_endpoints": [
+    {
+      "commanded": 409599.0,
+      "measured": 409607.0
+    },
+    {
+      "commanded": 1.0,
+      "measured": 48.0
+    },
+    {
+      "commanded": 409599.0,
+      "measured": 409582.0
+    },
+    {
+      "commanded": 1.0,
+      "measured": -128.0
+    }
+  ],
+  "cleanup_passed": true,
+  "elapsed_seconds": 16.061
+}
+PASSED

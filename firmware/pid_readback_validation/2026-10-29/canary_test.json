@@ -1,0 +1,24 @@
+{
+  "unique_id": "04245C407D26CCD0",
+  "version": [
+    [
+      1,
+      12,
+      15,
+      0
+    ],
+    0
+  ],
+  "defaults": [
+    2000,
+    5,
+    175000
+  ],
+  "roundtrips": 3,
+  "reset_defaults": [
+    2000,
+    5,
+    175000
+  ],
+  "passed": true
+}

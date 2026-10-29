@@ -1,12 +1,12 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2026-09-17 19:04:48
+Generated: 2026-10-29 16:33:26
 
 ## Latest Firmware Versions
 
 At the time of generating this API reference, the latest released firmware versions for the servomotors are:
 
-- **Model M17**: `servomotor_M17_fw0.15.12.0_scc3_hw1.5.firmware`
+- **Model M17**: `servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware`
 
 
 If you are experiencing problems, you can try to set the firmware of your product to this version and try again.
@@ -687,7 +687,7 @@ once at startup and never change it.**
 - If homing never hits an obstacle it travels the full maxDistance and stops — indistinguishable from a collision by status alone; compare positions to tell.
 - For repeatable origins, home 2-3 times and average; back off ("relieve") 10-50 degrees between runs.
 - After homing and zeroing, set 'Set safety limits' and/or 'Set max allowable position deviation' so later collisions fault out safely instead of grinding.
-- PID constants ('Set PID constants', u32 P, I, D) apply immediately, are not validated, have no read-back, and reset to firmware defaults on reset. Known-good M17 values (also the firmware defaults): P=2000, I=5, D=175000. GOTCHA: D values below 32 are quantized to zero derivative action.
+- PID constants ('Set PID constants', u32 P, I, D) apply immediately and reset to firmware defaults on reset. Firmware 0.16.0.0 adds 'Get PID constants' (48): no input, three raw u32 outputs in P/I/D order, without changing controller or motion state. The getter returns the last requested values, including the full u32 range; working gains are capped at INT32_MAX, I can be limited further for overflow safety, and D is scaled/quantized for averaging. Known-good M17 values (also the firmware defaults): P=2000, I=5, D=175000. GOTCHA: D values below 32 are quantized to zero derivative action.
 - 'Set max allowable position deviation' continuously watches how far the measured position has drifted from the commanded position; if the difference exceeds the limit, fatal error 45 trips (asynchronously — the offending move itself returns success). The default is 2 shaft rotations. The parameter is a signed 64-bit value on the wire and the firmware takes its absolute value, so a negative input acts as its positive equivalent. The deviation check stays armed even with MOSFETs disabled: back-driving a disabled motor more than the limit trips error 45.
 - GOTCHA: 'Disable MOSFETs' does NOT stop or clear queued motion — the commanded position keeps advancing invisibly while the rotor stands still, and the deviation check then trips fatal error 45. Stop motion (queue empty or 'Emergency stop') before or together with disabling.
 - Temporary torque release in closed loop: 'Disable MOSFETs' keeps the closed-loop mode bit, and a later 'Enable MOSFETs' resumes closed-loop control directly — no second 'Go to closed loop' needed — with a gentle re-engagement (bench-measured ~540 counts ≈ 0.06 degrees, versus ~4 degrees for a cold open-loop enable). CAVEAT: the commanded position is still held from before the disable, so if the shaft moved while unpowered (gravity, hand), the PID yanks it back on re-enable and can trip the deviation limit — re-zero or re-command first if the shaft may have moved.
@@ -1065,12 +1065,12 @@ motor.testMode(testMode);
 
 #### Set PID constants
 
-**Description:** Set the P, I, and D constants of the closed-loop controller that tries to maintain the motion trajectory. Executes immediately, not queued: the new constants are applied atomically (interrupts briefly disabled) before the success response is sent, even mid-move, which can cause a brief control transient. The values are raw fixed-point gains: the controller output is (P*error + integral term + derivative term) right-shifted by a product-specific amount (18 on M1/M2, 11 on M17, 14 on M23), so identical numbers behave very differently across products. The usable range of each constant is 0 to 2147483647. Setting the constants also rescales internal safety limits: the maximum usable error window is derived as output authority divided by P (a very large P shrinks it), and the integral accumulator is clamped to 25 percent of output authority for anti-windup. The constants are not persisted: a reset or power cycle restores compiled-in per-product defaults (P/I/D: M1 5000/1/5000, M2 20000/1/100000, M17 2000/5/175000, M23 500/1/1000). The command has no preconditions and is accepted in any state; a payload other than exactly 12 bytes raises fatal error 51, ERROR_COMMAND_SIZE_WRONG.
+**Description:** Set the P, I, and D constants of the closed-loop controller that tries to maintain the motion trajectory. Executes immediately, not queued: the new constants are applied atomically (interrupts briefly disabled) before the success response is sent, even mid-move, which can cause a brief control transient. The values are raw fixed-point gains: the controller output is (P*error + integral term + derivative term) right-shifted by a product-specific amount (18 on M1/M2, 11 on M17, 14 on M23), so identical numbers behave very differently across products. The setter accepts and stores raw u32 values from 0 to 4294967295; working coefficients are capped at 2147483647, I may be limited further for overflow safety, and D is scaled for derivative averaging. 'Get PID constants' (48, released in firmware 0.16.0.0) returns the stored raw values unchanged, including values above those effective limits. Setting the constants also rescales internal safety limits: the maximum usable error window is derived as output authority divided by P (a very large P shrinks it), and the integral accumulator is clamped to 25 percent of output authority for anti-windup. The constants are not persisted: a reset or power cycle restores compiled-in per-product defaults (P/I/D: M1 5000/1/5000, M2 20000/1/100000, M17 2000/5/175000, M23 500/1/1000). The command has no preconditions and is accepted in any state; a payload other than exactly 12 bytes raises fatal error 51, ERROR_COMMAND_SIZE_WRONG.
 
 **Parameters:**
-- `kP`: u32: The proportional term constant (P), a raw fixed-point gain. Usable range is 0 to 2147483647; do not exceed this.
-- `kI`: u32: The integral term constant (I), a raw fixed-point gain. Usable range is 0 to 2147483647; the firmware may silently cap large values further for overflow safety.
-- `kD`: u32: The differential term constant (D), a raw fixed-point gain. Usable range is 0 to 2147483647. The firmware right-shifts this value by 5 bits internally, so values 0 to 31 produce no derivative action and D is effectively quantized in steps of 32.
+- `kP`: u32: Raw proportional gain (P), 0 to 4294967295. The working coefficient is capped at 2147483647; readback preserves the requested value.
+- `kI`: u32: Raw integral gain (I), 0 to 4294967295. The working coefficient is capped at 2147483647 and may be limited further for overflow safety; readback preserves the requested value.
+- `kD`: u32: Raw derivative gain (D), 0 to 4294967295. The working coefficient is capped at 2147483647, then right-shifted by 5 bits for derivative averaging in current builds. Values 0 to 31 produce no derivative action; readback preserves the original unshifted value.
 
 **Example:**
 ```cpp
@@ -1110,6 +1110,21 @@ motor.setMaxAllowablePositionDeviation(maxAllowablePositionDeviation);
 uint8_t enableCrc32 = 1;
 
 motor.crc32Control(enableCrc32);
+```
+
+#### Get PID constants
+
+**Description:** Read a coherent snapshot of the configured raw P, I, and D constants. The representation matches 'Set PID constants' (43). Takes no input and returns exactly three little-endian u32 values (12 payload bytes) in P/I/D order, with no unit conversion. These are the last requested values, not the derived working coefficients: the setter accepts the full u32 range (0 to 4294967295), caps working gains at 2147483647, may further limit I for overflow safety, and scales/quantizes D for derivative averaging. Readback preserves the original D and any raw values above those effective limits. Reading changes no integrator, derivative state, queue, position, or output-enable state, and can be used while moving. Gains are RAM-only; reset or power cycling restores compiled-in product defaults (P/I/D: M1 5000/1/5000, M2 20000/1/100000, M17 2000/5/175000, M23 500/1/1000). Broadcast sends no reply. Any non-empty payload raises fatal error 51, ERROR_COMMAND_SIZE_WRONG; in an existing fatal-error state, the usual error response is returned instead of gains. Released in firmware 0.16.0.0; also present in the validated development build 0.15.12.1. Older firmware does not implement this command.
+
+**Returns:**
+- `kP`: u32: Configured raw proportional gain (P), before working-coefficient limits
+- `kI`: u32: Configured raw integral gain (I), before working-coefficient limits
+- `kD`: u32: Configured raw derivative gain (D), before working-coefficient limits and derivative-averaging scaling
+
+**Example:**
+```cpp
+// Get PID constants
+getPidConstantsResponse response = motor.getPidConstants();
 ```
 
 ### Device Management

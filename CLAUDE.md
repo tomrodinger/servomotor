@@ -46,7 +46,7 @@ All tests support `-p PORT`, `-P` (interactive), `--verbose`, and many support `
 ### Firmware Upgrade
 ```bash
 cd python_programs
-python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.15.2.0_scc3_hw1.5.firmware
+python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware
 ```
 
 ### Publishing the `servomotor` Python library to PyPI
@@ -85,7 +85,7 @@ firmware-upgrade test's `../firmware/firmware_releases` path resolves.
 ## Architecture
 
 ### Command Flow
-1. **JSON definitions** (`motor_commands.json`, `data_types.json`) define all 255 motor commands with parameter types and unit conversions
+1. **JSON definitions** (`motor_commands.json`, `data_types.json`) define the 49 public motor commands with parameter types and unit conversions
 2. **Autogeneration** creates Python methods, Arduino C++ methods, and unit conversion code from JSON
 3. **Python library** (`servomotor/`) sends commands via RS485 at 230400 baud
 4. **Firmware** (`firmware/Src/main.c`) processes commands in main loop, drives motor via the AT5833 stepper driver IC (current M17 hardware, software compatibility code >= 2; the GC6609 was used on legacy units, scc 1, and its code is compiled out on current builds)
@@ -144,8 +144,8 @@ servomotor.close_serial_port()
 Firmware version in `firmware/Src/main.c`:
 ```c
 #define MAJOR_FIRMWARE_VERSION    0
-#define MINOR_FIRMWARE_VERSION    15
-#define BUGFIX_FIRMWARE_VERSION   2
+#define MINOR_FIRMWARE_VERSION    16
+#define BUGFIX_FIRMWARE_VERSION   0
 #define DEVELOPMENT_FIRMWARE_VERSION 0
 ```
 
@@ -155,4 +155,10 @@ M17 1.5 3
 M23 0.10 1
 ```
 
-Output naming: `servomotor_M17_fw0.15.2.0_scc3_hw1.5.firmware`
+Output naming: `servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware`
+
+Firmware version fields are major.minor.bugfix.development. Use a minor bump
+for backward-compatible command additions, reset bugfix to zero for that minor
+release, and use development=0 for the release build. Firmware 0.16.0.0 adds
+Get PID constants (48); the wire protocol and software compatibility code stay
+unchanged. Development build 0.15.12.1 was the pre-release bench build.

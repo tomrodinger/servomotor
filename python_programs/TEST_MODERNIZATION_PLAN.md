@@ -4,6 +4,10 @@ Status: **Decisions from the 2026-05-19 review are incorporated below.**
 Ready to implement as `WORK_CHECKLIST.md` TODO #5. Companion to
 `TEST_INVENTORY.md` (the landscape snapshot).
 
+Release note (2026-10-29): the 48-command counts below describe the original
+planning baseline. Firmware 0.16.0.0 has 49 public commands after adding Get PID
+constants (48). Its dedicated tests and rack results are in TEST_SUMMARY.md.
+
 ## Goal
 
 Every motor command has its own dedicated, automatically-run test that makes a
