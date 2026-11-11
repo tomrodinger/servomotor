@@ -45,6 +45,10 @@ def build(directory):
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
 #include "commands.h"
 #include "error_text.h"
 #include "device_status.h"
@@ -318,6 +322,9 @@ static void selftest(void) {
     puts("PASSED: separate atomic writes/reads, IRQ-enabled validation, preemption between operations, 1000 retargets, queued followup, i64 edges and fatal guards");
 }
 int main(int argc, char **argv) {
+#ifdef _WIN32
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
     init();
     if(argc == 1) { selftest(); return 0; }
     assert(argc == 8); packet_mode = 1;
@@ -385,7 +392,7 @@ def main():
         t.check_eq('schema mismatch sends only one request', len(communication.ser.written), 15)
         for crc in (True, False):
             for command in (49, 50):
-                for target in (-123456, 0, 123456, -(1 << 63), (1 << 63) - 1, (1 << 53) + 1):
+                for target in (-123456, 0, 10, 123456, -(1 << 63), (1 << 63) - 1, (1 << 53) + 1):
                     # Same measured position keeps full-width edge targets within the deviation guard.
                     args = [str(executable), str(command), str(target), str(target), str(int(crc)), '0', '8', '0']
                     result = subprocess.run(args, capture_output=True)

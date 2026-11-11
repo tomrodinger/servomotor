@@ -42,6 +42,13 @@ jobs:
           # macos-latest runners are arm64, which has no CPython 3.8 build.
           - os: macos-latest
             python-version: '3.8'
+          # New ubuntu-latest images have no prebuilt CPython 3.8 runtime.
+          - os: ubuntu-latest
+            python-version: '3.8'
+        include:
+          # Retain the declared Python floor on an image with a 3.8 build.
+          - os: ubuntu-22.04
+            python-version: '3.8'
 
     steps:
       - uses: actions/checkout@v4
