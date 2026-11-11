@@ -1,0 +1,210 @@
+{
+  "unique_id": "04245C407D26CCD0",
+  "passed": true,
+  "states": [
+    {
+      "target": -9102,
+      "measured": 10824
+    },
+    {
+      "target": 9102,
+      "measured": -9146
+    },
+    {
+      "target": 0,
+      "measured": 9160
+    }
+  ],
+  "requested_current_limits_internal_units": [
+    50,
+    50
+  ],
+  "product_info": [
+    "M17     ",
+    3,
+    [
+      0,
+      5,
+      1
+    ],
+    1255,
+    298464907360652496,
+    0
+  ],
+  "firmware": [
+    [
+      0,
+      0,
+      17,
+      0
+    ],
+    0
+  ],
+  "fatal_errors": [
+    13,
+    55,
+    51,
+    51,
+    27,
+    45,
+    19,
+    51,
+    51,
+    27,
+    45,
+    19,
+    8,
+    55
+  ],
+  "settled_positions": [
+    {
+      "target": -9102,
+      "measured": -9108,
+      "error_counts": -6
+    },
+    {
+      "target": 9102,
+      "measured": 9197,
+      "error_counts": 95
+    },
+    {
+      "target": 0,
+      "measured": 4,
+      "error_counts": 4
+    }
+  ],
+  "wire_samples": [
+    {
+      "command": 49,
+      "crc32": true,
+      "tx": "2ffed0cc267d405c2404310000000000000000b891b591",
+      "rx": "0dfd13e27b37"
+    },
+    {
+      "command": 50,
+      "crc32": true,
+      "tx": "2ffed0cc267d405c24043200000000000000007dad38a8",
+      "rx": "1ffd00fdffffffffffffffc08178b5"
+    },
+    {
+      "command": 49,
+      "crc32": false,
+      "tx": "27fed0cc267d405c2404310000000000000000",
+      "rx": "05fc"
+    },
+    {
+      "command": 50,
+      "crc32": false,
+      "tx": "27fed0cc267d405c2404320000000000000000",
+      "rx": "17fc00dfffffffffffffff"
+    }
+  ],
+  "profiler_before": [
+    172938225691,
+    4203359652212,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    22,
+    25,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32,
+    43,
+    6485,
+    4876,
+    13305,
+    2147390856,
+    0,
+    176,
+    -184,
+    0,
+    7
+  ],
+  "stress": {
+    "transactions": 10000,
+    "elapsed_seconds": 41.72,
+    "crc_transactions": {
+      "enabled": 5000,
+      "disabled": 5000
+    },
+    "position_samples": [
+      {
+        "target": 4527,
+        "measured": 17
+      },
+      {
+        "target": -7340,
+        "measured": 1667
+      },
+      {
+        "target": 35,
+        "measured": -172
+      },
+      {
+        "target": -7138,
+        "measured": 277
+      },
+      {
+        "target": -6590,
+        "measured": -717
+      },
+      {
+        "target": -1563,
+        "measured": -1594
+      }
+    ]
+  },
+  "profiler_after": [
+    172938225691,
+    4203359652212,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    21,
+    25,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32,
+    36,
+    5847,
+    5445,
+    13361,
+    2147390856,
+    0,
+    239,
+    -231,
+    0,
+    4
+  ],
+  "communication_statistics_after_stress": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "cleanup_passed": true,
+  "elapsed_seconds": 66.894
+}

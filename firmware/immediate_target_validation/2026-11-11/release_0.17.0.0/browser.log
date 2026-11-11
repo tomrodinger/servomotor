@@ -1,0 +1,8 @@
+Demo-only browser tests at http://127.0.0.1:59331/?demo=1
+127.0.0.1 - - [11/Nov/2026 11:03:01] "GET /?demo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2026 11:03:01] "GET /app.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2026 11:03:01] "GET /protocol.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2026 11:03:01] "GET /demo.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2026 11:03:01] "GET /scope.mjs HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2026 11:03:12] "GET /?demo=1&demo-legacy=1 HTTP/1.1" 200 -
+PASSED: stable compact 0.17.0.0 and legacy 0.17.0.2 command 50, PID round trips, alternating-test automatic capture, actual step paths, scope pause/resume, settling capture, transaction rate/time, fatal errors, reset and disconnect; no browser script errors

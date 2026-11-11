@@ -1187,5 +1187,54 @@
             }
         ],
         "CommandGroup": "Configuration"
+    },
+    {
+        "CommandString": "Set immediate position target",
+        "CommandEnum": 49,
+        "Description": "Set and hold a position target without queueing a timed move. Requires an empty queue, enabled MOSFETs and closed-loop position control. Preserves PID history and protections. Invalid or busy requests raise fatal errors. Success confirms application, not arrival. No velocity or acceleration profile. Broadcasts execute silently.",
+        "Input": [
+            {
+                "Description": "i64: Signed position target relative to the current session zero, in encoder counts on the wire.",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "targetPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
+            }
+        ],
+        "Output": "success_response",
+        "CommandGroup": "Motion Control"
+    },
+    {
+        "CommandString": "Set immediate position target and get position",
+        "CommandEnum": 50,
+        "Description": "Set an immediate position target using command 49's requirements and return the latest stored Hall position. No new measurement or control-tick wait. Broadcasts execute silently.",
+        "Input": [
+            {
+                "Description": "i64: Signed position target relative to the current session zero, in encoder counts on the wire.",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "targetPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
+            }
+        ],
+        "Output": [
+            {
+                "Description": "i64: Latest stored Hall position, read after applying the target.",
+                "TooltipDisplayFormat": "%lld",
+                "ParameterName": "measuredPosition",
+                "UnitConversion": {
+                    "Type": "position",
+                    "InternalUnit": "encoder_counts",
+                    "ConversionFactorsFile": "unit_conversions_{motor_type}.json"
+                }
+            }
+        ],
+        "CommandGroup": "Motion Control"
     }
 ]

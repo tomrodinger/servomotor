@@ -1,0 +1,50 @@
+{
+  "timestamp_utc": "2026-11-11T02:58:09.359167+00:00",
+  "version": "0.17.0.0",
+  "status": "Exact stable image canary acceptance passed",
+  "images": [
+    {
+      "path": "firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware",
+      "bytes": 38317,
+      "sha256": "cfc47e472dfb02973530ee929e593fa7644d92b6b3568d0f87cecd8ce3349109"
+    }
+  ],
+  "version_only_difference_from_0_17_0_6": [
+    [
+      37621,
+      6,
+      0
+    ]
+  ],
+  "source_sha256": {
+    "firmware/Src/main.c": "61e6c6799f41566f20ee9c0559952c403252aa851323e2c344421a573263734a",
+    "firmware/Src/motor_control.c": "ccf25f31f548e0010dd3132b74c66ce6089c1e21ab093871e6e3b84705b99c6d",
+    "firmware/Src/motor_control.h": "b1648321d7fda04f12e3aaf5fe42ae54d687e6299b056e68cf31a6f9559d49f4",
+    "firmware/Src/commands.h": "c3307d907136720f8578dd5ef59f41e6931a2b302c3bf478035e98aae54bb66d"
+  },
+  "validation": {
+    "host_modules_passed": 14,
+    "immediate_target_checks": 306,
+    "ubsan_checks": 306,
+    "catalog_checks": 19,
+    "browser_demo_stable_and_legacy_passed": true,
+    "firmware_selection_passed": true,
+    "arduino_examples_compile_passed": true,
+    "builds_passed": [
+      "M17 scc3",
+      "M17 scc3 PROGRAMMING_TEST_JIG_MODE",
+      "M23 scc1"
+    ],
+    "physical_report": "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/hardware_summary.json",
+    "reference_updates_at_least": 35148,
+    "physical_canary_uid": "04245C407D26CCD0",
+    "calculation_peak_us": 26,
+    "other_motors_unchanged": 26,
+    "canary_disabled": true,
+    "strict_isr_entry_bound_established": false
+  },
+  "documentation_pdf_release_selection_pages_visually_checked": {
+    "Python": 1,
+    "Arduino": 1
+  }
+}

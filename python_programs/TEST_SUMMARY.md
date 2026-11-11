@@ -1,5 +1,67 @@
 # Servomotor Test Summary
 
+## Immediate targets: stable 0.17.0.0
+
+Commands 49 and 50 require enabled closed-loop position operation and an empty
+trajectory queue. Queue conflicts are fatal; no queued moves are cancelled to
+accept a reference. Command 50 now returns only the measured Hall position
+(signed i64, 8 payload bytes); Python returns a scalar, and Arduino returns a
+raw i64 or converted float. The source command-50 bindings and the hardware
+acceptance scripts support stable 0.17.0.0 and development 0.17.0.3+. The scripts
+query version before motion. Stable 0.16.0.0 does not implement these commands.
+
+The stable image differs from the accepted 0.17.0.6 image by exactly its
+development byte (6 to 0). Exact release-image canary acceptance passed on 2026-11-11: at least
+35,148 updates, both CRC modes, protection/recovery, planner followups and
+native C++ clients; zero communication errors and a 26-us calculation peak.
+Other 26 motors were unchanged; the canary was left disabled/defaulted.
+All 14 host modules passed, including 306 immediate-target and 306 UBSan
+checks. The stable/legacy browser demo, examples and firmware-selection
+regressions passed. Evidence and timing limitations: `firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/HARDWARE_RESULTS.txt`.
+Host gates explicitly accept stable .0 while rejecting legacy .1/.2 compact
+replies; ServoTune continues supporting .2 with its legacy decoder.
+
+Without hardware:
+
+```sh
+python3 python_programs/test_host_immediate_target.py
+node servotune/test_protocol.mjs
+python3 servotune/serve.py
+```
+
+The host test needs native C and C++ compilers. It compiles the real command
+handlers, queue operations and control ISR with sensor/output/PID-arithmetic
+stubs, plus the generated Arduino methods with a payload-level transport stub
+that opens no serial ports. It covers 1000 repeated targets,
+atomic foreground application before interrupts are restored, immediate ISR
+entry on restoration, validation with interrupts enabled, separate atomic
+writes and cached reads, an ISR between validation/commit and between
+commit/readback, coherent Hall copies across a 32-bit word carry, queued motion added before
+the first tick, full signed-i64 positions, both CRC modes, alias/unique-ID Python
+bindings, broadcasts, malformed payloads, strict legacy-reply rejection without
+retry, and foreground rejection without target/queue mutation. Later
+samples use normal running protections, including rejection of unrepresentable
+signed errors before PID or absolute-value arithmetic. Arduino checks include raw i64 results,
+position conversion, all addressing overloads, bad sizes and fatal errors. The
+existing PID differential test separately validates the actual controller arithmetic.
+The ServoTune demo exercises binary transactions using simulated motor data.
+
+The dedicated bench program stays outside the automatic hardware suite because
+it changes control modes and deliberately exercises fatal-error/reset paths:
+
+```sh
+python3 python_programs/test_immediate_position_target.py \
+  -p PORT -a 16_DIGIT_UNIQUE_ID --motion --samples 10000 \
+  --protocol-edge-cases --report immediate-target-bench.json
+```
+
+It uses +/-1 degree references and modest current limits, tests tracking,
+reference holding, framing, both CRC modes, guards, reset/recovery and later
+timed motion, then restores startup defaults with outputs disabled. Release
+validation qualified one canary; fleet, loaded-motion and physical power-cycle
+acceptance were not performed. Historical development captures remain separate
+from the current release evidence.
+
 ## Test Files
 
 | Filename                                                                       | Description                                                                                                                               | Module Used     | Obsolete | Prints PASS/FAIL |

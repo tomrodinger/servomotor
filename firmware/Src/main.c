@@ -67,9 +67,9 @@ struct __attribute__((__packed__)) firmware_version_struct {
     uint8_t major;
 };
 #define MAJOR_FIRMWARE_VERSION 0
-#define MINOR_FIRMWARE_VERSION 16
+#define MINOR_FIRMWARE_VERSION 17
 #define BUGFIX_FIRMWARE_VERSION 0
-#define DEVELOPMENT_FIRMWARE_VERSION 0 // this is the least significant number when it comes to versioning and is the last number on the right when printed in human readable form
+#define DEVELOPMENT_FIRMWARE_VERSION 0 // stable release: immediate position targets
 struct firmware_version_struct firmware_version = {DEVELOPMENT_FIRMWARE_VERSION, BUGFIX_FIRMWARE_VERSION, MINOR_FIRMWARE_VERSION, MAJOR_FIRMWARE_VERSION};
 
 #define BUTTON_PRESS_MOTOR_MOVE_DISTANCE ONE_REVOLUTION_MICROSTEPS
@@ -1006,6 +1006,27 @@ void process_packet(void)
             get_pid_constants_reply.i = i;
             get_pid_constants_reply.d = d;
             rs485_finalize_and_transmit_packet(&get_pid_constants_reply, sizeof(get_pid_constants_reply));
+        }
+        break;
+    case SET_IMMEDIATE_POSITION_TARGET_COMMAND:
+    case SET_IMMEDIATE_POSITION_TARGET_AND_GET_POSITION_COMMAND:
+        {
+            int64_t target;
+            copy_input_parameters_and_check_size(&target, payload, sizeof(target), payload_size);
+            rs485_done_with_this_packet();
+            set_immediate_position_target(target);
+            if(command == SET_IMMEDIATE_POSITION_TARGET_COMMAND) {
+                rs485_transmit_no_error_packet(is_broadcast);
+            }
+            else if(!is_broadcast) {
+                struct __attribute__((__packed__)) {
+                    uint8_t header[3];
+                    int64_t measured_position;
+                    uint32_t crc32;
+                } target_position_reply;
+                target_position_reply.measured_position = get_hall_position();
+                rs485_finalize_and_transmit_packet(&target_position_reply, sizeof(target_position_reply));
+            }
         }
         break;
     case SET_MAX_ALLOWABLE_POSITION_DEVIATION:

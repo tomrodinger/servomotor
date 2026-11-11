@@ -1,0 +1,11 @@
+START acceptance
+PASS acceptance 66.95 seconds
+START planner
+PASS planner 14.27 seconds
+START cpp
+PASS cpp 22.48 seconds
+START soak
+PASS soak 98.87 seconds
+START timing
+PASS timing 20.29 seconds
+PASSED: all five physical canary stages

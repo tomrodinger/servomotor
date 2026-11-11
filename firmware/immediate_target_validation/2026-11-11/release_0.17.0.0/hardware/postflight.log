@@ -1,0 +1,33 @@
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+04245C407D26CCD0 [[0, 0, 17, 0], 0] [0, 0]
+04B9C4C9EE48531B [[2, 0, 17, 0], 0] [0, 0]
+0C729700C8B96AC7 [[2, 0, 17, 0], 0] [0, 0]
+14B7D892AA0389E9 [[2, 0, 17, 0], 0] [0, 0]
+1994E7FE82D86D4C [[2, 0, 17, 0], 0] [0, 0]
+1CAE7F40D3E498E3 [[2, 0, 17, 0], 0] [0, 0]
+221424C29C1AE3C6 [[2, 0, 17, 0], 0] [0, 0]
+229E210595ADAAFB [[2, 0, 17, 0], 0] [0, 0]
+240871D6E400D46B [[2, 0, 17, 0], 0] [0, 0]
+2D288D9C0725A642 [[2, 0, 17, 0], 0] [0, 0]
+2ED2D58D7744DD46 [[2, 0, 17, 0], 0] [0, 0]
+3566EFBA6451C0BA [[2, 0, 17, 0], 0] [0, 0]
+36C545790836B394 [[2, 0, 17, 0], 0] [0, 0]
+3FE34E10207A6E5B [[2, 0, 17, 0], 0] [0, 0]
+538BA7B758215751 [[2, 0, 17, 0], 0] [0, 0]
+5E2E8161CF1D2624 [[2, 0, 17, 0], 0] [0, 0]
+67EF1D6AC2921A2A [[2, 0, 17, 0], 0] [0, 0]
+69BD35E368A525D6 [[2, 0, 17, 0], 0] [0, 0]
+6BF6BF3044B6A143 [[2, 0, 17, 0], 0] [0, 0]
+90691FD33073F4CD [[2, 0, 17, 0], 0] [0, 0]
+9474B90381CC1317 [[2, 0, 17, 0], 0] [0, 0]
+962C7FC2F220000B [[2, 0, 17, 0], 0] [0, 0]
+A6FC1C0BD24024E4 [[2, 0, 17, 0], 0] [0, 0]
+DBC90AF071C2DC56 [[2, 0, 17, 0], 0] [0, 0]
+E846EF4F7B2E28EF [[2, 0, 17, 0], 0] [0, 0]
+F87E9B73958AFE60 [[2, 0, 17, 0], 0] [0, 0]
+FBE10AA9188D2E3F [[2, 0, 17, 0], 0] [0, 0]
+Closed the serial port
+PASSED: snapshot 27 motors

@@ -1,0 +1,86 @@
+{
+  "release_version": "0.17.0.0",
+  "prepared_date": "2026-11-11",
+  "product": "M17",
+  "hardware_version": "1.5",
+  "software_compatibility_code": 3,
+  "version_fields": {
+    "major": 0,
+    "minor": 17,
+    "bugfix": 0,
+    "development": 0
+  },
+  "version_reason": "Backward-compatible command additions since stable 0.16.0.0; development field zero marks stable.",
+  "image": {
+    "filename": "servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware",
+    "size_bytes": 38317,
+    "sha256": "cfc47e472dfb02973530ee929e593fa7644d92b6b3568d0f87cecd8ce3349109"
+  },
+  "sidecars": {
+    "release_notes": "servomotor_M17_fw0.17.0.0_scc3_hw1.5.release_notes.txt",
+    "sha256": "servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware.sha256"
+  },
+  "validation": {
+    "host_modules_passed": 14,
+    "immediate_target_checks": 306,
+    "ubsan_checks": 306,
+    "catalog_checks": 19,
+    "browser_demo_stable_and_legacy_passed": true,
+    "firmware_selection_passed": true,
+    "arduino_examples_compile_passed": true,
+    "builds_passed": [
+      "M17 scc3",
+      "M17 scc3 PROGRAMMING_TEST_JIG_MODE",
+      "M23 scc1"
+    ],
+    "physical_report": "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/hardware_summary.json",
+    "reference_updates_at_least": 35148,
+    "physical_canary_uid": "04245C407D26CCD0",
+    "calculation_peak_us": 26,
+    "other_motors_unchanged": 26,
+    "canary_disabled": true,
+    "strict_isr_entry_bound_established": false,
+    "validated_development_version": "0.17.0.6",
+    "development_reference_updates_at_least": 35148,
+    "image_changes_from_validated_development_build": [
+      [
+        37621,
+        6,
+        0
+      ]
+    ],
+    "reset_tested": true,
+    "physical_power_cycle_tested": false,
+    "loaded_motion_tested": false,
+    "fleet_acceptance": false,
+    "browser_hardware_acceptance": false,
+    "evidence_directory": "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0"
+  },
+  "source_base_commit": "eb9ec9b1eae69df1239f8ee153eb5938febeda7b",
+  "source_ref": "refs/tags/v0.17.0.0",
+  "source_sha256": {
+    "firmware/Src/main.c": "61e6c6799f41566f20ee9c0559952c403252aa851323e2c344421a573263734a",
+    "firmware/Src/commands.h": "c3307d907136720f8578dd5ef59f41e6931a2b302c3bf478035e98aae54bb66d",
+    "firmware/Src/motor_control.c": "ccf25f31f548e0010dd3132b74c66ce6089c1e21ab093871e6e3b84705b99c6d",
+    "firmware/Src/motor_control.h": "b1648321d7fda04f12e3aaf5fe42ae54d687e6299b056e68cf31a6f9559d49f4",
+    "common_source_files/error_text.h": "53afd88751932ffad0e72cdf7955ff2452ae1be5037c06869b6e0d170d7fd860",
+    "python_programs/servomotor/motor_commands.json": "37cc56730c6e8c4da8d154be3c895bc35bcb0daae2d2cc8cb99c4865dcf84103",
+    "python_programs/servomotor/error_codes.json": "3ba6b85e36989b01dc7cf91e7a3b99b991de0bd7ce8422d3dc6858d2ee2493aa",
+    "python_programs/servomotor/M3.py": "0414d5e7864d7890c6fd8f4633041bfeef959243badf8ff27c7f497043b7d428",
+    "Arduino_library/Commands.h": "7d0d7204c0412ab5423347cb6b7fa8a1beeb01ad71db407460ef848e3ce5f7a3",
+    "Arduino_library/Servomotor.h": "457ab9211ef245d5ae2865ecb929e7fd1066ae51edf543fb472d833b9237815a",
+    "Arduino_library/Servomotor.cpp": "e35c9661836fb48693a53aa1241746a2fd6fd5e21da56db1ff873d83c3762ac7",
+    "servotune/protocol.mjs": "e715e78a6a85666e5e0b49a6cceb3cba07abc5541326971fe552aaa9ec698089",
+    "servotune/app.mjs": "467fe7837636cb02ec89431647c36ab4e85f07ef71750a91f04150e2d2635a19"
+  },
+  "documentation_sha256": {
+    "API_documentation/M17_servomotor_Python_API_documentation.md": "806463213606ae741c8c40048fe61eb0a1844bdcd3ecfaf94272f14613ccc0ed",
+    "API_documentation/M17_servomotor_Python_API_documentation.pdf": "4fed12ef9460a24829d84a5d9c07c0c1b1f755642dbbfd9f231e5d655bb8ada9",
+    "API_documentation/M17_servomotor_Arduino_API_documentation.md": "6846dabd378020ba8449af910d56e38522cce575a8c58f9a3558b6aad0334e09",
+    "API_documentation/M17_servomotor_Arduino_API_documentation.pdf": "009c0834004259547843a1936c3124db49232f4243d453ee5b71d96b5f020bbe"
+  },
+  "release_notes_sha256": "d409f047d2e030a228d84540580616e6afe51aff551fed73a134ac584a4905a0",
+  "python_and_arduino_packages_published": false,
+  "publication_scope": "M17 firmware, source, release notes and API references; Python/Arduino package publication is separate.",
+  "release_url": "https://github.com/tomrodinger/servomotor/releases/tag/v0.17.0.0"
+}

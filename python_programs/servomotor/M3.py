@@ -105,6 +105,11 @@ class UnitConverter:
         factors = self.conversion_factors[key]
         if current_unit not in factors:
             return value
+
+        # Preserve full-width integer payloads when no conversion is needed.
+        # Multiplying an i64 encoder count by 1.0 loses bits above 2^53.
+        if current_unit == conv_info['InternalUnit']:
+            return value
         
         factor = factors[current_unit]
         result = value * factor
@@ -130,6 +135,9 @@ class UnitConverter:
         # Handle both single values and lists
         if isinstance(value, list):
             value = value[0]  # Take first value since we expect single values
+
+        if target_unit == conv_info['InternalUnit']:
+            return value
 
         # Special handling for temperature conversions
         if conv_info['Type'] == 'temperature':

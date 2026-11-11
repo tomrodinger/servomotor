@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!-- Adapted from Matthias Wandel's October 2026 Gearotons ServoTune.
+     Supplied originals are preserved in original/. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gearotons ServoTune</title>
+  <link rel="icon" href="data:,">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Helvetica, Arial, sans-serif; color: #202b33; background: #f0f2f3; margin: 0; padding: 24px; }
+    header, main, footer { max-width: 1300px; margin: auto; }
+    header { margin-bottom: 20px; } h1 { margin: 0 0 8px; font-size: 26px; }
+    h2 { font-size: 17px; margin: 24px 0 14px; } p { line-height: 1.5; }
+    main { display: grid; grid-template-columns: minmax(340px, 1fr) minmax(380px, 1.2fr); gap: 20px; }
+    .panel { background: white; border-radius: 8px; padding: 22px; box-shadow: 0 2px 6px #00000012; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+    button, input { font: inherit; border: 1px solid #bbc4c9; border-radius: 4px; padding: 9px 11px; }
+    button { cursor: pointer; background: #edf0f2; } button:hover { background: #dde7eb; }
+    button:disabled { opacity: .45; cursor: default; } button.primary { background: #d4eadb; }
+    button.stop { color: #8b2222; background: #fbe4e4; } input[type=number] { width: 145px; }
+    #address { width: 210px; } .gain { display: grid; grid-template-columns: 30px 1fr 145px; align-items: center; gap: 10px; margin: 12px 0; }
+    .gain input[type=range] { width: 100%; padding: 0; } .muted { color: #58676f; font-size: 14px; }
+    #banner { padding: 12px 16px; border: 1px solid #c4cdd2; background: white; border-radius: 6px; }
+    #banner.demo { border-color: #d4ae4c; background: #fff4cf; } #notice { min-height: 24px; color: #285242; }
+    #notice.error { color: #a52424; } #status { font-weight: bold; } code { font-family: ui-monospace, monospace; }
+    canvas { width: 100%; height: 350px; background: #25333d; border-radius: 4px; display: block; }
+    dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } dt { color: #58676f; } dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+    footer { margin-top: 20px; color: #58676f; font-size: 13px; } a { color: #245c75; }
+    @media(max-width: 850px) { body { padding: 14px; } main { grid-template-columns: 1fr; } .gain { grid-template-columns: 25px 1fr 125px; } .gain input[type=number] { width: 125px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Gearotons ServoTune</h1>
+  <p class="muted">PID tuning and immediate position targets · adapted from Matthias Wandel’s ServoTune</p>
+  <div id="banner" role="status">Choose Demo to try the controls without a motor, or connect a USB–RS485 adapter.</div>
+</header>
+<main>
+  <section class="panel" aria-label="Motor controls">
+    <div class="row">
+      <button id="demo" class="primary">Start demo</button>
+      <button id="connect">Connect serial</button>
+      <button id="disconnect" disabled>Disconnect</button>
+    </div>
+    <div class="row"><label for="address">Motor address</label><input id="address" value="X" spellcheck="false" aria-describedby="address-help"></div>
+    <p class="muted" id="address-help">Alias character / number, or a 16-digit unique ID. Use unique IDs when several motors share an alias.</p>
+    <p id="status">Not connected</p>
+    <p id="notice" role="status"></p>
+
+    <h2>PID constants</h2>
+    <p class="muted">Raw P, I and D values. Connecting reads the motor’s settings; editing a field writes nothing until you press Write PID.</p>
+    <div class="gain"><label for="p">P</label><input id="p-range" type="range" min="0" max="10000" value="2000" aria-label="P slider"><input id="p" type="number" min="0" max="4294967295" value="2000"></div>
+    <div class="gain"><label for="i">I</label><input id="i-range" type="range" min="0" max="100" value="5" aria-label="I slider"><input id="i" type="number" min="0" max="4294967295" value="5"></div>
+    <div class="gain"><label for="d">D</label><input id="d-range" type="range" min="0" max="1000000" value="175000" aria-label="D slider"><input id="d" type="number" min="0" max="4294967295" value="175000"></div>
+    <div class="row"><button id="read-pid" data-connected disabled>Read PID</button><button id="write-pid" data-connected disabled>Write PID</button></div>
+
+    <h2>Immediate position target</h2>
+    <p class="muted">Requires enabled closed-loop position control and an empty trajectory queue. An invalid request raises a fatal motor error; reset is required.</p>
+    <div class="row"><label for="target">Target (degrees)</label><input id="target" type="number" step="0.1" value="10"></div>
+    <div class="row"><button id="target-only" data-target disabled>Send target</button><button id="target-position" data-target disabled>Send target + read position</button></div>
+    <div class="row"><button id="closed-loop" data-connected disabled>Enable closed loop</button><button id="drive-off" data-connected disabled>Drive off</button><button id="estop" class="stop" data-connected disabled>Emergency stop</button></div>
+    <div class="row"><button id="reset" data-connected disabled>Reset motor</button><button id="get-status" data-connected disabled>Get status</button></div>
+    <h2>Alternating target test</h2>
+    <p class="muted">Sends the entered angle and its negative every 250 ms, using the combined command, and starts continuous scope capture. Stop test holds the last accepted target and keeps capturing the settling response.</p>
+    <div class="row"><button id="motion-start" data-target disabled>Start alternating targets</button><button id="motion-stop" data-connected disabled>Stop test</button></div>
+  </section>
+  <section class="panel" aria-label="Scope and servo state">
+    <h2 style="margin-top:0">Position scope</h2>
+    <p class="muted">Latest 5 seconds · <span style="color:#438c63">green: target</span> · <span style="color:#247aa8">blue: measured position</span></p>
+    <canvas id="scope" width="700" height="350" aria-label="Target and measured position chart"></canvas>
+    <div class="row"><button id="scope-start" data-connected disabled>Start scope</button><button id="scope-stop" data-connected disabled>Stop scope</button></div>
+    <p class="muted" id="sample-count">0 samples</p>
+    <p class="muted">The target is drawn as held steps. Measured samples show the motor response; capture gaps over 100 ms are left blank.</p>
+    <h2>Last target reply</h2>
+    <dl>
+      <dt>Target sent</dt><dd id="state-target">—</dd>
+      <dt>Measured position</dt><dd id="state-measured">—</dd>
+      <dt>Position error</dt><dd id="state-error">—</dd>
+    </dl>
+    <p class="muted">The target shown is the value sent. The reply contains the latest stored measured position; the shaft may still be moving. Position error is calculated from the target and measurement.</p>
+    <h2>Communication</h2>
+    <dl>
+      <dt>Completed transactions</dt><dd id="transactions">0</dd>
+      <dt>Completed transactions/s</dt><dd id="transaction-rate">0.0</dd>
+      <dt>Average time per transaction</dt><dd id="transaction-time">—</dd>
+    </dl>
+    <p class="muted">Updates every second. Time per transaction is the elapsed interval divided by completed transactions, including pauses between requests.</p>
+  </section>
+</main>
+<footer>Demo motion is illustrative and does not model the physical PID controller. Real motor support for both target commands requires development firmware 0.17.0.2 or a later compatible release. <a href="README.md">Setup and test notes</a>.</footer>
+<script type="module" src="app.mjs"></script>
+</body>
+</html>

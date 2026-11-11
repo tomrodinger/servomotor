@@ -1,0 +1,949 @@
++-o Root  <class IORegistryEntry, id 0x100000100, retain 35>
+  | {
+  |   "IOKitBuildVersion" = "Darwin Kernel Version 25.2.0: Tue Nov 18 21:09:40 PST 2025; root:xnu-12377.61.12~1/RELEASE_ARM64_T6000"
+  |   "OS Build Version" = "25C56"
+  |   "OSKernelCPUSubtype" = 18446744072635809794
+  |   "OSKernelCPUType" = 16777228
+  |   "OSPrelinkKextCount" = 5
+  |   "IORegistryPlanes" = {"IOPort"="IOPort","IOPower"="IOPower","IOService"="IOService","IOAccessory"="IOAccessory","IOUSB"="IOUSB","CoreCapture"="CoreCapture","WiFiDKCoreCapture"="WiFiDKCoreCapture","IODeviceTree"="IODeviceTree"}
+  |   "IOConsoleLocked" = No
+  |   "IOConsoleUsers" = ({"kCGSSessionOnConsoleKey"=Yes,"kSCSecuritySessionID"=100023,"kCGSSessionSystemSafeBoot"=No,"kCGSessionLoginDoneKey"=Yes,"kCGSSessionIDKey"=257,"kCGSSessionUserNameKey"="tom","kCGSSessionGroupIDKey"=20,"CGSSessionUniqueSessionUUID"="3A1FDB94-8C97-4546-8E7C-2A38E0163C8E","kCGSessionLongUserNameKey"="Tomas Rodinger","kCGSSessionAuditIDKey"=100023,"kCGSSessionLoginwindowSafeLogin"=No,"kCGSSessionUserIDKey"=501})
+  |   "IOKitDiagnostics" = {"Instance allocation"=43182264,"Container allocation"=9973461,"Pageable allocation"=37437521920,"Classes"={"AppleJPEGWrapperControlV8"=0,"KDISecondaryEncoding"=0,"RTBuddyFirmwareBundle"=0,"ApplePMPThermal"=0,"IOSkywalkPacketPoller"=0,"IOGPUKernelMappedMemory"=1,"IOAVBStreamCaptureUserClient"=0,"IOPMPowerStateQueue"=1,"ExclavesAudioProxyInputStreamDriverInterface"=0,"AppleSPUVD6287"=0,"AppleConvergedIPCDevice"=1,"IosaEnhancementPipeUnitMSR9"=0,"IOPMServiceInterestNotifier"=191,"IOPerfControlWorkContext"=253,"IOAVService"=0,"IOBlockStorageDriver"=4,"IO80211NoneProtocol"=0,"IOGPUBufferMemoryDescriptor"=19800,"IODTPlatformExpert"=1,"AppleAOPVoiceTriggerController"=1,"AFKFirmwareService"=1,"IOTimeSyncUnicastUDPv4EtEPort"=0,"ApplePassThroughBakuBTM"=0,"AppleMesaARMFunction"=0,"IOGPUCommandDescriptor"=0,"IOMobileFramebufferAP"=1,"IOThunderboltSwitchIntelJHL8440"=0,"OSArray"=61477,"IOImageLoaderHashstore"=0,"IOThunderboltConfigXDomainLinkChangeRequestCommand"=0,"IOAccessoryManagerAID"=0,"ApplePCIEHostBridge"=2,"AppleEmbeddedButtonController"=1,"AUAInputTerminalDictionary"=0,"AppleNVMeController"=1,"IOCommandGate"=4066,"AppleT8132USBXHCICommandRing"=0,"IOSerialBSDClient"=12,"AppleParadeDP825TCON"=0,"IosaColorManager"=1,"KDIUDIFCacheBuffer"=0,"IosaPrescaler3x3PipeUnitMSR9"=0,"IO80211TimeSyncPeersDatabase"=0,"AppleT6000MemCachePanicFunction"=1,"AGXIOFenceData"=16,"AppleT8122DPTXPort"=0,"ApplePMGRFunctionStartS2RTimer"=0,"IOGPUClientSharedMachine"=62,"TaggedMemoryDescriptor"=0,"IOThunderboltSRAMLog"=0,"AppleGPIOICController"=1,"AGXSecureMonitorG13"=1,"AppleTCControllerType2"=0,"AGXHardwareBufferBase"=1,"AppleT8112USBXHCICommandRing"=0,"AppleSEPSharedMemoryChannel"=1,"IOUSBMassStorageUASDriver"=0,"IOThunderboltXDomainPath"=0,"IOThunderboltConfigXDomainResponseCommand"=18,"AppleUSBSerial"=1,"AppleUVDMAceInterface"=0,"IOPortUserClient"=0,"IOWorkLoop"=666,"AppleT8132USBXHCI"=0,"AGXMemoryMap"=1,"IORegistryIterator"=0,"ISPErrorEventSource"=1,"ApplePCIECLegacyIntController"=3,"IOGPUGroupMemory"=5,"ApplePPMDroopController"=1,"HSAIDUserClientHost"=0,"AppleEmbeddedNVMeNVRAM"=0,"AppleBCMWLANTimeSyncEngine"=0,"AUAEffectUnitDictionary"=0,"AppleARMCPUPerformanceServiceNub"=0,"AICInterruptTimestampFunction"=1,"IO80211TrafficNotification"=0,"AppleSEPDebugService"=0,"IOThunderboltConfigWriteCommand"=12,"IOTimeSyncDomainUserClient"=0,"AppleThunderboltNHITransmitRing"=0,"IO80211NeighborCacheManager"=0,"IOUSBInterfaceUserClientV3"=1,"AppleExternalPowerManager"=12,"OSAction_IOUserNetworkEthernet__RxSQDataAvailable"=0,"AppleATCDPPort"=2,"IO80211RealTimePeerManager"=0,"RTBuddyEndpoint"=121,"IOPortTransportAIDBus"=0,"AppleEmbeddedUSBDeviceSupport"=0,"IOSKMemoryBuffer"=757,"CommonGlue"=0,"DCPAVAudioDMADelegate"=5,"AGXStatistics"=1,"AppleARMSPMIDeviceUserClient"=0,"CoreAnalyticsMessenger"=2,"HIDAlwaysNotifyingIODataQueue"=1,"AppleBCMWLANItemRing"=0,"AppleM2ScalerCSCHalMSR22"=0,"IosaFirmwareControl"=0,"DigitizerTransducer"=0,"IOWatchdogUserClient"=1,"AppleThunderboltNHIReceiveRingType5"=0,"IOUnifiedAddressTranslator"=73,"IOThunderboltConfigErrorCommand"=3,"IOGPUDeviceUserClient"=1,"M2ScalerCSCColorConversionControlMSR23"=0,"AppleConvergedPCI"=1,"AppleSPUCT724"=0,"AppleThunderboltNHIReceiveRingType7"=0,"MCCommand"=0,"IOPlatformDevice"=32,"AppleARMFunctionMCA2Config"=3,"IODPPortAnalyticsCollector"=10,"AppleTCControllerType11"=1,"CoreKDLUserClient"=0,"AppleIPAppender"=1,"IOHIDevice"=0,"AGXLegacyGart"=0,"AppleHIDTransportIODataQueue"=0,"AIDQueueEventSource"=0,"AppleMCA2SerDes"=2,"AppleOnboardSerialSkywalkInterface"=0,"IOFramebufferSharedUserClient"=0,"AppleUSBUserHCIUserClient"=0,"com_apple_driver_FairPlayIOKitUserClient"=2,"AppleMultitouchInputHIDEventDriver"=1,"IODPVirtualDevice"=0,"IOMbufLittleMemoryCursor"=0,"HibiscusFunctions"=0,"AIDReporterState"=0,"IosaFilmGrainControlMSR16"=0,"AppleBCMWLANPCIeSkywalkMulticastQueue"=0,"IOHistogramReporter"=134,"AppleMCCUserClient"=0,"IODPRXPort"=0,"AGXFamilyAccelerator"=1,"IOBioPool"=0,"AppleBCMWLANChipManagerPCIe4377"=0,"IOHIDEventService"=3,"AppleBluetoothModuleUserClient"=0,"IONVMeBlockStorageDevice"=1,"WCLGASManager"=0,"AppleAOPAudioSpeakerClientManager"=0,"IODispatchSource"=2,"AppleJPEGWrapperControlV11"=0,"AppleBatteryAuth"=0,"OSOrderedSet"=595,"AUAControlDictionary"=0,"AppleBTMPMUAgent"=1,"AppleUserHIDDevice"=4,"AppleT8122USBXDCI"=0,"IOAVServiceUserClient"=0,"IOThunderboltCommand"=3,"AppleHIDTransportHIDDevice"=5,"IOGPUCommandQueue"=1,"CoreAnalyticsUserClient"=1,"IOBioPoolItemFactory"=0,"AppleUSB20HostController"=0,"IOPortFeaturePowerSourceOption"=0,"AppleT8140USBXHCI"=0,"AppleDCPLinkService"=1,"InterruptEventSourceBridge"=35,"IOBiometricUserClient"=0,"IOUserNetworkLogicalLink"=0,"AHTFunctionExecutor"=0,"AIDCircularBuffer"=0,"IOTSAEITimeSyncHandler"=0,"AppleCLPCWorkLoop"=1,"AppleUSBSortableConfigurationDescriptor"=11,"RTBuddyPatchBay"=1,"AppleProResHW"=1,"AppleSPUProfileDriverUserClient"=0,"M2ScalerSrcDestCfgControlMSR19"=0,"IOHITablet"=0,"BinaryEncoder"=0,"AppleARMBacklight"=1,"IO80211ThroughputCache"=0,"OSValueObject<KeyboardReserved>"=0,"OSAction_IOHIDEventService__CopyEvent"=0,"RTBuddyService"=14,"IOReporter"=3,"IO80211LQMCrashTracer"=0,"AppleBringUpPMGR"=0,"AppleAOPAudioServiceBase"=1,"AppleGCResource"=1,"AppleAOPAudioUserClient"=1,"IO80211RNGAgent"=0,"IOAccessoryHSAIDBusTransport"=0,"ApplePPMEntity"=5,"AppleBSDKextStarter"=2,"IOSurfaceSharedEvent"=45,"AppleUSBXHCI"=1,"IOAVRegisterSet"=0,"IO80211NANDataPathResponder"=0,"IOServiceMessageUserNotification"=572,"IOSharedInterruptController"=6,"IOThunderboltSet"=105,"AppleT8101GPIOIC"=0,"ACMKernelService"=6,"IOAVAudioLinkDelegate"=0,"IOProviderPropertyMerger"=1,"IOHIKeyboardMapper"=0,"IOBluetoothTimerEventSource"=0,"AppleAGXFunctionMetrology"=0,"IO80211DataPathInformAgent"=0,"RTBuddyRouteOnly"=0,"PMGRDispCtrl"=0,"IOStorage"=4,"AppleDisplayConnection"=0,"IONetworkMedium"=30,"AppleSPUDispADCUserClient"=0,"AppleHIDTransportBootloaderHBPP"=0,"AUCWorkloop"=1,"IO80211EventSource"=0,"AppleSMCChargerPS"=0,"AppleATVAintreeBTM"=0,"IOThunderboltConfigXDomainROMChangedRequestCommand"=0,"ApplePassthroughPPM"=1,"WCLBGCommonFsm"=0,"IOHDCP2LocalMessageTransport"=0,"IOPMWorkQueue"=1,"AppleSEPPanicBuffer"=1,"OSValueObject<H13ISPOverrideNVMParams>"=1,"AGXCLChannelSKU"=1,"AppleI2CPagedAudio"=0,"AppleSandDollar"=1,"AGXHWParamBufferManager"=43,"IosaChannelConfig"=0,"AppleTDMBlockStorageServices"=0,"IODPSwitchAllocationState"=2,"IOUSBDeviceInterface"=12,"RTBuddyKdebugEndpoint"=9,"AppleARMFunctionCharger"=0,"AppleARMLightEmUp"=1,"IOBluetoothSCOMemoryDescriptorRetainer"=0,"AppleSPU"=12,"RTBuddySlaveMemoryDescriptor"=16,"AppleSmartIOCommandPool"=11,"AppleT8130USBXDCI"=0,"IOAccessoryPowerSourceItemPDPlatformCurrentLimit"=0,"BTDebug"=1,"IOGPUWorkQueue"=1,"AppleCotaBTM"=0,"AppleS8000AESAccelerator"=1,"AppleSMCChargerFunction"=0,"AGXTAChannelSKU"=1,"AppleBCMWLANChipManagerPCIe4364"=0,"AppleM2ScalerCSCDriverFilters"=1,"IOThunderboltConfigMultiReadCommand"=3,"AppleUSBDeviceNCMControl"=6,"ANEClientDevice"=6,"IOSKRegionMapper"=343,"AppleFermiumBTM"=0,"AppleT8132DisplayCrossbar"=0,"IOHIDResource"=1,"AppleThunderboltNHIMemoryBlock"=0,"IORSMMemoryDescriptorArray"=0,"IOTimeSyncTimedEdgeGeneratorUserClient"=0,"IORSMCommand"=0,"IosaDPEControlMSR19"=0,"AppleThunderboltHALGenericACIO"=1,"IOCPU"=1,"DitherControlMSR7"=1,"AppleBCMWLANNANInterface"=0,"IOTimeSyncDaemonServiceBase"=1,"IOMachPort"=5183,"ApplePMGRFunctionPerfCycleCount"=2,"IOWorkGroup"=0,"AppleARMMIPIDSIController"=0,"AGXPerfCtrSampler"=1,"AppleT8103TypeCPhy"=1,"AGXCLWorkQueue"=35,"IOThunderboltConfigXDomainPathTeardownRequestCommand"=0,"AppleTCS3490"=0,"AGXFastRenderTarget"=1,"AppleThunderboltIPConnection"=0,"AppleUSBHostDARTDMACommand"=44,"MogulAuthI2CRelayInterface"=0,"IOAccessoryPowerSourceItemUSB_TypeC_Current"=0,"IODPEventLog"=0,"IODTNVRAMDiags"=1,"IOThunderboltSwitchType7"=0,"IOSCSIPeripheralDeviceNub"=1,"AppleUSBXHCISparseRequestPool"=0,"AppleSystemPolicy"=1,"IOPCIDevice"=8,"IOPolledFilePollers"=0,"IODTNVRAMVariables"=2,"AppleMCA2MCLK"=4,"IOUserNetworkPacketQueue"=4,"AppleBCMWLANCommandMonitor"=0,"IOPortTransportStatePCIe"=0,"IOAudioEngine"=0,"AppleEmbeddedSimpleSPINORFlasherDriverUC"=0,"IOSurfaceWiredSendRight"=0,"AppleEmbeddedHIDEventService"=5,"StatusDescriptorRingMSR23"=0,"ANEScheduler"=1,"OSValueObject<PMAssertStruct>"=40,"APFSOSNumberAtomic"=2566,"IODPVirtualPortService"=0,"HSAIDReceivePacket"=0,"AppleConvergedIPCBTIDevice"=0,"IosaRdmaControlMSR11"=0,"AppleHPM"=1,"AppleARMPWMBacklight"=0,"IOGPUFenceMachine"=1,"OSValueObject<void*>"=0,"ApplePMPv2UserClient"=0,"IOHIDEventDummyService"=0,"AUAASEndpointDictionary"=0,"IOCryptoAccelerator"=1,"AppleH13CamInFrameReceiverBufferPool"=0,"AppleBPIC"=0,"AppleSPUTimesyncV1"=0,"IOFramebufferParameterHandler"=0,"AppleBiometricSensor"=1,"AppleSetDroopUtilizationControlEffortFunction"=0,"IOThunderboltAbstractPath"=0,"KDIShadowedDiskImage"=0,"SalviaFunctions"=2,"AppleHPMInterfaceType16"=0,"AppleARMFunctionAssertReset"=1,"IOAccessoryPowerSourceItemDebounce"=0,"IOHIDSystem"=1,"IOSEPBiometricService"=1,"IOUSBDeviceController"=1,"AppleHIDTransportProtocol"=1,"HSAIDTransmitCommand"=0,"AppleHPMARM"=1,"M2ScalerScalingASEControlMSR10"=2,"IOGPU"=1,"IOTimeSyncNetworkPortUserClient"=0,"AppleMCA2Switch_Selector"=5,"IOThunderboltFrameList"=0,"AGXParameterManagementVirtual"=43,"M2ScalerScalingASEControlMSR23"=0,"IOAVCommandGate"=8,"MesaAccessoryIntReportError"=0,"DCPAVServiceProxyUserClient"=0,"IOPortTransportComponentCCUSBPDSOPp"=2,"AGX3DChannelGen2"=1,"AGXRepeatedMemoryDescriptor"=0,"AppleBCMWLANBusSkywalk"=0,"ANEMessage"=0,"IOAVVideoInterfaceConcreteUserClient"=0,"AppleBTM"=1,"IOThunderboltNub"=2,"AppleM2ScalerCSCHalMSR16"=0,"IOAESAcceleratorUserClient"=0,"IOThunderboltStatistics"=3,"IODPHDMIPortController"=1,"IosaDPEControlMSR16"=0,"IOHIPointing"=0,"AppleSmartIOPerf"=1,"IOSurface"=583,"AppleM3WrapV2"=1,"HSAIDAckPacket"=0,"M2ScalerScalingControlMSR2"=0,"AppleSPUFirmwareService"=1,"IOAudioTimeIntervalFilter"=0,"AppleParadeDP865TCON"=0,"WCLTrafficPatternAgent"=0,"TSNITimeSyncHandler"=0,"IOI2CInterface"=0,"RoswellAuthI2CRelayInterface"=0,"AppleBCMWLANCommander"=0,"IOUSBMassStorageUFIDriver"=0,"IO80211PacketDescriptor"=0,"IOThunderboltDebugBlock"=1,"AIDCircularWriteBufferShared"=0,"IODeblocker"=0,"ApplePMGRFunctionGetValidPerfState"=0,"IO80211BssManager"=0,"IOHDCPMessageTransport"=1,"AppleUSBHostDMACommandPool"=3,"ACMRestrictedModeKernelService"=1,"IOFastPathField"=0,"IosaInternalPipe"=1,"AGXLateEvalEventFence"=0,"IOSCSIMultipathedLogicalUnit"=0,"IOSkywalkBSDClient"=2,"IosaFilmGrainPipeUnitMSR16"=0,"IODPCECController"=0,"IOThunderboltConnectionManagerType5"=3,"AppleStockholmRingBuffer"=0,"AppleBCMWLANIO80211APSTAInterface"=0,"OSValueObject<ANECoredumpSection>"=0,"AppleThunderboltNHIReceiveRingManager"=0,"H13ISPSharedClientBufferArgs"=0,"AppleFairplayTextCrypter"=1,"SEPEpoch"=0,"IO80211NANSubscribeServiceDescriptor"=0,"IOTimeSyncUnicastUDPv6EtEPort"=0,"AGXArmFirmware"=1,"IOThunderboltJTAG"=3,"MSR23ChromaDownsampleFilter"=0,"IOFDiskPartitionScheme"=0,"AppleMultiFunctionPlatformExternal"=0,"AppleANEPerfCounterReadFunction"=1,"AppleUSBUserHCIResources"=1,"DCPDPDeviceProxyUserClient"=0,"IOTimeSyncNanosecondSnapshotService"=0,"IODARTVMSpace"=884,"IosaWdmaControlMSR23"=0,"IISAudioIsolatedStreamECProxy"=0,"IOUserNetworkTxCompletionQueueCompat"=0,"AppleSDXCBlockStorageDevice"=1,"IOThunderboltConnectionManager"=1,"IOGPUResource"=1,"AppleBCMWLANCallbackEventSource"=0,"IORangeAllocator"=427,"WCLController"=0,"IosaFilmGrainControl"=0,"IOAccessoryIDBusTransport"=0,"TSNPacketPool"=0,"AppleT810xPCIe"=1,"M2ScalerSrcDestCfgControlMSR7"=1,"RTBuddyBinaryLogHandler"=14,"AppleThunderboltHALType5"=3,"IOAccessoryIDBusBulkData"=0,"IOAVAUPPacket"=0,"AppleUSBAudioPlugin"=0,"IOTimeSyncTimeSyncTimePort"=1,"IOTimeSyncUserFilteredServiceDaemonClient"=0,"AppleUSB20XHCITypeCPort"=1,"ApplePCIeCPIODMA"=3,"IODPDeviceConcreteUserClient"=0,"AppleSPUALSSealionDriver"=0,"IOCECUserClient"=0,"IosaPowerManagerMSR20"=0,"IosaFirmwareControlMSR23"=0,"IOPortTransportProtocolAppleUVDM"=0,"AppleBCMWLANTimeTrace"=0,"AppleARMNORFlashDevice"=3,"IosaTiledCompressedMemMSR8"=2,"AppleTDMAKSCommand"=0,"IOAccessoryIDBusSystemStates"=0,"AppleUSB30Hub"=16,"AppleSmartBatteryUserClient"=0,"AppleThunderboltNHIType7"=0,"IOWorkQueue"=1,"FilmGrainSynthesizer"=0,"IOInterleavedMemoryDescriptor"=0,"AGXGartG13"=73,"IO80211InfraPeer"=0,"IOAccessoryIDBusHIDDevice"=0,"AEARuntimeRegisterPatchForI2C"=2,"IOTimeSyncDomain"=1,"AppleMCA2Switch"=1,"AppleSecondaryAudioFunction"=1,"IOAudioPort"=0,"AppleSPIBiometricSensor"=1,"AppleSPIMCControllerStats"=4,"AppleBCMWLANPCIeSkywalkRxCompletionQueue"=0,"IOHIDAccelElementProcessor"=0,"AppleUSBXDCIARM"=1,"IosaTunableControlMSR22"=0,"AppleOLYHALPlatformFunction"=1,"OSValueObject<ANEInDebugWorkProcessorRPCRequest>"=0,"IOAudioTimeIntervalFilterIIR"=0,"IOTimeSyncTranslationPMGR"=0,"AppleImage4"=1,"IOUSBDeviceControlRequest"=3,"IOGPUDeviceAssertion"=0,"HSAIDUserClientAccessory"=0,"IODARTVMAllocatorMPM"=0,"IOUserEthernetController"=1,"IOFilterScheme"=0,"IOSkywalkRxSubmissionQueue"=3,"KopsiaFunctions"=0,"AppleThunderboltNHIReceiveRingManagerType5"=0,"AppleSPUCT725"=0,"IODPPortUserClient"=0,"IOUSBHostDevice"=91,"AppleUSBXHCITransferRing"=65,"IOAVEventLog"=4,"IOThunderboltDispatchContextAbstract"=0,"IosaRevertPipeUnit"=0,"M2ScalerSrcDestCfgControlMSR17"=0,"ANEHWDevice"=1,"AppleDialogPMUUserClient"=0,"ApplePMGRUserClient"=0,"AppleT8112USBXDCI"=0,"AIDUserClientLogger"=1,"AppleUSBACMData"=2,"AppleEmbeddedNVMeDiagnostics"=0,"IOSerialStreamSync"=3,"IORS232SerialStreamSync"=0,"RegStream"=2,"IOAVVideoColorElement"=0,"IOThunderboltSwitch"=1,"IOTimeSyncSyncUserClient"=0,"AUCUserClient"=0,"AppleT603XDisplayCrossbar"=0,"IOServiceNotificationManager"=23,"MogulAuthSMCRelayInterface"=0,"AppleT8142ATCDPXBAR"=0,"IOAudioControl"=0,"MailBox"=0,"IOPort"=3,"ApplePMPv2"=1,"IOThunderboltTransmitCommand"=0,"IOPowerConnection"=546,"IOHIDUserDevice"=1,"AppleBCMWLANCommand"=0,"IODisplay"=0,"ANENotificationMsg"=0,"AppleUSBUserHCI"=0,"IOGPUVnioDesc"=0,"AppleMCA2Tx"=4,"AppleDiagnosticDataAccessReadOnly"=1,"IOHIDKeyboardDevice"=0,"IO80211HistogramReporter"=0,"IOThunderboltTracebuffer"=9,"AGXLateEvalEventTable"=1,"WCLConfigManager"=0,"AppleRSMChannelTestClient"=0,"AppleSPUALSSealionAccessoryDriver"=0,"IOAccessoryPowerSourceItemBehavior"=0,"AppleARMPerformanceControllerFunctionCPUIdle"=0,"AppleAOPAudioHallDevice"=0,"IOSerialDriverSync"=0,"AppleMMIOSerial"=1,"OSValueObject<SMCNotification>"=5,"AppleHIDTransportManagement"=0,"FrameDescriptorRing"=0,"AppleSPUFastpathDriver"=0,"IODataQueueDispatchSource"=22,"AppleSMCClient"=8,"IOThunderboltXDPropertiesDirectory"=6,"IOMobileFramebuffer"=1,"RTBuddyFirmware"=11,"IODPSACAggressorTable"=0,"IOTimeSyncService"=2,"AGXRestartReport"=0,"AppleT6000PCIe"=1,"AppleOLYHALUART"=1,"APCIECPortControlFunction"=0,"IOGPUSegmentResourceList"=1,"IOCatalogue"=1,"IONVMeEffaceableDevice"=0,"SCSITaskUserClient"=0,"AppleTDMAKSServices"=0,"IOPlatformExpertDevice"=1,"AppleHPMUserClient"=0,"AppleMemCacheController"=1,"AppleUSBHostUserClient"=1,"AppleBCMWLANPowerManager"=0,"AppleSmartIODMAController"=1,"AGXSecureGart"=1,"IO80211NANPeer"=0,"AppleSPUALSSunfishDriver"=0,"AHTFunctionInfo"=1,"IOTimeSyncReverseSync"=0,"AppleUSB20XHCILightningPort"=0,"RTBuddyTraceKitMessageEncoder"=21,"RTBuddyTimeDecoder"=14,"AppleAOPAudioAssetManagerDevice"=0,"ANEClientHints"=1,"AppleUSB20Hub"=28,"AppleM2ScalerCSCHalMSR6"=1,"IOUSBMassStorageDriverUFIDevice"=0,"IOECStateNotifier"=0,"CCFaultReport"=0,"AppleUSBHostBusCurrentClient"=3,"IosaDPEControlMSR10"=1,"IOSCSIPrimaryCommandsDevice"=1,"IOThunderboltReceiveQueue"=0,"AppleBCMWLANNearbyDeviceDiscoveryAdapter"=0,"AppleActuatorDevice"=1,"ANEProgramLegacyResource"=5,"IOUSBHostPipe"=1,"AppleS8000DWIBacklightFunction"=0,"IO80211Buffer"=0,"RTBuddyCrashlogDecoder"=14,"AppleRSMChannelServerClient"=0,"IOStateNotificationItem"=4,"AppleSEPCoreBuffer"=0,"RTBuddyScmDecoder"=14,"AppleExternalPowerProvider"=13,"AppleMobsiTmpSADC"=0,"AppleEmbeddedAudioGroup"=0,"IOBluetoothWorkLoop"=0,"AppleBCMWLANLogger"=0,"OSString"=57705,"AppleUSBXHCIRequest"=266,"IOHIDOOBReportDescriptor"=0,"IOSurfaceMemoryPool"=0,"AppleSEPDiscovery"=1,"IOSlaveProcessor"=2,"IOAccessoryPowerSourceItemUSB_DataContactDetect"=0,"IOTimeSyncgPTPManagerUserClient"=0,"IOBluetoothHCIUserClient"=1,"IOThunderboltHopSet"=42,"AppleHPMInterfaceType10"=0,"AppleAPFSContainerScheme"=3,"IOTextCrypter"=1,"ANEInVMAllocator"=0,"IOHDIXHDDriveOutKernelUserClient"=0,"IOSurfaceDeviceCache"=490,"IosaAxi2AfControl"=0,"AppleSMCPMU"=1,"ApplePMGRFunctionEnablePSDService"=0,"AppleARMNORPanicLog"=0,"AppleGasGaugeUpdate"=0,"AppleDieTempControllerUserClient"=0,"AppleTCControllerType12"=0,"AGXAcceleratorG13"=1,"AppleSPUSingleShotReporter"=0,"AppleBacklightDisplay"=0,"EndpointSecurityDriver"=1,"AppleBCMWLANRxByteRing"=0,"_IOServiceInterestNotifier"=490,"AppleHPMCommandGate"=5,"AGXFirmware"=1,"IOAVAudioInterfaceUserClient"=0,"IOBlockStorageServices"=2,"AGXEnergyAttributor"=1,"ApplePMGRFunctionSetATCDpClockSource"=0,"IOHIDButtonElementProcessor"=0,"IOPortTransportComponentCC"=1,"AppleSynopsysDRDUSBXHCI"=1,"IosaColorManagerMSR9"=0,"M2ScalerScalingControlMSR7"=1,"IOThunderboltArray"=12,"AppleSmartBattery"=1,"RTBuddyCL4Coredump"=0,"AppleSARTMarconi"=0,"IOGPUSysMemory"=1,"IOAccessoryEAInterface"=0,"AppleVTempDispatcher"=0,"AppleAPFSVolumeBSDClient"=13,"IOPortFamily"=3,"IOSkywalkPacketBufferPool"=2,"ANEDriver"=1,"IOBiometricSensorInterface"=1,"BootPolicyUserClient"=10,"AppleUSBHostResourcesTypeC"=1,"AppleUIOPCI"=0,"AppleMCA2Cluster_T600x"=3,"IOPortTransportComponent"=1,"AppleFirmwareUpdateKext"=1,"AppleHPMDevice"=4,"IO80211ApFeatureConfig"=0,"InterruptCommand"=56,"WCLTimerFactory"=0,"AppleM2ScalerCSCHalMSR13"=0,"IO80211RoamProfile"=0,"AppleEmbeddedPCIEPort"=1,"AppleSocHot"=0,"AGXLateEvalEventResourceManager"=1,"RTBuddyBinaryLogEntryHandlerSysLog"=7,"AppleSPUHapticsManagerUserClient"=0,"IOTimeSyncPort"=1,"NVMeSEPNotifier"=1,"AppleDialogSPMIPMUFunction"=0,"AppleEmbeddedNVMeController"=1,"AppleOLYHALPortInterfacePCIe"=1,"AppleBTMDataClientSMC"=0,"IOTimeSyncgPTPManager"=1,"IOAccessoryManagerOrion"=0,"ApplePPMPredictivePmax"=44,"AppleCallbackPowerSourceProvider"=1,"AppleSPUCoexParams"=0,"IOHITabletPointer"=0,"AppleUSBNCMControl"=2,"IO80211ColocatedGroup"=0,"IOGPUResourceSet"=1,"AppleCSI2CAudio"=0,"IOTimeSyncTimeLineFilter128"=0,"IORTC"=0,"WCLBSSBeacon"=0,"IOAudio2DeviceUserClient"=7,"AFKRemoteSMCClient"=0,"AppleBCMWLANChipManagerPCIe4350"=0,"IOAccessoryHSAIDBulkData"=0,"AppleHIDKeyboardEventDriver"=0,"CommonFsmManager"=0,"IosaColorManagerMSR11"=0,"AppleNVMeTranslationSMARTUserClient"=0,"AppleARMWatchdogTimerFunctionExpireWatchdog"=0,"AppleConvergedIPCLogger"=0,"AHTFunction"=1,"AppleMCA2Switch_ClockGenCfg"=4,"IOSimpleReporter"=841,"IosaRdmaPipeUnitMSR23"=0,"IOHIKeyboard"=0,"BinaryEncoderManager"=0,"M2ScalerScalingControl"=1,"IOSurfaceShared"=72,"AppleBCMWLANChipManagerPCIe4388"=0,"ApplePMGRFunctionROSC"=0,"AppleARMDMAAudioDevice"=1,"AppleThunderboltNHIReceiveRing"=0,"AppleUSBXDCITRBPool"=6,"IOHIDParamUserClient"=4,"IOPMGR"=1,"IosaRdmaControlMSR25"=0,"IOAudioTimerEvent"=0,"OSValueObject<IOAccessoryIDBusTransport::TransferData>"=0,"AppleThunderboltNHITransmitRingGenericACIO"=0,"IOUserNetworkPacketQueueCompat"=0,"IOMobileFramebufferLegacy"=0,"AppleAOPAudioDeviceProvider"=0,"IOPanicPlatform"=0,"IOHIDPowerSourceController"=1,"AFKEPInterfaceServiceKextV2"=65,"IOSkywalkController"=0,"IosaFirmwareControlMSR23Rtk"=0,"OSMetaClass"=0,"ApplePMPControlFunction"=0,"AIDUserClient"=0,"ApplePPMPolicyCPMSPowerServo"=1,"IODPControllerConcreteUserClient"=0,"AppleSPUGpioUnplugDriver"=0,"IO80211SkywalkInterface"=0,"AppleMultiFunctionManagerLogger"=0,"AppleT6000PCIeC"=3,"AppleT600XATCDPXBAR"=4,"OSValueObject<H13CamInChannelDataFileParams>"=0,"HSAIDPacket"=0,"AppleUSBIORequest"=385,"AppleT8112DisplayCrossbar"=0,"IO80211Stopwatch"=0,"AppleBCMWLANSkywalkRxCompletionQueue"=0,"AppleAOPAudioPCMAssetManagerUserClient"=0,"AppleAOPAudioCodecRequestCompletionFunction"=0,"IOUSBDevicePipe"=12,"IOThunderboltFamilyUserClient"=0,"AppleParadeDP835TCONI2CPLS"=0,"AppleConvergedIPCPool"=3,"AppleMemCacheDataSetsFunction"=7,"AppleARMQuadSPIDeviceUserClient"=0,"IOHDCPInterface"=1,"AGXUniqueResourceSet"=0,"IosaColorManagerMSR18"=0,"AppleConvergedIPCRTIDevice"=1,"ApplePPMCPMSSystemCapabilityMonitor"=1,"IosaInternalPipeMSR"=1,"StockFunctions"=0,"IO80211ControllerMonitor"=0,"IOAVSerializer"=33,"IOHIDAction"=0,"AppleConvergedIPCMemoryPolicyInfo"=1,"IOThunderboltTRMPolicy"=1,"IOAVAudioInterface"=0,"IOThunderboltTransmitQueue"=0,"IODisplayWrangler"=1,"AUAADC3ClassSpecificDescriptorFetcher"=0,"IOWatchdog"=1,"IODPDeviceUserClient"=0,"AppleT8101USB20XHCILightningPort"=0,"IOThunderboltTimerCommandQueue"=3,"IOPortTransportStateSD"=1,"KDIReadWriteDiskImage"=0,"IOSkywalkInterface"=2,"AppleThunderboltNHISubMemoryBlock"=0,"IOAVBControllerHelper"=0,"ApplePMGRFunctionPLLOffMode"=0,"AppleConvergedIPCMemoryCommandPool"=3,"ApplePMGR"=1,"AppleUSBECMDataNC"=0,"IosaInternalPipeMSR15"=0,"AppleMAXI2CAudio"=0,"IO80211FaultReporter"=0,"AppleTrustedAccessoryAnalytics"=1,"IOAccessoryManagerUSBC"=1,"AppleUSBXHCIInterrupter"=9,"AppleConvergedIPCControl"=1,"AppleSEPLoggerService"=0,"SMState"=390,"IOHIDActionQueue"=0,"IOTimeSyncDaemonUserClient"=1,"IO80211StaticBufferPool"=0,"IO80211AWDLProtocol"=0,"IOUserNetworkTxSubmissionQueue"=13,"AppleUSBXHCIEndpointSoftRetry"=0,"DCPDPDeviceProxy"=3,"AppleAuthCPI2C"=0,"AppleUSBXHCIRequestPool"=4,"AUC"=1,"GTraceBuffer"=3,"ANEClientInterface"=2,"AppleSEPTraceBuffer"=0,"IOUSBMassStorageDriver"=1,"ApplePPMEntityCLPC"=2,"AppleDPTXPort"=0,"IOHDIXControllerUserClient"=0,"AppleThunderboltPCIDownAdapter"=1,"AppleMCA2MCLKPin"=4,"AUASelectorUnitDictionary"=0,"AppleConvergedIPCUserClient"=0,"com_apple_AppleFSCompression_AppleFSCompressionTypeDataless"=1,"MesaAccessoryManager"=1,"AppleT8006GPIOIC"=0,"AppleS5L8960XGPIOIC"=4,"IOSCSIBlockCommandsDevice"=1,"WCLWnmAgent"=0,"RTBuddyEndpointService"=89,"IO80211TimerSource"=0,"AGXAllocationList2"=30,"AppleT8130USBXHCICommandRing"=0,"ApplePPMEntityBaseband"=0,"AppleMCA2Switch_TxCfg"=8,"AppleH13CamInFrameReceiver"=0,"RequestTimeOutInfo"=0,"AppleUSB20AccessoryHub"=0,"ApplePMGRFunctionGetServiceState"=0,"IOPortFeaturePowerSource"=0,"USBStringIndex"=3,"IosaInternalPipeMSR6"=1,"GTCondition"=3,"AppleHIDTransportStats"=0,"MCClient"=3,"PhloxFunctions"=0,"ApplePMGRFunctionSetTouchClockSource"=0,"M2ScalerSrcDestCfgControlMSR15"=0,"AppleHPMInterfaceType17"=0,"IOThunderboltConfigXDomainLinkStatusRequestCommand"=0,"AppleT6000MemCacheController"=1,"IOCommandPool"=90,"IOSlaveMemory"=1,"IOTimeSyncEthernetConcreteControllerAdapter"=0,"AppleEmbeddedPCIEUserClient"=0,"AppleThunderboltNHITransmitRingType5"=0,"AppleUSBHostCompositeDevice"=11,"IOHIDEventRepairDriver"=0,"AppleBaseAudioController"=1,"AppleBCMWLANPCIeSkywalkTxSubmissionQueue"=0,"AppleFirmwareUpdateUserClient"=0,"IOSystemStateNotification"=1,"BellisFunctions"=0,"AppleMCA2Cluster"=1,"IOHIDEventQueue"=0,"IOAccessoryIDBusEA"=0,"AppleUSB30XHCITypeCPort"=1,"AppleThunderboltNHITransmitRingType7"=0,"DIFracturedMemoryMap"=0,"ApplePMPUserClient"=0,"AppleCLCD2"=5,"AppleAuthCPAID"=0,"AppleUSBHostiOSDevice"=0,"AppleUSBSparseArray"=0,"IOAVControlInterfaceUserClient"=0,"IOKDP"=0,"IOPortTransportStateUSB"=2,"IOThunderboltSwitchType1"=0,"IOThunderboltReceiveCommand"=0,"IOAccessoryTransport"=0,"IOHIDDeviceElementContainer"=20,"AppleBCMWLANDynamicRingOperationContext"=0,"KDIBackingStore"=0,"IORegistryPlane"=8,"AppleSPUCT726"=0,"AppleSPUHIDDevice"=8,"IOAVSimpleVideoInterface"=0,"CCDataPipeBlob"=0,"IOThunderboltConfigXDomainRequestCommand"=0,"IOFramebufferUserClient"=0,"AppleARMPerformanceControllerFunctionCLPCEnabled"=0,"AppleARMFunction"=56,"CCCapture"=0,"AppleBCMWLANPCIeSkywalkPacketPool"=0,"AFKEndpointInterfaceClient"=59,"AppleConvergedIPCOLYBTCoreDumpProvider"=1,"OSValueObject<int>"=0,"ApplePPMSystemCapabilityMonitor"=1,"TSNBSDTestInterface"=0,"APCIECPort"=1,"IOAccessoryIDBusPD"=0,"IOUSBDeviceInterfaceReserved"=0,"_IOOpenServiceIterator"=0,"AppleAPFSSnapshot"=1,"AppleUSBECMData"=0,"IOThunderboltConfigXDomainPathSetupRequestCommand"=0,"AGXWorkQueue"=3,"IOAVBValidate"=1,"_IOMemoryDescriptorMixedData"=26562,"IOSurfaceRoot"=1,"CCDataPipeBlobOD"=0,"ApplePPMCPMSPowerInputHelperBatteryFirmware"=0,"IOThunderboltConfigXDomainPathCapabilitiesRequestCommand"=0,"IODiskImageBlockStorageDeviceInKernel"=0,"AppleHPMARMI2C"=4,"AppleUSBUserHCIIsochronousTransferQueue"=0,"AppleSimpleUARTCommand"=16,"AUCAsynchronousScheduler"=1,"AppleM68Buttons"=1,"OSSerialize"=1,"AppleT8112DPTXPort"=0,"IOTimeSyncTimeOfDayAnchorPort"=0,"AppleARMCPU"=10,"IOAVUserClient"=0,"AppleCT711"=0,"DitherControlMSR23"=0,"IOHIDEventServiceUserClient"=179,"AGXTAChannelGen2"=1,"IOHIDEventSystemUserClient"=1,"IOSlaveMemoryBuffer"=24,"IOHIDRootElementProcessor"=0,"AppleSMCFamily"=1,"IOGPUNotificationQueue"=35,"IO80211WorkSource"=0,"AppleThunderboltNHIDARTVMAllocator"=0,"AppleBiometricSensorEmulatorBaseClass"=0,"IOTimeSyncIntervalFilterIIR128"=0,"IONVRAMController"=1,"AppleCplBTM"=0,"OSValueObject<ANEProgramToANEMapping>"=5,"IOHIDTranslationEventReq"=0,"ApplePPMPolicyCPMS"=1,"OSValueObject<ANEFirmwareCommandState>"=0,"AppleMultitouchHIDEventService"=0,"AppleEmbeddedExternalAudioObject"=0,"AppleGasGaugeUpdateUserClient"=0,"AppleSPURemoteCrashdump"=0,"KDIURL"=0,"IOAccessoryPowerSourceItemCurrentBase"=0,"IO80211NeighborCache"=0,"AppleUSBUserHCITransferStructPool"=0,"AppleARMPMUSensor"=2,"AppleARMFunctionPerfAdvise"=0,"IOUserEthernetInterface"=1,"AppleM2ScalerCSCHalMSR10"=1,"AFKEPKextBaseV2"=1,"IOThunderboltCallbackEventSource"=3,"AppleUSBXDCI"=1,"AppleATCDPNativePort"=2,"MesaCachedSystemConfig"=1,"IOPortFeatureLDCMUserClient"=0,"IOThunderboltConfigCompareSwapCommand"=0,"IORSMChannel"=0,"IOUserNetworkRxSubmissionQueue"=1,"IOAccessoryAuthProtocolInterface"=0,"IOThunderboltProtocolListener"=3,"AppleBCMWLANSkywalkMulticastQueue"=0,"AIDQueueEventSourceWorkItem"=0,"KDIDiskImageNubUserClient"=0,"AGX3DWorkQueue"=43,"IOUSBMassStorageUFIDriverNub"=0,"IosaDPEControlMSR21"=0,"IOInterruptEventSource"=393,"AppleParadeDP835TCON"=0,"MesaAccessoryIntReportImageInfo"=0,"AVE_Thread"=1,"AppleHIDTransportBootloaderCBOR"=0,"AppleH13CamInFrameReceiverBuffer"=0,"IONVMeLifeboatBlockDevice"=0,"AppleUSBHostInterfaceUserClient"=0,"AUAFeatureUnitDictionary"=0,"IOTimeSyncPortManager"=0,"AppleMCA2Switch_ClockGenSel"=1,"IOAVAsyncEventSource"=8,"IO80211PeerBssSteeringManager"=0,"IOSurfaceAcceleratorClient"=1,"AGXCLChannelGen2"=1,"OSAction"=146,"AppleUSBXHCIPipe"=97,"IO80211AWDLPeerManager"=0,"IOPlatformIO"=1,"_IOServiceJob"=0,"AGXCommandDescriptor"=0,"AppleThunderboltNHITransmitRingManagerGenericACIO"=0,"IOBluetoothACPIMethods"=1,"AppleUSBUserHCIPort"=0,"IOKitDiagnosticsClient"=0,"AppleT6000PMGR"=1,"AIDCircularReadBufferShared"=0,"TextCrypterSession"=0,"IosaDirectionalScalingPipeUnit"=0,"AppleBCMWLANStopwatch"=0,"IosaTunableControlMSR23"=0,"IOUSBHostHIDDevice"=0,"AppleTDMType00"=0,"AppleDiskImageDevice"=0,"AppleUSB30XHCIPort"=1,"H13ISPClientMappedSurface"=0,"IODPLegacyDualDVIService"=0,"DCPDPServiceProxy"=3,"AppleHIDTransportBootloaderFlatPack"=0,"TSNWiFiControlInterface"=0,"IosaWdmaControlMSR11"=0,"AFKOOBMsgDescriptor"=0,"TSNWiFiInterface"=0,"IOAccessoryOOBPairingInterface"=0,"AMCTempSensor"=0,"AppleSPUDispADCDriver"=0,"IOPortTransportStateIIC"=0,"IO80211NANServiceDescriptor"=0,"IONetworkController"=1,"AppleARMFabricTrace"=0,"AppleButtonsDispatchFunction"=1,"IOAccessoryPort"=0,"IODPTXPortEventLog"=18,"PMTraceWorker"=1,"AppleGCResourceDeviceUserClient"=1,"IOAVTransactionLog"=0,"AppleARMNORNVRAM"=1,"IODPHDMIPortUserClient"=0,"AppleBTMDataClientPPM"=0,"KDIFileBackingStore"=0,"OSValueObject<AsyncCommitParam>"=0,"AppleAOPAudioFWdtAssetManagerDevice"=0,"H1xANELoadBalancerClient"=1,"IOAVElementArray"=0,"CoreKDLDriver"=1,"IODTNVRAMPlatformNotifier"=1,"IOPMRequestQueue"=2,"IODARTPIOAllocatorGeneric"=2,"HIDMTQueueEventSource"=1,"OSLiveNumber"=6,"AppleSPUAppDriver"=1,"IOI2CInterfaceUserClient"=0,"AppleBCMWLANChipManagerPCIe4387"=0,"AppleS5L8920XPWM"=1,"AppleARMTraceController"=0,"IO80211NANPowerManager"=0,"AHTHSWorkLoop"=1,"IOAppleLabelScheme"=0,"IOUSBDeviceUserClientV2"=1,"AppleSMCDockUSB_UFP"=0,"IODPServiceAUXOnly"=0,"DCPAVPowerControllerProxy"=1,"IOEventLink"=0,"AppleARMSPMIControllerUserClient"=0,"M2ScalerScalingControlMSR10"=2,"IO80211AWDLMulticastPeer"=0,"ConnectionWatchdog"=0,"OSOrderedSetEquality"=23,"AppleThunderboltNHIGenericACIO"=1,"IODPAgileLinkRateTable"=0,"IOTimeSyncIntervalFilter"=0,"IosaDirectionalScalingPipeUnitMSR23"=0,"IOAccessoryOOBPairingInterfaceUserClient"=0,"AppleSPUMesaDriver"=0,"IOPacketQueue"=0,"IosaCSCPipeUnit"=0,"RTBuddyAutoBKPDecoder"=14,"AppleHPMEmbedded"=1,"AppleATCDPAltModePort"=3,"AppleIPDormancyHandler"=1,"IOServiceNotificationDispatchSource"=0,"IosaRequestPipeUnitMSR23"=0,"AppleBCMWLANNetAdapter"=0,"IOTimeSyncDaemonClientBase"=4,"IOPerfControlClient"=7,"KDIUDIFCacheObject"=0,"IO80211DriverCommandDescriptor"=0,"IOEthernetController"=5,"IOMemoryDescriptor"=2,"IO80211TimeSyncPeer"=0,"AppleStockholmDebugDevice"=0,"AppleFairplayTextCrypterSession"=0,"IosaPipeUnit"=0,"IOGUIDPartitionScheme"=1,"IOGPUDeviceShmem"=533,"AppleGPIODevice"=15,"KDIUDIFDiskImage"=0,"IOAudioDevice"=0,"ApplePPM"=1,"AFKSharedDataQueue"=1,"AppleUSBHub"=2,"AGXPeakPowerManager"=1,"ACMBridgeKernelService"=0,"AppleM2ScalerCSCHalMSR7"=1,"IosaRdmaPipeUnit"=0,"AppleUVDMPDControllerInterface"=0,"IO80211GASFsm"=0,"AppleUSBAudioStream"=0,"IOSlaveCPU"=1,"CCFaultReporter"=0,"BTDebugService"=2,"AppleBTMFunction"=3,"AppleUSB30XHCIARMPort"=1,"ACMAccessoryCacheKernelService"=1,"AppleConvergedIPCOLYBTControl"=1,"AppleSEPEndpointService"=1,"AGXLegacySharedGartTableBacking"=0,"IODataQueue"=1,"IOSkywalkPacket"=2112,"AppleAOPAudioPDM2Device"=1,"IO80211NANDiscoveryEngine"=0,"UserTimerEventSource"=6,"IOPortTransportProtocol"=0,"ApplePMGRFunctionAvoidPerfState"=0,"AppleT8103PCIeCPort"=1,"IODPServiceUserClient"=0,"IOAccessoryManagerHSAID"=0,"IOAESAcceleratorCommand"=32,"AppleANEMPMUnmapMemoryFunction"=0,"AppleM2ScalerCSCHalMSR23"=0,"AppleS8000DWIVoltageFunction"=0,"IOThunderboltNHITransmitRing"=0,"AppleFileSystemDriver"=0,"AppleThunderboltIPTransmitter"=0,"AppleS8000DWI"=1,"IO80211ColocatedGroupManager"=0,"IOSkywalkLogicalLink"=4,"AppleHPMInterfaceType11"=0,"OSAction_IOHIDEventService__SetLED"=0,"AppleBCMWLAN11beAdapter"=0,"RTBuddy64"=0,"ANERequest"=0,"AppleBCMWLANWnmAdapter"=0,"AppleParadeDP865TCONSPI"=0,"IODPDevice"=0,"IOUSBHostIOSource"=1,"AppleThunderboltDPInAdapterCM"=1,"AppleBCMWLANChipManagerPCIe0x4377b"=0,"IOAccessoryHIDDeviceEndpoint"=0,"IOAVHandler"=0,"IO80211LinkRecovery"=0,"IOAVAudioChannelLayoutElement"=30,"AppleUSBHostControllerIsochEndpoint"=0,"IOSARTMapper"=0,"IODPTXPort"=2,"IORSMReceiveQueueEntry"=0,"AppleT602XDPTXPort"=0,"IOPCI2PCIBridge"=2,"AppleT8030USBXDCI"=0,"AppleDisplayCrossbar"=1,"IOAccessoryBulkDataEndpoint"=0,"M2ScalerCSCColorConversionControlMSR"=1,"AppleJPEGHal"=2,"ACMKeybagKernelService"=0,"IOMediaBSDClient"=7,"AppleAudioSequenceOperation"=0,"AGXRenderTargetMemory"=1,"IOAVController"=0,"IOTimeSyncInterfaceAdapter"=0,"AppleMemCacheEvent"=0,"AppleThunderboltIPReceiveCommand"=0,"IOAVBTimeSyncCaptureUserClient"=0,"IOThunderboltPort"=21,"RTBuddyNativeSlaveMemoryDescriptor"=0,"AppleAuthCPMGAID"=0,"AppleUSBUserHCIRequest"=0,"AppleSMCPowerOut"=0,"AppleTII2CAudio"=1,"AppleMultitouchHIDService"=0,"mDNSOffloadUserClient"=0,"IOThunderboltI2CCommand"=6,"IOUserBlockStorageDevice"=0,"M2ScalerSrcDestCfgControlMSR13"=0,"IO80211QueueCall"=0,"RTBuddyProductVersionDecoder"=14,"IOAccessoryPowerSourceItemPD"=0,"OSObject"=282,"IOHDIXHDDriveNub"=0,"IO80211NANRangingManager"=0,"AppleH13CamInFrameMetadata"=0,"AGXUATMux"=73,"IO80211NetworkPacket"=0,"AGXMeshShadersEmuMemory"=0,"AppleCSCodecMikey"=1,"AppleBCMWLANChanSpec"=0,"IOGPUSubMemoryDescriptor"=0,"AppleT810xPCIePort"=1,"IOBluetoothHCIController"=1,"AppleSOCDInterface"=0,"IO80211NANSyncEngine"=0,"IOUSBMassStorageCBIDriver"=0,"AppleBCMWLANHashtable"=0,"AppleMCA2Switch_TxCtl"=8,"AGXAccelerator"=1,"AppleMCA2Switch_SyncGenCtl"=4,"AppleSystemPolicyUserClient"=2,"RTBuddyNvramDecoder"=14,"ANEPrivilegedVMAccess"=0,"IOKitDiagnostics"=1,"IosaColorManagerMSR15"=0,"IOTimeSyncEthernetPort"=0,"WCLJoinManager"=0,"AppleDieTempController"=0,"WCLGASFsm"=0,"AGXBlockFence"=0,"AppleSEPBooter"=1,"AppleBCMWLANChipConfigSpace"=0,"IOUSBHostInterfaceIterator"=0,"IOTimeSyncEthernetModernInterfaceAdapter"=0,"WCLJoinCandidateSelector"=0,"RTBuddySyslogEndpoint"=10,"IO80211NANProtocol"=0,"IOSurfaceMemoryRegion"=1,"OSValueObject<ANEClientContext>"=7,"AppleM2ScalerCSCHalMSR"=1,"AppleBCMWLANSkywalkRxSubmissionQueue"=0,"IOTimeSyncTimeOfDayPort"=0,"IOAVValueSet"=0,"AppleEmbeddedAudio"=2,"com_apple_AppleFSCompression_AppleFSCompressionTypeZlib"=1,"AppleUSBXHCIStream"=0,"CCPipe"=2,"AppleAPFSMediaBSDClient"=3,"AppleAOPAudioButtonOutputDevice"=0,"WCLNetManager"=0,"IOHIDTranslationEvent"=0,"IOGPUIOCommandBuffer"=0,"AppleIOP"=1,"WCLScanCacheStore"=0,"ApplePPMPolicyCPMSPowerServoLowerLayerCEs"=1,"IOAccessoryIDBusSystemStatesUserClient"=0,"IOUserNetworkTxSubmissionQueueCompat"=0,"IOThunderboltTunnelDriver"=3,"IOAVCECInterface"=0,"AppleUSBCDCCompositeDevice"=3,"AGXVirtualMemory"=0,"IOExclaveProxy"=0,"AppleH13CamInUserClient"=1,"IOAVHandlerInternalDisplay"=0,"AppleARMFunctionSlowAdaptiveClockingAggressor"=1,"IOFastPathDescriptor"=0,"OSValueObject<ANEDriverRequestParams>"=0,"AGXGPUMemBlockPool"=121,"AppleSerialShim"=1,"IO80211FlowQueueDatabase"=0,"AppleKeyStoreUserClient"=92,"AppleUSBAudioEngine"=0,"AppleBCMWLANKeepAliveOffload"=0,"IOPortFeaturePowerIn"=4,"ApplePMGRFunctionISPRefClock"=3,"AppleANS2CGv2Controller"=0,"AppleATCDPOUTAdapterPort"=0,"AppleSmartIOControl"=1,"AppleNVMeNamespaceUC"=0,"AGXArmFirmwareASC"=1,"AppleUSBXHCIPort"=2,"AppleBCMWLANGCRAdapter"=0,"IOThunderboltSwitchI2CCommandQueue"=0,"IOPolledInterface"=2,"IOHIDPointingDevice"=0,"AppleHIDTransportSMCNotifier"=0,"IOHIDProviderPropertyMerger"=0,"IOThunderboltSideband"=0,"IOUserNotification"=2,"AGXParameterBufferBlock"=1,"AppleUSBXHCISparseRequest"=0,"AGXAcceleratorG13X"=1,"IOUSBDeviceConfigurator"=3,"AppleTypeCPhyUSBInterface"=12,"IOAccessoryManagerUserClient"=0,"VictimUserClient"=0,"IOThunderboltSwitchOS2"=0,"IOHDIXController"=1,"AppleSMCEmbeddedFunction"=12,"AppleMCA2Switch_i2sSel"=1,"AppleConvergedIPCOLYBTLogProvider"=1,"PMSettingHandle"=2,"IOTimeSyncUnicastLinkLayerEtEPort"=0,"RTBuddyRtkitDecoder"=14,"IOGPUBlockFencePort"=35,"OSAction_IOHIDDevice__CompleteReport"=0,"AppleSPUALSDriver"=0,"AppleStockholmSPMI"=1,"ApplePMGRFunctionVideoClock"=0,"AppleUSBHostBusCurrentPool"=0,"IosaPremultiplyAlphaMultiplyPipeUnit"=0,"IOGPUMemoryInfoUserClient"=0,"ACMRestrictedModeAnalyticsKernelService"=1,"IOGraphicsSystemWorkLoop"=1,"IOBioUtils"=0,"AppleARMGPIOFunction"=15,"IONetworkUserClient"=0,"AppleEmbeddedUSBDevice"=0,"IO80211PeerManager"=0,"IOAccessoryIDBusProxyPD"=0,"IOThunderboltIECSNub"=0,"IOAccessoryHSAIDBulkDataEndpoint"=0,"AppleBCMWLANTimeKeeper"=0,"IOPortFeatureLDCM"=0,"IO80211InterfaceMonitor"=0,"IOHIDEventServiceFastPathUserClient"=0,"AppleARMPassthroughPowerSource"=0,"AppleARMSPMIController"=1,"IOMbufNaturalMemoryCursor"=0,"IosaFirmwareControlMSR24Rtk"=0,"AppleAOPAudioLEAP"=0,"AppleARMSFRManifest"=1,"AppleNVMeNamespaceDevice"=2,"ApplePMGRFunctionReconfigTrigger"=0,"IOHIDEventSource"=20,"IOTimeSyncTimeLineFilter"=0,"SEPHibernatorService"=1,"OSValueObject<H13ISPCommandArgs>"=0,"AppleUSBHostFrameworkClient"=0,"IODMAController"=2,"IOAVBNub"=1,"IOAVAudioDMADelegate"=1,"IOPortTransportStateOrderedSet"=0,"DCPAVCECInterfaceProxy"=0,"IOTimeSyncDomainDaemonClient"=1,"IO80211WorkQueue"=0,"AppleUSBNetworkingHostCommandPool"=0,"AbstractPMGR"=0,"_HACK_RingBuffer"=0,"IOMemoryCursor"=0,"AppleUSBCDCControl"=2,"IOGraphicsDevice"=0,"AppleHIDTransportInterface"=5,"OSKext"=387,"IOGPUSurfaceMTL"=0,"IOThunderboltXDLocalPropertiesCache"=3,"AppleTDMControlLUN"=0,"IOResources"=1,"IOServiceStateNotificationDispatchSource"=0,"_IOUserServerCheckInCancellationHandler"=0,"IOConditionGate"=1,"RTBuddyMailboxDecoder"=14,"ApplePMGRFunctionSetPerfState"=0,"IOThunderboltSwitchDelegate"=1,"IOUSBInterface"=1,"AppleBCMWLANWorkOrder"=0,"AppleAPFSGraft"=6,"AppleUSBDeviceNCMPrivateEthernetInterface"=3,"IOUSBMassStorageUASDriverCommand"=0,"IOAVBNubUserClient"=0,"AppleARMIICController"=1,"AUAEndpointDictionary"=0,"RTBuddyCoredump"=7,"IOTimeSyncUserFilteredService"=0,"AppleThunderboltNHITransmitRingManagerType5"=0,"IOAVAudioElement"=30,"IOAccessoryPowerSourceItemExternal"=0,"RTBuddyHeapDecoder"=14,"IosaDegammaPipeUnit"=0,"AppleARMFunctionIISActive"=0,"IOThunderboltLocalNode"=3,"IOSkywalkPacketQueue"=5,"AppleARMPMUTempSensor"=62,"AppleHPMInterfaceType18"=0,"AppleBakuBTM"=0,"AIDSnifferInterface"=0,"IOServiceStateNotificationEventSource"=0,"AppleBCMWLANHistogram"=0,"AppleM2ScalerCSCDriver"=1,"IOMemoryMap"=44242,"AppleBTMBatteryDataAgent"=0,"IONetworkData"=26,"AppleUIOPCIUserClient"=0,"IOUserNetworkPacketBufferPool"=1,"IOThunderboltData"=0,"AUAConfigurationDictionary"=0,"M2ScalerScalingControlMSR8"=1,"AppleARMSPIDevice"=7,"IOBioSharedMemoryTransferQueue"=0,"AppleUSBAudioComposite"=0,"M2ScalerSrcDestCfgControlMSR6"=1,"AppleRSMChannelControllerClient"=0,"IOUSBMassStorageResource"=1,"AppleSPUMarconiFunction"=0,"AppleTempSensorUserClient"=0,"AppleATCDPXBAR"=1,"IOPortTransportStateUSB2"=21,"AppleT8103USBXDCI"=3,"RTBuddyRoute"=1,"BTDebugReporter"=1,"ApplePPMUserClient"=0,"AppleT6000PCIeCPort"=3,"AUAProcessingUnitDictionary"=0,"AGXRenderTargetMemoryG13"=43,"AppleSynopsysDRDUSBXHCICommandRing"=1,"AppleT8027USBXHCI"=0,"AGXResource"=24537,"AFKAsyncRequestV2"=0,"IOAudioToggleControl"=0,"AppleLIFSUserClient"=1,"IOGPUMemoryMap"=1,"IOImageLoaderRequest"=0,"IosaWdmaControlMSR25"=0,"AppleHPMBusDevice"=4,"AppleUSBHostBusCurrentAllocator"=95,"IOPCIHostBridge"=2,"DIDeviceCreatorUserClient"=0,"AppleNotificationQueue"=17,"SEPApNonce"=0,"IOThunderboltXDomainLink"=0,"AGXEventMachine"=1,"AppleT8150USBXDCI"=0,"RTBuddySlaveMemoryBuffer"=94,"IOHIDEventDriver"=3,"AppleMesaAccessory"=0,"AppleHPMDeviceHALType3"=0,"HSAIDTransmitCommandPool"=0,"IOSimpleMbufMemoryDescriptor"=0,"AppleM2ScalerCSCHalMSR20"=0,"IosaRegammaPipeUnit"=0,"ApplePassThroughEstBTM"=0,"IOTimeSyncServiceDaemonClient"=5,"IOAVSplitDisplay"=0,"IOThunderboltAbstractMicro"=0,"IOThunderboltCommandQueue"=3,"EventElementCollection"=0,"IO80211NANDataPathSession"=0,"FPMemoryDescriptor"=0,"AppleUSBSerialUserClient"=0,"IOBluetoothLocalUtilityEventSource"=0,"AGXLegacyGartG13"=0,"DCPAVAudioInterfaceProxyUserClient"=0,"IOSCSICommandGate"=5,"IOThunderboltCableState"=12,"AppleThunderboltNHIReceiveRingManagerType7"=0,"AppleBCMWLANInfraProtocol"=0,"AppleSEPXARTService"=2,"AppleBCMWLANChipBackplane"=0,"AGXUnifiedAddressTranslator"=0,"WCLBssManager"=0,"AppleUSBUserHCIDevice"=0,"AppleBiometricServices"=1,"TSNAssistedInterface"=0,"ApplePMGRFunctionAssertReset"=11,"AppleEmbeddedSimpleSPINORFlasherDriver"=1,"IOTimeSyncTimeLineFilterIIR"=0,"MesaAccessoryIntReportFingerState"=0,"AppleMultitouchHIDEventDriver"=0,"IOUserNetworkMemorySegment"=284,"AppleMCA2Switch_ClockGenCtl"=4,"ANEClientHintsUserClient"=0,"BootPolicy"=1,"IosaDPEControlMSR17"=0,"AGXCLCommandDescriptor"=0,"AHTMemoryDumpExtractor"=0,"AppleOnboardSerialBusInterface"=1,"IOCECService"=0,"IOCECMergeProperties"=0,"IODARTVMAllocatorGeneric"=34,"IOAVDisplayMemoryUserClient"=0,"IOUserNetworkPacket"=0,"CCLogPipe"=2,"AppleT6000USBXHCICommandRing"=3,"IOPartitionScheme"=2,"IOSkywalkNetworkController"=0,"KDIUDIFEncoding"=0,"DCPLink"=5,"AppleNVMeRequestPool"=1,"IOEthernetInterface"=11,"AppleHIDTransportProtocolNone"=0,"AppleUSB20Hub_32789"=0,"AppleNVMeWorkLoop"=2,"KDIDiskImage"=0,"AppleBCMWLANCommandQueue"=0,"AFKBufferMemoryDescriptor"=0,"IO80211AsyncEventUserClient"=0,"IOGPUMTLLateEvalEvent"=0,"IOThunderboltConfigReadCommand"=16,"AppleActuatorHIDEventDriver"=1,"IOThunderboltConfigNotifyAckCommand"=3,"ACMLockdownModeKernelService"=1,"AppleAVE2Driver"=1,"RTBuddyVisibleMemoryImpl"=38,"IOTimeSyncRootService"=1,"IOUSBMassStorageCBIDriverNub"=0,"RTBuddyUnknownDecoder"=14,"AppleMCA2NCO"=1,"AppleTCControllerType1"=0,"AppleT6000AMCPerfFunction"=0,"IODispatchQueue"=120,"WCL11axManager"=0,"AppleSMCCharger"=0,"ApplePPMSMCInterface"=0,"AppleSPMIController"=9,"IO80211IOUCEventPipe"=0,"IOThunderboltConfigPollQuadletCommand"=0,"AppleThunderboltDPAdapterFamily"=0,"AppleConvergedIPCBTIInterface"=0,"ApplePMGRFunctionWaitForDeviceEvent"=1,"AppleBCMWLANBusInterface"=0,"AppleAVE2UserClient"=0,"AppleNVMeBuffer"=5,"IOTimeSyncUnicastUDPv4PtPPort"=0,"AppleUSB30AccessoryHub"=0,"AppleARMSPIController"=1,"AppleSEPDebugArgs"=0,"AppleMultitouchHIDEventDriverV2"=1,"DCPPowerManager"=5,"IosaTunableControlMSR24"=0,"IOThunderboltConfigXDomainPathControlRequestCommand"=0,"PerfControlClient"=1,"AppleConvergedIPCControlUserClient"=0,"IosaRdmaControlMSR10"=2,"ApplePMGRFunctionPDMClockBypass"=0,"IOAccessoryDockUSB_UFP"=0,"AppleSEPLogger"=0,"HibernationService"=1,"AppleMCA2Controller_T600x"=4,"TSNUserWiFiControlInterface"=0,"AppleBCMWLANPCIeIO"=0,"M2ScalerSrcDestCfgControlMSR24"=0,"IOCommand"=378,"IOAVDeviceUserClient"=0,"IOAudio2Device"=2,"AppleARMIO"=1,"IO80211NANRadioResourceManager"=0,"WCLScanManager"=0,"CoreAnalyticsHub"=1,"IOThunderboltControllerType7"=0,"WCLRoamManager"=0,"AppleT602XATCDPXBAR"=0,"AppleBCMWLANByteRing"=0,"IODARTMapperNub"=49,"IO80211InfraInterface"=0,"MesaAccessoryIntReport"=0,"PassthruInterruptController"=1,"IOAccessoryPowerSourceItemCurrentOffset"=0,"IosaFilmGrainControlMSR23"=0,"IOPortTransport"=0,"IOUSBMassStorageInterfaceNub"=1,"OSCollectionIterator"=166,"AppleBCMWLANTxBuffer"=0,"AppleSMCBinaryLogDriver"=0,"AppleDCPExpert"=5,"IOThunderboltXDPropertiesImmediateValue"=27,"AppleUSBXHCIIsochronousTransferRing"=0,"OSValueObject<ISPCoredumpSection>"=0,"AppleARMFunctionIISRoute"=6,"IOUserNetworkWLAN"=4,"AppleSPUAppInterface"=3,"IOThunderboltSwitchOS"=1,"AppleT6000SleepPower"=0,"CommonTimerFactory"=0,"AppleANS3NVMeController"=1,"AppleUSBEthernetHostAQM"=0,"AppleSmartIOEndpoint"=3,"IODARTMapperClient"=0,"IOHIDDeviceShim"=0,"IODPCECInterface"=0,"AppleMultitouchMouseHIDEventDriver"=0,"IOStateReporter"=332,"AppleSSE"=1,"H13ISPSharedMemorySurfaceParams"=6,"IOAVDisplayConnectionManager"=1,"IOGPUSharedEventFence"=0,"AppleOLYHAL"=1,"IOHIDTranslationServiceClient"=0,"IOBasicOutputQueue"=0,"IOAccessoryPortIDBus"=0,"AppleT8027USBXHCICommandRing"=0,"HSAIDTransmitPacket"=0,"AppleI2CRangedMultipleAudio"=0,"AppleProResUserClient"=0,"IosaRdmaControl"=1,"com_apple_filesystems_apfs"=1,"AppleMesaCommand"=1,"OSEntitlements"=1869,"AppleNVMeRequestPoolTagReserve"=1,"AppleHPMARMSPMI"=0,"AudioDMAController"=2,"PacketMemoryDescriptorEx"=0,"AppleSMCACAMUserClient"=0,"IORSMReceiveQueue"=0,"M2ScalerScalingControlMSR23"=0,"AppleUSBAudioIsocFrameList"=0,"IOTimeSyncClockManager"=1,"IOHIDPointing"=0,"AppleATCDPOUTAdapterPortBase"=0,"M2ScalerScalingControlMSR15"=0,"IOSurfaceDescriptorComponent"=0,"AppleThunderboltNHIBufferMemoryBlock"=0,"com_apple_filesystems_nfs"=1,"AppleDisplayConnectionManager"=1,"ApiodmaRegStreamMSR11"=0,"IOImageLoader"=0,"ApplePIODMARequest"=48,"IOSkywalkLegacyEthernet"=1,"ExclavesAudioProxyDebugInterface"=0,"AppleT8142USBXHCI"=0,"AppleAOPSMCFunction"=0,"IO80211NANDataProtocol"=0,"OSValueObject<ANEClientResource*>"=0,"BinaryEncoderHCC2x"=0,"AppleThunderboltDPConnectionManager"=3,"IOThunderboltSwitchType5"=3,"IOBluetoothL2CAPSupervisoryFrameMemoryBlock"=0,"ApplePMP"=0,"AppleSPUHIDInterface"=8,"ApplePMGRFunctionEnableAutoClockGate"=0,"AppleBCMWLANTaskmaster"=0,"ANEProgramRTResource"=0,"AppleThunderboltNHITransmitRingManager"=0,"DIDeviceRequestPool"=0,"IOThunderboltXDPropertiesLeafText"=6,"AppleAOPAudioDeviceControllerObject"=1,"AppleARMPerformanceController"=0,"IOThunderboltControlPath"=3,"IOAVBTimeSyncCapture"=0,"AppleM2ScalerCSCHalMSR8"=1,"AppleNVMeEAN"=1,"IOGPUMappingCommandDescriptor"=0,"CCLogStream"=2,"AppleT700XTempSensorDisableSensorFunction"=0,"AppleTypeCPhyCIOInterface"=3,"IOPMPowerSourceList"=0,"IOUserResources"=1,"IODARTClient"=0,"IOAVBRingBufferMemoryDescriptor"=0,"IOAudioSelectorControl"=0,"ApplePMGRFunctionEnableTouchClock"=0,"AppleThunderboltDPPathManager"=0,"IOAVVideoInterfaceUserClient"=0,"ANEProcess"=5,"IONetworkInterface"=1,"AppleThunderboltUSBDownAdapter"=3,"AppleARMSPICommand"=64,"AppleSMC"=1,"OSValueObject<ANESharedMemorySurfaceParams>"=3,"OSValueObject<ANEInDebugWorkProcessorParams>"=0,"IOAccessoryPortIDBusSNTP"=0,"AppleCLPC"=1,"IOAccessoryIDBusBulkDataEndpoint"=0,"IOThunderboltTRMPolicyRoot"=3,"IO80211PoolMgr"=0,"IOAVIISAudioLinkDelegate"=0,"IOSCSITargetDevice"=0,"IOHIDConsumer"=0,"AppleBCMWLANObjectQueue"=0,"AppleEmbeddedKeyboard"=1,"AppleAOPAudioLPMicInDevice"=1,"AppleBCMWLANBusInterfacePCIe"=0,"RTBuddyEndpointPSEventSource"=14,"AppleARMSlowAdaptiveClockingManager"=1,"IOGPUEventMachine"=1,"IOAccessoryPowerSourceItem"=0,"IODPHDCPMessageTransportDelayContentType"=0,"AGXCLChannel"=1,"AFKLocalMemoryDescriptorManager"=5,"IODPTXVirtualPort"=0,"AppleTCControllerType14"=0,"IOGeneralMemoryDescriptor"=3535,"IOHIDInterface"=20,"AppleUSBUserHCIPipe"=0,"AppleAuthCPUserClient"=0,"IOAccessoryPowerSourceItemUSB_ChargingPort"=0,"AGXSharedGartTableBacking"=1,"CCDataSession"=0,"AppleOnboardSerialBSDClient"=1,"AppleANEPowerOnOffFunction"=0,"AIDLogger"=2,"AppleActuatorDeviceUserClient"=1,"AppleActuatorSecondaryAudio"=0,"AppleAPFSVolume"=23,"AppleBCMWLANPCIeFlowQueue"=0,"IOUserClient2022"=14,"IO80211ServiceRequestDescriptor"=0,"AppleSmartBatteryHFDataClient"=0,"AppleSmartIOCommand"=304,"IosaReshapePipeUnit"=0,"AppleSPUSpkAmpStateFunction"=0,"IosaDPEControlMSR11"=0,"TSNInterface"=0,"TSNBSDInterface"=0,"AppleUSBAudioControlInterface"=0,"AppleT8132USBXDCI"=0,"IOMedia"=7,"AppleT8101USBXHCI"=0,"TAAsyncReport"=0,"IOAVWAVRecorder"=0,"IOEmbeddedNVMeBlockDevice"=1,"OSValueObject<H13ISPClientContext>"=1,"IOUSBMassStorageDriverRequestTimer"=0,"AppleS5L8920XFPWM"=1,"AppleBCMWLANChipManagerPCIe4357"=0,"IO80211LQMData"=0,"AGXFastRenderTargetG13"=35,"IOThunderboltController"=1,"IOPortTransportStateCIO"=0,"IOHIDClientData"=179,"IOThunderboltPath"=0,"IOSurfaceSharedEventNotificationPort"=22,"AppleTypeCPhy"=1,"USBConfiguration"=3,"IOThunderboltI2CCommandQueue"=0,"IOSKArena"=126,"M2ScalerSrcDestCfgControlMSR2"=0,"IosaPrescaler3x3PipeUnitMSR23"=0,"AppleHIDTransportBootloaderUserClient"=0,"IosaPowerManager"=1,"IORegistryEntry"=3,"AFKACIPCEndpoint"=0,"ANEPrivilegedVMAccessUserClient"=0,"IONotifier"=3,"AppleHDCPManager"=1,"AppleJPEGWrapperControlLegacy"=2,"IOFBController"=0,"IOUserEthernetResourceUserClient"=1,"IOAccessoryPowerSourceItemUSBHost"=0,"IOBluetoothDevice"=1,"IOSkywalkEthernetInterface"=1,"AIDReporters"=1,"AppleSEPXART"=2,"AppleAPFSMedia"=3,"AppleBCMWLANProximityInterface"=0,"AppleSEPDeviceService"=12,"AGXAllocation"=23109,"ApplePMGRFunctionPowerGate"=1,"AppleT8122USBXHCICommandRing"=0,"IOReportUserClient"=13,"IOHDIXHDDriveOutKernel"=0,"IOTimeSyncClockMapping"=2,"AppleSmartIO"=1,"AppleSPUHIDDriverUserClient"=2,"RTBuddyCrashlogSectionDecoder"=16,"AppleUSBECMControl"=0,"IOAccelGPURestartReport"=0,"IOUSBHostInterface"=66,"AppleMCA2Switch_i2sCfg"=4,"AFKRTBuddyHelper"=65,"AppleStockholmControlUserClient"=0,"AppleConvergedIPCBTAdapter"=0,"AppleFabricTraceUserClient"=0,"IOAVInterface"=0,"DCPDPServiceProxyUserClient"=0,"IOHIDElementProcessor"=0,"AppleTrustedAccessoryInterface"=0,"ANEProgramResource"=1,"IOSkywalkNetworkBSDClient"=4,"AppleAVDUserClient"=0,"IOGPUMappingFence"=0,"AGXLateEvalEvent"=0,"AppleCallbackPowerSource"=0,"AppleARMIODevice"=165,"IOThunderboltXDomainTransmitPath"=0,"IO80211InfraProtocol"=0,"AppleT8140USBXDCI"=0,"AppleThunderboltDPInAdapterBase"=1,"IOUserNetworkRxCompletionQueueCompat"=0,"IOHIDLibUserClient"=1,"AppleI2CAudio"=1,"WCLCoreDbg"=0,"AppleFDEKeyStoreUserClient"=0,"AppleAOPAudioPCMAssetManagerDevice"=0,"AppleARMBootPerf"=1,"AFKMemoryDescriptorManagerBase"=1,"AGXLegacySharedGartTableBackingG13"=0,"AppleThunderboltNHIType5"=3,"AGX3DChannel"=1,"STUCWorkLoopLock"=0,"AppleBCMWLANApFeatureConfig"=0,"OSAction_IOUserNetworkEthernet__DataAvailable"=7,"AppleBTMBPICAgent"=0,"ANEPatchedWeightInfo"=0,"IO80211NANRangingSession"=0,"IOThunderboltConfigXDomainUUIDRequestCommand"=3,"IOThunderboltXDomainServiceClientManagerMergeProperties"=0,"IOInterruptController"=9,"AppleAOPAudioSawDevice"=0,"IOTimeSyncFDEtEPort"=0,"AppleSEPHDCPManager"=1,"CachedUserContext"=2,"ANEPowerOnMsg"=0,"AppleNVMeRequest"=253,"IosaInternalPipeMSR8"=1,"AppleSeraBTMiPad"=0,"AppleSeraBTM"=1,"IOGPUChannel"=2,"IOHIDDevice"=6,"WCLJoinCandidate"=0,"AFKMemoryDescriptor"=0,"client_log_buffer_t"=0,"IOUSBMassStorageResourceUserClient"=0,"KDIRAMBackingStore"=0,"AppleMCA2Switch_TxSel"=1,"IOMobileFramebufferShim"=0,"AppleI2CRangedAudio"=1,"AppleT6000PlatforErrorAfrEnableFunction"=1,"IOThunderboltString"=67,"IosaTiledCompressedMem"=1,"IOTimeSyncTimedEdgeGenerator"=0,"M2ScalerScalingControlMSR4"=1,"IOInterruptDispatchSource"=1,"AppleMCA2Regs"=17,"IosaEnhancementPipeUnit"=0,"IosaColorManagerMSR10j"=2,"AppleConvergedIPCRequestPool"=1,"ApplePMGRNub"=3,"AppleBCMWLANProvisioningManager"=0,"IosaDPEControl"=1,"IOPortTransportUserClient"=0,"DaisyFunctions"=0,"IO80211SimpleReporter"=0,"ModularDefaultFilter"=5,"IOSCSIHierarchicalLogicalUnit"=0,"AppleAOPAudioAmpStateFunction"=0,"IosaColorManagerMSR8"=1,"AppleConvergedIPCIOCommandPool"=1,"M2ScalerScalingControlMSR"=1,"AppleUSBACMControl"=2,"IOThunderboltXDomainServiceClientManager"=3,"IxoraFunctions"=0,"AppleSDXCWorkLoop"=1,"IosaRdmaControlMSR8"=1,"IOThunderboltConfigReadQuadletCommand"=6,"AppleBCMWLANConfigManager"=0,"AppleSDXCSlot"=1,"IOGPUTask"=1,"AppleUVDMUserClient"=0,"IO80211ActionFrameDescriptor"=0,"IosaDegammaPipeUnitMSR23"=0,"IosaPipeControl"=7,"IOGPUMTLFence"=0,"M2ScalerSrcDestCfgControlMSR22"=0,"AppleARMCFIFlashController"=0,"OSValueObject<ANEIOReporter*>"=0,"IOAVBGPIOEdgeTimeCapture"=0,"AFKEndpointInterfaceUserClient"=1,"ApplePPMCPMS"=1,"AGXGFXDVAccessor"=0,"com_apple_driver_AppleUSBMassStorageInterfaceNub"=0,"AppleUSB20XHCIPort"=1,"IOSKMapper"=98,"CryptoBufferDescriptor"=0,"IosaPolyphaseScalingPipeUnit"=0,"AppleARMFunctionChargerMux"=0,"AppleUSBRequestPool"=2,"ApplePMGRFunctionEnableCPUCore"=0,"AppleBCMWLANPCIeCompletionRing"=0,"AppleARM64ErrorHandler"=1,"IOSurfaceSharedEventListener"=9,"ExclavesAudioProxyEndpoint"=0,"AppleUSBHostResources"=1,"ApplePPMCPMSPowerInputHelper"=0,"OSNumber"=104320,"IOThunderboltSwitchIntelJHL9580"=0,"AppleAPFSUserClient"=0,"AppleHIDTransportDRAMUsageStats"=0,"AppleMCA2Fifo"=4,"IO80211ScanCacheStore"=0,"RTBuddyBinaryLogEntryHandlerTraceKit"=7,"IOTimeSyncUnicastUDPv6PtPPort"=0,"AppleJPEGDriverUserClient"=0,"AppleBCMWLANPCIeSkywalkTxCompletionQueue"=0,"IO80211BufferSlab"=0,"AppleCLPCUserClient"=4,"OSValueObject<ANEClientMappedSurfacePR>"=0,"IOPortTransportProtocolCCUSBPDSSAM"=0,"IOHIDResourceDeviceUserClient"=1,"AppleSDXCCommand"=64,"IosaFirmwareControlMSR25Rtk"=0,"IOServiceUserNotification"=852,"IO80211NANServiceManager"=0,"IO80211BufferPool"=0,"IOSkywalkStatisticsReporter"=38,"TransducerState"=0,"IOHDCP2TransmitterAuthSession"=1,"IOAVCommandDelegateService"=0,"AppleUSBUserHCITransferQueue"=0,"DisplayScalerFilter"=0,"OSValueObject<ANEClientMappedSurface>"=0,"AppleARMPMUAccessoryPS"=0,"IOHIDWorkLoop"=1,"IOGDiagnosticUserClient"=0,"IO80211ScanManager"=0,"IOWatchDogTimer"=0,"AppleThunderboltDPAdapterFamilyBase"=1,"IOThunderboltSwitchType2"=0,"IOGPUObject"=14,"AppleT8122USBXHCI"=0,"IOSkywalkRxCompletionQueue"=3,"IOAudioStream"=0,"IOFenceTransaction"=4,"IOUserClient"=32,"CommonFaultReporter"=0,"IOEventSource"=26,"IOGPUStatistics"=1,"IOAccessoryIDBusPDSupplyData"=0,"AGXLegacyMemoryMap"=0,"AppleUSBRequest"=1,"IO80211NANPublishServiceDescriptor"=0,"AppleM2ScalerCSCHalMSR2"=1,"APFSCryptoContext"=0,"IOHIDPowerSource"=1,"AppleM2ScalerCSCHalControl"=7,"AGXBlockedArray"=0,"AppleConvergedIPCSkywalkPacketPool"=3,"AGXAcceleratorG13S_A0"=0,"AppleT6001PMGR"=1,"IODART"=2,"AppleMCDP29XXGPIO"=1,"SEPHibernator"=1,"ANEDriverEventSource"=1,"AppleMesaSEPDriverInterface"=1,"AVE_WorkPool"=1,"IOAVAudioPattern"=0,"IO80211NANDataPeer"=0,"SMTransition"=650,"AppleAuthCPDock"=4,"IOBiometricService"=1,"AppleHPMDeviceHALType5"=0,"AppleARMSPIFlashController"=1,"AppleSOCD"=0,"AppleJPEGDriver"=1,"AppleSEPGenericTransfer"=3,"IOUserSerial"=9,"AppleConvergedIPCInterface"=1,"AppleSPUCT720"=0,"AppleIISAudioLinkDelegate"=0,"AIDInterface"=1,"IOUSBMassStorageDriverUFIStorageServices"=0,"AGXShared"=62,"IOAudioClientBufferSet"=0,"AppleARMWatchdogTimer"=1,"IOBioShareableMemoryObject"=0,"IOMFBSwapIORequest"=1,"IODPSwitch"=1,"OSKextSavedMutableSegment"=17,"ApplePMGRFunctionUSBClock"=0,"AppleUSBXHCIIsochronousRequestPool"=3,"AGXCommandQueue"=35,"AppleSPUControl"=0,"M2ScalerSrcDestCfgControlMSR9"=0,"AGXInternalResource"=440,"IOPortTransportComponentCCUSBPDSOP"=2,"AppleCS42L84Mikey"=1,"AppleSDXC"=1,"IOTimeSyncTranslationMach"=1,"IOFastPathUserClient"=0,"AppleHPMInterface"=0,"AppleHPMIECS"=0,"IOGPUMultiMemoryDescriptor"=0,"AppleBCMWLANTxItemRing"=0,"IO80211P2PDataPathManager"=0,"DitherControlMSR4"=0,"MSR23DefaultFilter"=0,"IO80211CommandGate"=0,"IOSurfaceDescriptor"=0,"AppleEmbeddedNVMeTemperatureSensor"=1,"AppleBakuBTM2"=0,"IOCoastGuardSARTMapper"=1,"AppleM2ScalerCSCHalMSR11"=0,"CCIOReporterLogStream"=0,"AppleUSBXHCIInterrupterMSI"=0,"AppleBCMWLAN11axAdapter"=0,"ClientObject"=0,"RTBuddyUserClient"=0,"IOAccessoryPortUserClient"=0,"IOThunderboltConfigXDomainCommand"=2,"IOMobileFramebufferUserClient"=13,"DCPAVControllerProxy"=9,"RTBuddyCallStackDecoder"=14,"IOTimeSyncUserFilteredServiceUserClient"=0,"IOThunderboltConfigXDomainPathSetupCompleteRequestCommand"=0,"AppleT8130USBXHCI"=0,"AppleUSBDeviceNCMData"=6,"AppleGCSyntheticDevice"=0,"AppleDCPLinkServiceSoC"=5,"IOAVSliceVideoInterface"=0,"AppleImage4UserClient"=1,"AppleLEAPController_T600x"=1,"AppleMCA2Switch_Configurator"=4,"CCIOService"=50,"AGXArmFirmwareMapper"=1,"IOSkywalkNetworkKDPPoller"=0,"IOCancelationWrapper"=0,"AppleThunderboltGenericHAL"=1,"ApplePCIEMSIController"=1,"IOGateLock"=1,"AppleT6000PlatformErrorHandler"=1,"IOThunderboltConfigCommand"=9,"AppleBTMDataClient"=0,"OSValueObject<AltInfo>"=18,"IODPServiceConcreteUserClient"=0,"AppleUSBXHCIIsochronousRequest"=15,"ApplePMGRFunctionResetPSDService"=0,"IOSurfaceDeviceMemoryRegion"=1,"IOThunderboltMultiMapper"=0,"IOAVControlInterfaceConcreteUserClient"=0,"IOPMClientAck"=0,"IosaTunableControlMSR25"=0,"AppleUSBAudioStreamNode"=0,"IONVMeController"=1,"AppleSMCAcamLogHandler"=0,"AppleMCA2Switch_MCAConfig"=1,"IosaRdmaControlMSR18"=0,"AppleHPMInterfaceType1"=0,"IOHIDTranslationService"=0,"AppleUSBAudioInterruptPipe"=0,"ApplePPMKernelClient"=3,"AGXParameterManagement"=1,"IOMesaCaptureDataLocal"=0,"AppleOnboardSerialSync"=1,"IOUSBInterfaceUserClient"=1,"SPUCommand"=11,"IOUserSCSIPeripheralDeviceType00"=0,"ANEPerfRequest"=0,"IOThunderboltDispatchContextBlock"=0,"AppleThunderboltPCIDownAdapterType5"=3,"AppleUSBXHCIARMEndpointSoftRetry"=0,"IOSlaveEndpoint"=2,"IOUserSCSIPeripheralDeviceType07"=0,"AppleASCWrapV4"=12,"AGXScheduler"=1,"VADResourceArbiterUserClient"=0,"AppleAVD"=1,"IosaPipe"=0,"IosaDPEControlMSR22"=0,"AGXSpillBufferManager"=121,"AppleConvergedIPCIOCommand"=56,"AppleBCMWLANChipMemory"=0,"AppleUSBXHCIIsochronousEndpoint"=0,"AppleH13CamIn"=1,"IOSKMemoryArray"=0,"AppleARMNORPanicLogDevice"=0,"IosaColorManagerMSR5"=0,"AppleARMCPUPerformanceArbiter"=0,"AppleH13CamInWorkLoop"=1,"AppleSN012776Amp"=1,"IOUserNetworkQueueSet"=0,"IODARTVMAllocator"=2,"AGXLateEvalWait"=0,"IODMAEventSource"=16,"AppleEffaceableStorageUserClient"=0,"AppleUSBXHCIStreamingEndpoint"=0,"AppleCSHTDCodecMikey"=1,"AUAClockSourceDictionary"=0,"AppleHPMLDCM"=0,"IOHIDComplexEventDriver"=0,"IODARTMapper"=49,"AppleMCA2Switch_SerDesCfg"=2,"AppleMobileFileIntegrityUserClient"=0,"IOSurfaceRootUserClient"=72,"ApplePMGRFunctionCLPCEnabled"=0,"AppleIPAppenderUserClient"=0,"IOBioArrayQueue"=1,"IO80211Controller"=0,"AppleBiometricSensorEventSource"=1,"AppleFDEKeyStore"=1,"ApplePMGRFunctionCPUIdle"=0,"IOPortTunnelingTransportState"=0,"AppleARMFunctionEventTimestamp"=1,"AppleUSBNetworkingCommandPool"=12,"IOThunderboltDispatchCallback"=0,"IOPMRequest"=0,"AppleBCMWLANJoinAdapter"=0,"com_apple_filesystems_hfs_encodings"=1,"IOHIDThumbstickElementProcessor"=0,"IosaPrescalerControl"=1,"AppleUSBRequestCompleter"=1,"IOOutputQueue"=0,"AUAOutputTerminalDictionary"=0,"AppleMultiFunctionPlatformEmbedded"=1,"AppleStockholmControlConfig"=1,"AppleT6000PCIePort"=2,"IOSKRegion"=449,"ApiodmaRegStreamMSR15"=0,"OSSerializer"=660,"AppleTCController"=2,"AppleThunderboltIPTransmitCommand"=0,"DitherControlMSR"=1,"AppleSMCSensorDispatcherUserClient"=1,"IOAccessoryIDBusUserClient"=0,"AppleUSBHostControllerIsochListElement"=0,"AppleThunderboltIPPort"=3,"ApiodmaRegStream"=0,"IOPortTransportComponentCCUSBPD"=2,"AUAMixerUnitDictionary"=0,"AppleSEPTestingService"=0,"IOGPUIOCommandDescriptor"=0,"IOThunderboltConfigPrepareToSleepCommand"=0,"AppleM2ScalerCSCHalMSR9"=0,"IOUSBDeviceInterfaceUserClient"=0,"AppleTimerQueueEventSource"=2,"IOServicePM"=681,"AudioDeviceCommandFunction"=0,"IOAVAudioInterfaceConcreteUserClient"=0,"IOSkywalkTxCompletionQueue"=3,"RTBuddySavedSegment"=0,"AppleAudioFirmwareDownloader"=0,"AppleParadeDP835TCONI2CTps65177"=0,"IOPortTransportState"=4,"IOCharacterDevice"=0,"ApplePMPThermalUserClient"=0,"IOSkywalkQueueSet"=4,"AppleSPUDCPDriver"=0,"IOAudioEngineEntry"=0,"AppleDialogPMU"=0,"IO80211APIUserClient"=0,"AppleTunneledPCIEUserClient"=0,"AppleM2ScalerCSCHalMSR24"=0,"AppleEmbeddedPCIE"=1,"IODisplayAssertionUserClient"=0,"AppleMCA"=2,"AppleOnboardSerialPool"=1,"IOAESAccelerator"=1,"AppleSPUProfileFirmwareDriver"=0,"WCLFsmManager"=0,"AGXTAChannel"=1,"IOServiceCompatibility"=4,"AppleT8103USB30XHCIPort"=3,"IOHIDKeyboard"=0,"AppleSPUGrimaldiDriver"=0,"APCIECMSIController"=3,"AppleMCA2Switch_RxCfg"=8,"IOThunderboltNHIReceiveRing"=0,"ApplePMPEvent"=0,"IOGDiagnosticGTraceClient"=0,"AppleTCControllerType15"=0,"AppleInterruptControllerV2"=1,"IosaColorManagerMSR16"=0,"MCCommandQueue"=0,"IOPortFeature"=1,"AppleARMI2CEEPROM"=0,"H13ISPLoggerEventSource"=1,"IORSMCommandQueue"=0,"ApplePPMDaemonIPC"=0,"RTBuddyTraceDataEncoder"=1,"AppleThunderboltDPInAdapterOS2"=0,"IOTimeSyncTimeLineFilterIIR128"=0,"AppleParadeDP835TCONI2C"=0,"IOHIDUserClient"=1,"IOSurfaceTransaction"=0,"IO80211NANDataPathInitiator"=0,"IOAccessoryUSBPowerSourceDetect"=0,"IOAVCECService"=0,"IOPMinformeeList"=681,"AppleUSBXHCITDPool"=3,"M2ScalerSrcDestCfgControlMSR20"=0,"AppleSmartBatteryManager"=1,"TAGateLock"=2,"IOImageDescriptor"=0,"AppleARMQuadSPIController"=0,"AppleExternalSecondaryAudio"=1,"AppleSEPManager"=1,"AppleARMBacklightPCCUpdateFunction"=0,"AppleNVMeFWNamespaceDevice"=0,"SCSITask"=0,"IOAccessoryPowerSourceItemBrickID"=0,"HSAIDReceivePacketPool"=0,"ANEDartAllocationInfo"=9,"IosaChromaDownsamplePipeUnitMSR23"=0,"ApplePMGRFunctionSEPSleepPrep"=0,"IosaWdmaControlMSR10"=2,"OSValueObject<ANEGroupResource*>"=0,"AppleAOPAudioHapticLEAP"=0,"IOSkywalkTxSubmissionQueue"=3,"IosaDPEControlMSR10j"=2,"IO80211FlowQueueLegacy"=0,"IOTimeSyncIntervalFilter128"=0,"IOFastPathService"=0,"IOTBTTunnelDriverInterface"=10,"IOMobileFramebufferService"=1,"DCPDPControllerProxy"=9,"AppleMultitouchEventDriverWrapper"=1,"AppleBCMWLANBonjourOffload"=0,"IOBluetoothMemoryBlockQueue"=1,"AppleHIDTransportDeviceSPI"=1,"IODiskImageBlockStorageDeviceOutKernel"=0,"AppleHIDTransportDeviceDummy"=0,"AppleBCMWLANPCIeSkywalkFlowQueue"=0,"IOPCIBridge"=2,"IOThunderboltFindCapabilityCommand"=3,"IOAccessoryUSBTypeCCurrentDetect"=0,"AppleBCMWLANSkywalkTxSubmissionQueue"=0,"AppleXsanDevice"=0,"WCLDeviceConfiguration"=0,"IOGPUMTLEvent"=3,"IOSurfaceMTLSharedEventFence"=0,"IODMACommand"=3762,"RTBuddyManagementEndpoint"=11,"IODPService"=0,"IOHDIXHDDriveInKernel"=0,"IOSkywalkKernelPipeBSDClient"=3,"IOPCIMessagedInterruptController"=2,"IOUserIterator"=141,"AIDLoggerUserClient"=0,"AppleBCMWLANRoamAdapter"=0,"IORegFlex"=2,"AppleMCA2Switch_Reginfo"=3,"IOSurfaceMemoryTag"=581,"DCPAVVideoInterfaceProxy"=3,"RTBuddyVersionDecoder"=14,"IOThunderboltDispatchQueue"=48,"DCPAVProxy"=13,"AppleBCMWLANCommandWithXTLV"=0,"AGXMTLCounterSampler"=1,"RTBuddySlaveBuffer"=1,"AppleEmbeddedAudioDevice"=2,"TAAccessoryEvent"=0,"AppleHPMLDCMType3"=0,"AppleBCMWLANPCIeSkywalkMemorySegment"=0,"IosaRdmaControlMSR15"=0,"AppleUSBXDCITRBBlock"=408,"AGXDeviceUserClient"=62,"IOSkywalkCloneableNetworkPacket"=0,"IOPortTransportStateDisplayPort"=4,"AppleDiskImagesController"=1,"IOSurfaceSharedEventNotification"=1,"AppleT6000DART"=28,"CachedSystemConfig"=1,"AGXDebugBufferShmem"=0,"AppleUSBXHCIEndpoint"=65,"AppleT8112USBXHCI"=0,"WCLDebugManager"=0,"AppleUSBUserHCIRequestPool"=0,"IOAVSplitDisplayVideoInterface"=0,"IosaPrescaler3x3PipeUnit"=0,"IOGPUAllocationInfo"=0,"IO80211PeerExtendedStats"=0,"AppleARMIISController"=1,"AppleBCMWLANCoreFirmwareLoader"=0,"ACMPersistentStoreKernelService"=1,"IosaPixelAveragingPipeUnitMSR6"=0,"IosaRequestPipeUnit"=0,"IOUSBDeviceUserClient"=1,"AppleThunderboltDPInAdapter"=0,"IOFastPathHIDLEDService"=0,"AppleA7IOPNub"=15,"IOUserEthernetResource"=1,"IOPCIHostBridgeData"=4,"IO80211P2PDFSProxyManager"=0,"AppleUSBHostControllerListElement"=0,"AppleARMIISCommand"=80,"AFKMemoryDescriptorManager"=1,"IOMultiMemoryDescriptor"=0,"AppleSEPFirmware"=0,"IOSlowAdaptiveClockingDomain"=1,"AppleBCMWLANPCIeSkywalk"=0,"IOTimeSyncEdgeTimeCapture"=0,"AppleCSSPIv2Audio"=0,"IOBioQueue"=1,"AppleSPUTimesync"=1,"AppleA7IOP"=2,"IOPortTransportStateCC"=4,"IosaColorManagerMSR2"=1,"AppleARMPMUCharger"=0,"IosaPrescalerControlMSR8"=2,"IO80211NANAttributeTx"=0,"AppleSPUAppDriverUserClient"=0,"OSSetEquality"=19,"M2ScalerSrcDestCfgControlMSR5"=1,"IOInterruptQueueEventSource"=7,"IOAVVideoTimingElement"=0,"WCLRoamProfile"=0,"AFKIOServiceClient"=0,"AppleSPUHapticsManagerDriver"=0,"KDIEncoding"=0,"IO80211TimerFactory"=0,"IOThunderboltPacketLoggerNub"=0,"IOFastPathHIDAccelService"=0,"DCPPowerCallback"=5,"IOImageLoaderImageDictionary"=0,"IOBigMemoryCursor"=0,"CCDataPipeUserClient"=0,"IO80211ScanSanitizer"=0,"MailBoxMSR23"=0,"IOThunderboltConfigCMOverrideCommand"=3,"AppleLVBOOST"=0,"IODP13Service"=0,"AppleThunderboltNHIReceiveRingGenericACIO"=0,"IOSurfaceSendRight"=0,"IOUSBMassStorageDriverNub"=1,"AppleJPEGWrapperControlV14"=0,"IOAVDeviceConcreteUserClient"=0,"AppleConvergedIPCSkywalkInterface"=3,"IOMesaCaptureDataQueue"=1,"IOThunderboltSwitchUSB4"=1,"AppleHIDTransportBootloaderPassive"=0,"AppleSPUCT721"=0,"AppleAuthCPHSAID"=0,"AppleUSBHostIORequestPool"=65,"AppleSPUUserClient"=0,"IOTimeSyncPersistentUserClockMapping"=0,"IOTimeSyncNetworkPort"=0,"AGX3DChannelG13"=43,"IODTNVRAM"=1,"IOFramebuffer"=0,"AppleCSSPIAudio"=0,"AppleDCPDPTXRemotePortProxy"=8,"AppleT604XATCDPXBAR"=0,"AppleUSBHostPort"=2,"MesaAccessoryIntReportImage"=0,"H1xANELoadBalancerDirectPathClient"=5,"AppleHPMAIDType1"=0,"IOThunderboltDispatchContext"=0,"RTBuddyRouteProvider"=0,"CCIOReporterHub"=0,"IOAccessoryEAInterfaceUserClient"=0,"AppleEventLogHandler"=1,"ApplePMGRv2"=0,"AppleSEPPairing"=0,"IOHIDReportElementQueue"=0,"AppleMCA2Controller"=1,"AppleOLYHALPlatformFunctionEventTimestamp"=0,"IOSkywalkMemorySegment"=60,"AppleUSBHostResourcesBusPowerClient"=0,"AFKMemoryDescriptorManagerUserClient"=0,"IOMesaCaptureDataAccessory"=0,"IOPCIEventSource"=8,"AppleT6000MemCacheModeFunction"=2,"IOGPUWorkQueueState"=0,"AppleBCMWLANChipManagerPCIe4355"=0,"AIDEventLogger"=2,"AppleRSMChannelController"=1,"IOModemSerialStreamSync"=0,"OSValueObject<ANEResource*>"=23,"IOSurfaceDescriptorContext"=0,"IOHIDElementContainer"=1,"IosaInternalPipeMSR23"=0,"AppleTCControllerSingleTransport"=0,"AppleBCMWLANPCIeSkywalkPacket"=0,"IOECTimeSyncHandler"=0,"AppleSMCSensorDispatcher"=1,"AppleEstBTM"=0,"AppleSEPEndpoint"=13,"RTBuddyBuiltinEndpoint"=3,"IOMesaCaptureData"=0,"IOAVDMACommand"=20,"IOBioSEPSharedBufferFactory"=0,"IOThunderboltSwitchLC"=0,"AppleBCMWLANGASAdapter"=0,"IOAVElement"=2,"RTBuddyCoredumpMapEntry"=132,"GTGateLock"=3,"AppleT600xDisplayCrossbar"=1,"IOFastPathHIDGyroService"=0,"ApplePMGRBase"=1,"AGXSecureMonitor"=1,"IOUserNetworkEthernet"=1,"IOGPUWeakResourceSet"=360,"AppleBCMWLANRxItemRing"=0,"IOSCSIProtocolInterface"=2,"IOHIDAsyncReportQueue"=0,"AppleThunderboltDPPathManagerOS"=6,"OSDictionary"=35235,"RTBuddyRegisterFrameDecoder"=14,"AppleHIDTransportProtocolHIDSPI"=1,"AppleMCA2Switch_Control"=4,"ApplePassthroughPPMSystemCapabilityMonitor"=1,"AppleTypeCPhyDisplayPortInterface"=10,"IOFastPathHIDService"=0,"IOPortTransportStateUSB3"=1,"IO80211IORecursiveLock"=0,"AppleUSBDescriptor"=540,"AppleM2ScalerCSCHalMSR18"=0,"com_apple_filesystems_hfs"=1,"AGXAttributionIndexManager"=35,"RTBuddyOSLogSegmentSlice"=0,"IOTimeSyncUnicastLinkLayerPtPPort"=0,"AudioDMAChannelStateMachine"=1,"AppleLEAPController"=1,"IosaPrescalerControlMSR23"=0,"AGXSecureMemoryMap"=23245,"AppleT8020MTRTempSensor"=0,"IOTimerEventSource"=1917,"IOThunderboltXDomainService"=0,"IOTimeSyncClockManagerUserClient"=0,"AppleHIDTransportDevice"=1,"ApplePPMPolicy"=1,"BlockDescriptorRegStreamMSR23"=0,"IOAccessoryPowerSourceItemBrickLimit"=0,"IOHIDForceSensorElementProcessor"=0,"DCPAVRemoteSACControllerProxy"=1,"AppleMesaResources"=1,"LegacyFunctions"=0,"EndpointSecurityDriverClient"=0,"WCLDeauthDisassoc"=0,"CoreAnalyticsEventRatePolicy"=1,"AppleUSBHostDMACommand"=1,"IosaConvertPipeUnit"=0,"IOUSBDevice"=1,"AppleDeviceManagementHIDEventService"=1,"AppleMobileApNonce"=1,"AppleT8110DART"=8,"AppleT602XDisplayCrossbar"=0,"AppleConvergedIPCMemoryCommand"=12,"IOTimeSyncSyncDaemonClient"=1,"ApplePMGRFunctionVoteCriticalLltMode"=0,"MCDataStreamInfoObject"=6,"IOAccessoryDock9Pin"=0,"AppleM2ScalerCSCHalMSR21"=0,"AppleSEPTesting"=0,"AppleBCMWLANPCIeMMIOHistory"=0,"IOUserServerCheckInToken"=12,"USBInterfaceAssociation"=0,"AppleDCPDPTXRemoteHDCPInterfaceProxy"=9,"IOThunderboltNumber"=364,"AppleARMGPICFunction"=0,"IO80211NANInfraManager"=0,"AppleBCMWLANTimeSyncClockInfo"=0,"AIDReporter"=1,"AppleUSBXDCIEndpoint"=0,"IOThunderboltControllerType5"=3,"AFKWorkloop"=148,"AppleI2CMultipleAudio"=1,"com_apple_driver_FairPlayIOKit"=1,"IOAccessoryPowerSourceItemLowVoltageLimit"=0,"RTBuddyIOReportingEndpoint"=10,"AppleSPUCT709"=0,"AppleBCMWLANPowerStateAdapter"=0,"IosaChromaUpsamplePipeUnitMSR9"=0,"AppleM2ScalerCSCHal"=1,"AppleHIDTransportInterfaceUserClient"=0,"AFKEPInterfaceKextV2"=83,"M2ScalerCSCColorConversionControlMSR10"=1,"AppleT8015TempSensor"=0,"IOHIDEvent"=0,"AppleDisplay"=0,"WCLBCNMuteMitigation"=0,"AppleUSBHostRequest"=2,"IOPortFeatureRFCoEx"=0,"HSAIDTransmitPacketPool"=0,"IOHIDLEDConstellationElementProcessor"=0,"IOTimeSyncDaemonService"=1,"AppleParadeDP815TCON"=0,"IOConditionLock"=0,"GMetricsRecorder"=0,"AppleKeyStoreCommand"=2,"AppleARMBacklightFunction"=0,"DCPAVDeviceProxy"=3,"IOKitRegistryCompatibility"=1,"IOAccessoryPowerSourceSupplyData"=0,"IOBluetoothHIDChannel"=0,"AppleATCDPINAdapterPortBase"=1,"AppleUSBTDMMassStorageClass"=0,"AppleTCControllerAssignableTransport"=0,"AppleThunderboltHALType7"=0,"AppleNVMeFWNamespaceUC"=0,"IOSlaveFirmware"=1,"AGXChannel"=3,"IOAVAudioDriver"=1,"IosaPolyphaseScalingPipeUnitMSR23"=0,"IOThunderboltConfigModifyQuadletCommand"=0,"AGXSpillMetadataBlock"=3,"AppleUSBXDCIEventHandler"=0,"AppleBCMWLANScanAdapter"=0,"WCLBulletinBoard"=0,"AppleMultiFunctionPlatform"=1,"AppleSmartIODMA"=9,"RTBuddySegmentSlice"=0,"WCLAdaptiveRoam"=0,"AppleSimpleUARTSync"=1,"IOPMrootDomain"=1,"AGXParameterMemoryVirtual"=9,"AppleMultitouchDeviceUserClient"=1,"AppleEmbeddedPCIEBarrier"=0,"AppleTrustedAccessoryManagerInterface"=1,"AppleARMNMI"=0,"AppleTCON"=1,"RTBuddySmbDecoder"=14,"AppleConvergedIPCMemoryPolicy"=9,"AppleARMPerformanceControllerFunctionClockGate"=0,"EndpointSecurityExternalClient"=0,"IOThunderboltLinkController"=0,"IOGPUNamespace"=558,"IORootParent"=1,"RootDomainUserClient"=132,"AppleARMPerformanceControllerFunctionAssertReset"=0,"AppleBCMWLANSkywalkInterface"=0,"M2ScalerScalingASEControlMSR20"=0,"IOThunderboltSwitchLegacy"=0,"AppleHPMInterfaceType3"=0,"TADetachedAccessory"=0,"WCLTimerSource"=0,"AppleMCA2Switch_RxCtl"=8,"IOBreaker"=0,"IODPController"=0,"IOTBTTunnelDriverClientDrivenInterface"=3,"AppleBCMWLANTxCommandBuffer"=0,"AudioDMAChannel"=48,"AppleBCMWLANSensingAdapter"=0,"AppleSPUGNSSDriverUserClient"=0,"IOTimeSyncLocalClockPort"=1,"AppleMultiFunctionManager"=1,"AppleARMPerformanceControllerFunctionPerfAdvise"=0,"AppleSPUHIDDeviceUserClient"=1,"AppleOLYHALPlatformFunctionEmbedded"=0,"AppleSPUTimesyncV2"=1,"AppleBCMWLANChipImage"=0,"OSAction_IOUserClient_KernelCompletion"=6,"AppleT8103PCIeC"=1,"StatusDescriptorRing"=0,"AppleSMCKeysEndpoint"=1,"AppleTunneledPCIE"=1,"RadishFunctions"=0,"IOSkywalkNetworkPacket"=0,"HSAIDCommand"=0,"AppleSEPSharedMemoryBuffer"=1,"AppleBCMWLANPCIeTransmitFlowRing"=0,"CCDataPipeBlobMD"=0,"IOImageLoaderUserClient"=0,"_Message"=0,"IOThunderboltControllerGenericACIO"=1,"APCIEPortControl"=3,"AGXDiagnosisReport"=0,"RTBKeyObjectPair"=604,"IOAVAbstractVideoInterface"=0,"IO80211BonjourOffloadAgent"=0,"IOThunderboltXDPropertiesCache"=1,"IOThunderboltEEPROM"=6,"IONetworkStackUserClient"=1,"IOUserNetworkRxSubmissionQueueCompat"=0,"IOAccessoryConfigStreamInterface"=0,"DitherControl"=1,"RingBuffer"=0,"AppleMCA2DeviceClock"=4,"AGXFirmwareKextG13RTBuddy"=1,"AppleDialogSPMIPMU"=2,"IOAccessoryDock0PinBuiltin"=0,"M2ScalerCSCColorConversionControl"=1,"AppleHPMDeviceHAL"=0,"AppleHIDTransportDeviceUserClient"=0,"PMHaltWorker"=0,"IODPPortService"=10,"AppleARMMIPIDSIDevice"=0,"RTBuddyEntropyEndpoint"=0,"AGX3DChannelSKU"=1,"RTBuddyBinaryLogEntryHandlerOSLog"=7,"AppleDialogSPMIPMURTC"=1,"AppleNANDConfigAccess"=0,"IOSkywalkPacketBuffer"=4912,"IODPLinkRateRangeTable"=0,"BlockDescriptorRegStream"=0,"ANECoreInterface"=2,"IOBluetoothMemoryDescriptorRetainer"=0,"IOThunderboltConfigWriteQuadletCommand"=6,"OSValueObject<AppleH13CamInFirmwareWorkProcessorRPCRequest>"=0,"AppleHPMBusController"=1,"IOGPUMemory"=3,"AppleMesa"=1,"AppleSEPDebug"=0,"AppleXsanDriver"=0,"RTBuddySegment"=178,"AppleAOPAudioLEAPClientManager"=0,"AppleARMIISSwitch"=1,"AppleHIDTransportProtocolZ2"=0,"IOAVDisplayConnection"=0,"IOGPUBlockFence"=0,"AppleUSBAudioDevice"=0,"SCSISubsystemGlobalsUserClient"=0,"IOSurfaceClient"=774,"IO80211P2PSupervisor"=0,"AppleSPUVD6286"=1,"AppleBCMWLANIOReportingPerSlice"=0,"M2ScalerScalingASEControl"=1,"IosaTunableControl"=0,"TSNBSDStackInterface"=0,"AppleSPUFastpathCaptureObject"=0,"AppleT8030USBXHCICommandRing"=0,"M2ScalerCSCColorConversionControlMSR15"=0,"SMEvent"=390,"IONetworkStack"=1,"AppleBCMWLANSkywalkPacketPool"=0,"ApiodmaRegStreamMSR19"=0,"IOAccessoryConfigStreamUserClient"=0,"AGXSecureSharedGartTableBacking"=1,"DCPAVCECController"=0,"WCLMngFrameRouter"=0,"AppleNVMeEANUC"=1,"AppleUSB20CameraKitHub"=0,"SCSITaskUserClientIniter"=0,"IOThunderboltSwitchType6"=0,"IOHIDEventServiceQueue"=17,"IosaColorManagerMSR13"=0,"AppleMesaShim"=1,"AppleCredentialManagerUserClient"=6,"AppleAOPAudioDeviceNode"=5,"IOPMCompletionQueue"=1,"AVE_HwC"=2,"AppleSPUFastpathClientObject"=0,"IOSubMemoryDescriptor"=648,"IOBluetoothObject"=1,"IOService"=326,"IOAVVSDBElement"=0,"AppleHDCPInterface"=14,"AppleAudioSequenceList"=0,"H1xANELoadBalancer"=1,"IOThunderboltTimerCommand"=3,"IOAVBValidateUserClient"=0,"AppleALSColorSensor"=0,"AppleUSBHostRequestCompleter"=91,"OSCollection"=5,"AppleMCKAudio"=0,"AppleSPUAONPTDDriver"=0,"IOThunderboltNHI"=1,"AppleAOPAudioAmpManagerDevice"=0,"RTBuddyCoredumpDecoder"=14,"IOHIDPowerSourceClient"=0,"AppleEffaceableStorage"=0,"IOTimeSyncClockTestUserClient"=0,"AppleUSBHostBulkHIDDevice"=0,"IOHDIXCommandPool"=0,"AppleUSBXHCIARM"=1,"RTBuddyFirmwareService"=3,"AppleThunderboltIPService"=3,"IOSCSIPeripheralDeviceType00"=2,"AEARuntimeRegisterPatch"=1,"FrameDescriptorRingMSR23"=0,"AppleRSMCommand"=0,"AppleT6000TypeCPhy"=4,"IosaInternalPipeMSR10"=2,"AppleUSBHostPacketFilter"=0,"IOReportLegend"=23,"AppleHPMInterfaceType14"=0,"IOAVDisplayMemory"=1,"AppleSEPUserClient"=0,"AppleSamsungSerial"=1,"AppleNVMeRequestTimer"=1,"AppleT8112ATCDPXBAR"=0,"AppleSATLSMARTUserClient"=0,"AppleMultitouchTrackpadHIDEventDriver"=1,"AppleUSBHostDeviceUserClient"=57,"AppleSPUMarconiControl"=0,"RTBuddyCoprocDrivenCoredump"=0,"IOHDCP1TransmitterAuthSession"=2,"UPAsynchronousScheduler"=35,"M2ScalerSrcDestCfgControlMSR14"=0,"CoreAnalyticsPipe"=1,"AppleCS42L84Audio"=1,"AppleMobileFileIntegrity"=1,"AIDReporterSimple"=1,"IO80211RangingManager"=0,"AppleAOPAudioController"=1,"AppleSmartIODMANub"=1,"IOUSBHostStream"=0,"AppleAOPSMCDriver"=0,"OSValueObject<AppleH13CamInFirmwareWorkProcessorParams>"=1,"IOSCSILogicalUnitNub"=2,"IO80211RangingManagerExt"=0,"AppleM2ScalerCSCHalMSR15"=0,"ApplePMGRTempSensor"=0,"_IOServiceNotifier"=1242,"IOAudioTimeIntervalFilterFIR"=0,"IO80211AssociationJoinSnapshot"=0,"AppleT8103ATCDPXBAR"=1,"DIDeviceIOUserClient"=0,"IO80211Peer"=0,"CCDataPipe"=1,"IOAVConcreteDisplayMemory"=0,"AHTEeprom"=0,"IOThunderboltSwitchDelegateACIO"=3,"AppleBCMWLANLowLatencyInterface"=0,"IOAVBAudioLoader"=0,"ApplePMGRFunctionPMPInterrupt"=2,"AFKEndpointInterfaceClient_Descriptor"=6,"AppleBCMWLANLeakyApParser"=0,"ANEWorkLoop"=2,"IOGPUWeakNamespace"=5,"RTBuddyTraceKitSession"=7,"IOUSBInterfaceUserClientV2"=1,"AppleUSB30HubPort"=28,"IOTimeSyncFilteredService"=0,"RTBuddyCoreAnalyticsEndpoint"=0,"AppleThunderboltDPInAdapterOS"=6,"DCPAVAudioInterfaceProxy"=2,"AppleUSBNCMData"=2,"AppleAvusBTM"=0,"IosaChromaUpsamplePipeUnit"=0,"AppleAOPAudioClientManager"=1,"IODPEmbeddedDevice"=0,"IOThunderboltConfigResetCommand"=6,"IOHDIXHDDrive"=0,"OSValueObject<__ReportResult>"=0,"IODPControllerUserClient"=0,"IOHIDKeyboardEventDevice"=0,"AppleUSBHostBillboardDevice"=1,"SpillBufferMSR23"=0,"AppleM2ScalerCSCHalMSR10j"=2,"_IOConfigThread"=0,"AppleSMCACAMDriver"=0,"IOUserSerialUserClient"=0,"IOAccessoryPowerSourceItemRestrictions"=0,"AppleBluetoothModule"=1,"WCLJoinRequest"=0,"IODisplayConnect"=0,"IONVMeControllerPolledAdapter"=1,"DCPAVServiceProxy"=3,"AppleMesaUserClientBase"=0,"AppleStonehengeBPIC"=0,"M2ScalerSrcDestCfgControlMSR"=1,"AppleDCPDPTXRemoteHDCPAuthSessionProxy"=4,"IO80211PostOffice"=0,"IOTimeSyncEdgeTimeCaptureUserClient"=0,"AppleUIOMem"=1,"OSValueObject<FWPendingRequest>"=0,"OSSet"=24609,"AppleKeyStoreTest"=1,"AppleMikeyReceiver"=1,"AppleBiometricServicesUserClient"=1,"M2ScalerSrcDestCfgControl"=1,"AppleOLYHALPortInterfacePCIeAMFM"=1,"IOTBTTunnelDPClientInterface"=12,"AppleARMPerformanceControllerCLPCNub"=0,"AppleUSBXHCIDevice"=25,"IOThunderboltConfigXDomainROMReadRequestCommand"=0,"IOThunderboltConfigXDomainPathRequestCommand"=0,"KDIDiskImageNub"=0,"H11ANEInDirectPathClient"=1,"AppleAOPAudioDevice"=3,"IOSurfaceRootParavirtMapperInterface"=0,"IOUserService"=5,"IO80211FlowQueue"=0,"RTBuddyCrashlogEndpoint"=11,"AppleSPUFastpathInterface"=0,"IOBioPoolItem"=0,"IOThunderboltXDPropertiesLeafData"=0,"IO80211CommandQueue"=0,"IOAccessoryPortSerialSync"=0,"IOSCSIPeripheralDeviceType07"=0,"AppleARMIISAudioDevice"=2,"RTBuddyBinaryLogSourceInfo"=1,"IosaColorManagerMSR23"=0,"Hibernator"=1,"AppleOnboardSerialSkywalkPacketPool"=0,"AppleEmbeddedAudioHeadsetSwitch"=0,"CCDataStream"=1,"AppleBCMWLANChipManagerPCIe"=0,"AppleUSBCapabilityDescriptor"=0,"IOBluetoothInactivityTimerEventSource"=0,"AppleMobileApNonceUserClient"=0,"IOHDCP2DPTransmitterAuthSession"=2,"AppleSMCKDebug"=1,"IOAVControllerConcreteUserClient"=0,"AppleAuthCPRelay"=0,"RTBuddyTraceChunkEncoder"=7,"IOThunderboltPortMicro"=0,"AppleBCMWLANPCIeSkywalkRxSubmissionQueue"=0,"RTBuddyRouteAdaptor"=14,"AppleSPUPDMCLKDriver"=0,"AppleCSI2CMultipleAudio"=0,"WCLNetPowerStateAgent"=0,"OSAction_IOUserNetworkEthernet__TxSQDataAvailable"=0,"IosaWdmaPipeUnit"=0,"AppleUVDMEndpoint"=0,"AppleTrustedAccessory"=0,"OSData"=11885,"ApplePMGRFunctionStub"=0,"AppleHPMLDCMType2"=0,"AppleParadeDP855TCON"=1,"IOHIDGyroElementProcessor"=0,"IOFence"=0,"IO80211CagedBuffer"=0,"AppleMultitouchEventDriverV2Wrapper"=1,"IOHIDElement"=1,"AFKTightbeamEndpoint"=0,"IOUserNetworkTxCompletionQueue"=4,"MSR23CurvatureLUT"=0,"AGX3DCommandDescriptor"=0,"IosaWdmaPipeUnitMSR23"=0,"AppleLockdownMode"=1,"AppleUSBUserHCICommandQueue"=0,"AppleHPMDeviceHALType2"=0,"IOPortFeaturePower"=1,"AppleBCMWLANDMASlab"=0,"IOGPUMappingCommand"=0,"AppleHapticsExternalSecondaryAudio"=0,"AppleUSBHostMergeProperties"=1,"IOThunderboltXDomainServiceClient"=0,"IOBluetoothACLMemoryDescriptor"=0,"AppleSEPControl"=1,"IOBioSEPSharedBuffer"=0,"AUAUnitDictionary"=0,"IOTimeSyncgPTPManagerDaemonClient"=1,"AppleSecondaryAudio"=3,"AppleBCMWLANBssManager"=0,"AppleARMSoftIICController"=0,"IONaturalMemoryCursor"=0,"AVE_Drv"=1,"IOAVVideoInterface"=0,"AppleARMWatchdogTimerHibernateHandler"=1,"OSSymbol"=32281,"RTBuddyHexDecoder"=16,"AppleEmbeddedAudioButtons"=1,"UnifiedPipeline2"=1,"DCPAVSACController"=1,"IOGraphicsWorkLoop"=1,"OSUserMetaClass"=995,"IOAVControllerUserClient"=0,"IOThunderboltXDomainReceivePath"=0,"AUAExtensionUnitDictionary"=0,"IOHIDTimeSyncService"=0,"IOSkywalkNetworkNotificationHelper"=0,"AppleUSB20AccessoryHubPort"=0,"AppleSPIMCController"=4,"ApplePPMARMFunction"=0,"OSValueObject<ANEMPMMemoryParams>"=0,"IO80211BGScanManager"=0,"RTBuddyOSLogEndpoint"=7,"SpillBuffer"=0,"AppleM3WrapV2ACIO"=3,"RTBuddyVisibleMemory"=1,"AppleSSEInterface"=1,"AUAStreamDictionary"=0,"IOAudioEngineUserClient"=0,"IOAccessoryTRM"=0,"M2ScalerSrcDestCfgControlMSR8"=1,"AppleBCMWLANCore"=0,"OSAction_IOHIDEventService__SetUserProperties"=0,"IOAVDisplayMemoryConcreteUserClient"=0,"IOTBTTunnelClientInterfaceManager"=3,"AppleNVMeUpdateUC"=0,"AIDCircularBufferShared"=0,"IOAVBStreamCapture"=0,"AGXCommandBuffer"=35,"AppleSPUFastpathDriverUserClient"=0,"AppleARMIICDevice"=9,"IO80211P2PSteeringManager"=0,"ANECoredump"=0,"AppleOLYHALPlatformFunctionEmbeddedAMFM"=1,"AppleAOPSMC"=0,"AGXTACommandDescriptor"=0,"CCStream"=2,"AggressorUserClient"=0,"IOThunderboltUserObjectExporter"=0,"IOReportHub"=1,"WCLNeighborCacheManager"=0,"AppleSOCTuner"=1,"IOTBTTunnelClientInterface"=5,"AppleT6000SOCTuner"=1,"AppleSPUSimpleAsyncEventSource"=14,"DCPAVControllerProxyUserClient"=0,"AppleParadeDP835TCONSPI"=0,"IOHDIXCommandQueue"=0,"AppleUserHIDEventService"=4,"AGXSharedGartTableBackingG13"=1,"IOLittleMemoryCursor"=0,"IOAccessoryPowerSourceItemUSBDevice"=0,"IOThunderboltDictionary"=10,"AppleTypeCPhyInterface"=3,"IOPortAIDController"=0,"AppleT8030USBXHCI"=0,"AIDService"=4,"WCLLinkDebounce"=0,"AppleWrapperMailbox"=0,"IO80211CoreDbg"=0,"LogManager"=0,"OSValueObject<client_log_buffer_t>"=0,"OSValueObject<ANEUnionResource*>"=0,"IOThunderboltSwitchType3"=0,"RTBuddyVisibleSlaveBuffer"=38,"IOUserServer"=12,"IosaEnhancementPipeUnitMSR23"=0,"AppleSEPCommandPool"=3,"AppleUSBHostFrameworkDeviceClient"=0,"AppleTrustedAccessoryManager"=1,"IO80211NANDataInterfacePeerManager"=0,"EndpointSecurityNoAuthClient"=0,"AppleM2ScalerCSCHalMSR4"=1,"AppleAPFSContainer"=3,"AppleUSBHostPortInterruptEventSource"=95,"ANERequestCompletionMsg"=0,"AppleSMCEventBuffer"=1,"AppleUSBAudioIsocPipe"=0,"AppleAOPAudioDeviceController"=1,"IOBluetoothDataQueue"=0,"AppleS5L8960XNCO"=1,"IOPlatformExpert"=1,"IO80211AVCAdvisory"=0,"AppleUSBHostBouncedDMACommand"=117,"RTBuddyRemoteSlaveMemoryDescriptor"=0,"AppleHIDKeyboardEventDriverV2"=1,"DCPAVVideoInterfaceProxyUserClient"=0,"IOAVBTimeSyncSyncUserClient"=0,"DCPAVRemotePowerController"=0,"AudioKernelClientInterface"=0,"IOThunderboltXDDirectory"=0,"AGXInvalidChannel"=1,"WCLGlue"=0,"AppleAOPAudioMCA2Device"=0,"AppleSEPHDCPEndpoint"=1,"IO80211InfraPeersDatabase"=0,"AppleEmbeddedPCIEPortControlFunction"=1,"IOAVControllerAddDeviceCompletion"=0,"IOHIDResourceQueue"=1,"IOImageLoaderDatastore"=0,"AppleARMRTC"=1,"IOHIDElementPrivate"=1704,"IOTimeSyncIntervalFilterIIR"=0,"IOUserUserClient"=15,"ApplePMPFirmware"=1,"AppleANEEPFunction"=3,"IOFilterInterruptEventSource"=135,"ApplePIODMARequestPool"=3,"IOStateNotificationListener"=0,"AppleCredentialManager"=1,"M2ScalerSrcDestCfgControlMSR10j"=2,"IOThunderboltIECSCommand"=0,"IOAccessoryPortSerial"=0,"AppleTCControllerType10"=3,"OSValueObject<AsyncReportParam>"=0,"IOUSBDeviceDMACommand"=0,"AppleT6000MemCacheFlushFunction"=1,"AppleBCMWLANTxPowerManager"=0,"IOAVDevice"=0,"AppleSMCInterface"=2,"IOSurfaceMemoryPoolBunch"=0,"IOBacklightDisplay"=0,"IOPortFeatureUserClient"=0,"ApplePIODMA"=1,"WCLBGScanManager"=0,"com_apple_BootCache"=1,"RTBuddyStatisticsDecoder"=14,"AFKEndpointInterface_DescriptorBase"=1,"IOTimeSyncDaemonServiceProcess"=2,"IO80211NANLocaleManager"=0,"AppleMCA2Rx"=4,"AppleMultitouchEventServiceWrapper"=0,"AFKACIPCMemoryDescriptorManager"=0,"AGXIOSurfaceSharedEventCommandDescriptor"=0,"AppleSDXCSDDetect"=1,"IO80211NANPeerManager"=0,"IOHIDBTCETimeSyncService"=0,"IOAccessoryUSBConnectShim"=0,"AppleMCDP29XXIROM"=0,"IOUserNetworkRxCompletionQueue"=4,"AppleUSBHostDMABufferMemoryDescriptor"=61,"IOPortTransportStateSWN"=0,"AppleUSBAudioDictionary"=0,"AGXFirmwareKextRTBuddy"=1,"AppleMesaSEPDriver"=1,"AppleARMSPIDeviceUserClient"=0,"AppleHIDTransportBootloaderHIDDevice"=1,"WCLBeaconDuplicator"=0,"IosaInternalPipeMSR7"=1,"AppleAOPAudioButtonHapticDevice"=0,"AppleT8027USBXDCI"=0,"RTBuddyTraceKitEndpoint"=7,"RTBuddyAscDecoder"=14,"AGXTimeStampQueue"=35,"AppleUSB20XHCIARMPort"=3,"IO80211AWDLPeer"=0,"AppleARMPMUPowerSource"=0,"AppleBCMWLANPCIeLinkChangeEventSource"=0,"IOBootFramebuffer"=0,"IOTimeSyncTSNInterfaceAdapter"=0,"IOTimeSyncEthernetSoftDMAInterfaceAdapter"=0,"RTBuddy"=14,"AppleUIOMemUserClient"=0,"AppleARMPWM"=2,"AppleS5L8940XI2CController"=6,"WCLNearbyDeviceDiscoveryManager"=0,"AFKAction"=0,"AppleRSMChannel"=0,"AppleBCMWLANPCIeSubmissionRing"=0,"IOFramebufferI2CInterface"=0,"IOHIDSystem_notificationData"=0,"IosaWdmaControl"=1,"AppleThunderboltIPMSMInterface"=0,"AIDImageDownloader"=1,"com_apple_filesystems_lifs"=1,"AppleARMPWMCaptureTimestampFunction"=0,"IosaColorManagerMSR7"=1,"AGXRemoteNodeCommandDescriptor"=0,"IOGPUIOCommandQueue"=0,"AHTFunctionSequence"=1,"IOHDCPAuthSession"=2,"AppleKeyStoreTestUserClient"=0,"AFKEPKextV2"=1,"AppleBCMWLANLQM"=0,"DahliaFunctions"=0,"IosaRdmaControlMSR6"=1,"AppleMCA2Switch_SyncGenSel"=1,"AppleANS2NVMeController"=1,"AppleARMSPMIDevice"=12,"IOKernelDebugger"=0,"IOAVServiceConcreteUserClient"=0,"OSDextCrash"=0,"AppleSPUHIDDriver"=8,"_IOFramebufferNotifier"=0,"IOPMPowerSource"=1,"IOAVIISAudioDMAEventSource"=0,"AppleARMPE"=1,"AppleUSBConfigurationDescriptorOrderedSet"=13,"IOMapper"=3,"IOThunderboltWorkLoop"=3,"RTBuddyBinaryLogEntryHandler"=5,"AGXGart"=1,"AppleBTMAONPMUAgent"=0,"iBootAudioVolumeManager"=1,"M2ScalerCSCRequest"=0,"DitherControlMSR8"=2,"AppleUSBHostDeviceIdler"=25,"IO80211QueueDescriptor"=0,"AppleCSDS911CodecMikey"=1,"AppleSSEUserClient"=0,"IO80211NANDataPathManager"=0,"AppleTDMAKSDriver"=0,"M2ScalerCSCColorConversionControlMSR4"=1,"IODPSwitchUFP"=1,"AppleSCCTempSensor"=0,"IOAccessoryHIDDeviceUserClient"=0,"IOAudioControlUserClient"=0,"AppleMCA2SwitchRegs"=3,"OSValueObject<OSKextRequestResourceCallback>"=0,"AppleUSBNetworkingCommand"=24,"AGXPerfCtrSamplerGen11"=1,"IOAppleS8000AESAcceleratorCommand"=32,"RTBuddySlaveMemory"=3,"AppleBCMWLANBGScanAdapter"=0,"WCLScanRequest"=0,"AppleSPUBoraUartDriver"=0,"OSDextStatistics"=19,"IO80211TrafficMonitor"=0,"AppleUSB20HubPort"=61,"AppleMaverickBTM"=1,"AppleSPUBattChannelUserClient"=0,"IosaColorManagerMSR10"=1,"IODPHDCPMessageTransport"=4,"ApplePMPv2RegistryEntry"=420,"AppleBCMWLANChipManager"=0,"IOTimeSyncClockManagerDaemonClient"=2,"TimerEventSourceBridge"=0,"BTDebugAdapter"=0,"HIDMTQueueEventSourceWorkItem"=0,"AppleGCSyntheticDeviceUserClient"=0,"IO80211GASDefragFsm"=0,"ApplePMGRTempUserClient"=0,"RTBuddyStringDecoder"=14,"AppleUSBHubPort"=2,"AppleBCMWLANBSSBeacon"=0,"IOAccessoryDock30PinBuiltIn"=0,"AppleAuthCPRelayInterface"=0,"IOAccessoryDock30Pin"=0,"IosaTiledCompressedMemMSR7"=1,"DCPEndpointV2"=65,"WCLBGScanCore"=0,"AppleARMIISDevice"=5,"IosaRdmaControlMSR23"=0,"CCLogPipeUserClient"=0,"AppleSPUALSColorDriver"=1,"AppleATCDPHDMIPort"=1,"AppleAintreeBTM"=0,"AFKEndpointInterfaceRelay"=0,"ApplePCIECHostBridge"=3,"AppleBCMWLANPCIeDoorbell"=0,"IOBluetoothL2CAPChannel"=0,"M2ScalerCSCColorConversionControlMSR7"=1,"AppleDCPTCON"=0,"LogManagerDevice"=0,"AppleHIDTransportHibernator"=0,"ACMFirstResponderKernelService"=1,"AppleStoweBTMiPad"=0,"AppleBCMWLANCoreDbg"=0,"IOTimeSyncEthernetInterfaceAdapter"=0,"IO80211Glue"=0,"CoreAnalyticsTestUserClient"=0,"IOHDCP2ReceiverAuthSession"=0,"IosaDPEControlMSR8"=1,"AppleT6000USBXHCI"=3,"M2ScalerCSCColorConversionControlMSR8"=1,"IOBluetoothMemoryBlock"=0,"AppleSPUGNSSDriver"=0,"AppleTrustedAccessoryManagerUserClient"=1,"IOThunderboltControlPathListener"=13,"AppleT8103USBXHCI"=1,"IOGPUScheduler"=1,"AppleUSB30AccessoryHubPort"=0,"AppleThunderboltNHIReceiveRingManagerGenericACIO"=0,"H11ANEInUserClient"=1,"IosaDPEControlMSR23"=0,"IOAccessoryHIDDeviceInterface"=0,"IO80211VirtualInterface"=0,"OSValueObject<ANEMutableProcessParams>"=0,"AppleUSBDescriptorCache"=91,"AppleBCMWLANIOReporting"=0,"AppleOnboardSerialDebugDevice"=0,"AppleMCKAudioFunction"=0,"IOThunderboltXDPropertiesEntry"=39,"AppleANS3CGv2Controller"=0,"DCPDPControllerProxyUserClient"=0,"AppleARMQuadSPIDevice"=0,"AFKIOServiceClientBase"=0,"AppleUSBEthernetHost"=0,"AppleMCA2Switch_RxSel"=1,"IOSurfaceSharedEventReference"=29,"IOExtensiblePaniclog"=0,"AppleUSBXDCIIsocTRBBlock"=0,"AGXParameterBufferBlockVirtual"=519,"AppleConvergedIPCRTIInterface"=4,"IOTimeSyncUserClient"=0,"AppleT700XTempSensorUserClient"=0,"AppleSmartIOUserClient"=0,"AppleBCMWLANIOReportingCore"=0,"AppleBCMWLANChipManagerPCIe4378"=0,"AppleT8150USBXHCI"=0,"IOAudioLevelControl"=0,"OSBoolean"=2,"AppleT8142DisplayCrossbar"=0,"AppleSEPCommand"=20,"IOCPUInterruptController"=0,"AppleARMPWMInOutPulseController"=0,"AppleM2ScalerCSCHalMSR25"=0,"AppleConvergedIPCRequest"=56,"AppleThunderboltIPControlCommand"=0,"IOBlockStorageDevice"=3,"IOWrappedMemoryDescriptor"=0,"AppleHPMInterfaceType15"=0,"AppleSPUBattChannelDriver"=0,"IOMbufBigMemoryCursor"=0,"IosaTiledCompressedMemMSR13"=0,"IOApplePartitionScheme"=0,"IOAsynchronousScheduler"=1,"MSR23BackwardsCompatibleFilter"=0,"AGXMeshShadersEmuMemoryBlock"=0,"IosaTunableControlMSR24d"=0,"AppleT8142USBXHCICommandRing"=0,"_IOServiceStateNotification"=0,"ApplePPMNormalizedResidencyReporter"=4,"AppleBCMWLANUserClient"=0,"SMMachine"=65,"AppleARMPWMDevice"=1,"IOAccessoryPowerSourceBehavior"=0,"AppleT600xIO"=1,"AppleS5L8960XNCOFrequencyFunction"=1,"IOSkywalkLegacyEthernetInterface"=1,"IO80211Queue"=0,"AppleSCSISubsystemGlobals"=1,"IDBusTransportPrivate"=0,"AppleUSBHostFrameworkInterfaceClient"=0,"AppleDCPLPDPTXPortProxy"=0,"ApplePPMPTDManager"=1,"WCL11axActionFrameQueue"=0,"RTBuddyCoredumpMap"=11,"AppleARMPWMBacklightControllerUpdateFunction"=0,"AppleStockholmControl"=1,"CCPipeUserClient"=0,"IOHIDTimeSyncClientData"=0,"IOPortFeaturePowerSourceOptionFixed"=0,"mDNSHandoff"=4,"AppleBCMWLANSkywalkTxCompletionQueue"=0,"IOSCSIProtocolServices"=2,"WCLDisconnectSuppression"=0,"AppleT8142USBXDCI"=0,"IOAccessoryPowerSourceItemOrion"=0,"IOBluetoothL2CAPMemoryBlock"=0,"IOGuardPageMemoryDescriptor"=0,"KDIObject"=0,"IO80211MacAddressAgent"=0,"IOPortTransportAIDBusUserClient"=0,"AppleKeyStore"=1,"AIDSerialLogger"=5,"AudioDMATransferCommand"=56,"M2ScalerSrcDestCfgControlMSR4"=1,"AppleThunderboltNHITransmitRingManagerType7"=0,"IO80211DynamicBufferPool"=0,"IOSlowAdaptiveClockingManager"=1,"IO80211LinkQualityMonitor"=0,"DCPAVDeviceProxyUserClient"=0,"WCLSystemStateManager"=0,"IOTimeSyncNetworkPortDaemonClient"=0,"IOGraphicsControllerWorkLoop"=0,"IOHDCP2AuthSession"=1,"TulipaFunctions"=0,"AppleMultitouchDevice"=1,"AppleHCPM"=0,"AFKEPInterfaceEventSourceV2"=64,"IOBluetoothL2CAPInformationFrameMemoryBlock"=0,"AppleNVMeSMARTUserClient"=0,"AppleTDMEffaceableNORDriver"=0,"IOAVControlInterface"=0,"BTDebugUserClient"=0,"IOMobileFramebufferTilingMgr"=1,"IOPCIConfigurator"=4,"IosaFirmwareControlMSR23Dv"=0,"AppleASCWrapV4SEP"=1,"WCLEPNOFsm"=0,"IO80211AsyncUserClientParameters"=0,"IosaColorManagerMSR20"=0,"IOSharedDataQueue"=47,"IosaDPEControlMSR20"=0,"AppleSMCChargerUtil"=1,"WCLPNOFsm"=0,"AppleT8103USBXHCICommandRing"=0,"IOGPUDevice"=1,"cache"=0,"IOAccessoryPortDataQueue"=0,"_IOServiceNullNotifier"=1,"AppleBCMWLANNANDataInterface"=0,"AppleANS2CGNVMeController"=1,"IOPMinformee"=317,"IOAccelerationUserClient"=0,"IosaColorManagerMSR4"=1,"OSValueObject<ANEDriverClientContext>"=6,"IOHIDTestTimeSyncService"=0,"AppleStoweBTM"=0,"IOGatedOutputQueue"=0,"AppleUVDMEndpointInterface"=0,"H11ANEIn"=1,"M2ScalerCSCColorConversionControlMSR10j"=2,"AppleAuthCP"=1,"AppleARMParamFIFO"=0,"AppleConvergedIPCReporter"=0,"AppleXsanScheme"=0,"AIDSharedMemoryManager"=0,"AppleARMIICUserClient"=0,"M2ScalerScalingControlMSR6"=1,"IOThunderboltIECSCommandQueue"=3,"ExclavesAudioProxyDebugTightbeam"=0,"IOGPUGLDrawableUserClient"=0,"IO80211SapProtocol"=0,"AppleAOPButtonHapticsServiceUserClient"=0,"EXBrightCalibrationConsumer"=0,"IO80211PeerMonitor"=0,"AFKEndpointInterface"=1,"AppleATCDPINAdapterPort"=6,"IOBufferMemoryDescriptor"=3398,"AppleConvergedIPCControlReporter"=0,"AppleANEMPMMapMemoryFunction"=0,"IOBioCondition"=0,"AppleARMFunctionUSBDataMonitor"=0,"AppleUSBHostController"=1,"AppleThunderboltNHI"=1,"PMSettingObject"=2,"IOHIDPointingEventDevice"=0,"IOAccelerator"=1,"AUAClockMultiplierDictionary"=0,"IOGPUVirtualMemory"=0,"AUAClockSelectorDictionary"=0,"IODisplayParameterHandler"=0,"_FlexWorkLoop"=1,"AppleConvergedIPCOLYBTControlReporter"=0,"IosaPowerManagerMSR"=2,"AGXCommandQueuePMConfig"=35,"CCIOReporterDataStream"=0,"WCLApFeatureConfig"=0,"AppleBCMWLANChipManagerPCIe43452"=0,"AppleSmartBatteryManagerUserClient"=0,"IOTimeSyncFDPtPPort"=0,"PMAssertionsTracker"=1,"IOTimeSyncEthernetControllerAdapter"=0,"AppleSPUInterface"=2,"ApplePMGRFunctionClockGate"=1,"IO80211BSSBeacon"=0,"IOSkywalkNetworkInterface"=1,"IosaPrescalerControlMSR9"=0,"AppleUSBXHCICommandRing"=1,"AppleTCONComponent"=6,"IOAccessoryPowerSource"=0,"ExclavesAudioProxyInputStreamDriverTightbeam"=0,"IOHIDProximityElementProcessor"=0,"AGXCLChannelG13"=35,"AppleARMNORFlashController"=1,"IosaChromaDownsamplePipeUnit"=0,"IOGPUEventFence"=0,"IosaRdmaControlMSR20"=0,"DCPAVAudioDriver"=2,"IO80211ScanRequest"=0,"IOAGPDevice"=0,"AppleARMFunctionSlowAdaptiveClocking"=1,"AppleSPUProfileDriver"=1,"AppleHDMIPortController"=1,"IOFastPathHIDButtonService"=0,"IOThunderboltCommandGate"=15,"IOMbufMemoryCursor"=0,"AVE_WorkThread"=0,"OSIterator"=2,"AGXTAChannelG13"=43,"IOTBTTunnelUSBClientInterface"=6,"AppleDCPDPTXRemotePortUFP"=8,"AppleAOPVoiceTriggerUserClient"=1,"IODPSwitchEventLog"=1,"ISPCoredump"=0,"AppleAOPAudioService"=1,"AppleHPMDeviceHALType4"=0,"IOAccessoryManager"=1,"AppleT700XTempSensor"=0,"AppleMCA2Switch_SyncGenCfg"=4,"IOMFBEvtMonTrampoline"=0,"IosaPowerManagerMSR23"=0,"M2ScalerSrcDestCfgControlMSR10"=1,"CCDataPipeBlobOS"=0,"VADResourceArbiter"=0,"AppleARMPerformanceControllerFunctionPowerGate"=0,"AppleHIDTransportBootloader"=1,"AppleARMPMUPowerSensor"=100,"IOThunderboltDeficitCommandQueue"=0,"M2ScalerSrcDestCfgControlMSR23"=0},"IOMalloc allocation"=250437243}
+  | }
+  | 
+  +-o AppleT6000USBXHCI@00000000  <class AppleT6000USBXHCI, id 0x100000475, registered, matched, active, busy 0 (308799658 ms), retain 677>
+  | | {
+  | |   "IOClass" = "AppleT6000USBXHCI"
+  | |   "kUSBSleepPortCurrentLimit" = 3000
+  | |   "UsbHostControllerSoftRetryPolicy" = 0
+  | |   "IOPersonalityPublisher" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  | |   "IOMatchedAtBoot" = Yes
+  | |   "IOPowerManagement" = {"ChildrenPowerState"=3,"DevicePowerState"=0,"CurrentPowerState"=3,"CapabilityFlags"=32768,"MaxPowerState"=3,"DriverPowerState"=0}
+  | |   "IOProviderClass" = "AppleARMIODevice"
+  | |   "IOProbeScore" = 10002
+  | |   "locationID" = 0
+  | |   "kUSBWakePortCurrentLimit" = 3000
+  | |   "IONameMatch" = "usb-drd,t6000"
+  | |   "CFBundleIdentifierKernel" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  | |   "UsbHostControllerDeferRegisterService" = Yes
+  | |   "IOMatchCategory" = "usb-host"
+  | |   "CFBundleIdentifier" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  | |   "IONameMatched" = "usb-drd,t6000"
+  | |   "UsbHostControllerUSB4LPMPolicy" = 1
+  | |   "UsbHostControllerTierLimit" = 6
+  | |   "controller-statistics" = {"kControllerStatIOCount"=78041760,"kControllerStatPowerStateTime"={"kPowerStateInitialize"="0ms (0%)","kPowerStateOff"="263208762ms (73%)","kPowerStateSleep"="0ms (0%)","kPowerStateOn"="94262739ms (26%)","kPowerStateSuspended"="4900ms (0%)"},"kControllerStatSpuriousInterruptCount"=0}
+  | |   "UsbHostControllerProtocolRevision" = "3.1"
+  | |   "kUSBSleepSupported" = Yes
+  | | }
+  | | 
+  | +-o USB3.1 Hub@00200000  <class IOUSBHostDevice, id 0x100060ff0, registered, matched, active, busy 0 (900 ms), retain 35>
+  | | | {
+  | | |   "sessionID" = 8490158534546
+  | | |   "USBSpeed" = 4
+  | | |   "idProduct" = 1574
+  | | |   "iManufacturer" = 1
+  | | |   "bDeviceClass" = 9
+  | | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  | | |   "bcdDevice" = 1622
+  | | |   "bMaxPacketSize0" = 9
+  | | |   "iProduct" = 2
+  | | |   "iSerialNumber" = 0
+  | | |   "bNumConfigurations" = 1
+  | | |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  | | |   "UsbDeviceSignature" = <e30526065606090003090000>
+  | | |   "locationID" = 2097152
+  | | |   "bDeviceSubClass" = 0
+  | | |   "bcdUSB" = 800
+  | | |   "USB Product Name" = "USB3.1 Hub"
+  | | |   "USB Address" = 1
+  | | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | | |   "UsbExclusiveOwner" = "AppleUSB30Hub"
+  | | |   "bDeviceProtocol" = 3
+  | | |   "USBPortType" = 5
+  | | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | | |   "kUSBHubIdlePolicy" = 0
+  | | |   "USB Vendor Name" = "GenesysLogic"
+  | | |   "Device Speed" = 3
+  | | |   "idVendor" = 1507
+  | | |   "kUSBCurrentConfiguration" = 1
+  | | |   "kUSBProductString" = "USB3.1 Hub"
+  | | |   "kUSBAddress" = 1
+  | | |   "kUSBVendorString" = "GenesysLogic"
+  | | | }
+  | | | 
+  | | +-o USB3.0 Card Reader@00230000  <class IOUSBHostDevice, id 0x100061019, registered, matched, active, busy 0 (640 ms), retain 26>
+  | | |   {
+  | | |     "sessionID" = 8490164460549
+  | | |     "USBSpeed" = 4
+  | | |     "idProduct" = 1865
+  | | |     "iManufacturer" = 3
+  | | |     "bDeviceClass" = 0
+  | | |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  | | |     "bcdDevice" = 5429
+  | | |     "bMaxPacketSize0" = 9
+  | | |     "iProduct" = 4
+  | | |     "iSerialNumber" = 5
+  | | |     "bNumConfigurations" = 1
+  | | |     "UsbDeviceSignature" = <e30549073515303030303030303031353336000000080650>
+  | | |     "USB Product Name" = "USB3.0 Card Reader"
+  | | |     "locationID" = 2293760
+  | | |     "bDeviceSubClass" = 0
+  | | |     "bcdUSB" = 784
+  | | |     "kUSBSerialNumberString" = "000000001536"
+  | | |     "USB Address" = 3
+  | | |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | | |     "UsbPowerSinkAllocation" = 896
+  | | |     "bDeviceProtocol" = 0
+  | | |     "USBPortType" = 0
+  | | |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | | |     "kUSBCurrentConfiguration" = 1
+  | | |     "USB Vendor Name" = "Generic"
+  | | |     "Device Speed" = 3
+  | | |     "idVendor" = 1507
+  | | |     "kUSBProductString" = "USB3.0 Card Reader"
+  | | |     "USB Serial Number" = "000000001536"
+  | | |     "kUSBAddress" = 3
+  | | |     "kUSBVendorString" = "Generic"
+  | | |   }
+  | | |   
+  | | +-o USB3.1 Hub@00210000  <class IOUSBHostDevice, id 0x10006101b, registered, matched, active, busy 0 (49 ms), retain 32>
+  | | | | {
+  | | | |   "sessionID" = 8490164648269
+  | | | |   "USBSpeed" = 4
+  | | | |   "idProduct" = 1574
+  | | | |   "iManufacturer" = 1
+  | | | |   "bDeviceClass" = 9
+  | | | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  | | | |   "bcdDevice" = 1622
+  | | | |   "bMaxPacketSize0" = 9
+  | | | |   "iProduct" = 2
+  | | | |   "iSerialNumber" = 0
+  | | | |   "bNumConfigurations" = 1
+  | | | |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  | | | |   "UsbDeviceSignature" = <e30526065606090003090000>
+  | | | |   "locationID" = 2162688
+  | | | |   "bDeviceSubClass" = 0
+  | | | |   "bcdUSB" = 800
+  | | | |   "USB Product Name" = "USB3.1 Hub"
+  | | | |   "USB Address" = 4
+  | | | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | | | |   "UsbExclusiveOwner" = "AppleUSB30Hub"
+  | | | |   "bDeviceProtocol" = 3
+  | | | |   "USBPortType" = 0
+  | | | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | | | |   "kUSBHubIdlePolicy" = 0
+  | | | |   "USB Vendor Name" = "GenesysLogic"
+  | | | |   "Device Speed" = 3
+  | | | |   "idVendor" = 1507
+  | | | |   "kUSBCurrentConfiguration" = 1
+  | | | |   "kUSBProductString" = "USB3.1 Hub"
+  | | | |   "kUSBAddress" = 4
+  | | | |   "kUSBVendorString" = "GenesysLogic"
+  | | | | }
+  | | | | 
+  | | | +-o USB3.1 Hub@00213000  <class IOUSBHostDevice, id 0x10006108e, registered, matched, active, busy 0 (34 ms), retain 32>
+  | | |   | {
+  | | |   |   "sessionID" = 8490171766965
+  | | |   |   "USBSpeed" = 4
+  | | |   |   "idProduct" = 1574
+  | | |   |   "iManufacturer" = 1
+  | | |   |   "bDeviceClass" = 9
+  | | |   |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  | | |   |   "bcdDevice" = 1622
+  | | |   |   "bMaxPacketSize0" = 9
+  | | |   |   "iProduct" = 2
+  | | |   |   "iSerialNumber" = 0
+  | | |   |   "bNumConfigurations" = 1
+  | | |   |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  | | |   |   "UsbDeviceSignature" = <e30526065606090003090000>
+  | | |   |   "locationID" = 2174976
+  | | |   |   "bDeviceSubClass" = 0
+  | | |   |   "bcdUSB" = 800
+  | | |   |   "USB Product Name" = "USB3.1 Hub"
+  | | |   |   "USB Address" = 8
+  | | |   |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | | |   |   "UsbExclusiveOwner" = "AppleUSB30Hub"
+  | | |   |   "bDeviceProtocol" = 3
+  | | |   |   "USBPortType" = 0
+  | | |   |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | | |   |   "kUSBHubIdlePolicy" = 0
+  | | |   |   "USB Vendor Name" = "GenesysLogic"
+  | | |   |   "Device Speed" = 3
+  | | |   |   "idVendor" = 1507
+  | | |   |   "kUSBCurrentConfiguration" = 1
+  | | |   |   "kUSBProductString" = "USB3.1 Hub"
+  | | |   |   "kUSBAddress" = 8
+  | | |   |   "kUSBVendorString" = "GenesysLogic"
+  | | |   | }
+  | | |   | 
+  | | |   +-o USB3.1 Hub@00213200  <class IOUSBHostDevice, id 0x1000610de, registered, matched, active, busy 0 (25 ms), retain 31>
+  | | |       {
+  | | |         "sessionID" = 8490178535422
+  | | |         "USBSpeed" = 4
+  | | |         "idProduct" = 1574
+  | | |         "iManufacturer" = 1
+  | | |         "bDeviceClass" = 9
+  | | |         "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  | | |         "bcdDevice" = 1622
+  | | |         "bMaxPacketSize0" = 9
+  | | |         "iProduct" = 2
+  | | |         "iSerialNumber" = 0
+  | | |         "bNumConfigurations" = 1
+  | | |         "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  | | |         "UsbDeviceSignature" = <e30526065606090003090000>
+  | | |         "locationID" = 2175488
+  | | |         "bDeviceSubClass" = 0
+  | | |         "bcdUSB" = 800
+  | | |         "USB Product Name" = "USB3.1 Hub"
+  | | |         "USB Address" = 12
+  | | |         "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | | |         "UsbExclusiveOwner" = "AppleUSB30Hub"
+  | | |         "bDeviceProtocol" = 3
+  | | |         "USBPortType" = 0
+  | | |         "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | | |         "kUSBHubIdlePolicy" = 0
+  | | |         "USB Vendor Name" = "GenesysLogic"
+  | | |         "Device Speed" = 3
+  | | |         "idVendor" = 1507
+  | | |         "kUSBCurrentConfiguration" = 1
+  | | |         "kUSBProductString" = "USB3.1 Hub"
+  | | |         "kUSBAddress" = 12
+  | | |         "kUSBVendorString" = "GenesysLogic"
+  | | |       }
+  | | |       
+  | | +-o AX88179A@00240000  <class IOUSBHostDevice, id 0x1000610b2, registered, matched, active, busy 0 (296 ms), retain 54>
+  | |     {
+  | |       "sessionID" = 8490178486664
+  | |       "USBSpeed" = 4
+  | |       "kUSBPreferredConfiguration" = 2
+  | |       "idProduct" = 6032
+  | |       "iManufacturer" = 1
+  | |       "bDeviceClass" = 0
+  | |       "IOPowerManagement" = {"PowerOverrideOn"=Yes,"DevicePowerState"=2,"CurrentPowerState"=2,"CapabilityFlags"=32768,"MaxPowerState"=2,"DriverPowerState"=0}
+  | |       "bcdDevice" = 512
+  | |       "bMaxPacketSize0" = 9
+  | |       "iProduct" = 2
+  | |       "iSerialNumber" = 3
+  | |       "bNumConfigurations" = 3
+  | |       "UsbDeviceSignature" = <950b901700023030303030303030303034433637000000ffff00020d000a00010206000a0000>
+  | |       "USB Product Name" = "AX88179A"
+  | |       "locationID" = 2359296
+  | |       "bDeviceSubClass" = 0
+  | |       "bcdUSB" = 800
+  | |       "kUSBSerialNumberString" = "00000000004C67"
+  | |       "USB Address" = 9
+  | |       "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  | |       "UsbPowerSinkAllocation" = 184
+  | |       "bDeviceProtocol" = 0
+  | |       "USBPortType" = 0
+  | |       "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  | |       "kUSBCurrentConfiguration" = 2
+  | |       "USB Vendor Name" = "ASIX"
+  | |       "Device Speed" = 3
+  | |       "idVendor" = 2965
+  | |       "kUSBProductString" = "AX88179A"
+  | |       "USB Serial Number" = "00000000004C67"
+  | |       "kUSBAddress" = 9
+  | |       "kUSBVendorString" = "ASIX"
+  | |     }
+  | |     
+  | +-o USB2.1 Hub@00100000  <class IOUSBHostDevice, id 0x100061006, registered, matched, active, busy 0 (7183 ms), retain 35>
+  |   | {
+  |   |   "sessionID" = 8490161159663
+  |   |   "USBSpeed" = 3
+  |   |   "idProduct" = 1552
+  |   |   "iManufacturer" = 1
+  |   |   "bDeviceClass" = 9
+  |   |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |   "bcdDevice" = 1622
+  |   |   "bMaxPacketSize0" = 64
+  |   |   "iProduct" = 2
+  |   |   "iSerialNumber" = 0
+  |   |   "bNumConfigurations" = 1
+  |   |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  |   |   "UsbDeviceSignature" = <e30510065606090001090000>
+  |   |   "locationID" = 1048576
+  |   |   "bDeviceSubClass" = 0
+  |   |   "bcdUSB" = 528
+  |   |   "USB Product Name" = "USB2.1 Hub"
+  |   |   "USB Address" = 2
+  |   |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |   |   "bDeviceProtocol" = 1
+  |   |   "USBPortType" = 5
+  |   |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |   "kUSBCurrentConfiguration" = 1
+  |   |   "USB Vendor Name" = "GenesysLogic"
+  |   |   "Device Speed" = 2
+  |   |   "idVendor" = 1507
+  |   |   "kUSBProductString" = "USB2.1 Hub"
+  |   |   "kUSBAddress" = 2
+  |   |   "kUSBVendorString" = "GenesysLogic"
+  |   | }
+  |   | 
+  |   +-o USB2.1 Hub@00110000  <class IOUSBHostDevice, id 0x10006103d, registered, matched, active, busy 0 (343 ms), retain 32>
+  |   | | {
+  |   | |   "sessionID" = 8490168323387
+  |   | |   "USBSpeed" = 3
+  |   | |   "idProduct" = 1552
+  |   | |   "iManufacturer" = 1
+  |   | |   "bDeviceClass" = 9
+  |   | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   | |   "bcdDevice" = 1622
+  |   | |   "bMaxPacketSize0" = 64
+  |   | |   "iProduct" = 2
+  |   | |   "iSerialNumber" = 0
+  |   | |   "bNumConfigurations" = 1
+  |   | |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  |   | |   "UsbDeviceSignature" = <e30510065606090001090000>
+  |   | |   "locationID" = 1114112
+  |   | |   "bDeviceSubClass" = 0
+  |   | |   "bcdUSB" = 528
+  |   | |   "USB Product Name" = "USB2.1 Hub"
+  |   | |   "USB Address" = 5
+  |   | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   | |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |   | |   "bDeviceProtocol" = 1
+  |   | |   "USBPortType" = 0
+  |   | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   | |   "kUSBCurrentConfiguration" = 1
+  |   | |   "USB Vendor Name" = "GenesysLogic"
+  |   | |   "Device Speed" = 2
+  |   | |   "idVendor" = 1507
+  |   | |   "kUSBProductString" = "USB2.1 Hub"
+  |   | |   "kUSBAddress" = 5
+  |   | |   "kUSBVendorString" = "GenesysLogic"
+  |   | | }
+  |   | | 
+  |   | +-o USB2.1 Hub@00113000  <class IOUSBHostDevice, id 0x1000610c9, registered, matched, active, busy 0 (328 ms), retain 32>
+  |   |   | {
+  |   |   |   "sessionID" = 8490175577421
+  |   |   |   "USBSpeed" = 3
+  |   |   |   "idProduct" = 1552
+  |   |   |   "iManufacturer" = 1
+  |   |   |   "bDeviceClass" = 9
+  |   |   |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |   |   "bcdDevice" = 1622
+  |   |   |   "bMaxPacketSize0" = 64
+  |   |   |   "iProduct" = 2
+  |   |   |   "iSerialNumber" = 0
+  |   |   |   "bNumConfigurations" = 1
+  |   |   |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  |   |   |   "UsbDeviceSignature" = <e30510065606090001090000>
+  |   |   |   "locationID" = 1126400
+  |   |   |   "bDeviceSubClass" = 0
+  |   |   |   "bcdUSB" = 528
+  |   |   |   "USB Product Name" = "USB2.1 Hub"
+  |   |   |   "USB Address" = 10
+  |   |   |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |   |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |   |   |   "bDeviceProtocol" = 1
+  |   |   |   "USBPortType" = 0
+  |   |   |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |   |   "kUSBCurrentConfiguration" = 1
+  |   |   |   "USB Vendor Name" = "GenesysLogic"
+  |   |   |   "Device Speed" = 2
+  |   |   |   "idVendor" = 1507
+  |   |   |   "kUSBProductString" = "USB2.1 Hub"
+  |   |   |   "kUSBAddress" = 10
+  |   |   |   "kUSBVendorString" = "GenesysLogic"
+  |   |   | }
+  |   |   | 
+  |   |   +-o USB2.1 Hub@00113200  <class IOUSBHostDevice, id 0x10006112f, registered, matched, active, busy 0 (320 ms), retain 34>
+  |   |     | {
+  |   |     |   "sessionID" = 8490182518890
+  |   |     |   "USBSpeed" = 3
+  |   |     |   "idProduct" = 1552
+  |   |     |   "iManufacturer" = 1
+  |   |     |   "bDeviceClass" = 9
+  |   |     |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |     |   "bcdDevice" = 1622
+  |   |     |   "bMaxPacketSize0" = 64
+  |   |     |   "iProduct" = 2
+  |   |     |   "iSerialNumber" = 0
+  |   |     |   "bNumConfigurations" = 1
+  |   |     |   "kUSBContainerID" = "f0564b9f-f61d-e011-ac64-0800200c9a66"
+  |   |     |   "UsbDeviceSignature" = <e30510065606090001090000>
+  |   |     |   "locationID" = 1126912
+  |   |     |   "bDeviceSubClass" = 0
+  |   |     |   "bcdUSB" = 528
+  |   |     |   "USB Product Name" = "USB2.1 Hub"
+  |   |     |   "USB Address" = 15
+  |   |     |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |     |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |   |     |   "bDeviceProtocol" = 1
+  |   |     |   "USBPortType" = 0
+  |   |     |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |     |   "kUSBCurrentConfiguration" = 1
+  |   |     |   "USB Vendor Name" = "GenesysLogic"
+  |   |     |   "Device Speed" = 2
+  |   |     |   "idVendor" = 1507
+  |   |     |   "kUSBProductString" = "USB2.1 Hub"
+  |   |     |   "kUSBAddress" = 15
+  |   |     |   "kUSBVendorString" = "GenesysLogic"
+  |   |     | }
+  |   |     | 
+  |   |     +-o CP2102N USB to UART Bridge Controller@00113210  <class IOUSBHostDevice, id 0x100061158, registered, matched, active, busy 0 (208 ms), retain 25>
+  |   |     |   {
+  |   |     |     "sessionID" = 8490190154731
+  |   |     |     "USBSpeed" = 1
+  |   |     |     "idProduct" = 60000
+  |   |     |     "iManufacturer" = 1
+  |   |     |     "bDeviceClass" = 0
+  |   |     |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |     |     "bcdDevice" = 256
+  |   |     |     "bMaxPacketSize0" = 64
+  |   |     |     "iProduct" = 2
+  |   |     |     "iSerialNumber" = 3
+  |   |     |     "bNumConfigurations" = 1
+  |   |     |     "UsbDeviceSignature" = <c41060ea00013536393932316264643639316566313161643932343263316364336634623765000000ff0000>
+  |   |     |     "USB Product Name" = "CP2102N USB to UART Bridge Controller"
+  |   |     |     "locationID" = 1126928
+  |   |     |     "bDeviceSubClass" = 0
+  |   |     |     "bcdUSB" = 512
+  |   |     |     "kUSBSerialNumberString" = "569921bdd691ef11ad9242c1cd3f4b7e"
+  |   |     |     "USB Address" = 16
+  |   |     |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |     |     "kUSBCurrentConfiguration" = 1
+  |   |     |     "bDeviceProtocol" = 0
+  |   |     |     "USBPortType" = 0
+  |   |     |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |     |     "USB Vendor Name" = "Silicon Labs"
+  |   |     |     "Device Speed" = 1
+  |   |     |     "idVendor" = 4292
+  |   |     |     "kUSBProductString" = "CP2102N USB to UART Bridge Controller"
+  |   |     |     "USB Serial Number" = "569921bdd691ef11ad9242c1cd3f4b7e"
+  |   |     |     "kUSBAddress" = 16
+  |   |     |     "kUSBVendorString" = "Silicon Labs"
+  |   |     |   }
+  |   |     |   
+  |   |     +-o CP2102N USB to UART Bridge Controller@00113230  <class IOUSBHostDevice, id 0x100061160, registered, matched, active, busy 0 (174 ms), retain 23>
+  |   |     |   {
+  |   |     |     "sessionID" = 8490191834597
+  |   |     |     "USBSpeed" = 1
+  |   |     |     "idProduct" = 60000
+  |   |     |     "iManufacturer" = 1
+  |   |     |     "bDeviceClass" = 0
+  |   |     |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |     |     "bcdDevice" = 256
+  |   |     |     "bMaxPacketSize0" = 64
+  |   |     |     "iProduct" = 2
+  |   |     |     "iSerialNumber" = 3
+  |   |     |     "bNumConfigurations" = 1
+  |   |     |     "UsbDeviceSignature" = <c41060ea00016432663936616463323739326566313161653639343363316364336634623765000000ff0000>
+  |   |     |     "USB Product Name" = "CP2102N USB to UART Bridge Controller"
+  |   |     |     "locationID" = 1126960
+  |   |     |     "bDeviceSubClass" = 0
+  |   |     |     "bcdUSB" = 512
+  |   |     |     "kUSBSerialNumberString" = "d2f96adc2792ef11ae6943c1cd3f4b7e"
+  |   |     |     "USB Address" = 17
+  |   |     |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |     |     "kUSBCurrentConfiguration" = 1
+  |   |     |     "bDeviceProtocol" = 0
+  |   |     |     "USBPortType" = 0
+  |   |     |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |     |     "USB Vendor Name" = "Silicon Labs"
+  |   |     |     "Device Speed" = 1
+  |   |     |     "idVendor" = 4292
+  |   |     |     "kUSBProductString" = "CP2102N USB to UART Bridge Controller"
+  |   |     |     "USB Serial Number" = "d2f96adc2792ef11ae6943c1cd3f4b7e"
+  |   |     |     "kUSBAddress" = 17
+  |   |     |     "kUSBVendorString" = "Silicon Labs"
+  |   |     |   }
+  |   |     |   
+  |   |     +-o CP2102N USB to UART Bridge Controller@00113220  <class IOUSBHostDevice, id 0x100061170, registered, matched, active, busy 0 (131 ms), retain 23>
+  |   |         {
+  |   |           "sessionID" = 8490193655245
+  |   |           "USBSpeed" = 1
+  |   |           "idProduct" = 60000
+  |   |           "iManufacturer" = 1
+  |   |           "bDeviceClass" = 0
+  |   |           "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |           "bcdDevice" = 256
+  |   |           "bMaxPacketSize0" = 64
+  |   |           "iProduct" = 2
+  |   |           "iSerialNumber" = 3
+  |   |           "bNumConfigurations" = 1
+  |   |           "UsbDeviceSignature" = <c41060ea00013534356536303331323439326566313161393566343363316364336634623765000000ff0000>
+  |   |           "USB Product Name" = "CP2102N USB to UART Bridge Controller"
+  |   |           "locationID" = 1126944
+  |   |           "bDeviceSubClass" = 0
+  |   |           "bcdUSB" = 512
+  |   |           "kUSBSerialNumberString" = "545e60312492ef11a95f43c1cd3f4b7e"
+  |   |           "USB Address" = 18
+  |   |           "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |           "kUSBCurrentConfiguration" = 1
+  |   |           "bDeviceProtocol" = 0
+  |   |           "USBPortType" = 0
+  |   |           "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |           "USB Vendor Name" = "Silicon Labs"
+  |   |           "Device Speed" = 1
+  |   |           "idVendor" = 4292
+  |   |           "kUSBProductString" = "CP2102N USB to UART Bridge Controller"
+  |   |           "USB Serial Number" = "545e60312492ef11a95f43c1cd3f4b7e"
+  |   |           "kUSBAddress" = 18
+  |   |           "kUSBVendorString" = "Silicon Labs"
+  |   |         }
+  |   |         
+  |   +-o USB Receiver@00120000  <class IOUSBHostDevice, id 0x100061058, registered, matched, active, busy 0 (54 ms), retain 44>
+  |   |   {
+  |   |     "sessionID" = 8490170100781
+  |   |     "USBSpeed" = 1
+  |   |     "idProduct" = 50504
+  |   |     "iManufacturer" = 1
+  |   |     "bDeviceClass" = 0
+  |   |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |   |     "bcdDevice" = 1285
+  |   |     "bMaxPacketSize0" = 64
+  |   |     "iProduct" = 2
+  |   |     "iSerialNumber" = 0
+  |   |     "bNumConfigurations" = 1
+  |   |     "UsbDeviceSignature" = <6d0448c50505000000030101030102030000>
+  |   |     "USB Product Name" = "USB Receiver"
+  |   |     "locationID" = 1179648
+  |   |     "bDeviceSubClass" = 0
+  |   |     "bcdUSB" = 512
+  |   |     "USB Address" = 6
+  |   |     "kUSBCurrentConfiguration" = 1
+  |   |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |   |     "bDeviceProtocol" = 0
+  |   |     "USBPortType" = 0
+  |   |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |   |     "USB Vendor Name" = "Logitech"
+  |   |     "Device Speed" = 1
+  |   |     "idVendor" = 1133
+  |   |     "kUSBProductString" = "USB Receiver"
+  |   |     "kUSBAddress" = 6
+  |   |     "kUSBVendorString" = "Logitech"
+  |   |   }
+  |   |   
+  |   +-o USB2.0 Hub@00140000  <class IOUSBHostDevice, id 0x10006108c, registered, matched, active, busy 0 (6819 ms), retain 34>
+  |     | {
+  |     |   "sessionID" = 8490171737237
+  |     |   "USBSpeed" = 3
+  |     |   "idProduct" = 1544
+  |     |   "iManufacturer" = 0
+  |     |   "bDeviceClass" = 9
+  |     |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     |   "bcdDevice" = 24976
+  |     |   "bMaxPacketSize0" = 64
+  |     |   "iProduct" = 1
+  |     |   "iSerialNumber" = 0
+  |     |   "bNumConfigurations" = 1
+  |     |   "kUSBContainerID" = "d925e8ec-bb84-4141-8a23-8302b8ef2b0f"
+  |     |   "UsbDeviceSignature" = <e30508069061090001090000>
+  |     |   "locationID" = 1310720
+  |     |   "bDeviceSubClass" = 0
+  |     |   "bcdUSB" = 512
+  |     |   "USB Product Name" = "USB2.0 Hub"
+  |     |   "USB Address" = 7
+  |     |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |     |   "bDeviceProtocol" = 1
+  |     |   "USBPortType" = 0
+  |     |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     |   "kUSBCurrentConfiguration" = 1
+  |     |   "Device Speed" = 2
+  |     |   "idVendor" = 1507
+  |     |   "kUSBProductString" = "USB2.0 Hub"
+  |     |   "kUSBAddress" = 7
+  |     | }
+  |     | 
+  |     +-o AX88179A@00142000  <class IOUSBHostDevice, id 0x1000610dc, registered, matched, active, busy 0 (278 ms), retain 53>
+  |     |   {
+  |     |     "sessionID" = 8490184299574
+  |     |     "USBSpeed" = 3
+  |     |     "kUSBPreferredConfiguration" = 2
+  |     |     "idProduct" = 6032
+  |     |     "iManufacturer" = 1
+  |     |     "bDeviceClass" = 0
+  |     |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"DevicePowerState"=2,"CurrentPowerState"=2,"CapabilityFlags"=32768,"MaxPowerState"=2,"DriverPowerState"=0}
+  |     |     "bcdDevice" = 512
+  |     |     "bMaxPacketSize0" = 64
+  |     |     "iProduct" = 2
+  |     |     "iSerialNumber" = 3
+  |     |     "bNumConfigurations" = 3
+  |     |     "UsbDeviceSignature" = <950b901700023030323444413545000000ffff00020d000a00010206000a0000>
+  |     |     "USB Product Name" = "AX88179A"
+  |     |     "locationID" = 1318912
+  |     |     "bDeviceSubClass" = 0
+  |     |     "bcdUSB" = 528
+  |     |     "kUSBSerialNumberString" = "0024DA5E"
+  |     |     "USB Address" = 11
+  |     |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     |     "kUSBCurrentConfiguration" = 2
+  |     |     "bDeviceProtocol" = 0
+  |     |     "USBPortType" = 0
+  |     |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     |     "USB Vendor Name" = "ASIX"
+  |     |     "Device Speed" = 2
+  |     |     "idVendor" = 2965
+  |     |     "kUSBProductString" = "AX88179A"
+  |     |     "USB Serial Number" = "0024DA5E"
+  |     |     "kUSBAddress" = 11
+  |     |     "kUSBVendorString" = "ASIX"
+  |     |   }
+  |     |   
+  |     +-o USB2.0 Hub@00143000  <class IOUSBHostDevice, id 0x1000610f6, registered, matched, active, busy 0 (6544 ms), retain 34>
+  |     | | {
+  |     | |   "sessionID" = 8490179679369
+  |     | |   "USBSpeed" = 3
+  |     | |   "idProduct" = 10263
+  |     | |   "iManufacturer" = 1
+  |     | |   "bDeviceClass" = 9
+  |     | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | |   "bcdDevice" = 1444
+  |     | |   "bMaxPacketSize0" = 64
+  |     | |   "iProduct" = 2
+  |     | |   "iSerialNumber" = 3
+  |     | |   "bNumConfigurations" = 1
+  |     | |   "kUSBContainerID" = "5cf3ee30-d507-4925-b001-802d79434c30"
+  |     | |   "UsbDeviceSignature" = <09211728a405303030303030303030090002090001090002>
+  |     | |   "locationID" = 1323008
+  |     | |   "bDeviceSubClass" = 0
+  |     | |   "bcdUSB" = 528
+  |     | |   "kUSBSerialNumberString" = "000000000"
+  |     | |   "USB Product Name" = "USB2.0 Hub"
+  |     | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | |   "USB Address" = 13
+  |     | |   "bDeviceProtocol" = 2
+  |     | |   "USBPortType" = 0
+  |     | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |     | |   "USB Vendor Name" = "VIA Labs, Inc."
+  |     | |   "Device Speed" = 2
+  |     | |   "idVendor" = 8457
+  |     | |   "kUSBCurrentConfiguration" = 1
+  |     | |   "kUSBProductString" = "USB2.0 Hub"
+  |     | |   "USB Serial Number" = "000000000"
+  |     | |   "kUSBAddress" = 13
+  |     | |   "kUSBVendorString" = "VIA Labs, Inc."
+  |     | | }
+  |     | | 
+  |     | +-o USB2.0 Hub@00143100  <class IOUSBHostDevice, id 0x1000611b2, registered, matched, active, busy 0 (249 ms), retain 33>
+  |     | | | {
+  |     | | |   "sessionID" = 8490214500508
+  |     | | |   "USBSpeed" = 3
+  |     | | |   "idProduct" = 10263
+  |     | | |   "iManufacturer" = 1
+  |     | | |   "bDeviceClass" = 9
+  |     | | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | | |   "bcdDevice" = 1444
+  |     | | |   "bMaxPacketSize0" = 64
+  |     | | |   "iProduct" = 2
+  |     | | |   "iSerialNumber" = 3
+  |     | | |   "bNumConfigurations" = 1
+  |     | | |   "kUSBContainerID" = "5cf3ee30-d507-4925-b001-802d79434c30"
+  |     | | |   "UsbDeviceSignature" = <09211728a405303030303030303030090002090001090002>
+  |     | | |   "locationID" = 1323264
+  |     | | |   "bDeviceSubClass" = 0
+  |     | | |   "bcdUSB" = 528
+  |     | | |   "kUSBSerialNumberString" = "000000000"
+  |     | | |   "USB Product Name" = "USB2.0 Hub"
+  |     | | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | | |   "USB Address" = 19
+  |     | | |   "bDeviceProtocol" = 2
+  |     | | |   "USBPortType" = 0
+  |     | | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | | |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |     | | |   "USB Vendor Name" = "VIA Labs, Inc."
+  |     | | |   "Device Speed" = 2
+  |     | | |   "idVendor" = 8457
+  |     | | |   "kUSBCurrentConfiguration" = 1
+  |     | | |   "kUSBProductString" = "USB2.0 Hub"
+  |     | | |   "USB Serial Number" = "000000000"
+  |     | | |   "kUSBAddress" = 19
+  |     | | |   "kUSBVendorString" = "VIA Labs, Inc."
+  |     | | | }
+  |     | | | 
+  |     | | +-o CP2102 USB to UART Bridge Controller@00143130  <class IOUSBHostDevice, id 0x10006123e, registered, matched, active, busy 0 (48 ms), retain 25>
+  |     | | |   {
+  |     | | |     "sessionID" = 8490247818032
+  |     | | |     "USBSpeed" = 1
+  |     | | |     "idProduct" = 60000
+  |     | | |     "iManufacturer" = 1
+  |     | | |     "bDeviceClass" = 0
+  |     | | |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | | |     "bcdDevice" = 256
+  |     | | |     "bMaxPacketSize0" = 64
+  |     | | |     "iProduct" = 2
+  |     | | |     "iSerialNumber" = 3
+  |     | | |     "bNumConfigurations" = 1
+  |     | | |     "UsbDeviceSignature" = <c41060ea000130303031000000ff0000>
+  |     | | |     "USB Product Name" = "CP2102 USB to UART Bridge Controller"
+  |     | | |     "locationID" = 1323312
+  |     | | |     "bDeviceSubClass" = 0
+  |     | | |     "bcdUSB" = 272
+  |     | | |     "kUSBSerialNumberString" = "0001"
+  |     | | |     "USB Address" = 23
+  |     | | |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | | |     "kUSBCurrentConfiguration" = 1
+  |     | | |     "bDeviceProtocol" = 0
+  |     | | |     "USBPortType" = 0
+  |     | | |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | | |     "USB Vendor Name" = "Silicon Labs"
+  |     | | |     "Device Speed" = 1
+  |     | | |     "idVendor" = 4292
+  |     | | |     "kUSBProductString" = "CP2102 USB to UART Bridge Controller"
+  |     | | |     "USB Serial Number" = "0001"
+  |     | | |     "kUSBAddress" = 23
+  |     | | |     "kUSBVendorString" = "Silicon Labs"
+  |     | | |   }
+  |     | | |   
+  |     | | +-o CP2102N USB to UART Bridge Controller@00143140  <class IOUSBHostDevice, id 0x10006124e, registered, matched, active, busy 0 (70 ms), retain 25>
+  |     | |     {
+  |     | |       "sessionID" = 8490250167478
+  |     | |       "USBSpeed" = 1
+  |     | |       "idProduct" = 60000
+  |     | |       "iManufacturer" = 1
+  |     | |       "bDeviceClass" = 0
+  |     | |       "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | |       "bcdDevice" = 256
+  |     | |       "bMaxPacketSize0" = 64
+  |     | |       "iProduct" = 2
+  |     | |       "iSerialNumber" = 3
+  |     | |       "bNumConfigurations" = 1
+  |     | |       "UsbDeviceSignature" = <c41060ea00013934303765346138346437646631313161386332303337623935303766646437000000ff0000>
+  |     | |       "USB Product Name" = "CP2102N USB to UART Bridge Controller"
+  |     | |       "locationID" = 1323328
+  |     | |       "bDeviceSubClass" = 0
+  |     | |       "bcdUSB" = 512
+  |     | |       "kUSBSerialNumberString" = "9407e4a84d7df111a8c2037b9507fdd7"
+  |     | |       "USB Address" = 24
+  |     | |       "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | |       "kUSBCurrentConfiguration" = 1
+  |     | |       "bDeviceProtocol" = 0
+  |     | |       "USBPortType" = 0
+  |     | |       "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | |       "USB Vendor Name" = "Silicon Labs"
+  |     | |       "Device Speed" = 1
+  |     | |       "idVendor" = 4292
+  |     | |       "kUSBProductString" = "CP2102N USB to UART Bridge Controller"
+  |     | |       "USB Serial Number" = "9407e4a84d7df111a8c2037b9507fdd7"
+  |     | |       "kUSBAddress" = 24
+  |     | |       "kUSBVendorString" = "Silicon Labs"
+  |     | |     }
+  |     | |     
+  |     | +-o USB2.0 Hub@00143200  <class IOUSBHostDevice, id 0x1000611c8, registered, matched, active, busy 0 (5924 ms), retain 33>
+  |     | | | {
+  |     | | |   "sessionID" = 8490220247683
+  |     | | |   "USBSpeed" = 3
+  |     | | |   "idProduct" = 10263
+  |     | | |   "iManufacturer" = 1
+  |     | | |   "bDeviceClass" = 9
+  |     | | |   "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | | |   "bcdDevice" = 1444
+  |     | | |   "bMaxPacketSize0" = 64
+  |     | | |   "iProduct" = 2
+  |     | | |   "iSerialNumber" = 3
+  |     | | |   "bNumConfigurations" = 1
+  |     | | |   "kUSBContainerID" = "5cf3ee30-d507-4925-b001-802d79434c30"
+  |     | | |   "UsbDeviceSignature" = <09211728a405303030303030303030090002090001090002>
+  |     | | |   "locationID" = 1323520
+  |     | | |   "bDeviceSubClass" = 0
+  |     | | |   "bcdUSB" = 528
+  |     | | |   "kUSBSerialNumberString" = "000000000"
+  |     | | |   "USB Product Name" = "USB2.0 Hub"
+  |     | | |   "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | | |   "USB Address" = 21
+  |     | | |   "bDeviceProtocol" = 2
+  |     | | |   "USBPortType" = 0
+  |     | | |   "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | | |   "UsbExclusiveOwner" = "AppleUSB20Hub"
+  |     | | |   "USB Vendor Name" = "VIA Labs, Inc."
+  |     | | |   "Device Speed" = 2
+  |     | | |   "idVendor" = 8457
+  |     | | |   "kUSBCurrentConfiguration" = 1
+  |     | | |   "kUSBProductString" = "USB2.0 Hub"
+  |     | | |   "USB Serial Number" = "000000000"
+  |     | | |   "kUSBAddress" = 21
+  |     | | |   "kUSBVendorString" = "VIA Labs, Inc."
+  |     | | | }
+  |     | | | 
+  |     | | +-o CP2102 USB to UART Bridge Controller@00143230  <class IOUSBHostDevice, id 0x10006126e, registered, matched, active, busy 0 (5039 ms), retain 25>
+  |     | | |   {
+  |     | | |     "sessionID" = 8490256069392
+  |     | | |     "USBSpeed" = 1
+  |     | | |     "idProduct" = 60000
+  |     | | |     "iManufacturer" = 1
+  |     | | |     "bDeviceClass" = 0
+  |     | | |     "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     | | |     "bcdDevice" = 256
+  |     | | |     "bMaxPacketSize0" = 64
+  |     | | |     "iProduct" = 2
+  |     | | |     "iSerialNumber" = 3
+  |     | | |     "bNumConfigurations" = 1
+  |     | | |     "UsbDeviceSignature" = <c41060ea000130303031000000ff0000>
+  |     | | |     "USB Product Name" = "CP2102 USB to UART Bridge Controller"
+  |     | | |     "locationID" = 1323568
+  |     | | |     "bDeviceSubClass" = 0
+  |     | | |     "bcdUSB" = 272
+  |     | | |     "kUSBSerialNumberString" = "0001"
+  |     | | |     "USB Address" = 26
+  |     | | |     "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | | |     "kUSBCurrentConfiguration" = 1
+  |     | | |     "bDeviceProtocol" = 0
+  |     | | |     "USBPortType" = 0
+  |     | | |     "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | | |     "USB Vendor Name" = "Silicon Labs"
+  |     | | |     "Device Speed" = 1
+  |     | | |     "idVendor" = 4292
+  |     | | |     "kUSBProductString" = "CP2102 USB to UART Bridge Controller"
+  |     | | |     "USB Serial Number" = "0001"
+  |     | | |     "kUSBAddress" = 26
+  |     | | |     "kUSBVendorString" = "Silicon Labs"
+  |     | | |   }
+  |     | | |   
+  |     | | +-o RS1 XIAO Dual UART@00143240  <class IOUSBHostDevice, id 0x100061a78, registered, matched, active, busy 0 (286 ms), retain 60>
+  |     | |     {
+  |     | |       "sessionID" = 8522733819787
+  |     | |       "USBSpeed" = 1
+  |     | |       "idProduct" = 86
+  |     | |       "iManufacturer" = 1
+  |     | |       "bDeviceClass" = 239
+  |     | |       "IOPowerManagement" = {"PowerOverrideOn"=Yes,"DevicePowerState"=2,"CurrentPowerState"=2,"CapabilityFlags"=32768,"MaxPowerState"=2,"DriverPowerState"=0}
+  |     | |       "bcdDevice" = 516
+  |     | |       "bMaxPacketSize0" = 64
+  |     | |       "iProduct" = 2
+  |     | |       "iSerialNumber" = 3
+  |     | |       "bNumConfigurations" = 1
+  |     | |       "UsbDeviceSignature" = <8628560004025253312d5849414f2d323036454631383831303430ef02010202000a0000ff5202>
+  |     | |       "USB Product Name" = "RS1 XIAO Dual UART"
+  |     | |       "locationID" = 1323584
+  |     | |       "bDeviceSubClass" = 2
+  |     | |       "bcdUSB" = 512
+  |     | |       "kUSBSerialNumberString" = "RS1-XIAO-206EF1881040"
+  |     | |       "USB Address" = 20
+  |     | |       "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     | |       "UsbPowerSinkAllocation" = 500
+  |     | |       "bDeviceProtocol" = 1
+  |     | |       "USBPortType" = 0
+  |     | |       "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     | |       "kUSBCurrentConfiguration" = 1
+  |     | |       "USB Vendor Name" = "Gearotons prototype"
+  |     | |       "Device Speed" = 1
+  |     | |       "idVendor" = 10374
+  |     | |       "kUSBProductString" = "RS1 XIAO Dual UART"
+  |     | |       "USB Serial Number" = "RS1-XIAO-206EF1881040"
+  |     | |       "kUSBAddress" = 20
+  |     | |       "kUSBVendorString" = "Gearotons prototype"
+  |     | |     }
+  |     | |     
+  |     | +-o CP2102N USB to UART Bridge Controller@00143400  <class IOUSBHostDevice, id 0x100061869, registered, matched, active, busy 0 (66 ms), retain 25>
+  |     |     {
+  |     |       "sessionID" = 8515367225403
+  |     |       "USBSpeed" = 1
+  |     |       "idProduct" = 60000
+  |     |       "iManufacturer" = 1
+  |     |       "bDeviceClass" = 0
+  |     |       "IOPowerManagement" = {"PowerOverrideOn"=Yes,"CapabilityFlags"=32768,"MaxPowerState"=2,"DevicePowerState"=2,"DriverPowerState"=0,"ChildrenPowerState"=2,"CurrentPowerState"=2}
+  |     |       "bcdDevice" = 256
+  |     |       "bMaxPacketSize0" = 64
+  |     |       "iProduct" = 2
+  |     |       "iSerialNumber" = 3
+  |     |       "bNumConfigurations" = 1
+  |     |       "UsbDeviceSignature" = <c41060ea00013736643934346163323739326566313139613136343363316364336634623765000000ff0000>
+  |     |       "USB Product Name" = "CP2102N USB to UART Bridge Controller"
+  |     |       "locationID" = 1324032
+  |     |       "bDeviceSubClass" = 0
+  |     |       "bcdUSB" = 512
+  |     |       "kUSBSerialNumberString" = "76d944ac2792ef119a1643c1cd3f4b7e"
+  |     |       "USB Address" = 22
+  |     |       "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |     |       "kUSBCurrentConfiguration" = 1
+  |     |       "bDeviceProtocol" = 0
+  |     |       "USBPortType" = 0
+  |     |       "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |     |       "USB Vendor Name" = "Silicon Labs"
+  |     |       "Device Speed" = 1
+  |     |       "idVendor" = 4292
+  |     |       "kUSBProductString" = "CP2102N USB to UART Bridge Controller"
+  |     |       "USB Serial Number" = "76d944ac2792ef119a1643c1cd3f4b7e"
+  |     |       "kUSBAddress" = 22
+  |     |       "kUSBVendorString" = "Silicon Labs"
+  |     |     }
+  |     |     
+  |     +-o Generic Billboard Device@00144000  <class IOUSBHostDevice, id 0x100061118, registered, matched, active, busy 0 (21 ms), retain 17>
+  |         {
+  |           "sessionID" = 8490180773799
+  |           "USBSpeed" = 1
+  |           "idProduct" = 28930
+  |           "iManufacturer" = 1
+  |           "bDeviceClass" = 17
+  |           "IOPowerManagement" = {"DevicePowerState"=1,"CurrentPowerState"=1,"CapabilityFlags"=65536,"MaxPowerState"=2,"DriverPowerState"=0}
+  |           "bcdDevice" = 256
+  |           "bMaxPacketSize0" = 64
+  |           "iProduct" = 2
+  |           "iSerialNumber" = 0
+  |           "bNumConfigurations" = 1
+  |           "UsbDeviceSignature" = <5c1d02710001110000110000>
+  |           "USB Product Name" = "Generic Billboard Device"
+  |           "locationID" = 1327104
+  |           "bDeviceSubClass" = 0
+  |           "bcdUSB" = 513
+  |           "USB Address" = 14
+  |           "kUSBCurrentConfiguration" = 1
+  |           "IOCFPlugInTypes" = {"9dc7b780-9ec0-11d4-a54f-000a27052861"="IOUSBHostFamily.kext/Contents/PlugIns/IOUSBLib.bundle"}
+  |           "UsbIdlePolicy" = 1000
+  |           "bDeviceProtocol" = 0
+  |           "USBPortType" = 0
+  |           "IOServiceDEXTEntitlements" = (("com.apple.developer.driverkit.transport.usb"))
+  |           "USB Vendor Name" = "Fresco Logic, Inc"
+  |           "Device Speed" = 1
+  |           "idVendor" = 7516
+  |           "kUSBProductString" = "Generic Billboard Device"
+  |           "kUSBAddress" = 14
+  |           "kUSBVendorString" = "Fresco Logic, Inc"
+  |           "UsbUserClientEntitlementRequired" = {"UsbUserClientEntitlement"="com.apple.developer.usb.billboard","UsbUserClientEntitlementExceptionAllowUnlocked"=Yes}
+  |         }
+  |         
+  +-o AppleT6000USBXHCI@01000000  <class AppleT6000USBXHCI, id 0x10000051c, registered, matched, active, busy 0 (23 ms), retain 38>
+  |   {
+  |     "IOClass" = "AppleT6000USBXHCI"
+  |     "kUSBSleepPortCurrentLimit" = 3000
+  |     "UsbHostControllerSoftRetryPolicy" = 0
+  |     "IOPersonalityPublisher" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  |     "IOMatchedAtBoot" = Yes
+  |     "IOPowerManagement" = {"ChildrenPowerState"=2,"DevicePowerState"=0,"CurrentPowerState"=2,"CapabilityFlags"=65536,"MaxPowerState"=3,"DriverPowerState"=0}
+  |     "IOProviderClass" = "AppleARMIODevice"
+  |     "IOProbeScore" = 10002
+  |     "locationID" = 16777216
+  |     "kUSBWakePortCurrentLimit" = 3000
+  |     "IONameMatch" = "usb-drd,t6000"
+  |     "CFBundleIdentifierKernel" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  |     "UsbHostControllerDeferRegisterService" = Yes
+  |     "IOMatchCategory" = "usb-host"
+  |     "CFBundleIdentifier" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+  |     "IONameMatched" = "usb-drd,t6000"
+  |     "UsbHostControllerUSB4LPMPolicy" = 1
+  |     "UsbHostControllerTierLimit" = 6
+  |     "controller-statistics" = {"kControllerStatIOCount"=0,"kControllerStatPowerStateTime"={"kPowerStateInitialize"="0ms (0%)","kPowerStateOff"="263221076ms (73%)","kPowerStateSleep"="0ms (0%)","kPowerStateOn"="6457ms (0%)","kPowerStateSuspended"="94248860ms (26%)"},"kControllerStatSpuriousInterruptCount"=0}
+  |     "UsbHostControllerProtocolRevision" = "3.1"
+  |     "kUSBSleepSupported" = Yes
+  |   }
+  |   
+  +-o AppleT6000USBXHCI@02000000  <class AppleT6000USBXHCI, id 0x100000503, registered, matched, active, busy 0 (9076 ms), retain 127>
+      {
+        "IOClass" = "AppleT6000USBXHCI"
+        "kUSBSleepPortCurrentLimit" = 3000
+        "UsbHostControllerSoftRetryPolicy" = 0
+        "IOPersonalityPublisher" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+        "IOMatchedAtBoot" = Yes
+        "IOPowerManagement" = {"ChildrenPowerState"=0,"DevicePowerState"=0,"CurrentPowerState"=0,"CapabilityFlags"=0,"MaxPowerState"=3,"DriverPowerState"=0}
+        "IOProviderClass" = "AppleARMIODevice"
+        "IOProbeScore" = 10002
+        "locationID" = 33554432
+        "kUSBWakePortCurrentLimit" = 3000
+        "IONameMatch" = "usb-drd,t6000"
+        "CFBundleIdentifierKernel" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+        "UsbHostControllerDeferRegisterService" = Yes
+        "IOMatchCategory" = "usb-host"
+        "CFBundleIdentifier" = "com.apple.driver.usb.AppleSynopsysUSB40XHCI"
+        "IONameMatched" = "usb-drd,t6000"
+        "UsbHostControllerUSB4LPMPolicy" = 1
+        "UsbHostControllerTierLimit" = 6
+        "controller-statistics" = {"kControllerStatIOCount"=293515245,"kControllerStatPowerStateTime"={"kPowerStateInitialize"="0ms (0%)","kPowerStateOff"="65765376ms (18%)","kPowerStateSleep"="60ms (0%)","kPowerStateOn"="288951572ms (80%)","kPowerStateSuspended"="2759329ms (0%)"},"kControllerStatSpuriousInterruptCount"=0}
+        "UsbHostControllerProtocolRevision" = "3.1"
+        "kUSBSleepSupported" = Yes
+      }
+      

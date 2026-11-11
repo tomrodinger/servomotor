@@ -1,0 +1,7 @@
+The model code is [M17     ]
+The firmware compatibility code is 3
+Reading from file: /tmp/servomotor-release-017/M17/servomotor_M17_fw0.17.0.0_scc3_hw1.5.bin
+The file size is 38308 bytes
+Successfully read 38308 bytes from the file
+Writing to file: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware
+Successfully wrote 38317 bytes to the file

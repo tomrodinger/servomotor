@@ -1,0 +1,274 @@
+{
+  "timestamp_utc": "2026-11-11T03:06:10.810821+00:00",
+  "firmware": "0.17.0.0",
+  "status": "Canary physical functional validation passed",
+  "tested_uid": "04245C407D26CCD0",
+  "tested_motor_count": 1,
+  "only_opened_port": "/dev/cu.usbserial-113210",
+  "adapter_jig_opened": false,
+  "image_sha256": "cfc47e472dfb02973530ee929e593fa7644d92b6b3568d0f87cecd8ce3349109",
+  "responding_inventory_count": 27,
+  "other_responding_motors_unchanged": 26,
+  "reference_updates_at_least": 35148,
+  "requested_current_limits_internal_units": [
+    50,
+    50
+  ],
+  "extended_python": {
+    "transactions": 10000,
+    "crc_split": {
+      "enabled": 5000,
+      "disabled": 5000
+    },
+    "fatal_codes_checked": [
+      8,
+      13,
+      19,
+      27,
+      45,
+      51,
+      55
+    ],
+    "stress_communication_statistics": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "peak_calculation_us": 25,
+    "peak_end_to_end_interval_us": 36,
+    "settled_positions": [
+      {
+        "target": -9102,
+        "measured": -9108,
+        "error_counts": -6
+      },
+      {
+        "target": 9102,
+        "measured": 9197,
+        "error_counts": 95
+      },
+      {
+        "target": 0,
+        "measured": 4,
+        "error_counts": 4
+      }
+    ],
+    "wire_samples": [
+      {
+        "command": 49,
+        "crc32": true,
+        "tx": "2ffed0cc267d405c2404310000000000000000b891b591",
+        "rx": "0dfd13e27b37"
+      },
+      {
+        "command": 50,
+        "crc32": true,
+        "tx": "2ffed0cc267d405c24043200000000000000007dad38a8",
+        "rx": "1ffd00fdffffffffffffffc08178b5"
+      },
+      {
+        "command": 49,
+        "crc32": false,
+        "tx": "27fed0cc267d405c2404310000000000000000",
+        "rx": "05fc"
+      },
+      {
+        "command": 50,
+        "crc32": false,
+        "tx": "27fed0cc267d405c2404320000000000000000",
+        "rx": "17fc00dfffffffffffffff"
+      }
+    ]
+  },
+  "planner_followup": {
+    "moves": 16,
+    "both_commands_and_crc_modes": true,
+    "communication_statistics": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "arduino_cpp": {
+    "checks": 4106,
+    "command_50_transactions": 2032,
+    "coverage": "Native C++ Arduino bindings through real serial transport: raw/converted positions, configured/explicit UID, both CRC modes, tracking, full-width i64 rejection and cleanup"
+  },
+  "mixed_soak": {
+    "reference_updates": 20000,
+    "command_37_reads": 200,
+    "phases": [
+      {
+        "crc32": true,
+        "command_49": 1000,
+        "command_50": 9000,
+        "command_37": 100,
+        "elapsed_seconds": 50.48190320801223,
+        "latency_ms": {
+          "min": 3.658875,
+          "median": 4.4885,
+          "p95": 7.05925,
+          "max": 30.758416
+        },
+        "communication_statistics_before": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "communication_statistics_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "peak_control_isr_us": 26,
+        "settled_error_counts": 33
+      },
+      {
+        "crc32": false,
+        "command_49": 1000,
+        "command_50": 9000,
+        "command_37": 100,
+        "elapsed_seconds": 44.451058292004745,
+        "latency_ms": {
+          "min": 3.369917,
+          "median": 4.03375,
+          "p95": 5.490708,
+          "max": 26.78675
+        },
+        "communication_statistics_before": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "communication_statistics_after": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "peak_control_isr_us": 26,
+        "settled_error_counts": -51
+      }
+    ]
+  },
+  "timing": {
+    "peak_calculation_us": 26,
+    "steady_windows": 30,
+    "disabled_idle_summary": {
+      "calculation_us": {
+        "min": 16,
+        "mean": 16.2,
+        "max": 17
+      },
+      "calculation_max_us": {
+        "min": 17,
+        "mean": 17,
+        "max": 17
+      },
+      "end_to_end_interval_us": {
+        "min": 32,
+        "mean": 32,
+        "max": 32
+      },
+      "end_to_end_interval_max_us": {
+        "min": 33,
+        "mean": 33,
+        "max": 33
+      }
+    },
+    "enable_transition": {
+      "calculation_us": 23,
+      "calculation_max_us": 24,
+      "end_to_end_interval_us": 30,
+      "end_to_end_interval_max_us": 39
+    },
+    "steady_retargeting_summary": {
+      "calculation_us": {
+        "min": 21,
+        "mean": 21.966666666666665,
+        "max": 24
+      },
+      "calculation_max_us": {
+        "min": 25,
+        "mean": 25,
+        "max": 25
+      },
+      "end_to_end_interval_us": {
+        "min": 30,
+        "mean": 31.7,
+        "max": 33
+      },
+      "end_to_end_interval_max_us": {
+        "min": 35,
+        "mean": 35.03333333333333,
+        "max": 36
+      }
+    },
+    "strict_isr_entry_interval_bound_established": false,
+    "metric_note": "Existing period profiler samples near ISR end, after motor phase calculation. End-to-end intervals include changes in calculation duration; they are not ISR-entry timestamp intervals. Sample distributions below are sampled telemetry/window maxima, not a distribution of every control tick."
+  },
+  "final_canary": {
+    "unique_id": "04245C407D26CCD0",
+    "product_info": [
+      "M17     ",
+      3,
+      [
+        0,
+        5,
+        1
+      ],
+      1255,
+      298464907360652496,
+      0
+    ],
+    "firmware": [
+      [
+        0,
+        0,
+        17,
+        0
+      ],
+      0
+    ],
+    "status": [
+      0,
+      0
+    ],
+    "queue_depth": 0,
+    "pid_constants": [
+      2000,
+      5,
+      175000
+    ],
+    "communication_statistics": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "limits": [
+    "One canary only. No loaded motion, physical power-cycle or external ISR-entry timestamp capture.",
+    "Physical UART tests check Hall data, framing and behavior; host interrupt-race tests and ARM disassembly establish the separate atomic write/read implementation.",
+    "No browser hardware test was run in this acceptance. Package publication is separate."
+  ]
+}

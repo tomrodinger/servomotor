@@ -48,6 +48,52 @@ unique IDs). Their default tests keep outputs disabled; `--motion` adds a slow
 45-degree move and return while reading and changing nearby gains. See
 `python_programs/TEST_SUMMARY.md` for commands and the recorded rack validation.
 
+## Immediate targets (stable firmware 0.17.0.0)
+
+The exact stable image passed release-canary testing, including 2,032 native
+C++ transactions in both CRC modes. Release notes and checksums are indexed
+in `firmware/firmware_releases/README.md`.
+
+Command 49 validates with interrupts enabled, then updates the reference and
+empty-queue planned position together using a short mask around only the
+stores. Command 50 (`Set immediate position target and get position`) then
+reads the latest stored Hall position atomically in a separate copy. An ISR
+may run between the write and read. Neither command waits for a control tick
+or recalculates the Hall measurement.
+
+```cpp
+motor.setPositionUnit(PositionUnit::DEGREES);
+motor.setImmediatePositionTarget(10.0f);
+float measured = motor.setImmediatePositionTargetAndGetPosition(-10.0f);
+if (motor.getError() == 0) {
+    // measured uses the selected position unit.
+}
+```
+
+Use `setImmediatePositionTargetRaw(int64_t)` and
+`int64_t measured = motor.setImmediatePositionTargetAndGetPositionRaw(target)` for
+exact encoder counts across the signed 64-bit range. Both raw and converted
+methods have the usual first-argument `uint64_t uniqueId` overloads. Converted
+results use floats and therefore do not preserve full i64 precision.
+
+The command ID remains 50 and its wire format is unchanged. Query firmware
+version before motion: these bindings support **stable 0.17.0.0 or development
+0.17.0.3+**, with eight reply-payload bytes. Older .1/.2 replies contain 24 bytes
+and are rejected by these bindings. Do not retry motion to guess a schema.
+The previous stable 0.16.0.0 has no immediate-target commands.
+
+Both commands require an empty motion queue and enabled closed-loop position
+operation. A nonempty queue raises fatal error 8, other control modes raise 13,
+and disabled MOSFETs raise 55. They preserve PID history and protections.
+Success confirms the exact requested reference was installed; it does not mean
+motion has finished. Invalid references raise errors rather than being clamped.
+There is no timed trajectory or guarantee of physical catch-up velocity limits.
+See `common_source_files/PROTOCOL_SPEC.md` for all preconditions and wire fields.
+
+Run `python3 python_programs/test_host_immediate_target.py` from the repository
+root to check the real C handlers/framing and the generated Arduino methods
+without hardware. It requires native C and C++ compilers.
+
 ## Autogeneration of Parts of the Source Code
 
 The library includes several Python scripts for code generation and maintenance:
@@ -109,8 +155,8 @@ The library implements a robust RS485 communication protocol for reliable commun
 All packets follow this basic structure:
 
 1. **Size Bytes**: First byte(s) indicating total packet size
-   - For sizes 1-127: Single byte containing size (left-shifted 7 bits with LSB=1)
-   - For sizes >127: Three bytes
+   - For total sizes below 127: Single byte containing `(size << 1) | 1`
+   - For total sizes of 127 or more: Three bytes
      - First byte: `0xFF` (encoded value of 127 with LSB=1)
      - Two additional bytes: Little-endian 16-bit size
 
@@ -138,14 +184,18 @@ Responses from devices follow this structure:
    - `253` (`RESPONSE_CHARACTER_CRC32_ENABLED`): Response from device with CRC32 enabled
    - `252` (`RESPONSE_CHARACTER_CRC32_DISABLED`): Response from device with CRC32 disabled
 
-3. **Command Byte**: 8-bit value indicating status
-   - `0`: Success and there is no firther data in the response
-   - `1`: Success and there is some further data in the response
-   - Other values: Currently not used and reserved for future use
+3. **Error Byte**: Data/error replies contain an 8-bit error code after the
+   response marker: `0` means success; nonzero values are fatal error codes.
+   This field does not echo the request command. The compact success ACK
+   omits this byte and has no payload (six total bytes with CRC, two without).
 
 4. **Payload Data**: Variable length response data
 
 5. **CRC32**: Optional 4-byte checksum (enabled by default but can be disabled)
+
+Keep one request outstanding on the bus until the complete reply arrives.
+Responses identify neither the originating command nor the device unique ID;
+the host must associate the reply with its pending request.
 
 ### CRC32 Implementation
 

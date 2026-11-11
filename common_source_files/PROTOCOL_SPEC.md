@@ -37,6 +37,135 @@ Each command packet follows this structure:
 
 Responses from devices follow a similar format: they start with the size byte, and are followed by an address byte, which is set to eitiher `253` (RESPONSE_CHARACTER_CRC32_ENABLED) to indicate a reply from a device with a CRC32 checksum appended, or to `252` (RESPONSE_CHARACTER_CRC32_DISABLED) to indicate a reply from a device which does not have the 4-byte CRC32.
 
+### Immediate position targets — commands 49 (`0x31`) and 50 (`0x32`)
+
+Stable **0.17.0.0** adds these commands to 0.16.0.0. It promotes validated
+development 0.17.0.6 with only its development byte changed to zero. The exact
+release image passed 35,148+ canary updates with zero communication errors.
+Release evidence and limitations: `firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/HARDWARE_RESULTS.txt`.
+The wire schema introduced by development .3 and the software compatibility
+code are unchanged; .1/.2 used the legacy 24-byte reply described below.
+
+Both requests contain exactly one signed 64-bit little-endian position, in
+encoder counts relative to the current session zero. There is no duration.
+In stable 0.17.0.0 (and development 0.17.0.6), the command handler validates with interrupts enabled.
+Validation takes its own atomic copy of the cached Hall value for the deviation
+check. Once an empty queue, idle operation and zero commanded/planned velocity
+are established, an ISR cannot start a new queued or busy operation on its own;
+foreground command dispatch is serialized.
+
+The reference and empty-queue planned end position are then updated together
+in a short interrupt-masked section containing only stores. They must remain
+consistent because the empty-queue ISR compares them. No validation, condition,
+function call or Hall read occurs inside this write mask.
+
+Both commands return without waiting for a control tick or shaft arrival.
+Command 49 (`Set immediate position target`) retains its compact success ACK.
+Command 50 (`Set immediate position target and get position`) reads the latest
+stored Hall value after applying the target, using a separate atomic copy in
+`get_hall_position()`, the same getter used by `Get comprehensive position`.
+The getter's mask contains only the cached-variable loads; it does no ADC read
+or position recalculation. An ISR may run between the target write and this
+read, so the returned value may come from a tick before or after the update.
+The write and read do not form one atomic snapshot.
+
+| Payload offset | Type | Meaning |
+|---|---|---|
+| 0 | i64 | Latest stored Hall position, read after applying the target |
+
+The successful payload is exactly **8 bytes**, signed little endian, in encoder
+counts relative to session zero. The response is **15 bytes with CRC32 or 11
+without it**. The normal header error code remains zero on success; fatal-error
+framing is unchanged. The accepted reference is exactly the requested signed-i64
+target: invalid targets raise an error rather than being clamped. The reply
+confirms reference application, not shaft arrival. It contains no target echo,
+sample counter, status flags, mode, queue depth, current or torque.
+
+The compact ACK for command 49 remains size + response marker + optional CRC
+(six bytes with CRC, two without), with no error/payload byte. Command 37 is
+unchanged.
+
+**Version boundary:** development 0.17.0.1 and 0.17.0.2 returned a 24-byte
+command-50 payload: accepted target i64, measured position i64, sample counter
+u32, status flags u16, control mode u8, queue depth u8. Query firmware version
+before motion. These source Python/Arduino bindings support stable 0.17.0.0
+and development 0.17.0.3+ for command 50; they reject an old reply's unexpected size.
+ServoTune selects legacy for development 0.17.0.2, and compact for stable
+0.17.0.0 or development 0.17.0.3+. Stable .0 must be explicitly recognized;
+numeric comparison with .3 alone would reject it. Targets remain disabled
+on development 0.17.0.1 because of its historical ISR overhead.
+Versions 0.17.0.3 and 0.17.0.4 wait for the first control tick and return its
+Hall position; 0.17.0.5 reads the cache in the same mask as the target update,
+and 0.17.0.6 reads it afterwards with a separate mask. Neither waits for a tick.
+This timing change does not alter payload size. Never resend motion to guess
+a schema after an unexpected reply.
+
+CRC-enabled examples for alias X and target 1000 encoder counts:
+
+```text
+Command 49 request: 1f 58 31 e8 03 00 00 00 00 00 00 85 b7 dd a4
+Success ACK:        0d fd 13 e2 7b 37
+Command 50 request: 1f 58 32 e8 03 00 00 00 00 00 00 40 8b 50 9d
+```
+
+Example command 50 response with measured position 900:
+
+```text
+1f fd 00 84 03 00 00 00 00 00 00 75 17 a2 55
+```
+
+The command must find an empty trajectory queue and enabled closed-loop
+position control. Preconditions are checked with interrupts enabled before
+either position is changed. Invalid requests leave both positions unchanged.
+There is no deferred command validation or pending transaction. Later Hall
+samples remain subject to the normal running protections; a subsequent fault
+can occur after this command has returned success. Validation never clears
+the queue. Fatal errors disable outputs and require reset.
+
+| Code | Rejection condition (in validation order) |
+|---|---|
+| 51 | Request payload is not exactly eight bytes |
+| 8 | Any active/queued trajectory item remains |
+| 19 | Calibration, homing, closed-loop entry, capture/test mode, or residual commanded/planned velocity is active |
+| 13 | Control mode is not closed-loop position control |
+| 55 | MOSFET outputs are disabled |
+| 27 | Target lies outside the configured safety limits |
+| 45 | Distance from measured position exceeds maximum allowable position deviation |
+
+Unsigned distance checking handles the full i64 range without overflowing a
+signed subtraction. Normal PID and deviation checks also reject an
+unrepresentable signed position error before subtraction or absolute-value
+arithmetic can overflow. Actual usable targets remain bounded by the configured
+safety/deviation limits. Existing faults and emergency stops retain priority.
+Requests do not enable outputs, clear faults, reset PID history, change current
+limits, or write flash. A successful target updates the empty-queue planner
+baseline, so later legacy timed moves start from that reference. Later target
+updates replace the reference without consuming queue entries. If updates stop,
+the enabled motor retains its last reference.
+
+Immediate reference changes have no trajectory velocity/acceleration profile;
+do not assume trajectory-limit setters bound physical catch-up motion. Old
+timed commands and their zero-duration semantics are unchanged. Broadcasts
+execute on each eligible device with no response, including errors; use unicast
+for validation and for command 50's state. Keep one request outstanding until
+its full response arrives. Never retry motion commands automatically after a
+timeout; first reestablish a synchronized connection and inspect device state.
+
+Python (source bindings, no conversion loss in raw encoder counts):
+
+```python
+m = servomotor.M3("X", position_unit="encoder_counts", verbose=0)
+m.set_immediate_position_target(1000)
+measured = m.set_immediate_position_target_and_get_position(2000)
+```
+
+Other selected position units convert the request target and measured result
+normally. Arduino returns a measured-position float from the converted methods
+and an exact i64 from `...Raw`, with the usual unique-ID overloads for both. Test
+the real C handlers/ISR/queue without hardware using
+`python3 python_programs/test_host_immediate_target.py`. The local
+`servotune/` browser bench supports both commands and a clearly labelled demo.
+
 ### Get PID constants — command 48 (`0x30`)
 
 Released in firmware **0.16.0.0** (also present in development build **0.15.12.1**). The request has **no payload**.

@@ -1,0 +1,38 @@
+
+1. error_codes.json internal consistency
+  PASS  every error entry has a numeric code
+  PASS  error codes are unique
+  PASS  error codes are contiguous starting at 0
+  PASS  every error entry has an enum name
+  PASS  error enum names are unique
+  PASS  every error enum is spelled ERROR_*
+
+2. error_codes.json agrees with the firmware's error_text.h
+        (using common_source_files/error_text.h, 57 entries)
+  PASS  the firmware text table has an entry for every error code
+
+3. every ERROR_* raised in the firmware is defined in the JSON
+        (40 distinct ERROR_* symbols raised in firmware)
+  PASS  every error the firmware can raise is defined in error_codes.json
+
+4. motor_commands.json internal consistency
+  PASS  every command has a numeric ID
+  PASS  command IDs are unique
+  PASS  every command has a name
+  PASS  command names are unique
+  PASS  every command has Input and Output entries
+
+5. motor_commands.json covers the firmware's command IDs
+        (50 command #defines found in firmware/Src/commands.h)
+  PASS  every public firmware command ID appears in motor_commands.json
+  PASS  the internal-only command allowlist has no stale entries
+
+6. descriptions are real, and their error references exist
+  PASS  every command has a substantive description
+  PASS  no description contains a placeholder marker
+  PASS  every numeric error reference in a description is a real code
+  PASS  every ERROR_* symbol named in a description is defined
+
+19 passed, 0 failed
+
+PASSED

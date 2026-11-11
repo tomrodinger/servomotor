@@ -1,0 +1,23 @@
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+PASS {'command': 49, 'crc32': True, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8641}
+PASS {'command': 49, 'crc32': True, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8089}
+PASS {'command': 49, 'crc32': True, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8618}
+PASS {'command': 49, 'crc32': True, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8095}
+PASS {'command': 50, 'crc32': True, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8600}
+PASS {'command': 50, 'crc32': True, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8066}
+PASS {'command': 50, 'crc32': True, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8605}
+PASS {'command': 50, 'crc32': True, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8040}
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+PASS {'command': 49, 'crc32': False, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8637}
+PASS {'command': 49, 'crc32': False, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8053}
+PASS {'command': 49, 'crc32': False, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8645}
+PASS {'command': 49, 'crc32': False, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -7979}
+PASS {'command': 50, 'crc32': False, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8593}
+PASS {'command': 50, 'crc32': False, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8032}
+PASS {'command': 50, 'crc32': False, 'immediate_reference': -9102, 'timed_target': 9102, 'final_reference': 9101, 'final_measured': 8637}
+PASS {'command': 50, 'crc32': False, 'immediate_reference': 9102, 'timed_target': -9102, 'final_reference': -9102, 'final_measured': -8033}
+Closed the serial port
+PASSED: 16 timed moves directly after nonzero immediate references, both commands/CRC modes

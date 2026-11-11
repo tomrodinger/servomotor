@@ -367,6 +367,75 @@ struct closed_loop_struct {
 };
 struct closed_loop_struct closed_loop = {0};
 
+static uint16_t validate_immediate_position_target(int64_t target)
+{
+    if(n_items_in_queue != 0) {
+        return ERROR_QUEUE_NOT_EMPTY;
+    }
+    if(motor_busy || homing_active || calibration_step || go_to_closed_loop_step ||
+       capture.capture_type || fast_capture_data_active || test_mode) {
+        return ERROR_MOTOR_BUSY;
+    }
+#ifdef PRODUCT_NAME_M1
+    if(vibration_active) {
+        return ERROR_MOTOR_BUSY;
+    }
+#endif
+    if(motor_control_mode != CLOSED_LOOP_POSITION_CONTROL) {
+        return ERROR_NOT_IN_CLOSED_LOOP;
+    }
+    if(!is_mosfets_enabled()) {
+        return ERROR_MOSFETS_NOT_ENABLED;
+    }
+    if(current_velocity_i64 != 0 || velocity_after_last_queue_item != 0) {
+        return ERROR_MOTOR_BUSY;
+    }
+    if(target < position_lower_safety_limit_i64 || target > position_upper_safety_limit_i64) {
+        return ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE;
+    }
+    // Unsigned distance remains defined across the signed-i64 boundary. This
+    // also rejects a reference step before the PID subtraction can overflow.
+    int64_t measured_position = get_hall_position();
+    uint64_t distance = target >= measured_position ?
+        (uint64_t)target - (uint64_t)measured_position :
+        (uint64_t)measured_position - (uint64_t)target;
+    if(distance > (uint64_t)max_allowable_position_deviation) {
+        return ERROR_POSITION_DEVIATION_TOO_LARGE;
+    }
+    return ERROR_NONE;
+}
+
+void set_immediate_position_target(int64_t target)
+{
+    // The foreground command handler is serialized: after these checks pass,
+    // no ISR can enqueue motion or start a busy operation on its own.
+    uint16_t error = validate_immediate_position_target(target);
+    if(error != ERROR_NONE) {
+        fatal_error(error);
+        return;
+    }
+    // Only the position stores are masked. The empty-queue ISR compares these
+    // two positions, so it must never see just one updated. No calls or tests.
+    __disable_irq();
+    current_position_i96.low = 0;
+    current_position_i96.position = target;
+    position_after_last_queue_item_i96.low = 0;
+    position_after_last_queue_item_i96.position = target;
+    __enable_irq();
+}
+
+// A later Hall sample can move beyond the distance accepted by the setter.
+// Reject an unrepresentable signed error before PID subtraction or llabs.
+static int64_t checked_position_error(int64_t target, int64_t measured)
+{
+    int64_t error;
+    if(__builtin_sub_overflow(target, measured, &error) || error == INT64_MIN) {
+        fatal_error(ERROR_POSITION_DEVIATION_TOO_LARGE);
+        return 0;
+    }
+    return error;
+}
+
 
 void motor_control_init(void)
 {
@@ -2687,7 +2756,7 @@ void motor_movement_calculations(void)
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
             int64_t current_position_i64 = current_position_i96.position;
-            motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
+            motor_pwm_voltage = PID_controller(checked_position_error(current_position_i64, hall_position_i64));
             int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
             back_emf_voltage = 0;
             int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_motor_pwm_voltage;
@@ -2738,7 +2807,7 @@ void motor_movement_calculations(void)
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          desired_motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
             int64_t current_position_i64 = current_position_i96.position;
-            desired_motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
+            desired_motor_pwm_voltage = PID_controller(checked_position_error(current_position_i64, hall_position_i64));
             if(desired_motor_pwm_voltage > HALL_TO_POSITION_90_DEGREE_OFFSET) {
                 commutation_position += HALL_TO_POSITION_90_DEGREE_OFFSET;
             }
@@ -2797,7 +2866,7 @@ void motor_movement_calculations(void)
         if(motor_control_mode == CLOSED_LOOP_POSITION_CONTROL) {
 //          motor_pwm_voltage = PID_controller(current_position.i32[1] - hall_position);
             int64_t current_position_i64 = current_position_i96.position;
-            motor_pwm_voltage = PID_controller(current_position_i64 - hall_position_i64);
+            motor_pwm_voltage = PID_controller(checked_position_error(current_position_i64, hall_position_i64));
             int32_t back_emf_voltage = (velocity * VOLTS_PER_ROTATIONAL_VELOCITY) >> 8;
 //          back_emf_voltage = 0; // DEBUG
             int32_t motor_max_allowed_pwm_voltage = back_emf_voltage + max_motor_pwm_voltage;
@@ -3231,7 +3300,7 @@ void check_if_actual_vs_desired_position_deviated_too_much(void)
     current_position_i64 = current_position_i96.position;
     current_hall_position_i64 = hall_position_i64;
     __enable_irq();
-    int64_t position_deviation = current_position_i64 - current_hall_position_i64;
+    int64_t position_deviation = checked_position_error(current_position_i64, current_hall_position_i64);
     if ( (calibration_step == 0) && (llabs(position_deviation) > max_allowable_position_deviation) ) {
         debug_value1 = position_deviation;
         debug_value2 = llabs(position_deviation);

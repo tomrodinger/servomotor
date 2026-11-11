@@ -1,0 +1,34 @@
+0.17.0.0 separate target/Hall copies: physical canary validation
+
+RESULT
+PASSED on UID 04245C407D26CCD0, upgraded from 0.17.0.6 to 0.17.0.0.
+Image SHA256: cfc47e472dfb02973530ee929e593fa7644d92b6b3568d0f87cecd8ce3349109
+Only /dev/cu.usbserial-113210 opened under the verified three-adapter motor-rack hub.
+The adapter-testing jig and all other serial adapters were not opened.
+
+COVERAGE
+At least 35,148 accepted immediate-reference updates.
+- Python: 10,000 target/position stress transactions, half in each CRC mode; exact command 49/50 frames, tracking, PID preservation, fatal errors 8/13/19/27/45/51/55 and recovery.
+- Planner: 16 timed moves directly after nonzero immediate references without reset/zero between the commands, both commands and CRC modes.
+- Native C++ Arduino library: 4106 checks, 2032 command-50 transactions; raw/converted/UID overloads, CRC modes, i64 guards and cleanup.
+- Mixed soak: 20,000 updates and 200 comprehensive-position reads; queue/output/reference/PID consistency, holding and communication counters.
+- Timing: 100 warmup and 3000 steady updates over 30 windows; disabled and enable-transition measurements.
+Requested current limit: 50 internal units each (about 256 mA by library conversion, not measured phase current). Reference range: +/-1 degree.
+
+TIMING
+Peak observed controller calculation: 26 us (nominal period 32 us).
+Steady-window maximum end-of-ISR intervals: 35-36 us, mean maximum 35.033 us.
+The existing interval profiler samples near ISR end, so these are not ISR-entry timestamps and do not establish a strict 32-us ISR-entry interval bound. Exact sampled/window values are in timing_windows.json.
+
+FINAL STATE
+Canary 0.17.0.0; status [0,0], queue 0, PID [2000,5,175000], CRC enabled, outputs disabled.
+Communication error counters stayed unchanged during tests and were zero at final verification.
+All 27 currently responding rack motors were verified; the other 26 have unchanged firmware, product data, PID, status, queue and error counters compared with preflight.
+
+LIMITS
+One canary only. No loaded-motion, physical power-cycle, browser or external ISR-entry timing test in this acceptance. UART behavior does not resolve the exact 32-us control-tick phase; host race checks and disassembly establish separate atomic writes and reads. Firmware publication is tracked by the release manifest.
+
+EVIDENCE
+hardware_summary.json, inventory_before.json, upgrade_canary.json, final_verification.json
+canary_extended.json, planner_followup.json, canary_soak.json, cpp.log, timing_windows.json
+physical_run.json, usb_scope.json, usb_topology.txt, test_source_hashes.json

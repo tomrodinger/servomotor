@@ -1,0 +1,34 @@
+{
+  "timestamp_utc": "2026-11-11T03:00:25.318900+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "unique_id": "04245C407D26CCD0",
+  "firmware": "0.17.0.0",
+  "passed": true,
+  "stages": [
+    {
+      "stage": "acceptance",
+      "returncode": 0,
+      "elapsed_seconds": 66.953338042018
+    },
+    {
+      "stage": "planner",
+      "returncode": 0,
+      "elapsed_seconds": 14.269342749961652
+    },
+    {
+      "stage": "cpp",
+      "returncode": 0,
+      "elapsed_seconds": 22.483790250029415
+    },
+    {
+      "stage": "soak",
+      "returncode": 0,
+      "elapsed_seconds": 98.86727066599997
+    },
+    {
+      "stage": "timing",
+      "returncode": 0,
+      "elapsed_seconds": 20.28636229102267
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/canary_soak.py": "99bfaa58957b59dc6d8373b787ba03b5ae0f283b7f6f08a41b20a095ee03c0e0",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/planner_followup.py": "427ded24909c2885689a70e2feb1203dd0da5f5e34cd65a92f6164fb4b70c2e2",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/rack_canary.py": "943b5c2222c348d34905d8512fafd0ff4f1b6c1abc66f1d4d920930c58215112",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/run_physical_tests.py": "3f3bd8a66a3ed567a43982485f7a916b3d86d990ac64669f8ca660201b40b0b9",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/summarize_results.py": "4eb93ffe2eccb84f17869700300816a48c9d593146854d6d8df23efca4df2c75",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/timing_windows.py": "f560abf7b14dd20c94fed2a58a0ad371283289d29627bc2e1e76cbcc3d714f89",
+  "firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/cpp_immediate_target.cpp": "31865579eb0cf98cb44e6de1e6a1ea3fb4924595b09d93fda0e33470074fb2f6",
+  "python_programs/test_immediate_position_target.py": "28a494f2bda96600d27f25518814050a2b87ab15693b308b4053eef0cf62f4e4",
+  "python_programs/upgrade_firmware.py": "7db5a9ac370ead2e499ef74919264f24d060e6f197890eba135c0027818c7439"
+}

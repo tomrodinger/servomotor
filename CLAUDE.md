@@ -46,7 +46,7 @@ All tests support `-p PORT`, `-P` (interactive), `--verbose`, and many support `
 ### Firmware Upgrade
 ```bash
 cd python_programs
-python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware
+python3 upgrade_firmware.py ../firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware
 ```
 
 ### Publishing the `servomotor` Python library to PyPI
@@ -85,7 +85,7 @@ firmware-upgrade test's `../firmware/firmware_releases` path resolves.
 ## Architecture
 
 ### Command Flow
-1. **JSON definitions** (`motor_commands.json`, `data_types.json`) define the 49 public motor commands with parameter types and unit conversions
+1. **JSON definitions** (`motor_commands.json`, `data_types.json`) define the 51 public motor commands with parameter types and unit conversions
 2. **Autogeneration** creates Python methods, Arduino C++ methods, and unit conversion code from JSON
 3. **Python library** (`servomotor/`) sends commands via RS485 at 230400 baud
 4. **Firmware** (`firmware/Src/main.c`) processes commands in main loop, drives motor via the AT5833 stepper driver IC (current M17 hardware, software compatibility code >= 2; the GC6609 was used on legacy units, scc 1, and its code is compiled out on current builds)
@@ -144,7 +144,7 @@ servomotor.close_serial_port()
 Firmware version in `firmware/Src/main.c`:
 ```c
 #define MAJOR_FIRMWARE_VERSION    0
-#define MINOR_FIRMWARE_VERSION    16
+#define MINOR_FIRMWARE_VERSION    17
 #define BUGFIX_FIRMWARE_VERSION   0
 #define DEVELOPMENT_FIRMWARE_VERSION 0
 ```
@@ -155,7 +155,19 @@ M17 1.5 3
 M23 0.10 1
 ```
 
-Output naming: `servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware`
+Stable release output: `servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware`.
+Release 0.17.0.0 promotes validated development 0.17.0.6 with only the development
+byte changed to zero. The exact release image passed 35,148+ canary updates,
+both CRC modes, guards/recovery, native C++ clients and timed-move followups;
+zero communication errors and a 26-us calculation peak. The canary was left
+disabled/defaulted and the other 26 motors unchanged. Evidence and limitations:
+`firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/HARDWARE_RESULTS.txt`.
+
+Release notes, checksum and manifest live beside each image in
+`firmware/firmware_releases/`; README.md there indexes releases. Python/Arduino
+bindings and ServoTune explicitly accept stable 0.17.0.0 with the compact reply.
+Numeric comparison against development .3 alone would incorrectly reject .0.
+ServoTune keeps the legacy .2 decoder and leaves the original .1 build disabled.
 
 Firmware version fields are major.minor.bugfix.development. Use a minor bump
 for backward-compatible command additions, reset bugfix to zero for that minor

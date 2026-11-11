@@ -1,0 +1,86 @@
+Gearotons M17 firmware 0.17.0.0
+Prepared 2026-11-11
+
+Target and version
+  M17 hardware 1.5, software compatibility code 3.
+  Image: servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware
+  SHA-256: adjacent .firmware.sha256 and release manifest.
+  This bundle publishes the M17 image only.
+
+  Versions are major.minor.bugfix.development. The minor version advances
+  from stable 0.16.0.0 to 0.17.0.0 for the new backward-compatible commands;
+  development zero marks the stable build. The exact image differs from
+  validated development 0.17.0.6 by one byte: development 6 becomes 0.
+  Existing command framing and the software compatibility code are unchanged.
+
+Added
+  49: Set immediate position target.
+      Set and hold a reference without queueing a timed move; compact ACK.
+  50: Set immediate position target and get position.
+      Apply the reference and return the latest stored Hall position.
+      No ADC acquisition, position recalculation or control-tick wait.
+
+  Both requests contain one signed i64 target. Command 50 returns one signed
+  i64 measured position: eight payload bytes, 15 total bytes with CRC32 or
+  11 without. Positions use session-relative encoder counts on the wire.
+  Success confirms reference installation, not shaft arrival. The reference
+  and empty-queue planned position are committed together using a short mask
+  around only their stores. The cached Hall read is separately atomic; an
+  interrupt may run between write and read. Broadcasts execute silently.
+
+Requirements and protections
+  Requires an empty queue, idle operation, enabled MOSFETs and closed-loop
+  position control. Validation runs with interrupts enabled. Queue contents,
+  PID history, current limits and protections are preserved; timed moves
+  subsequently start from the new reference. Updates replace the reference;
+  when updates stop, the enabled motor holds the last reference.
+
+  Fatal rejections: queue nonempty 8; busy or residual commanded/planned
+  velocity 19; wrong control mode 13; outputs disabled 55; safety bounds 27;
+  excessive deviation 45; incorrect payload size 51. Faults disable outputs
+  and require reset. Immediate steps have no trajectory velocity/acceleration
+  profile; trajectory limits do not bound physical catch-up motion.
+
+Clients and compatibility
+  Python: measured = motor.set_immediate_position_target_and_get_position(target)
+  Arduino: measured = motor.setImmediatePositionTargetAndGetPosition(target)
+  Raw and explicit-UID Arduino overloads are available. Raw encoder counts
+  retain signed-i64 precision. Get PID constants (48) remains supported.
+
+  Use updated source bindings; Python/Arduino package publication is separate.
+  ServoTune explicitly recognizes stable 0.17.0.0 as the compact reply format.
+  Development 0.17.0.2 retains its legacy 24-byte reply; 0.17.0.3+ uses eight
+  bytes. The initial 0.17.0.1 build remains disabled in ServoTune. An unexpected
+  reply size is a connection fault; motion is never retried to guess a schema.
+
+Upgrade and rollback
+  From the repository root, substitute the verified adapter PORT and motor UID:
+    python3 python_programs/upgrade_firmware.py -p PORT -a UID \
+      firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware
+  Leave the bus quiet for 1.5 seconds after reset, then verify firmware version,
+  status and queue depth. The updater retains bootloader/settings pages.
+  Roll back using the same command with the compatible 0.16.0.0 image;
+  that version supports PID readback but not commands 49/50.
+
+Validation
+  The exact release image passed at least 35,148 reference updates on
+  canary 04245C407D26CCD0: both CRC modes, guard/recovery cases, 16 timed-move
+  followups, 2,032 native C++ transactions, a 20,000-update mixed soak and timing
+  diagnostics. Communication error counters stayed zero; calculation peak
+  was 26 us. Other 26 responding rack motors were unchanged. The canary was
+  left disabled with an empty queue. Adapter-testing hardware was untouched.
+
+  All 14 host-test modules passed, including 306 immediate-target checks;
+  those 306 checks also passed UBSan. Stable/legacy browser demo regressions,
+  generated Arduino examples and firmware-selection tests passed. API PDFs
+  were regenerated and visually checked. Exact-image evidence:
+    firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/
+
+  Steady-window maximum end-of-ISR intervals were 35-36 us.
+  This profiler does not measure ISR-entry timestamps or establish a strict
+  32-us entry cadence. One canary was qualified; no loaded-motion, physical
+  power-cycle, fleet, or browser-hardware acceptance was run for this release.
+  The predecessor 0.17.0.6 passed at least 35,148 physical reference updates on
+  one canary, both CRC modes, Python/C++ clients, guards, planner followups and
+  timing checks, with zero communication errors and a 26-us calculation peak.
+  Historical evidence is not a substitute for exact release-image acceptance.

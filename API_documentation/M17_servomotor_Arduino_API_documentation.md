@@ -1,12 +1,12 @@
 # Servomotor Arduino API Documentation
 
-Generated: 2026-10-29 16:33:26
+Generated: 2026-11-11 11:02:56
 
 ## Latest Firmware Versions
 
 At the time of generating this API reference, the latest released firmware versions for the servomotors are:
 
-- **Model M17**: `servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware`
+- **Model M17**: `servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware`
 
 
 If you are experiencing problems, you can try to set the firmware of your product to this version and try again.
@@ -1124,7 +1124,7 @@ motor.crc32Control(enableCrc32);
 **Example:**
 ```cpp
 // Get PID constants
-getPidConstantsResponse response = motor.getPidConstants();
+auto response = motor.getPidConstants();
 ```
 
 ### Device Management
@@ -1145,7 +1145,7 @@ getPidConstantsResponse response = motor.getPidConstants();
 // Time sync
 uint32_t masterTime = 1000;
 
-timeSyncResponse response = motor.timeSync(masterTime);
+auto response = motor.timeSync(masterTime);
 ```
 
 #### Get product specs
@@ -1159,7 +1159,7 @@ timeSyncResponse response = motor.timeSync(masterTime);
 **Example:**
 ```cpp
 // Get product specs
-getProductSpecsResponse response = motor.getProductSpecs();
+auto response = motor.getProductSpecs();
 ```
 
 #### Detect devices
@@ -1173,7 +1173,7 @@ getProductSpecsResponse response = motor.getProductSpecs();
 **Example:**
 ```cpp
 // Detect devices
-detectDevicesResponse response = motor.detectDevices();
+auto response = motor.detectDevices();
 ```
 
 #### Set device alias
@@ -1206,7 +1206,7 @@ motor.setDeviceAlias(alias);
 **Example:**
 ```cpp
 // Get product info
-getProductInfoResponse response = motor.getProductInfo();
+auto response = motor.getProductInfo();
 ```
 
 #### Firmware upgrade
@@ -1234,7 +1234,7 @@ motor.firmwareUpgrade(firmwarePage);
 **Example:**
 ```cpp
 // Get product description
-getProductDescriptionResponse response = motor.getProductDescription();
+auto response = motor.getProductDescription();
 ```
 
 #### Get firmware version
@@ -1248,7 +1248,7 @@ getProductDescriptionResponse response = motor.getProductDescription();
 **Example:**
 ```cpp
 // Get firmware version
-getFirmwareVersionResponse response = motor.getFirmwareVersion();
+auto response = motor.getFirmwareVersion();
 ```
 
 #### Ping
@@ -1266,7 +1266,7 @@ getFirmwareVersionResponse response = motor.getFirmwareVersion();
 // Ping
 float pingData = 0;
 
-pingResponse response = motor.ping(pingData);
+auto response = motor.ping(pingData);
 ```
 
 #### Vibrate
@@ -1410,6 +1410,39 @@ uint32_t moveList = 1000;
 motor.multimove(moveCount, moveTypes, moveList);
 ```
 
+#### Set immediate position target
+
+**Description:** Set and hold a position target without queueing a timed move. Requires an empty queue, enabled MOSFETs and closed-loop position control. Preserves PID history and protections. Invalid or busy requests raise fatal errors. Success confirms application, not arrival. No velocity or acceleration profile. Broadcasts execute silently.
+
+**Parameters:**
+- `targetPosition`: i64: Signed position target relative to the current session zero, in encoder counts on the wire.
+
+**Example:**
+```cpp
+// Set immediate position target
+float targetPosition = 0;
+
+motor.setImmediatePositionTarget(targetPosition);
+```
+
+#### Set immediate position target and get position
+
+**Description:** Set an immediate position target using command 49's requirements and return the latest stored Hall position. No new measurement or control-tick wait. Broadcasts execute silently.
+
+**Parameters:**
+- `targetPosition`: i64: Signed position target relative to the current session zero, in encoder counts on the wire.
+
+**Returns:**
+- `measuredPosition`: i64: Latest stored Hall position, read after applying the target.
+
+**Example:**
+```cpp
+// Set immediate position target and get position
+float targetPosition = 0;
+
+auto response = motor.setImmediatePositionTargetAndGetPosition(targetPosition);
+```
+
 ### Other
 
 #### Capture hall sensor data
@@ -1437,7 +1470,14 @@ uint16_t timeStepsPerSample = 100;
 uint16_t nSamplesToSum = 100;
 uint16_t divisionFactor = 100;
 
-captureHallSensorDataResponse response = motor.captureHallSensorData(captureType, nPointsToRead, channelsToCaptureBitmask, timeStepsPerSample, nSamplesToSum, divisionFactor);
+auto response = motor.captureHallSensorData(
+    captureType,
+    nPointsToRead,
+    channelsToCaptureBitmask,
+    timeStepsPerSample,
+    nSamplesToSum,
+    divisionFactor
+);
 ```
 
 #### Read multipurpose buffer
@@ -1450,7 +1490,7 @@ captureHallSensorDataResponse response = motor.captureHallSensorData(captureType
 **Example:**
 ```cpp
 // Read multipurpose buffer
-readMultipurposeBufferResponse response = motor.readMultipurposeBuffer();
+auto response = motor.readMultipurposeBuffer();
 ```
 
 ### Status & Monitoring
@@ -1465,7 +1505,7 @@ readMultipurposeBufferResponse response = motor.readMultipurposeBuffer();
 **Example:**
 ```cpp
 // Get current time
-getCurrentTimeResponse response = motor.getCurrentTime();
+auto response = motor.getCurrentTime();
 ```
 
 #### Get n queued items
@@ -1478,7 +1518,7 @@ getCurrentTimeResponse response = motor.getCurrentTime();
 **Example:**
 ```cpp
 // Get n queued items
-getNQueuedItemsResponse response = motor.getNQueuedItems();
+auto response = motor.getNQueuedItems();
 ```
 
 #### Get hall sensor position
@@ -1491,7 +1531,7 @@ getNQueuedItemsResponse response = motor.getNQueuedItems();
 **Example:**
 ```cpp
 // Get hall sensor position
-getHallSensorPositionResponse response = motor.getHallSensorPosition();
+auto response = motor.getHallSensorPosition();
 ```
 
 #### Get status
@@ -1505,7 +1545,7 @@ getHallSensorPositionResponse response = motor.getHallSensorPosition();
 **Example:**
 ```cpp
 // Get status
-getStatusResponse response = motor.getStatus();
+auto response = motor.getStatus();
 ```
 
 #### Control hall sensor statistics
@@ -1542,7 +1582,7 @@ motor.controlHallSensorStatistics(control);
 **Example:**
 ```cpp
 // Get hall sensor statistics
-getHallSensorStatisticsResponse response = motor.getHallSensorStatistics();
+auto response = motor.getHallSensorStatistics();
 ```
 
 #### Get position
@@ -1555,7 +1595,7 @@ getHallSensorStatisticsResponse response = motor.getHallSensorStatistics();
 **Example:**
 ```cpp
 // Get position
-getPositionResponse response = motor.getPosition();
+auto response = motor.getPosition();
 ```
 
 #### Get comprehensive position
@@ -1570,7 +1610,7 @@ getPositionResponse response = motor.getPosition();
 **Example:**
 ```cpp
 // Get comprehensive position
-getComprehensivePositionResponse response = motor.getComprehensivePosition();
+auto response = motor.getComprehensivePosition();
 ```
 
 #### Get supply voltage
@@ -1583,7 +1623,7 @@ getComprehensivePositionResponse response = motor.getComprehensivePosition();
 **Example:**
 ```cpp
 // Get supply voltage
-getSupplyVoltageResponse response = motor.getSupplyVoltage();
+auto response = motor.getSupplyVoltage();
 ```
 
 #### Get max PID error
@@ -1597,7 +1637,7 @@ getSupplyVoltageResponse response = motor.getSupplyVoltage();
 **Example:**
 ```cpp
 // Get max PID error
-getMaxPidErrorResponse response = motor.getMaxPidError();
+auto response = motor.getMaxPidError();
 ```
 
 #### Get temperature
@@ -1610,7 +1650,7 @@ getMaxPidErrorResponse response = motor.getMaxPidError();
 **Example:**
 ```cpp
 // Get temperature
-getTemperatureResponse response = motor.getTemperature();
+auto response = motor.getTemperature();
 ```
 
 #### Get debug values
@@ -1652,7 +1692,7 @@ getTemperatureResponse response = motor.getTemperature();
 **Example:**
 ```cpp
 // Get debug values
-getDebugValuesResponse response = motor.getDebugValues();
+auto response = motor.getDebugValues();
 ```
 
 #### Get communication statistics
@@ -1675,7 +1715,7 @@ getDebugValuesResponse response = motor.getDebugValues();
 // Get communication statistics
 uint8_t resetCounter = 1;
 
-getCommunicationStatisticsResponse response = motor.getCommunicationStatistics(resetCounter);
+auto response = motor.getCommunicationStatistics(resetCounter);
 ```
 
 ## Error Handling
@@ -1749,6 +1789,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 | 52 | ERROR_INVALID_FLASH_PAGE | invalid flash page |
 | 53 | ERROR_INVALID_TEST_MODE | invalid test mode |
 | 54 | ERROR_STREAMING_OVERFLOW | streaming overflow |
+| 55 | ERROR_MOSFETS_NOT_ENABLED | MOSFETs not enabled |
 
 ### Error Code Details
 
@@ -1857,7 +1898,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 
 **Short Description:** queue not empty
 
-**Description:** A command that requires an empty motion queue was received while queued movements were still pending. This is raised by 'Start calibration', 'Go to closed loop', 'Homing', and 'Zero position' if the motion queue is not empty when they are received (and by 'Vibrate' on the M1 product only; on other products 'Vibrate' does nothing).
+**Description:** A command that requires an empty motion queue was received while queued movements were still pending. This is raised by 'Start calibration', 'Go to closed loop', 'Homing', and 'Zero position' if the motion queue is not empty when they are received (and by 'Vibrate' on the M1 product only; on other products 'Vibrate' does nothing). Both immediate-target commands also raise this error if any active or queued trajectory remains; they reject the new target without cancelling that trajectory.
 
 **Possible Causes:**
 - The command was sent while previously queued moves were still executing or still waiting in the queue
@@ -1930,7 +1971,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 
 **Short Description:** not in closed loop
 
-**Description:** The 'Homing' command was received while the motor was not in closed loop control mode. Homing works by detecting position deviation when the motor hits an obstacle, which requires closed loop control.
+**Description:** The 'Homing' command was received while the motor was not in closed loop control mode. Homing works by detecting position deviation when the motor hits an obstacle, which requires closed loop control. Both immediate-target commands also raise this error unless the mode is closed-loop position control. Output enablement is checked separately (error 55).
 
 **Possible Causes:**
 - 'Homing' was sent before switching the motor to closed loop mode
@@ -2025,7 +2066,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 
 **Short Description:** motor busy
 
-**Description:** A command was received while the motor was busy with an exclusive operation. The operations that make the motor busy are calibration and homing (on the M1 product, also the go-to-closed-loop procedure and vibration). Raised by 'Start calibration', 'Go to closed loop', and all move-queueing commands ('Trapezoid move', 'Go to position', 'Move with velocity', 'Move with acceleration', 'Multimove', 'Homing') if they arrive while such an operation is in progress.
+**Description:** A command was received while the motor was busy with an exclusive operation. The operations that make the motor busy are calibration and homing (on the M1 product, also the go-to-closed-loop procedure and vibration). Raised by 'Start calibration', 'Go to closed loop', and all move-queueing commands ('Trapezoid move', 'Go to position', 'Move with velocity', 'Move with acceleration', 'Multimove', 'Homing') if they arrive while such an operation is in progress. Immediate-target commands additionally reject capture/test modes, closed-loop entry and nonzero residual commanded/planned velocity with this code.
 
 **Possible Causes:**
 - A new operation or move was requested before a previous exclusive operation (calibration or homing) finished
@@ -2142,7 +2183,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 
 **Short Description:** predicted position out of safety zone
 
-**Description:** When a move is queued, the firmware predicts the position at the end of the move. The predicted end position lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing.
+**Description:** When a move is queued, the firmware predicts the position at the end of the move. The predicted end position lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing. Immediate-target commands use this code to reject a target outside the same configured safety limits before installing it.
 
 **Possible Causes:**
 - The requested move ends outside the safety limits
@@ -2407,7 +2448,7 @@ Look the code up here after `getError()` returns a positive value, or after `get
 
 **Short Description:** position deviation too large
 
-**Description:** The difference between the commanded position and the actual position measured by the hall sensors exceeded the configured limit (2 shaft rotations by default; changeable with 'Set max allowable position deviation'). The motor could not follow the commanded trajectory. This check runs continuously in the background.
+**Description:** The difference between the commanded position and the actual position measured by the hall sensors exceeded the configured limit (2 shaft rotations by default; changeable with 'Set max allowable position deviation'). The motor could not follow the commanded trajectory. This check runs continuously in the background. Immediate-target commands also check the proposed target against the measured position before installing it, and reject reference steps beyond the configured maximum deviation with this code.
 
 **Possible Causes:**
 - The motor stalled or hit an obstruction
@@ -2571,3 +2612,15 @@ Look the code up here after `getError()` returns a positive value, or after `get
 - Reduce the streaming data rate
 - Stop streaming when it is not needed
 - Send the 'System reset' command to clear the fatal error state
+
+#### Error 55: ERROR_MOSFETS_NOT_ENABLED
+
+**Short Description:** MOSFETs not enabled
+
+**Description:** An immediate position target was requested while the output MOSFETs were disabled. Both immediate-target commands require enabled closed-loop position operation. The request is rejected before target mutation; normal fatal-error handling disables outputs and requires a reset.
+
+**Possible Causes:**
+- Sending an immediate target before enabling the motor, or after disabling its output stages
+
+**Solutions:**
+- Reset the motor, establish enabled closed-loop position operation, and retry with an empty trajectory queue

@@ -1,0 +1,92 @@
+{
+  "timestamp_utc": "2026-11-11T02:59:19.291557+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "unique_id": "04245C407D26CCD0",
+  "before": {
+    "unique_id": "04245C407D26CCD0",
+    "product_info": [
+      "M17     ",
+      3,
+      [
+        0,
+        5,
+        1
+      ],
+      1255,
+      298464907360652496,
+      0
+    ],
+    "firmware": [
+      [
+        6,
+        0,
+        17,
+        0
+      ],
+      0
+    ],
+    "status": [
+      0,
+      0
+    ],
+    "queue_depth": 0,
+    "pid_constants": [
+      2000,
+      5,
+      175000
+    ],
+    "communication_statistics": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "version": "0.17.0.0",
+  "image_sha256": "cfc47e472dfb02973530ee929e593fa7644d92b6b3568d0f87cecd8ce3349109",
+  "passed": true,
+  "after": {
+    "unique_id": "04245C407D26CCD0",
+    "product_info": [
+      "M17     ",
+      3,
+      [
+        0,
+        5,
+        1
+      ],
+      1255,
+      298464907360652496,
+      0
+    ],
+    "firmware": [
+      [
+        0,
+        0,
+        17,
+        0
+      ],
+      0
+    ],
+    "status": [
+      0,
+      0
+    ],
+    "queue_depth": 0,
+    "pid_constants": [
+      2000,
+      5,
+      175000
+    ],
+    "communication_statistics": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  }
+}

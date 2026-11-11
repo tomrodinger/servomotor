@@ -40,6 +40,7 @@ transformation_visualization.png
 venv
 
 # Bench capture scratch
+firmware/immediate_target_validation/**/.serial_config/
 bootloader_STM32G031/m23_capture_*.bin
 bootloader_STM32G031/binary_diff_report.txt
 firmware/waveforms

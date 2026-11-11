@@ -1,0 +1,157 @@
+{
+  "timestamp_utc": "2026-11-11T03:01:32.667737+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "unique_id": "04245C407D26CCD0",
+  "passed": true,
+  "moves": [
+    {
+      "command": 49,
+      "crc32": true,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8641
+    },
+    {
+      "command": 49,
+      "crc32": true,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8089
+    },
+    {
+      "command": 49,
+      "crc32": true,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8618
+    },
+    {
+      "command": 49,
+      "crc32": true,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8095
+    },
+    {
+      "command": 50,
+      "crc32": true,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8600
+    },
+    {
+      "command": 50,
+      "crc32": true,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8066
+    },
+    {
+      "command": 50,
+      "crc32": true,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8605
+    },
+    {
+      "command": 50,
+      "crc32": true,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8040
+    },
+    {
+      "command": 49,
+      "crc32": false,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8637
+    },
+    {
+      "command": 49,
+      "crc32": false,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8053
+    },
+    {
+      "command": 49,
+      "crc32": false,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8645
+    },
+    {
+      "command": 49,
+      "crc32": false,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -7979
+    },
+    {
+      "command": 50,
+      "crc32": false,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8593
+    },
+    {
+      "command": 50,
+      "crc32": false,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8032
+    },
+    {
+      "command": 50,
+      "crc32": false,
+      "immediate_reference": -9102,
+      "timed_target": 9102,
+      "final_reference": 9101,
+      "final_measured": 8637
+    },
+    {
+      "command": 50,
+      "crc32": false,
+      "immediate_reference": 9102,
+      "timed_target": -9102,
+      "final_reference": -9102,
+      "final_measured": -8033
+    }
+  ],
+  "cleanup_passed": true,
+  "requested_current_limits_internal_units": [
+    50,
+    50
+  ],
+  "communication_statistics_before": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "communication_statistics_after": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

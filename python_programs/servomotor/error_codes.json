@@ -113,7 +113,7 @@
             "code": 8,
             "enum": "ERROR_QUEUE_NOT_EMPTY",
             "short_desc": "queue not empty",
-            "long_desc": "A command that requires an empty motion queue was received while queued movements were still pending. This is raised by 'Start calibration', 'Go to closed loop', 'Homing', and 'Zero position' if the motion queue is not empty when they are received (and by 'Vibrate' on the M1 product only; on other products 'Vibrate' does nothing).",
+            "long_desc": "A command that requires an empty motion queue was received while queued movements were still pending. This is raised by 'Start calibration', 'Go to closed loop', 'Homing', and 'Zero position' if the motion queue is not empty when they are received (and by 'Vibrate' on the M1 product only; on other products 'Vibrate' does nothing). Both immediate-target commands also raise this error if any active or queued trajectory remains; they reject the new target without cancelling that trajectory.",
             "causes": [
                 "The command was sent while previously queued moves were still executing or still waiting in the queue"
             ],
@@ -186,7 +186,7 @@
             "code": 13,
             "enum": "ERROR_NOT_IN_CLOSED_LOOP",
             "short_desc": "not in closed loop",
-            "long_desc": "The 'Homing' command was received while the motor was not in closed loop control mode. Homing works by detecting position deviation when the motor hits an obstacle, which requires closed loop control.",
+            "long_desc": "The 'Homing' command was received while the motor was not in closed loop control mode. Homing works by detecting position deviation when the motor hits an obstacle, which requires closed loop control. Both immediate-target commands also raise this error unless the mode is closed-loop position control. Output enablement is checked separately (error 55).",
             "causes": [
                 "'Homing' was sent before switching the motor to closed loop mode"
             ],
@@ -281,7 +281,7 @@
             "code": 19,
             "enum": "ERROR_MOTOR_BUSY",
             "short_desc": "motor busy",
-            "long_desc": "A command was received while the motor was busy with an exclusive operation. The operations that make the motor busy are calibration and homing (on the M1 product, also the go-to-closed-loop procedure and vibration). Raised by 'Start calibration', 'Go to closed loop', and all move-queueing commands ('Trapezoid move', 'Go to position', 'Move with velocity', 'Move with acceleration', 'Multimove', 'Homing') if they arrive while such an operation is in progress.",
+            "long_desc": "A command was received while the motor was busy with an exclusive operation. The operations that make the motor busy are calibration and homing (on the M1 product, also the go-to-closed-loop procedure and vibration). Raised by 'Start calibration', 'Go to closed loop', and all move-queueing commands ('Trapezoid move', 'Go to position', 'Move with velocity', 'Move with acceleration', 'Multimove', 'Homing') if they arrive while such an operation is in progress. Immediate-target commands additionally reject capture/test modes, closed-loop entry and nonzero residual commanded/planned velocity with this code.",
             "causes": [
                 "A new operation or move was requested before a previous exclusive operation (calibration or homing) finished"
             ],
@@ -398,7 +398,7 @@
             "code": 27,
             "enum": "ERROR_PREDICTED_POSITION_OUT_OF_SAFETY_ZONE",
             "short_desc": "predicted position out of safety zone",
-            "long_desc": "When a move is queued, the firmware predicts the position at the end of the move. The predicted end position lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing.",
+            "long_desc": "When a move is queued, the firmware predicts the position at the end of the move. The predicted end position lies outside the configured safety limits (set with 'Set safety limits'), so the move was rejected with this fatal error before executing. Immediate-target commands use this code to reject a target outside the same configured safety limits before installing it.",
             "causes": [
                 "The requested move ends outside the safety limits",
                 "The safety limits are configured too close to the intended range of motion",
@@ -663,7 +663,7 @@
             "code": 45,
             "enum": "ERROR_POSITION_DEVIATION_TOO_LARGE",
             "short_desc": "position deviation too large",
-            "long_desc": "The difference between the commanded position and the actual position measured by the hall sensors exceeded the configured limit (2 shaft rotations by default; changeable with 'Set max allowable position deviation'). The motor could not follow the commanded trajectory. This check runs continuously in the background.",
+            "long_desc": "The difference between the commanded position and the actual position measured by the hall sensors exceeded the configured limit (2 shaft rotations by default; changeable with 'Set max allowable position deviation'). The motor could not follow the commanded trajectory. This check runs continuously in the background. Immediate-target commands also check the proposed target against the measured position before installing it, and reject reference steps beyond the configured maximum deviation with this code.",
             "causes": [
                 "The motor stalled or hit an obstruction",
                 "The load is too heavy for the configured maximum motor current",
@@ -826,6 +826,18 @@
                 "Reduce the streaming data rate",
                 "Stop streaming when it is not needed",
                 "Send the 'System reset' command to clear the fatal error state"
+            ]
+        },
+        {
+            "code": 55,
+            "enum": "ERROR_MOSFETS_NOT_ENABLED",
+            "short_desc": "MOSFETs not enabled",
+            "long_desc": "An immediate position target was requested while the output MOSFETs were disabled. Both immediate-target commands require enabled closed-loop position operation. The request is rejected before target mutation; normal fatal-error handling disables outputs and requires a reset.",
+            "causes": [
+                "Sending an immediate target before enabling the motor, or after disabling its output stages"
+            ],
+            "solutions": [
+                "Reset the motor, establish enabled closed-loop position operation, and retry with an empty trajectory queue"
             ]
         }
     ]

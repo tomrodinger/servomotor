@@ -1,0 +1,12 @@
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+Closed the serial port
+Flashing only 04245C407D26CCD0 to 0.17.0.0
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+Closed the serial port
+PASSED: canary 0.17.0.0, identity verified, disabled/healthy

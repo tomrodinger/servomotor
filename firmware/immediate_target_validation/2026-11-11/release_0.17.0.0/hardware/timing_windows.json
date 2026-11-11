@@ -1,0 +1,380 @@
+{
+  "timestamp_utc": "2026-11-11T03:03:48.899035+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "unique_id": "04245C407D26CCD0",
+  "passed": true,
+  "cleanup_passed": true,
+  "disabled_idle": [
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 17,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 17,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 17,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 17,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    },
+    {
+      "calculation_us": 16,
+      "calculation_max_us": 17,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 33
+    }
+  ],
+  "steady_retargeting": [
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 30,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 31,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 23,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 30,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 33,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 23,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 31,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 24,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 23,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 30,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 36
+    },
+    {
+      "calculation_us": 21,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 32,
+      "end_to_end_interval_max_us": 35
+    },
+    {
+      "calculation_us": 22,
+      "calculation_max_us": 25,
+      "end_to_end_interval_us": 30,
+      "end_to_end_interval_max_us": 35
+    }
+  ],
+  "metric_note": "Existing period profiler samples near ISR end, after motor phase calculation. End-to-end intervals include changes in calculation duration; they are not ISR-entry timestamp intervals. Sample distributions below are sampled telemetry/window maxima, not a distribution of every control tick.",
+  "enable_transition": {
+    "calculation_us": 23,
+    "calculation_max_us": 24,
+    "end_to_end_interval_us": 30,
+    "end_to_end_interval_max_us": 39
+  },
+  "communication_statistics_before": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "communication_statistics_after": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "disabled_idle_summary": {
+    "calculation_us": {
+      "min": 16,
+      "mean": 16.2,
+      "max": 17
+    },
+    "calculation_max_us": {
+      "min": 17,
+      "mean": 17,
+      "max": 17
+    },
+    "end_to_end_interval_us": {
+      "min": 32,
+      "mean": 32,
+      "max": 32
+    },
+    "end_to_end_interval_max_us": {
+      "min": 33,
+      "mean": 33,
+      "max": 33
+    }
+  },
+  "steady_retargeting_summary": {
+    "calculation_us": {
+      "min": 21,
+      "mean": 21.966666666666665,
+      "max": 24
+    },
+    "calculation_max_us": {
+      "min": 25,
+      "mean": 25,
+      "max": 25
+    },
+    "end_to_end_interval_us": {
+      "min": 30,
+      "mean": 31.7,
+      "max": 33
+    },
+    "end_to_end_interval_max_us": {
+      "min": 35,
+      "mean": 35.03333333333333,
+      "max": 36
+    }
+  },
+  "steady_target_updates": 3000,
+  "warmup_target_updates": 100
+}

@@ -1,0 +1,27 @@
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+CRC True completed 1000 / 10000
+CRC True completed 2000 / 10000
+CRC True completed 3000 / 10000
+CRC True completed 4000 / 10000
+CRC True completed 5000 / 10000
+CRC True completed 6000 / 10000
+CRC True completed 7000 / 10000
+CRC True completed 8000 / 10000
+CRC True completed 9000 / 10000
+CRC True completed 10000 / 10000
+! The outgoing message had a CRC32 appended but the response coming back did not have a CRC32 appended
+CRC False completed 1000 / 10000
+CRC False completed 2000 / 10000
+CRC False completed 3000 / 10000
+CRC False completed 4000 / 10000
+CRC False completed 5000 / 10000
+CRC False completed 6000 / 10000
+CRC False completed 7000 / 10000
+CRC False completed 8000 / 10000
+CRC False completed 9000 / 10000
+CRC False completed 10000 / 10000
+Closed the serial port
+PASSED: mixed-command canary soak, both CRC modes, command-37 interleaving, hold and cleanup

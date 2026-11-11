@@ -63,7 +63,7 @@ void setup() {
   motor.enableMosfets();
   motor.trapezoidMove(2.0f, 3.0f);                 // two rotations over three seconds
   delay(4000);
-  Serial.println(motor.getPosition());             // where it actually is, from the encoder
+  Serial.println(motor.getPosition());             // commanded position; getHallSensorPosition() reads measured position
 }
 void loop() {}
 ```
@@ -107,19 +107,52 @@ The command set is data-driven: every firmware command is defined once in
 [`motor_commands.json`](python_programs/servomotor/motor_commands.json) and the Python library, the Arduino library and the MCP server are generated
 from it, so they always agree.
 
-## Firmware 0.16.0.0
+## Firmware 0.17.0.0
 
-This backward-compatible M17 release adds **Get PID constants (command 48)**.
-It returns the configured raw P, I and D values without changing controller or
-motion state. With the updated Python bindings in this repository:
+This M17 release adds **Set immediate position target (49)** and
+**Set immediate position target and get position (50)**. The second command
+returns the latest stored Hall position. Both require an empty motion queue
+and enabled closed-loop position control. PID readback (48) remains available.
 
 ```python
-p, i, d = m.get_pid_constants()
+m.set_immediate_position_target(1000)
+measured = m.set_immediate_position_target_and_get_position(2000)
 ```
 
-The release image targets **M17 hardware 1.5, software compatibility code 3**.
-See the [release notes](firmware/firmware_releases/servomotor_M17_fw0.16.0.0_scc3_hw1.5.release_notes.txt)
-for the wire contract, upgrade/rollback commands, client requirements and test evidence.
+Use updated bindings from this source tree. The release image targets
+**M17 hardware 1.5, software compatibility code 3**. Version 0.17.0.0 promotes
+the validated 0.17.0.6 implementation; only the development-version byte changes.
+See the [release notes](firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.release_notes.txt)
+for behavior, client compatibility, upgrade/rollback commands and validation.
+The exact stable image passed 35,148+ canary updates with zero communication
+errors; see [release-image results](firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/HARDWARE_RESULTS.txt).
+The [firmware release index](firmware/firmware_releases/README.md) lists images,
+release notes, checksums and manifests, including the preceding 0.16.0.0 release.
+
+## Immediate targets and ServoTune
+
+Both commands require an empty queue and enabled closed-loop position control.
+They retain PID history and protections. Validation runs with interrupts enabled;
+only the target/planner stores are masked. Command 50 reads cached Hall position
+atomically afterwards, without a sensor recalculation or control-tick wait.
+Its reply confirms reference installation, not shaft arrival.
+
+The exact 0.17.0.0 image passed 35,148+ canary updates, both CRC modes,
+protection/recovery, native C++ clients and timed-move followups, with zero
+communication errors. [Release-image results](firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/HARDWARE_RESULTS.txt) include timing limits.
+Updated Python/Arduino bindings and ServoTune recognize stable 0.17.0.0;
+ServoTune also retains the legacy 24-byte reply for development 0.17.0.2.
+
+Try the [ServoTune browser bench](servotune/README.md) without a motor:
+
+```sh
+python3 servotune/serve.py
+```
+
+The launcher opens a clearly labelled demo with simulated data. The modified
+client serializes request/reply transactions and supports both new commands.
+The published 0.16.0.0 release remains the stable firmware; it has no immediate
+target commands.
 
 ## Where the M17 is not the right tool
 

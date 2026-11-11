@@ -147,6 +147,10 @@
 
 typedef enum {MOVE_WITH_ACCELERATION = 0, MOVE_WITH_VELOCITY} movement_type_t;
 
+// Update the reference and empty-queue planned position with a short atomic
+// write. Command 50 reads the cached Hall position separately afterwards.
+void set_immediate_position_target(int64_t target);
+
 void motor_control_init(void);
 void reset_time_profiler(void);
 void start_calibration(uint8_t print_output);
@@ -216,6 +220,7 @@ int64_t get_motor_position(void);
 //int32_t get_hall_position(void);
 int64_t get_hall_position(void);
 uint16_t get_motor_status_flags(void);
+uint16_t get_motor_status_flags_without_disable_enable_irq(void);
 void set_pid_constants(uint32_t p, uint32_t i, uint32_t d);
 void get_pid_constants(uint32_t *p, uint32_t *i, uint32_t *d);
 void get_max_PID_error(int32_t *_min_PID_error, int32_t *_max_PID_error);

@@ -1,0 +1,51 @@
+
+================================================================================
+SERVOMOTOR API DOCUMENTATION GENERATOR
+================================================================================
+✓ Loaded 51 commands from motor_commands.json
+✓ Loaded 23 data types from data_types.json
+✓ Loaded 56 error codes from error_codes.json
+✓ Loaded error handling text from error_handling.txt
+✓ Loaded hardware setup from hardware_setup.md
+✓ Loaded know-how from knowhow.md
+✓ Loaded Arduino essentials from arduino_essentials.md
+✓ Loaded installation instructions from install_instructions_example.sh
+✓ Loaded servomotor command examples from servomotor_command_utility_examples.sh
+✓ Loaded 1 valid products: servomotor_M17
+✓ Found latest firmware for Model M17: servomotor_M17_fw0.17.0.0_scc3_hw1.5.firmware
+
+Validating commands...
+✓ All 51 commands have valid CommandGroup fields
+✓ Found 6 command groups:
+  - Basic Control: 6 commands
+  - Configuration: 10 commands
+  - Device Management: 11 commands
+  - Motion Control: 9 commands
+  - Other: 2 commands
+  - Status & Monitoring: 13 commands
+
+Generating Python Markdown documentation...
+✓ Loaded installation instructions from install_instructions_example.sh
+✓ Loaded servomotor command examples from servomotor_command_utility_examples.sh
+✓ Generated Python Markdown documentation: ../M17_servomotor_Python_API_documentation.md
+
+Generating Arduino Markdown documentation...
+✓ Generated Arduino Markdown documentation: ../M17_servomotor_Arduino_API_documentation.md
+
+Generating Python PDF documentation...
+✓ Loaded installation instructions from install_instructions_example.sh
+✓ Loaded servomotor command examples from servomotor_command_utility_examples.sh
+✓ Generated Python PDF documentation: ../M17_servomotor_Python_API_documentation.pdf
+
+Generating Arduino PDF documentation...
+✓ Generated Arduino PDF documentation: ../M17_servomotor_Arduino_API_documentation.pdf
+
+================================================================================
+✅ DOCUMENTATION GENERATION COMPLETE!
+================================================================================
+
+Generated files (in parent directory):
+  • ../M17_servomotor_Python_API_documentation.md
+  • ../M17_servomotor_Python_API_documentation.pdf
+  • ../M17_servomotor_Arduino_API_documentation.md
+  • ../M17_servomotor_Arduino_API_documentation.pdf

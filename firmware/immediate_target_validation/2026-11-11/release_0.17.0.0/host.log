@@ -1,0 +1,343 @@
+=== test_host_immediate_target ===
+  ok   : compact reply firmware gate 0.16.0.0
+  ok   : compact reply firmware gate 0.17.0.0
+  ok   : compact reply firmware gate 0.17.0.1
+  ok   : compact reply firmware gate 0.17.0.2
+  ok   : compact reply firmware gate 0.17.0.3
+  ok   : compact reply firmware gate 0.17.0.6
+  ok   : compact reply firmware gate 0.17.1.0
+  ok   : compact reply firmware gate 0.18.0.0
+  ok   : bootloader is not a compact-position application
+  ok   : target command ID
+  ok   : combined command ID
+  ok   : generated Arduino raw/converted results, i64, addressing and errors: [Motor] Initialized with standard addressing, Alias: 88
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] Use Unique ID: 0x04245c407d26ccd0
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] Use alias: 88
+[Motor] setPositionUnit called
+[Motor] setImmediatePositionTargetAndGetPosition called.
+  targetPosition in chosen unit: 90
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPosition called (by unique ID).
+  targetPosition in chosen unit: 90
+[Motor] setImmediatePositionTargetAndGetPositionRaw called (by unique ID).
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+[Motor] setImmediatePositionTargetAndGetPositionRaw called.
+PASSED: generated Arduino command 50, exact i64, units, addressing, errors and no retries
+
+  ok   : native ISR/state/queue self-tests: PASSED: separate atomic writes/reads, IRQ-enabled validation, preemption between operations, 1000 retargets, queued followup, i64 edges and fatal guards
+
+  ok   : shared browser/documentation state vector
+  ok   : binding returns measured position, not requested target
+  ok   : legacy 24-byte reply rejected
+  ok   : schema mismatch sends only one request
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python sends full i64 target
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : native success
+  ok   : actual firmware packet
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : Python preserves full i64 position
+  ok   : Python sends full i64 target
+  ok   : malformed payload fatal 51
+  ok   : fatal size error wire packet
+  ok   : malformed payload fatal 51
+  ok   : broadcast failure silent
+  ok   : broadcast applies silently
+  ok   : nonempty queue fatal 8
+  ok   : fatal queue error wire packet
+  ok   : measured position degree conversion
+
+test_host_immediate_target: 306/306 checks passed
+test_host_immediate_target PASSED

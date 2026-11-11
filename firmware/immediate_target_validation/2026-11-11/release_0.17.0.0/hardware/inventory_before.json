@@ -1,0 +1,1145 @@
+{
+  "timestamp_utc": "2026-11-11T02:58:56.697715+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "location": "0-1.1.3.2.1",
+  "adapter_serial_number": "569921bdd691ef11ad9242c1cd3f4b7e",
+  "passed": true,
+  "devices": [
+    {
+      "unique_id": "04245C407D26CCD0",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1255,
+        298464907360652496,
+        0
+      ],
+      "firmware": [
+        [
+          6,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "unique_id": "04B9C4C9EE48531B",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1289,
+        340519618408370971,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        14,
+        22,
+        0,
+        22
+      ]
+    },
+    {
+      "unique_id": "0C729700C8B96AC7",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1000,
+        896945305423538887,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        14,
+        21,
+        0,
+        15
+      ]
+    },
+    {
+      "unique_id": "14B7D892AA0389E9",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1232,
+        1492899925925792233,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        17,
+        21,
+        0,
+        5
+      ]
+    },
+    {
+      "unique_id": "1994E7FE82D86D4C",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1299,
+        1843353227804306764,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        21,
+        17,
+        0,
+        9
+      ]
+    },
+    {
+      "unique_id": "1CAE7F40D3E498E3",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1285,
+        2066729195419244771,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        16,
+        21,
+        0,
+        20
+      ]
+    },
+    {
+      "unique_id": "221424C29C1AE3C6",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1331,
+        2455628115085026246,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        19,
+        19,
+        0,
+        10
+      ]
+    },
+    {
+      "unique_id": "229E210595ADAAFB",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1185,
+        2494467551479573243,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        13,
+        23,
+        0,
+        19
+      ]
+    },
+    {
+      "unique_id": "240871D6E400D46B",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1187,
+        2596450352941290603,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        20,
+        17,
+        0,
+        8
+      ]
+    },
+    {
+      "unique_id": "2D288D9C0725A642",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1241,
+        3254006432049505858,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        13,
+        25,
+        0,
+        23
+      ]
+    },
+    {
+      "unique_id": "2ED2D58D7744DD46",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1203,
+        3373993874422029638,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        8,
+        25,
+        0,
+        17
+      ]
+    },
+    {
+      "unique_id": "3566EFBA6451C0BA",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1249,
+        3848026515460702394,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        23,
+        19,
+        0,
+        9
+      ]
+    },
+    {
+      "unique_id": "36C545790836B394",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1194,
+        3946637034591269780,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        17,
+        18,
+        0,
+        15
+      ]
+    },
+    {
+      "unique_id": "3FE34E10207A6E5B",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1245,
+        4603609075274116699,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        18,
+        20,
+        0,
+        6
+      ]
+    },
+    {
+      "unique_id": "538BA7B758215751",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1274,
+        6020089732810233681,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        21,
+        19,
+        0,
+        10
+      ]
+    },
+    {
+      "unique_id": "5E2E8161CF1D2624",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1317,
+        6786503945580520996,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        20,
+        16,
+        0,
+        16
+      ]
+    },
+    {
+      "unique_id": "67EF1D6AC2921A2A",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1227,
+        7489237049708517930,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        14,
+        21,
+        0,
+        12
+      ]
+    },
+    {
+      "unique_id": "69BD35E368A525D6",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1189,
+        7619305395410249174,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        20,
+        20,
+        0,
+        8
+      ]
+    },
+    {
+      "unique_id": "6BF6BF3044B6A143",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1193,
+        7779615620361265475,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        15,
+        25,
+        0,
+        22
+      ]
+    },
+    {
+      "unique_id": "90691FD33073F4CD",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1171,
+        10405883405927707853,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        21,
+        15,
+        0,
+        10
+      ]
+    },
+    {
+      "unique_id": "9474B90381CC1317",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1259,
+        10697378439625446167,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        15,
+        26,
+        0,
+        17
+      ]
+    },
+    {
+      "unique_id": "962C7FC2F220000B",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1011,
+        10821164479927025675,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        16,
+        23,
+        0,
+        10
+      ]
+    },
+    {
+      "unique_id": "A6FC1C0BD24024E4",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1325,
+        12032523141524759780,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        15,
+        21,
+        0,
+        13
+      ]
+    },
+    {
+      "unique_id": "DBC90AF071C2DC56",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1267,
+        15837201592442084438,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        16,
+        24,
+        0,
+        10
+      ]
+    },
+    {
+      "unique_id": "E846EF4F7B2E28EF",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1238,
+        16737328189817104623,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        19,
+        22,
+        0,
+        5
+      ]
+    },
+    {
+      "unique_id": "F87E9B73958AFE60",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1282,
+        17905920089204129376,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        15,
+        17,
+        0,
+        6
+      ]
+    },
+    {
+      "unique_id": "FBE10AA9188D2E3F",
+      "product_info": [
+        "M17     ",
+        3,
+        [
+          0,
+          5,
+          1
+        ],
+        1305,
+        18149799694657465919,
+        0
+      ],
+      "firmware": [
+        [
+          2,
+          0,
+          17,
+          0
+        ],
+        0
+      ],
+      "status": [
+        0,
+        0
+      ],
+      "queue_depth": 0,
+      "pid_constants": [
+        2000,
+        5,
+        175000
+      ],
+      "communication_statistics": [
+        0,
+        0,
+        21,
+        20,
+        0,
+        21
+      ]
+    }
+  ],
+  "nonresponding_historical_ids": [],
+  "count": 27
+}

@@ -1,0 +1,7 @@
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+✓ Loaded 1 valid products: servomotor_M17
+✓ Found latest firmware for Model M17: servomotor_M17_fw0.16.0.0_scc3_hw1.5.firmware

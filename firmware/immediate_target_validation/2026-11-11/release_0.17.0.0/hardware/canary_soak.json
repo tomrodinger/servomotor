@@ -1,0 +1,75 @@
+{
+  "timestamp_utc": "2026-11-11T03:02:09.812579+00:00",
+  "port": "/dev/cu.usbserial-113210",
+  "unique_id": "04245C407D26CCD0",
+  "passed": true,
+  "phases": [
+    {
+      "crc32": true,
+      "command_49": 1000,
+      "command_50": 9000,
+      "command_37": 100,
+      "elapsed_seconds": 50.48190320801223,
+      "latency_ms": {
+        "min": 3.658875,
+        "median": 4.4885,
+        "p95": 7.05925,
+        "max": 30.758416
+      },
+      "communication_statistics_before": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "communication_statistics_after": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "peak_control_isr_us": 26,
+      "settled_error_counts": 33
+    },
+    {
+      "crc32": false,
+      "command_49": 1000,
+      "command_50": 9000,
+      "command_37": 100,
+      "elapsed_seconds": 44.451058292004745,
+      "latency_ms": {
+        "min": 3.369917,
+        "median": 4.03375,
+        "p95": 5.490708,
+        "max": 26.78675
+      },
+      "communication_statistics_before": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "communication_statistics_after": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "peak_control_isr_us": 26,
+      "settled_error_counts": -51
+    }
+  ],
+  "cleanup_passed": true,
+  "requested_current_limits_internal_units": [
+    50,
+    50
+  ]
+}

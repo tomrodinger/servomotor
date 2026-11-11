@@ -1,0 +1,1 @@
+PASSED: legacy/compact command 50, exact signed i64, schema mismatch without retries, framing/CRC, compact ACK, fragments, coalesced and extended replies, both addresses, serialized concurrent calls, fatal cancellation, timeout/late reply and write failure

@@ -1,0 +1,36 @@
+Successfully opened the serial port: /dev/cu.usbserial-113210
+Saved the serial device name to: /Users/tom/Documents/Move_the_Needle/Servomotor/firmware/immediate_target_validation/2026-11-11/release_0.17.0.0/hardware/.serial_config/servomotor/serial_device.txt
+This serial port name will be used by default from now on.
+To override it: pass -p, or -P to choose from a menu, or set SERVOMOTOR_PORT.
+Window 1 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 2 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 3 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 4 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 5 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 6 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 7 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 30, 'end_to_end_interval_max_us': 35}
+Window 8 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 31, 'end_to_end_interval_max_us': 35}
+Window 9 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 10 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 11 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 12 {'calculation_us': 23, 'calculation_max_us': 25, 'end_to_end_interval_us': 30, 'end_to_end_interval_max_us': 35}
+Window 13 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 33, 'end_to_end_interval_max_us': 35}
+Window 14 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 15 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 16 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 17 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 18 {'calculation_us': 23, 'calculation_max_us': 25, 'end_to_end_interval_us': 31, 'end_to_end_interval_max_us': 35}
+Window 19 {'calculation_us': 24, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 20 {'calculation_us': 23, 'calculation_max_us': 25, 'end_to_end_interval_us': 30, 'end_to_end_interval_max_us': 35}
+Window 21 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 22 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 23 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 24 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 25 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 26 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 36}
+Window 27 {'calculation_us': 21, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 28 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 29 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 32, 'end_to_end_interval_max_us': 35}
+Window 30 {'calculation_us': 22, 'calculation_max_us': 25, 'end_to_end_interval_us': 30, 'end_to_end_interval_max_us': 35}
+Closed the serial port
+PASSED: separate disabled, enable-transition and 30 steady-retargeting timing windows

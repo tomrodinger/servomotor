@@ -769,23 +769,18 @@ class APIDocumentationGenerator:
             if param_names:
                 example_lines.append("")
         
-        # Handle the function call and return values
-        if command['Output'] and command['Output'] != "success_response":
-            # Command returns values - Always returns a structure in Arduino
-            # Structure name is based on method name + Response
-            struct_name = f"{method_name}Response"
-            
-            # Instantiate the structure and call the function
-            if param_names:
-                example_lines.append(f"{struct_name} response = motor.{method_name}({', '.join(param_names)});")
-            else:
-                example_lines.append(f"{struct_name} response = motor.{method_name}();")
+        # Generated methods may return a scalar, a raw structure or a converted
+        # structure. Deduce the actual type instead of guessing a Response name.
+        prefix = "auto response = " if command['Output'] and command['Output'] != "success_response" else ""
+        call = f"{prefix}motor.{method_name}("
+        one_line = call + ', '.join(param_names) + ');'
+        if len(one_line) <= 90:
+            example_lines.append(one_line)
         else:
-            # Command doesn't return values (just success response)
-            if param_names:
-                example_lines.append(f"motor.{method_name}({', '.join(param_names)});")
-            else:
-                example_lines.append(f"motor.{method_name}();")
+            example_lines.append(call)
+            example_lines.extend('    ' + name + (',' if i < len(param_names) - 1 else '')
+                                 for i, name in enumerate(param_names))
+            example_lines.append(');')
         
         return '\n'.join(example_lines)
     
