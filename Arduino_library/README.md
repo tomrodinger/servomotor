@@ -96,6 +96,31 @@ Run `python3 python_programs/test_host_immediate_target.py` from the repository
 root to check the real C handlers/framing and the generated Arduino methods
 without hardware. It requires native C and C++ compilers.
 
+## Tests running on ESP32-S3
+
+The [on-device test suite](https://github.com/tomrodinger/servomotor/tree/main/Arduino_library/Servomotor_TestSuite_ESP32S3)
+is available in the source repository. Its `Servomotor_TestSuite_ESP32S3.ino`
+runs the Arduino library on the ESP32-S3 itself, with its motor on RS485 (RX GPIO5, TX GPIO4).
+The USB console accepts `list`, `detect`, `run <test-name>` and `results`.
+`run immediate_position` tests commands 48/49/50: PID boundaries, raw and converted
+methods, explicit UID overloads, both CRC modes, small reference changes, hold,
+following timed motion, invalid inputs and fatal guards. It restores the motor
+to disabled/default state. `unit_conversions`, `units_roundtrip`, `comms` and
+`crc32_matrix` provide broader regression coverage.
+
+From the repository's `Arduino_library` directory, the Mac collector starts a
+named on-device test and records its result:
+
+```sh
+python3 Servomotor_TestSuite_ESP32S3/run_suite_mac.py \
+  --port <ESP32-USB-port> --only immediate_position --log immediate_position.log
+```
+
+Use the intended controller's explicit port. The collector uses the bundled
+serial module when `servomotor` is installed, or standalone `pyserial` otherwise.
+See the suite README for build options and flashing. These are physical motor
+tests; the separate `test_host_*.py` programs run without motors.
+
 ## Autogeneration of Parts of the Source Code
 
 The library includes several Python scripts for code generation and maintenance:

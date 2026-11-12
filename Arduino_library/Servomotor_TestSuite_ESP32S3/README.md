@@ -22,7 +22,7 @@ TX=GPIO4) at 230400 baud.
     records the test as CRASH and continues the sequence
   - a stale run from a different firmware build is refused (build-id check)
   - serial **CLI** to trigger tests over the debug link (`help`, `list`,
-    `run`, `run <n>`, `results`, `detect`, `uid <hex>`, `stop`, `status`)
+    `run`, `run <n|name>`, `results`, `detect`, `uid <hex>`, `stop`, `status`)
 - **`truncated_frame_test.cpp`** + **`build_truncated_frame_test.sh`** +
   **`run_truncated_frame_test.py`** — a standalone transport-layer regression test for
   `Communication::getResponse()`, needing **no motor and no hardware**. It creates a
@@ -44,6 +44,7 @@ TX=GPIO4) at 230400 baud.
 ```bash
 ./flash_suite.sh                      # refresh installed lib + compile + flash
 python3 run_suite_mac.py              # full run (all tests, reset between each)
+python3 run_suite_mac.py --only immediate_position  # commands 48/49/50
 python3 run_suite_mac.py --only 5     # single test by index
 python3 run_suite_mac.py --attach     # just watch an already-active run
 ```
@@ -81,9 +82,10 @@ annotations (crashes always count as unexpected).
 `immediate_position` covers commands 48/49/50 on one M17 selected by unique ID.
 It tests full-width PID readback with outputs off, both CRC settings, raw and
 converted methods, explicit UID overloads, repeated +/-1 degree references, hold,
-a following timed move and fatal guards 8/13/19/27/45/55. It resets the selected
-motor afterwards. Malformed payload error 51 and extended protocol checks are
-covered by `python_programs/test_immediate_position_target.py --protocol-edge-cases`.
+a following timed move, nonfinite/out-of-range converted inputs, and fatal guards
+8/13/19/27/45/51/55. Malformed payloads are tested through the actual Arduino
+transport in both CRC modes. It resets the selected motor afterwards. Additional
+protocol checks are in `python_programs/test_immediate_position_target.py --protocol-edge-cases`.
 
 The full suite needs the **Huge APP** partition (3 MB application, 4 MB flash)
 because it exceeds the ESP32-S3 default application partition. Compile only,

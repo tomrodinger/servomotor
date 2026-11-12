@@ -13,7 +13,7 @@
 //   status            show run state, motor uid, firmware build id
 //   results           re-print the last run's results table from NVS
 //   run               start a full sequential run (test 0..N-1, reset between)
-//   run <n>           run a single test by index, then stop
+//   run <n|name>      run a single test by index or name, then stop
 //   detect            re-detect the motor on RS485 and store its unique ID
 //   uid <16-hex>      set the motor unique ID manually
 //   stop              (also honored at boot while a run is active) abort run
@@ -237,7 +237,7 @@ static void startRun(uint8_t only) {
 
 // ---- CLI ------------------------------------------------------------------
 static void printHelp() {
-    tf_printf("Commands: help | list | status | results | run | run <n> | "
+    tf_printf("Commands: help | list | status | results | run | run <n|name> | "
               "detect | uid <16-hex> | stop | restart\n");
 }
 
@@ -259,9 +259,18 @@ static void handleCommand(String line) {
     else if (line == "results") { printSuiteResults(); }
     else if (line == "run") { startRun(IDX_NONE); }
     else if (line.startsWith("run ")) {
-        int n = line.substring(4).toInt();
+        String selector = line.substring(4);
+        selector.trim();
+        char* end = nullptr;
+        long n = strtol(selector.c_str(), &end, 10);
+        if (end == selector.c_str() || *end != '\0') {
+            n = -1;
+            for (int i = 0; i < TF_N_TESTS; ++i) {
+                if (selector == TF_TESTS[i].name) { n = i; break; }
+            }
+        }
         if (n >= 0 && n < TF_N_TESTS) startRun((uint8_t)n);
-        else tf_printf("Bad test index (0..%d)\n", TF_N_TESTS - 1);
+        else tf_printf("Unknown test '%s' (use list for names or indices)\n", selector.c_str());
     }
     else if (line == "detect") {
         uint64_t uid = detectMotorUid();

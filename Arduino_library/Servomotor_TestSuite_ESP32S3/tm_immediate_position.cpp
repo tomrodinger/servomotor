@@ -1,12 +1,12 @@
 #include "tf_motion_helpers.h"
 
 // Firmware 0.17.0.0 acceptance. One M17, selected by UID by the harness.
-// Only +/-1 degree reference changes; 50/50 internal current limits. PID
+// Only +/-1 degree reference changes; 100/100 internal current limits. PID
 // extrema are tested with outputs disabled, then reset before enabling motion.
 // Never run this module against the separate adapter-testing hub.
 static bool immediateReady(Servomotor* m) {
     tfhReset(m);
-    m->setMaximumMotorCurrentRaw(50, 50);
+    m->setMaximumMotorCurrentRaw(100, 100);
     if (m->getError()) return false;
     m->goToClosedLoop();
     if (m->getError()) return false;
@@ -95,9 +95,23 @@ void tm_immediate_position(void) {
             if (m->getError()) ready = false; else m->enableCRC32();
         }
         if (ready) {
-            m->setImmediatePositionTargetRaw(step); delay(500);
+            m->setImmediatePositionTargetRaw(step);
+            const int holdCommandError = m->getError();
+            delay(500);
             auto p = m->getComprehensivePositionRaw();
-            TEST_RESULT("target holds after updates stop", m->getError() == 0 && p.commandedPosition == step &&
+            const int holdReadError = m->getError();
+            printf("HOLD target=%lld commanded=%lld hall=%lld write_error=%d read_error=%d\n",
+                   (long long)step, (long long)p.commandedPosition, (long long)p.hallSensorPosition,
+                   holdCommandError, holdReadError);
+            const auto drive = m->getDebugValues();
+            printf("HOLD_DRIVE current_limit=100 pwm=%u measured_velocity=%ld error=%d\n",
+                   drive.motorPwmVoltage, (long)drive.measuredVelocity, m->getError());
+            for (int sample = 0; sample < 5; ++sample) {
+                const int64_t hall = m->getHallSensorPositionRaw();
+                printf("HOLD_SAMPLE t_ms=%d hall=%lld error=%d\n", 500 + sample*100, (long long)hall, m->getError());
+                delay(100);
+            }
+            TEST_RESULT("target holds after updates stop", holdCommandError == 0 && holdReadError == 0 && p.commandedPosition == step &&
                         p.hallSensorPosition > step-step/2 && p.hallSensorPosition < step+step/2);
             m->setPositionUnit(PositionUnit::DEGREES);
             const float measured = m->setImmediatePositionTargetAndGetPosition(uid, -1.0f);
@@ -126,6 +140,27 @@ void tm_immediate_position(void) {
         return;
     }
 
+    // Check the converted-input guard on the actual MCU and Arduino math
+    // implementation, with every public overload. Rejections must not send a
+    // target, change the reference, or put the motor into a fatal state.
+    const float invalidTargets[] = {NAN, INFINITY, -INFINITY, 0x1p63f, -0x1.000002p63f};
+    for (float invalid : invalidTargets) {
+        for (bool combined : {false, true}) for (bool explicitUid : {false, true}) {
+            const int64_t before = m->getPositionRaw();
+            if (combined) {
+                if (explicitUid) m->setImmediatePositionTargetAndGetPosition(uid, invalid);
+                else m->setImmediatePositionTargetAndGetPosition(invalid);
+            } else {
+                if (explicitUid) m->setImmediatePositionTarget(uid, invalid);
+                else m->setImmediatePositionTarget(invalid);
+            }
+            TEST_RESULT("invalid converted target rejected locally", m->getError() == COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE);
+            const auto status = m->getStatus();
+            TEST_RESULT("invalid input preserves healthy closed-loop state", m->getError() == 0 && status.statusFlags == 6 && status.fatalErrorCode == 0);
+            TEST_RESULT("invalid input preserves the entire reference", m->getPositionRaw() == before && m->getError() == 0);
+        }
+    }
+
     // Both methods must enforce each guard. Every fatal case starts afresh.
     for (bool combined : {false, true}) {
         tfhReset(m);
@@ -144,8 +179,31 @@ void tm_immediate_position(void) {
             immediateFault(m, error);
         }
     }
+    // The generated methods always send eight bytes. Exercise firmware's
+    // size guard through the real Arduino transport as well, in both framings.
+    for (uint8_t command : {uint8_t(49), uint8_t(50)}) for (bool crcOn : {true, false}) {
+        if (!immediateReady(m)) { TEST_RESULT("payload guard preparation", false); break; }
+        if (!crcOn) {
+            m->crc32Control(0);
+            TEST_RESULT("payload guard CRC transition", m->getError() == 0);
+            if (m->getError()) break;
+            m->disableCRC32();
+        }
+        Communication wire(Serial1, 230400);
+        if (!crcOn) wire.disableCRC32();
+        const uint8_t malformed[7] = {};
+        wire.sendCommandByUniqueId(uid, command, malformed, sizeof(malformed));
+        uint8_t response[8];
+        uint16_t received = 0;
+        const int16_t error = wire.getResponse(response, sizeof(response), received);
+        TEST_RESULT("malformed target payload rejected with fatal 51", error == 51);
+        const auto status = m->getStatus();
+        TEST_RESULT("malformed target disables motor", m->getError() == 0 && status.fatalErrorCode == 51 && (status.statusFlags & 2) == 0);
+    }
     tfhReset(m);
     const auto end = m->getStatus();
     TEST_RESULT("cleanup leaves motor disabled and healthy", m->getError() == 0 && end.statusFlags == 0 && end.fatalErrorCode == 0);
     TEST_RESULT("cleanup empties trajectory queue", m->getNQueuedItems() == 0 && m->getError() == 0);
+    const auto finalGains = m->getPidConstants();
+    TEST_RESULT("cleanup restores PID defaults", m->getError() == 0 && finalGains.kP == defaults.kP && finalGains.kI == defaults.kI && finalGains.kD == defaults.kD);
 }
