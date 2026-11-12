@@ -87,15 +87,22 @@ a following timed move, nonfinite/out-of-range converted inputs, and fatal guard
 transport in both CRC modes. It resets the selected motor afterwards. Additional
 protocol checks are in `python_programs/test_immediate_position_target.py --protocol-edge-cases`.
 
-The full suite needs the **Huge APP** partition (3 MB application, 4 MB flash)
-because it exceeds the ESP32-S3 default application partition. Compile only,
-without flashing or opening a serial port:
+The full suite needs an application partition larger than the default 1.3 MB.
+The **Huge APP** partition (3 MB application, 4 MB flash) is one option. Compile
+only, without flashing or opening a serial port:
 
 ```bash
 arduino-cli compile \
   --fqbn esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,PartitionScheme=huge_app \
   --library /path/to/staged/Servomotor .
 ```
+
+On the qualified 8-MB ESP32-S3 controller, the tested board configuration was
+`esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,FlashSize=8M,PartitionScheme=default_8MB`.
+It provides a 3,342,336-byte application partition. Use the configuration matching
+the actual controller's flash size; compile against the explicit staged library
+as above. The Mac collector's `--only motion_basic` selects the ordinary visible
+spin test, and `--only immediate_position` selects the new-command acceptance.
 
 Run physical tests only when the motor rack is available. Select the intended
 adapter explicitly and address the motor by UID. The separate adapter-testing

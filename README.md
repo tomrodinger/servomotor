@@ -119,7 +119,10 @@ m.set_immediate_position_target(1000)
 measured = m.set_immediate_position_target_and_get_position(2000)
 ```
 
-Use updated bindings from this source tree. The release image targets
+Updated bindings are published as [Python 0.13.0](https://pypi.org/project/servomotor/0.13.0/)
+and [Arduino 0.11.0](https://github.com/tomrodinger/Servomotor_Arduino_Library/releases/tag/v0.11.0).
+See the [client-library release handoff](LIBRARY_RELEASE_HANDOFF.md) for validation,
+release receipts and remaining indexing/publishing follow-ups. The release image targets
 **M17 hardware 1.5, software compatibility code 3**. Version 0.17.0.0 promotes
 the validated 0.17.0.6 implementation; only the development-version byte changes.
 See the [release notes](firmware/firmware_releases/servomotor_M17_fw0.17.0.0_scc3_hw1.5.release_notes.txt)
@@ -151,8 +154,8 @@ python3 servotune/serve.py
 
 The launcher opens a clearly labelled demo with simulated data. The modified
 client serializes request/reply transactions and supports both new commands.
-The published 0.16.0.0 release remains the stable firmware; it has no immediate
-target commands.
+The published stable firmware is 0.17.0.0. The preceding 0.16.0.0 release
+does not implement immediate-target commands.
 
 ## Where the M17 is not the right tool
 
