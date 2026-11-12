@@ -3,7 +3,38 @@
 
 Here's a basic example of how to use the servomotor package:
 
-TODO
+```python
+import servomotor
+
+# Open the intended adapter explicitly. Use a motor unique ID on shared racks.
+servomotor.set_serial_port("/dev/ttyUSB0")
+servomotor.open_serial_port()
+motor = servomotor.M3("0123456789ABCDEF", position_unit="encoder_counts")
+try:
+    kp, ki, kd = motor.get_pid_constants()  # firmware 0.16.0.0 or later
+    print(kp, ki, kd)
+finally:
+    servomotor.close_serial_port()
+```
+
+Firmware 0.17.0.0 adds `set_immediate_position_target(targetPosition)` and
+`set_immediate_position_target_and_get_position(targetPosition)`. Both require
+closed-loop position mode, enabled MOSFETs, an empty trajectory queue and zero
+commanded/planned velocity. Targets must satisfy the configured position and
+deviation limits. These commands step the reference immediately; trajectory
+velocity/acceleration limits do not profile the resulting catch-up motion.
+
+The combined method returns the latest stored measured Hall position, which may
+come from the preceding control tick. It does not wait for arrival or sample the
+ADC again. With `position_unit="encoder_counts"`, Python integer targets and
+responses preserve the full signed 64-bit value. For other units, conversions use
+floating point. The measured position may differ from the requested target.
+
+Broadcast calls return an empty list because motors do not reply. Use a unique
+ID to obtain a measured position or PID constants. Invalid keyword arguments,
+nonfinite numeric inputs and out-of-range integer fields raise exceptions before
+transmitting. Device fatal errors raise `servomotor.FatalError` and require a
+motor reset. Do not retry motion automatically after a communication failure.
 
 For more detailed usage instructions, please refer to the documentation.
 
@@ -57,7 +88,7 @@ then log out and back in for the change to take effect.
 
 ## Requirements
 
-- Python 3.6+
+- Python 3.8+
 
 That is the whole list. pyserial is BUNDLED inside this package
 (`servomotor/vendor/serial/`) and imported from there, so `pip install servomotor`
@@ -69,7 +100,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENCE](LICENCE) file for details.
 
 ## Contact
 

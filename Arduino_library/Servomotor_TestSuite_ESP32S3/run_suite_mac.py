@@ -18,7 +18,10 @@ import re
 import sys
 import time
 
-import serial
+try:
+    from servomotor.vendor import serial
+except ImportError:
+    import serial  # Standalone use with pyserial when servomotor is not installed.
 
 
 def open_port(port, deadline):
@@ -35,7 +38,7 @@ def open_port(port, deadline):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", default="/dev/cu.usbmodem2101")
-    ap.add_argument("--only", type=int, default=None, help="run a single test index")
+    ap.add_argument("--only", default=None, help="run a single test index or name")
     ap.add_argument("--attach", action="store_true",
                     help="don't start a run; just log an already-running suite")
     ap.add_argument("--timeout", type=int, default=2700)

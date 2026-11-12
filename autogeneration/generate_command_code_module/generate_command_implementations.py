@@ -694,7 +694,21 @@ def generate_wrapper_method_implementation(cmd, cmd_str, func_name, has_input, h
                                 raise ValueError(f"Unknown type '{json_type_str}' for parameter '{param_name}' in command '{cmd_str}'")
                                 
                             cpp_type = type_map[json_type_str]
-                            # Cast the converted value to the correct C++ type
+                            # Validate before float-to-integer conversion: casting NaN,
+                            # infinity or an out-of-range float has undefined behavior.
+                            # Use the exclusive power-of-two bound; INT64_MAX rounds
+                            # up to 2**63 when compared with a float.
+                            integer_type = re.fullmatch(r"([iu])(\d+)", json_type_str)
+                            if integer_type:
+                                signed = integer_type.group(1) == "i"
+                                bits = int(integer_type.group(2))
+                                lower = -(1 << (bits - 1)) if signed else 0
+                                upper = 1 << (bits - 1 if signed else bits)
+                                method_lines.append(f"    if (!std::isfinite({internal_var}) || {internal_var} < {lower}.0 || {internal_var} >= {upper}.0) {{")
+                                method_lines.append("        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;")
+                                method_lines.append("        return;" if return_type == "void" else "        return {};")
+                                method_lines.append("    }")
+                            # Cast the validated converted value to its wire type.
                             raw_params.append(f"({cpp_type})({internal_var})")
                             break
             else:

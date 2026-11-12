@@ -5,6 +5,7 @@
 #include "Servomotor.h"
 #include "Commands.h"
 #include "Utils.h"
+#include <cmath> // Validate converted inputs before integer casts
 #include <sstream> // For std::stringstream
 #include <iomanip> // For std::setw, std::setfill
 
@@ -188,7 +189,15 @@ void Servomotor::trapezoidMove(float displacement, float duration) {
     Serial.print("  displacement in chosen unit: "); Serial.println(displacement);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float displacement_internal = ::convertPosition(displacement, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(displacement_internal) || displacement_internal < -2147483648.0 || displacement_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     trapezoidMoveRaw((int32_t)(displacement_internal), (uint32_t)(duration_internal));
 }
 
@@ -197,7 +206,15 @@ void Servomotor::trapezoidMove(uint64_t uniqueId, float displacement, float dura
     Serial.print("  displacement in chosen unit: "); Serial.println(displacement);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float displacement_internal = ::convertPosition(displacement, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(displacement_internal) || displacement_internal < -2147483648.0 || displacement_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     trapezoidMoveRaw(uniqueId, (int32_t)(displacement_internal), (uint32_t)(duration_internal));
 }
 
@@ -227,6 +244,10 @@ void Servomotor::setMaximumVelocity(float maximumVelocity) {
     Serial.println("[Motor] setMaximumVelocity called.");
     Serial.print("  maximumVelocity in chosen unit: "); Serial.println(maximumVelocity);
     float maximumVelocity_internal = ::convertVelocity(maximumVelocity, m_velocityUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maximumVelocity_internal) || maximumVelocity_internal < 0.0 || maximumVelocity_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumVelocityRaw((uint32_t)(maximumVelocity_internal));
 }
 
@@ -234,6 +255,10 @@ void Servomotor::setMaximumVelocity(uint64_t uniqueId, float maximumVelocity) {
     Serial.println("[Motor] setMaximumVelocity called (by unique ID).");
     Serial.print("  maximumVelocity in chosen unit: "); Serial.println(maximumVelocity);
     float maximumVelocity_internal = ::convertVelocity(maximumVelocity, m_velocityUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maximumVelocity_internal) || maximumVelocity_internal < 0.0 || maximumVelocity_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumVelocityRaw(uniqueId, (uint32_t)(maximumVelocity_internal));
 }
 
@@ -266,7 +291,15 @@ void Servomotor::goToPosition(float position, float duration) {
     Serial.print("  position in chosen unit: "); Serial.println(position);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float position_internal = ::convertPosition(position, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(position_internal) || position_internal < -2147483648.0 || position_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     goToPositionRaw((int32_t)(position_internal), (uint32_t)(duration_internal));
 }
 
@@ -275,7 +308,15 @@ void Servomotor::goToPosition(uint64_t uniqueId, float position, float duration)
     Serial.print("  position in chosen unit: "); Serial.println(position);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float position_internal = ::convertPosition(position, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(position_internal) || position_internal < -2147483648.0 || position_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     goToPositionRaw(uniqueId, (int32_t)(position_internal), (uint32_t)(duration_internal));
 }
 
@@ -305,6 +346,10 @@ void Servomotor::setMaximumAcceleration(float maximumAcceleration) {
     Serial.println("[Motor] setMaximumAcceleration called.");
     Serial.print("  maximumAcceleration in chosen unit: "); Serial.println(maximumAcceleration);
     float maximumAcceleration_internal = ::convertAcceleration(maximumAcceleration, m_accelerationUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maximumAcceleration_internal) || maximumAcceleration_internal < 0.0 || maximumAcceleration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumAccelerationRaw((uint32_t)(maximumAcceleration_internal));
 }
 
@@ -312,6 +357,10 @@ void Servomotor::setMaximumAcceleration(uint64_t uniqueId, float maximumAccelera
     Serial.println("[Motor] setMaximumAcceleration called (by unique ID).");
     Serial.print("  maximumAcceleration in chosen unit: "); Serial.println(maximumAcceleration);
     float maximumAcceleration_internal = ::convertAcceleration(maximumAcceleration, m_accelerationUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maximumAcceleration_internal) || maximumAcceleration_internal < 0.0 || maximumAcceleration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumAccelerationRaw(uniqueId, (uint32_t)(maximumAcceleration_internal));
 }
 
@@ -513,6 +562,10 @@ timeSyncResponse Servomotor::timeSync(float masterTime) {
     Serial.println("[Motor] timeSync called.");
     Serial.print("  masterTime in chosen unit: "); Serial.println(masterTime);
     float masterTime_internal = ::convertTime(masterTime, m_timeUnit, ConversionDirection::TO_INTERNAL) / CONVERSION_FACTOR_MICROSECONDS;
+    if (!std::isfinite(masterTime_internal) || masterTime_internal < 0.0 || masterTime_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return {};
+    }
     auto rawResult = timeSyncRaw((uint32_t)(masterTime_internal));
     return rawResult;
 }
@@ -521,6 +574,10 @@ timeSyncResponse Servomotor::timeSync(uint64_t uniqueId, float masterTime) {
     Serial.println("[Motor] timeSync called (by unique ID).");
     Serial.print("  masterTime in chosen unit: "); Serial.println(masterTime);
     float masterTime_internal = ::convertTime(masterTime, m_timeUnit, ConversionDirection::TO_INTERNAL) / CONVERSION_FACTOR_MICROSECONDS;
+    if (!std::isfinite(masterTime_internal) || masterTime_internal < 0.0 || masterTime_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return {};
+    }
     auto rawResult = timeSyncRaw(uniqueId, (uint32_t)(masterTime_internal));
     return rawResult;
 }
@@ -630,7 +687,15 @@ void Servomotor::homing(float maxDistance, float maxDuration) {
     Serial.print("  maxDistance in chosen unit: "); Serial.println(maxDistance);
     Serial.print("  maxDuration in chosen unit: "); Serial.println(maxDuration);
     float maxDistance_internal = ::convertPosition(maxDistance, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxDistance_internal) || maxDistance_internal < -2147483648.0 || maxDistance_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float maxDuration_internal = ::convertTime(maxDuration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxDuration_internal) || maxDuration_internal < 0.0 || maxDuration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     homingRaw((int32_t)(maxDistance_internal), (uint32_t)(maxDuration_internal));
 }
 
@@ -639,7 +704,15 @@ void Servomotor::homing(uint64_t uniqueId, float maxDistance, float maxDuration)
     Serial.print("  maxDistance in chosen unit: "); Serial.println(maxDistance);
     Serial.print("  maxDuration in chosen unit: "); Serial.println(maxDuration);
     float maxDistance_internal = ::convertPosition(maxDistance, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxDistance_internal) || maxDistance_internal < -2147483648.0 || maxDistance_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float maxDuration_internal = ::convertTime(maxDuration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxDuration_internal) || maxDuration_internal < 0.0 || maxDuration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     homingRaw(uniqueId, (int32_t)(maxDistance_internal), (uint32_t)(maxDuration_internal));
 }
 
@@ -824,7 +897,15 @@ void Servomotor::moveWithAcceleration(float acceleration, float timeSteps) {
     Serial.print("  acceleration in chosen unit: "); Serial.println(acceleration);
     Serial.print("  timeSteps in chosen unit: "); Serial.println(timeSteps);
     float acceleration_internal = ::convertAcceleration(acceleration, m_accelerationUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(acceleration_internal) || acceleration_internal < -2147483648.0 || acceleration_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float timeSteps_internal = ::convertTime(timeSteps, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(timeSteps_internal) || timeSteps_internal < 0.0 || timeSteps_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     moveWithAccelerationRaw((int32_t)(acceleration_internal), (uint32_t)(timeSteps_internal));
 }
 
@@ -833,7 +914,15 @@ void Servomotor::moveWithAcceleration(uint64_t uniqueId, float acceleration, flo
     Serial.print("  acceleration in chosen unit: "); Serial.println(acceleration);
     Serial.print("  timeSteps in chosen unit: "); Serial.println(timeSteps);
     float acceleration_internal = ::convertAcceleration(acceleration, m_accelerationUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(acceleration_internal) || acceleration_internal < -2147483648.0 || acceleration_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float timeSteps_internal = ::convertTime(timeSteps, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(timeSteps_internal) || timeSteps_internal < 0.0 || timeSteps_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     moveWithAccelerationRaw(uniqueId, (int32_t)(acceleration_internal), (uint32_t)(timeSteps_internal));
 }
 
@@ -1119,7 +1208,15 @@ void Servomotor::moveWithVelocity(float velocity, float duration) {
     Serial.print("  velocity in chosen unit: "); Serial.println(velocity);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float velocity_internal = ::convertVelocity(velocity, m_velocityUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(velocity_internal) || velocity_internal < -2147483648.0 || velocity_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     moveWithVelocityRaw((int32_t)(velocity_internal), (uint32_t)(duration_internal));
 }
 
@@ -1128,7 +1225,15 @@ void Servomotor::moveWithVelocity(uint64_t uniqueId, float velocity, float durat
     Serial.print("  velocity in chosen unit: "); Serial.println(velocity);
     Serial.print("  duration in chosen unit: "); Serial.println(duration);
     float velocity_internal = ::convertVelocity(velocity, m_velocityUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(velocity_internal) || velocity_internal < -2147483648.0 || velocity_internal >= 2147483648.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float duration_internal = ::convertTime(duration, m_timeUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(duration_internal) || duration_internal < 0.0 || duration_internal >= 4294967296.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     moveWithVelocityRaw(uniqueId, (int32_t)(velocity_internal), (uint32_t)(duration_internal));
 }
 
@@ -1179,7 +1284,15 @@ void Servomotor::setMaximumMotorCurrent(float motorCurrent, float regenerationCu
     Serial.print("  motorCurrent in chosen unit: "); Serial.println(motorCurrent);
     Serial.print("  regenerationCurrent in chosen unit: "); Serial.println(regenerationCurrent);
     float motorCurrent_internal = ::convertCurrent(motorCurrent, m_currentUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(motorCurrent_internal) || motorCurrent_internal < 0.0 || motorCurrent_internal >= 65536.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float regenerationCurrent_internal = ::convertCurrent(regenerationCurrent, m_currentUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(regenerationCurrent_internal) || regenerationCurrent_internal < 0.0 || regenerationCurrent_internal >= 65536.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumMotorCurrentRaw((uint16_t)(motorCurrent_internal), (uint16_t)(regenerationCurrent_internal));
 }
 
@@ -1188,7 +1301,15 @@ void Servomotor::setMaximumMotorCurrent(uint64_t uniqueId, float motorCurrent, f
     Serial.print("  motorCurrent in chosen unit: "); Serial.println(motorCurrent);
     Serial.print("  regenerationCurrent in chosen unit: "); Serial.println(regenerationCurrent);
     float motorCurrent_internal = ::convertCurrent(motorCurrent, m_currentUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(motorCurrent_internal) || motorCurrent_internal < 0.0 || motorCurrent_internal >= 65536.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float regenerationCurrent_internal = ::convertCurrent(regenerationCurrent, m_currentUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(regenerationCurrent_internal) || regenerationCurrent_internal < 0.0 || regenerationCurrent_internal >= 65536.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaximumMotorCurrentRaw(uniqueId, (uint16_t)(motorCurrent_internal), (uint16_t)(regenerationCurrent_internal));
 }
 
@@ -1293,7 +1414,15 @@ void Servomotor::setSafetyLimits(float lowerLimit, float upperLimit) {
     Serial.print("  lowerLimit in chosen unit: "); Serial.println(lowerLimit);
     Serial.print("  upperLimit in chosen unit: "); Serial.println(upperLimit);
     float lowerLimit_internal = ::convertPosition(lowerLimit, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(lowerLimit_internal) || lowerLimit_internal < -9223372036854775808.0 || lowerLimit_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float upperLimit_internal = ::convertPosition(upperLimit, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(upperLimit_internal) || upperLimit_internal < -9223372036854775808.0 || upperLimit_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setSafetyLimitsRaw((int64_t)(lowerLimit_internal), (int64_t)(upperLimit_internal));
 }
 
@@ -1302,7 +1431,15 @@ void Servomotor::setSafetyLimits(uint64_t uniqueId, float lowerLimit, float uppe
     Serial.print("  lowerLimit in chosen unit: "); Serial.println(lowerLimit);
     Serial.print("  upperLimit in chosen unit: "); Serial.println(upperLimit);
     float lowerLimit_internal = ::convertPosition(lowerLimit, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(lowerLimit_internal) || lowerLimit_internal < -9223372036854775808.0 || lowerLimit_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     float upperLimit_internal = ::convertPosition(upperLimit, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(upperLimit_internal) || upperLimit_internal < -9223372036854775808.0 || upperLimit_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setSafetyLimitsRaw(uniqueId, (int64_t)(lowerLimit_internal), (int64_t)(upperLimit_internal));
 }
 
@@ -1854,6 +1991,10 @@ void Servomotor::setMaxAllowablePositionDeviation(float maxAllowablePositionDevi
     Serial.println("[Motor] setMaxAllowablePositionDeviation called.");
     Serial.print("  maxAllowablePositionDeviation in chosen unit: "); Serial.println(maxAllowablePositionDeviation);
     float maxAllowablePositionDeviation_internal = ::convertPosition(maxAllowablePositionDeviation, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxAllowablePositionDeviation_internal) || maxAllowablePositionDeviation_internal < -9223372036854775808.0 || maxAllowablePositionDeviation_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaxAllowablePositionDeviationRaw((int64_t)(maxAllowablePositionDeviation_internal));
 }
 
@@ -1861,6 +2002,10 @@ void Servomotor::setMaxAllowablePositionDeviation(uint64_t uniqueId, float maxAl
     Serial.println("[Motor] setMaxAllowablePositionDeviation called (by unique ID).");
     Serial.print("  maxAllowablePositionDeviation in chosen unit: "); Serial.println(maxAllowablePositionDeviation);
     float maxAllowablePositionDeviation_internal = ::convertPosition(maxAllowablePositionDeviation, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(maxAllowablePositionDeviation_internal) || maxAllowablePositionDeviation_internal < -9223372036854775808.0 || maxAllowablePositionDeviation_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setMaxAllowablePositionDeviationRaw(uniqueId, (int64_t)(maxAllowablePositionDeviation_internal));
 }
 
@@ -2036,6 +2181,10 @@ void Servomotor::setImmediatePositionTarget(float targetPosition) {
     Serial.println("[Motor] setImmediatePositionTarget called.");
     Serial.print("  targetPosition in chosen unit: "); Serial.println(targetPosition);
     float targetPosition_internal = ::convertPosition(targetPosition, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(targetPosition_internal) || targetPosition_internal < -9223372036854775808.0 || targetPosition_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setImmediatePositionTargetRaw((int64_t)(targetPosition_internal));
 }
 
@@ -2043,6 +2192,10 @@ void Servomotor::setImmediatePositionTarget(uint64_t uniqueId, float targetPosit
     Serial.println("[Motor] setImmediatePositionTarget called (by unique ID).");
     Serial.print("  targetPosition in chosen unit: "); Serial.println(targetPosition);
     float targetPosition_internal = ::convertPosition(targetPosition, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(targetPosition_internal) || targetPosition_internal < -9223372036854775808.0 || targetPosition_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return;
+    }
     setImmediatePositionTargetRaw(uniqueId, (int64_t)(targetPosition_internal));
 }
 
@@ -2094,6 +2247,10 @@ float Servomotor::setImmediatePositionTargetAndGetPosition(float targetPosition)
     Serial.println("[Motor] setImmediatePositionTargetAndGetPosition called.");
     Serial.print("  targetPosition in chosen unit: "); Serial.println(targetPosition);
     float targetPosition_internal = ::convertPosition(targetPosition, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(targetPosition_internal) || targetPosition_internal < -9223372036854775808.0 || targetPosition_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return {};
+    }
     auto rawResult = setImmediatePositionTargetAndGetPositionRaw((int64_t)(targetPosition_internal));
     float converted = ::convertPosition((float)rawResult, m_positionUnit, ConversionDirection::FROM_INTERNAL);
     return converted;
@@ -2103,6 +2260,10 @@ float Servomotor::setImmediatePositionTargetAndGetPosition(uint64_t uniqueId, fl
     Serial.println("[Motor] setImmediatePositionTargetAndGetPosition called (by unique ID).");
     Serial.print("  targetPosition in chosen unit: "); Serial.println(targetPosition);
     float targetPosition_internal = ::convertPosition(targetPosition, m_positionUnit, ConversionDirection::TO_INTERNAL);
+    if (!std::isfinite(targetPosition_internal) || targetPosition_internal < -9223372036854775808.0 || targetPosition_internal >= 9223372036854775808.0) {
+        _errno = COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE;
+        return {};
+    }
     auto rawResult = setImmediatePositionTargetAndGetPositionRaw(uniqueId, (int64_t)(targetPosition_internal));
     float converted = ::convertPosition((float)rawResult, m_positionUnit, ConversionDirection::FROM_INTERNAL);
     return converted;

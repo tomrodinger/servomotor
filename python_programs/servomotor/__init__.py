@@ -7,7 +7,7 @@ from the company Gearotons.
 Cross-platform compatible: Works on standard Python (Mac/PC/Raspberry Pi)
 and MicroPython (ESP32-S3).
 """
-__version__ = "0.12.2"  # 0.12.2: SERVOMOTOR_PORT env var; saved port moves out of the package into a per-user config dir
+__version__ = "0.13.0"  # Client-library version; independent of the motor firmware version.
 
 # Import platform detection first
 from .platform_detect import is_micropython, is_standard_python, get_platform, get_platform_info

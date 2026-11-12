@@ -1,5 +1,7 @@
 # Project Overview
 
+Release notes: [CHANGELOG.md](CHANGELOG.md).
+
 > **Documentation Note**: All project documentation is maintained in this README.md file. Whenever documentation is mentioned or requested, it refers to updates or additions to this file.
 
 This project provides a C++ library for controlling servo motors on both embedded platforms (Arduino, ESP32-C3, etc.) and desktop environments (macOS, etc.). It includes:
@@ -93,6 +95,31 @@ See `common_source_files/PROTOCOL_SPEC.md` for all preconditions and wire fields
 Run `python3 python_programs/test_host_immediate_target.py` from the repository
 root to check the real C handlers/framing and the generated Arduino methods
 without hardware. It requires native C and C++ compilers.
+
+## Tests running on ESP32-S3
+
+The [on-device test suite](https://github.com/tomrodinger/servomotor/tree/main/Arduino_library/Servomotor_TestSuite_ESP32S3)
+is available in the source repository. Its `Servomotor_TestSuite_ESP32S3.ino`
+runs the Arduino library on the ESP32-S3 itself, with its motor on RS485 (RX GPIO5, TX GPIO4).
+The USB console accepts `list`, `detect`, `run <test-name>` and `results`.
+`run immediate_position` tests commands 48/49/50: PID boundaries, raw and converted
+methods, explicit UID overloads, both CRC modes, small reference changes, hold,
+following timed motion, invalid inputs and fatal guards. It restores the motor
+to disabled/default state. `unit_conversions`, `units_roundtrip`, `comms` and
+`crc32_matrix` provide broader regression coverage.
+
+From the repository's `Arduino_library` directory, the Mac collector starts a
+named on-device test and records its result:
+
+```sh
+python3 Servomotor_TestSuite_ESP32S3/run_suite_mac.py \
+  --port <ESP32-USB-port> --only immediate_position --log immediate_position.log
+```
+
+Use the intended controller's explicit port. The collector uses the bundled
+serial module when `servomotor` is installed, or standalone `pyserial` otherwise.
+See the suite README for build options and flashing. These are physical motor
+tests; the separate `test_host_*.py` programs run without motors.
 
 ## Autogeneration of Parts of the Source Code
 
@@ -217,6 +244,7 @@ CRC32 checksums provide additional data integrity verification:
 
 The protocol includes robust error handling with specific error codes. The `Communication` class functions (particularly `getResponse`) return specific negative error codes on failure, or `COMMUNICATION_SUCCESS` (0) on success:
 
+- `COMMUNICATION_ERROR_PARAMETER_OUT_OF_RANGE` (-10): A converted scalar input is nonfinite or outside its wire integer range. The command is not transmitted. Raw integer methods retain the exact wire value.
 - `COMMUNICATION_ERROR_TIMEOUT` (-1): Timed out waiting for reply bytes. The 1-second budget covers the WHOLE reply, not each byte, and the stages it can expire in are: the first size byte, the extended size bytes, the response character, the device error byte, the payload, and the CRC32 (if enabled). A broadcast (alias 255) also produces this, because broadcasts are never answered.
 - `COMMUNICATION_ERROR_DATA_WRONG_SIZE` (-2): The reply's payload length did not match what the command expects
 - `COMMUNICATION_ERROR_BAD_RESPONSE_CHAR` (-3): The response character byte was not `RESPONSE_CHARACTER_CRC32_ENABLED (253)` or `RESPONSE_CHARACTER_CRC32_DISABLED (252)`
@@ -317,7 +345,7 @@ if (motor.getError() != 0) {
 ```
 
 `getError()` returns `0` on success, a **positive** value that is the motor's own
-fatal error code, or a **negative** value for a host-side communication failure
+fatal error code, or a **negative** value for a client-side validation or communication failure
 (`-1` is a timeout: wrong alias, wrong pins, motor unpowered, or motor in the
 bootloader). This matters because a motor that has latched a fatal error disables
 itself and silently ignores every later command except *Get status* and

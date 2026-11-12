@@ -188,7 +188,7 @@ def get_response(crc32_enabled=True, verbose=2):
 
     # At this point the packet has been valiadated (if crc32 is enabled).
     # It might be a success response, where there is nothing in the payload.
-    # It might indicate a fatal error, where the first (and probably only) byte in the bayload is the fatal error code.
+    # It might indicate a fatal error, where the single payload byte is the fatal error code.
     # If bigger than one byte then the first byte should be 0, which indicates that there is no error. The rest will be the response to the command.
     
     if len(payload) == 0:
@@ -201,6 +201,11 @@ def get_response(crc32_enabled=True, verbose=2):
             print_data("Payload: ", payload, verbose=verbose)
         error_code = payload[0]
         if error_code != 0:
+            # Firmware fatal replies contain exactly one error byte. Reject
+            # extra bytes before trusting the code: a flipped CRC-mode marker
+            # could otherwise turn CRC bytes into an apparent error payload.
+            if len(payload) != 1:
+                raise CommunicationError("Error: fatal response must contain exactly one error byte")
             raise FatalError(error_code)
         payload = payload[1:] # delete that error code since we already checked it
         return payload

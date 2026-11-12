@@ -121,6 +121,7 @@ CORE_FILES=(
     "README.md"
     "keywords.txt"
     "LICENSE"
+    "CHANGELOG.md"
 )
 
 # Create standard Arduino library directories
@@ -140,7 +141,7 @@ for FILE in "${CORE_FILES[@]}"; do
             cp "$SOURCE_DIR/$FILE" src/
             cp "$SOURCE_DIR/$FILE" .
             echo "  ✅ $FILE (copied to both root and src/)"
-        elif [[ "$FILE" == "library.properties" || "$FILE" == "README.md" || "$FILE" == "LICENSE" || "$FILE" == "keywords.txt" ]]; then
+        elif [[ "$FILE" == "library.properties" || "$FILE" == "README.md" || "$FILE" == "CHANGELOG.md" || "$FILE" == "LICENSE" || "$FILE" == "keywords.txt" ]]; then
             # These files go to root only
             cp "$SOURCE_DIR/$FILE" .
             echo "  ✅ $FILE (copied to root)"

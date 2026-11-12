@@ -124,7 +124,9 @@ def add_autogen_header(content, filename):
     basename = os.path.basename(filename)
     
     # Get the current date and time
-    current_date = datetime.now().strftime('%b %-d %Y %H:%M:%S')
+    generated_at = datetime.now()
+    # %-d is unavailable on Windows; emit the day as an integer instead.
+    current_date = f"{generated_at:%b} {generated_at.day} {generated_at:%Y %H:%M:%S}"
     
     # Create the header
     header = f"""// {basename}

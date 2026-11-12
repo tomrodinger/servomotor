@@ -134,6 +134,10 @@ const TestDef TF_TESTS[] = {
     { "settings_interaction_matrix", tm_settings_interaction_matrix, "",                 1800, true  },
     { "streaming_motion",        tm_streaming_motion,       "",                 1800, true  },
     { "unit_extreme_values",     tm_unit_extreme_values,    "",                 1800, true  },
+    { "immediate_position", tm_immediate_position, "", 180, true },
 };
 
 const int TF_N_TESTS = sizeof(TF_TESTS) / sizeof(TF_TESTS[0]);
+
+static_assert(sizeof(TF_TESTS) / sizeof(TF_TESTS[0]) <= TF_TEST_CAPACITY,
+              "Increase run-state capacity before adding test modules");

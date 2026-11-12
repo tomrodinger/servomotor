@@ -108,7 +108,7 @@ class UnitConverter:
 
         # Preserve full-width integer payloads when no conversion is needed.
         # Multiplying an i64 encoder count by 1.0 loses bits above 2^53.
-        if current_unit == conv_info['InternalUnit']:
+        if current_unit == conv_info['InternalUnit'] and factors[current_unit] == 1:
             return value
         
         factor = factors[current_unit]
@@ -136,7 +136,7 @@ class UnitConverter:
         if isinstance(value, list):
             value = value[0]  # Take first value since we expect single values
 
-        if target_unit == conv_info['InternalUnit']:
+        if target_unit == conv_info['InternalUnit'] and factors[target_unit] == 1:
             return value
 
         # Special handling for temperature conversions
@@ -179,60 +179,51 @@ def create_command_function(command, command_id, multiple_responses, unit_conver
         if self.verbose:
             print(f"Executing: {command['CommandString']} (ID {command_id}) with args: {args} and kwargs: {kwargs}")
         
-        # Convert input parameters based on unit conversion definitions
-        converted_inputs = []
-        if isinstance(command.get('Input'), list):
-            input_values = list(args)
-            json_cmd = next((cmd for cmd in unit_converter.command_definitions 
-                          if cmd['CommandString'] == command['CommandString']), None)
-            
-            if json_cmd:
-                # Handle positional arguments
-                for i, value in enumerate(input_values):
-                    param_info = unit_converter.get_param_info(command['CommandString'], i)
-                    if param_info and 'UnitConversion' in param_info:
-                        conv = param_info['UnitConversion']
-                        unit_type = conv['Type']
-                        current_unit = getattr(self, f"_{unit_type}_unit").value
-                        converted_value = unit_converter.convert_to_internal(
-                            value, command['CommandString'], param_info['ParameterName'], current_unit)
-                        if self.verbose:
-                            print(f"Converting {param_info['ParameterName']} from {value} {current_unit} "
-                                  f"to {converted_value} {conv['InternalUnit']}")
-                        # Round any float values to integers before adding to converted_inputs
-                        converted_inputs.append(int(round(converted_value)) if isinstance(converted_value, float) else converted_value)
-                    else:
-                        # Round any float values to integers
-                        converted_inputs.append(int(round(value)) if isinstance(value, float) else value)
+        # Bind against the catalog before converting or transmitting. Unknown,
+        # duplicate or missing arguments must never silently issue motion.
+        parameters = json_cmd.get('Input') or []
+        names = [param['ParameterName'] for param in parameters]
+        if len(args) > len(names):
+            raise TypeError(f"{command['CommandString']} expects {len(names)} input(s), got {len(args)}")
+        values = dict(zip(names, args))
+        named = dict(kwargs)
+        call_verbose = named.pop('verbose', self.verbose)
+        for name, value in named.items():
+            if name not in names:
+                raise TypeError(f"Unexpected parameter '{name}' for {command['CommandString']}")
+            if name in values:
+                raise TypeError(f"Multiple values for parameter '{name}'")
+            values[name] = value
+        missing = [name for name in names if name not in values]
+        if missing:
+            raise TypeError("Missing parameter(s): " + ", ".join(missing))
 
-                # Handle keyword arguments
-                if json_cmd.get('Input'):
-                    for param in json_cmd['Input']:
-                        if isinstance(param, dict):
-                            param_name = param.get('ParameterName')
-                            if param_name in kwargs:
-                                value = kwargs[param_name]
-                                if 'UnitConversion' in param:
-                                    conv = param['UnitConversion']
-                                    unit_type = conv['Type']
-                                    current_unit = getattr(self, f"_{unit_type}_unit").value
-                                    converted_value = unit_converter.convert_to_internal(
-                                        value, command['CommandString'], param_name, current_unit)
-                                    if self.verbose:
-                                        print(f"Converting {param_name} from {value} {current_unit} "
-                                              f"to {converted_value} {conv['InternalUnit']}")
-                                    # Round any float values to integers before adding to converted_inputs
-                                    converted_inputs.append(int(round(converted_value)) if isinstance(converted_value, float) else converted_value)
-                                else:
-                                    # Round any float values to integers
-                                    converted_inputs.append(int(round(value)) if isinstance(value, float) else value)
-            else:
-                # If we can't find the command in JSON definitions, round any float values to integers
-                converted_inputs = [int(round(v)) if isinstance(v, float) else v for v in (list(args) + list(kwargs.values()))]
+        converted_inputs = []
+        for param in parameters:
+            name = param['ParameterName']
+            value = values[name]
+            if 'UnitConversion' in param:
+                conv = param['UnitConversion']
+                current_unit = getattr(self, f"_{conv['Type']}_unit").value
+                value = unit_converter.convert_to_internal(
+                    value, command['CommandString'], name, current_unit)
+            if isinstance(value, float):
+                value = int(round(value))
+            # Validate integer fields here so the object API raises an exception
+            # instead of reaching the command-line packer's SystemExit path.
+            wire_type = param.get('Description', '').split(':', 1)[0]
+            if wire_type[:1] in ('i', 'u') and wire_type[1:].isdigit():
+                bits = int(wire_type[1:])
+                value = int(value)
+                lower = -(1 << (bits - 1)) if wire_type[0] == 'i' else 0
+                upper = (1 << (bits - (wire_type[0] == 'i'))) - 1
+                if value < lower or value > upper:
+                    raise ValueError(f"{name} must fit {wire_type}: {lower} to {upper}")
+            converted_inputs.append(value)
 
         # Execute the command and get response
         possibly_multiple_responses = communication.execute_command(command_id, converted_inputs, alias_or_unique_id=self.alias_or_unique_id,
-                                                                    crc32_enabled=self.crc32_enabled, verbose=self.verbose)
+                                                                    crc32_enabled=self.crc32_enabled, verbose=call_verbose)
 
         if not isinstance(possibly_multiple_responses, list):
             print("Error: Expected the response to be a list, but got: ", possibly_multiple_responses)
