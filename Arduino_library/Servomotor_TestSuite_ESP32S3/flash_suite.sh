@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 PORT="${1:-/dev/cu.usbmodem2101}"
-FQBN="esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc"
+FQBN="esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,PartitionScheme=huge_app"
 
 echo "== Refreshing installed library from repo =="
 ../copy_stuff_to_Arduino.sh > /dev/null

@@ -20,10 +20,14 @@ on:
     branches: [main]
     paths:
       - 'python_programs/**'
+      - 'Arduino_library/**'
+      - 'autogeneration/**'
       - '.github/workflows/test-python-cross-platform.yml'
   pull_request:
     paths:
       - 'python_programs/**'
+      - 'Arduino_library/**'
+      - 'autogeneration/**'
       - '.github/workflows/test-python-cross-platform.yml'
   workflow_dispatch:
 
@@ -103,6 +107,10 @@ jobs:
             "$c" --help > /dev/null || { echo "FAILED: $c"; exit 1; }
           done
           echo "all console scripts OK"
+
+      - name: Validate the installed wheel command contract in an isolated environment
+        shell: bash
+        run: python python_programs/validate_built_library.py dist_test/*.whl
 
       - name: Parse a real firmware file end-to-end (no hardware needed)
         shell: bash

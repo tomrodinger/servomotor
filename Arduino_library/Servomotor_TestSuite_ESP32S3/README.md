@@ -7,8 +7,7 @@ TX=GPIO4) at 230400 baud.
 
 ## Architecture
 
-- **`tm_*.cpp`** — one test module per command group (15 modules, ~250
-  assertions total, mirroring the Python per-command test suite). Entry point:
+- **`tm_*.cpp`** — one test module per command group (see `test_registry.cpp` for the current set). Entry point:
   `void tm_<name>(void)`. Modules only use the `tf_framework.h` API.
 - **`tf_framework.h/.cpp`** — portable mini framework: `TEST_RESULT`,
   `tfGetMotor()` (unique-ID addressed motor), `checkMotorError` (records, never
@@ -76,3 +75,26 @@ annotations (crashes always count as unexpected).
 - Between-test state: `nvs` namespace `ardsuite`. A power cycle mid-run resumes
   where it left off.
 - Do not use `Serial.printf` in modules (object-like `printf` macro).
+
+## Immediate-position acceptance (firmware 0.17.0.0)
+
+`immediate_position` covers commands 48/49/50 on one M17 selected by unique ID.
+It tests full-width PID readback with outputs off, both CRC settings, raw and
+converted methods, explicit UID overloads, repeated +/-1 degree references, hold,
+a following timed move and fatal guards 8/13/19/27/45/55. It resets the selected
+motor afterwards. Malformed payload error 51 and extended protocol checks are
+covered by `python_programs/test_immediate_position_target.py --protocol-edge-cases`.
+
+The full suite needs the **Huge APP** partition (3 MB application, 4 MB flash)
+because it exceeds the ESP32-S3 default application partition. Compile only,
+without flashing or opening a serial port:
+
+```bash
+arduino-cli compile \
+  --fqbn esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc,PartitionScheme=huge_app \
+  --library /path/to/staged/Servomotor .
+```
+
+Run physical tests only when the motor rack is available. Select the intended
+adapter explicitly and address the motor by UID. The separate adapter-testing
+hub must remain untouched.

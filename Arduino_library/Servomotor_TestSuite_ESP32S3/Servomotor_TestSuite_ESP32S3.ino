@@ -38,7 +38,7 @@
 #define RS485_TXD 4
 #define RS485_RXD 5
 #define USB_BAUD  230400
-#define MAX_TESTS 64        // NVS blob headroom (>= TF_N_TESTS)
+#define MAX_TESTS TF_TEST_CAPACITY // checked against registry at compile time
 
 static const uint8_t IDX_NONE = 0xFF;
 

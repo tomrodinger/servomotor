@@ -426,11 +426,15 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
             goto flush_read_remaining_bytes_and_return_error;
         }
         remoteErrorCodePresent = 1;
-        if (remoteErrorCode != 0) {
-            error_code = remoteErrorCode;
-            goto flush_read_remaining_bytes_and_return_error;
-        }
         bytesLeftToReadWithoutTheCRC32--; // Subtract 1 for the remote error code that we just read
+    }
+
+    // Fatal replies contain only the error byte, never a command payload.
+    // In particular, a corrupted response marker must not reinterpret CRC
+    // bytes as payload and turn a damaged frame into a trusted motor fault.
+    if (remoteErrorCodePresent && remoteErrorCode != 0 && bytesLeftToReadWithoutTheCRC32 != 0) {
+        error_code = COMMUNICATION_ERROR_DATA_WRONG_SIZE;
+        goto flush_read_remaining_bytes_and_return_error;
     }
 
     // If caller didn't provide a buffer, they are asserting that no payload bytes are expected.
@@ -479,6 +483,11 @@ int16_t Communication::getResponse(uint8_t* buffer, uint16_t bufferSize, uint16_
         }
     }
 
+    // Trust a remote fault only after the complete frame and its CRC have
+    // been validated. Corruption/truncation must remain transport errors.
+    if (remoteErrorCodePresent && remoteErrorCode != 0) {
+        return remoteErrorCode;
+    }
     return COMMUNICATION_SUCCESS;
 
 /*

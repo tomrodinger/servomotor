@@ -27,8 +27,8 @@ cp -R "${PP_DIR}/servomotor" "${DIST_DIR}/src/"
 # regardless of what is lying around in the working tree (e.g. M3.py.bak, *.old,
 # motor_commands.json.backup, __pycache__). The real sources + *.json data stay.
 find "${DIST_DIR}/src/servomotor" \
-  \( -name '*.bak' -o -name '*.bak2' -o -name '*.old' -o -name '*.working' \
-     -o -name '*.backup' -o -name '*.pyc' -o -name '__pycache__' \) \
+  \( -name '*.bak*' -o -name '*~' -o -name '.DS_Store' -o -name 'serial_device.txt' -o -name '*.old' -o -name '*.working' \
+     -o -name '*.backup' -o -name '*.py[co]' -o -name '__pycache__' \) \
   -exec rm -rf {} + 2>/dev/null || true
 
 # Include standalone module and CLI modules into the distribution tree

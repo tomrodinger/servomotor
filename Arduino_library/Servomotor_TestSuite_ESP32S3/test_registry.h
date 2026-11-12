@@ -14,6 +14,10 @@ struct TestDef {
     bool needsMotor;         // false = pure computation (runs without a motor)
 };
 
+// NVS run-state arrays and registry share one capacity. Index 255 is reserved.
+constexpr uint16_t TF_TEST_CAPACITY = 192;
+static_assert(TF_TEST_CAPACITY < 255, "Test indices must fit the persisted byte");
+
 extern const TestDef TF_TESTS[];
 extern const int TF_N_TESTS;
 
@@ -139,3 +143,4 @@ void tm_response_field_integrity();
 void tm_settings_interaction_matrix();
 void tm_streaming_motion();
 void tm_unit_extreme_values();
+void tm_immediate_position();

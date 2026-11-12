@@ -52,6 +52,9 @@ static uint8_t tfhFatal(Servomotor* m) {
 // ---------------------------------------------------------------------------
 static void tfhReset(Servomotor* m) {
     m->systemReset();
+    // Reset restores the firmware CRC setting. Send reset using the current
+    // setting, then restore the client before any post-boot command.
+    m->enableCRC32();
     delay(1500);
     for (uint32_t t0 = millis(); Serial1.available() && (millis() - t0) < 500; ) Serial1.read();
     m->setPositionUnit(PositionUnit::ENCODER_COUNTS);

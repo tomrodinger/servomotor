@@ -1,6 +1,7 @@
 #include "Servomotor.h"
 #include "Commands.h"
 #include "Utils.h"
+#include <cmath> // Validate converted inputs before integer casts
 #include <sstream> // For std::stringstream
 #include <iomanip> // For std::setw, std::setfill
 
