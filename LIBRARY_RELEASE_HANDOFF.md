@@ -26,29 +26,25 @@ Public downloads were checked against the qualified candidates:
 | Python wheel | `523e6b659ab99517cb7863596b8527f8eb0e5e91db55c516c20caca5f861c2bb` |
 | Python source archive | `28f0962c3b9be54cc9d6c6b618f8b975bf39e262e0f3801c3e1e2571e81f93e5` |
 | Arduino release ZIP | `042e26b487b0d6524910fd99cc34ca28eef0dafa4ed6a00e221c016ffa6ccf98` |
+| Arduino Library Manager ZIP | `8d6b251ddf14540313acf522b422870f8b39fde818f3a72a2b376600474d5355` |
 
 All 43 Python package source/data files and five CLI modules match the reviewed
 source. All 25 Arduino package files match the staged release; its runtime
 sources match those used for physical acceptance. No package needs republishing.
 
-## Remaining release follow-ups
+## Release follow-ups
 
-**Arduino Library Manager:** the GitHub release and ZIP are public. At
-09:46 UTC on November 12, version 0.11.0 was still absent from Library Manager;
-the downloaded index was last modified at 09:00:18 UTC. The registered repository
-will be scanned by Arduino's [hourly indexer](https://github.com/arduino/library-registry/blob/main/FAQ.md#how-can-i-publish-a-new-release-once-my-library-is-in-the-list).
-Check the [official per-repository log](https://downloads.arduino.cc/libraries/logs/github.com/tomrodinger/Servomotor_Arduino_Library/)
-and `https://downloads.arduino.cc/libraries/library_index.json.gz` for
-`name=Servomotor`, `version=0.11.0`. Indexing is a separate status from the
-already-published GitHub release.
+**Arduino Library Manager: complete.** The one-time local check ran on
+**2026-11-12 at 18:16 Asia/Shanghai (10:16 UTC)** and confirmed that 0.11.0
+is indexed. The index was last modified at 10:00:18 UTC. The
+[Library Manager download](https://downloads.arduino.cc/libraries/github.com/tomrodinger/Servomotor-0.11.0.zip)
+passed its registry checksum check, and all 25 files matched the qualified
+candidate. Its archive checksum differs from the separately packaged GitHub
+release ZIP; both contain the expected files.
 
-A **one-time local check** is scheduled for **2026-11-12 18:16:22 Asia/Shanghai
-(10:16:22 UTC)**. It runs a detached Python process, checks the index, verifies
-the indexed ZIP checksum and its 25 files against the released candidate, saves
-the outcome, and attempts a desktop notification. It exits after that check;
-it does not start another AI turn or post to the chat. Keep the Mac running.
-Its state survives clearing the conversation, but not a reboot or process kill.
-Inspect these local files before creating another timer:
+The local check completed and its desktop-notification command succeeded. It
+did not start another AI turn or access motors. No release-check timer remains
+pending. Its receipt, result and log are saved locally:
 
 ```text
 library_validation/2026-11-12-release/arduino_followup/timer.json
@@ -56,10 +52,9 @@ library_validation/2026-11-12-release/arduino_followup/result.json
 library_validation/2026-11-12-release/arduino_followup/timer.log
 ```
 
-`result.json` appears when the scheduled check runs. A completed check can still
-report `indexed=false`; in that case inspect the indexer log before choosing
-another follow-up. A positive result includes the verified archive checksum and
-`candidate_files_matched=25`. No motor or deployment commands run in this check.
+`result.json` records `indexed=true` and `candidate_files_matched=25`.
+For future releases, inspect the [official per-repository log](https://downloads.arduino.cc/libraries/logs/github.com/tomrodinger/Servomotor_Arduino_Library/)
+and Arduino's [hourly indexing process](https://github.com/arduino/library-registry/blob/main/FAQ.md#how-can-i-publish-a-new-release-once-my-library-is-in-the-list).
 
 **PyPI trusted publishing:** [workflow run 43192171653](https://github.com/tomrodinger/servomotor/actions/runs/43192171653)
 failed at upload with HTTP 403: the token was not allowed to upload to project
@@ -138,7 +133,8 @@ Arduino suite was restored to the ESP32 after the demonstrations and left idle.
 
 ## Continuing after clearing context
 
-Start with the two release follow-ups above. No additional motor motion or
+The remaining release follow-up is PyPI trusted-publisher permission repair;
+Arduino indexing and its timer are complete. No additional motor motion or
 package release is pending. Hardware tests are in
 `Arduino_library/Servomotor_TestSuite_ESP32S3/`; `run immediate_position` selects
 the new-command module and `run motion_basic` selects ordinary visible motion.
