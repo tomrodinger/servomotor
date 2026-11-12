@@ -108,6 +108,12 @@ following timed motion, invalid inputs and fatal guards. It restores the motor
 to disabled/default state. `unit_conversions`, `units_roundtrip`, `comms` and
 `crc32_matrix` provide broader regression coverage.
 
+Release 0.11.0 passed three consecutive `immediate_position` runs on the actual
+ESP32-S3 (1,158 assertions each), selected regression modules, and user-observed
+motion. The full 120-module suite was not run. See the
+[release handoff](https://github.com/tomrodinger/servomotor/blob/main/LIBRARY_RELEASE_HANDOFF.md)
+for results, the current-limit fixture adjustment and test scope.
+
 From the repository's `Arduino_library` directory, the Mac collector starts a
 named on-device test and records its result:
 
@@ -485,8 +491,8 @@ Total displacement: 2 + 3 + 3 + 0 = 8 rotations
 ### Testing
 
 The library's test suite lives in **`Servomotor_TestSuite_ESP32S3/`** (see its
-README for full details). It contains ~37 modular tests (`tm_*.cpp`, one per
-command group, ~580 assertions) that build TWO ways from the same sources:
+README for full details). It has 120 registered modules (`tm_*.cpp`, grouped by
+command and behavior) that build two ways from the same sources:
 
 1. **On-device (primary):** all modules compile into one ESP32-S3 firmware that
    runs natively on the Gearotons ESP32-S3 RS485 controller — one test per

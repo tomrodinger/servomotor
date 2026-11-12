@@ -1,3 +1,9 @@
+> **Historical handoff (June 2026).** For the current Python 0.13.0 / Arduino
+> 0.11.0 releases, hardware results and remaining follow-ups, start with
+> [the November 12 release handoff](../LIBRARY_RELEASE_HANDOFF.md). In particular,
+> production trusted publishing now needs its upload permission repaired;
+> 0.13.0 was successfully published with the existing manual fallback.
+
 # Handoff: (3) full hardware test run on 0.10.0  +  (4) tag-driven PyPI CI for the library
 
 > **STATUS: ✅ ALL TASKS COMPLETE (2026-06-23)**

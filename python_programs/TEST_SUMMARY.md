@@ -1,5 +1,25 @@
 # Servomotor Test Summary
 
+## Client-library releases — 2026-11-12
+
+Python **0.13.0** is published on PyPI; Arduino **0.11.0** is released in the
+dedicated Arduino repository. Public downloads match the qualified candidates.
+See [the release handoff](../LIBRARY_RELEASE_HANDOFF.md) for release links,
+checksums, physical acceptance scope, local evidence locations, the Arduino
+indexing timer and the remaining PyPI trusted-publisher permission issue.
+
+Library acceptance passed PID readback on 27 M17 motors (5,543 checks), 5,000
+Python immediate updates on the stable firmware canary, and 1,087 native C++
+assertions. The Arduino library then ran on the physical ESP32-S3: three
+new-command runs passed 1,158 assertions each, plus selected conversion,
+communication, CRC and response regressions. The user observed ordinary motion
+and a fast immediate half-turn. The full 120-module on-device suite was not run.
+
+All 17 host programs and five post-merge portability jobs passed. The downloaded
+public PyPI wheel passed 24 command-contract tests and four CLI help checks in
+a fresh environment. Historical firmware acceptance below remains a separate
+qualification result.
+
 ## Immediate targets: stable 0.17.0.0
 
 Commands 49 and 50 require enabled closed-loop position operation and an empty
